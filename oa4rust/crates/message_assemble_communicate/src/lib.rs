@@ -1,4 +1,5 @@
 use axum::{extract::Extension, Json};
+use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -1187,46 +1188,134 @@ pub async fn im_msg_collection_remove(
     ))))
 }
 
+/// W10：IM 富媒体上传大小上限（50MB）
+pub const MAX_IM_FILE_SIZE: usize = 50 * 1024 * 1024;
+
+/// W10：清洗上传文件名——剥离任意路径分量，防目录穿越/路径注入。
+pub fn sanitize_filename(name: &str) -> String {
+    name.rsplit(|c| c == '/' || c == '\\')
+        .next()
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// W10：解析后的 IM 富媒体消息。
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedImMessage {
+    pub conversation_id: String,
+    pub msg_type: String,
+    /// 富媒体文件引用（上传接口返回的附件 id）
+    pub body_file_id: Option<String>,
+    /// 引用回复的目标消息 id
+    pub quote_message_id: Option<String>,
+}
+
+/// W10：解析 IM 富媒体消息信封（`{conversationId, body, quoteMessageId?}`）。
+///
+/// body 必须是 JSON 对象文本且带非空 `type`（text/image/file/voice/video/...），
+/// `fileId` 为富媒体文件引用；缺 conversationId、body 非 JSON 或空对象
+/// （无 type）一律拒绝，绝不落库为不可渲染的消息。
+pub fn parse_im_message(req: &Value) -> Result<ParsedImMessage, AppError> {
+    let bad = |msg: &str| AppError::BadRequest(msg.to_string());
+    let conversation_id = req
+        .get("conversationId")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("conversationId is required"))?
+        .to_string();
+    let body_text = req
+        .get("body")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad("body is required"))?;
+    let body: Value =
+        serde_json::from_str(body_text).map_err(|_| bad("body must be a JSON object"))?;
+    let msg_type = body
+        .get("type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("body.type is required"))?
+        .to_string();
+    let body_file_id = body
+        .get("fileId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let quote_message_id = req
+        .get("quoteMessageId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    Ok(ParsedImMessage {
+        conversation_id,
+        msg_type,
+        body_file_id,
+        quote_message_id,
+    })
+}
+
 #[allow(non_snake_case)]
 pub async fn im_msg_download_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<axum::response::Response, AppError> {
+    use axum::http::{header, StatusCode};
+    use axum::response::IntoResponse;
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT id, file_url, file_name, file_size, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
+        .query_opt("SELECT file_name, type, mime, content FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "\"fileUrl\"".to_string(),
-                    Value::String(row.get("file_url")),
-                ),
-                (
-                    "\"fileName\"".to_string(),
-                    Value::String(row.get("file_name")),
-                ),
-                (
-                    "\"fileSize\"".to_string(),
-                    Value::String(row.get("file_size")),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("file not found"))),
-    }
+    let (file_name, mime, content_b64) = match row {
+        Some(row) => (
+            row.get::<_, Option<String>>("file_name"),
+            row.get::<_, Option<String>>("mime"),
+            row.get::<_, Option<String>>("content"),
+        ),
+        None => return Ok((StatusCode::NOT_FOUND, "file not found").into_response()),
+    };
+
+    let content_b64 = match content_b64.as_deref() {
+        Some(b64) if !b64.is_empty() => b64,
+        _ => return Ok((StatusCode::NOT_FOUND, "file content missing").into_response()),
+    };
+    let data = base64::engine::general_purpose::STANDARD
+        .decode(content_b64)
+        .map_err(|_| AppError::Internal)?;
+
+    let mime = mime
+        .or(file_type_fallback(&file_name))
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let name = sanitize_filename(file_name.as_deref().unwrap_or(&id));
+    let headers = [
+        (header::CONTENT_TYPE, mime),
+        (
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{name}\""),
+        ),
+    ];
+    Ok((StatusCode::OK, headers, data).into_response())
+}
+
+/// 上传时未记录 mime 的旧数据：按扩展名兜底
+fn file_type_fallback(file_name: &Option<String>) -> Option<String> {
+    let ext = file_name
+        .as_deref()?
+        .rsplit('.')
+        .next()?
+        .to_ascii_lowercase();
+    let mime = match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "webm" => "audio/webm",
+        "mp4" => "video/mp4",
+        "mp3" => "audio/mpeg",
+        "pdf" => "application/pdf",
+        _ => return None,
+    };
+    Some(mime.to_string())
 }
 
 #[allow(non_snake_case)]
@@ -1397,30 +1486,57 @@ pub async fn im_msg_revoke_id(
 pub async fn im_msg_upload_conversationId_type_type(
     pool: Extension<Pool>,
     axum::extract::Path((conversation_id, msg_type)): axum::extract::Path<(String, String)>,
-    axum::extract::Json(req): axum::extract::Json<Value>,
+    mut form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // W10：IM 富媒体必须走真实 multipart——`fileName` 文本字段 + `file` 二进制字段
+    let mut file_name: Option<String> = None;
+    let mut file_mime: Option<String> = None;
+    let mut file_data: Option<Vec<u8>> = None;
+    while let Some(field) = form
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("multipart parse failed".to_string()))?
+    {
+        if let Some(fname) = field.file_name() {
+            file_mime = field.content_type().map(|s| s.to_string());
+            file_name = Some(fname.to_string());
+            file_data = Some(
+                field
+                    .bytes()
+                    .await
+                    .map_err(|_| AppError::BadRequest("file read failed".to_string()))?
+                    .to_vec(),
+            );
+        } else if field.name() == Some("fileName") {
+            file_name = Some(
+                field
+                    .text()
+                    .await
+                    .map_err(|_| AppError::BadRequest("form read failed".to_string()))?,
+            );
+        }
+    }
 
-    let file_url = req
-        .get("\"fileUrl\"")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let file_name = req
-        .get("\"fileName\"")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let file_size = req
-        .get("\"fileSize\"")
-        .and_then(|v| v.as_str())
-        .unwrap_or("0");
-    let _sender = req
-        .get("sender")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    let data = file_data.ok_or_else(|| AppError::BadRequest("no file provided".to_string()))?;
+    if data.len() > MAX_IM_FILE_SIZE {
+        return Ok(Json(ActionResult::error("file too large")));
+    }
+    let name = sanitize_filename(
+        file_name
+            .as_deref()
+            .filter(|n| !n.is_empty())
+            .unwrap_or("file"),
+    );
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    let file_size = data.len().to_string();
+    let file_url = format!("/jaxrs/message/assemble/communicate/im/msg/download/{id}");
+    let file_mime = file_mime.unwrap_or_else(|| "application/octet-stream".to_string());
 
     let result = client
-        .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())", &[&id, &id, &conversation_id, &file_url, &file_name, &file_size, &msg_type])
+        .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, mime, content, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())", &[&id, &id, &conversation_id, &file_url, &name, &file_size, &msg_type, &file_mime, &content_b64])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1432,6 +1548,7 @@ pub async fn im_msg_upload_conversationId_type_type(
                 Value::String(conversation_id),
             ),
             ("type".to_string(), Value::String(msg_type)),
+            ("\"fileName\"".to_string(), Value::String(name)),
             (
                 "\"fileUrl\"".to_string(),
                 Value::String(file_url.to_string()),

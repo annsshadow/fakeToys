@@ -5059,7 +5059,6 @@ dependencies = [
  "futures-util",
  "serde",
  "serde_json",
- "shared",
  "thiserror 1.0.69",
  "tokio",
  "tower",
