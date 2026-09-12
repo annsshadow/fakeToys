@@ -158,6 +158,27 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W13（A6｜crud-view 空壳裁决）**：~38 空壳逐个"补齐 or 声明范围外"，禁止以壳冒充实装；纳入回归守卫（复用 `autoquery-guards.test.ts`）。
 - **W14（A6｜长尾视图）**：Minder 画布、`service_*Designer`、`AppMarketV2`、`Forum*` 按需补齐或书面排除。
 
+### 实施状态总表（rev8，2026-09-12 实测）
+
+| 项 | 状态 | 证据 |
+|---|---|---|
+| S1 双侧种子 | ✅ 代码/文档落地 | 迁移 091（seed-approval-flow activities + seed-leave-form moduleList，已施真库验证）+ seed_fixtures_java.http.md §7；双侧实跑待 o2server 容器 |
+| S2 CI 行为门槛 | ✅ 机件就绪 / ⏳ 基线固化 | CI behavior-gate 读 fail_baseline（bootstrap→记录模式）；整数固化需双侧稳定跑（外部） |
+| S3 闭环脚手架 | ✅ | contracts/* 契约测试 + e2e（designer-roundtrip×4 + workflow-runtime，--list 5/5）；实跑需双栈环境 |
+| S4 金丝雀 | ✅ 离线门禁 | scripts/pilot_gate.py + tests/test_pilot_gate.py 4/4 + pilot-gate workflow；真实试点流量待部署 |
+| W3 ProcessDesigner | ✅ | serializeProcessDefinition（15 类 activity/字段权限/edition/waypoints），__fakeProcesses 消除 |
+| W4 Xform 运行时 | ✅ | XformRuntime + ProcessWork 审批携带 {data, opinion, action} + 表单数据 PUT data/work/{id} |
+| W5 FormDesigner | ✅ | formSavePayload → definition（moduleList/移动端/Actions/Events/Validation） |
+| W6 路由闭合 | ✅ 14/15 | designer_route_match 全绿（当前调用面），剩 page/list 影子（W13 壳） |
+| W7 3×ScriptDesigner | ✅ | ScriptWorkbench + 三薄 adapter + portal/process u2 写路径 + 版本快照 |
+| W8 Selector | ✅ | OrganizationSelector 接入 ProcessDesigner 节点负责人（taskIdentityList） |
+| W9 Portal & Query | ✅ | PortalDesigner 拖拽版 / QueryTable 类型化列+受限 DDL / QueryView 过滤排序分页 simulate/bundle |
+| W10 IMChat 富媒体 | ✅ | multipart 上传 + 二进制下载 + client_message 规范化；realtime 10/10、communicate 102/102 |
+| W11 API 层质量 | ✅ | 路径参数 encodeURIComponent + 命名占位符消除（4b31fa2d） |
+| W12 深语义收敛 | ⏳ | 依赖 S2 双侧跑与富种子实跑（外部）；基础设施已备 |
+| W13 空壳裁决 | ✅ 44/47 实装外 | manifest 47 项（1 implemented + 2 out_of_scope + 44 still_blocked）+ 机器一致守卫；3 脚本设计器本轮转实装移出 |
+| W14 长尾视图 | ✅ 裁决 | Minder 画布实装（47cc0702）；余项 manifest 书面裁决 |
+
 ### 依赖顺序（关键路径）
 
 ```
