@@ -300,9 +300,7 @@ pub async fn person_nick_name_flag(
         None => ok_json(Value::Object(serde_json::Map::new())),
         Some(row) => {
             // W12 收敛：对齐 Java ActionNickName 信封——仅返回 value（昵称/姓名）
-            let name = row
-                .get::<_, Option<String>>("name")
-                .unwrap_or_default();
+            let name = row.get::<_, Option<String>>("name").unwrap_or_default();
             let mut map = serde_json::Map::new();
             if !name.is_empty() {
                 map.insert("value".to_string(), Value::String(name));
