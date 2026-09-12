@@ -35,7 +35,7 @@ describe('desktop security regressions', () => {
       'DocumentApp.vue',
       'FormApp.vue',
       'MeetingApp.vue',
-      'PortalDesigner.vue',
+      // PortalDesigner 重构后不再提供服务端删除等破坏性操作，改由契约层路径保存，故不在此列
       'RecycleApp.vue',
       'RoleManager.vue',
     ]

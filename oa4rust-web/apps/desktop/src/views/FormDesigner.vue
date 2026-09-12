@@ -707,6 +707,15 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import {
+  definitionToDesignerFields,
+  formSavePayload,
+  parseFormDefinition,
+  serializeFormDefinition,
+  type XformDefinition,
+  type XformLayout,
+} from '../contracts/xform'
 import { toast } from '../utils/toast'
 
 interface FormField {
@@ -757,6 +766,9 @@ interface FormDef {
   desc?: string
   layout?: 'single' | 'two_col' | 'three_col'
   fields: FormField[]
+  appId?: string
+  status?: string
+  definition?: XformDefinition
   updatedAt?: string
   version?: string
   settings?: { showReset?: boolean; showSubmit?: boolean; layoutClass?: string }
@@ -800,8 +812,13 @@ interface FormDef {
   flag: string
   desc?: string
   fields: FormField[]
+  appId?: string
+  status?: string
+  definition?: XformDefinition
   updatedAt?: string
 }
+const route = useRoute()
+const routeAppId = computed(() => String(route.query.appId || route.params.appId || ''))
 const fieldTypes = [
   { type: 'text', label: '文本', icon: '📝' },
   { type: 'textarea', label: '多行文本', icon: '📄' },
@@ -994,8 +1011,14 @@ function parseOptions(s?: string) {
 async function loadForms() {
   formsLoading.value = true
   try {
-    const r: any = await api.get('/jaxrs/form/list')
-    forms.value = r?.data ?? []
+    const path = routeAppId.value ? `/jaxrs/form/list/app/${routeAppId.value}` : '/jaxrs/form/list/all'
+    const r: any = await api.get(path)
+    forms.value = (r?.data?.data ?? r?.data ?? []).map((form: any) => ({
+      ...form,
+      flag: form.flag || form.id,
+      desc: form.description || '',
+      fields: [],
+    }))
   } catch {
     forms.value = []
   } finally {
@@ -1006,31 +1029,24 @@ async function loadForm(f: FormDef) {
   try {
     const r: any = await api.get(`/jaxrs/form/${f.id}`)
     const data = r?.data ?? f
+    const definition = parseFormDefinition(data)
     currentForm.value = {
+      ...f,
       id: data.id || f.id,
-      name: data.name || data.title || '',
-      flag: data.flag || data.formFlag || '',
+      name: data.name || definition.name || '',
+      flag: data.flag || data.formFlag || data.id || '',
       desc: data.description || data.desc || '',
-      fields: Array.isArray(data.fields)
-        ? data.fields.map((ff: any) => ({
-            id: ff.id || genId(),
-            type: ff.type || 'text',
-            label: ff.label || ff.name || '',
-            key: ff.key || ff.fieldKey || '',
-            placeholder: ff.placeholder || '',
-            defaultValue: ff.defaultValue || ff.default || '',
-            required: ff.required || false,
-            disabled: ff.disabled || false,
-            rows: ff.rows || 4,
-            min: ff.min,
-            max: ff.max,
-            optionsStr:
-              ff.optionsStr ||
-              (Array.isArray(ff.options) ? ff.options.map((o: any) => `${o.value}|${o.label}`).join('\n') : ''),
-          }))
-        : [],
+      appId: data.appId || definition.application || routeAppId.value,
+      status: data.status || 'draft',
+      definition,
+      fields: definitionToDesignerFields(definition) as FormField[],
       updatedAt: data.updatedAt || f.updatedAt,
     }
+    const desktop = definition.layouts.desktop
+    const mobile = definition.layouts.mobile
+    layoutConfig.value = { ...layoutConfig.value, columns: desktop.columns, gutter: desktop.gutter }
+    columnCount.value = Math.min(3, Math.max(1, desktop.columns)) as 1 | 2 | 3
+    mobileLayout.value = mobile
     selectedField.value = null
   } catch {
     currentForm.value = { ...f, fields: [] }
@@ -1038,7 +1054,7 @@ async function loadForm(f: FormDef) {
   }
 }
 function resetForm() {
-  currentForm.value = { name: '', flag: '', fields: [] }
+  currentForm.value = { name: '', flag: '', appId: routeAppId.value, fields: [] }
   selectedField.value = null
 }
 async function saveForm() {
@@ -1047,30 +1063,43 @@ async function saveForm() {
     return
   }
   try {
-    const payload = {
-      name: currentForm.value.name,
-      flag: currentForm.value.flag,
-      description: currentForm.value.desc,
-      fields: currentForm.value.fields.map((f) => ({
-        type: f.type,
-        label: f.label,
-        key: f.key,
-        placeholder: f.placeholder,
-        defaultValue: f.defaultValue,
-        required: f.required,
-        disabled: f.disabled,
-        rows: f.rows,
-        min: f.min,
-        max: f.max,
-        options: parseOptions(f.optionsStr),
-      })),
+    const appId = currentForm.value.appId || routeAppId.value
+    if (!appId) {
+      toast.error('缺少 appId，请从应用上下文打开表单设计器')
+      return
     }
+    const root = currentForm.value.fields.map((field) => field.id)
+    const definition = serializeFormDefinition({
+      name: currentForm.value.name,
+      application: appId,
+      fields: currentForm.value.fields,
+      base: currentForm.value.definition,
+      desktop: { root, columns: layoutConfig.value.columns, gutter: layoutConfig.value.gutter },
+      mobile: { ...mobileLayout.value, root: mobileLayout.value.root.length ? mobileLayout.value.root : root },
+      actions: currentForm.value.definition?.actions,
+      events: currentForm.value.definition?.events,
+      validation: {
+        ...(currentForm.value.definition?.validation ?? {}),
+        rules: validationRules.value,
+        groups: validationGroups.value,
+      },
+    })
+    const payload = formSavePayload(definition, {
+      name: currentForm.value.name,
+      appId,
+      status: currentForm.value.status,
+    })
     if (currentForm.value.id) await api.put(`/jaxrs/form/${currentForm.value.id}`, payload)
-    else await api.post('/jaxrs/form', payload)
+    else {
+      const created: any = await api.post('/jaxrs/form', payload)
+      currentForm.value.id = created?.data?.id
+    }
+    currentForm.value.definition = definition
+    currentForm.value.appId = appId
     await loadForms()
     toast.info('保存成功')
   } catch (e: any) {
-    toast.error('保存失败: : ' + (e?.message ?? ''))
+    toast.error('保存失败: ' + (e?.message ?? ''))
   }
 }
 function togglePreview() {
@@ -1578,6 +1607,7 @@ const layoutConfig = ref<FormLayoutConfig>({
   labelWidth: 100,
   labelAlign: 'right',
 })
+const mobileLayout = ref<XformLayout>({ mode: 'mobile', root: [], domTree: [], columns: 1, gutter: 12 })
 const fieldHistory = ref<FieldHistoryEntry[]>([])
 const validationGroups = ref<Array<{ id: string; name: string; fields: string[]; rules: string[] }>>([])
 const showSectionManager = ref(false)
