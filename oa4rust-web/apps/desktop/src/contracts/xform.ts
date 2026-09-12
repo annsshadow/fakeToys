@@ -48,9 +48,7 @@ export interface XformDefinition extends Record<string, unknown> {
 }
 
 function object(value: unknown): Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {}
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
 
 function parseJson(value: string): unknown {
@@ -64,7 +62,9 @@ function parseJson(value: string): unknown {
 function domRootIds(html: unknown, modules: Record<string, XformModule>): string[] {
   if (typeof html !== 'string' || typeof DOMParser === 'undefined') return Object.keys(modules)
   const doc = new DOMParser().parseFromString(html, 'text/html')
-  const ids = Array.from(doc.body.querySelectorAll('[id]')).map((node) => node.id).filter((id) => modules[id])
+  const ids = Array.from(doc.body.querySelectorAll('[id]'))
+    .map((node) => node.id)
+    .filter((id) => modules[id])
   return ids.filter((id) => !ids.some((candidate) => candidate !== id && modules[id]?.pid?.includes(candidate)))
 }
 
@@ -72,7 +72,7 @@ function domTree(ids: string[], modules: Record<string, XformModule>): XformDomN
   const visit = (id: string, seen: Set<string>): XformDomNode => {
     if (seen.has(id)) return { id }
     const next = new Set(seen).add(id)
-    const explicit = Array.isArray(modules[id]?.children) ? modules[id].children as string[] : []
+    const explicit = Array.isArray(modules[id]?.children) ? (modules[id].children as string[]) : []
     const inferred = Object.values(modules)
       .filter((module) => module.pid?.includes(id))
       .map((module) => module.id)
@@ -84,15 +84,26 @@ function domTree(ids: string[], modules: Record<string, XformModule>): XformDomN
 
 export function parseFormDefinition(input: unknown): XformDefinition {
   const envelope = object(typeof input === 'string' ? parseJson(input) : input)
-  const source = object(envelope.definition ? (typeof envelope.definition === 'string' ? parseJson(envelope.definition) : envelope.definition) : envelope)
+  const source = object(
+    envelope.definition
+      ? typeof envelope.definition === 'string'
+        ? parseJson(envelope.definition)
+        : envelope.definition
+      : envelope,
+  )
   const pcData = object(source.pcData)
   const mobileData = object(source.mobileData)
   const root = Object.keys(pcData).length ? object(pcData.json) : source
   const rawModules = object(root.moduleList)
-  const moduleList = Object.fromEntries(Object.entries(rawModules).map(([id, value]) => {
-    const module = object(value)
-    return [id, { ...module, id: String(module.id || id), type: String(module.type || module.mwftype || 'Textfield') }]
-  })) as Record<string, XformModule>
+  const moduleList = Object.fromEntries(
+    Object.entries(rawModules).map(([id, value]) => {
+      const module = object(value)
+      return [
+        id,
+        { ...module, id: String(module.id || id), type: String(module.type || module.mwftype || 'Textfield') },
+      ]
+    }),
+  ) as Record<string, XformModule>
   const mobileRoot = object(mobileData.json)
   const desktopIds = domRootIds(pcData.html ?? source.html, moduleList)
   const mobileIds = domRootIds(mobileData.html, moduleList)
@@ -115,10 +126,12 @@ export function parseFormDefinition(input: unknown): XformDefinition {
 }
 
 function scripts(value: unknown): Record<string, XformScript> {
-  return Object.fromEntries(Object.entries(object(value)).map(([key, script]) => {
-    const body = typeof script === 'string' ? { code: script } : object(script)
-    return [key, { code: String(body.code || ''), html: String(body.html || body.code || '') }]
-  }))
+  return Object.fromEntries(
+    Object.entries(object(value)).map(([key, script]) => {
+      const body = typeof script === 'string' ? { code: script } : object(script)
+      return [key, { code: String(body.code || ''), html: String(body.html || body.code || '') }]
+    }),
+  )
 }
 
 function normalizeLayout(
@@ -131,7 +144,7 @@ function normalizeLayout(
   return {
     mode,
     root,
-    domTree: Array.isArray(value.domTree) ? value.domTree as XformDomNode[] : domTree(root, modules),
+    domTree: Array.isArray(value.domTree) ? (value.domTree as XformDomNode[]) : domTree(root, modules),
     columns: Number(value.columns) || 1,
     gutter: Number(value.gutter) || 16,
   }
@@ -153,24 +166,61 @@ export interface DesignerField extends Record<string, unknown> {
 }
 
 const FIELD_TO_MODULE: Record<string, string> = {
-  text: 'Textfield', textarea: 'Textarea', number: 'Number', date: 'Calendar', datetime: 'Calendar',
-  select: 'Select', checkbox: 'Radio', checkbox_group: 'Checkbox', file: 'Attachment', upload: 'Attachment',
-  email: 'Textfield', phone: 'Textfield', switch: 'Select', rating: 'Number', slider: 'Number',
-  section: 'Div', divider: 'Div', spacer: 'Div', html: 'Html', signature: 'Image', image: 'Image',
+  text: 'Textfield',
+  textarea: 'Textarea',
+  number: 'Number',
+  date: 'Calendar',
+  datetime: 'Calendar',
+  select: 'Select',
+  checkbox: 'Radio',
+  checkbox_group: 'Checkbox',
+  file: 'Attachment',
+  upload: 'Attachment',
+  email: 'Textfield',
+  phone: 'Textfield',
+  switch: 'Select',
+  rating: 'Number',
+  slider: 'Number',
+  section: 'Div',
+  divider: 'Div',
+  spacer: 'Div',
+  html: 'Html',
+  signature: 'Image',
+  image: 'Image',
 }
 
 const MODULE_TO_FIELD: Record<string, string> = {
-  textfield: 'text', ooinput: 'text', textarea: 'textarea', ootextarea: 'textarea', number: 'number',
-  currency: 'number', calendar: 'date', oodatetime: 'date', select: 'select', ooselect: 'select',
-  radio: 'checkbox', ooradiogroup: 'checkbox', checkbox: 'checkbox_group', oocheckgroup: 'checkbox_group',
-  attachment: 'file', oofiles: 'file', org: 'text', ooorg: 'text', label: 'html', html: 'html', div: 'section',
+  textfield: 'text',
+  ooinput: 'text',
+  textarea: 'textarea',
+  ootextarea: 'textarea',
+  number: 'number',
+  currency: 'number',
+  calendar: 'date',
+  oodatetime: 'date',
+  select: 'select',
+  ooselect: 'select',
+  radio: 'checkbox',
+  ooradiogroup: 'checkbox',
+  checkbox: 'checkbox_group',
+  oocheckgroup: 'checkbox_group',
+  attachment: 'file',
+  oofiles: 'file',
+  org: 'text',
+  ooorg: 'text',
+  label: 'html',
+  html: 'html',
+  div: 'section',
 }
 
 function parseOptions(value?: string): Array<{ value: string; label: string }> {
-  return (value || '').split('\n').filter(Boolean).map((line) => {
-    const [option, label = option] = line.split('|')
-    return { value: option.trim(), label: label.trim() }
-  })
+  return (value || '')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [option, label = option] = line.split('|')
+      return { value: option.trim(), label: label.trim() }
+    })
 }
 
 export function definitionToDesignerFields(definition: XformDefinition): DesignerField[] {
@@ -209,28 +259,30 @@ export interface SerializeFormOptions {
 
 export function serializeFormDefinition(options: SerializeFormOptions): XformDefinition {
   const previous = options.base?.moduleList ?? {}
-  const moduleList = Object.fromEntries(options.fields.map((field) => {
-    const module: XformModule = {
-      ...(previous[field.id] ?? {}),
-      ...field,
-      id: field.id,
-      type: String(field.moduleType || FIELD_TO_MODULE[field.type] || 'Textfield'),
-      name: field.key,
-      label: field.label,
-      placeholder: field.placeholder,
-      defaultValue: { value: field.defaultValue ?? '', code: '', html: '' },
-      required: Boolean(field.required || field.validation?.required),
-      readonly: Boolean(field.readonly),
-      disabled: Boolean(field.disabled),
-      hidden: Boolean(field.hidden),
-      options: parseOptions(field.optionsStr),
-      validation: field.validation ?? {},
-      events: scripts(field.events),
-    }
-    delete module.key
-    delete module.optionsStr
-    return [field.id, module]
-  }))
+  const moduleList = Object.fromEntries(
+    options.fields.map((field) => {
+      const module: XformModule = {
+        ...(previous[field.id] ?? {}),
+        ...field,
+        id: field.id,
+        type: String(field.moduleType || FIELD_TO_MODULE[field.type] || 'Textfield'),
+        name: field.key,
+        label: field.label,
+        placeholder: field.placeholder,
+        defaultValue: { value: field.defaultValue ?? '', code: '', html: '' },
+        required: Boolean(field.required || field.validation?.required),
+        readonly: Boolean(field.readonly),
+        disabled: Boolean(field.disabled),
+        hidden: Boolean(field.hidden),
+        options: parseOptions(field.optionsStr),
+        validation: field.validation ?? {},
+        events: scripts(field.events),
+      }
+      delete module.key
+      delete module.optionsStr
+      return [field.id, module]
+    }),
+  )
   const root = options.fields.map((field) => field.id)
   const desktop = normalizeLayout(object(options.desktop), 'desktop', root, moduleList)
   const mobile = normalizeLayout(object(options.mobile), 'mobile', root, moduleList)
@@ -265,12 +317,14 @@ export function formSavePayload(
 
 export function initialFormValues(definition: XformDefinition, source: unknown = {}): Record<string, FormValue> {
   const data = object(source)
-  return Object.fromEntries(Object.values(definition.moduleList).map((module) => {
-    const key = String(module.name || module.key || module.id)
-    const rawDefault = object(module.defaultValue).value ?? module.defaultValue
-    const fallback = module.type.toLowerCase().includes('checkbox') ? [] : rawDefault ?? null
-    return [key, data[key] as FormValue ?? fallback as FormValue]
-  }))
+  return Object.fromEntries(
+    Object.values(definition.moduleList).map((module) => {
+      const key = String(module.name || module.key || module.id)
+      const rawDefault = object(module.defaultValue).value ?? module.defaultValue
+      const fallback = module.type.toLowerCase().includes('checkbox') ? [] : (rawDefault ?? null)
+      return [key, (data[key] as FormValue) ?? (fallback as FormValue)]
+    }),
+  )
 }
 
 export function validateFormValues(

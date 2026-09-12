@@ -27,46 +27,104 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
-import { designerPaths, extractList, tablePayload, type TableColumnDefinition } from '../contracts/designer'
+import { designerPaths, extractList, type TableColumnDefinition, tablePayload } from '../contracts/designer'
 import { toast } from '../utils/toast'
-interface TableSummary { id: string; name: string; tableFlag: string; queryFlag?: string; columns?: TableColumnDefinition[]; status?: string }
-const columnTypes: TableColumnDefinition['type'][] = ['text','integer','decimal','boolean','date','datetime','json']
+
+interface TableSummary {
+  id: string
+  name: string
+  tableFlag: string
+  queryFlag?: string
+  columns?: TableColumnDefinition[]
+  status?: string
+}
+const columnTypes: TableColumnDefinition['type'][] = [
+  'text',
+  'integer',
+  'decimal',
+  'boolean',
+  'date',
+  'datetime',
+  'json',
+]
 const tables = ref<TableSummary[]>([])
 const activeFlag = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const executing = ref(false)
 const executeResult = ref<unknown>(null)
-const form = ref<{name:string;queryFlag:string;columns:TableColumnDefinition[]}>({ name:'', queryFlag:'', columns:[] })
-const canSave = computed(() => form.value.name.trim() && form.value.columns.length && form.value.columns.every((column) => /^[a-z_][a-z0-9_]{0,62}$/.test(column.name) && column.name !== 'id'))
-function addColumn(){ form.value.columns.push({ name:'', type:'text', nullable:true }) }
-function removeColumn(index:number){ form.value.columns.splice(index,1) }
-function newTable(){ activeFlag.value=''; form.value={name:'',queryFlag:'',columns:[{name:'title',type:'text',nullable:false}]}; executeResult.value=null }
-function openTable(item:TableSummary){ activeFlag.value=item.tableFlag; form.value={name:item.name,queryFlag:item.queryFlag??'',columns:(item.columns??[]).map((column)=>({...column}))}; executeResult.value=null }
-async function loadTables(){
-  loading.value=true
-  try{ const response=await api.get<unknown>(designerPaths.tableList); tables.value=extractList<TableSummary>(response.data) }
-  catch(error:any){ toast.error(`加载数据表失败: ${error?.message??'未知错误'}`) }
-  finally{ loading.value=false }
+const form = ref<{ name: string; queryFlag: string; columns: TableColumnDefinition[] }>({
+  name: '',
+  queryFlag: '',
+  columns: [],
+})
+const canSave = computed(
+  () =>
+    form.value.name.trim() &&
+    form.value.columns.length &&
+    form.value.columns.every((column) => /^[a-z_][a-z0-9_]{0,62}$/.test(column.name) && column.name !== 'id'),
+)
+function addColumn() {
+  form.value.columns.push({ name: '', type: 'text', nullable: true })
 }
-async function saveTable(){
-  if(!canSave.value)return
-  saving.value=true
-  const payload=tablePayload(form.value.name,form.value.queryFlag,form.value.columns)
-  try{
-    const response=activeFlag.value ? await api.put<any>(designerPaths.tableSave(activeFlag.value),payload) : await api.post<any>(designerPaths.tableCreate,payload)
-    activeFlag.value=response.data?.tableFlag??activeFlag.value
+function removeColumn(index: number) {
+  form.value.columns.splice(index, 1)
+}
+function newTable() {
+  activeFlag.value = ''
+  form.value = { name: '', queryFlag: '', columns: [{ name: 'title', type: 'text', nullable: false }] }
+  executeResult.value = null
+}
+function openTable(item: TableSummary) {
+  activeFlag.value = item.tableFlag
+  form.value = {
+    name: item.name,
+    queryFlag: item.queryFlag ?? '',
+    columns: (item.columns ?? []).map((column) => ({ ...column })),
+  }
+  executeResult.value = null
+}
+async function loadTables() {
+  loading.value = true
+  try {
+    const response = await api.get<unknown>(designerPaths.tableList)
+    tables.value = extractList<TableSummary>(response.data)
+  } catch (error: any) {
+    toast.error(`加载数据表失败: ${error?.message ?? '未知错误'}`)
+  } finally {
+    loading.value = false
+  }
+}
+async function saveTable() {
+  if (!canSave.value) return
+  saving.value = true
+  const payload = tablePayload(form.value.name, form.value.queryFlag, form.value.columns)
+  try {
+    const response = activeFlag.value
+      ? await api.put<any>(designerPaths.tableSave(activeFlag.value), payload)
+      : await api.post<any>(designerPaths.tableCreate, payload)
+    activeFlag.value = response.data?.tableFlag ?? activeFlag.value
     toast.success('表定义已保存为草稿')
     await loadTables()
-  }catch(error:any){ toast.error(`保存失败: ${error?.message??'未知错误'}`) }
-  finally{ saving.value=false }
+  } catch (error: any) {
+    toast.error(`保存失败: ${error?.message ?? '未知错误'}`)
+  } finally {
+    saving.value = false
+  }
 }
-async function executeTable(){
-  if(!activeFlag.value)return
-  executing.value=true
-  try{ const response=await api.post<unknown>(designerPaths.tableExecute(activeFlag.value),{}); executeResult.value=response.data; toast.success('受限 DDL 已执行'); await loadTables() }
-  catch(error:any){ toast.error(`执行失败: ${error?.message??'未知错误'}`) }
-  finally{ executing.value=false }
+async function executeTable() {
+  if (!activeFlag.value) return
+  executing.value = true
+  try {
+    const response = await api.post<unknown>(designerPaths.tableExecute(activeFlag.value), {})
+    executeResult.value = response.data
+    toast.success('受限 DDL 已执行')
+    await loadTables()
+  } catch (error: any) {
+    toast.error(`执行失败: ${error?.message ?? '未知错误'}`)
+  } finally {
+    executing.value = false
+  }
 }
 loadTables()
 </script>
