@@ -1020,68 +1020,6 @@
       }
     },
     {
-      "id": "w13:QueryTableDesignerApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "QueryTableDesignerApp.vue",
-      "route": "/app/query-table-designer",
-      "title": "表格设计器",
-      "endpoint": "/jaxrs/query/assemble/surface/table/list",
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "无列编辑、建表或 DDL 语义。",
-      "blockerCodes": [
-        "NON_REACTIVE_QUERY_COPY",
-        "LIST_ENDPOINT_REUSED_FOR_WRITES",
-        "MISSING_DOMAIN_DESIGNER"
-      ],
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryTableDesignerApp.vue",
-            "contains": "items.value = data.value ?? []"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
-            "contains": "import('./views/QueryTableDesignerApp.vue')"
-          }
-        ]
-      }
-    },
-    {
-      "id": "w13:QueryViewDesignerApp.vue",
-      "workItem": "W13",
-      "kind": "crud_view",
-      "view": "QueryViewDesignerApp.vue",
-      "route": "/app/query-view-designer",
-      "title": "视图设计器",
-      "endpoint": "/jaxrs/query/assemble/designer/view/list",
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "无可视化过滤、排序、分页、lookup 和模拟。",
-      "blockerCodes": [
-        "NON_REACTIVE_QUERY_COPY",
-        "LIST_ENDPOINT_REUSED_FOR_WRITES",
-        "MISSING_DOMAIN_DESIGNER"
-      ],
-      "evidence": {
-        "frontend": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/views/QueryViewDesignerApp.vue",
-            "contains": "items.value = data.value ?? []"
-          }
-        ],
-        "routing": [
-          {
-            "file": "oa4rust-web/apps/desktop/src/main.ts",
-            "contains": "import('./views/QueryViewDesignerApp.vue')"
-          }
-        ]
-      }
-    },
-    {
       "id": "w13:ServiceInvokeDesignerApp.vue",
       "workItem": "W13",
       "kind": "crud_view",
@@ -1726,15 +1664,15 @@
     }
   ],
   "summary": {
-    "total": 52,
+    "total": 50,
     "byWorkItem": {
-      "W13": 37,
+      "W13": 35,
       "W14": 15
     },
     "byStatus": {
-      "still_blocked": 49,
+      "implemented": 1,
       "out_of_scope": 2,
-      "implemented": 1
+      "still_blocked": 47
     }
   }
 }

@@ -97,15 +97,23 @@ import {
   designerPaths,
   extractList,
   moveItem,
-  parsePortalContent,
-  serializePortalContent,
   type PortalWidget,
   type PortalWidgetType,
+  parsePortalContent,
+  serializePortalContent,
 } from '../contracts/designer'
 import { toast } from '../utils/toast'
 
-interface DesignSummary { id: string; name: string; description?: string }
-interface ModuleItem { type: PortalWidgetType; label: string; hint: string }
+interface DesignSummary {
+  id: string
+  name: string
+  description?: string
+}
+interface ModuleItem {
+  type: PortalWidgetType
+  label: string
+  hint: string
+}
 
 const modules: ModuleItem[] = [
   { type: 'text', label: '文本', hint: '静态文本内容' },
@@ -134,7 +142,9 @@ async function loadDesigns() {
     designs.value = extractList<DesignSummary>(response.data)
   } catch (error: any) {
     toast.error(`加载门户设计失败: ${error?.message ?? '未知错误'}`)
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 async function openDesign(id: string) {
@@ -144,21 +154,35 @@ async function openDesign(id: string) {
     activeName.value = response.data?.name ?? designs.value.find((item) => item.id === id)?.name ?? ''
     widgets.value = parsePortalContent(response.data).widgets
     selectedId.value = ''
-  } catch (error: any) { toast.error(`加载设计失败: ${error?.message ?? '未知错误'}`) }
+  } catch (error: any) {
+    toast.error(`加载设计失败: ${error?.message ?? '未知错误'}`)
+  }
 }
 
 function makeWidget(module: ModuleItem): PortalWidget {
   return { id: crypto.randomUUID(), type: module.type, title: module.label, width: 2, config: {} }
 }
-function addWidget(module: ModuleItem) { const widget = makeWidget(module); widgets.value.push(widget); selectedId.value = widget.id }
-function dropModule() { if (dragModule.value) addWidget(dragModule.value); dragModule.value = null }
+function addWidget(module: ModuleItem) {
+  const widget = makeWidget(module)
+  widgets.value.push(widget)
+  selectedId.value = widget.id
+}
+function dropModule() {
+  if (dragModule.value) addWidget(dragModule.value)
+  dragModule.value = null
+}
 function dropWidget(index: number) {
   if (dragIndex.value === null) return
   widgets.value = moveItem(widgets.value, dragIndex.value, index)
   dragIndex.value = null
 }
-function removeSelected() { widgets.value = widgets.value.filter((widget) => widget.id !== selectedId.value); selectedId.value = '' }
-function widgetPreview(widget: PortalWidget) { return widget.config.text || widget.config.source || widget.config.target || '尚未配置' }
+function removeSelected() {
+  widgets.value = widgets.value.filter((widget) => widget.id !== selectedId.value)
+  selectedId.value = ''
+}
+function widgetPreview(widget: PortalWidget) {
+  return widget.config.text || widget.config.source || widget.config.target || '尚未配置'
+}
 
 async function createDesign() {
   try {
@@ -167,7 +191,9 @@ async function createDesign() {
     createForm.value = { name: '', description: '' }
     await loadDesigns()
     if (response.data?.id) await openDesign(response.data.id)
-  } catch (error: any) { toast.error(`创建失败: ${error?.message ?? '未知错误'}`) }
+  } catch (error: any) {
+    toast.error(`创建失败: ${error?.message ?? '未知错误'}`)
+  }
 }
 async function saveDesign() {
   if (!activeId.value) return
@@ -175,8 +201,11 @@ async function saveDesign() {
   try {
     await api.put(designerPaths.portalSave(activeId.value), { content: serializePortalContent(widgets.value) })
     toast.success('门户布局已保存')
-  } catch (error: any) { toast.error(`保存失败: ${error?.message ?? '未知错误'}`) }
-  finally { saving.value = false }
+  } catch (error: any) {
+    toast.error(`保存失败: ${error?.message ?? '未知错误'}`)
+  } finally {
+    saving.value = false
+  }
 }
 loadDesigns()
 </script>

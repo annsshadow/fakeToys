@@ -61,13 +61,16 @@
 import { computed } from 'vue'
 import type { FormMode, FormValue, XformDefinition, XformModule } from '../contracts/xform'
 
-const props = withDefaults(defineProps<{
-  definition: XformDefinition
-  modelValue: Record<string, FormValue>
-  errors?: Record<string, string>
-  mode?: FormMode
-  readonly?: boolean
-}>(), { errors: () => ({}), mode: 'desktop', readonly: false })
+const props = withDefaults(
+  defineProps<{
+    definition: XformDefinition
+    modelValue: Record<string, FormValue>
+    errors?: Record<string, string>
+    mode?: FormMode
+    readonly?: boolean
+  }>(),
+  { errors: () => ({}), mode: 'desktop', readonly: false },
+)
 
 const emit = defineEmits<{ 'update:modelValue': [value: Record<string, FormValue>] }>()
 const layout = computed(() => props.definition.layouts[props.mode] ?? props.definition.layouts.desktop)

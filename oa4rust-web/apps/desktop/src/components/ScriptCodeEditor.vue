@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { autocompletion, completionKeymap, type CompletionContext } from '@codemirror/autocomplete'
+import { autocompletion, type CompletionContext, completionKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap } from '@codemirror/commands'
 import { EditorState } from '@codemirror/state'
 import { keymap } from '@codemirror/view'

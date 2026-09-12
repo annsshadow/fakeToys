@@ -2813,10 +2813,10 @@
 import { api } from '@oa4rust/sdk'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
+  type JsonObject,
   parseProcessDefinition,
   processCreatePayload,
   serializeProcessDefinition,
-  type JsonObject,
 } from '../contracts/process-definition'
 import { runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
@@ -5736,9 +5736,7 @@ function currentO2Definition(
   meta: { name: string; flag: string; desc?: string },
   id = currentProcess.value?.id,
 ): JsonObject {
-  const routeWaypoints = Object.fromEntries(
-    [...routingConfigs.value].map(([id, config]) => [id, config.controlPoints]),
-  )
+  const routeWaypoints = Object.fromEntries([...routingConfigs.value].map(([id, config]) => [id, config.controlPoints]))
   return serializeProcessDefinition(processDef.value, {
     id,
     name: meta.name,

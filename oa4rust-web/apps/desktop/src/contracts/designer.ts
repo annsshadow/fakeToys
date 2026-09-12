@@ -54,8 +54,7 @@ export const designerPaths = {
   tableCreate: '/jaxrs/query/assemble/designer/table',
   tableSave: (flag: string) => `/jaxrs/query/assemble/designer/table/${encodeURIComponent(flag)}`,
   tableExecute: (flag: string) => `/jaxrs/query/assemble/designer/table/${encodeURIComponent(flag)}/execute`,
-  viewList: (queryFlag: string) =>
-    `/jaxrs/query/assemble/designer/view/list/query/${encodeURIComponent(queryFlag)}`,
+  viewList: (queryFlag: string) => `/jaxrs/query/assemble/designer/view/list/query/${encodeURIComponent(queryFlag)}`,
   viewGet: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}`,
   viewCreate: '/jaxrs/query/assemble/designer/view',
   viewSave: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}`,
@@ -87,7 +86,8 @@ export function serializePortalContent(widgets: readonly PortalWidget[]): string
 
 export function parsePortalContent(raw: unknown): PortalDesignContent {
   const empty: PortalDesignContent = { version: 1, widgets: [] }
-  const wrapped = raw && typeof raw === 'object' && 'components' in raw ? (raw as { components: unknown }).components : raw
+  const wrapped =
+    raw && typeof raw === 'object' && 'components' in raw ? (raw as { components: unknown }).components : raw
   try {
     const parsed = typeof wrapped === 'string' ? JSON.parse(wrapped) : wrapped
     if (!parsed || typeof parsed !== 'object' || !Array.isArray((parsed as PortalDesignContent).widgets)) return empty

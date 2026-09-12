@@ -61,22 +61,57 @@ const LIST_KEY: Record<O2ActivityType, string> = {
 }
 
 const ACTIVITY_TO_NODE: Record<O2ActivityType, string> = {
-  begin: 'start', manual: 'task', choice: 'gate_xor', condition: 'gate_or', split: 'gate_and',
-  merge: 'merge', embed: 'subprocess', publish: 'publish', delay: 'timer', invoke: 'invoke',
-  service: 'service', agent: 'script', cancel: 'cancel', parallel: 'parallel', end: 'end',
+  begin: 'start',
+  manual: 'task',
+  choice: 'gate_xor',
+  condition: 'gate_or',
+  split: 'gate_and',
+  merge: 'merge',
+  embed: 'subprocess',
+  publish: 'publish',
+  delay: 'timer',
+  invoke: 'invoke',
+  service: 'service',
+  agent: 'script',
+  cancel: 'cancel',
+  parallel: 'parallel',
+  end: 'end',
 }
 
 const NODE_TO_ACTIVITY: Record<string, O2ActivityType> = {
-  start: 'begin', task: 'manual', approval: 'manual', gate_xor: 'choice', gate_or: 'condition',
-  gate_and: 'split', subprocess: 'embed', timer: 'delay', script: 'agent',
-  parallel: 'parallel', end: 'end', publish: 'publish', invoke: 'invoke', service: 'service',
-  cancel: 'cancel', merge: 'merge', split: 'split', choice: 'choice', condition: 'condition',
-  manual: 'manual', begin: 'begin', embed: 'embed', delay: 'delay', agent: 'agent',
+  start: 'begin',
+  task: 'manual',
+  approval: 'manual',
+  gate_xor: 'choice',
+  gate_or: 'condition',
+  gate_and: 'split',
+  subprocess: 'embed',
+  timer: 'delay',
+  script: 'agent',
+  parallel: 'parallel',
+  end: 'end',
+  publish: 'publish',
+  invoke: 'invoke',
+  service: 'service',
+  cancel: 'cancel',
+  merge: 'merge',
+  split: 'split',
+  choice: 'choice',
+  condition: 'condition',
+  manual: 'manual',
+  begin: 'begin',
+  embed: 'embed',
+  delay: 'delay',
+  agent: 'agent',
 }
 
 const SCRIPT_KEYS = [
-  'beforeArriveScriptText', 'afterArriveScriptText', 'beforeExecuteScriptText',
-  'afterExecuteScriptText', 'beforeInquireScriptText', 'afterInquireScriptText',
+  'beforeArriveScriptText',
+  'afterArriveScriptText',
+  'beforeExecuteScriptText',
+  'afterExecuteScriptText',
+  'beforeInquireScriptText',
+  'afterInquireScriptText',
 ] as const
 
 function object(value: unknown): JsonObject {
@@ -99,7 +134,7 @@ function activityType(node: ProcessCanvasNode): O2ActivityType {
   const explicit = text(node.activityType)
   return O2_ACTIVITY_TYPES.includes(explicit as O2ActivityType)
     ? (explicit as O2ActivityType)
-    : NODE_TO_ACTIVITY[node.type] ?? 'manual'
+    : (NODE_TO_ACTIVITY[node.type] ?? 'manual')
 }
 
 function activityArrays(definition: JsonObject): JsonObject[] {
@@ -122,7 +157,9 @@ export function parseProcessDefinition(input: unknown): {
   definition: JsonObject
 } {
   const envelope = object(input)
-  const definition = object(envelope.processDefinition ?? envelope.process_definition ?? envelope.definition ?? envelope)
+  const definition = object(
+    envelope.processDefinition ?? envelope.process_definition ?? envelope.definition ?? envelope,
+  )
   const activities = activityArrays(definition)
   const nodes = activities.map((activity, index) => {
     const type = text(activity.type) as O2ActivityType
@@ -138,14 +175,18 @@ export function parseProcessDefinition(input: unknown): {
       y: pos.y,
       w: Number(activity.width) || undefined,
       h: Number(activity.height) || undefined,
-      assignee: text(activity.assignee) || (Array.isArray(activity.taskIdentityList) ? activity.taskIdentityList.join(',') : ''),
+      assignee:
+        text(activity.assignee) ||
+        (Array.isArray(activity.taskIdentityList) ? activity.taskIdentityList.join(',') : ''),
       script: text(activity.scriptText) || text(activity.afterExecuteScriptText),
       eventScripts,
     } satisfies ProcessCanvasNode
   })
   const routes = Array.isArray(definition.routeList)
     ? definition.routeList.map(object)
-    : Array.isArray(definition.routes) ? definition.routes.map(object) : []
+    : Array.isArray(definition.routes)
+      ? definition.routes.map(object)
+      : []
   const owner = new Map<string, string>()
   for (const activity of activities) {
     const ids = Array.isArray(activity.routeList) ? activity.routeList : activity.route ? [activity.route] : []
@@ -210,7 +251,10 @@ export function serializeProcessDefinition(
       routeList: routesByNode.get(node.id) ?? [],
       taskIdentityList: Array.isArray(node.taskIdentityList)
         ? node.taskIdentityList
-        : text(node.assignee).split(',').map((value) => value.trim()).filter(Boolean),
+        : text(node.assignee)
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean),
       readIdentityList: Array.isArray(node.readIdentityList) ? node.readIdentityList : [],
       readUnitList: Array.isArray(node.readUnitList) ? node.readUnitList : [],
       reviewIdentityList: Array.isArray(node.reviewIdentityList) ? node.reviewIdentityList : [],
@@ -220,7 +264,10 @@ export function serializeProcessDefinition(
       activity.scriptText = node.script
       activity.afterExecuteScriptText = node.script
     }
-    if ((routesByNode.get(node.id)?.length ?? 0) === 1 && !['manual', 'choice', 'condition', 'parallel'].includes(type)) {
+    if (
+      (routesByNode.get(node.id)?.length ?? 0) === 1 &&
+      !['manual', 'choice', 'condition', 'parallel'].includes(type)
+    ) {
       activity.route = routesByNode.get(node.id)?.[0]
     }
     delete activity.x

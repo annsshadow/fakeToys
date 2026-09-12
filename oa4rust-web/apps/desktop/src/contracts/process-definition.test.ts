@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  O2_ACTIVITY_TYPES,
-  parseProcessDefinition,
-  serializeProcessDefinition,
-} from './process-definition'
+import { O2_ACTIVITY_TYPES, parseProcessDefinition, serializeProcessDefinition } from './process-definition'
 
 describe('O2OA process definition adapter', () => {
   it('round-trips all required activity types, routes, permissions, edition and scripts', () => {
@@ -24,15 +20,20 @@ describe('O2OA process definition adapter', () => {
       condition: `route-${index}`,
       waypoints: [{ x: index, y: index + 1 }],
     }))
-    const definition = serializeProcessDefinition({ nodes, edges }, {
-      id: 'process-1',
-      name: '审批流程',
-      application: 'app-1',
-      edition: 'v2',
-      fieldPermissions: [{ path: 'amount', readActivityList: ['n1'] }],
-    })
+    const definition = serializeProcessDefinition(
+      { nodes, edges },
+      {
+        id: 'process-1',
+        name: '审批流程',
+        application: 'app-1',
+        edition: 'v2',
+        fieldPermissions: [{ path: 'amount', readActivityList: ['n1'] }],
+      },
+    )
 
-    expect((definition.activities as Array<Record<string, unknown>>).map((item) => item.type)).toEqual(O2_ACTIVITY_TYPES)
+    expect((definition.activities as Array<Record<string, unknown>>).map((item) => item.type)).toEqual(
+      O2_ACTIVITY_TYPES,
+    )
     expect(definition.routeList).toHaveLength(edges.length)
     expect(definition.fieldPermissions).toEqual([{ path: 'amount', readActivityList: ['n1'] }])
     expect(definition.edition).toBe('v2')
