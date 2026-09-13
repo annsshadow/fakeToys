@@ -354,8 +354,9 @@ pub async fn calendar_follow_get(
         .await
         .map_err(|_| AppError::Internal)?
         .get("c");
+    // W12 收敛：对齐 Java ActionFollowCalendar——Wo extends WrapOutBoolean（仅 value 键）
     Ok(Json(ActionResult::success(
-        json!({ "followed": count > 0 }),
+        json!({ "value": count > 0 }),
     )))
 }
 
@@ -374,7 +375,8 @@ pub async fn calendar_follow_cancel(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(json!({ "canceled": n > 0 }))))
+    // W12 收敛：对齐 Java ActionFollowCalendarCancel——WrapOutBoolean（仅 value 键）
+    Ok(Json(ActionResult::success(json!({ "value": n > 0 }))))
 }
 
 /// GET /jaxrs/calendar_assemble_control/calendar/ismanager/calendar/{id} —— 当前用户是否某日历管理员

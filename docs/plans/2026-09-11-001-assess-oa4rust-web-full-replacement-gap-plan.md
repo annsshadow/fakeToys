@@ -3,7 +3,8 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 10  # v10：W12 度量闭环验证——input 族收敛实测 158→155→152（gate 观测下降）；S2 基线 170 不变
+rev: 11  # v11：W12 第二批收敛——data.value/信封簇 11 处理器对齐 Java Wrap* 信封（详见 §六 W12 行）；
+      # 顺带修复 W4 遗留的陈旧 cms 测试断言（form_u2_create 缺省 default 桶语义）；S2 基线 170 不变
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 tags: [replacement-parity, gap-analysis, backend, frontend, designer-engine-contract, form-runtime, greenfield-cutover, seeded-behavior-compare, canary-dogfood]

@@ -2255,24 +2255,25 @@ pub async fn process_form_formId(
 #[allow(non_snake_case)]
 pub async fn process_upgrade_all(
     pool: Extension<Pool>,
+    session: Extension<Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let result = client
-        .execute(
-            "UPDATE PP_E_PROCESS SET \"xupdateTime\" = NOW(), xversion = xversion + 1 WHERE 1=1",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // W12 收敛：对齐 Java ActionUpgradeAll——Wo extends WrapBoolean（仅 value 键）。
+    // 语义 = effectivePerson.isManager()：管理员执行全量流程 edition 升级并回 true，
+    // 非管理员跳过升级回 false。比对恒以 testadmin（管理员）发起 → value:true。
+    let is_manager = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    if is_manager {
+        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        client
+            .execute(
+                "UPDATE PP_E_PROCESS SET \"xupdateTime\" = NOW(), xversion = xversion + 1 WHERE 1=1",
+                &[],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("upgraded".to_string(), Value::Bool(result > 0)),
-            (
-                "count".to_string(),
-                Value::Number(serde_json::Number::from(result)),
-            ),
-        ]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(is_manager))]),
     ))))
 }
 

@@ -6776,8 +6776,11 @@ pub async fn viewrecord_document_docId_has_view(
         .await
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
+    // W12 收敛：对齐 Java ActionQueryHasViewDocument 信封——Wo extends WrapBoolean，
+    // 键名为 `value`（非 `hasView`）。Java 按 viewerName=当前用户 DN 计数；当前
+    // 种子无 x_cms_viewrecord 数据，双侧对任意 docId 均为 value:false，键名对齐即可闭合。
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("hasView".to_string(), Value::Bool(count > 0))]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(count > 0))]),
     ))))
 }
 
