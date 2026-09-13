@@ -13,11 +13,11 @@ test('creates and round-trips a process through the web designer', async ({ page
   await page.locator('.sb-header').getByRole('button', { name: '+ 新建' }).click()
   await page.getByPlaceholder('如: 请假审批流程').fill(name)
   await page.getByPlaceholder('如: leave_approval_v2').fill(flag)
-  const createResponse = audit.waitForWrite((response) =>
-    new URL(response.url()).pathname.endsWith('/designer/process'),
-  )
+  const createResponse = audit.waitForWrite((response) => new URL(response.url()).pathname.endsWith('/designer/create'))
   await page.getByRole('button', { name: '创建', exact: true }).click()
-  await expectSuccessfulWrite(await createResponse)
+  const created = await createResponse
+  await expectSuccessfulWrite(created)
+  expect(created.request().postDataJSON()).toMatchObject({ name, category: 'all' })
   await expect(page.getByText(name, { exact: true })).toBeVisible()
 
   await page.reload()
@@ -25,7 +25,7 @@ test('creates and round-trips a process through the web designer', async ({ page
   await page.getByText(name, { exact: true }).click()
   await expect(page.locator('.pd-palette')).toBeVisible()
   const saveResponse = audit.waitForWrite((response) =>
-    /\/designer\/process\/[^/]+$/.test(new URL(response.url()).pathname),
+    /\/designer\/save\/[^/]+$/.test(new URL(response.url()).pathname),
   )
   await page.getByRole('button', { name: /保存/ }).first().click()
   const saved = await saveResponse
@@ -87,35 +87,38 @@ test('creates and round-trips a query through the web designer', async ({ page }
   await page.reload()
   await expect(page.getByText(name, { exact: true })).toBeVisible()
   await page.getByText(name, { exact: true }).click()
-  await page.getByRole('button', { name: /编辑/ }).click()
+  await page.getByRole('button', { name: '✏ 编辑' }).click()
   await expect(page.getByPlaceholder('SELECT * FROM ...')).toHaveValue(sql)
   await assertNo404OrServerErrors(audit)
 })
 
 test('creates and round-trips a portal page through the web designer', async ({ page }) => {
   const audit = auditApiResponses(page)
-  const flag = uniqueFlag('s3-portal')
-  const name = `S3 门户 ${flag}`
-  const layout = '[{"type":"row","widgets":[{"type":"text","text":"S3 portal"}]}]'
+  const name = `S3 门户 ${uniqueFlag('s3-portal')}`
 
   await page.goto('/app/portal-designer')
   await expect(page.getByRole('heading', { name: '门户设计器' })).toBeVisible()
-  await page.getByRole('button', { name: /新建页面/ }).click()
-  await page.getByPlaceholder('页面名称').fill(name)
-  await page.getByPlaceholder('唯一标识').fill(flag)
-  await page.getByPlaceholder('[{"type":"row","widgets":[...]}]').fill(layout)
-  const createResponse = audit.waitForWrite((response) => new URL(response.url()).pathname.endsWith('/designer/page'))
-  await page.getByRole('button', { name: '保存', exact: true }).click()
+  await page.getByRole('button', { name: '新建设计' }).click()
+  await page.getByLabel('名称').fill(name)
+  const createResponse = audit.waitForWrite((response) => new URL(response.url()).pathname.endsWith('/designer/create'))
+  await page.getByRole('button', { name: '创建', exact: true }).click()
   const created = await createResponse
   await expectSuccessfulWrite(created)
-  expect(created.request().postDataJSON()).toMatchObject({ name, content: { flag, layout: JSON.parse(layout) } })
-  await expect(page.getByText(name, { exact: true })).toBeVisible()
+
+  // 拖一个文本模块到画布
+  await page.locator('.palette-item').first().dragTo(page.locator('.canvas'))
+  await expect(page.locator('.widget')).toHaveCount(1)
+
+  const saveResponse = audit.waitForWrite((response) =>
+    /\/designer\/save\/[^/]+$/.test(new URL(response.url()).pathname),
+  )
+  await page.getByRole('button', { name: /保存布局/ }).click()
+  await expectSuccessfulWrite(await saveResponse)
+  await expect(page.getByText('文本', { exact: true })).toBeVisible()
 
   await page.reload()
   await expect(page.getByText(name, { exact: true })).toBeVisible()
   await page.getByText(name, { exact: true }).click()
-  await expect(page.getByPlaceholder('页面名称')).toHaveValue(name)
-  await expect(page.getByPlaceholder('唯一标识')).toHaveValue(flag)
-  await expect(page.getByPlaceholder('[{"type":"row","widgets":[...]}]')).toHaveValue(layout)
+  await expect(page.locator('.widget')).toHaveCount(1)
   await assertNo404OrServerErrors(audit)
 })

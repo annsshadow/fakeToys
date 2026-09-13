@@ -1,8 +1,11 @@
 <template>
   <div class="work-view">
     <div class="view-header glass-card">
-      <h1>工作流待办</h1>
-      <p class="subtitle">真实任务、表单定义与流程数据闭环</p>
+      <div>
+        <h1>工作流待办</h1>
+        <p class="subtitle">真实任务、表单定义与流程数据闭环</p>
+      </div>
+      <button class="btn-sm primary" @click="openStart">发起流程</button>
     </div>
     <div class="tabs glass-card">
       <button
@@ -50,14 +53,49 @@
           v-model="formValues"
           :definition="formDefinition"
           :errors="formErrors"
-          :readonly="activeTab !== 'pending'"
+          :readonly="activeTab !== 'pending' && !handleTaskId"
         />
         <div v-else class="state">当前工作没有可渲染的表单定义</div>
-        <textarea v-if="activeTab === 'pending'" v-model="opinion" class="opinion" placeholder="处理意见" />
-        <footer v-if="activeTab === 'pending'">
+        <textarea v-if="canHandle" v-model="opinion" class="opinion" placeholder="处理意见" aria-label="处理意见" />
+        <footer v-if="canHandle">
           <button class="btn-sm reject" :disabled="submitting" @click="submit('reject')">驳回</button>
           <button class="btn-sm primary" :disabled="submitting" @click="submit('approve')">审批通过</button>
         </footer>
+      </section>
+    </div>
+
+    <div v-if="showStart" class="modal-overlay" @click.self="showStart = false">
+      <section class="work-dialog glass-card">
+        <header>
+          <div><h2>发起流程</h2><p>从零创建工作实例并填报表单</p></div>
+          <button class="btn-sm" @click="closeStart">关闭</button>
+        </header>
+        <div v-if="startLoading" class="state">加载流程列表...</div>
+        <template v-else>
+          <div class="start-row">
+            <label for="start-process">流程</label>
+            <select id="start-process" v-model="startProcessId" @change="onStartProcessChange">
+              <option value="">请选择流程</option>
+              <option v-for="proc in startProcesses" :key="proc.id" :value="proc.id">{{ proc.name }}</option>
+            </select>
+          </div>
+          <div class="start-row">
+            <label for="start-title">标题</label>
+            <input id="start-title" v-model="startTitle" placeholder="工作标题" />
+          </div>
+          <XformRuntime
+            v-if="startDefinition"
+            v-model="startValues"
+            :definition="startDefinition"
+            :errors="startErrors"
+          />
+          <div v-else-if="startProcessId" class="state">当前流程未绑定表单，可直接发起</div>
+          <footer>
+            <button class="btn-sm primary" :disabled="!startProcessId || !startTitle.trim() || startSubmitting" @click="submitStart">
+              {{ startSubmitting ? '发起中…' : '发起' }}
+            </button>
+          </footer>
+        </template>
       </section>
     </div>
   </div>
@@ -120,6 +158,7 @@ const detailLoading = ref(false)
 const detailError = ref('')
 const opinion = ref('')
 const submitting = ref(false)
+const handleTaskId = ref('')
 
 function workId(item: TaskItem): string {
   return String(item.work || item.workId || item.id)
@@ -131,6 +170,7 @@ async function openWork(item: TaskItem): Promise<void> {
   detailError.value = ''
   formErrors.value = {}
   opinion.value = ''
+  handleTaskId.value = ''
   try {
     const id = workId(item)
     const [formResponse, dataResponse] = await Promise.all([
@@ -138,9 +178,18 @@ async function openWork(item: TaskItem): Promise<void> {
       api.get(`/jaxrs/processplatform/assemble/surface/data/work/${id}`),
     ])
     formDefinition.value = parseFormDefinition((formResponse as any)?.data)
-    const data = (dataResponse as any)?.data
-    const values = Array.isArray(data) ? (data[0] ?? {}) : (data ?? {})
+    const payload = (dataResponse as any)?.data
+    const values = Array.isArray(payload)
+      ? (payload[0] ?? {})
+      : ((payload?.data as Record<string, FormValue>) ?? payload ?? {})
     formValues.value = initialFormValues(formDefinition.value, values)
+    // “我发起的”详情：若本人有该工作的活动任务，允许在此办理（发起人 begin 环节）
+    if (activeTab.value === 'started') {
+      const pending: any = await api.get(endpoints.pending)
+      const tasks = (pending?.data?.data ?? pending?.data ?? []) as TaskItem[]
+      const mine = tasks.find((task) => workId(task) === id)
+      handleTaskId.value = mine?.id ?? ''
+    }
   } catch (error: any) {
     formDefinition.value = null
     detailError.value = error?.message || '加载表单失败'
@@ -156,6 +205,110 @@ function closeWork(): void {
   formErrors.value = {}
 }
 
+const canHandle = computed(() => {
+  if (!opened.value) return false
+  if (activeTab.value === 'pending') return true
+  return Boolean(handleTaskId.value)
+})
+
+// ── 发起流程（从零创建工作实例）────────────────────────────────
+const showStart = ref(false)
+const startLoading = ref(false)
+const startProcesses = ref<Array<{ id: string; name: string }>>([])
+const startProcessId = ref('')
+const startTitle = ref('')
+const startDefinition = ref<XformDefinition | null>(null)
+const startValues = ref<Record<string, FormValue>>({})
+const startErrors = ref<Record<string, FormValue>>({})
+const startSubmitting = ref(false)
+
+async function openStart(): Promise<void> {
+  showStart.value = true
+  startLoading.value = true
+  startProcessId.value = ''
+  startTitle.value = ''
+  startDefinition.value = null
+  startValues.value = {}
+  startErrors.value = {}
+  try {
+    const r: any = await api.get('/jaxrs/processplatform/assemble/designer/list/all')
+    const rows = (r?.data ?? []) as Array<Record<string, unknown>>
+    startProcesses.value = rows
+      .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? row.id ?? '') }))
+      .filter((proc) => proc.id)
+  } catch (error: any) {
+    toast.error(`加载流程失败: ${error?.message || ''}`)
+  } finally {
+    startLoading.value = false
+  }
+}
+
+function closeStart(): void {
+  showStart.value = false
+  startProcessId.value = ''
+  startTitle.value = ''
+  startDefinition.value = null
+  startValues.value = {}
+  startErrors.value = {}
+}
+
+async function onStartProcessChange(): Promise<void> {
+  startDefinition.value = null
+  startValues.value = {}
+  startErrors.value = {}
+  if (!startProcessId.value) return
+  try {
+    const detail: any = await api.get(
+      `/jaxrs/processplatform/assemble/designer/get/${encodeURIComponent(startProcessId.value)}`,
+    )
+    const definition = detail?.data?.processDefinition as Record<string, unknown> | undefined
+    const formFlag = (() => {
+      const begin = definition?.begin as Record<string, unknown> | undefined
+      const manualList = definition?.manualList as Array<Record<string, unknown>> | undefined
+      const fromBegin = typeof begin?.form === 'string' ? begin.form : ''
+      const fromManual = typeof manualList?.[0]?.form === 'string' ? manualList[0].form : ''
+      return fromBegin || fromManual
+    })()
+    if (!formFlag) return
+    const form: any = await api.get(`/jaxrs/form/${encodeURIComponent(formFlag)}`)
+    startDefinition.value = parseFormDefinition(form?.data)
+    startValues.value = initialFormValues(startDefinition.value, {})
+  } catch (error: any) {
+    toast.error(`加载流程表单失败: ${error?.message || ''}`)
+  }
+}
+
+async function submitStart(): Promise<void> {
+  if (!startProcessId.value || !startTitle.value.trim()) return
+  if (startDefinition.value) {
+    startErrors.value = validateFormValues(startDefinition.value, startValues.value)
+    if (Object.keys(startErrors.value).length) {
+      toast.error('请先修正表单校验错误')
+      return
+    }
+  }
+  startSubmitting.value = true
+  try {
+    const created: any = await api.post('/jaxrs/processplatform/service/processing/work', {
+      process: startProcessId.value,
+      title: startTitle.value.trim(),
+    })
+    const workId = String(created?.data?.id ?? '')
+    if (!workId) throw new Error('后端未返回工作 ID')
+    if (startDefinition.value && Object.keys(startValues.value).length) {
+      await api.put(`/jaxrs/processplatform/service/processing/data/work/${workId}`, startValues.value)
+    }
+    toast.success('流程已发起')
+    closeStart()
+    activeTab.value = 'started'
+    await queryClient.invalidateQueries({ queryKey: ['process-work'] })
+  } catch (error: any) {
+    toast.error(`发起失败: ${error?.message || ''}`)
+  } finally {
+    startSubmitting.value = false
+  }
+}
+
 async function submit(action: 'approve' | 'reject'): Promise<void> {
   if (!opened.value || !formDefinition.value) return
   formErrors.value = validateFormValues(formDefinition.value, formValues.value)
@@ -168,10 +321,11 @@ async function submit(action: 'approve' | 'reject'): Promise<void> {
   const payload = { data: formValues.value, opinion: opinion.value, action }
   try {
     await api.put(`/jaxrs/processplatform/service/processing/data/work/${id}`, formValues.value)
+    const taskId = activeTab.value === 'started' ? handleTaskId.value : opened.value.id
     if (action === 'approve') {
-      await api.post(`/jaxrs/task/${opened.value.id}/complete`, payload)
+      await api.post(`/jaxrs/task/${taskId}/complete`, payload)
     } else {
-      await api.post(`/jaxrs/task/${opened.value.id}/reject`, payload)
+      await api.post(`/jaxrs/task/${taskId}/reject`, payload)
     }
     toast.success(action === 'approve' ? '审批通过' : '已驳回')
     closeWork()

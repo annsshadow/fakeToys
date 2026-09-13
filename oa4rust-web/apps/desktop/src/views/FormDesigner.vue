@@ -10,7 +10,7 @@
         <button class="btn" @click="resetForm" title="新建表单">📄 新建</button>
         <button class="btn btn-outline" @click="loadForms" title="刷新列表">🔄 刷新</button>
         <button class="btn btn-outline" :class="{ active: mode === 'preview' }" @click="togglePreview">👁 预览</button>
-        <button class="btn btn-primary" :disabled="!currentForm || !currentForm.name" @click="saveForm">💾 保存</button>
+        <button class="btn btn-primary" :disabled="!currentForm || !currentForm.name" @click="saveForm" title="保存">💾 保存</button>
       </div>
     </div>
     <div class="fd-body">
@@ -1063,11 +1063,8 @@ async function saveForm() {
     return
   }
   try {
-    const appId = currentForm.value.appId || routeAppId.value
-    if (!appId) {
-      toast.error('缺少 appId，请从应用上下文打开表单设计器')
-      return
-    }
+    // 全局入口（无应用上下文）缺省落 default 桶，后端对该桶跳过存在性校验
+    const appId = currentForm.value.appId || routeAppId.value || 'default'
     const root = currentForm.value.fields.map((field) => field.id)
     const definition = serializeFormDefinition({
       name: currentForm.value.name,
