@@ -30,11 +30,32 @@ pub fn cors_middleware() -> CorsLayer {
 pub fn cors_middleware_for_origin(public_origin: &str) -> CorsLayer {
     use tower_http::cors::AllowOrigin;
 
-    let allow_origin = AllowOrigin::exact(
-        public_origin
-            .parse::<HeaderValue>()
-            .expect("validated APP_PUBLIC_ORIGIN must be a valid header value"),
-    );
+    // 除配置的 public_origin 外，放行其回环镜像（localhost ⇄ 127.0.0.1）：
+    // 同源访问经 127.0.0.1 时浏览器同样携带 Origin，精确单源白名单会把它
+    // 当跨域拒绝（实测 POST 同源 403）。
+    let mut origins = vec![public_origin
+        .parse::<HeaderValue>()
+        .expect("validated APP_PUBLIC_ORIGIN must be a valid header value")];
+    if let Ok(url) = url::Url::parse(public_origin) {
+        let port = url.port();
+        if let Some(host) = url.host_str() {
+            let mirror_host = match host {
+                "localhost" => Some("127.0.0.1"),
+                "127.0.0.1" => Some("localhost"),
+                _ => None,
+            };
+            if let Some(mirror) = mirror_host {
+                let mirror_origin = match port {
+                    Some(port) => format!("{}://{}:{}", url.scheme(), mirror, port),
+                    None => format!("{}://{}", url.scheme(), mirror),
+                };
+                if let Ok(value) = mirror_origin.parse::<HeaderValue>() {
+                    origins.push(value);
+                }
+            }
+        }
+    }
+    let allow_origin = AllowOrigin::list(origins);
 
     CorsLayer::new()
         .allow_origin(allow_origin)
