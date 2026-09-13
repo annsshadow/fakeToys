@@ -8280,23 +8280,27 @@ pub async fn form_u2_create(
     session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W12/E2E：全局表单设计器无应用上下文，缺省落 default 桶（对齐 script 处理）
     let app_id = match u2_body_str(&body, "appId") {
-        Some(a) if !a.is_empty() => a,
-        _ => return Err(AppError::BadRequest("appId required".to_string())),
+        Some(a) if !a.is_empty() => a.to_string(),
+        _ => "default".to_string(),
     };
     let definition = form_definition_from_body(&body)?
         .ok_or_else(|| AppError::BadRequest("definition required".to_string()))?
         .to_db()?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let app = client
-        .query_opt(
-            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
-            &[&app_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if app.is_none() {
-        return Ok(Json(ActionResult::error("application not found")));
+    // default 桶跳过应用存在性校验（全局设计器场景）
+    if app_id != "default" {
+        let app = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&app_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if app.is_none() {
+            return Ok(Json(ActionResult::error("application not found")));
+        }
     }
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();

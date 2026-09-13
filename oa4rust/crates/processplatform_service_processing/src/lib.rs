@@ -3029,6 +3029,21 @@ pub async fn task_complete(
             )
             .await
             .map_err(|_| AppError::Internal)?;
+    } else {
+        // W12/E2E：无后续任务 = 流程终点，work 收尾为 completed
+        tx.execute(
+            "UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2",
+            &[&"completed", &work_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+        let id4 = Uuid::new_v4().to_string();
+        tx.execute(
+                "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
+                &[&id4, &work_id, &"complete", &"work completed at terminal activity", &"system"],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
     }
     tx.commit().await.map_err(|_| AppError::Internal)?;
     let row = client

@@ -3327,40 +3327,31 @@ pub async fn data_work_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W12/E2E：读新栈数据 bundle（x_data，与 service_processing 的写侧同轨），
+    // 返回 {data: <表单键值对象>}；无 bundle 时返回空对象。
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityType\", \"xactivityName\", \"xactivityAlias\", \"xactivityDescription\", \"xactivityToken\", \"xactivityUnique\", \"xactivityArrivedTime\", xserial, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1 ORDER BY \"xcreateTime\" DESC",
+    let row = client
+        .query_opt(
+            "SELECT data::text AS data FROM x_data WHERE scope = 'work' AND bundle = $1 ORDER BY create_time DESC LIMIT 1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
-                ),
-                (
-                    "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
-                ),
-            ]))
-        })
-        .collect();
-
-    {
-        let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
-            Value::Array(data),
-            count,
-            0,
-        )))
-    }
+    let bundle: Value = match row {
+        Some(row) => row
+            .get::<_, Option<String>>("data")
+            .and_then(|text| serde_json::from_str(&text).ok())
+            .unwrap_or(Value::Null),
+        None => Value::Null,
+    };
+    let data = if bundle.is_object() {
+        bundle
+    } else {
+        Value::Object(serde_json::Map::new())
+    };
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("data".to_string(), data)]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -6322,6 +6313,61 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
     axum::extract::Path(workOrWorkCompleted): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // W4/E2E：新栈契约优先——work id → 流程定义 → begin/manual 绑定的表单 →
+    // x_cms_form.definition（moduleList）。未命中再回退 parity 表。
+    let process_flag: Option<String> = client
+        .query_opt(
+            "SELECT process FROM x_work WHERE id = $1 AND deleted_at IS NULL",
+            &[&workOrWorkCompleted],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .and_then(|row| row.get::<_, Option<String>>("process"));
+    if let Some(process_flag) = process_flag {
+        let definition_row = client
+            .query_opt(
+                "SELECT process_definition::text AS definition FROM x_process_definition WHERE id = $1",
+                &[&process_flag],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if let Some(definition_row) = definition_row {
+            let raw: String = definition_row.get("definition");
+            let parsed: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
+            let form_flag = parsed
+                .get("begin")
+                .and_then(|begin| begin.get("form"))
+                .and_then(Value::as_str)
+                .filter(|f| !f.is_empty())
+                .or_else(|| {
+                    parsed
+                        .get("manualList")
+                        .and_then(Value::as_array)
+                        .and_then(|list| list.first())
+                        .and_then(|manual| manual.get("form"))
+                        .and_then(Value::as_str)
+                        .filter(|f| !f.is_empty())
+                });
+            if let Some(form_flag) = form_flag {
+                let form_row = client
+                    .query_opt(
+                        "SELECT definition FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
+                        &[&form_flag],
+                    )
+                    .await
+                    .map_err(|_| AppError::Internal)?;
+                if let Some(form_row) = form_row {
+                    let definition_text: Option<String> = form_row.get("definition");
+                    let definition_value: Value = definition_text
+                        .and_then(|text| serde_json::from_str(&text).ok())
+                        .unwrap_or(Value::Null);
+                    return Ok(Json(ActionResult::success(definition_value)));
+                }
+            }
+        }
+    }
+
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE xid = $1",
