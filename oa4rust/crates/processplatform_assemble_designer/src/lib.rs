@@ -156,7 +156,7 @@ pub async fn list_flows(
     let rows = if category.is_empty() || category == "all" {
         client
             .query(
-                "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
+                "SELECT id, name, category, version, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_process_definition \
                  WHERE 1=1 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
                 &[&size, &offset],
             )
@@ -165,7 +165,7 @@ pub async fn list_flows(
     } else {
         client
             .query(
-                "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
+                "SELECT id, name, category, version, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_process_definition \
                  WHERE category = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
                 &[&category, &size, &offset],
             )
