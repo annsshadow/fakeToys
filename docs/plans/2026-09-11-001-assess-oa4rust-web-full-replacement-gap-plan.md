@@ -161,7 +161,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W13（A6｜crud-view 空壳裁决）**：~38 空壳逐个"补齐 or 声明范围外"，禁止以壳冒充实装；纳入回归守卫（复用 `autoquery-guards.test.ts`）。
 - **W14（A6｜长尾视图）**：Minder 画布、`service_*Designer`、`AppMarketV2`、`Forum*` 按需补齐或书面排除。
 
-### 实施状态总表（rev8，2026-09-12 实测）
+### 实施状态总表（rev11，2026-09-13 实测）
 
 | 项 | 状态 | 证据 |
 |---|---|---|
@@ -178,7 +178,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | W9 Portal & Query | ✅ | PortalDesigner 拖拽版 / QueryTable 类型化列+受限 DDL / QueryView 过滤排序分页 simulate/bundle |
 | W10 IMChat 富媒体 | ✅ | multipart 上传 + 二进制下载 + client_message 规范化；realtime 10/10、communicate 102/102 |
 | W11 API 层质量 | ✅ | 路径参数 encodeURIComponent + 命名占位符消除（4b31fa2d） |
-| W12 深语义收敛 | ▶ 进行中（度量闭环已验证：158→155→152） | input 族 10 处理器对齐 Java CompareAppInfo/Wo 信封（首批收敛 -6）；158 FAIL 分解：117×200\|200 字段差 + 16×200\|405 + 12×200\|500 + 余为安全偏离；聚类清单 docs/audits/behavior-diff-clusters-2026-09-13.md 持续更新，gate 观测值下降为度量 |
+| W12 深语义收敛 | ▶ 进行中（度量闭环已验证：158→155→152；第二批信封簇已修待 gate 观测） | 第一批 input 族 10 处理器对齐 Java CompareAppInfo/Wo 信封（gate 观测 -6）；**第二批（rev11，01891cc4）`data.value`/信封簇 11 处理器对齐 Java `Wrap*` 信封**（person nick/name 回退、unit has/person WrapBoolean、viewrecord has/view、config is/file/manager、calendar follow/cancel WrapOutBoolean、recycle/empty 恒 true、message consume/instant mockputtopost、process upgrade/all isManager、securityclearance/system=400、worktime/minutesofworkday=420），另 2 端点留已知残差（ai chat delete 依赖外部网关、program appstyle/update SHA256 内容哈希）；顺带修 W4 遗留的陈旧 cms 测试断言；gate 观测值下降仍需双栈容器复跑（外部），改动 7 crate --lib 6 全绿 |
 | W13 空壳裁决 | ✅ 44/47 实装外 | manifest 47 项（1 implemented + 2 out_of_scope + 44 still_blocked）+ 机器一致守卫；3 脚本设计器本轮转实装移出 |
 | W14 长尾视图 | ✅ 裁决 | Minder 画布实装（47cc0702）；余项 manifest 书面裁决 |
 
