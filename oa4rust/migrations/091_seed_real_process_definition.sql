@@ -167,7 +167,7 @@ VALUES (
           "id": "module-reason",
           "type": "text",
           "name": "reason",
-          "label": "请假事由",
+          "label": "申请原因",
           "required": true,
           "defaultValue": null
         },
