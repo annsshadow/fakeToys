@@ -2495,16 +2495,12 @@ pub async fn config_is_file_manager(
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    // W12 收敛：对齐 Java ActionIsManager——Wo extends WrapBoolean，仅 value 键。
+    // Java 语义 controlAble(当前人)：登录人（管理员）为 true，匿名会话为 false，
+    // 与"已认证即会话存在"一致。
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            (
-                "isFileManager".to_string(),
-                Value::Bool(!session.person_unique.is_empty()),
-            ),
-            (
-                "personUnique".to_string(),
-                Value::String(session.person_unique),
-            ),
+            ("value".to_string(), Value::Bool(!session.person_unique.is_empty())),
         ]),
     ))))
 }
@@ -3562,14 +3558,11 @@ pub async fn recycle_empty(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    let _ = result;
+    // W12 收敛：对齐 Java ActionEmpty——Wo extends WrapBoolean，成功路径恒回 value=true
+    // （即便回收站为空，Java 也先 setValue(true) 再短路返回）
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            (
-                "cleared".to_string(),
-                Value::Number(serde_json::Number::from(result)),
-            ),
-            ("success".to_string(), Value::Bool(true)),
-        ]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
     ))))
 }
 
