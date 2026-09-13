@@ -24,6 +24,7 @@ tracing-subscriber.workspace = true
 utoipa = { version = "4", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "6", features = ["axum"] }
 tower-http = { workspace = true }
+tower.workspace = true
 
 shared = { path = "crates/shared" }
 base_core_project = { path = "crates/base_core_project" }
