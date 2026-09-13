@@ -4004,7 +4004,7 @@ const forkLabels = computed(() => {
   return labels
 })
 // ── Process List ──────────────────────────────────────────────────────
-const procList = ref<ProcDef[]>(procData.value ?? [])
+const procList = ref<ProcDef[]>([])
 // ── History ───────────────────────────────────────────────────────────
 function pushHistory() {
   if (!processDef.value) return
