@@ -368,14 +368,17 @@ mod u2_tests {
 
     #[tokio::test]
     async fn form_create_validates_body_before_database_access() {
-        let missing_app = form_u2_create(
+        // W4 语义：全局表单设计器无应用上下文，缺省 appId 落 default 桶（不再是
+        // "appId required"）。保持"body 校验先于数据库访问"意图——缺 definition
+        // 在任何 DB 访问前即 400，mock_pool 不会因触库而 panic。
+        let missing_definition = form_u2_create(
             Extension(mock_pool()),
             Extension(session(OWNER)),
-            axum::extract::Json(json!({"definition": {"moduleList": {}}})),
+            axum::extract::Json(json!({"appId": "app-1"})),
         )
         .await;
         assert!(
-            matches!(missing_app, Err(AppError::BadRequest(message)) if message == "appId required")
+            matches!(missing_definition, Err(AppError::BadRequest(message)) if message == "definition required")
         );
 
         let malformed_definition = form_u2_create(

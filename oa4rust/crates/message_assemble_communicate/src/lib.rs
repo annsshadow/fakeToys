@@ -313,17 +313,36 @@ pub async fn consume_type_type(
 pub async fn consume_type_type_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
+    Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // W12 收敛：对齐 Java ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
+    // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
+    let id_list: Vec<String> = body
+        .get("idList")
+        .and_then(Value::as_array)
+        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .unwrap_or_default();
 
-    let id = Uuid::new_v4().to_string();
-    let result = client
-        .execute("INSERT INTO x_message_consume (id, consume, content, type, create_time) VALUES ($1, $2, '', $3, NOW())", &[&id, &msg_type, &msg_type])
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let found: i64 = if id_list.is_empty() {
+        0
+    } else {
+        let n = client
+            .execute(
+                "UPDATE x_message SET consumed = true WHERE id = ANY($1)",
+                &[&id_list],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        // Java 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
+        let _ = msg_type;
+        n as i64
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Number(serde_json::Number::from(found))),
+        ]),
     ))))
 }
 
@@ -1657,7 +1676,6 @@ pub async fn instant_currentperson_consumed_mockputtopost(
         })
         .unwrap_or_default();
 
-    let success = id_list.is_empty();
     let result = if !id_list.is_empty() {
         Some(
             client
@@ -1672,11 +1690,11 @@ pub async fn instant_currentperson_consumed_mockputtopost(
         None
     };
 
+    // W12 收敛：对齐 Java ActionCurrentPersonConsumed——Wo extends WrapBoolean，
+    // 成功路径恒 value=true（与 idList 是否为空无关，Java 总是先 setValue(true)）
+    let _ = result;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
-            "success".to_string(),
-            Value::Bool(success || result.unwrap_or(0) > 0),
-        )]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
     ))))
 }
 

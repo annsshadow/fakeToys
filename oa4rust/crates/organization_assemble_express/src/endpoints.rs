@@ -297,14 +297,18 @@ pub async fn person_nick_name_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     match rows.first() {
-        None => ok_json(Value::Object(serde_json::Map::new())),
+        // W12 收敛：对齐 Java ActionGetNickName——查无 person 时回退 value=flag
+        // （Wo extends WrapString，恒有 value 键）
+        None => {
+            let mut map = serde_json::Map::new();
+            map.insert("value".to_string(), Value::String(flag));
+            ok_json(Value::Object(map))
+        }
         Some(row) => {
-            // W12 收敛：对齐 Java ActionNickName 信封——仅返回 value（昵称/姓名）
+            // W12 收敛：对齐 Java ActionNickName 信封——value 键恒在（昵称缺省取 name）
             let name = row.get::<_, Option<String>>("name").unwrap_or_default();
             let mut map = serde_json::Map::new();
-            if !name.is_empty() {
-                map.insert("value".to_string(), Value::String(name));
-            }
+            map.insert("value".to_string(), Value::String(name));
             ok_json(Value::Object(map))
         }
     }

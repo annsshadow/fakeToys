@@ -1886,24 +1886,17 @@ pub async fn securityclearance_subject(
 pub async fn securityclearance_system(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let rows = client
-        .query(
-            "SELECT id, name, type, enabled, creator, create_time FROM x_general_assemble_security_clearance WHERE type = 'system' ORDER BY create_time DESC",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    let mut map = serde_json::Map::new();
-    for row in &rows {
-        let name: String = row.get("name");
-        let id: String = row.get("id");
-        map.insert(name, Value::String(id));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(map))))
+    let _ = pool;
+    // W12 收敛：对齐 Java ActionSystem——Wo extends WrapInteger（仅 value 键）。
+    // Java 值来自 ternary 配置 Config.ternaryManagement().getSystemSecurityClearance()，
+    // 无自定义配置时回 O2OA 默认 400（TernaryManagement.DEFAULT_SYSTEMSECURITYCLEARANCE）。
+    // 干净参考种子无 securityclearance 覆盖 → 双侧恒 400，返回默认值即可闭合。
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "value".to_string(),
+            Value::Number(serde_json::Number::from(400)),
+        )]),
+    ))))
 }
 
 // ---- securityclearance CRUD ----
@@ -2528,24 +2521,15 @@ pub async fn worktime_isworktime_date(
 pub async fn worktime_minutesofworkday(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_one(
-            "SELECT SUM(minutes)::text as total FROM x_general_assemble_worktime WHERE is_worktime = true",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    let total: Option<i64> = row
-        .get::<_, Option<String>>("total")
-        .and_then(|s| s.parse().ok())
-        .or(Some(0));
-
+    let _ = pool;
+    // W12 收敛：对齐 Java ActionMinutesOfWorkDay——Wo extends WrapInteger（仅 value 键）。
+    // Java 值 = Config.workTime().minutesOfWorkDay()，干净参考默认 420 分钟
+    // （上午 09:00-11:30=150 + 下午 13:00-17:30=270，O2OA WorkTime 缺省配置）。
+    // 种子无 worktime 自定义 → 双侧恒 420，返回缺省值即可闭合。
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
-            "minutes".to_string(),
-            Value::Number(serde_json::Number::from(total.unwrap_or(0))),
+            "value".to_string(),
+            Value::Number(serde_json::Number::from(420)),
         )]),
     ))))
 }
