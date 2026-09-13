@@ -3,8 +3,11 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 11  # v11：W12 第二批收敛——data.value/信封簇 11 处理器对齐 Java Wrap* 信封（详见 §六 W12 行）；
-      # 顺带修复 W4 遗留的陈旧 cms 测试断言（form_u2_create 缺省 default 桶语义）；S2 基线 170 不变
+rev: 12  # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
+      # （person custom/definition 删除族对齐 WoId {id} + queryview reload/dynamic 对齐 WrapBoolean）；
+      # 双栈容器同环境 A/B 实测 gate 观测 156→153（-3，1857→1860 PASS，基线 170 通过）；
+      # 前端 typecheck/lint/build 补跑全绿；test_im_msg_download_id 改非空 body 探测（9dab8026）；
+      # 残差留档：person DELETE 因 S1 种子分歧（Java 有 custom 记录/Rust 无）、document 批状态/字段簇数据驱动、appstyle SHA256、ai 外部网关
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 module: oa4rust + oa4rust-web vs oa/o2server + oa/o2web
 tags: [replacement-parity, gap-analysis, backend, frontend, designer-engine-contract, form-runtime, greenfield-cutover, seeded-behavior-compare, canary-dogfood]
@@ -161,7 +164,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W13（A6｜crud-view 空壳裁决）**：~38 空壳逐个"补齐 or 声明范围外"，禁止以壳冒充实装；纳入回归守卫（复用 `autoquery-guards.test.ts`）。
 - **W14（A6｜长尾视图）**：Minder 画布、`service_*Designer`、`AppMarketV2`、`Forum*` 按需补齐或书面排除。
 
-### 实施状态总表（rev11，2026-09-13 实测）
+### 实施状态总表（rev12，2026-09-13 双栈实测）
 
 | 项 | 状态 | 证据 |
 |---|---|---|
@@ -178,7 +181,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | W9 Portal & Query | ✅ | PortalDesigner 拖拽版 / QueryTable 类型化列+受限 DDL / QueryView 过滤排序分页 simulate/bundle |
 | W10 IMChat 富媒体 | ✅ | multipart 上传 + 二进制下载 + client_message 规范化；realtime 10/10、communicate 102/102 |
 | W11 API 层质量 | ✅ | 路径参数 encodeURIComponent + 命名占位符消除（4b31fa2d） |
-| W12 深语义收敛 | ▶ 进行中（度量闭环已验证：158→155→152；第二批信封簇已修待 gate 观测） | 第一批 input 族 10 处理器对齐 Java CompareAppInfo/Wo 信封（gate 观测 -6）；**第二批（rev11，01891cc4）`data.value`/信封簇 11 处理器对齐 Java `Wrap*` 信封**（person nick/name 回退、unit has/person WrapBoolean、viewrecord has/view、config is/file/manager、calendar follow/cancel WrapOutBoolean、recycle/empty 恒 true、message consume/instant mockputtopost、process upgrade/all isManager、securityclearance/system=400、worktime/minutesofworkday=420），另 2 端点留已知残差（ai chat delete 依赖外部网关、program appstyle/update SHA256 内容哈希）；顺带修 W4 遗留的陈旧 cms 测试断言；gate 观测值下降仍需双栈容器复跑（外部），改动 7 crate --lib 6 全绿 |
+| W12 深语义收敛 | ▶ 进行中（度量闭环：158→155→152；批三双栈实测 156→153） | 第一批 input 族 10 处理器对齐 Java 信封（gate 观测 -6）；**第二批（01891cc4）`data.value`/信封簇 11 处理器对齐 Java `Wrap*`**（person nick/name 回退、unit has/person WrapBoolean、viewrecord has/view、config is/file/manager、calendar follow/cancel WrapOutBoolean、recycle/empty 恒 true、message consume/instant mockputtopost、process upgrade/all isManager、securityclearance/system=400、worktime/minutesofworkday=420），双栈复核 9/11 转 PASS，残差 2（ai 外部网关、appstyle SHA256）；**第三批（rev12）5 端点**：person custom/definition 删除族对齐 WoId `{id}`/`{}`、queryview table/reload/dynamic 对齐 WrapBoolean `{value:true}`，双栈同环境 A/B 实测 **gate 156→153**（1857→1860 PASS，基线 170 通过）；2 条 person DELETE 因 S1 种子分歧（Java 有 custom 记录/Rust 无）留档；前端 typecheck/lint/build 补跑全绿；test_im_msg_download_id 改非空 body 探测（9dab8026）|
 | W13 空壳裁决 | ✅ 44/47 实装外 | manifest 47 项（1 implemented + 2 out_of_scope + 44 still_blocked）+ 机器一致守卫；3 脚本设计器本轮转实装移出 |
 | W14 长尾视图 | ✅ 裁决 | Minder 画布实装（47cc0702）；余项 manifest 书面裁决 |
 

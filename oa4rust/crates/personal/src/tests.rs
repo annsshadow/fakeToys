@@ -683,7 +683,9 @@ mod u2_contract {
             .await
             .unwrap();
         let v = body_bytes(response).await;
-        assert_eq!(v["data"]["value"], true);
+        // W12：对齐 Java WoId——删除命中回 {id}（非旧 {value:bool}）
+        assert!(v["data"]["id"].is_string(), "delete custom 应回 {{id}}, body={v}");
+        assert!(v["data"].get("value").is_none(), "不应再带 value 键, body={v}");
     }
 
     #[tokio::test]
@@ -745,10 +747,12 @@ mod u2_contract {
             .unwrap();
         let status = response.status();
         let v = body_bytes(response).await;
-        assert_eq!(
-            v["data"]["value"], true,
-            "delete def: status={status} body={v}"
+        // W12：对齐 Java WoId——删除命中回 {id}（非旧 {value:bool}）
+        assert!(
+            v["data"]["id"].is_string(),
+            "delete def 应回 {{id}}: status={status} body={v}"
         );
+        assert!(v["data"].get("value").is_none(), "不应再带 value 键, body={v}");
     }
 
     #[tokio::test]
