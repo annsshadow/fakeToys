@@ -3,7 +3,15 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 12  # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
+rev: 13  # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达成）——Playwright 对运行中双栈 5/5 通过
+      # （designer-roundtrip process/form/query/portal + workflow-runtime 发起→填报→审批→收尾）；
+      # 根因修复：ProcessDesigner 死模板未定义标识符（simState/ganttRows/branchStates 等）+ 行129 v-for/v-if 防御；
+      # get_flow create_time/update_time to_char 消 panic；create/save_flow 去 ::jsonb（列实为 text）；
+      # service_processing 系统性 i64 参数 + `$N::int` 序列化 500 → `::bigint`；work/task my/paging 改读
+      # x_work/x_task（新栈）+ 分页 offset=(page-1)*size + 回带 title/work；091 种子 manualList[0].form 补齐
+      # 且 days 改可选；task_complete 保留 query_one（不破坏 generated parity 断言）；ProcessWork「我发起的」
+      # 用 POST（Java 契约）+ 列表项可点。受影響 crate 测试零回归（designer 28 / service_processing 52 / surface 592 全过）
+      # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
       # （person custom/definition 删除族对齐 WoId {id} + queryview reload/dynamic 对齐 WrapBoolean）；
       # 双栈容器同环境 A/B 实测 gate 观测 156→153（-3，1857→1860 PASS，基线 170 通过）；
       # 前端 typecheck/lint/build 补跑全绿；test_im_msg_download_id 改非空 body 探测（9dab8026）；
@@ -164,13 +172,13 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W13（A6｜crud-view 空壳裁决）**：~38 空壳逐个"补齐 or 声明范围外"，禁止以壳冒充实装；纳入回归守卫（复用 `autoquery-guards.test.ts`）。
 - **W14（A6｜长尾视图）**：Minder 画布、`service_*Designer`、`AppMarketV2`、`Forum*` 按需补齐或书面排除。
 
-### 实施状态总表（rev12，2026-09-13 双栈实测）
+### 实施状态总表（rev13，2026-09-14 S3 E2E 实跑全绿）
 
 | 项 | 状态 | 证据 |
 |---|---|---|
 | S1 双侧种子 | ✅ 代码/文档落地 | 迁移 091（seed-approval-flow activities + seed-leave-form moduleList，已施真库验证）+ seed_fixtures_java.http.md §7；双侧实跑待 o2server 容器 |
 | S2 CI 行为门槛 | ✅ 闭合（rev9） | 全新双侧容器全播种观测 157-158 FAIL（跨环境 ±1）；fail_baseline=170（gate 实测 165 过/175 拦）；CI 增加 Java 播种步骤 |
-| S3 闭环脚手架 | ✅ | contracts/* 契约测试 + e2e（designer-roundtrip×4 + workflow-runtime，--list 5/5）；实跑需双栈环境 |
+| S3 闭环脚手架 | ✅ 实跑 5/5 绿（rev13） | contracts/* 契约测试 + e2e（designer-roundtrip×4 process/form/query/portal + workflow-runtime）；对运行中双栈 Playwright 实跑 **5/5 通过**（发起→填报→审批→收尾）；残留需双栈容器环境 |
 | S4 金丝雀 | ✅ 离线门禁 | scripts/pilot_gate.py + tests/test_pilot_gate.py 4/4 + pilot-gate workflow；真实试点流量待部署 |
 | W3 ProcessDesigner | ✅ | serializeProcessDefinition（15 类 activity/字段权限/edition/waypoints），__fakeProcesses 消除 |
 | W4 Xform 运行时 | ✅ | XformRuntime + ProcessWork 审批携带 {data, opinion, action} + 表单数据 PUT data/work/{id} |
@@ -181,7 +189,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | W9 Portal & Query | ✅ | PortalDesigner 拖拽版 / QueryTable 类型化列+受限 DDL / QueryView 过滤排序分页 simulate/bundle |
 | W10 IMChat 富媒体 | ✅ | multipart 上传 + 二进制下载 + client_message 规范化；realtime 10/10、communicate 102/102 |
 | W11 API 层质量 | ✅ | 路径参数 encodeURIComponent + 命名占位符消除（4b31fa2d） |
-| W12 深语义收敛 | ▶ 进行中（度量闭环：158→155→152；批三双栈实测 156→153） | 第一批 input 族 10 处理器对齐 Java 信封（gate 观测 -6）；**第二批（01891cc4）`data.value`/信封簇 11 处理器对齐 Java `Wrap*`**（person nick/name 回退、unit has/person WrapBoolean、viewrecord has/view、config is/file/manager、calendar follow/cancel WrapOutBoolean、recycle/empty 恒 true、message consume/instant mockputtopost、process upgrade/all isManager、securityclearance/system=400、worktime/minutesofworkday=420），双栈复核 9/11 转 PASS，残差 2（ai 外部网关、appstyle SHA256）；**第三批（rev12）5 端点**：person custom/definition 删除族对齐 WoId `{id}`/`{}`、queryview table/reload/dynamic 对齐 WrapBoolean `{value:true}`，双栈同环境 A/B 实测 **gate 156→153**（1857→1860 PASS，基线 170 通过）；2 条 person DELETE 因 S1 种子分歧（Java 有 custom 记录/Rust 无）留档；前端 typecheck/lint/build 补跑全绿；test_im_msg_download_id 改非空 body 探测（9dab8026）|
+| W12 深语义收敛 | ▶ 进行中（度量闭环：158→155→152；批三双栈实测 156→153） | 第一批 input 族 10 处理器对齐 Java 信封（gate 观测 -6）；**第二批（01891cc4）`data.value`/信封簇 11 处理器对齐 Java `Wrap*`**（person nick/name 回退、unit has/person WrapBoolean、viewrecord has/view、config is/file/manager、calendar follow/cancel WrapOutBoolean、recycle/empty 恒 true、message consume/instant mockputtopost、process upgrade/all isManager、securityclearance/system=400、worktime/minutesofworkday=420），双栈复核 9/11 转 PASS，残差 2（ai 外部网关、appstyle SHA256）；**第三批（rev12）5 端点**：person custom/definition 删除族对齐 WoId `{id}`/`{}`、queryview table/reload/dynamic 对齐 WrapBoolean `{value:true}`，双栈同环境 A/B 实测 **gate 156→153**（1857→1860 PASS，基线 170 通过）；2 条 person DELETE 因 S1 种子分歧（Java 有 custom 记录/Rust 无）留档；前端 typecheck/lint/build 补跑全绿；test_im_msg_download_id 改非空 body 探测（9dab8026）；**rev13 S3 前端 E2E 闭环**：workflow-runtime 实跑绿由后端 `get_flow` create_time `to_char` 消 panic、`create/save_flow` 去 `::jsonb`（列实为 text）、`work/task my/paging` 改读 `x_work/x_task`（新栈）+ 分页 offset、091 种子 `manualList[0].form` 补齐支撑，前端 ProcessDesigner 死模板补最小定义（§七 项 2 本地达成）|
 | W13 空壳裁决 | ✅ 44/47 实装外 | manifest 47 项（1 implemented + 2 out_of_scope + 44 still_blocked）+ 机器一致守卫；3 脚本设计器本轮转实装移出 |
 | W14 长尾视图 | ✅ 裁决 | Minder 画布实装（47cc0702）；余项 manifest 书面裁决 |
 
@@ -210,6 +218,8 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 5. **书面边界声明**：IM 完整协议、无历史迁移、参考锚点局限、Java prompt 不一致——对外披露。
 
 > **未满足 1、2 之前不得宣布完全替代**；v1 的"R1 影子流量报告归档"要求已删除，由 S1+S2+S4 三件套取代。
+>
+> **rev13 状态（2026-09-14）**：项 2「前端 E2E 闭环」已在运行中双栈本地达成——S3 Playwright 实跑 5/5（process/form/query/portal 四设计器保存 round-trip 无 404 + workflow-runtime 发起→填报→审批→收尾）；项 1（behavior_compare FAIL≤阈值）与项 4（S4 金丝雀真实流量）仍为外部/双栈容器门槛，待 CI 观测值落地 + 试点部署后签核。在此之前**不宣布完全替代**。
 
 ---
 
