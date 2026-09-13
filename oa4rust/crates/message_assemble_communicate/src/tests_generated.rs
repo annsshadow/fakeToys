@@ -735,11 +735,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "im_msg_download_id route should be registered"
-        );
+        // Route-presence probe: an unregistered path hits the axum fallback
+        // (empty 404 body); this handler may legitimately answer 404 for a
+        // missing x_message_file row but always with a body, so assert the
+        // body is non-empty instead of the status.
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+        assert!(!bytes.is_empty(),
+            "im_msg_download_id route should be registered");
     }
 
     #[tokio::test]
