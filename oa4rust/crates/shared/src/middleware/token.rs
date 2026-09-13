@@ -76,11 +76,26 @@ pub async fn csrf_middleware(
     ) {
         return next.run(request).await;
     }
+    // Cookie 认证的写请求须携带与站点一致的 Origin（CSRF 防护）。
+    // 同源经回环镜像访问（localhost ⇄ 127.0.0.1）同样是可信站点，
+    // 与 CORS 白名单保持同一镜像语义。
+    let allowed = state.session_manager.auth_config.public_origin.clone();
+    let mirror = {
+        let origin_url = url::Url::parse(&allowed).ok();
+        match origin_url {
+            Some(url) => match url.host_str() {
+                Some("localhost") => Some(format!("{}://127.0.0.1{}", url.scheme(), url.port().map(|p| format!(":{p}")).unwrap_or_default())),
+                Some("127.0.0.1") => Some(format!("{}://localhost{}", url.scheme(), url.port().map(|p| format!(":{p}")).unwrap_or_default())),
+                _ => None,
+            },
+            None => None,
+        }
+    };
     let matches = request
         .headers()
         .get(header::ORIGIN)
         .and_then(|value| value.to_str().ok())
-        .map(|origin| origin == state.session_manager.auth_config.public_origin)
+        .map(|origin| origin == allowed || Some(origin) == mirror.as_deref())
         .unwrap_or(false);
     if !matches {
         return AppError::Forbidden.into_response();
