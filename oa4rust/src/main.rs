@@ -2,6 +2,7 @@ use std::env;
 use std::sync::Arc;
 
 use anyhow::Context as _;
+use axum::response::IntoResponse;
 use axum::Router;
 use mcp_server::tool_bridge::ToolBridge;
 use openapi::ApiDoc;
@@ -12,7 +13,6 @@ use shared::middleware::{
 };
 use shared::rate_limit::RateLimiter;
 use shared::session::SessionManager;
-use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
 /// OpenAPI JSON endpoint handler.
@@ -96,10 +96,49 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // ── 静态文件服务（前端构建产物）─────────────────────────────────────
-    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置向上两级再进 dist/web
+    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置向上两级再进 dist/web。
+    // SPA 深链回退：/login、/app/** 等前端路由刷新时回 index.html；/jaxrs/** 与
+    // /ws/** 未知路径保持 404（API 客户端不应收到 HTML）。
     let web_dist = env::var("OA4RUST_WEB_DIST").unwrap_or_else(|_| "../../dist/web".to_string());
-    let app = app.fallback_service(ServeDir::new(&web_dist).append_index_html_on_directories(true));
-    tracing::info!(web_dist, "static frontend files mounted");
+    let web_dist_root = std::path::PathBuf::from(&web_dist);
+    let spa = tower::service_fn(move |req: axum::http::Request<axum::body::Body>| {
+        let web_dist_root = web_dist_root.clone();
+        async move {
+            let path = req.uri().path();
+            if path.starts_with("/jaxrs/") || path.starts_with("/ws/") {
+                return Ok::<_, std::convert::Infallible>(
+                    axum::http::StatusCode::NOT_FOUND.into_response(),
+                );
+            }
+            // 拒绝目录穿越（逐段精确匹配 ".."）
+            if path.split('/').any(|segment| segment == "..") {
+                return Ok(axum::http::StatusCode::FORBIDDEN.into_response());
+            }
+            let rel = path.trim_start_matches('/');
+            let candidate = if rel.is_empty() {
+                web_dist_root.join("index.html")
+            } else {
+                web_dist_root.join(rel)
+            };
+            // 命中静态文件则原样返回；未命中回 index.html（SPA 深链）
+            if let Ok(bytes) = tokio::fs::read(&candidate).await {
+                let mime = mime_for_path(&candidate);
+                return Ok(axum::http::Response::builder()
+                    .header(axum::http::header::CONTENT_TYPE, mime)
+                    .body(axum::body::Body::from(bytes))
+                    .unwrap());
+            }
+            match tokio::fs::read(web_dist_root.join("index.html")).await {
+                Ok(bytes) => Ok(axum::http::Response::builder()
+                    .header(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")
+                    .body(axum::body::Body::from(bytes))
+                    .unwrap()),
+                Err(_) => Ok(axum::http::StatusCode::NOT_FOUND.into_response()),
+            }
+        }
+    });
+    let app = app.fallback_service(spa);
+    tracing::info!(web_dist, "static frontend files mounted with SPA fallback");
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
@@ -197,4 +236,34 @@ fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::Security
         ))
         .layer(middleware::from_fn(security_headers_middleware))
         .layer(middleware::from_fn(trace_middleware))
+}
+
+/// SPA 静态服务的最小 mime 映射（按扩展名）
+fn mime_for_path(path: &std::path::Path) -> &'static str {
+    match path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "html" => "text/html; charset=utf-8",
+        "js" | "mjs" => "text/javascript; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "json" => "application/json; charset=utf-8",
+        "svg" => "image/svg+xml",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "ico" => "image/x-icon",
+        "woff" => "font/woff",
+        "woff2" => "font/woff2",
+        "ttf" => "font/ttf",
+        "wasm" => "application/wasm",
+        "map" => "application/json; charset=utf-8",
+        "txt" => "text/plain; charset=utf-8",
+        "webmanifest" => "application/manifest+json",
+        _ => "application/octet-stream",
+    }
 }
