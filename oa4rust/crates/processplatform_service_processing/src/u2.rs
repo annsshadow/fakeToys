@@ -1758,6 +1758,13 @@ async fn work_start_impl(
     )
     .await
     .map_err(|_| AppError::Internal)?;
+    // 初始化该 work 的数据 bundle（scope='work'），使前端填报数据可 PUT/GET（update 需行存在）
+    tx.execute(
+        "INSERT INTO x_data (scope, bundle, data) VALUES ('work', $1, '{}'::jsonb)",
+        &[&id],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
     ok(json!({ "id": id, "taskId": task_id }))
 }
