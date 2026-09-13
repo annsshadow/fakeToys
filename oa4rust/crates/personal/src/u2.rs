@@ -274,7 +274,16 @@ pub async fn custom_delete(
     };
     let person = resolve_current_person_unique(&session_manager, &headers).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let n = client
+    // W12 收敛：对齐 Java CustomAction#delete——Wo extends WoId，命中回 {id}，
+    // 未命中回空 data {}（WoId.id 为 null 时跳过序列化）。
+    let found = client
+        .query_opt(
+            "SELECT id FROM x_custom WHERE person = $1 AND name = $2 AND deleted_at IS NULL",
+            &[&person, &name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    client
         .execute(
             "UPDATE x_custom SET deleted_at = NOW() \
              WHERE person = $1 AND name = $2 AND deleted_at IS NULL",
@@ -282,7 +291,11 @@ pub async fn custom_delete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(json!({ "value": n > 0 }))))
+    let mut data = serde_json::Map::new();
+    if let Some(row) = found {
+        data.insert("id".to_string(), Value::String(row.get("id")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(data))))
 }
 
 /// 解析人员标识（unique_id / name / id）→ unique_id；不存在返回 None
@@ -489,11 +502,24 @@ pub async fn definition_delete(
         return Ok(Json(ActionResult::error("name is required")));
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let n = client
+    // W12 收敛：对齐 Java DefinitionAction#delete——Wo extends WoId，命中回 {id}，
+    // 未命中回空 data {}。
+    let found = client
+        .query_opt(
+            "SELECT id FROM x_org_definition WHERE name = $1 AND deleted_at IS NULL",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    client
         .execute("DELETE FROM x_org_definition WHERE name = $1", &[&name])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(json!({ "value": n > 0 }))))
+    let mut data = serde_json::Map::new();
+    if let Some(row) = found {
+        data.insert("id".to_string(), Value::String(row.get("id")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(data))))
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

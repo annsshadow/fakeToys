@@ -1228,7 +1228,7 @@ pub async fn table_reload_dynamic(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let result = client
+    let _ = client
         .execute(
             "UPDATE x_query_table SET reloaded = true, update_time = NOW() WHERE reloaded = false",
             &[],
@@ -1236,21 +1236,10 @@ pub async fn table_reload_dynamic(
         .await
         .map_err(|_| AppError::Internal)?;
 
+    // W12 收敛：对齐 Java ActionBuildQueryDispatch——Wo extends WrapBoolean，
+    // 成功路径恒 value=true（不携带 reloaded/success 等额外键）。
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            (
-                "reloaded".to_string(),
-                Value::Number(serde_json::Number::from(result as i64)),
-            ),
-            (
-                "success".to_string(),
-                Value::Number(serde_json::Number::from(result as i64)),
-            ),
-            (
-                "value".to_string(),
-                Value::Number(serde_json::Number::from(result as i64)),
-            ),
-        ]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
     ))))
 }
 
