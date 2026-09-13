@@ -53,7 +53,12 @@ test('creates and round-trips a form through the web designer', async ({ page })
   await page.getByTitle('保存').click()
   const saved = await saveResponse
   await expectSuccessfulWrite(saved)
-  expect(saved.request().postDataJSON().moduleList).toEqual(expect.any(Object))
+  // W5 契约：保存载荷 definition 为 O2OA moduleList 结构的 JSON 字符串
+  // （顶层不再摊开 moduleList，而是包在 definition 字段里；断言该结构存在）
+  const formBody = saved.request().postDataJSON()
+  const definition =
+    typeof formBody.definition === 'string' ? JSON.parse(formBody.definition) : formBody.definition
+  expect(definition?.moduleList).toEqual(expect.any(Object))
   await expect(page.getByText(name, { exact: true })).toBeVisible()
 
   await page.reload()
@@ -114,7 +119,8 @@ test('creates and round-trips a portal page through the web designer', async ({ 
   )
   await page.getByRole('button', { name: /保存布局/ }).click()
   await expectSuccessfulWrite(await saveResponse)
-  await expect(page.getByText('文本', { exact: true })).toBeVisible()
+  // 限定到画布 widget，避免与调色板/图例中的「文本」字样歧义（strict mode）
+  await expect(page.locator('.widget').filter({ hasText: '文本' })).toHaveCount(1)
 
   await page.reload()
   await expect(page.getByText(name, { exact: true })).toBeVisible()

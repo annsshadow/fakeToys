@@ -27,7 +27,7 @@
       <div v-else-if="!items.length" class="state">暂无任务</div>
       <div v-else class="item-list">
         <article v-for="item in items" :key="item.id" class="item-card">
-          <div class="item-body">
+          <div class="item-body" @click="openWork(item)">
             <div class="item-title">{{ item.title || item.processName || item.id }}</div>
             <div class="item-meta">
               <span>{{ item.appName || item.applicationName }}</span>
@@ -144,7 +144,11 @@ const endpoints: Record<TabKey, string> = {
 const query = useQuery({
   queryKey: ['process-work', activeTab],
   queryFn: async () => {
-    const response: any = await api.get(endpoints[activeTab.value])
+    // 「我发起的」work 列表在 Java 契约为 POST（task/taskcompleted 为 GET），按 tab 分流
+    const response: any =
+      activeTab.value === 'started'
+        ? await api.post(endpoints[activeTab.value])
+        : await api.get(endpoints[activeTab.value])
     return (response?.data?.data ?? response?.data ?? []) as TaskItem[]
   },
   staleTime: 30_000,
@@ -232,8 +236,10 @@ async function openStart(): Promise<void> {
   startErrors.value = {}
   try {
     const r: any = await api.get('/jaxrs/processplatform/assemble/designer/list/all')
-    const rows = (r?.data ?? []) as Array<Record<string, unknown>>
-    startProcesses.value = rows
+    // 该端点返回分页包裹 {count, data:[rows], page, size}（兼容直接数组形态）
+    const payload = r?.data ?? {}
+    const rows: unknown[] = Array.isArray(payload) ? payload : (payload.data ?? [])
+    startProcesses.value = (rows as Array<Record<string, unknown>>)
       .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? row.id ?? '') }))
       .filter((proc) => proc.id)
   } catch (error: any) {

@@ -51,7 +51,7 @@ pub async fn create_flow(
     client
         .execute(
             "INSERT INTO x_process_definition (id, name, category, process_definition, version, creator, create_time, update_time) \
-             VALUES ($1, $2, $3, $4::jsonb, $5, $6, NOW(), NOW())",
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
             &[&id, &name, &category, &description, &version, &creator],
         )
         .await
@@ -75,7 +75,9 @@ pub async fn get_flow(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
-            "SELECT id, name, category, process_definition, version, creator, create_time, update_time \
+            "SELECT id, name, category, process_definition, version, creator, \
+             to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time, \
+             to_char(update_time, 'YYYY-MM-DD HH24:MI:SS') AS update_time \
              FROM x_process_definition WHERE id = $1",
             &[&id],
         )
@@ -231,14 +233,15 @@ pub async fn save_flow(
         .get("processDefinition")
         .or_else(|| body.get("process_definition"))
         .cloned();
-    let process_definition_str = process_definition
+    let process_definition_str: String = process_definition
         .map(|v| serde_json::to_string(&v))
         .transpose()
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .unwrap_or_default();
 
     let result = client
         .execute(
-            "UPDATE x_process_definition SET process_definition = $1::jsonb, update_time = NOW() WHERE id = $2",
+            "UPDATE x_process_definition SET process_definition = $1, update_time = NOW() WHERE id = $2",
             &[&process_definition_str, &id],
         )
         .await

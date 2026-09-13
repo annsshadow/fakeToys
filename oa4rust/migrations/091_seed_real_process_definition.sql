@@ -122,7 +122,8 @@ VALUES (
           "name": "审批",
           "process": "seed-approval-flow",
           "position": "240,80",
-          "taskIdentityList": ["seed-person-a"]
+          "taskIdentityList": ["seed-person-a"],
+          "form": "seed-leave-form"
         }
       ],
       "endList": [
@@ -160,7 +161,7 @@ VALUES (
           "type": "number",
           "name": "days",
           "label": "请假天数",
-          "required": true,
+          "required": false,
           "defaultValue": null
         },
         "module-reason": {

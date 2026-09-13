@@ -126,7 +126,7 @@
               :marker-end="selectedEdge===i ? 'url(#arrowhead-sel)' : 'url(#arrowhead)'"
               @click.stop="selectEdge(i)" />
             <!-- Edge labels -->
-            <g v-for="(edge, i) in processDef?.edges||[]" :key="'label-'+edge.id" v-if="edge.label">
+            <g v-for="(edge, i) in (processDef?.edges||[]).filter((e)=>e&&e.label)" :key="'label-'+(edge?.id??i)">
               <rect :d="getEdgeLabelRect(edge)" class="edge-label-bg" />
               <text :x="getEdgeLabelX(edge)" :y="getEdgeLabelY(edge)"
                 text-anchor="middle" class="edge-label-text">{{ edge.label }}</text>
@@ -3553,6 +3553,34 @@ interface ExecState {
 }
 const execState = ref<ExecState>({ currentNodeIdx: null, progress: 0, status: 'idle', completedNodes: [] })
 const showExecPanel = ref(false)
+// ── 模拟 / 甘特 / 分支面板状态（模板引用但从未实现的可视化面板；默认关闭，
+//    提供最小安全定义保证渲染不崩溃，不实现完整模拟引擎）──────────────
+interface SimEvent {
+  time: number
+  label: string
+  event: string
+}
+const simState = ref<{ running: boolean; events: SimEvent[] }>({ running: false, events: [] })
+function runFullSimulation() {
+  simState.value.running = false
+}
+function advanceSimulationStep() {
+  simState.value.running = false
+}
+function getSimulationProgress(): number {
+  return 0
+}
+const showGanttChart = ref(false)
+interface GanttRow {
+  nodeId: string
+  label: string
+  start: number
+  end: number
+  color: string
+}
+type BranchStateTuple = [string, { status: string }]
+const ganttRows = ref<GanttRow[]>([])
+const branchStates = ref<BranchStateTuple[]>([])
 function startExecution() {
   if (!processDef.value || processDef.value.nodes.length === 0) return
   const starts = processDef.value.nodes.findIndex((n) => n.type === 'start')
