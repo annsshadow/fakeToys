@@ -11,6 +11,10 @@ rev: 13  # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达�
       # x_work/x_task（新栈）+ 分页 offset=(page-1)*size + 回带 title/work；091 种子 manualList[0].form 补齐
       # 且 days 改可选；task_complete 保留 query_one（不破坏 generated parity 断言）；ProcessWork「我发起的」
       # 用 POST（Java 契约）+ 列表项可点。受影響 crate 测试零回归（designer 28 / service_processing 52 / surface 592 全过）
+      # 项1 复验（2026-09-14）：干净双栈（全新 o2server + 干净 Rust DB，双侧全播种）重跑 behavior_compare
+      # = 136 FAIL / 1877 PASS / 2029 SKIP ≤ 基线 170，gate 无回归（较 rev12 153 下降）——本次后端改动未使 gate 回归
+      # 项3/项5 复核：W13 crud-view manifest（47 项裁决，壳视 replacementClaim:false）+ 守卫测试 6/6；§五 四条书面边界声明在档
+      # 项4 S4：离线门禁 pilot_gate 4/4 达成；真实试点流量为外部阻塞（需部署），留档
       # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
       # （person custom/definition 删除族对齐 WoId {id} + queryview reload/dynamic 对齐 WrapBoolean）；
       # 双栈容器同环境 A/B 实测 gate 观测 156→153（-3，1857→1860 PASS，基线 170 通过）；
@@ -177,7 +181,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 | 项 | 状态 | 证据 |
 |---|---|---|
 | S1 双侧种子 | ✅ 代码/文档落地 | 迁移 091（seed-approval-flow activities + seed-leave-form moduleList，已施真库验证）+ seed_fixtures_java.http.md §7；双侧实跑待 o2server 容器 |
-| S2 CI 行为门槛 | ✅ 闭合（rev9） | 全新双侧容器全播种观测 157-158 FAIL（跨环境 ±1）；fail_baseline=170（gate 实测 165 过/175 拦）；CI 增加 Java 播种步骤 |
+| S2 CI 行为门槛 | ✅ 闭合（rev9）+ 本地复验 | 全新双侧容器全播种观测 157-158 FAIL（跨环境 ±1）；fail_baseline=170（gate 实测 165 过/175 拦）；CI 增加 Java 播种步骤。**2026-09-14 本地复验（rev13 后端改动后）：干净双栈（全新 o2server + 干净 Rust DB，双侧全播种）实跑 136 FAIL / 1877 PASS / 2029 SKIP ≤ 170，gate 无回归（较 rev12 153 下降）** |
 | S3 闭环脚手架 | ✅ 实跑 5/5 绿（rev13） | contracts/* 契约测试 + e2e（designer-roundtrip×4 process/form/query/portal + workflow-runtime）；对运行中双栈 Playwright 实跑 **5/5 通过**（发起→填报→审批→收尾）；残留需双栈容器环境 |
 | S4 金丝雀 | ✅ 离线门禁 | scripts/pilot_gate.py + tests/test_pilot_gate.py 4/4 + pilot-gate workflow；真实试点流量待部署 |
 | W3 ProcessDesigner | ✅ | serializeProcessDefinition（15 类 activity/字段权限/edition/waypoints），__fakeProcesses 消除 |
@@ -219,7 +223,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 
 > **未满足 1、2 之前不得宣布完全替代**；v1 的"R1 影子流量报告归档"要求已删除，由 S1+S2+S4 三件套取代。
 >
-> **rev13 状态（2026-09-14）**：项 2「前端 E2E 闭环」已在运行中双栈本地达成——S3 Playwright 实跑 5/5（process/form/query/portal 四设计器保存 round-trip 无 404 + workflow-runtime 发起→填报→审批→收尾）；项 1（behavior_compare FAIL≤阈值）与项 4（S4 金丝雀真实流量）仍为外部/双栈容器门槛，待 CI 观测值落地 + 试点部署后签核。在此之前**不宣布完全替代**。
+> **rev13 状态（2026-09-14）**：项 2「前端 E2E 闭环」已在运行中双栈本地达成——S3 Playwright 实跑 5/5（process/form/query/portal 四设计器保存 round-trip 无 404 + workflow-runtime 发起→填报→审批→收尾）。项 1「后端 behavior_compare」已于 2026-09-14 在干净双栈（全新 `o2oa/o2server` 容器 + 干净 Rust DB，双侧全播种：Java 经 `seed_java.py --init --process-form`、Rust 经自动迁移 + 091 + `seed_fixtures.sql`）本地复验：**136 FAIL / 1877 PASS / 2029 SKIP ≤ 基线 170，gate 无回归**（较 rev12 观测 153 下降，PASS 1856→1877）。项 4（S4 金丝雀真实流量）仍为外部门槛（离线门禁 4/4 已达成，真实试点流量待部署后签核）。在项 4 真实流量达标前**不宣布完全替代**。
 
 ---
 
