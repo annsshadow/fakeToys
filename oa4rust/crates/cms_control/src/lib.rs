@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json, Router,
-};
+use axum::{extract::Extension, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -12,7 +9,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[axum::debug_handler]
 pub async fn get_control_config(
@@ -30,8 +26,16 @@ pub async fn get_control_config(
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-        ("maxCategoryCount".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_category_count")))),
-        ("allowAnonymous".to_string(), Value::Bool(row.get("allow_anonymous"))),
+        (
+            "maxCategoryCount".to_string(),
+            Value::Number(serde_json::Number::from(
+                row.get::<_, i64>("max_category_count"),
+            )),
+        ),
+        (
+            "allowAnonymous".to_string(),
+            Value::Bool(row.get("allow_anonymous")),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -63,7 +67,11 @@ pub async fn list_control_sections(
         .collect();
 
     let total_sections = sections.len();
-    Ok(Json(ActionResult::java_success(Value::Array(sections), total_sections as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(sections),
+        total_sections as i64,
+        0,
+    )))
 }
 
 pub fn cms_control_router(pool: Pool) -> Router {

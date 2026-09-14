@@ -1,16 +1,13 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -82,7 +79,8 @@ async fn test_process_query_route_exists() {
         "query_type": "sql",
         "params": {},
         "options": {}
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -109,7 +107,8 @@ async fn test_batch_process_route_exists() {
             {"query_type": "sql", "params": {}},
             {"query_type": "rest", "params": {}}
         ]
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -164,7 +163,6 @@ async fn test_reset_service_route_exists() {
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
-
 // ═════════════════════════════════════════════════════════════════════════════
 // plan002 U2：Java x_query_service_processing 契约端点（u2 模块）行为测试
 //
@@ -177,7 +175,7 @@ async fn test_reset_service_route_exists() {
 
 #[cfg(test)]
 mod u2_contract {
-    
+
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
@@ -341,7 +339,11 @@ mod u2_contract {
     #[tokio::test]
     async fn u2_touch_state_machine_persists() {
         ensure_schema().await;
-        let v = get(app(), "/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch").await;
+        let v = get(
+            app(),
+            "/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch",
+        )
+        .await;
         assert_eq!(v["data"]["status"], "touched");
         let c = client().await;
         let row = c
@@ -353,7 +355,11 @@ mod u2_contract {
             .unwrap();
         assert_eq!(row.get::<_, String>("status"), "touched");
 
-        let v = get(app(), "/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset").await;
+        let v = get(
+            app(),
+            "/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset",
+        )
+        .await;
         assert_eq!(v["data"]["status"], "idle");
         let row = c
             .query_one(
@@ -370,7 +376,11 @@ mod u2_contract {
     #[tokio::test]
     async fn u2_optimize_and_reload_markers() {
         ensure_schema().await;
-        let v = get(app(), "/jaxrs/query/service/processing/touch/optimize/index/n0/touch").await;
+        let v = get(
+            app(),
+            "/jaxrs/query/service/processing/touch/optimize/index/n0/touch",
+        )
+        .await;
         assert_eq!(v["data"]["value"], true);
         let c = client().await;
         let n: i64 = c
@@ -383,7 +393,11 @@ mod u2_contract {
             .get("c");
         assert_eq!(n, 1);
 
-        let v = get(app(), "/jaxrs/query/service/processing/table/reload/dynamic").await;
+        let v = get(
+            app(),
+            "/jaxrs/query/service/processing/table/reload/dynamic",
+        )
+        .await;
         assert_eq!(v["type"], "success");
     }
 
@@ -420,7 +434,10 @@ mod u2_contract {
         )
         .await;
         // category/key 全空 → 返回文档库真实计数
-        assert_eq!(v["data"]["exists"], v["data"]["count"].as_i64().unwrap() > 0);
+        assert_eq!(
+            v["data"]["exists"],
+            v["data"]["count"].as_i64().unwrap() > 0
+        );
         // 带 category 过滤时（非全量口径）→ 计数 0 且 exists=false
         let v = post(
             app(),
@@ -478,13 +495,20 @@ mod u2_contract {
     async fn u2_neural_calculate_requires_completed_learn() {
         ensure_schema().await;
         let c = client().await;
-        c.execute("DELETE FROM x_query_neural_job WHERE model_flag = 'u2model'", &[])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_query_neural_job WHERE model_flag = 'u2model'",
+            &[],
+        )
+        .await
+        .unwrap();
 
         let base = "/jaxrs/query/service/processing/neural";
         // 未学习：推算必须拒绝（对齐 Java ExceptionModelNotReady）
-        let v = get(app(), &format!("{base}/list/calculate/model/u2model/work/w1")).await;
+        let v = get(
+            app(),
+            &format!("{base}/list/calculate/model/u2model/work/w1"),
+        )
+        .await;
         assert_eq!(v["type"], "error");
         assert!(v["message"].as_str().unwrap().contains("not ready"));
 
@@ -504,7 +528,11 @@ mod u2_contract {
         )
         .await
         .unwrap();
-        let v = get(app(), &format!("{base}/list/calculate/model/u2model/work/w1")).await;
+        let v = get(
+            app(),
+            &format!("{base}/list/calculate/model/u2model/work/w1"),
+        )
+        .await;
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["workId"], "w1");
     }
@@ -513,9 +541,12 @@ mod u2_contract {
     async fn u2_generate_then_stop_generating() {
         ensure_schema().await;
         let c = client().await;
-        c.execute("DELETE FROM x_query_neural_job WHERE model_flag = 'u2gen'", &[])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM x_query_neural_job WHERE model_flag = 'u2gen'",
+            &[],
+        )
+        .await
+        .unwrap();
         let base = "/jaxrs/query/service/processing/neural";
         let v = get(app(), &format!("{base}/generate/model/u2gen")).await;
         assert_eq!(v["data"]["action"], "generate");

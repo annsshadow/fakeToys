@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        ControlClient, ControlPool, DynControlPool, RowGet,
         file_assemble_control_router, get_control_config, list_control_categories,
-        list_storage_pools, update_control_config,
+        list_storage_pools, update_control_config, ControlClient, ControlPool, DynControlPool,
+        RowGet,
     };
     use axum::body::Body;
     use axum::extract::Extension;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use serde_json::Value;
     use shared::response::ActionResult;
     use shared::testing::test_pool;
@@ -100,9 +100,14 @@ mod tests {
             _p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
         ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
             match self.results.lock().await.pop() {
-                Some(MockQueryResult::Rows(rows)) => Ok(rows.into_iter().map(|v| Box::new(MockRow { values: v }) as Box<dyn RowGet>).collect()),
+                Some(MockQueryResult::Rows(rows)) => Ok(rows
+                    .into_iter()
+                    .map(|v| Box::new(MockRow { values: v }) as Box<dyn RowGet>)
+                    .collect()),
                 Some(MockQueryResult::EmptyRows) => Ok(vec![]),
-                Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
+                Some(MockQueryResult::Error) => Err(
+                    Box::<dyn std::error::Error + Send + Sync>::from("mock query error"),
+                ),
                 _ => Ok(vec![]),
             }
         }
@@ -116,8 +121,12 @@ mod tests {
                 Some(MockQueryResult::Row(values)) => {
                     Ok(Box::new(MockRow { values }) as Box<dyn RowGet>)
                 }
-                Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
-                _ => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock: no result")),
+                Some(MockQueryResult::Error) => Err(
+                    Box::<dyn std::error::Error + Send + Sync>::from("mock query error"),
+                ),
+                _ => Err(Box::<dyn std::error::Error + Send + Sync>::from(
+                    "mock: no result",
+                )),
             }
         }
 
@@ -157,17 +166,20 @@ mod tests {
     impl ControlPool for MockControlPool {
         fn acquire<'a>(
             &'a self,
-        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Arc<dyn ControlClient>, crate::AppError>> + Send + 'a>>
-        {
+        ) -> std::pin::Pin<
+            Box<
+                dyn std::future::Future<Output = Result<Arc<dyn ControlClient>, crate::AppError>>
+                    + Send
+                    + 'a,
+            >,
+        > {
             Box::pin(async move { Ok(self.client.clone() as Arc<dyn ControlClient>) })
         }
     }
 
     // ---- Test helpers ----
 
-    fn mock_control_pool(
-        results: Arc<Mutex<Vec<MockQueryResult>>>,
-    ) -> Arc<dyn ControlPool> {
+    fn mock_control_pool(results: Arc<Mutex<Vec<MockQueryResult>>>) -> Arc<dyn ControlPool> {
         let client = Arc::new(MockControlClient::new(results));
         let pool = MockControlPool::new(client);
         Arc::new(DynControlPool::new(Arc::new(pool)))
@@ -180,7 +192,10 @@ mod tests {
         let results = MockControlClient::single_row(vec![
             ("enabled", Value::Bool(true)),
             ("default_storage", Value::String("local".to_string())),
-            ("max_upload_size", Value::Number(serde_json::Number::from(104857600_i64))),
+            (
+                "max_upload_size",
+                Value::Number(serde_json::Number::from(104857600_i64)),
+            ),
         ]);
         let pool = mock_control_pool(results);
 
@@ -298,7 +313,10 @@ mod tests {
     async fn test_upload_file_route_exists() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
-        let body = serde_json::to_string(&serde_json::json!({"name": "test.txt", "path": "/tmp", "folderId": "f1", "size": 100})).unwrap();
+        let body = serde_json::to_string(
+            &serde_json::json!({"name": "test.txt", "path": "/tmp", "folderId": "f1", "size": 100}),
+        )
+        .unwrap();
         let response = app
             .oneshot(
                 Request::builder()
@@ -318,7 +336,10 @@ mod tests {
     async fn test_create_file_route_exists() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
-        let body = serde_json::to_string(&serde_json::json!({"name": "new.txt", "path": "/tmp", "folderId": "f1"})).unwrap();
+        let body = serde_json::to_string(
+            &serde_json::json!({"name": "new.txt", "path": "/tmp", "folderId": "f1"}),
+        )
+        .unwrap();
         let response = app
             .oneshot(
                 Request::builder()
@@ -396,7 +417,9 @@ mod tests {
     async fn test_upload_file_missing_path_route_exists() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
-        let body = serde_json::to_string(&serde_json::json!({"name": "test.txt", "folderId": "f1"})).unwrap();
+        let body =
+            serde_json::to_string(&serde_json::json!({"name": "test.txt", "folderId": "f1"}))
+                .unwrap();
         let response = app
             .oneshot(
                 Request::builder()
@@ -437,7 +460,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/attachment2/some-id/office/preview/type/docx")
+                    .uri(
+                        "/jaxrs/file/assemble/control/attachment2/some-id/office/preview/type/docx",
+                    )
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -480,11 +505,8 @@ mod tests {
         let mut buf = std::io::Cursor::new(Vec::new());
         {
             let mut zip = zip::ZipWriter::new(&mut buf);
-            zip.start_file(
-                "word/styles.xml",
-                zip::write::SimpleFileOptions::default(),
-            )
-            .unwrap();
+            zip.start_file("word/styles.xml", zip::write::SimpleFileOptions::default())
+                .unwrap();
             zip.finish().unwrap();
         }
         let bytes = buf.into_inner();
@@ -713,8 +735,6 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
-
-
 }
 
 #[cfg(test)]
@@ -759,10 +779,7 @@ mod office_preview_tests {
     fn test_pptx_to_html_renders_slides_in_order() {
         let s2 = "<?xml version=\"1.0\"?><p:sp><a:t>第二页</a:t><a:t>要点</a:t></p:sp>";
         let s1 = "<?xml version=\"1.0\"?><p:sp><a:t>封面标题</a:t></p:sp>";
-        let bytes = build_zip(&[
-            ("ppt/slides/slide2.xml", s2),
-            ("ppt/slides/slide1.xml", s1),
-        ]);
+        let bytes = build_zip(&[("ppt/slides/slide2.xml", s2), ("ppt/slides/slide1.xml", s1)]);
         let html = crate::pptx_to_html(&bytes).expect("should render");
         let h2_pos = html.find("<h2>封面标题</h2>").expect("slide1 title");
         let s2_pos = html.find("<h2>第二页</h2>").expect("slide2 title");

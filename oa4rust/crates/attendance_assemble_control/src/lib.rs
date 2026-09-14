@@ -20,7 +20,6 @@ mod tests_u2;
 #[cfg(test)]
 mod tests_u2_legacy;
 
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ControlRule {
@@ -52,7 +51,13 @@ pub async fn list_control_rules(
                 ("ruleName".to_string(), Value::String(row.get("rule_name"))),
                 ("ruleType".to_string(), Value::String(row.get("rule_type"))),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -72,7 +77,10 @@ pub async fn toggle_control_rule(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let enabled: bool = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let enabled: bool = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let result = client
         .execute(
@@ -88,11 +96,16 @@ pub async fn toggle_control_rule(
         return Ok(Json(ActionResult::error("control rule not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("enabled".to_string(), Value::Bool(enabled)),
-        ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("enabled".to_string(), Value::Bool(enabled)),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+        ]),
+    ))))
 }
 
 pub fn attendance_assemble_control_router(pool: Pool) -> Router {
@@ -102,9 +115,6 @@ pub fn attendance_assemble_control_router(pool: Pool) -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::routes::attendance_assemble_control_routes(pool)
 }
-
-
-
 
 /// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
 pub async fn attendanceadmin_list_all(
@@ -128,7 +138,10 @@ pub async fn attendanceadmin_list_all(
                 ("personId".to_string(), Value::String(row.get("person_id"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -165,7 +178,10 @@ pub async fn attendanceadmin_id(
                 ("personId".to_string(), Value::String(row.get("person_id"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -202,7 +218,10 @@ pub async fn attendanceappealInfo_appeal_id(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.to_string())),
             ("status".to_string(), Value::String(status.to_string())),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -228,9 +247,15 @@ pub async fn attendanceconfig_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("value".to_string(), Value::String(row.get("value"))),
-                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -250,11 +275,23 @@ pub async fn attendanceconfig_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let value = payload.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let value = payload
+        .get("value")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let category = payload.get("category").and_then(|v| v.as_str());
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let existing = client
         .query_opt("SELECT id FROM x_attendance_config WHERE id = $1", &[&id])
@@ -293,16 +330,13 @@ pub async fn attendanceconfig_save(
             ("id".to_string(), Value::String(id.to_string())),
             ("name".to_string(), Value::String(name.to_string())),
             ("value".to_string(), Value::String(value.to_string())),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
-
-
-
-
-
-
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}
 pub async fn attendanceappealInfo_archive_id(
@@ -326,7 +360,10 @@ pub async fn attendanceappealInfo_archive_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("archived".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "archived".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -340,8 +377,15 @@ pub async fn attendanceappealInfo_audit(
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let audit_status = payload.get("auditStatus").and_then(|v| v.as_str()).unwrap_or("approved");
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let audit_status = payload
+        .get("auditStatus")
+        .and_then(|v| v.as_str())
+        .unwrap_or("approved");
 
     let result = client
         .execute(
@@ -358,12 +402,15 @@ pub async fn attendanceappealInfo_audit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("audited".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "audited".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check 
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check
 pub async fn attendanceappealInfo_check(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -372,8 +419,15 @@ pub async fn attendanceappealInfo_check(
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let checked = payload.get("checked").and_then(|v| v.as_bool()).unwrap_or(true);
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let checked = payload
+        .get("checked")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let result = client
         .execute(
@@ -418,7 +472,10 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("appeal_status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get("appeal_status")),
+                ),
             ]))
         })
         .collect();
@@ -454,7 +511,10 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("appeal_status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get("appeal_status")),
+                ),
             ]))
         })
         .collect();
@@ -488,7 +548,10 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("appeal_status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get("appeal_status")),
+                ),
             ]))
         })
         .collect();
@@ -523,7 +586,10 @@ pub async fn attendanceappealInfo_workflow_appeal_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("workflowAppealed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "workflowAppealed".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -537,7 +603,11 @@ pub async fn attendanceappealInfo_workflow_sync(
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let appeal_id = payload.get("appealId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let appeal_id = payload
+        .get("appealId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -552,9 +622,10 @@ pub async fn attendanceappealInfo_workflow_sync(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "synced".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -578,7 +649,10 @@ pub async fn attendanceappealInfo_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("appeal_status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get("appeal_status")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -594,9 +668,21 @@ pub async fn attendancedetail_analyse(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let end_date = payload.get("endDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let start_date = payload
+        .get("startDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let end_date = payload
+        .get("endDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -607,9 +693,10 @@ pub async fn attendancedetail_analyse(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("analysed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "analysed".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -631,7 +718,10 @@ pub async fn attendancedetail_analyse_id_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("analysed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "analysed".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -645,7 +735,11 @@ pub async fn attendancedetail_analyse_redo(
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -656,9 +750,10 @@ pub async fn attendancedetail_analyse_redo(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("redone".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "redone".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -678,9 +773,10 @@ pub async fn attendancedetail_analyse_startDate_endDate(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("analysed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "analysed".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -706,7 +802,10 @@ pub async fn attendancedetail_archive_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("archived".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "archived".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -738,8 +837,14 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("checked".to_string(), Value::Number(serde_json::Number::from(updated))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "checked".to_string(),
+                Value::Number(serde_json::Number::from(updated)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -1013,7 +1118,11 @@ pub async fn attendancedetail_list_file_id(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
@@ -1059,8 +1168,16 @@ pub async fn attendancedetail_mobile_mobilepreview(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let date = payload
+        .get("date")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let row = client
         .query_opt(
@@ -1091,7 +1208,11 @@ pub async fn attendancedetail_mobile_my(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let rows = client
         .query(
@@ -1128,8 +1249,16 @@ pub async fn attendancedetail_mobile_recive(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let date = payload
+        .get("date")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -1140,9 +1269,10 @@ pub async fn attendancedetail_mobile_recive(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("received".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "received".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -1182,7 +1312,11 @@ pub async fn attendancedetail_recive(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -1193,9 +1327,10 @@ pub async fn attendancedetail_recive(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("received".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "received".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -1206,7 +1341,11 @@ pub async fn attendancedetail_reciveSingle(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -1217,9 +1356,10 @@ pub async fn attendancedetail_reciveSingle(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("received".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "received".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -1272,13 +1412,20 @@ pub async fn attendanceemployeeconfig_list_all(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("configData".to_string(), Value::String(row.get("config_data"))),
+                (
+                    "configData".to_string(),
+                    Value::String(row.get("config_data")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
@@ -1301,7 +1448,10 @@ pub async fn attendanceemployeeconfig_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("configData".to_string(), Value::String(row.get("config_data"))),
+                (
+                    "configData".to_string(),
+                    Value::String(row.get("config_data")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1328,14 +1478,24 @@ pub async fn attendanceimportfileinfo_list_all(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
-                ("\"fileSize\"".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+                (
+                    "\"fileName\"".to_string(),
+                    Value::String(row.get("file_name")),
+                ),
+                (
+                    "\"fileSize\"".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
@@ -1357,8 +1517,14 @@ pub async fn attendanceimportfileinfo_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
-                ("\"fileSize\"".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+                (
+                    "\"fileName\"".to_string(),
+                    Value::String(row.get("file_name")),
+                ),
+                (
+                    "\"fileSize\"".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1386,13 +1552,20 @@ pub async fn attendanceschedulesetting_list_all(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+                (
+                    "settingData".to_string(),
+                    Value::String(row.get("setting_data")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
@@ -1416,13 +1589,20 @@ pub async fn attendanceschedulesetting_list_topUnit_name(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+                (
+                    "settingData".to_string(),
+                    Value::String(row.get("setting_data")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
@@ -1446,14 +1626,21 @@ pub async fn attendanceschedulesetting_list_unit_name(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+                (
+                    "settingData".to_string(),
+                    Value::String(row.get("setting_data")),
+                ),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
@@ -1476,7 +1663,10 @@ pub async fn attendanceschedulesetting_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+                (
+                    "settingData".to_string(),
+                    Value::String(row.get("setting_data")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1505,7 +1695,10 @@ pub async fn attendanceselfholiday_filter_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                (
+                    "holidayDate".to_string(),
+                    Value::String(row.get("holiday_date")),
+                ),
             ]))
         })
         .collect();
@@ -1539,7 +1732,10 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                (
+                    "holidayDate".to_string(),
+                    Value::String(row.get("holiday_date")),
+                ),
             ]))
         })
         .collect();
@@ -1572,14 +1768,21 @@ pub async fn attendanceselfholiday_list_all(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                (
+                    "holidayDate".to_string(),
+                    Value::String(row.get("holiday_date")),
+                ),
                 ("reason".to_string(), Value::String(row.get("reason"))),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
@@ -1602,7 +1805,10 @@ pub async fn attendanceselfholiday_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                (
+                    "holidayDate".to_string(),
+                    Value::String(row.get("holiday_date")),
+                ),
                 ("reason".to_string(), Value::String(row.get("reason"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1649,8 +1855,15 @@ pub async fn attendancesetting_enable_type(
     // Java 端该端点为 GET 无 body；字段均可选
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
 
-    let code = payload.get("code").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+    let code = payload
+        .get("code")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let enabled = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
 
     let result = client
         .execute(
@@ -1668,7 +1881,10 @@ pub async fn attendancesetting_enable_type(
         serde_json::Map::from_iter([
             ("code".to_string(), Value::String(code)),
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1700,7 +1916,11 @@ pub async fn attendancesetting_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/{id}
@@ -1753,7 +1973,10 @@ pub async fn attendancestatisticalcycle_cycleDetail_year_month(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("year".to_string(), Value::String(row.get("year"))),
                 ("month".to_string(), Value::String(row.get("month"))),
-                ("cycleStatus".to_string(), Value::String(row.get("cycle_status"))),
+                (
+                    "cycleStatus".to_string(),
+                    Value::String(row.get("cycle_status")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1782,13 +2005,20 @@ pub async fn attendancestatisticalcycle_list_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("year".to_string(), Value::String(row.get("year"))),
                 ("month".to_string(), Value::String(row.get("month"))),
-                ("cycleStatus".to_string(), Value::String(row.get("cycle_status"))),
+                (
+                    "cycleStatus".to_string(),
+                    Value::String(row.get("cycle_status")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
@@ -1812,7 +2042,10 @@ pub async fn attendancestatisticalcycle_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("year".to_string(), Value::String(row.get("year"))),
                 ("month".to_string(), Value::String(row.get("month"))),
-                ("cycleStatus".to_string(), Value::String(row.get("cycle_status"))),
+                (
+                    "cycleStatus".to_string(),
+                    Value::String(row.get("cycle_status")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1839,14 +2072,21 @@ pub async fn attendancestatisticrequirelog_list_all(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("requireType".to_string(), Value::String(row.get("require_type"))),
+                (
+                    "requireType".to_string(),
+                    Value::String(row.get("require_type")),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
@@ -1868,7 +2108,10 @@ pub async fn attendancestatisticrequirelog_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("requireType".to_string(), Value::String(row.get("require_type"))),
+                (
+                    "requireType".to_string(),
+                    Value::String(row.get("require_type")),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1884,8 +2127,16 @@ pub async fn attendanceworkdayconfig_filter(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let end_date = payload.get("endDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let start_date = payload
+        .get("startDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let end_date = payload
+        .get("endDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let rows = client
         .query(
@@ -1940,7 +2191,11 @@ pub async fn attendanceworkdayconfig_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
@@ -1991,7 +2246,10 @@ pub async fn selfholidaysimple_docId_docId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                (
+                    "holidayDate".to_string(),
+                    Value::String(row.get("holiday_date")),
+                ),
                 ("reason".to_string(), Value::String(row.get("reason"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2011,9 +2269,21 @@ pub async fn statistic_do(
     // Java 端该端点为 GET 无 body；字段均可选，缺省空串
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let year = payload.get("year").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let month = payload.get("month").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let year = payload
+        .get("year")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let month = payload
+        .get("month")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let result = client
         .execute(
@@ -2024,9 +2294,10 @@ pub async fn statistic_do(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("done".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "done".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -2706,13 +2977,20 @@ pub async fn statisticshow_unit_sum_name_year_month(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("year".to_string(), Value::String(row.get("year"))),
                 ("month".to_string(), Value::String(row.get("month"))),
-                ("orderNumber".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("order_number").unwrap_or(0)))),
+                (
+                    "orderNumber".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("order_number").unwrap_or(0),
+                    )),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => {
             // Java returns empty object {}, not null
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::new(),
+            ))))
         }
     }
 }
@@ -2822,7 +3100,11 @@ pub async fn workplace_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET /jaxrs/attendance/assemble/control/workplace/{id}
@@ -2865,10 +3147,7 @@ pub async fn workplace_id(
 // ════════════════════════════════════════════════════════════════════
 
 /// 管理类写操作门禁：非 admin 返回 Forbidden。
-async fn require_admin(
-    pool: &Pool,
-    session: &shared::session::Session,
-) -> Result<(), AppError> {
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {
@@ -2906,7 +3185,9 @@ fn json_join(payload: &Value, key: &str) -> String {
 
 fn json_page(page: i64, size: i64) -> Result<(i64, i64), AppError> {
     if page < 1 || !(1..=500).contains(&size) {
-        return Err(AppError::BadRequest("page must be >= 1 and size in 1..=500".to_string()));
+        return Err(AppError::BadRequest(
+            "page must be >= 1 and size in 1..=500".to_string(),
+        ));
     }
     Ok((size, (page - 1) * size))
 }
@@ -3438,7 +3719,14 @@ pub async fn attendanceadmin_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_admin", &id, &session, "attendance admin").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_admin",
+        &id,
+        &session,
+        "attendance admin",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
@@ -3474,7 +3762,14 @@ pub async fn attendanceemployeeconfig_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_employee_config", &id, &session, "employee config").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_employee_config",
+        &id,
+        &session,
+        "employee config",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
@@ -3483,7 +3778,14 @@ pub async fn attendanceimportfileinfo_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_import_file_info", &id, &session, "import file info").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_import_file_info",
+        &id,
+        &session,
+        "import file info",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
@@ -3492,7 +3794,14 @@ pub async fn attendanceschedulesetting_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_schedule_setting", &id, &session, "schedule setting").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_schedule_setting",
+        &id,
+        &session,
+        "schedule setting",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
@@ -3510,7 +3819,14 @@ pub async fn attendancesetting_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_setting", &id, &session, "attendance setting").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_setting",
+        &id,
+        &session,
+        "attendance setting",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
@@ -3519,7 +3835,14 @@ pub async fn attendancestatisticalcycle_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_statistical_cycle", &id, &session, "statistical cycle").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_statistical_cycle",
+        &id,
+        &session,
+        "statistical cycle",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
@@ -3528,7 +3851,14 @@ pub async fn attendancestatisticrequirelog_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_statistic_require_log", &id, &session, "statistic require log").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_statistic_require_log",
+        &id,
+        &session,
+        "statistic require log",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
@@ -3537,7 +3867,14 @@ pub async fn attendanceworkdayconfig_delete(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    delete_admin_record(&pool, "x_attendance_workday_config", &id, &session, "workday config").await
+    delete_admin_record(
+        &pool,
+        "x_attendance_workday_config",
+        &id,
+        &session,
+        "workday config",
+    )
+    .await
 }
 
 /// DELETE /jaxrs/attendance/assemble/control/workplace/{id}
@@ -3580,14 +3917,53 @@ pub async fn v2_group_get(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("groupName".to_string(), Value::String(row.get::<_, Option<String>>("group_name").unwrap_or_default())),
-                ("checkType".to_string(), Value::String(row.get::<_, Option<String>>("check_type").unwrap_or_default())),
-                ("unitList".to_string(), Value::String(row.get::<_, Option<String>>("unit_list").unwrap_or_default())),
-                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
-                ("status".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("status")))),
-                ("participateList".to_string(), Value::String(row.get::<_, Option<String>>("participate_list").unwrap_or_default())),
-                ("startDate".to_string(), Value::String(row.get::<_, Option<String>>("start_date").unwrap_or_default())),
-                ("endDate".to_string(), Value::String(row.get::<_, Option<String>>("end_date").unwrap_or_default())),
+                (
+                    "groupName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("group_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "checkType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "unitList".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unit_list")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "shiftId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("status"))),
+                ),
+                (
+                    "participateList".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("participate_list")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "startDate".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("start_date")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "endDate".to_string(),
+                    Value::String(row.get::<_, Option<String>>("end_date").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3656,10 +4032,31 @@ pub async fn v2_group_person_date(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("groupName".to_string(), Value::String(row.get::<_, Option<String>>("group_name").unwrap_or_default())),
-                ("checkType".to_string(), Value::String(row.get::<_, Option<String>>("check_type").unwrap_or_default())),
-                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
-                ("participateList".to_string(), Value::String(row.get::<_, Option<String>>("participate_list").unwrap_or_default())),
+                (
+                    "groupName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("group_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "checkType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "shiftId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default()),
+                ),
+                (
+                    "participateList".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("participate_list")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -3728,7 +4125,12 @@ pub async fn v2_group_list_page_size(
 
     let filter_name = body
         .as_ref()
-        .map(|Json(b)| b.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string())
+        .map(|Json(b)| {
+            b.get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        })
         .unwrap_or_default();
 
     let d = dialect();
@@ -3758,17 +4160,51 @@ pub async fn v2_group_list_page_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("groupName".to_string(), Value::String(row.get::<_, Option<String>>("group_name").unwrap_or_default())),
-                ("checkType".to_string(), Value::String(row.get::<_, Option<String>>("check_type").unwrap_or_default())),
-                ("unitList".to_string(), Value::String(row.get::<_, Option<String>>("unit_list").unwrap_or_default())),
-                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
-                ("status".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("status")))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "groupName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("group_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "checkType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "unitList".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unit_list")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "shiftId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("status"))),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        0,
+    )))
 }
 
 // ── v2 shift（5 个） ───────────────────────────────────────────────
@@ -3793,11 +4229,37 @@ pub async fn v2_shift_get(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("shiftName".to_string(), Value::String(row.get::<_, Option<String>>("shift_name").unwrap_or_default())),
-                ("onDutyTime".to_string(), Value::String(row.get::<_, Option<String>>("on_duty_time").unwrap_or_default())),
-                ("offDutyTime".to_string(), Value::String(row.get::<_, Option<String>>("off_duty_time").unwrap_or_default())),
-                ("workTime".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("work_time").unwrap_or(0)))),
-                ("serialNo".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("serial_no")))),
+                (
+                    "shiftName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("shift_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "onDutyTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("on_duty_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "offDutyTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("off_duty_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "workTime".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("work_time").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "serialNo".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("serial_no"))),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3830,13 +4292,19 @@ pub async fn v2_shift_create(
 
     let on_duty_time = json_str(&payload, "onDutyTime");
     let off_duty_time = json_str(&payload, "offDutyTime");
-    let work_time = payload.get("workTime").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+    let work_time = payload
+        .get("workTime")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0) as i32;
     let properties_json = match payload.get("properties") {
         Some(v) => v.to_string(),
         None => "{}".to_string(),
     };
     let serial_no: i64 = client
-        .query_one("SELECT COALESCE(MAX(serial_no), 0) + 1 AS next FROM x_attendance_v2_shift", &[])
+        .query_one(
+            "SELECT COALESCE(MAX(serial_no), 0) + 1 AS next FROM x_attendance_v2_shift",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get(0);
@@ -3855,7 +4323,10 @@ pub async fn v2_shift_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("shiftName".to_string(), Value::String(shift_name)),
-            ("serialNo".to_string(), Value::Number(serde_json::Number::from(serial_no))),
+            (
+                "serialNo".to_string(),
+                Value::Number(serde_json::Number::from(serial_no)),
+            ),
             ("created".to_string(), Value::Bool(true)),
         ]),
     ))))
@@ -3892,16 +4363,46 @@ pub async fn v2_shift_list_page_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("shiftName".to_string(), Value::String(row.get::<_, Option<String>>("shift_name").unwrap_or_default())),
-                ("onDutyTime".to_string(), Value::String(row.get::<_, Option<String>>("on_duty_time").unwrap_or_default())),
-                ("offDutyTime".to_string(), Value::String(row.get::<_, Option<String>>("off_duty_time").unwrap_or_default())),
-                ("workTime".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("work_time").unwrap_or(0)))),
-                ("serialNo".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("serial_no")))),
+                (
+                    "shiftName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("shift_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "onDutyTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("on_duty_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "offDutyTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("off_duty_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "workTime".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("work_time").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "serialNo".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("serial_no"))),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        0,
+    )))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/shift/update
@@ -3929,24 +4430,35 @@ pub async fn v2_shift_update(
         return Ok(Json(ActionResult::error("shift not found")));
     };
 
-    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    let owner: String = row
+        .get::<_, Option<String>>("creator_person")
+        .unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &owner).await?;
 
     let shift_name = payload
         .get("shiftName")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or_else(|| row.get::<_, Option<String>>("shift_name").unwrap_or_default());
+        .unwrap_or_else(|| {
+            row.get::<_, Option<String>>("shift_name")
+                .unwrap_or_default()
+        });
     let on_duty_time = payload
         .get("onDutyTime")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or_else(|| row.get::<_, Option<String>>("on_duty_time").unwrap_or_default());
+        .unwrap_or_else(|| {
+            row.get::<_, Option<String>>("on_duty_time")
+                .unwrap_or_default()
+        });
     let off_duty_time = payload
         .get("offDutyTime")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or_else(|| row.get::<_, Option<String>>("off_duty_time").unwrap_or_default());
+        .unwrap_or_else(|| {
+            row.get::<_, Option<String>>("off_duty_time")
+                .unwrap_or_default()
+        });
     let work_time = payload
         .get("workTime")
         .and_then(|v| v.as_i64())
@@ -4000,7 +4512,10 @@ pub async fn v2_leave_import_result_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("flag".to_string(), Value::String(flag)),
-            ("total".to_string(), Value::Number(serde_json::Number::from(total))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
         ]),
     ))))
 }
@@ -4066,7 +4581,12 @@ pub async fn v2_leave_list_page_size(
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
     let filter_person = if admin {
         body.as_ref()
-            .map(|Json(b)| b.get("person").and_then(|v| v.as_str()).unwrap_or("").to_string())
+            .map(|Json(b)| {
+                b.get("person")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string()
+            })
             .unwrap_or_default()
     } else {
         session.person_unique.clone()
@@ -4099,17 +4619,51 @@ pub async fn v2_leave_list_page_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
-                ("leaveType".to_string(), Value::String(row.get::<_, Option<String>>("leave_type").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
-                ("endTime".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
-                ("batchFlag".to_string(), Value::String(row.get::<_, Option<String>>("batch_flag").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
+                (
+                    "leaveType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("leave_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("start_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "endTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
+                (
+                    "batchFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("batch_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        0,
+    )))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/leave/import
@@ -4139,20 +4693,41 @@ pub async fn v2_leave_import(
     let mut inserted: i64 = 0;
 
     for item in rows {
-        let mut person = item.get("person").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let mut person = item
+            .get("person")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         if person.is_empty() {
             person = session.person_unique.clone();
         }
         if !admin && person != session.person_unique {
             return Err(AppError::Forbidden);
         }
-        let leave_type = item.get("leaveType").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let leave_type = item
+            .get("leaveType")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         if leave_type.is_empty() {
-            return Err(AppError::BadRequest("each row requires leaveType".to_string()));
+            return Err(AppError::BadRequest(
+                "each row requires leaveType".to_string(),
+            ));
         }
-        let start_time = item.get("startTime").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let end_time = item.get("endTime").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let description = item.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let start_time = item
+            .get("startTime")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let end_time = item
+            .get("endTime")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let description = item
+            .get("description")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let job_id: Option<String> = None;
         let id = uuid::Uuid::new_v4().to_string();
 
@@ -4170,7 +4745,10 @@ pub async fn v2_leave_import(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("flag".to_string(), Value::String(flag)),
-            ("inserted".to_string(), Value::Number(serde_json::Number::from(inserted))),
+            (
+                "inserted".to_string(),
+                Value::Number(serde_json::Number::from(inserted)),
+            ),
         ]),
     ))))
 }
@@ -4178,9 +4756,7 @@ pub async fn v2_leave_import(
 // ── v2 config（4 个，复用 x_attendance_config 分类存储） ────────────
 
 /// GET /jaxrs/attendance/assemble/control/v2/config
-pub async fn v2_config_get(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn v2_config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -4365,10 +4941,25 @@ pub async fn v2_record_get(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("userId".to_string(), Value::String(row.get("user_id"))),
-                ("checkInTime".to_string(), Value::String(row.get("check_in_time"))),
-                ("checkOutTime".to_string(), Value::String(row.get::<_, Option<String>>("check_out_time").unwrap_or_default())),
+                (
+                    "checkInTime".to_string(),
+                    Value::String(row.get("check_in_time")),
+                ),
+                (
+                    "checkOutTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_out_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4387,7 +4978,12 @@ pub async fn v2_record_list_page_size(
 
     let filter_user = body
         .as_ref()
-        .map(|Json(b)| b.get("userId").and_then(|v| v.as_str()).unwrap_or("").to_string())
+        .map(|Json(b)| {
+            b.get("userId")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        })
         .unwrap_or_default();
 
     let d = dialect();
@@ -4418,15 +5014,34 @@ pub async fn v2_record_list_page_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("userId".to_string(), Value::String(row.get("user_id"))),
-                ("checkInTime".to_string(), Value::String(row.get("check_in_time"))),
-                ("checkOutTime".to_string(), Value::String(row.get::<_, Option<String>>("check_out_time").unwrap_or_default())),
+                (
+                    "checkInTime".to_string(),
+                    Value::String(row.get("check_in_time")),
+                ),
+                (
+                    "checkOutTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_out_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        0,
+    )))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/detail/list/{page}/size/{size}
@@ -4441,11 +5056,21 @@ pub async fn v2_detail_list_page_size(
     let empty = String::new();
     let filter_person = body
         .as_ref()
-        .map(|Json(b)| b.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string())
+        .map(|Json(b)| {
+            b.get("personId")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        })
         .unwrap_or(empty.clone());
     let filter_status = body
         .as_ref()
-        .map(|Json(b)| b.get("status").and_then(|v| v.as_str()).unwrap_or("").to_string())
+        .map(|Json(b)| {
+            b.get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        })
         .unwrap_or(empty);
 
     let d = dialect();
@@ -4475,16 +5100,41 @@ pub async fn v2_detail_list_page_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-                ("date".to_string(), Value::String(row.get::<_, Option<String>>("date").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        0,
+    )))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/my/statistic
@@ -4528,8 +5178,14 @@ pub async fn v2_my_statistic(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("count".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("cnt")))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("cnt"))),
+                ),
             ]))
         })
         .collect();
@@ -4545,10 +5201,16 @@ pub async fn v2_my_statistic(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("person".to_string(), Value::String(session.person_unique.clone())),
+            (
+                "person".to_string(),
+                Value::String(session.person_unique.clone()),
+            ),
             ("month".to_string(), Value::String(month)),
             ("detailByStatus".to_string(), Value::Array(by_status)),
-            ("recordCount".to_string(), Value::Number(serde_json::Number::from(record_count))),
+            (
+                "recordCount".to_string(),
+                Value::Number(serde_json::Number::from(record_count)),
+            ),
         ]),
     ))))
 }
@@ -4613,21 +5275,29 @@ async fn ddqy_delete_all(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let n_detail = client
-        .execute(
-            &format!("DELETE FROM {} WHERE 1 = 1", detail_table),
-            &[],
-        )
+        .execute(&format!("DELETE FROM {} WHERE 1 = 1", detail_table), &[])
         .await
         .map_err(|_| AppError::Internal)?;
     let n_sync = client
-        .execute("DELETE FROM x_attendance_sync_record WHERE type = $1", &[&sync_type])
+        .execute(
+            "DELETE FROM x_attendance_sync_record WHERE type = $1",
+            &[&sync_type],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("detailDeleted".to_string(), Value::Number(serde_json::Number::from(n_detail as i64))),
-        ("syncRecordDeleted".to_string(), Value::Number(serde_json::Number::from(n_sync as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "detailDeleted".to_string(),
+                Value::Number(serde_json::Number::from(n_detail as i64)),
+            ),
+            (
+                "syncRecordDeleted".to_string(),
+                Value::Number(serde_json::Number::from(n_sync as i64)),
+            ),
+        ]),
+    ))))
 }
 
 async fn ddqy_sync_start(
@@ -4637,7 +5307,9 @@ async fn ddqy_sync_start(
     to: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if from.trim().is_empty() || to.trim().is_empty() {
-        return Err(AppError::BadRequest("dateFrom/dateTo is required".to_string()));
+        return Err(AppError::BadRequest(
+            "dateFrom/dateTo is required".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -4652,10 +5324,12 @@ async fn ddqy_sync_start(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(true)),
-        ("syncId".to_string(), Value::String(id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("syncId".to_string(), Value::String(id)),
+        ]),
+    ))))
 }
 
 async fn ddqy_sync_list(
@@ -4678,15 +5352,27 @@ async fn ddqy_sync_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "exceptionMessage".to_string(),
-                    Value::String(row.get::<_, Option<String>>("exception_message").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_message")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "startDate".to_string(),
-                    Value::String(row.get::<_, Option<String>>("start_date").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("start_date")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "endDate".to_string(),
@@ -4694,7 +5380,10 @@ async fn ddqy_sync_list(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4722,7 +5411,13 @@ async fn ddqy_attendance_list_next(
 
     let filter_user = body
         .as_ref()
-        .map(|Json(b)| b.get("user").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+        .map(|Json(b)| {
+            b.get("user")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        })
         .unwrap_or_default();
 
     // id 为空串表示从头开始（Java ActionListDDAttendanceDetail 语义）
@@ -4744,19 +5439,34 @@ async fn ddqy_attendance_list_next(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("user".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
-                ("time".to_string(), Value::String(row.get::<_, Option<String>>("time").unwrap_or_default())),
+                (
+                    "user".to_string(),
+                    Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
+                ),
+                (
+                    "time".to_string(),
+                    Value::String(row.get::<_, Option<String>>("time").unwrap_or_default()),
+                ),
                 (
                     "checkinType".to_string(),
-                    Value::String(row.get::<_, Option<String>>("checkin_type").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("checkin_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "locationResult".to_string(),
-                    Value::String(row.get::<_, Option<String>>("location_result").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("location_result")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "sourceType".to_string(),
-                    Value::String(row.get::<_, Option<String>>("source_type").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("source_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4779,7 +5489,9 @@ async fn ddqy_statistic_person_trigger(
     month: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if year.trim().len() != 4 || month.trim().len() != 2 {
-        return Err(AppError::BadRequest("year must be yyyy and month must be MM".to_string()));
+        return Err(AppError::BadRequest(
+            "year must be yyyy and month must be MM".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -4787,7 +5499,10 @@ async fn ddqy_statistic_person_trigger(
         "DELETE FROM {st} WHERE statistic_year = $1 AND statistic_month = $2",
         st = stat_table
     );
-    client.execute(&delete_sql, &[&year, &month]).await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(&delete_sql, &[&year, &month])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     let insert_sql = format!(
         "INSERT INTO {st} (id, o2_user, o2_unit, statistic_year, statistic_month, \
@@ -4808,12 +5523,20 @@ async fn ddqy_statistic_person_trigger(
         st = stat_table,
         dt = detail_table,
     );
-    let n = client.execute(&insert_sql, &[&year, &month]).await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(&insert_sql, &[&year, &month])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(true)),
-        ("rowsRecalculated".to_string(), Value::Number(serde_json::Number::from(n as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            (
+                "rowsRecalculated".to_string(),
+                Value::Number(serde_json::Number::from(n as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// 统计重算：按日聚合刷新 unit_day 统计表（o2_unit 以考勤组 group_id 为键）。
@@ -4826,7 +5549,9 @@ async fn ddqy_statistic_unit_day_trigger(
     day: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if year.trim().len() != 4 || month.trim().len() != 2 || day.trim().len() != 2 {
-        return Err(AppError::BadRequest("year/month/day must be yyyy/MM/dd".to_string()));
+        return Err(AppError::BadRequest(
+            "year/month/day must be yyyy/MM/dd".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let date = format!("{}-{}-{}", year, month, day);
@@ -4862,10 +5587,15 @@ async fn ddqy_statistic_unit_day_trigger(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(true)),
-        ("rowsRecalculated".to_string(), Value::Number(serde_json::Number::from(n as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            (
+                "rowsRecalculated".to_string(),
+                Value::Number(serde_json::Number::from(n as i64)),
+            ),
+        ]),
+    ))))
 }
 
 async fn stat_person_month_query(
@@ -4887,11 +5617,18 @@ async fn stat_person_month_query(
     let empty = "";
     let person_v = person.unwrap_or(empty);
     let unit = unit_filter.unwrap_or(empty);
-    let rows = client.query(&sql, &[&person_v, &year, &month, &unit]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&person_v, &year, &month, &unit])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 async fn stat_unit_month_query(
@@ -4909,7 +5646,10 @@ async fn stat_unit_month_query(
          FROM {st} WHERE o2_unit = $1 AND statistic_year = $2 AND statistic_month = $3",
         st = stat_table
     );
-    let rows = client.query(&sql, &[&unit, &year, &month]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&unit, &year, &month])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
 
@@ -4929,19 +5669,46 @@ fn stat_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         }
     }
     Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
-        ("o2User".to_string(), Value::String(row.get::<_, Option<String>>("o2_user").unwrap_or_default())),
-        ("o2Unit".to_string(), Value::String(row.get::<_, Option<String>>("o2_unit").unwrap_or_default())),
-        ("statisticYear".to_string(), Value::String(row.get::<_, Option<String>>("statistic_year").unwrap_or_default())),
-        ("statisticMonth".to_string(), Value::String(row.get::<_, Option<String>>("statistic_month").unwrap_or_default())),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        ),
+        (
+            "o2User".to_string(),
+            Value::String(row.get::<_, Option<String>>("o2_user").unwrap_or_default()),
+        ),
+        (
+            "o2Unit".to_string(),
+            Value::String(row.get::<_, Option<String>>("o2_unit").unwrap_or_default()),
+        ),
+        (
+            "statisticYear".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("statistic_year")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "statisticMonth".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("statistic_month")
+                    .unwrap_or_default(),
+            ),
+        ),
         ("workDayCount".to_string(), num(row, "work_day_count")),
         ("onDutyTimes".to_string(), num(row, "on_duty_times")),
         ("offDutyTimes".to_string(), num(row, "off_duty_times")),
         ("resultNormal".to_string(), num(row, "result_normal")),
         ("lateTimes".to_string(), num(row, "late_times")),
-        ("seriousLateTimes".to_string(), num(row, "serious_late_times")),
+        (
+            "seriousLateTimes".to_string(),
+            num(row, "serious_late_times"),
+        ),
         ("leaveEarlyTimes".to_string(), num(row, "leave_early_times")),
-        ("absenteeismTimes".to_string(), num(row, "absenteeism_times")),
+        (
+            "absenteeismTimes".to_string(),
+            num(row, "absenteeism_times"),
+        ),
         ("notSignedCount".to_string(), num(row, "not_signed_count")),
     ]))
 }
@@ -4987,7 +5754,14 @@ pub async fn dingding_statistic_person_trigger(
     Path((year, month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    ddqy_statistic_person_trigger(&pool, "x_attendance_dingding_detail", "x_attendance_statistic_dd_person_month", &year, &month).await
+    ddqy_statistic_person_trigger(
+        &pool,
+        "x_attendance_dingding_detail",
+        "x_attendance_statistic_dd_person_month",
+        &year,
+        &month,
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/dingding/statistic/unit/year/{year}/month/{month}/day/{day}
@@ -4997,7 +5771,15 @@ pub async fn dingding_statistic_unit_day_trigger(
     Path((year, month, day)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    ddqy_statistic_unit_day_trigger(&pool, "x_attendance_dingding_detail", "x_attendance_statistic_dd_unit_day", &year, &month, &day).await
+    ddqy_statistic_unit_day_trigger(
+        &pool,
+        "x_attendance_dingding_detail",
+        "x_attendance_statistic_dd_unit_day",
+        &year,
+        &month,
+        &day,
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}
@@ -5005,7 +5787,15 @@ pub async fn dingdingstatistic_person(
     pool: Extension<Pool>,
     Path((person, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    stat_person_month_query(&pool, "x_attendance_statistic_dd_person_month", Some(&person), &year, &month, None).await
+    stat_person_month_query(
+        &pool,
+        "x_attendance_statistic_dd_person_month",
+        Some(&person),
+        &year,
+        &month,
+        None,
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}
@@ -5014,7 +5804,15 @@ pub async fn dingdingstatistic_person_unit(
     Path((unit, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // Java 语义：查该部门下人员月份统计；本 schema 中 person 维度以 o2_unit 过滤实现
-    stat_person_month_query(&pool, "x_attendance_statistic_dd_person_month", None, &year, &month, Some(&unit)).await
+    stat_person_month_query(
+        &pool,
+        "x_attendance_statistic_dd_person_month",
+        None,
+        &year,
+        &month,
+        Some(&unit),
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/dingdingstatistic/unit/{unit}/{year}/{month}
@@ -5028,7 +5826,10 @@ pub async fn dingdingstatistic_unit(
     let sql = "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
                result_normal, late_times, serious_late_times, leave_early_times, absenteeism_times, not_signed_count \
                FROM x_attendance_statistic_dd_unit_month WHERE o2_unit = $1 AND statistic_year = $2 AND statistic_month = $3";
-    let mut rows = client.query(sql, &[&unit, &year, &month]).await.map_err(|_| AppError::Internal)?;
+    let mut rows = client
+        .query(sql, &[&unit, &year, &month])
+        .await
+        .map_err(|_| AppError::Internal)?;
     if rows.is_empty() {
         rows = client
             .query(
@@ -5070,9 +5871,7 @@ pub async fn qywx_sync_start(
 }
 
 /// GET /jaxrs/attendance/assemble/control/qywx/sync/list
-pub async fn qywx_sync_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn qywx_sync_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     ddqy_sync_list(&pool, "qywx").await
 }
 
@@ -5092,7 +5891,14 @@ pub async fn qywx_statistic_person_trigger(
     Path((year, month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    ddqy_statistic_person_trigger(&pool, "x_attendance_qywx_detail", "x_attendance_statistic_qywx_person_month", &year, &month).await
+    ddqy_statistic_person_trigger(
+        &pool,
+        "x_attendance_qywx_detail",
+        "x_attendance_statistic_qywx_person_month",
+        &year,
+        &month,
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/qywx/statistic/unit/year/{year}/month/{month}/day/{day}
@@ -5102,7 +5908,15 @@ pub async fn qywx_statistic_unit_day_trigger(
     Path((year, month, day)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    ddqy_statistic_unit_day_trigger(&pool, "x_attendance_qywx_detail", "x_attendance_statistic_qywx_unit_day", &year, &month, &day).await
+    ddqy_statistic_unit_day_trigger(
+        &pool,
+        "x_attendance_qywx_detail",
+        "x_attendance_statistic_qywx_unit_day",
+        &year,
+        &month,
+        &day,
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/qywxstatistic/person/{person}/{year}/{month}
@@ -5110,7 +5924,15 @@ pub async fn qywxstatistic_person(
     pool: Extension<Pool>,
     Path((person, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    stat_person_month_query(&pool, "x_attendance_statistic_qywx_person_month", Some(&person), &year, &month, None).await
+    stat_person_month_query(
+        &pool,
+        "x_attendance_statistic_qywx_person_month",
+        Some(&person),
+        &year,
+        &month,
+        None,
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}
@@ -5118,7 +5940,15 @@ pub async fn qywxstatistic_person_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    stat_person_month_query(&pool, "x_attendance_statistic_qywx_person_month", None, &year, &month, Some(&unit)).await
+    stat_person_month_query(
+        &pool,
+        "x_attendance_statistic_qywx_person_month",
+        None,
+        &year,
+        &month,
+        Some(&unit),
+    )
+    .await
 }
 
 /// GET /jaxrs/attendance/assemble/control/qywxstatistic/unit/{unit}/{year}/{month}
@@ -5126,7 +5956,14 @@ pub async fn qywxstatistic_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    stat_unit_month_query(&pool, "x_attendance_statistic_qywx_unit_month", &unit, &year, &month).await
+    stat_unit_month_query(
+        &pool,
+        "x_attendance_statistic_qywx_unit_month",
+        &unit,
+        &year,
+        &month,
+    )
+    .await
 }
 
 // ── v2 appeal（8 个） ──────────────────────────────────────────────
@@ -5147,7 +5984,13 @@ pub async fn v2_appeal_list_page_size(
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
     let filter_user = if admin {
         body.as_ref()
-            .map(|Json(b)| b.get("user").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+            .map(|Json(b)| {
+                b.get("user")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string()
+            })
             .unwrap_or_default()
     } else {
         session.person_unique.clone()
@@ -5170,31 +6013,74 @@ pub async fn v2_appeal_list_page_size(
         d.cast_bigint_param(2),
         d.cast_bigint_param(3),
     );
-    let rows = client.query(&sql, &[&filter_user, &limit, &offset]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&filter_user, &limit, &offset])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("data".to_string(), Value::Array(rows.iter().map(v2_appeal_row).collect())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "data".to_string(),
+                Value::Array(rows.iter().map(v2_appeal_row).collect()),
+            ),
+        ]),
+    ))))
 }
 
 fn v2_appeal_row(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
-        ("recordId".to_string(), Value::String(row.get::<_, Option<String>>("record_id").unwrap_or_default())),
-        ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        ),
+        (
+            "recordId".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("record_id")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "userId".to_string(),
+            Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
+        ),
         (
             "recordDateString".to_string(),
-            Value::String(row.get::<_, Option<String>>("record_date_string").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("record_date_string")
+                    .unwrap_or_default(),
+            ),
         ),
-        ("startTime".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
-        ("endTime".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
-        ("reason".to_string(), Value::String(row.get::<_, Option<String>>("reason").unwrap_or_default())),
+        (
+            "startTime".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("start_time")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "endTime".to_string(),
+            Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+        ),
+        (
+            "reason".to_string(),
+            Value::String(row.get::<_, Option<String>>("reason").unwrap_or_default()),
+        ),
         (
             "status".to_string(),
-            Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("status").unwrap_or(0))),
+            Value::Number(serde_json::Number::from(
+                row.get::<_, Option<i32>>("status").unwrap_or(0),
+            )),
         ),
-        ("jobId".to_string(), Value::String(row.get::<_, Option<String>>("job_id").unwrap_or_default())),
+        (
+            "jobId".to_string(),
+            Value::String(row.get::<_, Option<String>>("job_id").unwrap_or_default()),
+        ),
     ]))
 }
 
@@ -5212,7 +6098,12 @@ pub async fn v2_appeal_manager_list_page_size(
 
     let filter_status = body
         .as_ref()
-        .map(|Json(b)| b.get("status").and_then(|v| v.as_i64()).unwrap_or(-1).to_string())
+        .map(|Json(b)| {
+            b.get("status")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(-1)
+                .to_string()
+        })
         .unwrap_or_else(|| "-1".to_string());
 
     let d = dialect();
@@ -5232,12 +6123,23 @@ pub async fn v2_appeal_manager_list_page_size(
         d.cast_bigint_param(2),
         d.cast_bigint_param(3),
     );
-    let rows = client.query(&sql, &[&filter_status, &limit, &offset]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&filter_status, &limit, &offset])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("data".to_string(), Value::Array(rows.iter().map(v2_appeal_row).collect())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "data".to_string(),
+                Value::Array(rows.iter().map(v2_appeal_row).collect()),
+            ),
+        ]),
+    ))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}
@@ -5279,7 +6181,9 @@ async fn appeal_owner_gate(
 
     let Some(row) = row else { return Ok(None) };
 
-    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    let owner: String = row
+        .get::<_, Option<String>>("creator_person")
+        .unwrap_or_default();
     shared::middleware::require_owner(pool, session, &owner).await?;
     Ok(Some(row))
 }
@@ -5306,10 +6210,15 @@ pub async fn v2_appeal_manager_status(
         return Ok(Json(ActionResult::error("appeal not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("status".to_string(), Value::Number(serde_json::Number::from(4))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "status".to_string(),
+                Value::Number(serde_json::Number::from(4)),
+            ),
+        ]),
+    ))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/start/check
@@ -5340,13 +6249,19 @@ pub async fn v2_appeal_start_check(
 
     let status: i32 = row.get::<_, Option<i32>>("status").unwrap_or(0);
     let can_start = status == 0;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(can_start)),
-        (
-            "message".to_string(),
-            Value::String(if can_start { String::new() } else { "申诉数据已进入流程，不能重复发起".to_string() }),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(can_start)),
+            (
+                "message".to_string(),
+                Value::String(if can_start {
+                    String::new()
+                } else {
+                    "申诉数据已进入流程，不能重复发起".to_string()
+                }),
+            ),
+        ]),
+    ))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/appeal/{id}/start/process
@@ -5379,11 +6294,16 @@ pub async fn v2_appeal_start_process(
         return Ok(Json(ActionResult::error("appeal not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("jobId".to_string(), Value::String(job_id)),
-        ("status".to_string(), Value::Number(serde_json::Number::from(1))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("jobId".to_string(), Value::String(job_id)),
+            (
+                "status".to_string(),
+                Value::Number(serde_json::Number::from(1)),
+            ),
+        ]),
+    ))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/reset/status
@@ -5410,10 +6330,15 @@ pub async fn v2_appeal_reset_status(
         return Ok(Json(ActionResult::error("appeal not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("status".to_string(), Value::Number(serde_json::Number::from(0))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "status".to_string(),
+                Value::Number(serde_json::Number::from(0)),
+            ),
+        ]),
+    ))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/appeal/{id}/end/process
@@ -5431,7 +6356,9 @@ pub async fn v2_appeal_end_process(
     // 流程结束后回填：审批结果只允许 2(通过)/3(不通过)
     let end_status = payload.get("status").and_then(|v| v.as_i64()).unwrap_or(-1) as i32;
     if end_status != 2 && end_status != 3 {
-        return Err(AppError::BadRequest("status must be 2 (agree) or 3 (disagree)".to_string()));
+        return Err(AppError::BadRequest(
+            "status must be 2 (agree) or 3 (disagree)".to_string(),
+        ));
     }
     let job_id = json_opt_str(&payload, "jobId");
 
@@ -5447,10 +6374,15 @@ pub async fn v2_appeal_end_process(
         return Ok(Json(ActionResult::error("appeal not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("status".to_string(), Value::Number(serde_json::Number::from(end_status))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "status".to_string(),
+                Value::Number(serde_json::Number::from(end_status)),
+            ),
+        ]),
+    ))))
 }
 
 // ── v2 detail（4 个） ──────────────────────────────────────────────
@@ -5465,8 +6397,14 @@ pub async fn v2_detail_rebuild_person_date(
 
     let person = person.trim();
     let date = date.trim();
-    if person.is_empty() || date.len() != 10 || date.as_bytes().get(4) != Some(&b'-') || date.as_bytes().get(7) != Some(&b'-') {
-        return Err(AppError::BadRequest("person and date(yyyy-MM-dd) are required".to_string()));
+    if person.is_empty()
+        || date.len() != 10
+        || date.as_bytes().get(4) != Some(&b'-')
+        || date.as_bytes().get(7) != Some(&b'-')
+    {
+        return Err(AppError::BadRequest(
+            "person and date(yyyy-MM-dd) are required".to_string(),
+        ));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5488,10 +6426,12 @@ pub async fn v2_detail_rebuild_person_date(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(true)),
-        ("detailId".to_string(), Value::String(new_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            ("detailId".to_string(), Value::String(new_id)),
+        ]),
+    ))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/v2/detail/statistic/{detailId}/list/record
@@ -5513,7 +6453,9 @@ pub async fn v2_detail_statistic_record_list(
     let Some(detail) = detail else {
         return Ok(Json(ActionResult::error("detail not found")));
     };
-    let person: String = detail.get::<_, Option<String>>("person_id").unwrap_or_default();
+    let person: String = detail
+        .get::<_, Option<String>>("person_id")
+        .unwrap_or_default();
     let date: String = detail.get::<_, Option<String>>("date").unwrap_or_default();
     let pattern = format!("{}%", date);
 
@@ -5531,13 +6473,28 @@ pub async fn v2_detail_statistic_record_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
-                ("checkInTime".to_string(), Value::String(row.get::<_, Option<String>>("check_in_time").unwrap_or_default())),
+                (
+                    "userId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
+                ),
+                (
+                    "checkInTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_in_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "checkOutTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("check_out_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_out_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -5575,8 +6532,14 @@ async fn detail_statistic_aggregate(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("count".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("cnt")))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("cnt"))),
+                ),
             ]))
         })
         .collect())
@@ -5590,7 +6553,8 @@ pub async fn v2_detail_statistic_filter(
     let empty = String::new();
     let (filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
 
-    let data = detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
+    let data =
+        detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -5608,14 +6572,20 @@ pub async fn v2_detail_statistic_export_filter(
     let empty = String::new();
     let (filter_person, filter_start, filter_end) = extract_stat_filter(body.as_ref(), &empty);
 
-    let data = detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
+    let data =
+        detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
     let export_flag = uuid::Uuid::new_v4().to_string();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("exportFlag".to_string(), Value::String(export_flag)),
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("exportFlag".to_string(), Value::String(export_flag)),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 fn extract_stat_filter(body: Option<&Json<Value>>, empty: &String) -> (String, String, String) {
@@ -5642,7 +6612,9 @@ pub async fn v2_group_rebuild_detail_group_date(
 
     let date = date.trim();
     if group_id.trim().is_empty() || date.len() != 10 {
-        return Err(AppError::BadRequest("groupId and date(yyyy-MM-dd) are required".to_string()));
+        return Err(AppError::BadRequest(
+            "groupId and date(yyyy-MM-dd) are required".to_string(),
+        ));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5696,10 +6668,15 @@ pub async fn v2_group_rebuild_detail_group_date(
             .map_err(|_| AppError::Internal)?;
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("value".to_string(), Value::Bool(true)),
-        ("personsRebuilt".to_string(), Value::Number(serde_json::Number::from(participate.len() as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Bool(true)),
+            (
+                "personsRebuilt".to_string(),
+                Value::Number(serde_json::Number::from(participate.len() as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/groupschedule
@@ -5717,7 +6694,9 @@ pub async fn v2_groupschedule_post(
     let shift_id = json_str(&payload, "shiftId");
 
     if group_id.trim().is_empty() || user_id.is_empty() || date_str.is_empty() {
-        return Err(AppError::BadRequest("groupId/userId/scheduleDateString are required".to_string()));
+        return Err(AppError::BadRequest(
+            "groupId/userId/scheduleDateString are required".to_string(),
+        ));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -5738,10 +6717,12 @@ pub async fn v2_groupschedule_post(
             let exist_id: String = row.get("id");
             let exist_shift: String = row.get::<_, Option<String>>("shift_id").unwrap_or_default();
             if exist_shift == shift_id {
-                return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(exist_id)),
-                    ("duplicated".to_string(), Value::Bool(true)),
-                ])))));
+                return Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(exist_id)),
+                        ("duplicated".to_string(), Value::Bool(true)),
+                    ]),
+                ))));
             }
             client
                 .execute(
@@ -5750,10 +6731,12 @@ pub async fn v2_groupschedule_post(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(exist_id)),
-                ("updated".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(exist_id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
         None => {
             let id = uuid::Uuid::new_v4().to_string();
@@ -5765,10 +6748,12 @@ pub async fn v2_groupschedule_post(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("created".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("created".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
     }
 }
@@ -5789,19 +6774,30 @@ pub async fn v2_groupschedule_config_get(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("groupId".to_string(), Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default())),
-            (
-                "config".to_string(),
-                serde_json::from_str::<Value>(&row.get::<_, Option<String>>("config_json").unwrap_or_default())
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "groupId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    serde_json::from_str::<Value>(
+                        &row.get::<_, Option<String>>("config_json")
+                            .unwrap_or_default(),
+                    )
                     .unwrap_or(Value::Null),
-            ),
-            (
-                "updateTime".to_string(),
-                Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
-            ),
-        ]))))),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("schedule config not found"))),
     }
 }
@@ -5829,13 +6825,25 @@ pub async fn v2_groupschedule_list_group_month(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("groupId".to_string(), Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default())),
-                ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+                (
+                    "groupId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default()),
+                ),
+                (
+                    "userId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
+                ),
                 (
                     "scheduleDateString".to_string(),
-                    Value::String(row.get::<_, Option<String>>("schedule_date_string").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_date_string")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
+                (
+                    "shiftId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -5884,17 +6892,32 @@ pub async fn v2_groupschedule_list_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("groupId".to_string(), Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default())),
-                ("userId".to_string(), Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default())),
+                (
+                    "groupId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("group_id").unwrap_or_default()),
+                ),
+                (
+                    "userId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
+                ),
                 (
                     "scheduleMonthString".to_string(),
-                    Value::String(row.get::<_, Option<String>>("schedule_month_string").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_month_string")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "scheduleDateString".to_string(),
-                    Value::String(row.get::<_, Option<String>>("schedule_date_string").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_date_string")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("shiftId".to_string(), Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default())),
+                (
+                    "shiftId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("shift_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -5911,19 +6934,24 @@ pub async fn v2_groupschedule_list_filter(
 
 /// GET /jaxrs/attendance/assemble/control/v2/leave/template
 pub async fn v2_leave_template() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        (
-            "columns".to_string(),
-            Value::Array(vec![
-                Value::String("person".to_string()),
-                Value::String("leaveType".to_string()),
-                Value::String("startTime".to_string()),
-                Value::String("endTime".to_string()),
-                Value::String("description".to_string()),
-            ]),
-        ),
-        ("fileName".to_string(), Value::String("请假导入模板.xlsx".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "columns".to_string(),
+                Value::Array(vec![
+                    Value::String("person".to_string()),
+                    Value::String("leaveType".to_string()),
+                    Value::String("startTime".to_string()),
+                    Value::String("endTime".to_string()),
+                    Value::String("description".to_string()),
+                ]),
+            ),
+            (
+                "fileName".to_string(),
+                Value::String("请假导入模板.xlsx".to_string()),
+            ),
+        ]),
+    ))))
 }
 
 // ── v2 mobile（3 个） ──────────────────────────────────────────────
@@ -5975,19 +7003,31 @@ pub async fn v2_mobile_pre_check(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "checkInType".to_string(),
-                    Value::String(row.get::<_, Option<String>>("check_in_type").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_in_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "checkInResult".to_string(),
-                    Value::String(row.get::<_, Option<String>>("check_in_result").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("check_in_result")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "sourceType".to_string(),
-                    Value::String(row.get::<_, Option<String>>("source_type").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("source_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5996,25 +7036,39 @@ pub async fn v2_mobile_pre_check(
     let group = group_rows.first().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("groupName".to_string(), Value::String(row.get::<_, Option<String>>("group_name").unwrap_or_default())),
-            ("checkType".to_string(), Value::String(row.get::<_, Option<String>>("check_type").unwrap_or_default())),
+            (
+                "groupName".to_string(),
+                Value::String(
+                    row.get::<_, Option<String>>("group_name")
+                        .unwrap_or_default(),
+                ),
+            ),
+            (
+                "checkType".to_string(),
+                Value::String(
+                    row.get::<_, Option<String>>("check_type")
+                        .unwrap_or_default(),
+                ),
+            ),
             (
                 "workPlaceIdList".to_string(),
-                Value::String(row.get::<_, Option<String>>("work_place_id_list").unwrap_or_default()),
+                Value::String(
+                    row.get::<_, Option<String>>("work_place_id_list")
+                        .unwrap_or_default(),
+                ),
             ),
         ]))
     });
     let can_check_in = group.is_some();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("date".to_string(), Value::String(today)),
-        (
-            "group".to_string(),
-            group.unwrap_or(Value::Null),
-        ),
-        ("canCheckIn".to_string(), Value::Bool(can_check_in)),
-        ("records".to_string(), Value::Array(records)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("date".to_string(), Value::String(today)),
+            ("group".to_string(), group.unwrap_or(Value::Null)),
+            ("canCheckIn".to_string(), Value::Bool(can_check_in)),
+            ("records".to_string(), Value::Array(records)),
+        ]),
+    ))))
 }
 
 async fn mobile_check_impl(
@@ -6025,7 +7079,10 @@ async fn mobile_check_impl(
     default_source: &str,
 ) -> Result<(String, bool), AppError> {
     let user_id = normalize_key(
-        payload.get("userId").and_then(|v| v.as_str()).unwrap_or(&session.person_unique),
+        payload
+            .get("userId")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&session.person_unique),
     );
     if user_id.is_empty() {
         return Err(AppError::BadRequest("userId is required".to_string()));
@@ -6095,10 +7152,12 @@ pub async fn v2_mobile_check(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let (id, duplicated) = mobile_check_impl(&client, &pool, &session, &payload, "移动端").await?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("duplicated".to_string(), Value::Bool(duplicated)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("duplicated".to_string(), Value::Bool(duplicated)),
+        ]),
+    ))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/mobile/check/ from/out
@@ -6113,22 +7172,25 @@ pub async fn v2_mobile_check_from_out(
     if !target.is_empty() && target != session.person_unique {
         require_admin(&pool, &session).await?;
     }
-    let (id, duplicated) = mobile_check_impl(&client, &pool, &session, &payload, "外部设备").await?;
+    let (id, duplicated) =
+        mobile_check_impl(&client, &pool, &session, &payload, "外部设备").await?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("duplicated".to_string(), Value::Bool(duplicated)),
-        ("fromOut".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("duplicated".to_string(), Value::Bool(duplicated)),
+            ("fromOut".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 // ── v2 my（4 个） ──────────────────────────────────────────────────
 
 /// GET /jaxrs/attendance/assemble/control/v2/my/version
 pub async fn v2_my_version() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("version".to_string(), Value::String("2".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("version".to_string(), Value::String("2".to_string()))]),
+    ))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/v2/my/controls
@@ -6149,11 +7211,16 @@ pub async fn v2_my_controls(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("admin".to_string(), Value::Bool(admin)),
-        ("readAdmin".to_string(), Value::Bool(admin)),
-        ("assistAdmin".to_string(), Value::Bool(!assist_rows.is_empty())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("admin".to_string(), Value::Bool(admin)),
+            ("readAdmin".to_string(), Value::Bool(admin)),
+            (
+                "assistAdmin".to_string(),
+                Value::Bool(!assist_rows.is_empty()),
+            ),
+        ]),
+    ))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/my/detail/list
@@ -6166,7 +7233,13 @@ pub async fn v2_my_detail_list(
 
     let date = body
         .as_ref()
-        .map(|Json(b)| b.get("date").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+        .map(|Json(b)| {
+            b.get("date")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        })
         .unwrap_or_default();
 
     let rows = if date.is_empty() {
@@ -6194,12 +7267,27 @@ pub async fn v2_my_detail_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-                ("date".to_string(), Value::String(row.get::<_, Option<String>>("date").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -6220,10 +7308,18 @@ pub async fn v2_my_rest_date_check(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let date = body
         .as_ref()
-        .map(|Json(b)| b.get("date").and_then(|v| v.as_str()).unwrap_or("").trim().to_string())
+        .map(|Json(b)| {
+            b.get("date")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        })
         .unwrap_or_default();
     if date.len() != 10 {
-        return Err(AppError::BadRequest("date(yyyy-MM-dd) is required".to_string()));
+        return Err(AppError::BadRequest(
+            "date(yyyy-MM-dd) is required".to_string(),
+        ));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -6242,10 +7338,12 @@ pub async fn v2_my_rest_date_check(
         None => false,
     };
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("date".to_string(), Value::String(date)),
-        ("restDay".to_string(), Value::Bool(is_rest)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("date".to_string(), Value::String(date)),
+            ("restDay".to_string(), Value::Bool(is_rest)),
+        ]),
+    ))))
 }
 
 // ── v2 record（4 个） ──────────────────────────────────────────────
@@ -6259,7 +7357,9 @@ pub async fn v2_record_delete_people_date(
     let people = normalize_key(&people);
     let date = date.trim();
     if people.is_empty() || date.len() != 10 {
-        return Err(AppError::BadRequest("people and date(yyyy-MM-dd) are required".to_string()));
+        return Err(AppError::BadRequest(
+            "people and date(yyyy-MM-dd) are required".to_string(),
+        ));
     }
 
     // 仅本人或管理员可删除打卡记录（IDOR）
@@ -6283,27 +7383,40 @@ pub async fn v2_record_delete_people_date(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("recordDeleted".to_string(), Value::Number(serde_json::Number::from(n_record as i64))),
-        ("checkinDeleted".to_string(), Value::Number(serde_json::Number::from(n_checkin as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "recordDeleted".to_string(),
+                Value::Number(serde_json::Number::from(n_record as i64)),
+            ),
+            (
+                "checkinDeleted".to_string(),
+                Value::Number(serde_json::Number::from(n_checkin as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// GET /jaxrs/attendance/assemble/control/v2/record/template
 pub async fn v2_record_template() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        (
-            "columns".to_string(),
-            Value::Array(vec![
-                Value::String("userId".to_string()),
-                Value::String("recordDateString".to_string()),
-                Value::String("checkInType".to_string()),
-                Value::String("checkInResult".to_string()),
-                Value::String("description".to_string()),
-            ]),
-        ),
-        ("fileName".to_string(), Value::String("打卡记录导入模板.xlsx".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "columns".to_string(),
+                Value::Array(vec![
+                    Value::String("userId".to_string()),
+                    Value::String("recordDateString".to_string()),
+                    Value::String("checkInType".to_string()),
+                    Value::String("checkInResult".to_string()),
+                    Value::String("description".to_string()),
+                ]),
+            ),
+            (
+                "fileName".to_string(),
+                Value::String("打卡记录导入模板.xlsx".to_string()),
+            ),
+        ]),
+    ))))
 }
 
 async fn import_checkin_rows(
@@ -6331,9 +7444,15 @@ async fn import_checkin_rows(
             .filter(|s| !s.trim().is_empty())
             .map(|s| s.trim().to_string())
             .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
-        let check_in_type = item.get("checkInType").and_then(|v| v.as_str()).unwrap_or("").trim();
+        let check_in_type = item
+            .get("checkInType")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
         if check_in_type.is_empty() {
-            return Err(AppError::BadRequest("each row requires checkInType".to_string()));
+            return Err(AppError::BadRequest(
+                "each row requires checkInType".to_string(),
+            ));
         }
 
         let dup = client
@@ -6362,7 +7481,10 @@ async fn import_checkin_rows(
             .filter(|s| !s.trim().is_empty())
             .unwrap_or("Normal")
             .to_string();
-        let description = item.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let description = item
+            .get("description")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         client
             .execute(
@@ -6395,11 +7517,22 @@ pub async fn v2_record_import(
 
     let (inserted, ids) = import_checkin_rows(&pool, &session, rows, "导入").await?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("inserted".to_string(), Value::Number(serde_json::Number::from(inserted))),
-        ("total".to_string(), Value::Number(serde_json::Number::from(ids.len() as i64))),
-        ("ids".to_string(), Value::Array(ids.into_iter().map(Value::String).collect())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "inserted".to_string(),
+                Value::Number(serde_json::Number::from(inserted)),
+            ),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(ids.len() as i64)),
+            ),
+            (
+                "ids".to_string(),
+                Value::Array(ids.into_iter().map(Value::String).collect()),
+            ),
+        ]),
+    ))))
 }
 
 /// POST /jaxrs/attendance/assemble/control/v2/record/import/daily
@@ -6414,14 +7547,18 @@ pub async fn v2_record_import_daily(
         .map(|s| s.trim().to_string())
         .unwrap_or_default();
     if date_str.len() != 10 {
-        return Err(AppError::BadRequest("date(yyyy-MM-dd) is required".to_string()));
+        return Err(AppError::BadRequest(
+            "date(yyyy-MM-dd) is required".to_string(),
+        ));
     }
     let records = payload
         .get("records")
         .and_then(|v| v.as_array())
         .ok_or_else(|| AppError::BadRequest("records array is required".to_string()))?;
     if records.is_empty() {
-        return Err(AppError::BadRequest("records must not be empty".to_string()));
+        return Err(AppError::BadRequest(
+            "records must not be empty".to_string(),
+        ));
     }
 
     // 归一化：为每行补齐 recordDateString 后复用批量导入
@@ -6430,7 +7567,8 @@ pub async fn v2_record_import_daily(
         .map(|r| {
             let mut obj = r.clone();
             if let Some(map) = obj.as_object_mut() {
-                map.entry("recordDateString".to_string()).or_insert_with(|| Value::String(date_str.clone()));
+                map.entry("recordDateString".to_string())
+                    .or_insert_with(|| Value::String(date_str.clone()));
             }
             obj
         })
@@ -6438,11 +7576,19 @@ pub async fn v2_record_import_daily(
 
     let (inserted, ids) = import_checkin_rows(&pool, &session, &normalized, "导入").await?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("date".to_string(), Value::String(date_str)),
-        ("inserted".to_string(), Value::Number(serde_json::Number::from(inserted))),
-        ("ids".to_string(), Value::Array(ids.into_iter().map(Value::String).collect())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("date".to_string(), Value::String(date_str)),
+            (
+                "inserted".to_string(),
+                Value::Number(serde_json::Number::from(inserted)),
+            ),
+            (
+                "ids".to_string(),
+                Value::Array(ids.into_iter().map(Value::String).collect()),
+            ),
+        ]),
+    ))))
 }
 
 // ── v2 workplace（4 个，复用 x_attendance_workplace 表） ───────────
@@ -6495,11 +7641,13 @@ pub async fn v2_workplace_post(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("name".to_string(), Value::String(name)),
-                ("updated".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
         _ => {
             let id = uuid::Uuid::new_v4().to_string();
@@ -6511,11 +7659,13 @@ pub async fn v2_workplace_post(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("name".to_string(), Value::String(name)),
-                ("created".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("created".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
     }
 }
@@ -6543,23 +7693,36 @@ pub async fn v2_workplace_list_all(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(workplace_row_value)
-        .collect();
+    let data: Vec<Value> = rows.iter().map(workplace_row_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 fn workplace_row_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get::<_, Option<String>>("id").unwrap_or_default())),
-        ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-        ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        ),
+        (
+            "name".to_string(),
+            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+        ),
+        (
+            "address".to_string(),
+            Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
-            Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]))
 }
@@ -6605,5 +7768,3 @@ pub async fn v2_workplace_list_ids(
         0,
     )))
 }
-
-

@@ -1,0 +1,36 @@
+# cargo-deny configuration for oa4rust.
+# RustSec advisories are enforced by cargo-audit in the supply-chain workflow.
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "MPL-2.0",
+    "Zlib",
+    "0BSD",
+    "Unlicense",
+    "CC0-1.0",
+    "OpenSSL",
+    "CDLA-Permissive-2.0",
+]
+
+[licenses.private]
+ignore = true
+
+[[licenses.exceptions]]
+name = "ring"
+allow = ["OpenSSL"]
+
+[[licenses.exceptions]]
+name = "webpki-roots"
+allow = ["MPL-2.0"]
+
+# Require all crates to come from trusted registries
+[sources]
+unknown-registry = "deny"

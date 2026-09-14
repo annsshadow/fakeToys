@@ -383,13 +383,14 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
 // 精确限流仅限"明文凭证尝试"：登录契约路径（POST /jaxrs/authentication）
 // 与其自造别名（/jaxrs/authentication/login）；以及密码重置与初始化端点（前缀）。
-pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &["/jaxrs/authentication", "/jaxrs/authentication/login"];
+pub const AUTH_RATE_LIMIT_EXACT: &[&str] =
+    &["/jaxrs/authentication", "/jaxrs/authentication/login"];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/jaxrs/authentication/code",
-    "/jaxrs/authentication/two",     // 双因素登录
-    "/jaxrs/authentication/safe",    // 安全注销
+    "/jaxrs/authentication/two",        // 双因素登录
+    "/jaxrs/authentication/safe",       // 安全注销
     "/jaxrs/authentication/switchuser", // 用户切换
-    "/jaxrs/person/regist/code",    // 注册验证码发送
+    "/jaxrs/person/regist/code",        // 注册验证码发送
     "/jaxrs/reset",
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",

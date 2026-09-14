@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::routes::process_express_router;
-    use shared::response::ActionResult;
     use serde_json::json;
+    use shared::response::ActionResult;
 
     #[test]
     fn test_task_count_action_result_format() {
@@ -32,19 +32,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_task_count_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_express_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method};
+        use axum::http::{Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -63,19 +61,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_read_count_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_express_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method};
+        use axum::http::{Method, Request};
         use tower::util::ServiceExt;
 
         let response = app
@@ -94,19 +90,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_list_route_exists() {
-        let pool = deadpool_postgres::Pool::builder(
-            deadpool_postgres::Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ),
-        )
+        let pool = deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
         .build()
         .unwrap();
 
         let app = process_express_router(pool);
 
         use axum::body::Body;
-        use axum::http::{Request, Method};
+        use axum::http::{Method, Request};
         use tower::util::ServiceExt;
 
         let response = app

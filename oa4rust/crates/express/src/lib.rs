@@ -1,20 +1,16 @@
-use axum::{
-    extract::Extension,
-    extract::Query,
-    Json,
-};
+use axum::{extract::Extension, extract::Query, Json};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 
 use shared::{error::AppError, response::ActionResult};
 
-pub mod routes;
 pub mod batch_query;
+pub mod routes;
 
 pub use batch_query::{
-    express_person_list, express_unit_list, express_identity_list, express_group_list,
-    express_role_list, express_person_with_unit, express_person_with_identity,
+    express_group_list, express_identity_list, express_person_list, express_person_with_identity,
+    express_person_with_unit, express_role_list, express_unit_list,
 };
 
 #[derive(Debug, Deserialize)]
@@ -90,7 +86,10 @@ pub async fn list_express_companies(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(companies.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(companies.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(companies)),
         ]),
     ))))
@@ -133,4 +132,3 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

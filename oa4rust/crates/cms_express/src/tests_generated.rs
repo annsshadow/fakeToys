@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     #[tokio::test]
@@ -20,8 +20,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "uuid_random route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "uuid_random route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -38,8 +41,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "template_form_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "template_form_list route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -56,8 +62,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "view_list_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "view_list_all route should be registered"
+        );
     }
 
     // SKIPPED: view_publish requires Session parameter

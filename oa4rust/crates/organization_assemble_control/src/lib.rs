@@ -1,11 +1,6 @@
 #[allow(dead_code)]
 use axum::{
-    extract::Extension,
-    Json, Router,
-    routing::get,
-    routing::post,
-    routing::put,
-    routing::delete,
+    extract::Extension, routing::delete, routing::get, routing::post, routing::put, Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -55,9 +50,15 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -90,9 +91,15 @@ pub async fn organization_assemble_control_role_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -137,7 +144,10 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                     ("level".to_string(), Value::String(row.get("level"))),
                     ("sort".to_string(), Value::String(row.get("sort"))),
                     ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    (
+                        "createTime".to_string(),
+                        Value::String(row.get("create_time")),
+                    ),
                 ]
                 .into_iter()
                 .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
@@ -178,7 +188,10 @@ pub async fn organization_assemble_control_unit_flag(
                     ("level".to_string(), Value::String(row.get("level"))),
                     ("sort".to_string(), Value::String(row.get("sort"))),
                     ("creator".to_string(), Value::String(row.get("creator"))),
-                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                    (
+                        "createTime".to_string(),
+                        Value::String(row.get("create_time")),
+                    ),
                 ]
                 .into_iter()
                 .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
@@ -211,23 +224,35 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        let parent_id: Option<String> = row.get("parent_id");
-        let level: i32 = row.get("level");
-        let sort: i32 = row.get("sort");
-        Value::Object(serde_json::Map::from_iter(
-            [
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("level".to_string(), Value::Number(serde_json::Number::from(level))),
-                ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]
-            .into_iter()
-            .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
-        ))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let parent_id: Option<String> = row.get("parent_id");
+            let level: i32 = row.get("level");
+            let sort: i32 = row.get("sort");
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "level".to_string(),
+                        Value::Number(serde_json::Number::from(level)),
+                    ),
+                    (
+                        "sort".to_string(),
+                        Value::Number(serde_json::Number::from(sort)),
+                    ),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "createTime".to_string(),
+                        Value::String(row.get("create_time")),
+                    ),
+                ]
+                .into_iter()
+                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+            ))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -259,23 +284,35 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        let parent_id: Option<String> = row.get("parent_id");
-        let level: i32 = row.get("level");
-        let sort: i32 = row.get("sort");
-        Value::Object(serde_json::Map::from_iter(
-            [
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("level".to_string(), Value::Number(serde_json::Number::from(level))),
-                ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]
-            .into_iter()
-            .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
-        ))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let parent_id: Option<String> = row.get("parent_id");
+            let level: i32 = row.get("level");
+            let sort: i32 = row.get("sort");
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "level".to_string(),
+                        Value::Number(serde_json::Number::from(level)),
+                    ),
+                    (
+                        "sort".to_string(),
+                        Value::Number(serde_json::Number::from(sort)),
+                    ),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "createTime".to_string(),
+                        Value::String(row.get("create_time")),
+                    ),
+                ]
+                .into_iter()
+                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+            ))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -322,7 +359,10 @@ pub async fn organization_assemble_control_person_list_like(
                 ("email".to_string(), Value::String(row.get("email"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -348,7 +388,10 @@ pub async fn export_export_all(
         .map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT id, type, status, create_time::text FROM x_org_export WHERE id = $1", &[&export_id])
+        .query_opt(
+            "SELECT id, type, status, create_time::text FROM x_org_export WHERE id = $1",
+            &[&export_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -358,11 +401,16 @@ pub async fn export_export_all(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("export record not found after creation"))),
+        None => Ok(Json(ActionResult::error(
+            "export record not found after creation",
+        ))),
     }
 }
 
@@ -374,7 +422,10 @@ pub async fn export_result_flag_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT id, type, status, file_url, create_time::text FROM x_org_export WHERE id = $1", &[&flag])
+        .query_opt(
+            "SELECT id, type, status, file_url, create_time::text FROM x_org_export WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -384,8 +435,14 @@ pub async fn export_result_flag_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "\"fileUrl\"".to_string(),
+                    Value::String(row.get("file_url")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -406,7 +463,10 @@ pub async fn export_zhengwudingding_person(
         .map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT id, type, status, create_time::text FROM x_org_export WHERE id = $1", &[&export_id])
+        .query_opt(
+            "SELECT id, type, status, create_time::text FROM x_org_export WHERE id = $1",
+            &[&export_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -416,15 +476,18 @@ pub async fn export_zhengwudingding_person(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("export record not found after creation"))),
+        None => Ok(Json(ActionResult::error(
+            "export record not found after creation",
+        ))),
     }
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn group_list_like_mockputtopost(
@@ -437,16 +500,22 @@ pub async fn group_list_like_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -466,16 +535,22 @@ pub async fn group_list_like_pinyin(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -495,16 +570,22 @@ pub async fn group_list_like_pinyin_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -513,9 +594,6 @@ pub async fn group_list_like_pinyin_mockputtopost(
         0,
     )))
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn group_list_pinyininitial(
@@ -528,16 +606,22 @@ pub async fn group_list_pinyininitial(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -557,16 +641,22 @@ pub async fn group_list_pinyininitial_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -575,11 +665,6 @@ pub async fn group_list_pinyininitial_mockputtopost(
         0,
     )))
 }
-
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn group_list_flag_sub_direct(
@@ -596,16 +681,22 @@ pub async fn group_list_flag_sub_direct(
         .await
         .map_err(|e| { eprintln!("DIAG org_sub_direct query err: {:?}", e); AppError::Internal })?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -630,16 +721,22 @@ pub async fn group_list_flag_sub_nested(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -670,16 +767,22 @@ pub async fn group_list_flag_sup_direct(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -712,16 +815,22 @@ pub async fn group_list_flag_sup_nested(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -754,7 +863,10 @@ pub async fn group_flag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -779,9 +891,7 @@ pub async fn group_flag_add_member(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(result > 0)),
-        ]),
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -802,9 +912,7 @@ pub async fn group_flag_add_member_mockputtopost(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(result > 0)),
-        ]),
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -825,9 +933,7 @@ pub async fn group_flag_delete_member(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -848,9 +954,7 @@ pub async fn group_flag_delete_member_mockputtopost(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(result > 0)),
-        ]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -871,7 +975,10 @@ pub async fn group_flag_mockdeletetoget(
 
     if let Some(row) = row {
         client
-            .execute("UPDATE x_org_group SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .execute(
+                "UPDATE x_org_group SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                &[&flag],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
 
@@ -881,7 +988,10 @@ pub async fn group_flag_mockdeletetoget(
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
             ("type".to_string(), Value::String(row.get("type"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
@@ -912,15 +1022,16 @@ pub async fn group_flag_mockputtopost(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("group not found"))),
     }
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn identity_id(
@@ -960,16 +1071,25 @@ pub async fn identity_list_like_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -989,16 +1109,25 @@ pub async fn identity_list_like_pinyin(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1018,16 +1147,25 @@ pub async fn identity_list_like_pinyin_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1036,7 +1174,6 @@ pub async fn identity_list_like_pinyin_mockputtopost(
         0,
     )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn identity_list_pinyininitial(
@@ -1049,16 +1186,25 @@ pub async fn identity_list_pinyininitial(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1078,16 +1224,25 @@ pub async fn identity_list_pinyininitial_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1096,15 +1251,6 @@ pub async fn identity_list_pinyininitial_mockputtopost(
         0,
     )))
 }
-
-
-
-
-
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn identity_flag(
@@ -1127,9 +1273,15 @@ pub async fn identity_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1154,7 +1306,10 @@ pub async fn identity_flag_mockdeletetoget(
 
     if let Some(row) = row {
         client
-            .execute("UPDATE x_org_identity SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .execute(
+                "UPDATE x_org_identity SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                &[&flag],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
 
@@ -1162,9 +1317,15 @@ pub async fn identity_flag_mockdeletetoget(
             ("id".to_string(), Value::String(row.get("id"))),
             ("name".to_string(), Value::String(row.get("name"))),
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
+            (
+                "identityId".to_string(),
+                Value::String(row.get("identity_id")),
+            ),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
@@ -1193,19 +1354,21 @@ pub async fn identity_flag_mockputtopost(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("identity not found"))),
     }
 }
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn inputperson_template(
@@ -1218,15 +1381,21 @@ pub async fn inputperson_template(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1246,15 +1415,21 @@ pub async fn inputperson_wipe(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("message".to_string(), Value::String(row.get("message"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1263,7 +1438,6 @@ pub async fn inputperson_wipe(
         0,
     )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn permissionsetting_list(
@@ -1276,14 +1450,20 @@ pub async fn permissionsetting_list(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1314,7 +1494,10 @@ pub async fn permissionsetting_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1348,7 +1531,10 @@ pub async fn permissionsetting_flag_mockdeletetoget(
             ("name".to_string(), Value::String(row.get("name"))),
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
@@ -1378,19 +1564,16 @@ pub async fn permissionsetting_flag_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("permission setting not found"))),
     }
 }
-
-
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn personattribute_flag(
@@ -1412,10 +1595,19 @@ pub async fn personattribute_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-                ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1447,10 +1639,19 @@ pub async fn personattribute_flag_mockdeletetoget(
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+            (
+                "attributeKey".to_string(),
+                Value::String(row.get("attribute_key")),
+            ),
+            (
+                "attributeValue".to_string(),
+                Value::String(row.get("attribute_value")),
+            ),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
@@ -1478,24 +1679,25 @@ pub async fn personattribute_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-                ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("person attribute not found"))),
     }
 }
-
-
-
-
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn personcard_listgrouptypes(
@@ -1508,21 +1710,27 @@ pub async fn personcard_listgrouptypes(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        let mobile: Option<String> = row.get("mobile");
-        let email: Option<String> = row.get("email");
-        let unit_id: Option<String> = row.get("unit_id");
-        let creator: Option<String> = row.get("creator");
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let mobile: Option<String> = row.get("mobile");
+            let email: Option<String> = row.get("email");
+            let unit_id: Option<String> = row.get("unit_id");
+            let creator: Option<String> = row.get("creator");
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("mobile".to_string(), mobile.unwrap_or_default().into()),
                 ("email".to_string(), email.unwrap_or_default().into()),
                 ("unitId".to_string(), unit_id.unwrap_or_default().into()),
                 ("creator".to_string(), creator.unwrap_or_default().into()),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1531,7 +1739,6 @@ pub async fn personcard_listgrouptypes(
         0,
     )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
@@ -1548,22 +1755,31 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), Value::String(row.get("mobile"))),
-            ("email".to_string(), Value::String(row.get("email"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
@@ -1580,20 +1796,30 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), Value::String(row.get("mobile"))),
-            ("email".to_string(), Value::String(row.get("email"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1607,21 +1833,27 @@ pub async fn personcard_mylist(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        let mobile: Option<String> = row.get("mobile");
-        let email: Option<String> = row.get("email");
-        let unit_id: Option<String> = row.get("unit_id");
-        let creator: Option<String> = row.get("creator");
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let mobile: Option<String> = row.get("mobile");
+            let email: Option<String> = row.get("email");
+            let unit_id: Option<String> = row.get("unit_id");
+            let creator: Option<String> = row.get("creator");
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("mobile".to_string(), mobile.unwrap_or_default().into()),
                 ("email".to_string(), email.unwrap_or_default().into()),
                 ("unitId".to_string(), unit_id.unwrap_or_default().into()),
                 ("creator".to_string(), creator.unwrap_or_default().into()),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1655,7 +1887,10 @@ pub async fn personcard_flag(
                 ("email".to_string(), Value::String(row.get("email"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1680,7 +1915,10 @@ pub async fn personcard_flag_mockdeletetoget(
 
     if let Some(row) = row {
         client
-            .execute("UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .execute(
+                "UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                &[&flag],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
 
@@ -1691,17 +1929,16 @@ pub async fn personcard_flag_mockdeletetoget(
             ("email".to_string(), Value::String(row.get("email"))),
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
         Ok(Json(ActionResult::error("person not found")))
     }
 }
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn role_list_like_mockputtopost(
@@ -1714,15 +1951,24 @@ pub async fn role_list_like_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1742,15 +1988,24 @@ pub async fn role_list_like_pinyin(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1770,15 +2025,24 @@ pub async fn role_list_like_pinyin_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1787,7 +2051,6 @@ pub async fn role_list_like_pinyin_mockputtopost(
         0,
     )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn role_list_pinyininitial(
@@ -1800,15 +2063,24 @@ pub async fn role_list_pinyininitial(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1828,15 +2100,24 @@ pub async fn role_list_pinyininitial_mockputtopost(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -1845,7 +2126,6 @@ pub async fn role_list_pinyininitial_mockputtopost(
         0,
     )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn role_flag_mockdeletetoget(
@@ -1864,16 +2144,25 @@ pub async fn role_flag_mockdeletetoget(
 
     if let Some(row) = row {
         client
-            .execute("UPDATE x_org_role SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .execute(
+                "UPDATE x_org_role SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+                &[&flag],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), Value::String(row.get("description"))),
+            (
+                "description".to_string(),
+                Value::String(row.get("description")),
+            ),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
@@ -1901,21 +2190,21 @@ pub async fn role_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("role not found"))),
     }
 }
-
-
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn unitattribute_flag(
@@ -1937,10 +2226,19 @@ pub async fn unitattribute_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-                ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1972,10 +2270,19 @@ pub async fn unitattribute_flag_mockdeletetoget(
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+            (
+                "attributeKey".to_string(),
+                Value::String(row.get("attribute_key")),
+            ),
+            (
+                "attributeValue".to_string(),
+                Value::String(row.get("attribute_value")),
+            ),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
+            (
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            ),
         ]));
         Ok(Json(ActionResult::success(result)))
     } else {
@@ -2003,10 +2310,19 @@ pub async fn unitattribute_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-                ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2025,9 +2341,15 @@ pub async fn unitduty_distinct_name(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([("name".to_string(), Value::String(row.get("name")))]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([(
+                "name".to_string(),
+                Value::String(row.get("name")),
+            )]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2037,16 +2359,6 @@ pub async fn unitduty_distinct_name(
     )))
 }
 
-
-
-
-
-
-
-
-
-
-
 #[allow(non_snake_case)]
 pub async fn unitduty_flag_mockputtopost(
     pool: Extension<Pool>,
@@ -2055,7 +2367,10 @@ pub async fn unitduty_flag_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_org_duty SET sort = sort + 1 WHERE id = $1", &[&flag])
+        .execute(
+            "UPDATE x_org_duty SET sort = sort + 1 WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2102,9 +2417,15 @@ pub async fn unitduty_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2123,16 +2444,25 @@ pub async fn unitduty_update_member(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2162,16 +2492,25 @@ pub async fn unitduty_list_flag_prev_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2201,16 +2540,25 @@ pub async fn unitduty_list_flag_next_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2232,16 +2580,25 @@ pub async fn unitduty_list_unit_unitFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2264,16 +2621,25 @@ pub async fn unitduty_list_name_name(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2297,16 +2663,25 @@ pub async fn unitduty_list_like(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2328,16 +2703,25 @@ pub async fn unitduty_list_identity_identityFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2356,13 +2740,22 @@ pub async fn unitduty_distinct_name_like_key(
 
     let pattern = format!("%{}%", key);
     let rows = client
-        .query("SELECT DISTINCT name FROM x_org_duty WHERE name ILIKE $1 ORDER BY name", &[&pattern])
+        .query(
+            "SELECT DISTINCT name FROM x_org_duty WHERE name ILIKE $1 ORDER BY name",
+            &[&pattern],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([("name".to_string(), Value::String(row.get("name")))]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([(
+                "name".to_string(),
+                Value::String(row.get("name")),
+            )]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2371,10 +2764,6 @@ pub async fn unitduty_distinct_name_like_key(
         0,
     )))
 }
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn unitattribute_list_flag_prev_count(
@@ -2396,16 +2785,28 @@ pub async fn unitattribute_list_flag_prev_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2435,16 +2836,28 @@ pub async fn unitattribute_list_flag_next_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2466,16 +2879,28 @@ pub async fn unitattribute_list_unit_flag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2484,8 +2909,6 @@ pub async fn unitattribute_list_unit_flag(
         0,
     )))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn role_list_flag_prev_count(
@@ -2507,15 +2930,24 @@ pub async fn role_list_flag_prev_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), Value::String(row.get("description"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2524,8 +2956,6 @@ pub async fn role_list_flag_prev_count(
         0,
     )))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn role_list_person_personFlag(
@@ -2539,15 +2969,24 @@ pub async fn role_list_person_personFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), Value::String(row.get("description"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2556,9 +2995,6 @@ pub async fn role_list_person_personFlag(
         0,
     )))
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn role_list_like(
@@ -2574,15 +3010,24 @@ pub async fn role_list_like(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), Value::String(row.get("description"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2604,15 +3049,24 @@ pub async fn role_list_group_groupFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), Value::String(row.get("description"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2621,10 +3075,6 @@ pub async fn role_list_group_groupFlag(
         0,
     )))
 }
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn personcard_listpagingwithgroup_page_page_size_size(
@@ -2641,22 +3091,31 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), Value::String(row.get("mobile"))),
-            ("email".to_string(), Value::String(row.get("email"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn personcard_listpaging_page_page_size_size(
@@ -2673,22 +3132,31 @@ pub async fn personcard_listpaging_page_page_size_size(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), Value::String(row.get("mobile"))),
-            ("email".to_string(), Value::String(row.get("email"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
-
 
 #[allow(non_snake_case)]
 pub async fn personcard_listVCf_idList(
@@ -2703,15 +3171,18 @@ pub async fn personcard_listVCf_idList(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), Value::String(row.get("mobile"))),
-            ("email".to_string(), Value::String(row.get("email"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2734,15 +3205,18 @@ pub async fn personcard_listPersonalVCf_idList(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), Value::String(row.get("mobile"))),
-            ("email".to_string(), Value::String(row.get("email"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2761,7 +3235,10 @@ pub async fn personcard_createQR_cardId(
 
     let qr_code = format!("https://api.example.com/personcard/qr/{}", card_id);
     client
-        .execute("UPDATE x_org_person SET qr_code = $1 WHERE id = $2", &[&qr_code, &card_id])
+        .execute(
+            "UPDATE x_org_person SET qr_code = $1 WHERE id = $2",
+            &[&qr_code, &card_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2782,7 +3259,10 @@ pub async fn personcard_createQR_cardId(
                 ("email".to_string(), Value::String(row.get("email"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2799,7 +3279,10 @@ pub async fn personcard_createCode_cardId(
 
     let code = uuid::Uuid::new_v4().to_string();
     client
-        .execute("UPDATE x_org_person SET card_code = $1 WHERE id = $2", &[&code, &card_id])
+        .execute(
+            "UPDATE x_org_person SET card_code = $1 WHERE id = $2",
+            &[&code, &card_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2820,16 +3303,16 @@ pub async fn personcard_createCode_cardId(
                 ("email".to_string(), Value::String(row.get("email"))),
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("person not found"))),
     }
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn personattribute_list_flag_prev_count(
@@ -2851,16 +3334,28 @@ pub async fn personattribute_list_flag_prev_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2890,16 +3385,28 @@ pub async fn personattribute_list_flag_next_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2921,16 +3428,28 @@ pub async fn personattribute_list_person_personFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
-            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "attributeKey".to_string(),
+                    Value::String(row.get("attribute_key")),
+                ),
+                (
+                    "attributeValue".to_string(),
+                    Value::String(row.get("attribute_value")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2939,10 +3458,6 @@ pub async fn personattribute_list_person_personFlag(
         0,
     )))
 }
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn loginrecord_stream(
@@ -2956,15 +3471,21 @@ pub async fn loginrecord_stream(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("loginTime".to_string(), Value::String(row.get("login_time"))),
-            ("ip".to_string(), Value::String(row.get("ip"))),
-            ("device".to_string(), Value::String(row.get("device"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "loginTime".to_string(),
+                    Value::String(row.get("login_time")),
+                ),
+                ("ip".to_string(), Value::String(row.get("ip"))),
+                ("device".to_string(), Value::String(row.get("device"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -2973,8 +3494,6 @@ pub async fn loginrecord_stream(
         0,
     )))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn inputperson_result_flag_flag(
@@ -2988,15 +3507,21 @@ pub async fn inputperson_result_flag_flag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("status".to_string(), Value::String(row.get("status"))),
-            ("message".to_string(), Value::String(row.get("message"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3014,7 +3539,10 @@ pub async fn identity_flag_order_before_followFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let identity_row = client
-        .query_opt("SELECT id, unit_id FROM x_org_identity WHERE id = $1", &[&flag])
+        .query_opt(
+            "SELECT id, unit_id FROM x_org_identity WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3027,7 +3555,10 @@ pub async fn identity_flag_order_before_followFlag(
 
     let follow_identity = if follow_flag != "(0)" {
         client
-            .query_opt("SELECT id FROM x_org_identity WHERE id = $1", &[&follow_flag])
+            .query_opt(
+                "SELECT id FROM x_org_identity WHERE id = $1",
+                &[&follow_flag],
+            )
             .await
             .map_err(|_| AppError::Internal)?
     } else {
@@ -3035,7 +3566,10 @@ pub async fn identity_flag_order_before_followFlag(
     };
 
     let rows = client
-        .query("SELECT id FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time::text DESC", &[&unit_id])
+        .query(
+            "SELECT id FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time::text DESC",
+            &[&unit_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3062,7 +3596,10 @@ pub async fn identity_flag_order_before_followFlag(
     for (index, id) in ids.iter().enumerate() {
         let order_num = (index + 1) as i32;
         order_result += client
-            .execute("UPDATE x_org_identity SET order_number = $1 WHERE id = $2", &[&order_num, id])
+            .execute(
+                "UPDATE x_org_identity SET order_number = $1 WHERE id = $2",
+                &[&order_num, id],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
     }
@@ -3071,9 +3608,6 @@ pub async fn identity_flag_order_before_followFlag(
         serde_json::Map::from_iter([("success".to_string(), Value::Bool(order_result > 0))]),
     ))))
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn identity_list_flag_unitduty_name_unitDutyName(
@@ -3087,16 +3621,25 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3126,16 +3669,25 @@ pub async fn identity_list_flag_prev_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3165,16 +3717,25 @@ pub async fn identity_list_flag_next_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3196,16 +3757,25 @@ pub async fn identity_list_unitduty_name_unitDutyName(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3227,16 +3797,25 @@ pub async fn identity_list_unit_unitFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3245,8 +3824,6 @@ pub async fn identity_list_unit_unitFlag(
         0,
     )))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn identity_list_person_personFlag(
@@ -3260,16 +3837,25 @@ pub async fn identity_list_person_personFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3278,9 +3864,6 @@ pub async fn identity_list_person_personFlag(
         0,
     )))
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn identity_list_like(
@@ -3296,16 +3879,25 @@ pub async fn identity_list_like(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("identityId".to_string(), Value::String(row.get("identity_id"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "identityId".to_string(),
+                    Value::String(row.get("identity_id")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3314,17 +3906,6 @@ pub async fn identity_list_like(
         0,
     )))
 }
-
-
-
-
-
-
-
-
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn group_list_flag_prev_count(
@@ -3346,16 +3927,22 @@ pub async fn group_list_flag_prev_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3385,16 +3972,22 @@ pub async fn group_list_flag_next_count(
         ).await.map_err(|_| AppError::Internal)?
     };
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3416,16 +4009,22 @@ pub async fn group_list_role_roleFlag(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3434,8 +4033,6 @@ pub async fn group_list_role_roleFlag(
         0,
     )))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn group_list_person_personFlag_sup_nested(
@@ -3449,16 +4046,22 @@ pub async fn group_list_person_personFlag_sup_nested(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3480,16 +4083,22 @@ pub async fn group_list_person_personFlag_sup_direct(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3498,9 +4107,6 @@ pub async fn group_list_person_personFlag_sup_direct(
         0,
     )))
 }
-
-
-
 
 #[allow(non_snake_case)]
 pub async fn group_list_like(
@@ -3516,16 +4122,22 @@ pub async fn group_list_like(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("unitId".to_string(), Value::String(row.get("unit_id"))),
-            ("type".to_string(), Value::String(row.get("type"))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
     Ok(Json(ActionResult::java_success(
@@ -3536,7 +4148,6 @@ pub async fn group_list_like(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {
-    
     Router::new()
     .route("/jaxrs/organization/assemble/control/export/export/all", get(export_export_all))
     .route("/jaxrs/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
@@ -3664,7 +4275,3 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
-
-
-
-

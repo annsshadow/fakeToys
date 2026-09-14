@@ -1,4 +1,4 @@
-import { defineConfig, presetUno, presetIcons } from 'unocss';
+import { defineConfig, presetIcons, presetUno } from 'unocss'
 
 export default defineConfig({
   presets: [presetUno(), presetIcons()],
@@ -35,4 +35,4 @@ export default defineConfig({
   shortcuts: {
     'glass-card': 'bg-glass backdrop-blur-16 border border-white/10 rounded-lg shadow-card',
   },
-});
+})

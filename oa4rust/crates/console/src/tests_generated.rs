@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     #[tokio::test]
@@ -20,8 +20,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_status route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_status route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -38,8 +41,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_logs route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_logs route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -56,8 +62,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "send_message route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "send_message route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -74,8 +83,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "clear_cache route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "clear_cache route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -92,8 +104,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_metric route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_metric route should be registered"
+        );
     }
 
     // SKIPPED: execute_command requires Session parameter
@@ -111,8 +126,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_system_info route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_system_info route should be registered"
+        );
     }
-
 }

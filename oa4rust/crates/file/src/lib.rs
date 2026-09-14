@@ -8,7 +8,9 @@ use serde::Serialize;
 use serde_json::Value;
 use shared::{
     error::AppError,
-    input_validation::{validate_file_size, validate_length, validate_mime_type, validate_required},
+    input_validation::{
+        validate_file_size, validate_length, validate_mime_type, validate_required,
+    },
     response::ActionResult,
 };
 
@@ -46,9 +48,7 @@ struct ComplexTopResponse {
 )]
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn folder_list_top(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -70,7 +70,10 @@ pub async fn folder_list_top(
                     "attachmentCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
                 ),
-                ("size".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
                 (
                     "folderCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
@@ -84,7 +87,11 @@ pub async fn folder_list_top(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -128,7 +135,10 @@ pub async fn folder_list_with_folder(
                     "attachmentCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
                 ),
-                ("size".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
                 (
                     "folderCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
@@ -142,7 +152,11 @@ pub async fn folder_list_with_folder(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -158,9 +172,7 @@ pub async fn folder_list_with_folder(
 )]
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn complex_top(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let folder_rows = client
@@ -182,7 +194,10 @@ pub async fn complex_top(
                     "attachmentCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
                 ),
-                ("size".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
                 (
                     "folderCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
@@ -212,7 +227,10 @@ pub async fn complex_top(
                 ("person".to_string(), Value::String(row.get("person"))),
                 (
                     "\"referenceType\"".to_string(),
-                    Value::String(row.get::<_, Option<String>>("referenceType").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("referenceType")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "extension".to_string(),
@@ -354,8 +372,14 @@ pub async fn file_upload(
             Value::Number(serde_json::Number::from(data.len() as i64)),
         ),
         ("mimeType".to_string(), Value::String(mime.to_string())),
-        ("createTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
-        ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+        (
+            "createTime".to_string(),
+            Value::String(chrono::Local::now().to_rfc3339()),
+        ),
+        (
+            "updateTime".to_string(),
+            Value::String(chrono::Local::now().to_rfc3339()),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -423,8 +447,14 @@ pub(crate) async fn upload_file_record(
             Value::Number(serde_json::Number::from(data.len() as i64)),
         ),
         ("mimeType".to_string(), Value::String(mime)),
-        ("createTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
-        ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+        (
+            "createTime".to_string(),
+            Value::String(chrono::Local::now().to_rfc3339()),
+        ),
+        (
+            "updateTime".to_string(),
+            Value::String(chrono::Local::now().to_rfc3339()),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -466,14 +496,20 @@ pub async fn file_download(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+                (
+                    "referenceType".to_string(),
+                    Value::String(row.get("reference_type")),
+                ),
                 ("extension".to_string(), Value::String(row.get("extension"))),
                 (
                     "length".to_string(),
                     Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
                 ),
                 ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -499,9 +535,17 @@ pub async fn folder_create(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let superior = body.get("superior").and_then(|v| v.as_str());
-    let person = body.get("person").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let person = body
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     validate_required("name", &name).map_err(|e| e.to_app_error())?;
     validate_length("name", &name, 1, 255).map_err(|e| e.to_app_error())?;
@@ -550,8 +594,16 @@ pub async fn folder_update(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     validate_required("name", &name).map_err(|e| e.to_app_error())?;
     validate_length("name", &name, 1, 255).map_err(|e| e.to_app_error())?;
@@ -574,7 +626,10 @@ pub async fn folder_update(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
-            ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+            (
+                "updateTime".to_string(),
+                Value::String(chrono::Local::now().to_rfc3339()),
+            ),
         ]),
     ))))
 }
@@ -599,7 +654,11 @@ pub async fn folder_remove(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     let result = client
         .execute(
@@ -616,7 +675,10 @@ pub async fn folder_remove(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deletedAt".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+            (
+                "deletedAt".to_string(),
+                Value::String(chrono::Local::now().to_rfc3339()),
+            ),
         ]),
     ))))
 }
@@ -641,8 +703,16 @@ pub async fn permission_set(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let target_type = body.get("targetType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let target_id = body.get("targetId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let target_type = body
+        .get("targetType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let target_id = body
+        .get("targetId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let permissions: Option<Value> = body.get("permissions").cloned();
     let permissions_str = permissions
         .as_ref()
@@ -669,8 +739,14 @@ pub async fn permission_set(
             ("id".to_string(), Value::String(id)),
             ("targetType".to_string(), Value::String(target_type)),
             ("targetId".to_string(), Value::String(target_id)),
-            ("permissions".to_string(), permissions.unwrap_or(Value::Object(serde_json::Map::new()))),
-            ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+            (
+                "permissions".to_string(),
+                permissions.unwrap_or(Value::Object(serde_json::Map::new())),
+            ),
+            (
+                "updateTime".to_string(),
+                Value::String(chrono::Local::now().to_rfc3339()),
+            ),
         ]),
     ))))
 }
@@ -679,5 +755,3 @@ pub async fn permission_set(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
-

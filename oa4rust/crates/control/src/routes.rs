@@ -28,15 +28,27 @@ pub fn control_router(pool: Pool) -> Router {
         .route("/jaxrs/person/{flag}", get(person::get))
         .route("/jaxrs/person/{flag}", put(person::update))
         .route("/jaxrs/person/{flag}", delete(person::delete))
-        .route("/jaxrs/person/list/{flag}/next/{count}", get(person::list_next))
-        .route("/jaxrs/person/list/{flag}/prev/{count}", get(person::list_prev))
+        .route(
+            "/jaxrs/person/list/{flag}/next/{count}",
+            get(person::list_next),
+        )
+        .route(
+            "/jaxrs/person/list/{flag}/prev/{count}",
+            get(person::list_prev),
+        )
         // 用户组管理
         .route("/jaxrs/group", post(group::create))
         .route("/jaxrs/group/{flag}", get(group::get))
         .route("/jaxrs/group/{flag}", put(group::update))
         .route("/jaxrs/group/{flag}", delete(group::delete))
-        .route("/jaxrs/group/list/{flag}/next/{count}", get(group::list_next))
-        .route("/jaxrs/group/list/{flag}/prev/{count}", get(group::list_prev))
+        .route(
+            "/jaxrs/group/list/{flag}/next/{count}",
+            get(group::list_next),
+        )
+        .route(
+            "/jaxrs/group/list/{flag}/prev/{count}",
+            get(group::list_prev),
+        )
         // 角色管理
         .route("/jaxrs/role", post(role::create))
         .route("/jaxrs/role/{flag}", get(role::get))

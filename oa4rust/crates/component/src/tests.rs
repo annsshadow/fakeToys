@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{ComponentInfo as Component, component_router};
+    use crate::{component_router, ComponentInfo as Component};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};

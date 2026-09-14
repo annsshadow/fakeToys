@@ -82,11 +82,8 @@ impl LdapAuthenticator {
             format!("uid={},{}", username, base_dn)
         };
 
-        let result = tokio::time::timeout(
-            Duration::from_secs(3),
-            self.try_bind(&bind_dn, password),
-        )
-        .await;
+        let result =
+            tokio::time::timeout(Duration::from_secs(3), self.try_bind(&bind_dn, password)).await;
 
         match result {
             Ok(Ok(())) => {
@@ -100,7 +97,10 @@ impl LdapAuthenticator {
             }
             Err(_) => {
                 // 连接超时或网络错误 — 不应静默回退，应告警
-                error!("LDAP connection error for user {}: service unavailable", username);
+                error!(
+                    "LDAP connection error for user {}: service unavailable",
+                    username
+                );
                 LdapAuthResult::Error("connection timeout".to_string())
             }
         }

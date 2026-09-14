@@ -24,29 +24,31 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { api } from '@oa4rust/sdk';
+import { api } from '@oa4rust/sdk'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
-const route = useRoute();
-const fileId = ref<string>(route.query.id as string ?? '');
-const pdfUrl = ref<string>('');
-const loading = ref(false);
+const route = useRoute()
+const fileId = ref<string>((route.query.id as string) ?? '')
+const pdfUrl = ref<string>('')
+const loading = ref(false)
 
-onMounted(() => { if (fileId.value) loadPdf(); });
+onMounted(() => {
+  if (fileId.value) loadPdf()
+})
 
 async function loadPdf() {
-  const fid = fileId.value.trim();
-  if (!fid) return;
-  loading.value = true;
-  pdfUrl.value = '';
+  const fid = fileId.value.trim()
+  if (!fid) return
+  loading.value = true
+  pdfUrl.value = ''
   try {
-    await api.get(`/jaxrs/attachment/download/${fid}/stream`);
-    pdfUrl.value = `/jaxrs/file/download/${fid}`;
+    await api.get(`/jaxrs/attachment/download/${fid}/stream`)
+    pdfUrl.value = `/jaxrs/file/download/${fid}`
   } catch {
-    pdfUrl.value = `/jaxrs/file/download/${fid}`;
+    pdfUrl.value = `/jaxrs/file/download/${fid}`
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 </script>

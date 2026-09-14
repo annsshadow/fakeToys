@@ -1,11 +1,17 @@
-use axum::{extract::{Extension, Path}, Json, Router};
+use axum::{
+    extract::{Extension, Path},
+    Json, Router,
+};
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, middleware::is_admin, response::ActionResult, session::Session};
 
-use crate::{entities, MAX_NAME_LEN, MAX_TEXT_LEN, MAX_LONG_TEXT_LEN};
+use crate::{entities, MAX_LONG_TEXT_LEN, MAX_NAME_LEN, MAX_TEXT_LEN};
 
 #[derive(Debug, Deserialize)]
 pub struct AgentCreateRequest {
@@ -34,22 +40,31 @@ pub async fn agent_list(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = models.iter().map(|m| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(m.id.clone())),
-            ("name".to_string(), Value::String(m.name.clone())),
-            ("type".to_string(), Value::String("agent".to_string())),
-            ("alias".to_string(), Value::String(m.alias.clone())),
-            ("description".to_string(), Value::String(m.description.clone())),
-            ("validated".to_string(), Value::Bool(m.validated)),
-            ("enable".to_string(), Value::Bool(m.enable)),
-            ("cron".to_string(), Value::String(m.cron.clone())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = models
+        .iter()
+        .map(|m| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("type".to_string(), Value::String("agent".to_string())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                (
+                    "description".to_string(),
+                    Value::String(m.description.clone()),
+                ),
+                ("validated".to_string(), Value::Bool(m.validated)),
+                ("enable".to_string(), Value::Bool(m.enable)),
+                ("cron".to_string(), Value::String(m.cron.clone())),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -64,7 +79,9 @@ pub async fn agent_create(
         return Err(AppError::BadRequest("name is required".to_string()));
     }
     if req.name.len() > MAX_NAME_LEN {
-        return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters")));
+        return Err(AppError::BadRequest(format!(
+            "name must be at most {MAX_NAME_LEN} characters"
+        )));
     }
 
     let active = entities::cte_agent::ActiveModel {
@@ -85,7 +102,10 @@ pub async fn agent_create(
             ("name".to_string(), Value::String(model.name.clone())),
             ("type".to_string(), Value::String("agent".to_string())),
             ("alias".to_string(), Value::String(model.alias.clone())),
-            ("description".to_string(), Value::String(model.description.clone())),
+            (
+                "description".to_string(),
+                Value::String(model.description.clone()),
+            ),
             ("validated".to_string(), Value::Bool(model.validated)),
             ("enable".to_string(), Value::Bool(model.enable)),
             ("cron".to_string(), Value::String(model.cron.clone())),
@@ -112,20 +132,38 @@ pub async fn agent_update(
 
     let mut active: entities::cte_agent::ActiveModel = model.into();
     if let Some(name) = req.name {
-        if name.trim().is_empty() { return Err(AppError::BadRequest("name is required".to_string())); }
-        if name.len() > MAX_NAME_LEN { return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters"))); }
+        if name.trim().is_empty() {
+            return Err(AppError::BadRequest("name is required".to_string()));
+        }
+        if name.len() > MAX_NAME_LEN {
+            return Err(AppError::BadRequest(format!(
+                "name must be at most {MAX_NAME_LEN} characters"
+            )));
+        }
         active.name = Set(name);
     }
     if let Some(alias) = req.alias {
-        if alias.len() > MAX_TEXT_LEN { return Err(AppError::BadRequest("alias must be at most 500 characters".to_string())); }
+        if alias.len() > MAX_TEXT_LEN {
+            return Err(AppError::BadRequest(
+                "alias must be at most 500 characters".to_string(),
+            ));
+        }
         active.alias = Set(alias);
     }
     if let Some(description) = req.description {
-        if description.len() > MAX_LONG_TEXT_LEN { return Err(AppError::BadRequest(format!("description must be at most {MAX_LONG_TEXT_LEN} characters"))); }
+        if description.len() > MAX_LONG_TEXT_LEN {
+            return Err(AppError::BadRequest(format!(
+                "description must be at most {MAX_LONG_TEXT_LEN} characters"
+            )));
+        }
         active.description = Set(description);
     }
     if let Some(cron) = req.cron {
-        if cron.len() > MAX_TEXT_LEN { return Err(AppError::BadRequest("cron must be at most 500 characters".to_string())); }
+        if cron.len() > MAX_TEXT_LEN {
+            return Err(AppError::BadRequest(
+                "cron must be at most 500 characters".to_string(),
+            ));
+        }
         active.cron = Set(cron);
     }
 
@@ -136,7 +174,10 @@ pub async fn agent_update(
             ("name".to_string(), Value::String(updated.name.clone())),
             ("type".to_string(), Value::String("agent".to_string())),
             ("alias".to_string(), Value::String(updated.alias.clone())),
-            ("description".to_string(), Value::String(updated.description.clone())),
+            (
+                "description".to_string(),
+                Value::String(updated.description.clone()),
+            ),
             ("validated".to_string(), Value::Bool(updated.validated)),
             ("enable".to_string(), Value::Bool(updated.enable)),
             ("cron".to_string(), Value::String(updated.cron.clone())),
@@ -176,4 +217,3 @@ pub fn _router(_pool: Pool, _db: Option<DatabaseConnection>) -> Router {
     // panic axum at merge time ("Overlapping method route").
     Router::new()
 }
-

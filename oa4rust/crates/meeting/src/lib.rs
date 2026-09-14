@@ -1,11 +1,11 @@
-use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, row_opt_json, ActionResult},
+};
 
 pub mod routes;
 
@@ -13,7 +13,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
@@ -75,9 +74,7 @@ pub struct Participant {
     tag = "meeting"
 )]
 #[allow(non_snake_case)]
-pub async fn room_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -102,7 +99,10 @@ pub async fn room_list(
             if let Some(val) = row_opt_json::<i32>(row, "capacity") {
                 map.insert("capacity".to_string(), val);
             }
-            if let Some(val) = option_to_json::<Value>(row.get::<_, Option<String>>("equipment").and_then(|s| serde_json::from_str(&s).ok())) {
+            if let Some(val) = option_to_json::<Value>(
+                row.get::<_, Option<String>>("equipment")
+                    .and_then(|s| serde_json::from_str(&s).ok()),
+            ) {
                 map.insert("equipment".to_string(), val);
             }
             if let Some(val) = row_opt_json::<String>(row, "description") {
@@ -119,7 +119,11 @@ pub async fn room_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -134,9 +138,7 @@ pub async fn room_list(
     tag = "meeting"
 )]
 #[allow(non_snake_case)]
-pub async fn building_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -161,13 +163,20 @@ pub async fn building_list(
             if let Some(val) = row_opt_json::<i32>(row, "order_number") {
                 map.insert("orderNumber".to_string(), val);
             }
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -208,7 +217,11 @@ pub async fn openmeeting_list_room(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -229,12 +242,32 @@ pub async fn create_meeting(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let title = payload.get("title").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("title is required".to_string()))?;
-    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let room_id = payload.get("roomId").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("roomId is required".to_string()))?;
-    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
-    let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("title is required".to_string()))?;
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let room_id = payload
+        .get("roomId")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("roomId is required".to_string()))?;
+    let start_time = payload
+        .get("\"startTime\"")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest(
+            "\"startTime\" is required".to_string(),
+        ))?;
+    let end_time = payload
+        .get("\"endTime\"")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -245,13 +278,21 @@ pub async fn create_meeting(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(title.to_string())),
-        ("roomId".to_string(), Value::String(room_id.to_string())),
-        ("\"startTime\"".to_string(), Value::String(start_time.to_string())),
-        ("\"endTime\"".to_string(), Value::String(end_time.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(title.to_string())),
+            ("roomId".to_string(), Value::String(room_id.to_string())),
+            (
+                "\"startTime\"".to_string(),
+                Value::String(start_time.to_string()),
+            ),
+            (
+                "\"endTime\"".to_string(),
+                Value::String(end_time.to_string()),
+            ),
+        ]),
+    ))))
 }
 
 #[utoipa::path(
@@ -287,12 +328,24 @@ pub async fn get_meeting(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 ("roomId".to_string(), Value::String(row.get("room_id"))),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(row.get("end_time")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -312,9 +365,7 @@ pub async fn get_meeting(
     tag = "meeting"
 )]
 #[allow(non_snake_case)]
-pub async fn list_meetings(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -330,18 +381,41 @@ pub async fn list_meetings(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("roomId".to_string(), row.get::<_, Option<String>>("room_id").unwrap_or_default().into()),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "roomId".to_string(),
+                    row.get::<_, Option<String>>("room_id")
+                        .unwrap_or_default()
+                        .into(),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
-                ("creator".to_string(), row.get::<_, Option<String>>("creator").unwrap_or_default().into()),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "creator".to_string(),
+                    row.get::<_, Option<String>>("creator")
+                        .unwrap_or_default()
+                        .into(),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -366,7 +440,10 @@ pub async fn add_participant(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let invitee = payload.get("invitee").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("invitee is required".to_string()))?;
+    let invitee = payload
+        .get("invitee")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("invitee is required".to_string()))?;
     let id = uuid::Uuid::new_v4().to_string();
 
     client
@@ -377,12 +454,14 @@ pub async fn add_participant(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("\"meetingId\"".to_string(), Value::String(meeting_id)),
-        ("invitee".to_string(), Value::String(invitee.to_string())),
-        ("added".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("\"meetingId\"".to_string(), Value::String(meeting_id)),
+            ("invitee".to_string(), Value::String(invitee.to_string())),
+            ("added".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 #[utoipa::path(
@@ -418,16 +497,26 @@ pub async fn list_participants(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"meetingId\"".to_string(), Value::String(row.get("meeting_id"))),
+                (
+                    "\"meetingId\"".to_string(),
+                    Value::String(row.get("meeting_id")),
+                ),
                 ("invitee".to_string(), Value::String(row.get("invitee"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -464,18 +553,34 @@ pub async fn list_schedule(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 ("roomId".to_string(), Value::String(row.get("room_id"))),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(row.get("end_time")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub use routes::meeting_router;

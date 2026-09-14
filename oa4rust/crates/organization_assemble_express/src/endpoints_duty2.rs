@@ -10,7 +10,10 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, named_list, normalize_flags, ok_java_list, ok_json, row_to_map, string_field, string_list, PICK_ANY};
+use crate::endpoints::{
+    capped, named_list, normalize_flags, ok_java_list, ok_json, row_to_map, string_field,
+    string_list, PICK_ANY,
+};
 
 /// POST /jaxrs/role/list/object (Java ActionListObject)：批量角色对象。
 pub async fn role_list_object(
@@ -25,7 +28,10 @@ pub async fn role_list_object(
     const SQL: &str = "SELECT id, name, description FROM x_org_role \
          WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) ORDER BY id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_java_list(data.len(), data)
 }
@@ -46,7 +52,10 @@ pub async fn role_list_person_object(
          JOIN x_org_role r ON r.id = gr.role_id AND r.deleted_at IS NULL \
          WHERE p.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY p.id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_java_list(data.len(), data)
 }
@@ -174,7 +183,10 @@ async fn named_list_duty(
         )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(sql, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     Ok(AxumJson(ActionResult::java_success(
         named_list("nameList", &list),
@@ -198,7 +210,10 @@ pub async fn unitduty_list_unit_object(
          JOIN x_org_unit u ON u.id = d.unit_id AND u.deleted_at IS NULL \
          WHERE d.deleted_at IS NULL AND (u.id = ANY($1) OR u.name = ANY($1)) ORDER BY d.id";
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(SQL, &[&flags]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(SQL, &[&flags])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_java_list(data.len(), data)
 }

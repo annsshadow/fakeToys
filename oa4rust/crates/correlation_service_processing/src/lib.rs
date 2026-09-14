@@ -1,7 +1,9 @@
 #[allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    routing::get,
+    routing::post,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -82,16 +84,14 @@ pub async fn get_link(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("sourceType".to_string(), Value::String(source_type)),
-                    ("sourceId".to_string(), Value::String(source_id)),
-                    ("targetType".to_string(), Value::String(row.get("type"))),
-                    ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("sourceType".to_string(), Value::String(source_type)),
+                ("sourceId".to_string(), Value::String(source_id)),
+                ("targetType".to_string(), Value::String(row.get("type"))),
+                ("targetId".to_string(), Value::String(row.get("target_id"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("link not found"))),
     }
 }
@@ -120,13 +120,20 @@ pub async fn list_correlations(
                 ("targetId".to_string(), Value::String(row.get("target_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -152,7 +159,10 @@ pub async fn get_correlation(
                 ("targetId".to_string(), Value::String(row.get("target_id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -230,15 +240,14 @@ pub async fn delete_correlation(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
-        .execute(
-            "DELETE FROM x_correlation WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_correlation WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("correlation not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "correlation not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -252,7 +261,12 @@ pub async fn delete_correlation(
 #[allow(non_snake_case)]
 pub async fn unlink_service(
     pool: Extension<Pool>,
-    axum::extract::Path((source_type, source_id, target_type, target_id)): axum::extract::Path<(String, String, String, String)>,
+    axum::extract::Path((source_type, source_id, target_type, target_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -264,7 +278,9 @@ pub async fn unlink_service(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("correlation not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "correlation not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -345,7 +361,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     correlation_service_processing_router().layer(axum::extract::Extension(pool))
 }
@@ -405,5 +420,3 @@ pub async fn correlation_type_processplatform_job_job(
         None => Ok(Json(ActionResult::error("correlation not found"))),
     }
 }
-
-

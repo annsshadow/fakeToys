@@ -8,7 +8,7 @@ pub mod rewriter;
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use deadpool_postgres::{Manager, Pool};
 use dotenvy::dotenv;
-use sea_orm::{Database, DatabaseConnection, ConnectOptions};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::env;
 use thiserror::Error;
 
@@ -69,5 +69,5 @@ pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
         .map_err(|e| DbError::PoolError(e.to_string()))
 }
 
-pub use rewriter::rewrite_pg_to_mysql;
 pub use dialect::{dialect, MySQLDialect, PostgresDialect, SqlDialect};
+pub use rewriter::rewrite_pg_to_mysql;

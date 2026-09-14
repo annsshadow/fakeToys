@@ -1,22 +1,20 @@
-use shared::response::ActionResult;
-use serde_json::json;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
+use serde_json::json;
+use shared::response::ActionResult;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
 #[test]
 fn test_action_result_success_serialization() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({"count": 2, "data": []}));
+    let result: ActionResult<serde_json::Value> =
+        ActionResult::success(json!({"count": 2, "data": []}));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert!(json["data"].is_object());
@@ -168,14 +166,19 @@ async fn test_device_bind_java_path() {
 async fn test_u2_post_message_send_route() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    let body = serde_json::to_string(&json!({"title": "t", "content": "c", "target": "u"})).unwrap();
-    let response = app.oneshot(
-        Request::builder()
-            .uri("/jaxrs/jpush_assemble_control/message/send")
-            .method(Method::POST)
-            .header("content-type", "application/json")
-            .body(Body::from(body)).unwrap(),
-    ).await.unwrap();
+    let body =
+        serde_json::to_string(&json!({"title": "t", "content": "c", "target": "u"})).unwrap();
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush_assemble_control/message/send")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
     assert_ne!(response.status(), StatusCode::NOT_FOUND);
 }
 
@@ -183,12 +186,16 @@ async fn test_u2_post_message_send_route() {
 async fn test_u2_post_device_admin_unbind_route() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    let response = app.oneshot(
-        Request::builder()
-            .uri("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person")
-            .method(Method::POST)
-            .body(Body::empty()).unwrap(),
-    ).await.unwrap();
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person")
+                .method(Method::POST)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
     assert_ne!(response.status(), StatusCode::NOT_FOUND);
 }
 
@@ -196,11 +203,15 @@ async fn test_u2_post_device_admin_unbind_route() {
 async fn test_u2_delete_device_unbind_route() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    let response = app.oneshot(
-        Request::builder()
-            .uri("/jaxrs/jpush_assemble_control/device/unbind/a/b")
-            .method(Method::DELETE)
-            .body(Body::empty()).unwrap(),
-    ).await.unwrap();
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush_assemble_control/device/unbind/a/b")
+                .method(Method::DELETE)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
     assert_ne!(response.status(), StatusCode::NOT_FOUND);
 }

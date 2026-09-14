@@ -9,16 +9,16 @@
 //   rate_limit_distributed.rs — Redis 分布式限流（plan002 U7c，env 门控）
 
 pub mod constants;
-pub mod security;
-pub mod token;
+pub mod rate_limit_distributed;
 pub mod rbac;
 pub mod routing;
-pub mod rate_limit_distributed;
+pub mod security;
+pub mod token;
 
 // Re-export public API for backward compatibility
 pub use constants::*;
-pub use security::*;
-pub use token::*;
+pub use rate_limit_distributed::*;
 pub use rbac::*;
 pub use routing::*;
-pub use rate_limit_distributed::*;
+pub use security::*;
+pub use token::*;

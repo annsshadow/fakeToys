@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use shared::db::dialect;
@@ -76,7 +73,10 @@ pub async fn two_factor_login(
     let valid = match ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await {
         Ok(Some(ldap_auth::LdapAuthOutcome::Success)) => true,
         Ok(Some(ldap_auth::LdapAuthOutcome::Failed)) => {
-            warn!("LDAP auth failed for two_factor user {}, falling back to DB", req.credential);
+            warn!(
+                "LDAP auth failed for two_factor user {}, falling back to DB",
+                req.credential
+            );
             password::verify_password(&req.password, &password_hash, "", None)
         }
         Ok(None) | Ok(Some(ldap_auth::LdapAuthOutcome::Disabled)) => {

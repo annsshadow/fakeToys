@@ -20,14 +20,20 @@ pub async fn task_count(
             return Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("credential".to_string(), Value::String(credential)),
-                    ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+                    (
+                        "count".to_string(),
+                        Value::Number(serde_json::Number::from(0)),
+                    ),
                 ]),
             )));
         }
     };
 
     let row = match client
-        .query_one("SELECT COUNT(*) as count FROM auth_person WHERE unique_id = $1", &[&credential])
+        .query_one(
+            "SELECT COUNT(*) as count FROM auth_person WHERE unique_id = $1",
+            &[&credential],
+        )
         .await
     {
         Ok(row) => row,
@@ -35,7 +41,10 @@ pub async fn task_count(
             return Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("credential".to_string(), Value::String(credential)),
-                    ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+                    (
+                        "count".to_string(),
+                        Value::Number(serde_json::Number::from(0)),
+                    ),
                 ]),
             )));
         }
@@ -46,7 +55,10 @@ pub async fn task_count(
     Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("credential".to_string(), Value::String(credential)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     )))
 }
@@ -61,14 +73,20 @@ pub async fn read_count(
             return Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("credential".to_string(), Value::String(credential)),
-                    ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+                    (
+                        "count".to_string(),
+                        Value::Number(serde_json::Number::from(0)),
+                    ),
                 ]),
             )));
         }
     };
 
     let row = match client
-        .query_one("SELECT COUNT(*) as count FROM auth_person WHERE unique_id = $1", &[&credential])
+        .query_one(
+            "SELECT COUNT(*) as count FROM auth_person WHERE unique_id = $1",
+            &[&credential],
+        )
         .await
     {
         Ok(row) => row,
@@ -76,7 +94,10 @@ pub async fn read_count(
             return Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("credential".to_string(), Value::String(credential)),
-                    ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+                    (
+                        "count".to_string(),
+                        Value::Number(serde_json::Number::from(0)),
+                    ),
                 ]),
             )));
         }
@@ -87,14 +108,15 @@ pub async fn read_count(
     Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("credential".to_string(), Value::String(credential)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     )))
 }
 
-pub async fn application_list(
-    pool: Extension<Pool>,
-) -> Json<ActionResult<Value>> {
+pub async fn application_list(pool: Extension<Pool>) -> Json<ActionResult<Value>> {
     let client = match pool.get().await {
         Ok(client) => client,
         Err(_) => {
@@ -130,7 +152,6 @@ pub async fn application_list(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::process_express_router(pool)

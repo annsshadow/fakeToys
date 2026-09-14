@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension, extract::Path,
-    Json,
-};
+use axum::{extract::Extension, extract::Path, Json};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -18,9 +15,7 @@ pub struct ComponentInfo {
     pub icon_path: String,
 }
 
-pub async fn list_all(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -40,7 +35,10 @@ pub async fn list_all(
             map.insert("type".to_string(), Value::String(row.get("type")));
             map.insert("visible".to_string(), Value::Bool(row.get("visible")));
             if let Some(v) = row.get::<_, Option<i32>>("order_number") {
-                map.insert("orderNumber".to_string(), serde_json::Number::from(v).into());
+                map.insert(
+                    "orderNumber".to_string(),
+                    serde_json::Number::from(v).into(),
+                );
             }
             map.insert("path".to_string(), Value::String(row.get("path")));
             map.insert("iconPath".to_string(), Value::String(row.get("icon_path")));
@@ -49,7 +47,11 @@ pub async fn list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub async fn get_component(
@@ -75,7 +77,10 @@ pub async fn get_component(
             map.insert("type".to_string(), Value::String(row.get("type")));
             map.insert("visible".to_string(), Value::Bool(row.get("visible")));
             if let Some(v) = row.get::<_, Option<i32>>("order_number") {
-                map.insert("orderNumber".to_string(), serde_json::Number::from(v).into());
+                map.insert(
+                    "orderNumber".to_string(),
+                    serde_json::Number::from(v).into(),
+                );
             }
             map.insert("path".to_string(), Value::String(row.get("path")));
             map.insert("iconPath".to_string(), Value::String(row.get("icon_path")));
@@ -85,9 +90,7 @@ pub async fn get_component(
     }
 }
 
-pub async fn count(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -98,9 +101,12 @@ pub async fn count(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("cnt");
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        )]),
+    ))))
 }
 
 pub mod routes;
@@ -111,7 +117,6 @@ pub use routes::component_router;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::component_router(pool)

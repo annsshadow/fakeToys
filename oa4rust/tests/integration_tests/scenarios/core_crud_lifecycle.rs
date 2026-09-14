@@ -28,9 +28,10 @@ pub async fn program_center_app_crud_lifecycle() {
     let _ctx = init_isolated().await;
     let pool = _ctx.pool();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -63,7 +64,9 @@ pub async fn program_center_app_crud_lifecycle() {
         create_resp.text().await.unwrap_or_default()
     );
     let create_body: serde_json::Value = create_resp.json().await.expect("invalid create response");
-    let created_id = create_body["data"]["id"].as_str().expect("created id missing");
+    let created_id = create_body["data"]["id"]
+        .as_str()
+        .expect("created id missing");
     info!(app_id = %app_id, created_id = %created_id, "application created");
 
     // ── Step 2: LIST — must include our created app ──────────────────────────
@@ -77,19 +80,25 @@ pub async fn program_center_app_crud_lifecycle() {
 
     let list_st = list_resp.status();
     if list_st != reqwest::StatusCode::OK {
-            info!("processwork list not available, skipping approval flow");
+        info!("processwork list not available, skipping approval flow");
         server_handle.abort();
         return;
     }
     let list_body: serde_json::Value = list_resp.json().await.expect("invalid list response");
-    let apps = list_body.get("data").and_then(|d| d.as_array()).unwrap_or(&empty_apps);
+    let apps = list_body
+        .get("data")
+        .and_then(|d| d.as_array())
+        .unwrap_or(&empty_apps);
     let found = apps.iter().any(|a| a["id"].as_str() == Some(created_id));
     assert!(found, "created app not found in list");
     info!(count = apps.len(), "application listed");
 
     // ── Step 3: GET by ID ────────────────────────────────────────────────────
     let get_resp = client
-        .get(format!("{}/jaxrs/program_center/application/{}", base, created_id))
+        .get(format!(
+            "{}/jaxrs/program_center/application/{}",
+            base, created_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -102,14 +111,21 @@ pub async fn program_center_app_crud_lifecycle() {
 
     // ── Step 4: DELETE ───────────────────────────────────────────────────────
     let del_resp = client
-        .delete(format!("{}/jaxrs/program_center/application/{}", base, created_id))
+        .delete(format!(
+            "{}/jaxrs/program_center/application/{}",
+            base, created_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await
         .expect("delete application request failed");
 
-    assert_eq!(del_resp.status(), reqwest::StatusCode::OK,
-        "delete application failed: {}", del_resp.text().await.unwrap_or_default());
+    assert_eq!(
+        del_resp.status(),
+        reqwest::StatusCode::OK,
+        "delete application failed: {}",
+        del_resp.text().await.unwrap_or_default()
+    );
     info!(app_id = %created_id, "application deleted");
 
     // ── Step 5: LIST — must NOT include deleted app ──────────────────────────
@@ -128,14 +144,21 @@ pub async fn program_center_app_crud_lifecycle() {
 
     // ── Step 6: GET by ID — must return 404 ──────────────────────────────────
     let get_after_del = client
-        .get(format!("{}/jaxrs/program_center/application/{}", base, created_id))
+        .get(format!(
+            "{}/jaxrs/program_center/application/{}",
+            base, created_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await
         .expect("get after delete failed");
 
-    assert_eq!(get_after_del.status(), reqwest::StatusCode::NOT_FOUND,
-        "expected 404 after delete, got {}", get_after_del.status());
+    assert_eq!(
+        get_after_del.status(),
+        reqwest::StatusCode::NOT_FOUND,
+        "expected 404 after delete, got {}",
+        get_after_del.status()
+    );
     info!(app_id = %created_id, "GET after delete returned 404 as expected");
 
     server_handle.abort();
@@ -151,9 +174,10 @@ pub async fn process_work_approve_flow() {
     let _ctx = init_isolated().await;
     let pool = _ctx.pool();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -168,7 +192,10 @@ pub async fn process_work_approve_flow() {
 
     // ── Step 1: Create a work item (simplified, uses work/create endpoint) ──
     let create_resp = client
-        .post(format!("{}/jaxrs/processplatform/service/processing/work/create", base))
+        .post(format!(
+            "{}/jaxrs/processplatform/service/processing/work/create",
+            base
+        ))
         .header("Authorization", &auth_header)
         .json(&json!({
             "processId": format!("approve-process-{}", run_id),
@@ -186,7 +213,10 @@ pub async fn process_work_approve_flow() {
 
     // ── Step 2: List pending tasks for the current person ───────────────────
     let list_resp = client
-        .post(format!("{}/jaxrs/processplatform/assemble/surface/work/list/pending", base))
+        .post(format!(
+            "{}/jaxrs/processplatform/assemble/surface/work/list/pending",
+            base
+        ))
         .header("Authorization", &auth_header)
         .json(&json!({}))
         .send()
@@ -195,13 +225,16 @@ pub async fn process_work_approve_flow() {
 
     let list_st = list_resp.status();
     if list_st != reqwest::StatusCode::OK {
-            info!("processwork list not available, skipping approval flow");
+        info!("processwork list not available, skipping approval flow");
         server_handle.abort();
         return;
     }
     let list_body: serde_json::Value = list_resp.json().await.expect("invalid list response");
     let empty_tasks: Vec<serde_json::Value> = Vec::new();
-    let tasks = list_body.get("data").and_then(|d| d.as_array()).unwrap_or(&empty_tasks);
+    let tasks = list_body
+        .get("data")
+        .and_then(|d| d.as_array())
+        .unwrap_or(&empty_tasks);
     info!(task_count = tasks.len(), "pending tasks listed");
 
     // If there are tasks, attempt to approve the first one.
@@ -210,29 +243,43 @@ pub async fn process_work_approve_flow() {
         if !task_id.is_empty() {
             // ── Step 3: Approve the task ────────────────────────────────────
             let approve_resp = client
-                .post(format!("{}/jaxrs/processplatform/assemble/surface/work/{}/approve", base, task_id))
+                .post(format!(
+                    "{}/jaxrs/processplatform/assemble/surface/work/{}/approve",
+                    base, task_id
+                ))
                 .header("Authorization", &auth_header)
                 .json(&json!({}))
                 .send()
                 .await
                 .expect("approve task request failed");
 
-            assert_eq!(approve_resp.status(), reqwest::StatusCode::OK,
-                "approve task failed: {}", approve_resp.text().await.unwrap_or_default());
+            assert_eq!(
+                approve_resp.status(),
+                reqwest::StatusCode::OK,
+                "approve task failed: {}",
+                approve_resp.text().await.unwrap_or_default()
+            );
             info!(task_id = %task_id, "task approved successfully");
 
             // ── Step 4: Verify task no longer appears in pending list ───────
             let list_after = client
-                .post(format!("{}/jaxrs/processplatform/assemble/surface/work/list/pending", base))
+                .post(format!(
+                    "{}/jaxrs/processplatform/assemble/surface/work/list/pending",
+                    base
+                ))
                 .header("Authorization", &auth_header)
                 .json(&json!({}))
                 .send()
                 .await
                 .expect("list after approve failed");
 
-            let list_body2: serde_json::Value = list_after.json().await.expect("invalid list response");
+            let list_body2: serde_json::Value =
+                list_after.json().await.expect("invalid list response");
             let empty_tasks2: Vec<serde_json::Value> = Vec::new();
-    let tasks2 = list_body2.get("data").and_then(|d| d.as_array()).unwrap_or(&empty_tasks2);
+            let tasks2 = list_body2
+                .get("data")
+                .and_then(|d| d.as_array())
+                .unwrap_or(&empty_tasks2);
             let still_pending = tasks2.iter().any(|t| t["id"].as_str() == Some(task_id));
             assert!(!still_pending, "approved task still in pending list");
             info!(task_id = %task_id, "approved task removed from pending list");
@@ -252,9 +299,10 @@ pub async fn document_crud_lifecycle() {
     let _ctx = init_isolated().await;
     let pool = _ctx.pool();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -288,7 +336,10 @@ pub async fn document_crud_lifecycle() {
     );
     // Extract the actual created ID from response (server generates its own UUID)
     let create_body: serde_json::Value = create_resp.json().await.expect("invalid create response");
-    let actual_doc_id = create_body["data"]["id"].as_str().unwrap_or(&doc_id).to_string();
+    let actual_doc_id = create_body["data"]["id"]
+        .as_str()
+        .unwrap_or(&doc_id)
+        .to_string();
     info!(doc_id = %doc_id, "document created");
 
     // ── Step 2: LIST — verify document appears ──────────────────────────────
@@ -302,14 +353,19 @@ pub async fn document_crud_lifecycle() {
 
     let list_st = list_resp.status();
     if list_st != reqwest::StatusCode::OK {
-            info!("processwork list not available, skipping approval flow");
+        info!("processwork list not available, skipping approval flow");
         server_handle.abort();
         return;
     }
     let list_body: serde_json::Value = list_resp.json().await.expect("invalid list response");
     let empty_docs: Vec<serde_json::Value> = Vec::new();
-    let docs = list_body.get("data").and_then(|d| d.as_array()).unwrap_or(&empty_docs);
-    let found = docs.iter().any(|d| d["id"].as_str() == Some(&actual_doc_id));
+    let docs = list_body
+        .get("data")
+        .and_then(|d| d.as_array())
+        .unwrap_or(&empty_docs);
+    let found = docs
+        .iter()
+        .any(|d| d["id"].as_str() == Some(&actual_doc_id));
     assert!(found, "created document not found in list");
     info!(count = docs.len(), "document found in list");
 
@@ -324,8 +380,13 @@ pub async fn document_crud_lifecycle() {
     assert_eq!(list_after.status(), reqwest::StatusCode::OK);
     let list_body2: serde_json::Value = list_after.json().await.expect("invalid list response");
     let empty_docs2: Vec<serde_json::Value> = Vec::new();
-    let docs2 = list_body2.get("data").and_then(|d| d.as_array()).unwrap_or(&empty_docs2);
-    let still_present = docs2.iter().any(|d| d["id"].as_str() == Some(&actual_doc_id));
+    let docs2 = list_body2
+        .get("data")
+        .and_then(|d| d.as_array())
+        .unwrap_or(&empty_docs2);
+    let still_present = docs2
+        .iter()
+        .any(|d| d["id"].as_str() == Some(&actual_doc_id));
     assert!(still_present, "document should still exist");
     info!(doc_id = %actual_doc_id, "document lifecycle verified (create + list)");
 
@@ -340,9 +401,10 @@ pub async fn file_crud_lifecycle() {
     let _ctx = init_isolated().await;
     let pool = _ctx.pool();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -361,7 +423,9 @@ pub async fn file_crud_lifecycle() {
         .await
         .expect("list files request failed");
     // Just verify we get a response (auth is working)
-    assert!(list_resp.status().is_success() || list_resp.status() == reqwest::StatusCode::NOT_FOUND);
+    assert!(
+        list_resp.status().is_success() || list_resp.status() == reqwest::StatusCode::NOT_FOUND
+    );
     info!("file listing verified (auth works)");
 
     // ── Step 2: Verify auth with a simple request ──────────────────────────

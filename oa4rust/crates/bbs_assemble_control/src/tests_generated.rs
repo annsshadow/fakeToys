@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     #[tokio::test]
@@ -20,8 +20,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_control_config route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_control_config route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -38,8 +41,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_control_sections route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "list_control_sections route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -56,8 +62,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "update_control_config route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "update_control_config route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -74,8 +83,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_forums route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "list_forums route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -92,8 +104,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_forum route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_forum route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -110,8 +125,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "create_topic route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "create_topic route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -128,8 +146,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_topics_by_forum route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "list_topics_by_forum route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -146,8 +167,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "create_reply route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "create_reply route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -164,8 +188,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "forum_view_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "forum_view_all route should be registered"
+        );
     }
 
     // SKIPPED: forum_id not accessible
@@ -187,8 +214,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "reply_list_sub_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "reply_list_sub_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -205,8 +235,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "subject_view_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "subject_view_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -223,8 +256,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "subject_top_sectionId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "subject_top_sectionId route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -241,8 +277,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "permission_section_sectionId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "permission_section_sectionId route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -259,8 +298,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "permission_subject_subjectId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "permission_subject_subjectId route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -277,8 +319,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "section_viewforum_forumId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "section_viewforum_forumId route should be registered"
+        );
     }
 
     // SKIPPED: delete_forum not accessible
@@ -307,8 +352,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "shutup_create route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "shutup_create route should be registered"
+        );
     }
 
     // SKIPPED: shutup_delete not accessible
@@ -347,8 +395,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "uuid_generate route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "uuid_generate route should be registered"
+        );
     }
 
     // SKIPPED: subjectattach_list not accessible

@@ -1,9 +1,5 @@
 #[allow(dead_code, non_snake_case)]
-use axum::{
-    extract::Extension,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -15,7 +11,6 @@ pub mod u2;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[axum::debug_handler]
 pub async fn get_control_config(
@@ -36,7 +31,9 @@ pub async fn get_control_config(
             let cfg: Option<String> = r.get("config_value");
             match cfg {
                 Some(ref s) if s.contains("\"enabled\":true") => (true, "UTC+8".to_string(), true),
-                Some(ref s) if s.contains("\"enabled\":false") => (false, "UTC+8".to_string(), false),
+                Some(ref s) if s.contains("\"enabled\":false") => {
+                    (false, "UTC+8".to_string(), false)
+                }
                 _ => (true, "UTC+8".to_string(), true),
             }
         }
@@ -45,7 +42,10 @@ pub async fn get_control_config(
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("enabled".to_string(), Value::Bool(enabled)),
-        ("defaultTimeZone".to_string(), Value::String(default_time_zone)),
+        (
+            "defaultTimeZone".to_string(),
+            Value::String(default_time_zone),
+        ),
         ("allowSharing".to_string(), Value::Bool(allow_sharing)),
     ]));
 
@@ -79,7 +79,11 @@ pub async fn list_control_calendars(
     }
 
     let count = calendars.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(calendars), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(calendars),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -120,7 +124,10 @@ pub async fn update_control_config(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    tracing::info!("Updated calendar assemble control config: {:?}", config_value);
+    tracing::info!(
+        "Updated calendar assemble control config: {:?}",
+        config_value
+    );
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -159,7 +166,10 @@ pub async fn get_calendar_detail(
         .map(|row| {
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("calendarId".to_string(), Value::String(row.get("calendar_id")));
+            map.insert(
+                "calendarId".to_string(),
+                Value::String(row.get("calendar_id")),
+            );
             map.insert("title".to_string(), Value::String(row.get("title")));
             if let Some(content) = row.get::<_, Option<String>>("content") {
                 map.insert("content".to_string(), Value::String(content));
@@ -167,10 +177,16 @@ pub async fn get_calendar_detail(
             if let Some(location) = row.get::<_, Option<String>>("location") {
                 map.insert("location".to_string(), Value::String(location));
             }
-            map.insert("startTime".to_string(), Value::String(row.get("start_time")));
+            map.insert(
+                "startTime".to_string(),
+                Value::String(row.get("start_time")),
+            );
             map.insert("endTime".to_string(), Value::String(row.get("end_time")));
             map.insert("allDay".to_string(), Value::Bool(row.get("all_day")));
-            map.insert("visibility".to_string(), Value::String(row.get("visibility")));
+            map.insert(
+                "visibility".to_string(),
+                Value::String(row.get("visibility")),
+            );
             map.insert("status".to_string(), Value::String(row.get("status")));
             Value::Object(map)
         })
@@ -180,15 +196,33 @@ pub async fn get_calendar_detail(
     data_map.insert("id".to_string(), Value::String(calendar_row.get("id")));
     data_map.insert("name".to_string(), Value::String(calendar_row.get("name")));
     data_map.insert("type".to_string(), Value::String(calendar_row.get("type")));
-    data_map.insert("target".to_string(), Value::String(calendar_row.get("target")));
-    data_map.insert("color".to_string(), Value::String(calendar_row.get("color")));
+    data_map.insert(
+        "target".to_string(),
+        Value::String(calendar_row.get("target")),
+    );
+    data_map.insert(
+        "color".to_string(),
+        Value::String(calendar_row.get("color")),
+    );
     if let Some(description) = calendar_row.get::<_, Option<String>>("description") {
         data_map.insert("description".to_string(), Value::String(description));
     }
-    data_map.insert("createor".to_string(), Value::String(calendar_row.get("createor")));
-    data_map.insert("isPublic".to_string(), Value::Bool(calendar_row.get("is_public")));
-    data_map.insert("status".to_string(), Value::String(calendar_row.get("status")));
-    data_map.insert("eventCount".to_string(), Value::Number(serde_json::Number::from(events.len() as i64)));
+    data_map.insert(
+        "createor".to_string(),
+        Value::String(calendar_row.get("createor")),
+    );
+    data_map.insert(
+        "isPublic".to_string(),
+        Value::Bool(calendar_row.get("is_public")),
+    );
+    data_map.insert(
+        "status".to_string(),
+        Value::String(calendar_row.get("status")),
+    );
+    data_map.insert(
+        "eventCount".to_string(),
+        Value::Number(serde_json::Number::from(events.len() as i64)),
+    );
     data_map.insert("events".to_string(), Value::Array(events));
     let data = Value::Object(data_map);
 
@@ -198,11 +232,12 @@ pub async fn get_calendar_detail(
 pub fn calendar_assemble_control_router(pool: Pool) -> Router {
     // plan002 U2 的 7 条新路由注册于 routes::router 内部（Extension 层之前），
     // 确保共享连接池扩展对全部路由可见。
-    crate::routes::router(pool)
-        .route("/jaxrs/calendar/assemble/control/calendar/detail/{id}", get(get_calendar_detail))
+    crate::routes::router(pool).route(
+        "/jaxrs/calendar/assemble/control/calendar/detail/{id}",
+        get(get_calendar_detail),
+    )
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::calendar_assemble_control_router(pool)
 }
-

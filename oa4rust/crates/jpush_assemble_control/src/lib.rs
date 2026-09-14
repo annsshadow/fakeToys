@@ -1,18 +1,18 @@
+use async_trait::async_trait;
 #[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
     Json, Router,
 };
+use base64::Engine;
+use chrono::Utc;
 use deadpool_postgres::Pool;
+use reqwest::Client;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
-use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
-use chrono::Utc;
-use reqwest::Client;
-use base64::Engine;
-use uuid::Uuid;
 use thiserror::Error;
+use uuid::Uuid;
 
 pub const JAVA_BASE: &str = "/jaxrs/jpush_assemble_control";
 pub mod routes;
@@ -21,7 +21,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -43,8 +42,14 @@ pub async fn get_control_config(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("defaultAppKey".to_string(), Value::String("default".to_string())),
-            ("maxPushCount".to_string(), Value::Number(serde_json::Number::from(10000i64))),
+            (
+                "defaultAppKey".to_string(),
+                Value::String("default".to_string()),
+            ),
+            (
+                "maxPushCount".to_string(),
+                Value::Number(serde_json::Number::from(10000i64)),
+            ),
         ]),
     ))))
 }
@@ -69,13 +74,20 @@ pub async fn list_control_apps(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("id"))),
-                ("enabled".to_string(), Value::Bool(row.get::<_, i64>("cnt") > 0)),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, i64>("cnt") > 0),
+                ),
             ]))
         })
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -89,7 +101,11 @@ pub async fn update_control_config(
     tracing::info!("Updating jpush assemble control config: {:?}", config);
 
     let id = uuid::Uuid::new_v4().to_string();
-    let title = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let title = config
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default")
+        .to_string();
 
     let result = client
         .execute(
@@ -115,7 +131,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::jpush_assemble_control_router(pool)
 }
 
-
 #[derive(Debug, serde::Deserialize)]
 pub struct JpushRequest {
     pub title: Option<String>,
@@ -125,9 +140,7 @@ pub struct JpushRequest {
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_jpushs(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -146,13 +159,20 @@ pub async fn list_jpushs(
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("target".to_string(), Value::String(row.get("target"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -178,7 +198,10 @@ pub async fn get_jpush(
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("target".to_string(), Value::String(row.get("target"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -268,7 +291,9 @@ pub async fn delete_jpush(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("jpush not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "jpush not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -285,7 +310,11 @@ pub async fn device_admin_unbind_all_person(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person_id = req
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     if person_id.is_empty() {
         return Ok(Json(ActionResult::error("personId is required")));
@@ -303,7 +332,10 @@ pub async fn device_admin_unbind_all_person(
         serde_json::Map::from_iter([
             ("personId".to_string(), Value::String(person_id)),
             ("unbound".to_string(), Value::Bool(result > 0)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -314,10 +346,26 @@ pub async fn device_bind(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let device_name = req.get("deviceName").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let device_type = req.get("deviceType").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let push_type = req.get("pushType").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let creator = req.get("personId").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let device_name = req
+        .get("deviceName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let device_type = req
+        .get("deviceType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let push_type = req
+        .get("pushType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let creator = req
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -329,7 +377,9 @@ pub async fn device_bind(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::new(),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -348,9 +398,7 @@ pub async fn device_check_deviceName_deviceType_pushType(
 
     let exists = row.is_some();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("value".to_string(), Value::Bool(exists)),
-        ]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(exists))]),
     ))))
 }
 
@@ -372,7 +420,10 @@ pub async fn device_config_push_type(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("pushType".to_string(), Value::String(push_type)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -400,13 +451,20 @@ pub async fn device_list_pushType(
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("target".to_string(), Value::String(row.get("target"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -424,7 +482,9 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("device not found or already unbound")));
+        return Ok(Json(ActionResult::error(
+            "device not found or already unbound",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -452,7 +512,9 @@ pub async fn device_unbind_deviceName_deviceType(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("device not found or already unbound")));
+        return Ok(Json(ActionResult::error(
+            "device not found or already unbound",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -506,7 +568,10 @@ pub async fn message_test_send(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("pushed".to_string(), Value::Bool(push_sent)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(messages.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(messages.len() as i64)),
+            ),
             ("messages".to_string(), Value::Array(messages)),
         ]),
     ))))
@@ -590,13 +655,16 @@ impl PushGateway for MockPushGateway {
             sent_at: Utc::now().to_rfc3339(),
             status: PushStatus::Sent,
         };
-        self.sent_messages
-            .lock()
-            .unwrap()
-            .push((title.to_string(), content.to_string(), target.to_string()));
+        self.sent_messages.lock().unwrap().push((
+            title.to_string(),
+            content.to_string(),
+            target.to_string(),
+        ));
         tracing::info!(
             "[Push:mock] title={} content={} target={} status=sent",
-            title, content, target
+            title,
+            content,
+            target
         );
         Ok(result)
     }
@@ -687,10 +755,7 @@ impl PushGateway for JPushGateway {
             .map_err(|_| PushError::Network)?;
 
         let status = resp.status();
-        let body: Value = resp
-            .json()
-            .await
-            .map_err(|_| PushError::Network)?;
+        let body: Value = resp.json().await.map_err(|_| PushError::Network)?;
 
         if !status.is_success() {
             let err_msg = body["error"]["message"]
@@ -714,8 +779,6 @@ impl PushGateway for JPushGateway {
     }
 }
 
-
-
 #[allow(non_snake_case)]
 pub async fn message_send(
     pool: Extension<Pool>,
@@ -723,10 +786,22 @@ pub async fn message_send(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let target = req.get("target").and_then(|v| v.as_str()).unwrap_or_default();
-    let creator = req.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let target = req
+        .get("target")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let creator = req
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
     client
         .execute(
             "INSERT INTO x_jpush (id, title, content, target, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
@@ -734,5 +809,7 @@ pub async fn message_send(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::new()))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::new(),
+    ))))
 }

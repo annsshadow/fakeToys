@@ -34,7 +34,7 @@ pub fn rewrite_pg_to_mysql(sql: &str) -> String {
     let s = replace_on_conflict_do_nothing(&s);
     let s = replace_alter_if_not_exists(&s);
     let s = replace_gen_random_uuid(&s);
-    
+
     replace_pg_catalog(&s)
 }
 
@@ -130,9 +130,7 @@ fn rewrite_do_block_content(block: &str) -> String {
             if trimmed.is_empty() {
                 return false;
             }
-            let has_pg_catalog = pg_catalog_patterns
-                .iter()
-                .any(|p| trimmed.contains(p));
+            let has_pg_catalog = pg_catalog_patterns.iter().any(|p| trimmed.contains(p));
             if has_pg_catalog {
                 return false;
             }
@@ -351,7 +349,7 @@ fn replace_ident_quotes(sql: &str) -> String {
 fn replace_timestamptz(sql: &str) -> String {
     let s = sql.replace("TIMESTAMPTZ", "DATETIME(6)");
     s.replace("TIMESTAMP WITH TIME ZONE", "DATETIME(6)")
-     .replace("TIMESTAMP WITHOUT TIME ZONE", "TIMESTAMP")
+        .replace("TIMESTAMP WITHOUT TIME ZONE", "TIMESTAMP")
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -369,7 +367,9 @@ fn replace_on_conflict_do_nothing(sql: &str) -> String {
         if let Some(do_nothing_pos) = remaining[pos..].find("DO NOTHING") {
             if let Some(insert_pos) = result.rfind("INSERT INTO") {
                 let before = result[..insert_pos].to_string();
-                let after_insert = result[insert_pos + "INSERT INTO".len()..].trim_end().to_string();
+                let after_insert = result[insert_pos + "INSERT INTO".len()..]
+                    .trim_end()
+                    .to_string();
                 result = before + "INSERT IGNORE INTO" + &after_insert;
             }
 
@@ -550,10 +550,7 @@ mod tests {
 
     #[test]
     fn preserves_now_function() {
-        assert_eq!(
-            rewrite_pg_to_mysql("SELECT NOW()"),
-            "SELECT NOW()"
-        );
+        assert_eq!(rewrite_pg_to_mysql("SELECT NOW()"), "SELECT NOW()");
     }
 
     #[test]
@@ -575,7 +572,8 @@ mod tests {
 
     #[test]
     fn replaces_on_conflict_do_update() {
-        let sql = "INSERT INTO t (id, name) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET name = $2;";
+        let sql =
+            "INSERT INTO t (id, name) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET name = $2;";
         assert_eq!(
             rewrite_pg_to_mysql(sql),
             "INSERT INTO t (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?;"

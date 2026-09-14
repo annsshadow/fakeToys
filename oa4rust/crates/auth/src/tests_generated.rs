@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     // SKIPPED: andfx_moa_sso requires Session parameter
@@ -21,8 +21,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "bind route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "bind route should be registered"
+        );
     }
 
     // SKIPPED: bind_confirm requires Session parameter
@@ -41,8 +44,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "captcha_default route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "captcha_default route should be registered"
+        );
     }
 
     // SKIPPED: captcha_with_size not accessible
@@ -60,8 +66,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "verify route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "verify route should be registered"
+        );
     }
 
     // SKIPPED: check_token requires Session parameter
@@ -86,8 +95,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "unit_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "unit_list route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -104,8 +116,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "role_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "role_list route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -122,8 +137,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "group_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "group_list route should be registered"
+        );
     }
 
     // SKIPPED: captcha_generate not accessible
@@ -161,8 +179,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "qiyeweixin_jssdk_sign route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "qiyeweixin_jssdk_sign route should be registered"
+        );
     }
 
     // SKIPPED: safe_logout requires Session parameter
@@ -181,8 +202,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "sms_send_handler route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "sms_send_handler route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -199,8 +223,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "sms_verify_handler route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "sms_verify_handler route should be registered"
+        );
     }
 
     // SKIPPED: sso_post_login requires Session parameter
@@ -224,8 +251,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "zwdingding_info route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "zwdingding_info route should be registered"
+        );
     }
-
 }

@@ -6,7 +6,12 @@
 use shared::error::AppError;
 
 /// 占位函数 - 实际分页逻辑在各自 crate 中实现
-pub async fn cursor_list<E>(_db: &sea_orm::DatabaseConnection, _cursor: &str, _limit: i64, _is_next: bool) -> Result<(i64, Vec<E>, String), AppError>
+pub async fn cursor_list<E>(
+    _db: &sea_orm::DatabaseConnection,
+    _cursor: &str,
+    _limit: i64,
+    _is_next: bool,
+) -> Result<(i64, Vec<E>, String), AppError>
 where
     E: Send,
 {

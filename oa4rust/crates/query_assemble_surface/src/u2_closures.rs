@@ -27,9 +27,7 @@ pub fn validate_single_select(sql: &str) -> Result<(), String> {
     }
     match &statements[0] {
         Statement::Query(_) => Ok(()),
-        _ => Err(
-            "only SELECT queries are allowed (INSERT/UPDATE/DELETE/DDL rejected)".to_string(),
-        ),
+        _ => Err("only SELECT queries are allowed (INSERT/UPDATE/DELETE/DDL rejected)".to_string()),
     }
 }
 
@@ -109,7 +107,9 @@ pub fn parameterize_statement_sql(sql: &str, params: &Value) -> (String, Vec<Sql
                 }
             }
             if !name.is_empty() {
-                values.push(SqlParam::from_value(params.get(&name).unwrap_or(&Value::Null)));
+                values.push(SqlParam::from_value(
+                    params.get(&name).unwrap_or(&Value::Null),
+                ));
                 out.push_str(&format!("${}", values.len()));
                 i = j;
                 continue;
@@ -140,11 +140,17 @@ fn statement_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "queryFlag".to_string(),
-            Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("query_flag")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "entityClassName".to_string(),
-            Value::String(row.get::<_, Option<String>>("entity_class").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("entity_class")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "type".to_string(),
@@ -160,8 +166,16 @@ fn statement_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 /// 简单 SQL 格式化：主要关键字前换行，供 statement format 端点输出。
 pub fn format_sql(sql: &str) -> String {
     let keywords = [
-        "FROM ", "WHERE ", "GROUP BY ", "ORDER BY ", "HAVING ", "LEFT JOIN ", "RIGHT JOIN ",
-        "INNER JOIN ", "OUTER JOIN ", "JOIN ",
+        "FROM ",
+        "WHERE ",
+        "GROUP BY ",
+        "ORDER BY ",
+        "HAVING ",
+        "LEFT JOIN ",
+        "RIGHT JOIN ",
+        "INNER JOIN ",
+        "OUTER JOIN ",
+        "JOIN ",
     ];
     let mut formatted = sql.trim().to_string();
     for kw in keywords {
@@ -327,7 +341,10 @@ async fn execute_statement_by_flag(
             .await
             .map_err(|_| AppError::Internal)?;
         let total: i64 = count_row.get("total");
-        payload.insert("total".to_string(), Value::Number(serde_json::Number::from(total)));
+        payload.insert(
+            "total".to_string(),
+            Value::Number(serde_json::Number::from(total)),
+        );
     }
 
     let offset = if page > 0 { (page - 1) * size } else { 0 };
@@ -392,11 +409,17 @@ fn stat_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "queryFlag".to_string(),
-            Value::String(row.get::<_, Option<String>>("query_flag").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("query_flag")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "statType".to_string(),
-            Value::String(row.get::<_, Option<String>>("stat_type").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("stat_type")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "config".to_string(),
@@ -411,7 +434,10 @@ fn stat_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 
 /// stat execute 真实落地：config.sql 存在则校验后真实执行返回聚合行；
 /// 否则返回 config 元数据与 executed 标记（无计算定义可执行）。
-async fn execute_stat_by_id(client: &deadpool_postgres::Client, id: &str) -> Result<Value, AppError> {
+async fn execute_stat_by_id(
+    client: &deadpool_postgres::Client,
+    id: &str,
+) -> Result<Value, AppError> {
     let row = client
         .query_opt(
             "SELECT id, name, stat_type, config FROM x_query_stat WHERE id = $1 LIMIT 1",
@@ -427,7 +453,10 @@ async fn execute_stat_by_id(client: &deadpool_postgres::Client, id: &str) -> Res
 
     let config_raw: String = row.get::<_, Option<String>>("config").unwrap_or_default();
     let config: Value = serde_json::from_str(&config_raw).unwrap_or(Value::Null);
-    let sql_opt = config.get("sql").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let sql_opt = config
+        .get("sql")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let mut payload = serde_json::Map::new();
     payload.insert("id".to_string(), Value::String(row.get("id")));
@@ -456,7 +485,10 @@ async fn execute_stat_by_id(client: &deadpool_postgres::Client, id: &str) -> Res
             payload.insert("data".to_string(), Value::Array(data));
         }
         _ => {
-            tracing::warn!("stat '{}' has no executable config.sql; returning metadata only", id);
+            tracing::warn!(
+                "stat '{}' has no executable config.sql; returning metadata only",
+                id
+            );
             payload.insert("calculated".to_string(), Value::Bool(false));
             payload.insert("config".to_string(), config);
         }
@@ -606,7 +638,10 @@ pub async fn search_post(
                 ),
                 (
                     "viewFlag".to_string(),
-                    Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -665,7 +700,10 @@ pub async fn morelikethis_post(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("list".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -722,7 +760,10 @@ pub async fn table_row_insert(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("inserted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "inserted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -805,8 +846,12 @@ pub async fn importmodel_reexecute_record(
         None => return Ok(Json(ActionResult::error("record not found"))),
     };
 
-    let model_flag: String = row.get::<_, Option<String>>("model_flag").unwrap_or_default();
-    let import_model_id: String = row.get::<_, Option<String>>("import_model_id").unwrap_or_default();
+    let model_flag: String = row
+        .get::<_, Option<String>>("model_flag")
+        .unwrap_or_default();
+    let import_model_id: String = row
+        .get::<_, Option<String>>("import_model_id")
+        .unwrap_or_default();
 
     let new_record_id = uuid::Uuid::new_v4().to_string();
     client
@@ -862,7 +907,11 @@ pub async fn view_bundle_v2_post(
         .unwrap_or_default();
     let items: Vec<Value> = serde_json::from_str(&bundle_raw).unwrap_or_default();
 
-    let page = body.get("page").and_then(|v| v.as_i64()).unwrap_or(1).max(1);
+    let page = body
+        .get("page")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(1)
+        .max(1);
     let size = body
         .get("size")
         .and_then(|v| v.as_i64())
@@ -882,11 +931,23 @@ pub async fn view_bundle_v2_post(
             ("id".to_string(), Value::String(row.get("id"))),
             (
                 "viewFlag".to_string(),
-                Value::String(row.get::<_, Option<String>>("view_flag").unwrap_or_default()),
+                Value::String(
+                    row.get::<_, Option<String>>("view_flag")
+                        .unwrap_or_default(),
+                ),
             ),
-            ("total".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "page".to_string(),
+                Value::Number(serde_json::Number::from(page)),
+            ),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(size)),
+            ),
             ("list".to_string(), Value::Array(slice)),
         ]),
     ))))
@@ -940,7 +1001,8 @@ async fn guard_write(
 }
 
 fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {
-    keys.iter().find_map(|k| body.get(*k).and_then(|v| v.as_str()))
+    keys.iter()
+        .find_map(|k| body.get(*k).and_then(|v| v.as_str()))
 }
 
 /// PUT/POST /stat/flag/{flag}/query/{queryFlag}/execute —— 查询作用域内按 flag/name 执行统计。
@@ -1036,7 +1098,10 @@ async fn view_update_field_by_flag_query(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag.to_string())),
-            ("queryFlag".to_string(), Value::String(query_flag.to_string())),
+            (
+                "queryFlag".to_string(),
+                Value::String(query_flag.to_string()),
+            ),
             ("updated".to_string(), Value::Bool(true)),
         ]),
     ))))
@@ -1052,15 +1117,26 @@ struct ViewField {
 impl ViewField {
     fn extract(&self, body: &Value) -> Result<String, AppError> {
         match self.column {
-            "excel_data" => Ok(body_str(body, &["excelData", "file"]).unwrap_or_default().to_string()),
+            "excel_data" => Ok(body_str(body, &["excelData", "file"])
+                .unwrap_or_default()
+                .to_string()),
             _ => serde_json::to_string(body).map_err(|_| AppError::Internal),
         }
     }
 }
 
-const FIELD_BUNDLE: ViewField = ViewField { column: "bundle_data", label: "bundle" };
-const FIELD_EXCEL: ViewField = ViewField { column: "excel_data", label: "excel" };
-const FIELD_CONTENT: ViewField = ViewField { column: "content", label: "content" };
+const FIELD_BUNDLE: ViewField = ViewField {
+    column: "bundle_data",
+    label: "bundle",
+};
+const FIELD_EXCEL: ViewField = ViewField {
+    column: "excel_data",
+    label: "excel",
+};
+const FIELD_CONTENT: ViewField = ViewField {
+    column: "content",
+    label: "content",
+};
 
 /// PUT /view/flag/{flag}/query/{queryFlag}/bundle
 #[allow(non_snake_case)]
@@ -1132,7 +1208,10 @@ pub async fn view_flag_query_execute_mock(
 fn view_rows_payload(rows: &[deadpool_postgres::tokio_postgres::Row]) -> Value {
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(data.len() as i64)),
+        ),
         ("data".to_string(), Value::Array(data)),
     ]))
 }
@@ -1312,5 +1391,9 @@ pub async fn table_row_select_post(
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }

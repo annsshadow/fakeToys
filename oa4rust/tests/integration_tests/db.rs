@@ -4,8 +4,8 @@ use std::sync::{Arc, OnceLock};
 use anyhow::Context as _;
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use deadpool_postgres::{Manager, Pool};
-use mysql_async::Opts;
 use mysql_async::prelude::Queryable;
+use mysql_async::Opts;
 use tokio::runtime::Handle;
 use tracing::info;
 
@@ -73,9 +73,8 @@ impl Drop for TestContext {
 }
 
 async fn drop_database(db_name: &str) -> anyhow::Result<()> {
-    let base_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://o2server:password@localhost:5432/postgres".to_string()
-    });
+    let base_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/postgres".to_string());
     let url = url::Url::parse(&base_url).context("invalid DATABASE_URL")?;
     let host = url.host_str().context("no host in DATABASE_URL")?;
     let port = url.port().unwrap_or(5432);
@@ -83,21 +82,32 @@ async fn drop_database(db_name: &str) -> anyhow::Result<()> {
     let password = url.password().unwrap_or("");
 
     let mut cfg = Config::new();
-    cfg.host(host).port(port).user(user).password(password).dbname("postgres");
+    cfg.host(host)
+        .port(port)
+        .user(user)
+        .password(password)
+        .dbname("postgres");
     let mgr = Manager::new(cfg, NoTls);
-    let admin_pool = Pool::builder(mgr).max_size(2).build().context("failed to build admin pool")?;
-    let client = admin_pool.get().await.context("failed to acquire admin connection")?;
-    let _ = client.execute(
-        &format!(
-            "SELECT pg_terminate_backend(pg_stat_activity.pid) \
+    let admin_pool = Pool::builder(mgr)
+        .max_size(2)
+        .build()
+        .context("failed to build admin pool")?;
+    let client = admin_pool
+        .get()
+        .await
+        .context("failed to acquire admin connection")?;
+    let _ = client
+        .execute(
+            &format!(
+                "SELECT pg_terminate_backend(pg_stat_activity.pid) \
              FROM pg_stat_activity \
              WHERE pg_stat_activity.datname = '{}' \
              AND pid <> pg_backend_pid()",
-            db_name
-        ),
-        &[],
-    )
-    .await;
+                db_name
+            ),
+            &[],
+        )
+        .await;
     client
         .execute(&format!("DROP DATABASE IF EXISTS \"{}\"", db_name), &[])
         .await
@@ -132,12 +142,12 @@ pub async fn init_test_database_async() -> Arc<TestContext> {
         let db_name_mysql = db_name.clone();
         let rt = runtime_or_new();
         Arc::new(rt.handle().block_on(async move {
-            init_mysql_database(&db_name_mysql)
-                .expect("failed to init MySQL test database")
+            init_mysql_database(&db_name_mysql).expect("failed to init MySQL test database")
         }))
     } else {
         // PostgreSQL initialization
-        let p = setup_postgres_database(&db_name).await
+        let p = setup_postgres_database(&db_name)
+            .await
             .expect("failed to set up PostgreSQL test database");
         Arc::new(TestPool::Postgres(p))
     };
@@ -198,8 +208,7 @@ pub fn lazy_lock() -> &'static OnceLock<Arc<TestPool>> {
 fn runtime_or_new() -> std::sync::Arc<tokio::runtime::Runtime> {
     match Handle::try_current() {
         Ok(_) => Arc::new(
-            tokio::runtime::Runtime::new()
-                .expect("failed to create fallback tokio runtime"),
+            tokio::runtime::Runtime::new().expect("failed to create fallback tokio runtime"),
         ),
         Err(_) => {
             let rt = tokio::runtime::Runtime::new()
@@ -212,9 +221,8 @@ fn runtime_or_new() -> std::sync::Arc<tokio::runtime::Runtime> {
 pub async fn setup_postgres_database(test_db_name: &str) -> anyhow::Result<Pool> {
     dotenvy::dotenv().ok();
 
-    let base_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://o2server:password@localhost:5432/postgres".to_string()
-    });
+    let base_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/postgres".to_string());
 
     info!(db = %test_db_name, "setting up PostgreSQL integration test database");
 
@@ -244,15 +252,15 @@ pub async fn setup_postgres_database(test_db_name: &str) -> anyhow::Result<Pool>
         .context("failed to acquire admin connection")?;
 
     admin_client
-        .execute(&format!("DROP DATABASE IF EXISTS \"{}\"", test_db_name), &[])
+        .execute(
+            &format!("DROP DATABASE IF EXISTS \"{}\"", test_db_name),
+            &[],
+        )
         .await
         .context("failed to drop existing test database")?;
 
     admin_client
-        .execute(
-            &format!("CREATE DATABASE \"{}\"", test_db_name),
-            &[],
-        )
+        .execute(&format!("CREATE DATABASE \"{}\"", test_db_name), &[])
         .await
         .context("failed to create test database")?;
 
@@ -320,7 +328,10 @@ fn init_mysql_database(db_name: &str) -> anyhow::Result<TestPool> {
         .unwrap_or_else(|_| "mysql://o2server:password@localhost:3306/oa4rust".to_string());
 
     let url = url::Url::parse(&base_url).context("invalid DATABASE_URL")?;
-    let host = url.host_str().context("no host in DATABASE_URL")?.to_string();
+    let host = url
+        .host_str()
+        .context("no host in DATABASE_URL")?
+        .to_string();
     let port = url.port().unwrap_or(3306);
     let user = url.username().to_string();
     let password_opt = url.password().map(|s| s.to_string());
@@ -333,8 +344,7 @@ fn init_mysql_database(db_name: &str) -> anyhow::Result<TestPool> {
     );
 
     rt.block_on(async {
-        let admin_opts = Opts::from_url(&admin_url)
-            .expect("failed to parse MySQL admin URL");
+        let admin_opts = Opts::from_url(&admin_url).expect("failed to parse MySQL admin URL");
         let admin_pool = mysql_async::Pool::new(admin_opts);
 
         let mut admin_conn = admin_pool
@@ -356,7 +366,7 @@ fn init_mysql_database(db_name: &str) -> anyhow::Result<TestPool> {
 
         let test_url = build_mysql_url(&host, port, &user, password_opt.as_deref(), db_name);
         let test_pool = Arc::new(mysql_async::Pool::new(
-            Opts::from_url(&test_url).expect("failed to parse MySQL test URL")
+            Opts::from_url(&test_url).expect("failed to parse MySQL test URL"),
         ));
 
         run_mysql_migrations(&test_pool)
@@ -370,8 +380,8 @@ fn init_mysql_database(db_name: &str) -> anyhow::Result<TestPool> {
 }
 
 async fn run_mysql_migrations(pool: &mysql_async::Pool) -> anyhow::Result<()> {
-    use mysql_async::prelude::Queryable;
     use mysql_async::params::Params;
+    use mysql_async::prelude::Queryable;
 
     let migrations_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
 
@@ -385,7 +395,8 @@ async fn run_mysql_migrations(pool: &mysql_async::Pool) -> anyhow::Result<()> {
         .filter(|e| {
             let path = e.path();
             path.extension().map(|x| x == "sql").unwrap_or(false)
-                && !path.file_stem()
+                && !path
+                    .file_stem()
                     .and_then(|s| s.to_str())
                     .map(|s| s.ends_with("_rollback"))
                     .unwrap_or(false)

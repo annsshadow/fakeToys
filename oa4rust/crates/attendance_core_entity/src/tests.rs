@@ -74,14 +74,18 @@ mod tests {
                         .uri("/jaxrs/attendance/core/entity/rule/create")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
-                        .body(Body::from(r#"{"name":"标准作息","startTime":"09:00","endTime":"18:00"}"#))
+                        .body(Body::from(
+                            r#"{"name":"标准作息","startTime":"09:00","endTime":"18:00"}"#,
+                        ))
                         .unwrap(),
                 )
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -105,8 +109,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -129,8 +135,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -148,14 +156,18 @@ mod tests {
                         .uri("/jaxrs/attendance/core/entity/record/create")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
-                        .body(Body::from(r#"{"userId":"user-001","checkInTime":"2024-01-01T09:00:00"}"#))
+                        .body(Body::from(
+                            r#"{"userId":"user-001","checkInTime":"2024-01-01T09:00:00"}"#,
+                        ))
                         .unwrap(),
                 )
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -179,8 +191,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -203,8 +217,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 

@@ -82,7 +82,10 @@ pub(crate) fn named_list(key: &str, items: &[String]) -> Value {
 
 /// Java WrapBoolean Wo 序列化形态：{"value": true|false}。
 pub(crate) fn wrap_bool(v: bool) -> Value {
-    Value::Object(serde_json::Map::from_iter([("value".to_string(), Value::Bool(v))]))
+    Value::Object(serde_json::Map::from_iter([(
+        "value".to_string(),
+        Value::Bool(v),
+    )]))
 }
 
 /// 单值字符串字段（缺失/非字符串返回 None）。
@@ -103,7 +106,11 @@ pub(crate) fn int_list(body: &Value, key: &str) -> Result<Vec<i32>, AppError> {
     let raw: Vec<i32> = body
         .get(key)
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|x| x.as_i64().map(|n| n as i32)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_i64().map(|n| n as i32))
+                .collect()
+        })
         .unwrap_or_default();
     capped(&raw.iter().map(|i| i.to_string()).collect::<Vec<_>>())?;
     Ok(raw)
@@ -146,7 +153,10 @@ pub(crate) const PICK_ANY: &str = "(id = ANY($1) OR name = ANY($1))";
 type Cols = &'static [&'static str];
 
 fn cols_sql(cols: Cols) -> String {
-    cols.iter().map(|c| c.to_string()).collect::<Vec<_>>().join(", ")
+    cols.iter()
+        .map(|c| c.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 pub(crate) fn row_to_map(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
@@ -287,8 +297,20 @@ pub async fn person_nick_name_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     match rows.first() {
-        None => ok_json(Value::Object(serde_json::Map::new())),
-        Some(row) => ok_json(row_to_map(row)),
+        // W12 收敛：对齐 Java ActionGetNickName——查无 person 时回退 value=flag
+        // （Wo extends WrapString，恒有 value 键）
+        None => {
+            let mut map = serde_json::Map::new();
+            map.insert("value".to_string(), Value::String(flag));
+            ok_json(Value::Object(map))
+        }
+        Some(row) => {
+            // W12 收敛：对齐 Java ActionNickName 信封——value 键恒在（昵称缺省取 name）
+            let name = row.get::<_, Option<String>>("name").unwrap_or_default();
+            let mut map = serde_json::Map::new();
+            map.insert("value".to_string(), Value::String(name));
+            ok_json(Value::Object(map))
+        }
     }
 }
 

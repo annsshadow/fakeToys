@@ -1,11 +1,17 @@
-﻿use axum::{
+use axum::{
     extract::{Extension, Json, Path},
     routing::{get, post},
     Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, ActionResult},
+};
 
 pub mod entities;
 pub mod routes;
@@ -33,15 +39,25 @@ pub async fn category_list(
             if let Some(val) = option_to_json(m.parent_id.clone().map(Value::String)) {
                 map.insert("parentId".to_string(), val);
             }
-            map.insert("sortOrder".to_string(), Value::Number(serde_json::Number::from(m.sort_order)));
+            map.insert(
+                "sortOrder".to_string(),
+                Value::Number(serde_json::Number::from(m.sort_order)),
+            );
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+            );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -63,9 +79,15 @@ pub async fn category_get(
             if let Some(val) = option_to_json(m.parent_id.clone().map(Value::String)) {
                 map.insert("parentId".to_string(), val);
             }
-            map.insert("sortOrder".to_string(), Value::Number(serde_json::Number::from(m.sort_order)));
+            map.insert(
+                "sortOrder".to_string(),
+                Value::Number(serde_json::Number::from(m.sort_order)),
+            );
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+            );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -80,9 +102,19 @@ pub async fn category_create(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let sort_order = payload.get("sortOrder").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let parent_id = payload
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let sort_order = payload
+        .get("sortOrder")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0) as i32;
     let status = payload
         .get("status")
         .and_then(|v| v.as_str())
@@ -105,11 +137,16 @@ pub async fn category_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("sortOrder".to_string(), Value::Number(serde_json::Number::from(sort_order))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            (
+                "sortOrder".to_string(),
+                Value::Number(serde_json::Number::from(sort_order)),
+            ),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -129,23 +166,35 @@ pub async fn article_list(
         .map(|m| {
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
-            map.insert("categoryId".to_string(), Value::String(m.category_id.clone()));
+            map.insert(
+                "categoryId".to_string(),
+                Value::String(m.category_id.clone()),
+            );
             map.insert("title".to_string(), Value::String(m.title.clone()));
             if let Some(val) = option_to_json(m.content.clone().map(Value::String)) {
                 map.insert("content".to_string(), val);
             }
             map.insert("authorId".to_string(), Value::String(m.author_id.clone()));
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            if let Some(val) = option_to_json(m.publish_time.map(|dt| Value::String(dt.to_string()))) {
+            if let Some(val) =
+                option_to_json(m.publish_time.map(|dt| Value::String(dt.to_string())))
+            {
                 map.insert("publishTime".to_string(), val);
             }
-            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+            );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -163,17 +212,25 @@ pub async fn article_get(
         Some(m) => {
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(m.id.clone()));
-            map.insert("categoryId".to_string(), Value::String(m.category_id.clone()));
+            map.insert(
+                "categoryId".to_string(),
+                Value::String(m.category_id.clone()),
+            );
             map.insert("title".to_string(), Value::String(m.title.clone()));
             if let Some(val) = option_to_json(m.content.clone().map(Value::String)) {
                 map.insert("content".to_string(), val);
             }
             map.insert("authorId".to_string(), Value::String(m.author_id.clone()));
             map.insert("status".to_string(), Value::String(m.status.clone()));
-            if let Some(val) = option_to_json(m.publish_time.map(|dt| Value::String(dt.to_string()))) {
+            if let Some(val) =
+                option_to_json(m.publish_time.map(|dt| Value::String(dt.to_string())))
+            {
                 map.insert("publishTime".to_string(), val);
             }
-            map.insert("createTime".to_string(), Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+            );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -198,7 +255,10 @@ pub async fn article_create(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let author_id = payload
         .get("authorId")
         .and_then(|v| v.as_str())
@@ -227,11 +287,13 @@ pub async fn article_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(title)),
-        ("categoryId".to_string(), Value::String(category_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(title)),
+            ("categoryId".to_string(), Value::String(category_id)),
+        ]),
+    ))))
 }
 
 pub fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
@@ -249,8 +311,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::cms_core_entity_router(pool)
 }
-

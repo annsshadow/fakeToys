@@ -1,8 +1,5 @@
 #[allow(dead_code, non_snake_case)]
-use axum::{
-    extract::Extension,
-    Json, Router,
-};
+use axum::{extract::Extension, Json, Router};
 use base64::Engine as _;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
@@ -18,8 +15,6 @@ mod tests;
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -51,16 +46,29 @@ pub async fn list_meeting_controls(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("meetingId".to_string(), Value::String(row.get("meeting_id"))),
-                ("controlType".to_string(), Value::String(row.get("control_type"))),
+                (
+                    "meetingId".to_string(),
+                    Value::String(row.get("meeting_id")),
+                ),
+                (
+                    "controlType".to_string(),
+                    Value::String(row.get("control_type")),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("config".to_string(), Value::String(row.get::<_, Option<String>>("config").unwrap_or_default())),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -70,10 +78,22 @@ pub async fn create_meeting_control(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let meeting_id = payload.get("meetingId").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("meetingId is required".to_string()))?;
-    let control_type = payload.get("controlType").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("controlType is required".to_string()))?;
-    let enabled: bool = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let config = payload.get("config").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let meeting_id = payload
+        .get("meetingId")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("meetingId is required".to_string()))?;
+    let control_type = payload
+        .get("controlType")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("controlType is required".to_string()))?;
+    let enabled: bool = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let config = payload
+        .get("config")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let id: String = uuid::Uuid::new_v4().to_string();
 
@@ -85,12 +105,20 @@ pub async fn create_meeting_control(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("meetingId".to_string(), Value::String(meeting_id.to_string())),
-        ("controlType".to_string(), Value::String(control_type.to_string())),
-        ("enabled".to_string(), Value::Bool(enabled)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "meetingId".to_string(),
+                Value::String(meeting_id.to_string()),
+            ),
+            (
+                "controlType".to_string(),
+                Value::String(control_type.to_string()),
+            ),
+            ("enabled".to_string(), Value::Bool(enabled)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -108,10 +136,12 @@ pub async fn delete_meeting_control(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(count > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(count > 0)),
+        ]),
+    ))))
 }
 
 pub fn meeting_assemble_control_router(pool: Pool) -> Router {
@@ -122,12 +152,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::routes::meeting_assemble_control_routes(pool)
 }
 
-
-
 #[allow(non_snake_case)]
-pub async fn building_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -144,17 +170,42 @@ pub async fn building_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -179,17 +230,42 @@ pub async fn building_list_like_pinyin_key(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -214,17 +290,42 @@ pub async fn building_list_like_key(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -248,17 +349,42 @@ pub async fn building_list_pinyininitial_key(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -282,17 +408,42 @@ pub async fn building_list_start_start_completed_completed(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -316,23 +467,53 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn building_list_start_start_completed_completed_room_room_meeting_meeting(
     pool: Extension<Pool>,
-    axum::extract::Path((start, completed, room, meeting)): axum::extract::Path<(String, String, String, String)>,
+    axum::extract::Path((start, completed, room, meeting)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -350,17 +531,42 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -383,11 +589,32 @@ pub async fn building_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -419,19 +646,45 @@ pub async fn config_system_config(
     }
 
     // Ensure required fields exist with defaults (matching Java MeetingConfigProperties)
-    config_map.entry("weekBegin".to_string()).or_insert(Value::String("1".to_string()));
-    config_map.entry("mobileCreateEnable".to_string()).or_insert(Value::Bool(true));
-    config_map.entry("enableOnline".to_string()).or_insert(Value::Bool(false));
-    config_map.entry("onlineProduct".to_string()).or_insert(Value::String("其他".to_string()));
-    config_map.entry("toDayViewName".to_string()).or_insert(Value::String("".to_string()));
-    config_map.entry("toListViewName".to_string()).or_insert(Value::String("".to_string()));
-    config_map.entry("toMonthViewName".to_string()).or_insert(Value::String("".to_string()));
-    config_map.entry("toMyMeetingViewName".to_string()).or_insert(Value::String("".to_string()));
-    config_map.entry("toRoomViewName".to_string()).or_insert(Value::String("".to_string()));
-    config_map.entry("toWeekViewName".to_string()).or_insert(Value::String("".to_string()));
-    config_map.entry("meetingViewer".to_string()).or_insert(Value::Array(vec![]));
-    config_map.entry("typeList".to_string()).or_insert(Value::Array(vec![]));
-    config_map.entry("disableViewList".to_string()).or_insert(Value::Array(vec![]));
+    config_map
+        .entry("weekBegin".to_string())
+        .or_insert(Value::String("1".to_string()));
+    config_map
+        .entry("mobileCreateEnable".to_string())
+        .or_insert(Value::Bool(true));
+    config_map
+        .entry("enableOnline".to_string())
+        .or_insert(Value::Bool(false));
+    config_map
+        .entry("onlineProduct".to_string())
+        .or_insert(Value::String("其他".to_string()));
+    config_map
+        .entry("toDayViewName".to_string())
+        .or_insert(Value::String("".to_string()));
+    config_map
+        .entry("toListViewName".to_string())
+        .or_insert(Value::String("".to_string()));
+    config_map
+        .entry("toMonthViewName".to_string())
+        .or_insert(Value::String("".to_string()));
+    config_map
+        .entry("toMyMeetingViewName".to_string())
+        .or_insert(Value::String("".to_string()));
+    config_map
+        .entry("toRoomViewName".to_string())
+        .or_insert(Value::String("".to_string()));
+    config_map
+        .entry("toWeekViewName".to_string())
+        .or_insert(Value::String("".to_string()));
+    config_map
+        .entry("meetingViewer".to_string())
+        .or_insert(Value::Array(vec![]));
+    config_map
+        .entry("typeList".to_string())
+        .or_insert(Value::Array(vec![]));
+    config_map
+        .entry("disableViewList".to_string())
+        .or_insert(Value::Array(vec![]));
 
     let data = Value::Object(config_map);
     Ok(Json(ActionResult::java_success(data, 1, 1)))
@@ -444,9 +697,18 @@ pub async fn config_system_config_manage(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let config_key = payload.get("configKey").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("configKey is required".to_string()))?;
-    let config_value = payload.get("configValue").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("configValue is required".to_string()))?;
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let config_key = payload
+        .get("configKey")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("configKey is required".to_string()))?;
+    let config_value = payload
+        .get("configValue")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("configValue is required".to_string()))?;
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let result = client
         .execute(
@@ -462,8 +724,14 @@ pub async fn config_system_config_manage(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("configKey".to_string(), Value::String(config_key.to_string())),
-            ("configValue".to_string(), Value::String(config_value.to_string())),
+            (
+                "configKey".to_string(),
+                Value::String(config_key.to_string()),
+            ),
+            (
+                "configValue".to_string(),
+                Value::String(config_value.to_string()),
+            ),
             ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -489,17 +757,30 @@ pub async fn meeting_list_applied_completed(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -522,17 +803,30 @@ pub async fn meeting_list_applied_processing(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -555,17 +849,30 @@ pub async fn meeting_list_applied_wait(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -592,17 +899,30 @@ pub async fn meeting_list_apply_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -632,17 +952,33 @@ pub async fn meeting_list_coming_day_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -666,17 +1002,30 @@ pub async fn meeting_list_coming_month_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -700,17 +1049,30 @@ pub async fn meeting_list_forward_monthcount_monthCount(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -734,17 +1096,30 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -771,17 +1146,30 @@ pub async fn meeting_list_invite_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -804,17 +1192,30 @@ pub async fn meeting_list_invited_completed(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -837,17 +1238,30 @@ pub async fn meeting_list_invited_processing(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -870,17 +1284,30 @@ pub async fn meeting_list_invited_rejected(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -903,17 +1330,30 @@ pub async fn meeting_list_invited_wait(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -936,17 +1376,30 @@ pub async fn meeting_list_wait_accept(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -969,17 +1422,30 @@ pub async fn meeting_list_wait_confirm(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1010,17 +1476,30 @@ pub async fn meeting_list_year_year_month_month(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1051,17 +1530,30 @@ pub async fn meeting_list_year_year_month_month_all(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1088,17 +1580,30 @@ pub async fn meeting_list_year_year_month_month_day_day(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1125,17 +1630,30 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1162,17 +1680,30 @@ pub async fn meeting_list_year_year_month_month_day_day_roomId(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1208,17 +1739,30 @@ pub async fn meeting_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1244,17 +1788,30 @@ pub async fn meeting_list_id_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1281,17 +1838,30 @@ pub async fn meeting_list_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1318,17 +1888,30 @@ pub async fn meeting_list_page_size_size_manage(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1351,11 +1934,20 @@ pub async fn meeting_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
                 ("endTime".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1370,11 +1962,26 @@ pub async fn create_meeting(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let title = payload.get("title").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("title is required".to_string()))?;
-    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("startTime is required".to_string()))?;
-    let end_time = payload.get("endTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("endTime is required".to_string()))?;
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("title is required".to_string()))?;
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let start_time = payload
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("startTime is required".to_string()))?;
+    let end_time = payload
+        .get("endTime")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("endTime is required".to_string()))?;
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -1386,13 +1993,18 @@ pub async fn create_meeting(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(title.to_string())),
-        ("creator".to_string(), Value::String(creator.to_string())),
-        ("startTime".to_string(), Value::String(start_time.to_string())),
-        ("endTime".to_string(), Value::String(end_time.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(title.to_string())),
+            ("creator".to_string(), Value::String(creator.to_string())),
+            (
+                "startTime".to_string(),
+                Value::String(start_time.to_string()),
+            ),
+            ("endTime".to_string(), Value::String(end_time.to_string())),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -1403,10 +2015,22 @@ pub async fn save_meeting(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).unwrap_or_default();
-    let end_time = payload.get("endTime").and_then(|v| v.as_str()).unwrap_or_default();
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let start_time = payload
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let end_time = payload
+        .get("endTime")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let result = client
         .execute(
@@ -1437,10 +2061,7 @@ pub async fn delete_meeting(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute(
-            "DELETE FROM x_meeting WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1487,7 +2108,10 @@ pub async fn meeting_id_add_invite(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let invitee = payload.get("invitee").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("invitee is required".to_string()))?;
+    let invitee = payload
+        .get("invitee")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("invitee is required".to_string()))?;
     let invite_id = uuid::Uuid::new_v4().to_string();
 
     let result = client
@@ -1516,7 +2140,10 @@ pub async fn meeting_id_checkin(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person = payload.get("person").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("person is required".to_string()))?;
+    let person = payload
+        .get("person")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("person is required".to_string()))?;
     let checkin_id = uuid::Uuid::new_v4().to_string();
 
     let result = client
@@ -1556,8 +2183,14 @@ pub async fn meeting_id_checkin_code(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("meetingId".to_string(), Value::String(id)),
-                ("checkinCode".to_string(), Value::String(row.get("checkin_code"))),
-                ("expireTime".to_string(), Value::String(row.get("expire_time"))),
+                (
+                    "checkinCode".to_string(),
+                    Value::String(row.get("checkin_code")),
+                ),
+                (
+                    "expireTime".to_string(),
+                    Value::String(row.get("expire_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1619,7 +2252,10 @@ pub async fn meeting_id_delete_invite(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let invitee = payload.get("invitee").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("invitee is required".to_string()))?;
+    let invitee = payload
+        .get("invitee")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("invitee is required".to_string()))?;
 
     let result = client
         .execute(
@@ -1669,7 +2305,12 @@ pub async fn meeting_id_modify_completedtime(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let completed_time = payload.get("completedTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("completedTime is required".to_string()))?;
+    let completed_time = payload
+        .get("completedTime")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest(
+            "completedTime is required".to_string(),
+        ))?;
 
     let result = client
         .execute(
@@ -1682,7 +2323,10 @@ pub async fn meeting_id_modify_completedtime(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("completedTime".to_string(), Value::String(completed_time.to_string())),
+            (
+                "completedTime".to_string(),
+                Value::String(completed_time.to_string()),
+            ),
             ("modified".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -1696,7 +2340,10 @@ pub async fn meeting_id_modify_starttime(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("startTime is required".to_string()))?;
+    let start_time = payload
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("startTime is required".to_string()))?;
     let end_time = payload.get("endTime").and_then(|v| v.as_str());
 
     let result = if let Some(end_time) = end_time {
@@ -1720,7 +2367,10 @@ pub async fn meeting_id_modify_starttime(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("startTime".to_string(), Value::String(start_time.to_string())),
+            (
+                "startTime".to_string(),
+                Value::String(start_time.to_string()),
+            ),
             ("modified".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -1769,23 +2419,46 @@ pub async fn openmeeting_list_room(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
-pub async fn room_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1802,17 +2475,42 @@ pub async fn room_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1837,17 +2535,42 @@ pub async fn room_list_like_pinyin_key(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1872,17 +2595,42 @@ pub async fn room_list_like_key(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1906,17 +2654,42 @@ pub async fn room_list_pinyininitial_key(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1939,11 +2712,32 @@ pub async fn room_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("pinyin".to_string(), Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default())),
-                ("pinyinInitial".to_string(), Value::String(row.get::<_, Option<String>>("pinyin_initial").unwrap_or_default())),
-                ("address".to_string(), Value::String(row.get::<_, Option<String>>("address").unwrap_or_default())),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "pinyin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pinyin").unwrap_or_default()),
+                ),
+                (
+                    "pinyinInitial".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("pinyin_initial")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "address".to_string(),
+                    Value::String(row.get::<_, Option<String>>("address").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1971,8 +2765,14 @@ pub async fn room_id_photo(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("roomId".to_string(), Value::String(id)),
                 ("photoUrl".to_string(), Value::String(row.get("photo_url"))),
-                ("photoName".to_string(), Value::String(row.get("photo_name"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "photoName".to_string(),
+                    Value::String(row.get("photo_name")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2003,7 +2803,10 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
 
 /// 归一化查重键：trim + 小写 + 折叠内部空白。同名不同形视为冲突。
 fn u2_normalize_name(name: &str) -> String {
-    name.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+    name.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
 }
 
 /// 规范化附件 blob key：`meeting-attachment/{id}/{filename}`；剥离路径分隔符、
@@ -2039,7 +2842,10 @@ async fn u2_persist_blob_verified(key: &str, bytes: &[u8]) -> Result<(), AppErro
 }
 
 /// meeting.creator 查询（IDOR 门禁前置）。None = 会议不存在。
-async fn u2_meeting_creator(client: &deadpool_postgres::tokio_postgres::Client, id: &str) -> Result<Option<String>, AppError> {
+async fn u2_meeting_creator(
+    client: &deadpool_postgres::tokio_postgres::Client,
+    id: &str,
+) -> Result<Option<String>, AppError> {
     let row = client
         .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&id])
         .await
@@ -2061,7 +2867,9 @@ async fn u2_attachment_guard(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let Some(row) = row else { return Err(AppError::NotFound) };
+    let Some(row) = row else {
+        return Err(AppError::NotFound);
+    };
     let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
     if shared::middleware::is_admin(pool, &session.person_unique).await
         || session.person_unique == creator
@@ -2078,15 +2886,44 @@ const U2_ATTACHMENT_COLS: &str =
 fn u2_attachment_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("meetingId".to_string(), Value::String(row.get("meeting_id"))),
-        ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
-        ("fileName".to_string(), Value::String(row.get::<_, Option<String>>("file_name").unwrap_or_default())),
-        ("extension".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
-        ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i64>>("length").unwrap_or_default()))),
-        ("summary".to_string(), Value::Bool(row.get::<_, Option<bool>>("summary").unwrap_or_default())),
+        (
+            "meetingId".to_string(),
+            Value::String(row.get("meeting_id")),
+        ),
+        (
+            "person".to_string(),
+            Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+        ),
+        (
+            "fileName".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("file_name")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "extension".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("extension")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "length".to_string(),
+            Value::Number(serde_json::Number::from(
+                row.get::<_, Option<i64>>("length").unwrap_or_default(),
+            )),
+        ),
+        (
+            "summary".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("summary").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
-            Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]))
 }
@@ -2132,10 +2969,16 @@ async fn u2_attachment_store_new(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("meetingId".to_string(), Value::String(meeting_id.to_string())),
+            (
+                "meetingId".to_string(),
+                Value::String(meeting_id.to_string()),
+            ),
             ("fileName".to_string(), Value::String(filename.to_string())),
             ("extension".to_string(), Value::String(ext)),
-            ("length".to_string(), Value::Number(serde_json::Number::from(length))),
+            (
+                "length".to_string(),
+                Value::Number(serde_json::Number::from(length)),
+            ),
             ("uploaded".to_string(), Value::Bool(true)),
         ]),
     ))))
@@ -2144,10 +2987,20 @@ async fn u2_attachment_store_new(
 async fn u2_extract_multipart(
     mut form: axum::extract::Multipart,
 ) -> Result<(Option<String>, Option<String>, Vec<u8>), AppError> {
-    while let Some(field) = form.next_field().await.map_err(|_| AppError::BadRequest("malformed multipart body".to_string()))? {
-        let fname = field.file_name().map(str::to_string).filter(|s| !s.is_empty());
+    while let Some(field) = form
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("malformed multipart body".to_string()))?
+    {
+        let fname = field
+            .file_name()
+            .map(str::to_string)
+            .filter(|s| !s.is_empty());
         let mime = field.content_type().map(str::to_string);
-        let data = field.bytes().await.map_err(|_| AppError::BadRequest("unreadable upload field".to_string()))?;
+        let data = field
+            .bytes()
+            .await
+            .map_err(|_| AppError::BadRequest("unreadable upload field".to_string()))?;
         if fname.is_some() || !data.is_empty() {
             return Ok((fname, mime, data.to_vec()));
         }
@@ -2172,7 +3025,11 @@ pub async fn u2_attachment_list_with_meeting(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_attachment_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -2209,16 +3066,35 @@ pub async fn u2_attachment_download(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let Some(row) = row else { return Err(AppError::NotFound) };
+    let Some(row) = row else {
+        return Err(AppError::NotFound);
+    };
     let content_b64: Option<String> = row.get("content");
     match content_b64 {
-        Some(b64) if !b64.is_empty() => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("fileName".to_string(), Value::String(row.get::<_, Option<String>>("file_name").unwrap_or_default())),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("mime_type").unwrap_or_default())),
-            ("contentBase64".to_string(), Value::String(b64)),
-            ("stream".to_string(), Value::Bool(_stream.eq_ignore_ascii_case("true") || _stream == "1")),
-        ]))))),
+        Some(b64) if !b64.is_empty() => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("mime_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                ("contentBase64".to_string(), Value::String(b64)),
+                (
+                    "stream".to_string(),
+                    Value::Bool(_stream.eq_ignore_ascii_case("true") || _stream == "1"),
+                ),
+            ]),
+        )))),
         _ => Err(AppError::NotFound),
     }
 }
@@ -2263,7 +3139,10 @@ async fn u2_attachment_update_inner(
             .decode(b64)
             .map_err(|_| AppError::BadRequest("contentBase64 is not valid base64".to_string()))?;
         let row = client
-            .query_opt("SELECT file_name FROM x_meeting_attachment WHERE id = $1", &[&id])
+            .query_opt(
+                "SELECT file_name FROM x_meeting_attachment WHERE id = $1",
+                &[&id],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
         let current_name: String = row
@@ -2342,7 +3221,10 @@ pub async fn u2_attachment_create_from_processplatform(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("meetingId".to_string(), Value::String(meeting_id.to_string())),
+            (
+                "meetingId".to_string(),
+                Value::String(meeting_id.to_string()),
+            ),
             ("site".to_string(), Value::String(site.to_string())),
             ("title".to_string(), Value::String(title.to_string())),
         ]),
@@ -2356,14 +3238,13 @@ async fn u2_attachment_paged(
     backward: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if count <= 0 || count > 200 {
-        return Err(AppError::BadRequest("count must be within 1..=200".to_string()));
+        return Err(AppError::BadRequest(
+            "count must be within 1..=200".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let exists = client
-        .query_opt(
-            "SELECT id FROM x_meeting_attachment WHERE id = $1",
-            &[&id],
-        )
+        .query_opt("SELECT id FROM x_meeting_attachment WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?
         .is_some();
@@ -2377,14 +3258,21 @@ async fn u2_attachment_paged(
          WHERE create_time {op} (SELECT create_time FROM x_meeting_attachment WHERE id = $1) \
          ORDER BY create_time {order} LIMIT $2"
     );
-    let rows = client.query(&sql, &[&id, &count]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&id, &count])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let mut data: Vec<Value> = rows.iter().map(u2_attachment_json).collect();
     // O2 next/prev 语义均按时间正序呈现窗口内容
     if backward {
         data.reverse();
     }
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -2392,7 +3280,9 @@ pub async fn u2_attachment_list_next(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let count: i64 = count.parse().map_err(|_| AppError::BadRequest("invalid count".to_string()))?;
+    let count: i64 = count
+        .parse()
+        .map_err(|_| AppError::BadRequest("invalid count".to_string()))?;
     u2_attachment_paged(pool, id, count, false).await
 }
 
@@ -2401,7 +3291,9 @@ pub async fn u2_attachment_list_prev(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let count: i64 = count.parse().map_err(|_| AppError::BadRequest("invalid count".to_string()))?;
+    let count: i64 = count
+        .parse()
+        .map_err(|_| AppError::BadRequest("invalid count".to_string()))?;
     u2_attachment_paged(pool, id, count, true).await
 }
 
@@ -2415,21 +3307,43 @@ pub async fn u2_attachment_upload(
     let summary = matches!(summary.as_str(), "true" | "1");
     let (fname, mime, data) = u2_extract_multipart(form).await?;
     let filename = fname.unwrap_or_else(|| "upload.bin".to_string());
-    u2_attachment_store_new(&pool, &session, &meeting_id, summary, &filename, mime.as_deref(), data).await
+    u2_attachment_store_new(
+        &pool,
+        &session,
+        &meeting_id,
+        summary,
+        &filename,
+        mime.as_deref(),
+        data,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
 pub async fn u2_attachment_upload_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
-    axum::extract::Path((meeting_id, summary, callback)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((meeting_id, summary, callback)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
     form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     tracing::debug!(callback, meeting = %meeting_id, "attachment upload via callback route");
     let summary = matches!(summary.as_str(), "true" | "1");
     let (fname, mime, data) = u2_extract_multipart(form).await?;
     let filename = fname.unwrap_or_else(|| "upload.bin".to_string());
-    u2_attachment_store_new(&pool, &session, &meeting_id, summary, &filename, mime.as_deref(), data).await
+    u2_attachment_store_new(
+        &pool,
+        &session,
+        &meeting_id,
+        summary,
+        &filename,
+        mime.as_deref(),
+        data,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
@@ -2441,7 +3355,10 @@ pub async fn u2_attachment_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     u2_attachment_guard(&client, &pool, &session, &id).await?;
     let key_row = client
-        .query_opt("SELECT storage_key FROM x_meeting_attachment WHERE id = $1", &[&id])
+        .query_opt(
+            "SELECT storage_key FROM x_meeting_attachment WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let count = client
@@ -2468,13 +3385,20 @@ pub async fn u2_attachment_delete(
 
 // ── Building 族补齐（create / delete / edit：Java buildingEditAvailable ≈ is_admin）──
 
-async fn u2_building_name_taken(client: &deadpool_postgres::tokio_postgres::Client, raw_name: &str, exclude_id: Option<&str>) -> Result<bool, AppError> {
+async fn u2_building_name_taken(
+    client: &deadpool_postgres::tokio_postgres::Client,
+    raw_name: &str,
+    exclude_id: Option<&str>,
+) -> Result<bool, AppError> {
     let target = u2_normalize_name(raw_name);
     if target.is_empty() {
         return Ok(false);
     }
     let rows = client
-        .query("SELECT name FROM x_meeting_building WHERE ($1::text IS NULL OR id != $1)", &[&exclude_id])
+        .query(
+            "SELECT name FROM x_meeting_building WHERE ($1::text IS NULL OR id != $1)",
+            &[&exclude_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(rows
@@ -2498,7 +3422,10 @@ pub async fn u2_building_create(
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
     if u2_building_name_taken(&client, name, None).await? {
-        return Err(AppError::BadRequest(format!("building already exists: {}", name)));
+        return Err(AppError::BadRequest(format!(
+            "building already exists: {}",
+            name
+        )));
     }
 
     let address = payload.get("address").and_then(|v| v.as_str());
@@ -2540,10 +3467,17 @@ pub async fn u2_building_edit(
         return Err(AppError::NotFound);
     }
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty());
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     if let Some(name) = name {
         if u2_building_name_taken(&client, name, Some(&id)).await? {
-            return Err(AppError::BadRequest(format!("building already exists: {}", name)));
+            return Err(AppError::BadRequest(format!(
+                "building already exists: {}",
+                name
+            )));
         }
     }
     let address = payload.get("address").and_then(|v| v.as_str());
@@ -2576,12 +3510,17 @@ pub async fn u2_building_delete(
     u2_require_admin(&pool.0, &session).await?;
 
     let in_use: i64 = client
-        .query_one("SELECT COUNT(*) AS n FROM x_meeting_room WHERE building_id = $1", &[&id])
+        .query_one(
+            "SELECT COUNT(*) AS n FROM x_meeting_room WHERE building_id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("n");
     if in_use > 0 {
-        return Err(AppError::BadRequest(format!("building still referenced by {in_use} room(s)")));
+        return Err(AppError::BadRequest(format!(
+            "building still referenced by {in_use} room(s)"
+        )));
     }
     let count = client
         .execute("DELETE FROM x_meeting_building WHERE id = $1", &[&id])
@@ -2669,17 +3608,33 @@ pub async fn u2_config_manage_get(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("configKey".to_string(), Value::String(row.get("config_key"))),
-                ("configValue".to_string(), Value::String(row.get::<_, Option<String>>("config_value").unwrap_or_default())),
+                (
+                    "configKey".to_string(),
+                    Value::String(row.get("config_key")),
+                ),
+                (
+                    "configValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ── Meeting 族补齐（IDOR 删除 / modify / PUT save / GET checkin）────────────
@@ -2692,7 +3647,9 @@ pub async fn u2_meeting_delete_owned(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let creator = u2_meeting_creator(&client, &id).await?;
-    let Some(creator) = creator else { return Err(AppError::NotFound) };
+    let Some(creator) = creator else {
+        return Err(AppError::NotFound);
+    };
     shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
     client
@@ -2720,12 +3677,21 @@ pub async fn u2_meeting_modify(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let creator = u2_meeting_creator(&client, &id).await?;
-    let Some(creator) = creator else { return Err(AppError::NotFound) };
+    let Some(creator) = creator else {
+        return Err(AppError::NotFound);
+    };
     shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
-    let title = payload.get("title").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty());
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     let content = payload.get("content").and_then(|v| v.as_str());
-    let room_id = payload.get("roomId").or_else(|| payload.get("roomId")).and_then(|v| v.as_str());
+    let room_id = payload
+        .get("roomId")
+        .or_else(|| payload.get("roomId"))
+        .and_then(|v| v.as_str());
 
     let count = client
         .execute(
@@ -2753,13 +3719,24 @@ pub async fn u2_meeting_put_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let creator = u2_meeting_creator(&client, &id).await?;
-    let Some(creator) = creator else { return Err(AppError::NotFound) };
+    let Some(creator) = creator else {
+        return Err(AppError::NotFound);
+    };
     shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
-    let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default();
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let content = payload.get("content").and_then(|v| v.as_str());
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).unwrap_or_default();
-    let end_time = payload.get("endTime").and_then(|v| v.as_str()).unwrap_or_default();
+    let start_time = payload
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let end_time = payload
+        .get("endTime")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let count = client
         .execute(
@@ -2827,10 +3804,15 @@ pub async fn u2_openmeeting_get(
     map.insert("enable".to_string(), Value::Bool(false));
     for row in &rows {
         let key: String = row.get("config_key");
-        let val: String = row.get::<_, Option<String>>("config_value").unwrap_or_default();
+        let val: String = row
+            .get::<_, Option<String>>("config_value")
+            .unwrap_or_default();
         let short = key.trim_start_matches("openmeeting.").to_string();
         if short == "enable" {
-            map.insert("enable".to_string(), Value::Bool(val.eq_ignore_ascii_case("true") || val == "1"));
+            map.insert(
+                "enable".to_string(),
+                Value::Bool(val.eq_ignore_ascii_case("true") || val == "1"),
+            );
         } else {
             map.insert(short, Value::String(val));
         }
@@ -2840,13 +3822,20 @@ pub async fn u2_openmeeting_get(
 
 // ── Room 族补齐（create / delete / edit / setPhoto）─────────────────────────
 
-async fn u2_room_name_taken(client: &deadpool_postgres::tokio_postgres::Client, raw_name: &str, exclude_id: Option<&str>) -> Result<bool, AppError> {
+async fn u2_room_name_taken(
+    client: &deadpool_postgres::tokio_postgres::Client,
+    raw_name: &str,
+    exclude_id: Option<&str>,
+) -> Result<bool, AppError> {
     let target = u2_normalize_name(raw_name);
     if target.is_empty() {
         return Ok(false);
     }
     let rows = client
-        .query("SELECT name FROM x_meeting_room WHERE ($1::text IS NULL OR id != $1)", &[&exclude_id])
+        .query(
+            "SELECT name FROM x_meeting_room WHERE ($1::text IS NULL OR id != $1)",
+            &[&exclude_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(rows
@@ -2870,12 +3859,22 @@ pub async fn u2_room_create(
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
     if u2_room_name_taken(&client, name, None).await? {
-        return Err(AppError::BadRequest(format!("room already exists: {}", name)));
+        return Err(AppError::BadRequest(format!(
+            "room already exists: {}",
+            name
+        )));
     }
 
-    let building_id = payload.get("buildingId").or_else(|| payload.get("buildingId")).and_then(|v| v.as_str());
+    let building_id = payload
+        .get("buildingId")
+        .or_else(|| payload.get("buildingId"))
+        .and_then(|v| v.as_str());
     let floor = payload.get("floor").and_then(|v| v.as_str());
-    let capacity = payload.get("capacity").and_then(|v| v.as_i64()).map(|v| v as i32).unwrap_or(0);
+    let capacity = payload
+        .get("capacity")
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32)
+        .unwrap_or(0);
     let equipment = payload
         .get("equipment")
         .map(|v| v.to_string())
@@ -2919,13 +3918,23 @@ pub async fn u2_room_edit(
         return Err(AppError::NotFound);
     }
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty());
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     if let Some(name) = name {
         if u2_room_name_taken(&client, name, Some(&id)).await? {
-            return Err(AppError::BadRequest(format!("room already exists: {}", name)));
+            return Err(AppError::BadRequest(format!(
+                "room already exists: {}",
+                name
+            )));
         }
     }
-    let capacity = payload.get("capacity").and_then(|v| v.as_i64()).map(|v| v as i32);
+    let capacity = payload
+        .get("capacity")
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32);
     let description = payload.get("description").and_then(|v| v.as_str());
 
     let count = client
@@ -3010,7 +4019,10 @@ pub async fn u2_room_set_photo(
             ("id".to_string(), Value::String(photo_id)),
             ("roomId".to_string(), Value::String(id)),
             ("photoName".to_string(), Value::String(photo_name)),
-            ("size".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
         ]),
     ))))
 }

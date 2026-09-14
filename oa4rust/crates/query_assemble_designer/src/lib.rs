@@ -1,17 +1,341 @@
 #![allow(dead_code, non_snake_case)]
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post, routing::put, routing::delete,
+    routing::delete,
+    routing::get,
+    routing::post,
+    routing::put,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult, response::row_to_json};
+use shared::{error::AppError, response::row_to_json, response::ActionResult};
 
 pub mod routes;
 pub mod u2_closures;
 
 use u2_closures::{ensure_limit, validate_single_select};
+
+const DESIGN_TABLE_PREFIX: &str = "x_query_data_";
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TableColumnDefinition {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub data_type: String,
+    #[serde(default = "default_nullable")]
+    pub nullable: bool,
+}
+
+fn default_nullable() -> bool {
+    true
+}
+
+fn validate_identifier(value: &str) -> Result<&str, AppError> {
+    let valid = !value.is_empty()
+        && value.len() <= 63
+        && value.bytes().enumerate().all(|(index, byte)| {
+            byte == b'_' || byte.is_ascii_lowercase() || (index > 0 && byte.is_ascii_digit())
+        });
+    if valid {
+        Ok(value)
+    } else {
+        Err(AppError::BadRequest(format!(
+            "invalid identifier '{}': use lowercase letters, digits, and underscores",
+            value
+        )))
+    }
+}
+
+fn postgres_column_type(value: &str) -> Result<&'static str, AppError> {
+    match value {
+        "text" => Ok("TEXT"),
+        "integer" => Ok("BIGINT"),
+        "decimal" => Ok("DOUBLE PRECISION"),
+        "boolean" => Ok("BOOLEAN"),
+        "date" => Ok("DATE"),
+        "datetime" => Ok("TIMESTAMPTZ"),
+        "json" => Ok("JSONB"),
+        _ => Err(AppError::BadRequest(format!(
+            "unsupported column type '{}'",
+            value
+        ))),
+    }
+}
+
+pub fn parse_table_columns(body: &Value) -> Result<Vec<TableColumnDefinition>, AppError> {
+    let columns_value = body
+        .get("columns")
+        .ok_or_else(|| AppError::BadRequest("columns is required".to_string()))?;
+    let columns: Vec<TableColumnDefinition> = serde_json::from_value(columns_value.clone())
+        .map_err(|_| AppError::BadRequest("columns must be a typed array".to_string()))?;
+    if columns.is_empty() {
+        return Err(AppError::BadRequest(
+            "at least one column is required".to_string(),
+        ));
+    }
+    if columns.len() > 100 {
+        return Err(AppError::BadRequest(
+            "at most 100 columns are allowed".to_string(),
+        ));
+    }
+    let mut names = std::collections::HashSet::new();
+    for column in &columns {
+        validate_identifier(&column.name)?;
+        postgres_column_type(&column.data_type)?;
+        if column.name == "id" {
+            return Err(AppError::BadRequest(
+                "column name 'id' is reserved".to_string(),
+            ));
+        }
+        if !names.insert(column.name.as_str()) {
+            return Err(AppError::BadRequest(format!(
+                "duplicate column '{}'",
+                column.name
+            )));
+        }
+    }
+    Ok(columns)
+}
+
+pub fn physical_table_name(table_flag: &str) -> Result<String, AppError> {
+    validate_identifier(table_flag)?;
+    Ok(format!("{}{}", DESIGN_TABLE_PREFIX, table_flag))
+}
+
+pub fn create_table_ddl(
+    table_flag: &str,
+    columns: &[TableColumnDefinition],
+) -> Result<String, AppError> {
+    let table_name = physical_table_name(table_flag)?;
+    let definitions = columns
+        .iter()
+        .map(|column| {
+            Ok(format!(
+                "\"{}\" {}{}",
+                column.name,
+                postgres_column_type(&column.data_type)?,
+                if column.nullable { "" } else { " NOT NULL" }
+            ))
+        })
+        .collect::<Result<Vec<_>, AppError>>()?;
+    Ok(format!(
+        "CREATE TABLE \"{}\" (\"id\" UUID PRIMARY KEY DEFAULT gen_random_uuid(), {})",
+        table_name,
+        definitions.join(", ")
+    ))
+}
+
+pub fn add_column_ddl(
+    table_flag: &str,
+    column: &TableColumnDefinition,
+) -> Result<String, AppError> {
+    let table_name = physical_table_name(table_flag)?;
+    validate_identifier(&column.name)?;
+    Ok(format!(
+        "ALTER TABLE \"{}\" ADD COLUMN \"{}\" {}{}",
+        table_name,
+        column.name,
+        postgres_column_type(&column.data_type)?,
+        if column.nullable { "" } else { " NOT NULL" }
+    ))
+}
+
+fn table_columns_json(columns: &[TableColumnDefinition]) -> Result<String, AppError> {
+    serde_json::to_string(columns).map_err(|_| AppError::Internal)
+}
+
+#[allow(non_snake_case)]
+pub async fn create_table_definition(
+    pool: Extension<Pool>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = body
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim();
+    if name.is_empty() {
+        return Err(AppError::BadRequest("name is required".to_string()));
+    }
+    let columns = parse_table_columns(&body)?;
+    let columns_json = table_columns_json(&columns)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let duplicate = client
+        .query_one(
+            "SELECT COUNT(*) AS cnt FROM x_query_table WHERE LOWER(TRIM(COALESCE(name,''))) = $1 AND deleted_at IS NULL",
+            &[&name.to_lowercase()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if duplicate.get::<_, i64>("cnt") > 0 {
+        return Ok(Json(ActionResult::error("table name already exists")));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let table_flag = format!("t_{}", uuid::Uuid::new_v4().simple());
+    let query_flag = body
+        .get("queryFlag")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_query_table (id, name, table_flag, query_flag, status, columns, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, 'draft', $5, 'system', NOW(), NOW())",
+            &[&id, &name, &table_flag, &query_flag, &columns_json],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id,
+        "tableFlag": table_flag,
+        "name": name,
+        "columns": columns,
+        "status": "draft"
+    }))))
+}
+
+#[allow(non_snake_case)]
+pub async fn update_table_definition(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let columns = parse_table_columns(&body)?;
+    let columns_json = table_columns_json(&columns)?;
+    let name = body.get("name").and_then(Value::as_str).unwrap_or_default();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_query_table SET name = COALESCE(NULLIF($1,''), name), columns = $2, status = 'draft', update_time = NOW() \
+             WHERE table_flag = $3 AND deleted_at IS NULL",
+            &[&name, &columns_json, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("table not found")));
+    }
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "tableFlag": flag,
+        "columns": columns,
+        "status": "draft"
+    }))))
+}
+
+#[allow(non_snake_case)]
+pub async fn execute_table_definition(
+    pool: Extension<Pool>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT columns FROM x_query_table WHERE table_flag = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("table not found")));
+    };
+    let columns_raw: String = row.get("columns");
+    let columns: Vec<TableColumnDefinition> = serde_json::from_str(&columns_raw)
+        .map_err(|_| AppError::BadRequest("stored columns are invalid".to_string()))?;
+    if columns.is_empty() {
+        return Err(AppError::BadRequest(
+            "at least one column is required".to_string(),
+        ));
+    }
+    let table_name = physical_table_name(&flag)?;
+    let exists = client
+        .query_one(
+            "SELECT to_regclass($1)::text IS NOT NULL AS exists",
+            &[&table_name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get::<_, bool>("exists");
+    let mut applied = Vec::new();
+    if exists {
+        let rows = client
+            .query(
+                "SELECT column_name, data_type, is_nullable FROM information_schema.columns \
+                 WHERE table_schema = current_schema() AND table_name = $1 AND column_name <> 'id'",
+                &[&table_name],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        let stored_by_name = columns
+            .iter()
+            .map(|column| (column.name.as_str(), column))
+            .collect::<std::collections::HashMap<_, _>>();
+        for row in rows {
+            let name: String = row.get("column_name");
+            let Some(expected) = stored_by_name.get(name.as_str()) else {
+                return Err(AppError::BadRequest(
+                    "removing columns from a built table is not supported".to_string(),
+                ));
+            };
+            let actual_type: String = row.get("data_type");
+            let expected_type = postgres_column_type(&expected.data_type)?.to_lowercase();
+            let type_matches = actual_type == expected_type
+                || (expected_type == "bigint" && actual_type == "bigint")
+                || (expected_type == "double precision" && actual_type == "double precision")
+                || (expected_type == "timestamp with time zone"
+                    && actual_type == "timestamp with time zone");
+            let actual_nullable = row.get::<_, String>("is_nullable") == "YES";
+            if !type_matches || actual_nullable != expected.nullable {
+                return Err(AppError::BadRequest(format!(
+                    "changing existing column '{}' type or nullability is not supported",
+                    name
+                )));
+            }
+        }
+        let existing_names = client
+            .query(
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = $1",
+                &[&table_name],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+            .into_iter()
+            .map(|row| row.get::<_, String>("column_name"))
+            .collect::<std::collections::HashSet<_>>();
+        for column in &columns {
+            if !existing_names.contains(&column.name) {
+                let ddl = add_column_ddl(&flag, column)?;
+                client
+                    .batch_execute(&ddl)
+                    .await
+                    .map_err(|_| AppError::Internal)?;
+                applied.push(column.name.clone());
+            }
+        }
+    } else {
+        let ddl = create_table_ddl(&flag, &columns)?;
+        client
+            .batch_execute(&ddl)
+            .await
+            .map_err(|_| AppError::Internal)?;
+        applied.extend(columns.iter().map(|column| column.name.clone()));
+    }
+    client
+        .execute(
+            "UPDATE x_query_table SET status = 'build', update_time = NOW() WHERE table_flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "tableFlag": flag,
+        "physicalTable": table_name,
+        "created": !exists,
+        "appliedColumns": applied,
+        "status": "build"
+    }))))
+}
 
 #[derive(Debug, Deserialize)]
 pub struct CreateDesignerRequest {
@@ -42,10 +366,19 @@ pub async fn get_designer(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("query".to_string(), Value::String(row.get("query_definition"))),
+                (
+                    "query".to_string(),
+                    Value::String(row.get("query_definition")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -108,8 +441,14 @@ pub async fn list_designers(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
@@ -150,7 +489,10 @@ pub async fn save_designer(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
             ("name".to_string(), Value::String(name)),
             ("query".to_string(), Value::String(query_definition)),
         ]),
@@ -173,13 +515,18 @@ pub async fn delete_designer(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("query design not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "query design not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -275,8 +622,8 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/stat", post(u2::stat_create))
         .route("/jaxrs/query/assemble/designer/stat/edit/{id}", put(u2::stat_edit))
         .route("/jaxrs/query/assemble/designer/stat/delete/{id}", delete(u2::stat_delete))
-        .route("/jaxrs/query/assemble/designer/table", post(u2::table_create))
-        .route("/jaxrs/query/assemble/designer/table/edit/{flag}", put(u2::table_edit))
+        .route("/jaxrs/query/assemble/designer/table", post(create_table_definition))
+        .route("/jaxrs/query/assemble/designer/table/edit/{flag}", put(update_table_definition))
         .route("/jaxrs/query/assemble/designer/table/delete/{flag}", delete(u2::table_delete))
         .route("/jaxrs/query/assemble/designer/table/row/insert/{tableFlag}", post(u2::table_tableFlag_row_insert))
         .route("/jaxrs/query/assemble/designer/table/row/update/{tableFlag}/{id}", put(u2::table_tableFlag_row_update))
@@ -297,6 +644,8 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/output/{flag}/select", put(u2::output_select_put))
         .route("/jaxrs/query/assemble/designer/output/{flag}/select/file", get(crate::output_flag_select_file))
         .route("/jaxrs/query/assemble/designer/query", post(u2::query_create_v2))
+        .route("/jaxrs/query/assemble/designer/execute", post(u2::designer_execute))
+        .route("/jaxrs/query/assemble/designer/stat/do", post(u2::stat_do))
         .route("/jaxrs/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties", get(crate::query_entity_entity_category_entityCategory_properties))
         .route("/jaxrs/query/assemble/designer/query/list/all", get(crate::query_list_all))
         .route("/jaxrs/query/assemble/designer/query/list/querycategory/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
@@ -320,9 +669,9 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
         .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
         .route("/jaxrs/query/assemble/designer/table/query/{query}/build", get(crate::table_query_build_dispatch))
-        .route("/jaxrs/query/assemble/designer/table/{flag}", put(u2::table_edit).delete(u2::table_delete))
+        .route("/jaxrs/query/assemble/designer/table/{flag}", put(update_table_definition).delete(u2::table_delete))
         .route("/jaxrs/query/assemble/designer/table/{flag}/build/dispatch", get(u2::table_build_dispatch_flag))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/execute", post(crate::table_flag_execute))
+        .route("/jaxrs/query/assemble/designer/table/{flag}/execute", post(execute_table_definition))
         .route("/jaxrs/query/assemble/designer/table/{flag}/permission", post(u2::table_permission_set))
         .route("/jaxrs/query/assemble/designer/table/{flag}/row", post(u2::table_tableFlag_row_insert))
         .route("/jaxrs/query/assemble/designer/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
@@ -350,17 +699,12 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_designer_router(Some(pool))
 }
 
-
-
 #[allow(non_snake_case)]
-pub async fn designer_search(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -378,8 +722,14 @@ pub async fn designer_search(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
@@ -400,7 +750,10 @@ pub async fn id_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_one("SELECT COUNT(*) as cnt FROM x_query_design WHERE deleted_at IS NULL", &[])
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM x_query_design WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -408,8 +761,14 @@ pub async fn id_count(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("total".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -435,10 +794,19 @@ pub async fn importmodel_list_query_flag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -471,11 +839,20 @@ pub async fn importmodel_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -499,14 +876,15 @@ pub async fn importmodel_id_permission(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("permission".to_string(), Value::String(row.get("permission"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "permission".to_string(),
+                    Value::String(row.get("permission")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("import model not found"))),
     }
 }
@@ -531,14 +909,20 @@ pub async fn input_compare(
     match row {
         Some(row) => {
             let old_content: Option<String> = row.get("content");
-            let new_content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+            let new_content = body
+                .get("content")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
             let old_str = old_content.unwrap_or_default();
             let compared = !old_str.is_empty() && old_str == new_content;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(input_id.to_string())),
                     ("oldContent".to_string(), Value::String(old_str)),
-                    ("newContent".to_string(), Value::String(new_content.to_string())),
+                    (
+                        "newContent".to_string(),
+                        Value::String(new_content.to_string()),
+                    ),
                     ("compared".to_string(), Value::Bool(compared)),
                 ]),
             ))))
@@ -555,7 +939,10 @@ pub async fn input_cover(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-    let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content_str = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let result = client
         .execute(
@@ -572,7 +959,10 @@ pub async fn input_cover(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(input_id.to_string())),
-            ("covered".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "covered".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -585,7 +975,10 @@ pub async fn input_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let creator = "system";
 
     let result = client
@@ -599,7 +992,10 @@ pub async fn input_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -626,7 +1022,12 @@ pub async fn input_prepare_cover(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(input_id.to_string())),
-                    ("content".to_string(), content.map(Value::String).unwrap_or(Value::String("".to_string()))),
+                    (
+                        "content".to_string(),
+                        content
+                            .map(Value::String)
+                            .unwrap_or(Value::String("".to_string())),
+                    ),
                 ]),
             ))))
         }
@@ -640,7 +1041,10 @@ pub async fn input_prepare_create(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let creator = "system";
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -656,7 +1060,10 @@ pub async fn input_prepare_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -683,7 +1090,10 @@ pub async fn neural_generate_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("generating".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "generating".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -710,7 +1120,10 @@ pub async fn neural_learn_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("learning".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "learning".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -738,7 +1151,10 @@ pub async fn neural_list_model(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -758,8 +1174,14 @@ pub async fn neural_model(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let flag = body.get("flag").and_then(|v| v.as_str()).unwrap_or_default();
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let flag = body
+        .get("flag")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let creator = "system";
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -776,7 +1198,10 @@ pub async fn neural_model(
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name.to_string())),
             ("flag".to_string(), Value::String(flag.to_string())),
-            ("created".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "created".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -804,7 +1229,10 @@ pub async fn neural_model_modelFlag(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -834,7 +1262,10 @@ pub async fn neural_model_modelFlag_reset_status(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("reset".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "reset".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -855,13 +1286,18 @@ pub async fn neural_stop_generating_model_modelFlag(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("model not found or not generating")));
+        return Ok(Json(ActionResult::error(
+            "model not found or not generating",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("stopped".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "stopped".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -888,15 +1324,16 @@ pub async fn neural_stop_learn_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("stopped".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "stopped".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn output_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -916,7 +1353,10 @@ pub async fn output_list(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -950,7 +1390,10 @@ pub async fn output_flag_select_file(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("selectFile".to_string(), Value::String(row.get("select_file"))),
+                (
+                    "selectFile".to_string(),
+                    Value::String(row.get("select_file")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -982,7 +1425,10 @@ pub async fn output_queryFlag_select(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1015,22 +1461,29 @@ pub async fn query_entity_entity_category_entityCategory_properties(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("fieldName".to_string(), Value::String(row.get("field_name"))),
-                ("fieldLabel".to_string(), Value::String(row.get("field_label"))),
-                ("fieldType".to_string(), Value::String(row.get("field_type"))),
+                (
+                    "fieldName".to_string(),
+                    Value::String(row.get("field_name")),
+                ),
+                (
+                    "fieldLabel".to_string(),
+                    Value::String(row.get("field_label")),
+                ),
+                (
+                    "fieldType".to_string(),
+                    Value::String(row.get("field_type")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("properties".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("properties".to_string(), Value::Array(data))]),
+    ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn query_list_all(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn query_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1049,7 +1502,10 @@ pub async fn query_list_all(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1085,7 +1541,10 @@ pub async fn query_list_querycategory_queryCategory(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1182,9 +1641,10 @@ pub async fn query_querycategory_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("category".to_string(), Value::String(row.get("category"))),
-            ]))
+            Value::Object(serde_json::Map::from_iter([(
+                "category".to_string(),
+                Value::String(row.get("category")),
+            )]))
         })
         .collect();
 
@@ -1217,9 +1677,15 @@ pub async fn query_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("query".to_string(), Value::String(row.get("query_definition"))),
+                (
+                    "query".to_string(),
+                    Value::String(row.get("query_definition")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1243,14 +1709,12 @@ pub async fn query_flag_icon(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("icon".to_string(), Value::String(row.get("icon"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("icon".to_string(), Value::String(row.get("icon"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("query not found"))),
     }
 }
@@ -1271,14 +1735,15 @@ pub async fn query_id_permission(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("permission".to_string(), Value::String(row.get("permission"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "permission".to_string(),
+                    Value::String(row.get("permission")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("query not found"))),
     }
 }
@@ -1304,10 +1769,16 @@ pub async fn stat_list_query_flag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("statType".to_string(), Value::String(row.get("stat_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1342,7 +1813,10 @@ pub async fn stat_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("statType".to_string(), Value::String(row.get("stat_type"))),
             ]))
         })
@@ -1378,7 +1852,10 @@ pub async fn stat_list_id_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("statType".to_string(), Value::String(row.get("stat_type"))),
             ]))
         })
@@ -1412,11 +1889,17 @@ pub async fn stat_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("statType".to_string(), Value::String(row.get("stat_type"))),
                 ("config".to_string(), Value::String(row.get("config"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1440,14 +1923,15 @@ pub async fn stat_id_permission(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("permission".to_string(), Value::String(row.get("permission"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "permission".to_string(),
+                    Value::String(row.get("permission")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("stat not found"))),
     }
 }
@@ -1501,7 +1985,10 @@ pub async fn table_export_tableFlag_count_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1523,7 +2010,7 @@ pub async fn table_list_manage(
 
     let rows = client
         .query(
-            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, table_flag, query_flag, columns, status, creator, create_time, update_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
         )
         .await
@@ -1535,9 +2022,40 @@ pub async fn table_list_manage(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "columns".to_string(),
+                    serde_json::from_str::<Value>(
+                        &row.get::<_, Option<String>>("columns").unwrap_or_default(),
+                    )
+                    .unwrap_or(Value::Array(Vec::new())),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -1571,10 +2089,19 @@ pub async fn table_list_query_flag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1608,7 +2135,10 @@ pub async fn table_list_tableFlag_row_select_where_where(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1644,7 +2174,10 @@ pub async fn table_list_tableFlag_row_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1680,7 +2213,10 @@ pub async fn table_list_tableFlag_row_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1712,7 +2248,10 @@ pub async fn table_query_query_build(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("queryFlag".to_string(), Value::String(query)),
-            ("built".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "built".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1733,8 +2272,14 @@ pub async fn table_reload_dynamic(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("value".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "reloaded".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+            (
+                "value".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1748,7 +2293,7 @@ pub async fn table_flag(
 
     let row = client
         .query_opt(
-            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE table_flag = $1 LIMIT 1",
+            "SELECT id, name, table_flag, query_flag, columns, status, creator, create_time, update_time FROM x_query_table WHERE table_flag = $1 AND deleted_at IS NULL LIMIT 1",
             &[&flag],
         )
         .await
@@ -1759,9 +2304,40 @@ pub async fn table_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "columns".to_string(),
+                    serde_json::from_str::<Value>(
+                        &row.get::<_, Option<String>>("columns").unwrap_or_default(),
+                    )
+                    .unwrap_or(Value::Array(Vec::new())),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1867,14 +2443,15 @@ pub async fn table_id_permission(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("permission".to_string(), Value::String(row.get("permission"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "permission".to_string(),
+                    Value::String(row.get("permission")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("table not found"))),
     }
 }
@@ -1897,7 +2474,10 @@ pub async fn table_query_build_dispatch(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("queryFlag".to_string(), Value::String(query)),
-            ("built".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "built".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -1922,7 +2502,10 @@ pub async fn table_tableFlag_row(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]))
         })
@@ -1957,7 +2540,10 @@ pub async fn table_tableFlag_row_count_where_where(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -1980,8 +2566,14 @@ pub async fn table_tableFlag_row_delete_all(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -2009,7 +2601,10 @@ pub async fn table_tableFlag_row_save(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -2034,7 +2629,10 @@ pub async fn table_tableFlag_row_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("tableFlag".to_string(), Value::String(row.get("table_flag"))),
+                (
+                    "tableFlag".to_string(),
+                    Value::String(row.get("table_flag")),
+                ),
                 ("data".to_string(), Value::String(row.get("data"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2065,9 +2663,15 @@ pub async fn view_list_query_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -2104,7 +2708,10 @@ pub async fn view_list_id_next_count(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -2141,7 +2748,10 @@ pub async fn view_list_id_prev_count(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -2175,10 +2785,16 @@ pub async fn view_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("queryFlag".to_string(), Value::String(row.get("query_flag"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2202,15 +2818,13 @@ pub async fn view_id_bundle(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                    ("bundle".to_string(), Value::String(row.get("bundle_data"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                ("bundle".to_string(), Value::String(row.get("bundle_data"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -2231,14 +2845,15 @@ pub async fn view_id_permission(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("permission".to_string(), Value::String(row.get("permission"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "permission".to_string(),
+                    Value::String(row.get("permission")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
@@ -2270,6 +2885,3 @@ pub async fn view_id_simulate(
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
-
-
-

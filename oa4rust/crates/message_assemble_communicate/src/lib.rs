@@ -1,7 +1,5 @@
-﻿use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
+use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -18,9 +16,18 @@ pub async fn send_message(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let conversation_id = req.get("\"conversationId\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
+    let conversation_id = req
+        .get("\"conversationId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
@@ -30,14 +37,20 @@ pub async fn send_message(
         .map_err(|_| AppError::Internal)?;
 
     client
-        .execute("UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1", &[&conversation_id])
+        .execute(
+            "UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1",
+            &[&conversation_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
+            (
+                "\"conversationId\"".to_string(),
+                Value::String(conversation_id.to_string()),
+            ),
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
@@ -58,17 +71,34 @@ pub async fn receive_list(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -79,7 +109,10 @@ pub async fn mark_read(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message_consume SET consumed = true WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_message_consume SET consumed = true WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -97,9 +130,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
-
-
 #[allow(non_snake_case)]
 pub async fn consume_list_consume_count_count(
     pool: Extension<Pool>,
@@ -113,17 +143,34 @@ pub async fn consume_list_consume_count_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -139,18 +186,38 @@ pub async fn consume_list_consume_currentperson_count_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("readStatus".to_string(), Value::String(row.get("read_status"))),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "readStatus".to_string(),
+                    Value::String(row.get("read_status")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -166,17 +233,34 @@ pub async fn consume_list_consume_person_person_count_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -191,35 +275,74 @@ pub async fn consume_type_type(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn consume_type_type_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
+    Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // W12 收敛：对齐 Java ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
+    // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
+    let id_list: Vec<String> = body
+        .get("idList")
+        .and_then(Value::as_array)
+        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .unwrap_or_default();
 
-    let id = Uuid::new_v4().to_string();
-    let result = client
-        .execute("INSERT INTO x_message_consume (id, consume, content, type, create_time) VALUES ($1, $2, '', $3, NOW())", &[&id, &msg_type, &msg_type])
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let found: i64 = if id_list.is_empty() {
+        0
+    } else {
+        let n = client
+            .execute(
+                "UPDATE x_message SET consumed = true WHERE id = ANY($1)",
+                &[&id_list],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        // Java 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
+        let _ = msg_type;
+        n as i64
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
+        serde_json::Map::from_iter([
+            ("value".to_string(), Value::Number(serde_json::Number::from(found))),
+        ]),
     ))))
 }
 
@@ -231,7 +354,10 @@ pub async fn consume_id_type_type(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message_consume SET type = $1 WHERE id = $2", &[&msg_type, &id])
+        .execute(
+            "UPDATE x_message_consume SET type = $1 WHERE id = $2",
+            &[&msg_type, &id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -264,7 +390,10 @@ pub async fn im_conversation(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name.to_string())),
-            ("type".to_string(), Value::String(conversation_type.to_string())),
+            (
+                "type".to_string(),
+                Value::String(conversation_type.to_string()),
+            ),
             ("created".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -286,10 +415,25 @@ pub async fn im_conversation_business_businessId(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-                ("businessId".to_string(), Value::String(row.get("business_id"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "businessId".to_string(),
+                    Value::String(row.get("business_id")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -308,17 +452,43 @@ pub async fn im_conversation_list_my(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-            ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-            ("lastMessage".to_string(), Value::String(row.get::<_, Option<String>>("last_message").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "lastMessage".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("last_message")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -332,16 +502,36 @@ pub async fn im_conversation_list_with_person(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-            ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -352,7 +542,10 @@ pub async fn im_conversation_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let note = req.get("note").and_then(|v| v.as_str()).unwrap_or_default();
 
     let result = client
@@ -381,10 +574,28 @@ pub async fn im_conversation_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-                ("lastMessage".to_string(), Value::String(row.get::<_, Option<String>>("last_message").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "lastMessage".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("last_message")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -404,17 +615,28 @@ pub async fn im_conversation_id_group(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
-            ("personId".to_string(), Value::String(row.get("person_id"))),
-            ("role".to_string(), Value::String(row.get("role"))),
-            ("joinTime".to_string(), Value::String(row.get("join_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "\"conversationId\"".to_string(),
+                    Value::String(row.get("conversation_id")),
+                ),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("role".to_string(), Value::String(row.get("role"))),
+                ("joinTime".to_string(), Value::String(row.get("join_time"))),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -424,8 +646,14 @@ pub async fn im_manager_config_post(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let config_key = req.get("configKey").and_then(|v| v.as_str()).unwrap_or_default();
-    let config_value = req.get("configValue").and_then(|v| v.as_str()).unwrap_or_default();
+    let config_key = req
+        .get("configKey")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let config_value = req
+        .get("configValue")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let result = client
         .execute("UPDATE x_message_config SET config_key = $1, config_value = $2, update_time = NOW() WHERE id = (SELECT id FROM x_message_config ORDER BY create_time DESC LIMIT 1)", &[&config_key, &config_value])
@@ -449,9 +677,21 @@ pub async fn im_manager_config_post(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("configKey".to_string(), Value::String(row.get("config_key"))),
-                ("configValue".to_string(), Value::String(row.get("config_value"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "configKey".to_string(),
+                    Value::String(row.get("config_key")),
+                ),
+                (
+                    "configValue".to_string(),
+                    Value::String(row.get("config_value")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -480,7 +720,10 @@ pub async fn im_conversation_update(
     }
 
     let row = client
-        .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1", &[&id])
+        .query_opt(
+            "SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -488,9 +731,21 @@ pub async fn im_conversation_update(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -506,7 +761,10 @@ pub async fn im_conversation_id_group_mockdeletetoget(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&id])
+        .execute(
+            "DELETE FROM x_message_conversation_member WHERE conversation_id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -526,7 +784,9 @@ pub async fn im_conversation_id_group_quit_self(
     // Java 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
     let conv_type = conversation_type(&client, &id).await?;
     if conv_type.as_deref() != Some("group") {
-        return Ok(Json(ActionResult::error("conversation not found or not a group")));
+        return Ok(Json(ActionResult::error(
+            "conversation not found or not a group",
+        )));
     }
     if !is_conversation_member(&client, &id, &session.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
@@ -560,7 +820,13 @@ pub async fn im_conversation_id_icon(
                 ("\"conversationId\"".to_string(), Value::String(id)),
                 ("iconUrl".to_string(), Value::String(row.get("icon_url"))),
                 ("iconName".to_string(), Value::String(row.get("icon_name"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -624,9 +890,21 @@ pub async fn im_conversation_id_single(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -648,7 +926,10 @@ pub async fn im_conversation_id_single_mockdeletetoget(
     }
 
     let result = client
-        .execute("DELETE FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
+        .execute(
+            "DELETE FROM x_message_conversation WHERE id = $1 AND type = 'single'",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -665,7 +946,10 @@ pub async fn im_conversation_id_top_cancel(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_message_conversation SET top = false WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -682,7 +966,10 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_message_conversation SET top = false WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -699,7 +986,10 @@ pub async fn im_conversation_id_top_set(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -716,7 +1006,10 @@ pub async fn im_conversation_id_top_set_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -740,9 +1033,21 @@ pub async fn im_manager_config(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"configKey\"".to_string(), Value::String(row.get("config_key"))),
-                ("\"configValue\"".to_string(), Value::String(row.get("config_value"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "\"configKey\"".to_string(),
+                    Value::String(row.get("config_key")),
+                ),
+                (
+                    "\"configValue\"".to_string(),
+                    Value::String(row.get("config_value")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -757,9 +1062,18 @@ pub async fn im_msg(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let conversation_id = req.get("\"conversationId\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
+    let conversation_id = req
+        .get("\"conversationId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
@@ -771,7 +1085,10 @@ pub async fn im_msg(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
+            (
+                "\"conversationId\"".to_string(),
+                Value::String(conversation_id.to_string()),
+            ),
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
@@ -788,7 +1105,10 @@ pub async fn im_msg_clear(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message SET cleared = true WHERE conversation_id = $1", &[&conversation_id])
+        .execute(
+            "UPDATE x_message SET cleared = true WHERE conversation_id = $1",
+            &[&conversation_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -804,9 +1124,15 @@ pub async fn im_msg_collection(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let message_id = req.get("\"messageId\"").and_then(|v| v.as_str()).unwrap_or_default();
+    let message_id = req
+        .get("\"messageId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let result = client
-        .execute("INSERT INTO x_message_collection (id, message_id, create_time) VALUES ($1, $2, NOW())", &[&Uuid::new_v4().to_string(), &message_id])
+        .execute(
+            "INSERT INTO x_message_collection (id, message_id, create_time) VALUES ($1, $2, NOW())",
+            &[&Uuid::new_v4().to_string(), &message_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -829,15 +1155,32 @@ pub async fn im_msg_collection_list_page_size_size(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("\"messageId\"".to_string(), Value::String(row.get("message_id"))),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "\"messageId\"".to_string(),
+                    Value::String(row.get("message_id")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -847,9 +1190,15 @@ pub async fn im_msg_collection_remove(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let message_id = req.get("\"messageId\"").and_then(|v| v.as_str()).unwrap_or_default();
+    let message_id = req
+        .get("\"messageId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let result = client
-        .execute("DELETE FROM x_message_collection WHERE message_id = $1", &[&message_id])
+        .execute(
+            "DELETE FROM x_message_collection WHERE message_id = $1",
+            &[&message_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -858,31 +1207,134 @@ pub async fn im_msg_collection_remove(
     ))))
 }
 
+/// W10：IM 富媒体上传大小上限（50MB）
+pub const MAX_IM_FILE_SIZE: usize = 50 * 1024 * 1024;
+
+/// W10：清洗上传文件名——剥离任意路径分量，防目录穿越/路径注入。
+pub fn sanitize_filename(name: &str) -> String {
+    name.rsplit(|c| c == '/' || c == '\\')
+        .next()
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// W10：解析后的 IM 富媒体消息。
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedImMessage {
+    pub conversation_id: String,
+    pub msg_type: String,
+    /// 富媒体文件引用（上传接口返回的附件 id）
+    pub body_file_id: Option<String>,
+    /// 引用回复的目标消息 id
+    pub quote_message_id: Option<String>,
+}
+
+/// W10：解析 IM 富媒体消息信封（`{conversationId, body, quoteMessageId?}`）。
+///
+/// body 必须是 JSON 对象文本且带非空 `type`（text/image/file/voice/video/...），
+/// `fileId` 为富媒体文件引用；缺 conversationId、body 非 JSON 或空对象
+/// （无 type）一律拒绝，绝不落库为不可渲染的消息。
+pub fn parse_im_message(req: &Value) -> Result<ParsedImMessage, AppError> {
+    let bad = |msg: &str| AppError::BadRequest(msg.to_string());
+    let conversation_id = req
+        .get("conversationId")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("conversationId is required"))?
+        .to_string();
+    let body_text = req
+        .get("body")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad("body is required"))?;
+    let body: Value =
+        serde_json::from_str(body_text).map_err(|_| bad("body must be a JSON object"))?;
+    let msg_type = body
+        .get("type")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| bad("body.type is required"))?
+        .to_string();
+    let body_file_id = body
+        .get("fileId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let quote_message_id = req
+        .get("quoteMessageId")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    Ok(ParsedImMessage {
+        conversation_id,
+        msg_type,
+        body_file_id,
+        quote_message_id,
+    })
+}
+
 #[allow(non_snake_case)]
 pub async fn im_msg_download_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<axum::response::Response, AppError> {
+    use axum::http::{header, StatusCode};
+    use axum::response::IntoResponse;
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT id, file_url, file_name, file_size, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
+        .query_opt("SELECT file_name, type, mime, content FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
-                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
-                ("\"fileSize\"".to_string(), Value::String(row.get("file_size"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("file not found"))),
-    }
+    let (file_name, mime, content_b64) = match row {
+        Some(row) => (
+            row.get::<_, Option<String>>("file_name"),
+            row.get::<_, Option<String>>("mime"),
+            row.get::<_, Option<String>>("content"),
+        ),
+        None => return Ok((StatusCode::NOT_FOUND, "file not found").into_response()),
+    };
+
+    let content_b64 = match content_b64.as_deref() {
+        Some(b64) if !b64.is_empty() => b64,
+        _ => return Ok((StatusCode::NOT_FOUND, "file content missing").into_response()),
+    };
+    let data = base64::engine::general_purpose::STANDARD
+        .decode(content_b64)
+        .map_err(|_| AppError::Internal)?;
+
+    let mime = mime
+        .or(file_type_fallback(&file_name))
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let name = sanitize_filename(file_name.as_deref().unwrap_or(&id));
+    let headers = [
+        (header::CONTENT_TYPE, mime),
+        (
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{name}\""),
+        ),
+    ];
+    Ok((StatusCode::OK, headers, data).into_response())
+}
+
+/// 上传时未记录 mime 的旧数据：按扩展名兜底
+fn file_type_fallback(file_name: &Option<String>) -> Option<String> {
+    let ext = file_name
+        .as_deref()?
+        .rsplit('.')
+        .next()?
+        .to_ascii_lowercase();
+    let mime = match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "webm" => "audio/webm",
+        "mp4" => "video/mp4",
+        "mp3" => "audio/mpeg",
+        "pdf" => "application/pdf",
+        _ => return None,
+    };
+    Some(mime.to_string())
 }
 
 #[allow(non_snake_case)]
@@ -904,10 +1356,25 @@ pub async fn im_msg_download_id_image_width_width_height_height(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("\"fileUrl\"".to_string(), Value::String(resized_url)),
-                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
-                ("width".to_string(), Value::Number(serde_json::Number::from(width))),
-                ("height".to_string(), Value::Number(serde_json::Number::from(height))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "\"fileName\"".to_string(),
+                    Value::String(row.get("file_name")),
+                ),
+                (
+                    "width".to_string(),
+                    Value::Number(serde_json::Number::from(width)),
+                ),
+                (
+                    "height".to_string(),
+                    Value::Number(serde_json::Number::from(height)),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -926,18 +1393,41 @@ pub async fn im_msg_list_object(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "\"conversationId\"".to_string(),
+                    Value::String(row.get("conversation_id")),
+                ),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -954,19 +1444,41 @@ pub async fn im_msg_list_page_size_size(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "\"conversationId\"".to_string(),
+                    Value::String(row.get("conversation_id")),
+                ),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -977,7 +1489,10 @@ pub async fn im_msg_revoke_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_message SET revoked = true, revoke_time = NOW() WHERE id = $1", &[&id])
+        .execute(
+            "UPDATE x_message SET revoked = true, revoke_time = NOW() WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -990,27 +1505,73 @@ pub async fn im_msg_revoke_id(
 pub async fn im_msg_upload_conversationId_type_type(
     pool: Extension<Pool>,
     axum::extract::Path((conversation_id, msg_type)): axum::extract::Path<(String, String)>,
-    axum::extract::Json(req): axum::extract::Json<Value>,
+    mut form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    // W10：IM 富媒体必须走真实 multipart——`fileName` 文本字段 + `file` 二进制字段
+    let mut file_name: Option<String> = None;
+    let mut file_mime: Option<String> = None;
+    let mut file_data: Option<Vec<u8>> = None;
+    while let Some(field) = form
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("multipart parse failed".to_string()))?
+    {
+        if let Some(fname) = field.file_name() {
+            file_mime = field.content_type().map(|s| s.to_string());
+            file_name = Some(fname.to_string());
+            file_data = Some(
+                field
+                    .bytes()
+                    .await
+                    .map_err(|_| AppError::BadRequest("file read failed".to_string()))?
+                    .to_vec(),
+            );
+        } else if field.name() == Some("fileName") {
+            file_name = Some(
+                field
+                    .text()
+                    .await
+                    .map_err(|_| AppError::BadRequest("form read failed".to_string()))?,
+            );
+        }
+    }
 
-    let file_url = req.get("\"fileUrl\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let file_name = req.get("\"fileName\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let file_size = req.get("\"fileSize\"").and_then(|v| v.as_str()).unwrap_or("0");
-    let _sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
+    let data = file_data.ok_or_else(|| AppError::BadRequest("no file provided".to_string()))?;
+    if data.len() > MAX_IM_FILE_SIZE {
+        return Ok(Json(ActionResult::error("file too large")));
+    }
+    let name = sanitize_filename(
+        file_name
+            .as_deref()
+            .filter(|n| !n.is_empty())
+            .unwrap_or("file"),
+    );
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    let file_size = data.len().to_string();
+    let file_url = format!("/jaxrs/message/assemble/communicate/im/msg/download/{id}");
+    let file_mime = file_mime.unwrap_or_else(|| "application/octet-stream".to_string());
 
     let result = client
-        .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())", &[&id, &id, &conversation_id, &file_url, &file_name, &file_size, &msg_type])
+        .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, mime, content, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())", &[&id, &id, &conversation_id, &file_url, &name, &file_size, &msg_type, &file_mime, &content_b64])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"conversationId\"".to_string(), Value::String(conversation_id)),
+            (
+                "\"conversationId\"".to_string(),
+                Value::String(conversation_id),
+            ),
             ("type".to_string(), Value::String(msg_type)),
-            ("\"fileUrl\"".to_string(), Value::String(file_url.to_string())),
+            ("\"fileName\"".to_string(), Value::String(name)),
+            (
+                "\"fileUrl\"".to_string(),
+                Value::String(file_url.to_string()),
+            ),
             ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -1027,17 +1588,34 @@ pub async fn instant_currentperson_consumed(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("consumeTime".to_string(), Value::String(row.get::<_, Option<String>>("consume_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1051,17 +1629,34 @@ pub async fn instant_currentperson_consumed_all(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("consumeTime".to_string(), Value::String(row.get::<_, Option<String>>("consume_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1071,22 +1666,35 @@ pub async fn instant_currentperson_consumed_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id_list = req.get("\"idList\"").and_then(|v| v.as_array()).map(|arr| {
-        arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>()
-    }).unwrap_or_default();
+    let id_list = req
+        .get("\"idList\"")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect::<Vec<String>>()
+        })
+        .unwrap_or_default();
 
-    let success = id_list.is_empty();
     let result = if !id_list.is_empty() {
-        Some(client
-            .execute("UPDATE x_message_instant SET consumed = true WHERE id = ANY($1)", &[&id_list])
-            .await
-            .map_err(|_| AppError::Internal)?)
+        Some(
+            client
+                .execute(
+                    "UPDATE x_message_instant SET consumed = true WHERE id = ANY($1)",
+                    &[&id_list],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?,
+        )
     } else {
         None
     };
 
+    // W12 收敛：对齐 Java ActionCurrentPersonConsumed——Wo extends WrapBoolean，
+    // 成功路径恒 value=true（与 idList 是否为空无关，Java 总是先 setValue(true)）
+    let _ = result;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(success || result.unwrap_or(0) > 0))]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
     ))))
 }
 
@@ -1102,17 +1710,31 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(row.get("consume_time")),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1127,17 +1749,31 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "consumeTime".to_string(),
+                    Value::String(row.get("consume_time")),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1152,17 +1788,34 @@ pub async fn instant_list_currentperson_count_count_asc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1177,17 +1830,34 @@ pub async fn instant_list_currentperson_count_count_desc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1202,17 +1872,34 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1227,17 +1914,34 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1252,17 +1956,34 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1277,17 +1998,34 @@ pub async fn instant_list_id_next_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1302,17 +2040,34 @@ pub async fn instant_list_id_prev_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("consume".to_string(), Value::String(row.get("consume"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("consume".to_string(), Value::String(row.get("consume"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1326,7 +2081,10 @@ pub async fn mass_enable_type(
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
 
     client
-        .execute("UPDATE x_message_mass SET enabled = $1 WHERE type = $2", &[&enabled, &msg_type])
+        .execute(
+            "UPDATE x_message_mass SET enabled = $1 WHERE type = $2",
+            &[&enabled, &msg_type],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1350,17 +2108,34 @@ pub async fn mass_list_id_next_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("massId".to_string(), Value::String(row.get("mass_id"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("massId".to_string(), Value::String(row.get("mass_id"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1375,17 +2150,34 @@ pub async fn mass_list_id_prev_count(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("massId".to_string(), Value::String(row.get("mass_id"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("massId".to_string(), Value::String(row.get("mass_id"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1396,7 +2188,10 @@ pub async fn mass_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT id, title, content, sender, create_time FROM x_message_mass WHERE id = $1", &[&id])
+        .query_opt(
+            "SELECT id, title, content, sender, create_time FROM x_message_mass WHERE id = $1",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1406,8 +2201,17 @@ pub async fn mass_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1422,9 +2226,18 @@ pub async fn message_custom_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let conversation_id = req.get("\"conversationId\"").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
+    let conversation_id = req
+        .get("\"conversationId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = req
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
     let result = client
@@ -1435,7 +2248,10 @@ pub async fn message_custom_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
+            (
+                "\"conversationId\"".to_string(),
+                Value::String(conversation_id.to_string()),
+            ),
             ("content".to_string(), Value::String(content.to_string())),
             ("type".to_string(), Value::String("custom".to_string())),
             ("created".to_string(), Value::Bool(result > 0)),
@@ -1457,19 +2273,41 @@ pub async fn message_list_paging_page_size_size(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
-            ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
-            ("type".to_string(), Value::String(row.get::<_, Option<String>>("type").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "\"conversationId\"".to_string(),
+                    Value::String(row.get("conversation_id")),
+                ),
+                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "sender".to_string(),
+                    Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        size,
+    )))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1483,10 +2321,7 @@ pub async fn message_list_paging_page_size_size(
 //     操作前校验成员身份，禁止代他人操作。
 // ══════════════════════════════════════════════════════════════════
 
-async fn require_admin(
-    pool: &Pool,
-    session: &shared::session::Session,
-) -> Result<(), AppError> {
+async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {
@@ -1514,7 +2349,10 @@ async fn conversation_type(
     conversation_id: &str,
 ) -> Result<Option<String>, AppError> {
     let row = client
-        .query_opt("SELECT type FROM x_message_conversation WHERE id = $1", &[&conversation_id])
+        .query_opt(
+            "SELECT type FROM x_message_conversation WHERE id = $1",
+            &[&conversation_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(row.map(|r| r.get::<_, Option<String>>("type").unwrap_or_default()))
@@ -1529,9 +2367,21 @@ pub async fn connector_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let person = req.get("person").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let msg_type = req
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let person = req
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let body = match req.get("body") {
         Some(v) => v.to_string(),
         None => String::new(),
@@ -1575,7 +2425,10 @@ pub async fn connector_create(
         serde_json::Map::from_iter([
             ("value".to_string(), Value::Bool(true)),
             ("instantId".to_string(), Value::String(instant_id)),
-            ("messages".to_string(), Value::Number(serde_json::Number::from(dispatched))),
+            (
+                "messages".to_string(),
+                Value::Number(serde_json::Number::from(dispatched)),
+            ),
         ]),
     ))))
 }
@@ -1589,8 +2442,16 @@ pub async fn ws_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person = req.get("person").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let person = req
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let sender = req
+        .get("sender")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
     let body = match req.get("body") {
         Some(v) => v.to_string(),
         None => String::new(),
@@ -1624,9 +2485,7 @@ pub async fn ws_create(
 
 /// GET /ws/count/person — 当前在线（未断开）ws 连接的去重人数。
 #[allow(non_snake_case)]
-pub async fn ws_count_person(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn ws_count_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i64 = client
@@ -1639,9 +2498,10 @@ pub async fn ws_count_person(
         .get("cnt");
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-        ]),
+        serde_json::Map::from_iter([(
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        )]),
     ))))
 }
 
@@ -1663,9 +2523,10 @@ pub async fn ws_list_person_current_node(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("person".to_string(), Value::String(row.get("person"))),
-            ]))
+            Value::Object(serde_json::Map::from_iter([(
+                "person".to_string(),
+                Value::String(row.get("person")),
+            )]))
         })
         .collect();
 
@@ -1679,9 +2540,7 @@ pub async fn ws_list_person_current_node(
 
 /// GET /ws/list/person — 按节点分组的在线人员列表。
 #[allow(non_snake_case)]
-pub async fn ws_list_person(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn ws_list_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1692,9 +2551,12 @@ pub async fn ws_list_person(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let mut groups: std::collections::BTreeMap<String, Vec<String>> = std::collections::BTreeMap::new();
+    let mut groups: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
     for row in &rows {
-        let node: String = row.get::<_, Option<String>>("node").unwrap_or_else(|| "local".to_string());
+        let node: String = row
+            .get::<_, Option<String>>("node")
+            .unwrap_or_else(|| "local".to_string());
         let person: String = row.get("person");
         groups.entry(node).or_default().push(person);
     }
@@ -1751,14 +2613,26 @@ pub async fn mass_create(
     if targets.is_empty() {
         return Ok(Json(ActionResult::error("empty target")));
     }
-    let body = req.get("body").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let body = req
+        .get("body")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     if body.is_empty() {
         return Ok(Json(ActionResult::error("empty body")));
     }
 
     let id = Uuid::new_v4().to_string();
-    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("dingding").to_string();
-    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let msg_type = req
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("dingding")
+        .to_string();
+    let title = req
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let send_person_list = targets.join(",");
 
     client
@@ -1774,7 +2648,10 @@ pub async fn mass_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("type".to_string(), Value::String(msg_type)),
-            ("targetCount".to_string(), Value::Number(serde_json::Number::from(targets.len() as i64))),
+            (
+                "targetCount".to_string(),
+                Value::Number(serde_json::Number::from(targets.len() as i64)),
+            ),
         ]),
     ))))
 }
@@ -1799,7 +2676,12 @@ pub async fn mass_enable_type_get(
         .filter_map(|row| row.get::<_, Option<String>>("type").map(Value::String))
         .collect();
 
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
@@ -1849,7 +2731,9 @@ pub async fn im_conversation_id_single_delete_virtual(
     match conv_type.as_deref() {
         None => return Ok(Json(ActionResult::error("conversation not found"))),
         Some(t) if t != "single" => {
-            return Ok(Json(ActionResult::error("only single conversation can be deleted")))
+            return Ok(Json(ActionResult::error(
+                "only single conversation can be deleted",
+            )))
         }
         _ => {}
     }
@@ -1915,7 +2799,10 @@ pub async fn instant_currentperson_consumed_put(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("value".to_string(), Value::Bool(true)),
-            ("marked".to_string(), Value::Number(serde_json::Number::from(marked as i64))),
+            (
+                "marked".to_string(),
+                Value::Number(serde_json::Number::from(marked as i64)),
+            ),
         ]),
     ))))
 }

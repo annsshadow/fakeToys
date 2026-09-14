@@ -1,4 +1,5 @@
 [package]
+publish.workspace = true
 name = "organization_assemble_authentication"
 version.workspace = true
 edition.workspace = true

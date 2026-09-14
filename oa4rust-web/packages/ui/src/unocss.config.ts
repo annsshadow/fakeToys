@@ -1,4 +1,4 @@
-import { defineConfig } from 'unocss';
+import { defineConfig } from 'unocss'
 
 export default defineConfig({
   theme: {
@@ -20,14 +20,7 @@ export default defineConfig({
       },
     },
     fontFamily: {
-      sans: [
-        'Inter',
-        'HarmonyOS Sans SC',
-        'PingFang SC',
-        'Microsoft YaHei',
-        'system-ui',
-        'sans-serif',
-      ],
+      sans: ['Inter', 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei', 'system-ui', 'sans-serif'],
       mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       display: ['Orbitron', 'Rajdhani', 'sans-serif'],
     },
@@ -39,8 +32,7 @@ export default defineConfig({
     },
   },
   shortcuts: {
-    'glass-card':
-      'bg-glass backdrop-blur-16 border border-white/10 rounded-lg shadow-card',
+    'glass-card': 'bg-glass backdrop-blur-16 border border-white/10 rounded-lg shadow-card',
     'neon-border': 'border border-primary/20 hover:border-primary/50 transition-all duration-200',
     'glow-text': 'text-primary drop-shadow-[0_0_8px_rgba(0,212,255,0.5)]',
   },
@@ -51,4 +43,4 @@ export default defineConfig({
       `,
     },
   ],
-});
+})

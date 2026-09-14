@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    http::HeaderMap,
-    Json,
-};
+use axum::{extract::Extension, http::HeaderMap, Json};
 use chrono::Utc;
 use serde_json::Value;
 use shared::error::AppError;
@@ -29,7 +25,10 @@ pub async fn safe_logout(
         .ok_or(AppError::Unauthorized)?;
 
     // 写入 TokenThreshold 记录当前时间戳
-    let now = Utc::now().naive_utc().format("%Y-%m-%d %H:%M:%S").to_string();
+    let now = Utc::now()
+        .naive_utc()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let _ = client
         .execute(

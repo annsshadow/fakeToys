@@ -83,25 +83,33 @@ pub struct TokioCronScheduler {
 impl TokioCronScheduler {
     /// 创建新调度器实例
     pub async fn new() -> SchedulerResult<Self> {
-        let scheduler = JobScheduler::new().await
+        let scheduler = JobScheduler::new()
+            .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
         Ok(Self {
             scheduler: Arc::new(RwLock::new(scheduler)),
             jobs: Arc::new(RwLock::new(HashMap::new())),
-        }
-        )
+        })
     }
 
     /// 启动调度器（阻塞直到被停止）
     pub async fn start(&self) -> SchedulerResult<()> {
-        self.scheduler.write().await.start().await
+        self.scheduler
+            .write()
+            .await
+            .start()
+            .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
         Ok(())
     }
 
     /// 关闭调度器
     pub async fn shutdown(&self) -> SchedulerResult<()> {
-        self.scheduler.write().await.shutdown().await
+        self.scheduler
+            .write()
+            .await
+            .shutdown()
+            .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
         Ok(())
     }
@@ -119,21 +127,21 @@ impl Scheduler for TokioCronScheduler {
         let cron_expr = systemtime_to_cron(at);
         let h = handler.clone();
 
-        let job = Job::new_async_tz(
-            cron_expr.as_str(),
-            chrono::Utc,
-            move |_uuid, _lock| {
-                let h = h.clone();
-                let id = job_id_arc.clone();
-                Box::pin(async move {
-                    h();
-                    debug!(job_id = %id, "one-shot job executed");
-                }) as std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
-            },
-        )
+        let job = Job::new_async_tz(cron_expr.as_str(), chrono::Utc, move |_uuid, _lock| {
+            let h = h.clone();
+            let id = job_id_arc.clone();
+            Box::pin(async move {
+                h();
+                debug!(job_id = %id, "one-shot job executed");
+            }) as std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+        })
         .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
-        self.scheduler.write().await.add(job).await
+        self.scheduler
+            .write()
+            .await
+            .add(job)
+            .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
         self.jobs.write().await.insert(job_id.clone(), true);
@@ -150,21 +158,21 @@ impl Scheduler for TokioCronScheduler {
         let job_id_arc = Arc::new(job_id.clone());
         let h = handler.clone();
 
-        let job = Job::new_async_tz(
-            cron_expr,
-            chrono::Utc,
-            move |_uuid, _lock| {
-                let h = h.clone();
-                let id = job_id_arc.clone();
-                Box::pin(async move {
-                    h();
-                    debug!(job_id = %id, "cron job executed");
-                })
-            },
-        )
+        let job = Job::new_async_tz(cron_expr, chrono::Utc, move |_uuid, _lock| {
+            let h = h.clone();
+            let id = job_id_arc.clone();
+            Box::pin(async move {
+                h();
+                debug!(job_id = %id, "cron job executed");
+            })
+        })
         .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
-        self.scheduler.write().await.add(job).await
+        self.scheduler
+            .write()
+            .await
+            .add(job)
+            .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
         self.jobs.write().await.insert(job_id.clone(), true);
@@ -272,7 +280,6 @@ impl Scheduler for MockScheduler {
 #[cfg(test)]
 mod scheduler_tests {
     use super::*;
-    
 
     #[tokio::test]
     async fn test_mock_scheduler_schedule_once() {
@@ -281,9 +288,13 @@ mod scheduler_tests {
         let executed_clone = executed.clone();
 
         scheduler
-            .schedule_once("job-1".into(), SystemTime::now(), Arc::new(move || {
-                executed_clone.store(true, std::sync::atomic::Ordering::SeqCst);
-            }))
+            .schedule_once(
+                "job-1".into(),
+                SystemTime::now(),
+                Arc::new(move || {
+                    executed_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+                }),
+            )
             .await
             .unwrap();
 
@@ -299,9 +310,13 @@ mod scheduler_tests {
         let executed_clone = executed.clone();
 
         scheduler
-            .schedule_cron("cron-1".into(), "0 0 * * * *", Arc::new(move || {
-                executed_clone.store(true, std::sync::atomic::Ordering::SeqCst);
-            }))
+            .schedule_cron(
+                "cron-1".into(),
+                "0 0 * * * *",
+                Arc::new(move || {
+                    executed_clone.store(true, std::sync::atomic::Ordering::SeqCst);
+                }),
+            )
             .await
             .unwrap();
 
@@ -315,8 +330,13 @@ mod scheduler_tests {
         let scheduler = MockScheduler::default();
         let handler = Arc::new(|| {});
 
-        scheduler.schedule_once("dup".into(), SystemTime::now(), handler.clone()).await.unwrap();
-        let result = scheduler.schedule_once("dup".into(), SystemTime::now(), handler).await;
+        scheduler
+            .schedule_once("dup".into(), SystemTime::now(), handler.clone())
+            .await
+            .unwrap();
+        let result = scheduler
+            .schedule_once("dup".into(), SystemTime::now(), handler)
+            .await;
         assert!(result.is_err());
     }
 
@@ -325,7 +345,10 @@ mod scheduler_tests {
         let scheduler = MockScheduler::default();
         let handler = Arc::new(|| {});
 
-        scheduler.schedule_once("to-cancel".into(), SystemTime::now(), handler).await.unwrap();
+        scheduler
+            .schedule_once("to-cancel".into(), SystemTime::now(), handler)
+            .await
+            .unwrap();
         scheduler.cancel(&"to-cancel".into()).await.unwrap();
         let jobs = scheduler.list_jobs().await.unwrap();
         assert!(!jobs.contains(&"to-cancel".to_string()));

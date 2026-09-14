@@ -246,7 +246,9 @@ async fn apply_reset(
     password: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if !is_password_acceptable(password) {
-        return Ok(Json(ActionResult::error("新密码不符合规则（长度需 6 至 64 位）")));
+        return Ok(Json(ActionResult::error(
+            "新密码不符合规则（长度需 6 至 64 位）",
+        )));
     }
 
     if let Err(e) = store.verify_and_consume(credential, code).await {

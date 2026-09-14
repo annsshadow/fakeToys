@@ -22,41 +22,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 const props = defineProps<{
-  modelValue: boolean;
-  title: string;
-  x?: number;
-  y?: number;
-  zIndex?: number;
-}>();
+  modelValue: boolean
+  title: string
+  x?: number
+  y?: number
+  zIndex?: number
+}>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean];
-  minimize: [];
-}>();
+  'update:modelValue': [value: boolean]
+  minimize: []
+}>()
 
-const maximized = ref(false);
-const bodyStyle = ref<Record<string, string>>({});
+const maximized = ref(false)
+const bodyStyle = ref<Record<string, string>>({})
 
 // Simple drag implementation
 function startDrag(e: MouseEvent): void {
-  if ((e.target as HTMLElement).classList.contains('win-btn')) return;
-  const startX = e.clientX - (props.x ?? 0);
-  const startY = e.clientY - (props.y ?? 0);
+  if ((e.target as HTMLElement).classList.contains('win-btn')) return
+  const startX = e.clientX - (props.x ?? 0)
+  const startY = e.clientY - (props.y ?? 0)
   const onMove = (ev: MouseEvent) => {
-    document.body.style.cursor = 'move';
-    document.body.style.userSelect = 'none';
-  };
+    document.body.style.cursor = 'move'
+    document.body.style.userSelect = 'none'
+  }
   const onUp = () => {
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    window.removeEventListener('mousemove', onMove);
-    window.removeEventListener('mouseup', onUp);
-  };
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onUp);
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+  }
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
 }
 </script>
 

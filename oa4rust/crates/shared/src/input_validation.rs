@@ -24,7 +24,10 @@ pub enum ValidationError {
         actual: usize,
     },
     #[error("field '{field}' has invalid format: {message}")]
-    InvalidFormat { field: &'static str, message: String },
+    InvalidFormat {
+        field: &'static str,
+        message: String,
+    },
     #[error("field '{field}' value '{value}' is not allowed")]
     InvalidValue {
         field: &'static str,
@@ -164,7 +167,10 @@ pub fn validate_file_size(
     if size > max_bytes {
         Err(ValidationError::InvalidFormat {
             field,
-            message: format!("file size {} bytes exceeds maximum {} bytes", size, max_bytes),
+            message: format!(
+                "file size {} bytes exceeds maximum {} bytes",
+                size, max_bytes
+            ),
         })
     } else {
         Ok(())
@@ -188,7 +194,8 @@ pub fn validate_mobile(mobile: &str) -> Result<(), ValidationError> {
     if mobile.is_empty() {
         return Ok(());
     }
-    if !mobile.starts_with('1') || mobile.len() != 11 || !mobile.chars().all(|c| c.is_ascii_digit()) {
+    if !mobile.starts_with('1') || mobile.len() != 11 || !mobile.chars().all(|c| c.is_ascii_digit())
+    {
         return Err(ValidationError::InvalidFormat {
             field: "mobile",
             message: "must be a valid 11-digit mobile number starting with 1".to_string(),

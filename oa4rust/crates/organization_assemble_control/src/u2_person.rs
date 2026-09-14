@@ -14,7 +14,10 @@ const PERSON_COLS: &str =
     "id, name, mobile, email, unit_id, icon, status, status_des, creator, create_time::text";
 
 #[allow(non_snake_case)]
-pub async fn resolve_person_id(client: &deadpool_postgres::Client, flag: &str) -> Result<Option<String>, AppError> {
+pub async fn resolve_person_id(
+    client: &deadpool_postgres::Client,
+    flag: &str,
+) -> Result<Option<String>, AppError> {
     resolve_generic_id(client, PERSON_TABLE, flag).await
 }
 
@@ -41,16 +44,17 @@ fn person_row_json(row: &PgRow) -> Value {
 }
 
 #[allow(non_snake_case)]
-pub async fn person_get(
-    pool: Extension<Pool>,
-    Path(flag): Path<String>,
-) -> HandlerResult {
+pub async fn person_get(pool: Extension<Pool>, Path(flag): Path<String>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
     };
     let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE id = $1");
-    match client.query_opt(&sql, &[&pid]).await.map_err(|_| AppError::Internal)? {
+    match client
+        .query_opt(&sql, &[&pid])
+        .await
+        .map_err(|_| AppError::Internal)?
+    {
         Some(row) => ok(person_row_json(&row)),
         None => err("person not found"),
     }
@@ -116,7 +120,9 @@ pub async fn person_edit(
     let mobile = opt(&body, &["mobile"]).unwrap_or_default().to_string();
     let email = opt(&body, &["email"]).unwrap_or_default().to_string();
     let unit_id = opt(&body, &["unitId"]).unwrap_or_default().to_string();
-    let pinyin = opt(&body, &["pinyinInitial"]).unwrap_or_default().to_string();
+    let pinyin = opt(&body, &["pinyinInitial"])
+        .unwrap_or_default()
+        .to_string();
     let updated = client
         .execute(
             "UPDATE x_org_person SET
@@ -153,7 +159,10 @@ pub async fn person_mock_put_to_post(
     person_edit(pool, session, Path(flag), Json(body)).await
 }
 
-async fn soft_delete_person(client: &deadpool_postgres::Client, flag: &str) -> Result<Option<String>, AppError> {
+async fn soft_delete_person(
+    client: &deadpool_postgres::Client,
+    flag: &str,
+) -> Result<Option<String>, AppError> {
     let Some(pid) = resolve_person_id(client, flag).await? else {
         return Ok(None);
     };
@@ -177,7 +186,9 @@ pub async fn person_delete(
     let client = client_of(&pool).await?;
     match soft_delete_person(&client, &flag).await? {
         Some(pid) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(pid))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(pid))]
+                .into_iter()
+                .collect(),
         )),
         None => err("person not found"),
     }
@@ -208,7 +219,10 @@ pub async fn person_reserve_delete(
         "DELETE FROM x_org_group_member WHERE person_id = $1",
         "DELETE FROM x_org_person_attribute WHERE person_id = $1",
     ] {
-        client.execute(sql, &[&pid]).await.map_err(|_| AppError::Internal)?;
+        client
+            .execute(sql, &[&pid])
+            .await
+            .map_err(|_| AppError::Internal)?;
     }
     client
         .execute(
@@ -218,7 +232,9 @@ pub async fn person_reserve_delete(
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("id".to_string(), Value::String(pid))].into_iter().collect(),
+        vec![("id".to_string(), Value::String(pid))]
+            .into_iter()
+            .collect(),
     ))
 }
 
@@ -238,7 +254,10 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
         let sql = format!(
             "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int"
         );
-        client.query(&sql, &[&limit]).await.map_err(|_| AppError::Internal)?
+        client
+            .query(&sql, &[&limit])
+            .await
+            .map_err(|_| AppError::Internal)?
     } else {
         let op = if next { ">" } else { "<" };
         let sql = format!(
@@ -320,7 +339,10 @@ pub async fn person_list_with_role(
           JOIN x_org_role r ON r.id = pr.role_id
          WHERE (r.id = $1 OR r.name = $1) AND p.deleted_at IS NULL"
     );
-    let rows = client.query(&sql, &[&role_flag]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&role_flag])
+        .await
+        .map_err(|_| AppError::Internal)?;
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
@@ -334,34 +356,43 @@ pub async fn person_list_pinyininitial(
     let client = client_of(&pool).await?;
     if initials.is_empty() {
         let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
-        let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(&sql, &[])
+            .await
+            .map_err(|_| AppError::Internal)?;
         return list_ok_java(rows.iter().map(person_row_json).collect());
     }
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
           WHERE deleted_at IS NULL AND (LEFT(LOWER(pinyin_initial), 1) = ANY($1) OR LEFT(LOWER(name), 1) = ANY($1))"
     );
-    let rows = client.query(&sql, &[&initials]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&initials])
+        .await
+        .map_err(|_| AppError::Internal)?;
     list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
-pub async fn person_list_like(
-    pool: Extension<Pool>,
-    Json(body): Json<Value>,
-) -> HandlerResult {
+pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let key = normalize_key(opt(&body, &["key", "name"]).unwrap_or_default());
     if key.is_empty() {
         let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
-        let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(&sql, &[])
+            .await
+            .map_err(|_| AppError::Internal)?;
         return list_ok_java(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("%{key}%");
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1"
     );
-    let rows = client.query(&sql, &[&pattern]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&pattern])
+        .await
+        .map_err(|_| AppError::Internal)?;
     list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
@@ -374,7 +405,10 @@ pub async fn person_list_like_pinyin(
     let key = normalize_key(opt(&body, &["key"]).unwrap_or_default());
     if key.is_empty() {
         let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
-        let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(&sql, &[])
+            .await
+            .map_err(|_| AppError::Internal)?;
         return list_ok_java(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("{}%", key.to_lowercase());
@@ -382,7 +416,10 @@ pub async fn person_list_like_pinyin(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
           WHERE deleted_at IS NULL AND (LOWER(pinyin_initial) LIKE $1 OR LOWER(name) LIKE $1)"
     );
-    let rows = client.query(&sql, &[&pattern]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&pattern])
+        .await
+        .map_err(|_| AppError::Internal)?;
     list_ok_java(rows.iter().map(person_row_json).collect())
 }
 
@@ -395,15 +432,22 @@ pub async fn person_set_password(
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
     let client = client_of(&pool).await?;
-    let value = opt(&body, &["value", "password"]).unwrap_or_default().to_string();
+    let value = opt(&body, &["value", "password"])
+        .unwrap_or_default()
+        .to_string();
     if value.is_empty() {
-        return Err(AppError::BadRequest("password must not be empty".to_string()));
+        return Err(AppError::BadRequest(
+            "password must not be empty".to_string(),
+        ));
     }
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
     };
     client
-        .execute("UPDATE x_org_person SET password = $2 WHERE id = $1", &[&pid, &value])
+        .execute(
+            "UPDATE x_org_person SET password = $2 WHERE id = $1",
+            &[&pid, &value],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Bool(true))
@@ -431,28 +475,33 @@ pub async fn person_reset_password(
         return err("person not found");
     };
     client
-        .execute("UPDATE x_org_person SET password = '' WHERE id = $1", &[&pid])
+        .execute(
+            "UPDATE x_org_person SET password = '' WHERE id = $1",
+            &[&pid],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("value".to_string(), Value::Bool(true))].into_iter().collect(),
-    ))
-}
-
-#[allow(non_snake_case)]
-pub async fn person_check_password(Path(password): Path<String>) -> HandlerResult {
-    ok(Value::Object(
-        vec![("value".to_string(), Value::Bool(validate_password_policy(&password)))]
+        vec![("value".to_string(), Value::Bool(true))]
             .into_iter()
             .collect(),
     ))
 }
 
 #[allow(non_snake_case)]
-pub async fn person_get_icon(
-    pool: Extension<Pool>,
-    Path(flag): Path<String>,
-) -> HandlerResult {
+pub async fn person_check_password(Path(password): Path<String>) -> HandlerResult {
+    ok(Value::Object(
+        vec![(
+            "value".to_string(),
+            Value::Bool(validate_password_policy(&password)),
+        )]
+        .into_iter()
+        .collect(),
+    ))
+}
+
+#[allow(non_snake_case)]
+pub async fn person_get_icon(pool: Extension<Pool>, Path(flag): Path<String>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
@@ -515,8 +564,12 @@ pub async fn person_lock(
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
     let client = client_of(&pool).await?;
-    let desc = opt(&body, &["desc", "description"]).unwrap_or_default().to_string();
-    let lock_expired_time = opt(&body, &["lockExpiredTime"]).unwrap_or_default().to_string();
+    let desc = opt(&body, &["desc", "description"])
+        .unwrap_or_default()
+        .to_string();
+    let lock_expired_time = opt(&body, &["lockExpiredTime"])
+        .unwrap_or_default()
+        .to_string();
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
     };
@@ -653,7 +706,12 @@ pub async fn person_list_filter_paging(
         "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6::int OFFSET $7::int"
     );
     let rows = client
-        .query(&data_sql, &[&name, &mobile, &email, &status, &unit_flag, &size_str, &offset])
+        .query(
+            &data_sql,
+            &[
+                &name, &mobile, &email, &status, &unit_flag, &size_str, &offset,
+            ],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 

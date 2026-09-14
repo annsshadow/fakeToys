@@ -47,8 +47,7 @@ pub fn diff(a: &Value, b: &Value) -> Vec<String> {
 fn diff_impl(a: &Value, b: &Value, path: &str, out: &mut Vec<String>) {
     match (a, b) {
         (Value::Object(ao), Value::Object(bo)) => {
-            let keys: std::collections::BTreeSet<&String> =
-                ao.keys().chain(bo.keys()).collect();
+            let keys: std::collections::BTreeSet<&String> = ao.keys().chain(bo.keys()).collect();
             for k in keys {
                 let child = if path.is_empty() {
                     k.clone()
@@ -57,8 +56,14 @@ fn diff_impl(a: &Value, b: &Value, path: &str, out: &mut Vec<String>) {
                 };
                 match (ao.get(k), bo.get(k)) {
                     (Some(av), Some(bv)) => diff_impl(av, bv, &child, out),
-                    (Some(_), None) => out.push(format!("{}: present in oa4rust, missing in o2server", child)),
-                    (None, Some(_)) => out.push(format!("{}: missing in oa4rust, present in o2server", child)),
+                    (Some(_), None) => out.push(format!(
+                        "{}: present in oa4rust, missing in o2server",
+                        child
+                    )),
+                    (None, Some(_)) => out.push(format!(
+                        "{}: missing in oa4rust, present in o2server",
+                        child
+                    )),
                     (None, None) => {}
                 }
             }
@@ -78,7 +83,10 @@ fn diff_impl(a: &Value, b: &Value, path: &str, out: &mut Vec<String>) {
         }
         (av, bv) => {
             if av != bv {
-                out.push(format!("{}: value differs (oa4rust={:?}, o2server={:?})", path, av, bv));
+                out.push(format!(
+                    "{}: value differs (oa4rust={:?}, o2server={:?})",
+                    path, av, bv
+                ));
             }
         }
     }
@@ -121,9 +129,10 @@ fn parity_record() {
 
     let rt = tokio::runtime::Runtime::new().expect("failed to build runtime");
     rt.block_on(async {
-        let (_addr, server_handle, token) = integration_tests::helpers::setup_test_server(pool.clone())
-            .await
-            .expect("failed to start test server");
+        let (_addr, server_handle, token) =
+            integration_tests::helpers::setup_test_server(pool.clone())
+                .await
+                .expect("failed to start test server");
 
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(10))
@@ -136,14 +145,26 @@ fn parity_record() {
         // 跨模块已知可用（无路径参数）的只读端点，录制 oa4rust 基线响应。
         // 带路径参数的端点（如 /jaxrs/ai/file/{id}/download）需种子数据，留待 o2server 语料齐备后扩展。
         let endpoints: Vec<(&str, &str, &str)> = vec![
-            ("cms_document_list", "GET", "/jaxrs/cms_assemble_control/data/document"),
+            (
+                "cms_document_list",
+                "GET",
+                "/jaxrs/cms_assemble_control/data/document",
+            ),
             ("program_applications", "GET", "/jaxrs/program/applications"),
             ("ldap_config", "GET", "/jaxrs/ldap/config"),
             ("portalcategory_list", "GET", "/jaxrs/portalcategory/list"),
             ("console_status", "GET", "/jaxrs/console/status"),
             ("console_metric_cpu", "GET", "/jaxrs/console/metric/cpu"),
-            ("control_config", "GET", "/jaxrs/component_assemble_control/get/control/config"),
-            ("ai_mcp_config_list", "GET", "/jaxrs/ai/config/list/mcp/paging/1/size/10"),
+            (
+                "control_config",
+                "GET",
+                "/jaxrs/component_assemble_control/get/control/config",
+            ),
+            (
+                "ai_mcp_config_list",
+                "GET",
+                "/jaxrs/ai/config/list/mcp/paging/1/size/10",
+            ),
         ];
 
         let out_dir = Path::new("tests/parity/corpus");
@@ -173,9 +194,17 @@ fn parity_record() {
             });
 
             let file = out_dir.join(format!("oa4rust-{}.json", name));
-            fs::write(&file, serde_json::to_string_pretty(&record).expect("serialize"))
-                .unwrap_or_else(|e| panic!("write {} failed: {}", file.display(), e));
-            println!("recorded {} -> {} (status {})", name, file.display(), status);
+            fs::write(
+                &file,
+                serde_json::to_string_pretty(&record).expect("serialize"),
+            )
+            .unwrap_or_else(|e| panic!("write {} failed: {}", file.display(), e));
+            println!(
+                "recorded {} -> {} (status {})",
+                name,
+                file.display(),
+                status
+            );
         }
 
         server_handle.abort();

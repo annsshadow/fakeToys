@@ -283,7 +283,10 @@ macro_rules! parity_test {
 #[cfg(test)]
 mod generated_tests {
     //! AUTO-GENERATED — DO NOT EDIT. Run `python scripts/generate_parity_tests.py`.
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/generated_tests.rs"));
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/generated_tests.rs"
+    ));
 }
 
 #[cfg(test)]
@@ -293,7 +296,10 @@ mod behavior_tests {
     //! These use the `behavior:` form of `parity_test!` to validate response
     //! body structure (not just 404 absence).  Do NOT auto-generate — edits
     //! here are intentional and must be reviewed.
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/behavior_tests.rs"));
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/behavior_tests.rs"
+    ));
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -361,7 +367,7 @@ impl ParityReport {
 
 #[cfg(test)]
 mod macro_self_test {
-    
+
     use tower::util::ServiceExt;
 
     parity_test!(

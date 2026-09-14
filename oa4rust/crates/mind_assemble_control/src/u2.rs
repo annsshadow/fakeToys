@@ -75,7 +75,9 @@ pub async fn folder_delete(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -86,9 +88,13 @@ pub async fn folder_delete(
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
-        return Ok(Json(ActionResult::error("folder not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "folder not found or already deleted",
+        )));
     }
-    Ok(Json(ActionResult::success(json!({ "id": id, "deleted": n }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": id, "deleted": n }),
+    )))
 }
 
 /// DELETE /jaxrs/mind/assemble/control/folder/{id}/force —— 强制删除（复用 lib.rs handler，修正方法）
@@ -116,7 +122,11 @@ pub async fn mind_filter_list(
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/recived/{id}/next/{page} —— 收到(共享给我)的过滤分页
@@ -143,7 +153,11 @@ pub async fn mind_filter_received(
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/recycle/{id}/next/{page} —— 回收站过滤分页
@@ -168,7 +182,11 @@ pub async fn mind_filter_recycle(
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/filter/shared/{id}/next/{page} —— 我共享出的过滤分页
@@ -194,7 +212,11 @@ pub async fn mind_filter_shared(
         .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/list/{id}/shareRecords —— 共享记录
@@ -221,7 +243,11 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/list/{id}/version —— 版本列表
@@ -250,7 +276,11 @@ pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) ->
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 /// DELETE /jaxrs/mind/assemble/control/mind/recycle/{id} —— 移入回收站（软删除）
@@ -261,7 +291,9 @@ pub async fn mind_recycle(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -272,9 +304,13 @@ pub async fn mind_recycle(
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
-        return Ok(Json(ActionResult::error("mind not found or already recycled")));
+        return Ok(Json(ActionResult::error(
+            "mind not found or already recycled",
+        )));
     }
-    Ok(Json(ActionResult::success(json!({ "id": id, "recycled": n }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": id, "recycled": n }),
+    )))
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/restore/{id} —— 从回收站恢复
@@ -285,7 +321,9 @@ pub async fn mind_restore(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -296,9 +334,13 @@ pub async fn mind_restore(
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
-        return Ok(Json(ActionResult::error("mind not found or not in recycle")));
+        return Ok(Json(ActionResult::error(
+            "mind not found or not in recycle",
+        )));
     }
-    Ok(Json(ActionResult::success(json!({ "id": id, "restored": n }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": id, "restored": n }),
+    )))
 }
 
 /// POST /jaxrs/mind/assemble/control/mind/save —— 保存脑图
@@ -310,15 +352,37 @@ pub async fn mind_save(
 ) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let content = body.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let folder_id = body.get("folderId").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let description = body.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let shared = body.get("shared").and_then(|v| v.as_bool()).unwrap_or(false);
-    let parent_id = body.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let name = body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let content = body
+        .get("content")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let folder_id = body
+        .get("folderId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let description = body
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let shared = body
+        .get("shared")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let parent_id = body
+        .get("parentId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let person = session.person_unique.clone();
 
-    let existing = body.get("id").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let existing = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     if let Some(eid) = existing {
         if !eid.is_empty() {
             let n = client
@@ -327,7 +391,15 @@ pub async fn mind_save(
                      folder_id = COALESCE($4, folder_id), description = COALESCE($5, description), \
                      shared = $6, parent_id = COALESCE($7, parent_id) \
                      WHERE id = $1 AND deleted_at IS NULL",
-                    &[&eid, &name, &content, &folder_id, &description, &shared, &parent_id],
+                    &[
+                        &eid,
+                        &name,
+                        &content,
+                        &folder_id,
+                        &description,
+                        &shared,
+                        &parent_id,
+                    ],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
@@ -349,7 +421,9 @@ pub async fn mind_save(
                         &[&vid, &eid, &name, &ver, &person, &body.get("creatorUnit").and_then(|v| v.as_str()).map(|s| s.to_string()), &description],
                     )
                     .await;
-                return Ok(Json(ActionResult::success(json!({ "id": eid, "updated": n, "fileVersion": ver }))));
+                return Ok(Json(ActionResult::success(
+                    json!({ "id": eid, "updated": n, "fileVersion": ver }),
+                )));
             }
         }
     }
@@ -359,7 +433,20 @@ pub async fn mind_save(
             "INSERT INTO x_mind (id, name, content, folder_id, description, shared, \
              file_version, creator, creator_unit, parent_id, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, 1, $7, $8, $9, NOW())",
-            &[&id, &name, &content, &folder_id, &description, &shared, &person, &body.get("creatorUnit").and_then(|v| v.as_str()).map(|s| s.to_string()), &parent_id],
+            &[
+                &id,
+                &name,
+                &content,
+                &folder_id,
+                &description,
+                &shared,
+                &person,
+                &body
+                    .get("creatorUnit")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                &parent_id,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -380,9 +467,15 @@ pub async fn mind_share(
     Json(body): Json<Value>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
-    let person = body.get("person").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person = body
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     if person.is_empty() {
         return Ok(Json(ActionResult::error("person is required")));
     }
@@ -400,7 +493,9 @@ pub async fn mind_share(
         .execute("UPDATE x_mind SET shared = true WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(json!({ "id": sid, "mindId": id, "person": person }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": sid, "mindId": id, "person": person }),
+    )))
 }
 
 /// PUT /jaxrs/mind/assemble/control/mind/share/{id}/cancel —— 取消共享
@@ -412,9 +507,15 @@ pub async fn mind_share_cancel(
     Json(body): Json<Value>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
-    let person = body.get("person").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let person = body
+        .get("person")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
         .execute(
@@ -496,7 +597,9 @@ pub async fn mind_destroy(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
@@ -506,7 +609,9 @@ pub async fn mind_destroy(
     if n == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
     }
-    Ok(Json(ActionResult::success(json!({ "id": id, "destroyed": n }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": id, "destroyed": n }),
+    )))
 }
 
 /// DELETE /jaxrs/mind/assemble/control/mind/{id}/destoryrecycle —— 从回收站彻底删除
@@ -517,17 +622,24 @@ pub async fn mind_destroy_recycle(
     Path(id): Path<String>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
-        .execute("DELETE FROM x_mind WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .execute(
+            "DELETE FROM x_mind WHERE id = $1 AND deleted_at IS NOT NULL",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
         return Ok(Json(ActionResult::error("mind not found in recycle")));
     }
-    Ok(Json(ActionResult::success(json!({ "id": id, "destroyed": n }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": id, "destroyed": n }),
+    )))
 }
 
 /// GET /jaxrs/mind/assemble/control/mind/{id}/icon —— 获取图标
@@ -535,7 +647,10 @@ pub async fn mind_destroy_recycle(
 pub async fn mind_icon_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT id, icon FROM x_mind WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .query_opt(
+            "SELECT id, icon FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
@@ -559,16 +674,27 @@ pub async fn mind_icon_set(
     Json(body): Json<Value>,
 ) -> ApiResult {
     if !person_can_manage_mind(&pool, &session.person_unique, &id).await? {
-        return Ok(Json(ActionResult::error("forbidden: not mind owner or admin")));
+        return Ok(Json(ActionResult::error(
+            "forbidden: not mind owner or admin",
+        )));
     }
-    let icon = body.get("icon").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let icon = body
+        .get("icon")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
-        .execute("UPDATE x_mind SET icon = $2 WHERE id = $1 AND deleted_at IS NULL", &[&id, &icon])
+        .execute(
+            "UPDATE x_mind SET icon = $2 WHERE id = $1 AND deleted_at IS NULL",
+            &[&id, &icon],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     if n == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
     }
-    Ok(Json(ActionResult::success(json!({ "id": id, "size": size, "icon": icon }))))
+    Ok(Json(ActionResult::success(
+        json!({ "id": id, "size": size, "icon": icon }),
+    )))
 }

@@ -5,17 +5,14 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use super::db::TestPool;
 use anyhow::Context as _;
 use base64::Engine;
 use chrono::NaiveDateTime;
 use deadpool_postgres::Pool;
 use hmac::Mac;
 use oa4rust::create_app;
-use shared::{
-    rate_limit::RateLimiter,
-    session::SessionManager,
-};
-use super::db::TestPool;
+use shared::{rate_limit::RateLimiter, session::SessionManager};
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
@@ -29,11 +26,12 @@ use tokio::task::JoinHandle;
 /// aborted by the caller when the scenario is done.
 ///
 /// Requires PostgreSQL pool (application uses deadpool_postgres::Pool).
-pub async fn setup_test_server(pool: Arc<TestPool>) -> anyhow::Result<(SocketAddr, JoinHandle<()>, String)> {
-    let pg_pool = pool
-        .as_pg()
-        .cloned()
-        .expect("setup_test_server requires PostgreSQL pool; MySQL scenario tests are not yet supported");
+pub async fn setup_test_server(
+    pool: Arc<TestPool>,
+) -> anyhow::Result<(SocketAddr, JoinHandle<()>, String)> {
+    let pg_pool = pool.as_pg().cloned().expect(
+        "setup_test_server requires PostgreSQL pool; MySQL scenario tests are not yet supported",
+    );
 
     let session_manager = SessionManager::with_pool(pg_pool.clone());
     let rate_limiter = RateLimiter::new();
@@ -77,7 +75,10 @@ pub async fn seed_test_data(
         .as_pg()
         .expect("seed_test_data requires PostgreSQL pool; MySQL seeding not yet supported");
 
-    let client = pg_pool.get().await.context("failed to get pool client for seeding")?;
+    let client = pg_pool
+        .get()
+        .await
+        .context("failed to get pool client for seeding")?;
 
     client
         .execute(
@@ -129,11 +130,15 @@ pub async fn seed_test_data(
         .await?;
 
     let signed_token = if let Ok(secret) = std::env::var("SESSION_HMAC_SECRET") {
-        let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())
-            .expect("HMAC init");
+        let mut mac =
+            hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes()).expect("HMAC init");
         mac.update(session.token.as_bytes());
         let sig = mac.finalize().into_bytes();
-        format!("{}.{}", session.token, base64::engine::general_purpose::URL_SAFE.encode(sig))
+        format!(
+            "{}.{}",
+            session.token,
+            base64::engine::general_purpose::URL_SAFE.encode(sig)
+        )
     } else {
         session.token.clone()
     };

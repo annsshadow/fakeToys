@@ -6,4 +6,3 @@ use crate::query_core_express_router;
 pub fn router(pool: Pool) -> axum::Router {
     query_core_express_router(pool)
 }
-

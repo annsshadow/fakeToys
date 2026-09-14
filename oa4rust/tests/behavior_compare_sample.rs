@@ -142,17 +142,21 @@ async fn behavior_compare_sample_first_run() {
         eprintln!("[behavior_compare_sample] Skipping (set BEHAVIOR_COMPARE_SAMPLE=1 to run)");
         return;
     }
-    let java_url = std::env::var("JAVA_SERVICE_URL").unwrap_or_else(|_| "http://localhost:18080".to_string());
+    let java_url =
+        std::env::var("JAVA_SERVICE_URL").unwrap_or_else(|_| "http://localhost:18080".to_string());
 
     // ── 启动 Rust 测试服务 ────────────────────────────────────────────────
     let ctx = integration_tests::db::init_test_database_async().await;
-    let (addr, handle, _admin_token) =
-        integration_tests::helpers::setup_test_server(ctx.pool()).await.expect("failed to start rust test server");
+    let (addr, handle, _admin_token) = integration_tests::helpers::setup_test_server(ctx.pool())
+        .await
+        .expect("failed to start rust test server");
     let rust_url = format!("http://{}", addr);
     eprintln!("[behavior_compare_sample] Rust server at {}", rust_url);
     eprintln!("[behavior_compare_sample] Java base: {}", java_url);
 
-    seed_testadmin(&ctx.pool()).await.expect("failed to seed testadmin");
+    seed_testadmin(&ctx.pool())
+        .await
+        .expect("failed to seed testadmin");
 
     // ── 两侧登录 ─────────────────────────────────────────────────────────
     let base_comparator = EndpointComparator::new(&rust_url, &java_url);
@@ -168,21 +172,36 @@ async fn behavior_compare_sample_first_run() {
     eprintln!("[behavior_compare_sample] Java login OK");
 
     // ── 构造 comparator（allowlist 失败则空表继续）──────────────────────
-    let mut comparator = base_comparator
-        .with_tokens(rust_token.clone(), java_token.clone());
-    match behavior_comparison::DiffAllowlist::from_yaml("tests/behavior_comparison/allowlist.yaml") {
+    let mut comparator = base_comparator.with_tokens(rust_token.clone(), java_token.clone());
+    match behavior_comparison::DiffAllowlist::from_yaml("tests/behavior_comparison/allowlist.yaml")
+    {
         Ok(list) => comparator.allowlist = list,
-        Err(e) => eprintln!("[behavior_compare_sample] allowlist load failed: {} — continuing empty", e),
+        Err(e) => eprintln!(
+            "[behavior_compare_sample] allowlist load failed: {} — continuing empty",
+            e
+        ),
     }
 
     // ── 执行对比 ─────────────────────────────────────────────────────────
     let endpoints = sample_endpoints();
-    eprintln!("[behavior_compare_sample] Comparing {} endpoints...", endpoints.len());
+    eprintln!(
+        "[behavior_compare_sample] Comparing {} endpoints...",
+        endpoints.len()
+    );
     let results = comparator.compare_all(&endpoints).await;
 
-    let passed = results.iter().filter(|r| r.status == ComparisonStatus::Pass).count();
-    let failed = results.iter().filter(|r| r.status == ComparisonStatus::Fail).count();
-    let skipped = results.iter().filter(|r| r.status == ComparisonStatus::Skip).count();
+    let passed = results
+        .iter()
+        .filter(|r| r.status == ComparisonStatus::Pass)
+        .count();
+    let failed = results
+        .iter()
+        .filter(|r| r.status == ComparisonStatus::Fail)
+        .count();
+    let skipped = results
+        .iter()
+        .filter(|r| r.status == ComparisonStatus::Skip)
+        .count();
 
     for r in &results {
         eprintln!(
@@ -192,10 +211,17 @@ async fn behavior_compare_sample_first_run() {
             r.rust_status,
             r.java_status,
             r.status,
-            if r.differences.is_empty() { String::new() } else { format!(" diffs={:?}", r.differences) }
+            if r.differences.is_empty() {
+                String::new()
+            } else {
+                format!(" diffs={:?}", r.differences)
+            }
         );
     }
-    eprintln!("[behavior_compare_sample] Results: {} passed, {} failed, {} skipped", passed, failed, skipped);
+    eprintln!(
+        "[behavior_compare_sample] Results: {} passed, {} failed, {} skipped",
+        passed, failed, skipped
+    );
 
     // ── 报告 ─────────────────────────────────────────────────────────────
     let mut report = ComparisonReport::new(&java_url);
@@ -207,7 +233,10 @@ async fn behavior_compare_sample_first_run() {
         let _ = std::fs::create_dir_all(parent);
     }
     match std::fs::write(REPORT_PATH, &markdown) {
-        Ok(_) => eprintln!("[behavior_compare_sample] Report written to {}", REPORT_PATH),
+        Ok(_) => eprintln!(
+            "[behavior_compare_sample] Report written to {}",
+            REPORT_PATH
+        ),
         Err(e) => eprintln!("[behavior_compare_sample] Failed to write report: {}", e),
     }
 

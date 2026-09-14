@@ -1,4 +1,5 @@
 ﻿[package]
+publish.workspace = true
 name = "query_core_express"
 version.workspace = true
 edition.workspace = true

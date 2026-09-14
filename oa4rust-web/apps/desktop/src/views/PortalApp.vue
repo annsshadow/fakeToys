@@ -26,53 +26,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { confirmMsg } from '../utils/toast';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
-import { api } from '@oa4rust/sdk';
+import { api } from '@oa4rust/sdk'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { ref } from 'vue'
+import { confirmMsg } from '../utils/toast'
 
 interface PortalPage {
-  id: string;
-  name?: string;
-  title?: string;
-  icon?: string;
-  createTime?: string;
-  appId?: string;
+  id: string
+  name?: string
+  title?: string
+  icon?: string
+  createTime?: string
+  appId?: string
 }
 
-const pages = ref<PortalPage[]>([]);
-const showEditor = ref(false);
-const queryClient = useQueryClient();
+const pages = ref<PortalPage[]>([])
+const showEditor = ref(false)
+const queryClient = useQueryClient()
 
 const { data } = useQuery({
   queryKey: ['portal', 'pages'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/portal/assemble/surface/page/list/default');
-    return ((resp as any)?.data ?? []) as PortalPage[];
+    const resp = await api.get('/jaxrs/portal/assemble/surface/page/list/default')
+    return ((resp as any)?.data ?? []) as PortalPage[]
   },
   staleTime: 60_000,
-});
-pages.value = data.value ?? [];
+})
+pages.value = data.value ?? []
 
 const deleteMutation = useMutation({
   mutationFn: (id: string) => api.delete(`/jaxrs/portal/assemble/surface/page/${id}`),
   onSuccess: () => {
-    pages.value = pages.value.filter(p => p.id !== id);
-    queryClient.invalidateQueries({ queryKey: ['portal', 'pages'] });
+    pages.value = pages.value.filter((p) => p.id !== id)
+    queryClient.invalidateQueries({ queryKey: ['portal', 'pages'] })
   },
-});
+})
 
 function editPage(_page: PortalPage): void {
   // Navigate to portal designer (future)
-
 }
 
-function publishPage(_page: PortalPage): void {
-
-}
+function publishPage(_page: PortalPage): void {}
 
 function deletePage(id: string): void {
-  if (confirmMsg('确定删除此页面？')) deleteMutation.mutate(id);
+  if (confirmMsg('确定删除此页面？')) deleteMutation.mutate(id)
 }
 </script>
 

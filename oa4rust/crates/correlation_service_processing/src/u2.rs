@@ -142,7 +142,13 @@ async fn upsert_targets(
                  WHERE from_type = $1 AND from_bundle = $2 \
                    AND target_type = $3 AND target_bundle = $4 \
                    AND COALESCE(site, '') = $5 LIMIT 1",
-                &[&from_type.to_string(), &from_bundle.to_string(), &ty, &bundle, &site],
+                &[
+                    &from_type.to_string(),
+                    &from_bundle.to_string(),
+                    &ty,
+                    &bundle,
+                    &site,
+                ],
             )
             .await
             .map_err(|_| AppError::Internal)?;
@@ -326,8 +332,12 @@ async fn delete_impl(
         .map_err(|_| AppError::Internal)?;
 
     for row in &rows {
-        let row_type: String = row.get::<_, Option<String>>("from_type").unwrap_or_default();
-        let row_bundle: String = row.get::<_, Option<String>>("from_bundle").unwrap_or_default();
+        let row_type: String = row
+            .get::<_, Option<String>>("from_type")
+            .unwrap_or_default();
+        let row_bundle: String = row
+            .get::<_, Option<String>>("from_bundle")
+            .unwrap_or_default();
         if !row_type.eq_ignore_ascii_case(from_type) {
             return Ok(Json(ActionResult::error(format!(
                 "type not match: {} != {}",
@@ -404,7 +414,9 @@ async fn readable_impl(
     let mut pp_bundles: Vec<String> = Vec::new();
     let mut cms_bundles: Vec<String> = Vec::new();
     for row in rows {
-        let ft: String = row.get::<_, Option<String>>("from_type").unwrap_or_default();
+        let ft: String = row
+            .get::<_, Option<String>>("from_type")
+            .unwrap_or_default();
         let fb: String = row.get("from_bundle");
         match ft.to_lowercase().as_str() {
             TYPE_PROCESSPLATFORM => pp_bundles.push(fb),
@@ -525,7 +537,11 @@ async fn list_impl(
                          WHERE from_type = $1 AND from_bundle = $2 AND COALESCE(site, '') = $3 \
                          ORDER BY create_time DESC NULLS LAST"
                     ),
-                    &[&from_type.to_string(), &from_bundle.to_string(), &s.to_string()],
+                    &[
+                        &from_type.to_string(),
+                        &from_bundle.to_string(),
+                        &s.to_string(),
+                    ],
                 )
                 .await
         }
@@ -546,7 +562,11 @@ async fn list_impl(
 
     let data: Vec<Value> = rows.iter().map(row_to_item).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET correlation/list/type/processplatform/job/{job}

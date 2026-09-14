@@ -16,14 +16,20 @@ pub async fn work_terminate(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
-        .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"terminated", &work_id])
+        .execute(
+            "UPDATE x_work SET work_status = $1 WHERE id = $2",
+            &[&"terminated", &work_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(work_id)),
-            ("workStatus".to_string(), Value::String("terminated".to_string())),
+            (
+                "workStatus".to_string(),
+                Value::String("terminated".to_string()),
+            ),
             ("result".to_string(), Value::String("ok".to_string())),
         ]),
     ))))
@@ -36,7 +42,10 @@ pub async fn work_retract(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT id, work_status, activity FROM x_work WHERE id = $1", &[&work_id])
+        .query(
+            "SELECT id, work_status, activity FROM x_work WHERE id = $1",
+            &[&work_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -47,8 +56,14 @@ pub async fn work_retract(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(work_id)),
-            ("workStatus".to_string(), Value::String("retracted".to_string())),
-            ("previousStatus".to_string(), Value::String(rows[0].get("work_status"))),
+            (
+                "workStatus".to_string(),
+                Value::String("retracted".to_string()),
+            ),
+            (
+                "previousStatus".to_string(),
+                Value::String(rows[0].get("work_status")),
+            ),
         ]),
     ))))
 }
@@ -60,7 +75,10 @@ pub async fn work_processing(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one("SELECT id, title, work_status, activity FROM x_work WHERE id = $1", &[&work_id])
+        .query_one(
+            "SELECT id, title, work_status, activity FROM x_work WHERE id = $1",
+            &[&work_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -68,7 +86,10 @@ pub async fn work_processing(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("title".to_string(), Value::String(row.get("title"))),
-            ("workStatus".to_string(), Value::String(row.get("work_status"))),
+            (
+                "workStatus".to_string(),
+                Value::String(row.get("work_status")),
+            ),
             ("activity".to_string(), Value::String(row.get("activity"))),
         ]),
     ))))
@@ -81,7 +102,10 @@ pub async fn task_processing(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one("SELECT id, title, person, activity FROM x_task WHERE id = $1", &[&task_id])
+        .query_one(
+            "SELECT id, title, person, activity FROM x_task WHERE id = $1",
+            &[&task_id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -114,7 +138,10 @@ pub async fn work_count_with_person(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("personId".to_string(), Value::String(person_id)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
@@ -138,19 +165,40 @@ pub async fn task_count_with_person(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("personId".to_string(), Value::String(person_id)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
         ]),
     ))))
 }
 
 pub fn processplatform_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/processplatform/work/terminate/{id}", get(work_terminate))
-        .route("/jaxrs/processplatform/work/retract/{id}", get(work_retract))
-        .route("/jaxrs/processplatform/work/processing/{id}", get(work_processing))
-        .route("/jaxrs/processplatform/task/processing/{id}", get(task_processing))
-        .route("/jaxrs/processplatform/work/count/with/person/{id}", get(work_count_with_person))
-        .route("/jaxrs/processplatform/task/count/with/person/{id}", get(task_count_with_person))
+        .route(
+            "/jaxrs/processplatform/work/terminate/{id}",
+            get(work_terminate),
+        )
+        .route(
+            "/jaxrs/processplatform/work/retract/{id}",
+            get(work_retract),
+        )
+        .route(
+            "/jaxrs/processplatform/work/processing/{id}",
+            get(work_processing),
+        )
+        .route(
+            "/jaxrs/processplatform/task/processing/{id}",
+            get(task_processing),
+        )
+        .route(
+            "/jaxrs/processplatform/work/count/with/person/{id}",
+            get(work_count_with_person),
+        )
+        .route(
+            "/jaxrs/processplatform/task/count/with/person/{id}",
+            get(task_count_with_person),
+        )
         .layer(Extension(pool))
 }
 

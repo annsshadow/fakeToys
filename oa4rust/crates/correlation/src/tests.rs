@@ -1,6 +1,6 @@
 use super::*;
 use axum::{extract::Extension, Json};
-use deadpool_postgres::{Manager, Pool, tokio_postgres::NoTls};
+use deadpool_postgres::{tokio_postgres::NoTls, Manager, Pool};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 

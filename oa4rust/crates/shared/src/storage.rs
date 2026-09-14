@@ -42,9 +42,11 @@ impl BlobStorage for DbBlobStorage {
     }
 
     async fn get(&self, _key: &str) -> Result<Vec<u8>, String> {
-        Err("DbBlobStorage is a placeholder: blobs live in FILE_FILE.content rows \
+        Err(
+            "DbBlobStorage is a placeholder: blobs live in FILE_FILE.content rows \
              and are read directly by file_assemble_control; not yet routed through BlobStorage"
-            .to_string())
+                .to_string(),
+        )
     }
 
     async fn delete(&self, _key: &str) -> Result<(), String> {
@@ -69,12 +71,14 @@ impl FsBlobStorage {
             return Err("empty blob key".to_string());
         }
         let rel = Path::new(key);
-        if rel.is_absolute() || key.starts_with('/') || key.starts_with('\\') || key.contains(':')
-        {
+        if rel.is_absolute() || key.starts_with('/') || key.starts_with('\\') || key.contains(':') {
             return Err(format!("invalid blob key: {key:?}"));
         }
         for comp in rel.components() {
-            if matches!(comp, std::path::Component::ParentDir | std::path::Component::CurDir) {
+            if matches!(
+                comp,
+                std::path::Component::ParentDir | std::path::Component::CurDir
+            ) {
                 return Err(format!("invalid blob key component in {key:?}"));
             }
         }
@@ -142,8 +146,11 @@ mod tests {
     use super::*;
 
     fn temp_root(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir()
-            .join(format!("oa4rust_storage_test_{}_{}", tag, uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!(
+            "oa4rust_storage_test_{}_{}",
+            tag,
+            uuid::Uuid::new_v4()
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         dir
     }
@@ -165,7 +172,12 @@ mod tests {
         let root = temp_root("nested");
         let fs = FsBlobStorage::new(&root);
         fs.put("bbs/2026/08/pic.png", &[1, 2, 3]).await.unwrap();
-        assert!(root.join("bbs").join("2026").join("08").join("pic.png").is_file());
+        assert!(root
+            .join("bbs")
+            .join("2026")
+            .join("08")
+            .join("pic.png")
+            .is_file());
         assert_eq!(fs.get("bbs/2026/08/pic.png").await.unwrap(), vec![1, 2, 3]);
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -198,8 +210,7 @@ mod tests {
         let db: Arc<dyn BlobStorage> = storage_from("", None);
         assert!(db.get("k").await.is_err()); // Db 占位 get 必然 Err
 
-        let fs_default: Arc<dyn BlobStorage> =
-            storage_from("FS", Some(root.to_str().unwrap())); // 大小写不敏感
+        let fs_default: Arc<dyn BlobStorage> = storage_from("FS", Some(root.to_str().unwrap())); // 大小写不敏感
         fs_default.put("f.txt", b"z").await.unwrap();
         assert!(root.join("f.txt").is_file());
 

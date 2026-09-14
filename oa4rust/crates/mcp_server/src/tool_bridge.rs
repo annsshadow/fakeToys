@@ -1,8 +1,4 @@
-use axum::{
-    body::Body,
-    http::{Request},
-    Router,
-};
+use axum::{body::Body, http::Request, Router};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -1411,7 +1407,10 @@ impl ToolBridge {
                 shared::rate_limit::RateLimiter::new(),
                 security_state.session_manager.clone(),
             ))
-            .merge(personal::router(pool.clone(), security_state.session_manager.clone()))
+            .merge(personal::router(
+                pool.clone(),
+                security_state.session_manager.clone(),
+            ))
             .merge(cms_control::cms_control_router(pool.clone()))
             .merge(control::control_router(pool.clone()))
             .merge(personal_extend::personal_extend_router(
@@ -1557,10 +1556,7 @@ impl ToolBridge {
     }
 
     /// Execute a tool call. Returns the raw axum response body as a text block.
-    pub async fn call_tool(
-        &self,
-        params: ToolCallParams,
-    ) -> Result<CallToolResponse, McpError> {
+    pub async fn call_tool(&self, params: ToolCallParams) -> Result<CallToolResponse, McpError> {
         let name = &params.name;
         let args = params.arguments;
 
@@ -1588,13 +1584,19 @@ impl ToolBridge {
             if !body_args.is_empty() {
                 let qs: Vec<String> = body_args
                     .iter()
-                    .map(|(k, v)| format!("{}={}", urlencoding::encode(k), urlencoding::encode(&v.to_string())))
+                    .map(|(k, v)| {
+                        format!(
+                            "{}={}",
+                            urlencoding::encode(k),
+                            urlencoding::encode(&v.to_string())
+                        )
+                    })
                     .collect();
                 path = if path.contains('?') {
-                        format!("{}&{}", path, qs.join("&"))
-                    } else {
-                        format!("{}?{}", path, qs.join("&"))
-                    };
+                    format!("{}&{}", path, qs.join("&"))
+                } else {
+                    format!("{}?{}", path, qs.join("&"))
+                };
             }
             Body::empty()
         } else {
@@ -1617,12 +1619,11 @@ impl ToolBridge {
             .clone()
             .oneshot(req)
             .await
-                .map_err(|e| McpError::internal(e.to_string()))?;
+            .map_err(|e| McpError::internal(e.to_string()))?;
 
         let status = response.status();
-        let bytes =
-            axum::body::to_bytes(response.into_body(), 4096)
-                .await
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
             .map_err(|e| McpError::internal(e.to_string()))?;
 
         let body_text = String::from_utf8_lossy(&bytes).to_string();
@@ -1786,28 +1787,22 @@ pub async fn run_stdio(bridge: Arc<ToolBridge>) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn handle_json_rpc(
-    bridge: &Arc<ToolBridge>,
-    req: JsonRpcRequest,
-) -> Result<Value, McpError> {
+async fn handle_json_rpc(bridge: &Arc<ToolBridge>, req: JsonRpcRequest) -> Result<Value, McpError> {
     match req.method.as_str() {
-        "initialize" => {
-            Ok(serde_json::json!({
-                "protocolVersion": "2024-11-05",
-                "capabilities": {"tools": {"listChanged": false}},
-                "serverInfo": {"name": "oa4rust-mcp", "version": "0.1.0"}
-            }))
-        }
-        "tools/list" => {
-            Ok(serde_json::to_value(bridge.list_tools()).map_err(|e| McpError::internal(e.to_string()))?)
-        }
+        "initialize" => Ok(serde_json::json!({
+            "protocolVersion": "2024-11-05",
+            "capabilities": {"tools": {"listChanged": false}},
+            "serverInfo": {"name": "oa4rust-mcp", "version": "0.1.0"}
+        })),
+        "tools/list" => Ok(serde_json::to_value(bridge.list_tools())
+            .map_err(|e| McpError::internal(e.to_string()))?),
         "tools/call" => {
             let params = req
                 .params
                 .ok_or_else(|| McpError::invalid_request("missing params"))?
                 .clone();
-            let params: ToolCallParams =
-                serde_json::from_value(params).map_err(|e| McpError::invalid_request(e.to_string()))?;
+            let params: ToolCallParams = serde_json::from_value(params)
+                .map_err(|e| McpError::invalid_request(e.to_string()))?;
             let resp = bridge.call_tool(params).await?;
             Ok(serde_json::to_value(resp).map_err(|e| McpError::internal(e.to_string()))?)
         }

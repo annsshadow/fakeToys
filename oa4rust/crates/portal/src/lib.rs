@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -12,7 +9,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[utoipa::path(
     get,
@@ -47,11 +43,26 @@ pub async fn portal_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("config".to_string(), Value::String(row.get::<_, Option<String>>("config").unwrap_or_default())),
-                ("pages".to_string(), Value::String(row.get::<_, Option<String>>("pages").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "pages".to_string(),
+                    Value::String(row.get::<_, Option<String>>("pages").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -71,9 +82,7 @@ pub async fn portal_id(
     tag = "portal"
 )]
 #[allow(non_snake_case)]
-pub async fn portal_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -89,9 +98,18 @@ pub async fn portal_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -137,13 +155,20 @@ pub async fn list_portal_category(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(category.clone())),
                 ("name".to_string(), Value::String(category)),
-                ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(count)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -158,9 +183,7 @@ pub async fn list_portal_category(
     tag = "portal"
 )]
 #[allow(non_snake_case)]
-pub async fn page_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -177,16 +200,29 @@ pub async fn page_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -223,10 +259,19 @@ pub async fn get_page(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -252,10 +297,22 @@ pub async fn create_page(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = payload.get("name").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("name is required".to_string()))?;
-    let category = payload.get("category").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = payload.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("name is required".to_string()))?;
+    let category = payload
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system");
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -266,11 +323,13 @@ pub async fn create_page(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name.to_string())),
-        ("category".to_string(), Value::String(category.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name.to_string())),
+            ("category".to_string(), Value::String(category.to_string())),
+        ]),
+    ))))
 }
 
 #[utoipa::path(
@@ -295,7 +354,10 @@ pub async fn save_page(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let content = payload.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
 
     let result = client
         .execute(
@@ -338,15 +400,14 @@ pub async fn delete_page(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
-        .execute(
-            "DELETE FROM x_portal_page WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("page not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "page not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -369,9 +430,7 @@ pub async fn delete_page(
     tag = "portal"
 )]
 #[allow(non_snake_case)]
-pub async fn widget_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -395,7 +454,11 @@ pub async fn widget_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -410,9 +473,7 @@ pub async fn widget_list(
     tag = "portal"
 )]
 #[allow(non_snake_case)]
-pub async fn script_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -435,7 +496,11 @@ pub async fn script_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[utoipa::path(
@@ -450,9 +515,7 @@ pub async fn script_list(
     tag = "portal"
 )]
 #[allow(non_snake_case)]
-pub async fn dict_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -471,13 +534,20 @@ pub async fn dict_list(
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("appData".to_string(), Value::String(row.get("app_data"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

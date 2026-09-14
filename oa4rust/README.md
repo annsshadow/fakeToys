@@ -14,6 +14,15 @@ O2OA 后端的 Rust 实现，以认证模块为第一个迁移试点。
 2. 复制 `.env.example` 到 `.env` 并配置数据库连接
 3. 运行 `cargo run`
 
+## 安全与质量门禁
+
+- 浏览器会话 Cookie、CSRF 与代理部署：[`docs/security/browser-session-cookie.md`](docs/security/browser-session-cookie.md)
+- RustSec 依赖审计与例外流程：[`docs/security/rustsec-audit.md`](docs/security/rustsec-audit.md)
+- 后端验证：`cargo check --workspace --locked`、`cargo test --workspace --lib --locked`
+- 前端验证：在 `../oa4rust-web` 运行 `pnpm test && pnpm typecheck && pnpm lint:check && pnpm build`
+
+供应链扫描器由 CI 使用 Rust 1.88.0 运行；这与应用在 `[workspace.package]` 中声明的最低 Rust 版本是两个独立约束。
+
 ## 项目结构
 
 ```

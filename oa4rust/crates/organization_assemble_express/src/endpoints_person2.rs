@@ -47,11 +47,20 @@ async fn login_after(
         )));
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let sql = if objects { LOGIN_AFTER_OBJ_SQL } else { LOGIN_AFTER_IDS_SQL };
+    let sql = if objects {
+        LOGIN_AFTER_OBJ_SQL
+    } else {
+        LOGIN_AFTER_IDS_SQL
+    };
     let rows = match client.query(sql, &[&date]).await {
         Ok(rows) => rows,
         // 非法日期文本在 PG 侧触发 invalid_text_representation
-        Err(e) if e.code() == Some(&deadpool_postgres::tokio_postgres::error::SqlState::INVALID_DATETIME_FORMAT) => {
+        Err(e)
+            if e.code()
+                == Some(
+                    &deadpool_postgres::tokio_postgres::error::SqlState::INVALID_DATETIME_FORMAT,
+                ) =>
+        {
             return Err(AppError::BadRequest(format!("invalid date: {date}")));
         }
         Err(_) => return Err(AppError::Internal),
@@ -88,7 +97,8 @@ pub async fn person_list_login_after_object(
 const LOGIN_RECENT_IDS_SQL: &str = "SELECT p.id, MAX(lr.login_time) AS last_login \
      FROM x_org_person p JOIN x_org_login_record lr ON lr.person_id = p.id \
      WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY last_login DESC";
-const LOGIN_RECENT_OBJ_SQL: &str = "SELECT p.id, p.name, p.unit_id, MAX(lr.login_time) AS last_login \
+const LOGIN_RECENT_OBJ_SQL: &str =
+    "SELECT p.id, p.name, p.unit_id, MAX(lr.login_time) AS last_login \
      FROM x_org_person p JOIN x_org_login_record lr ON lr.person_id = p.id \
      WHERE p.deleted_at IS NULL GROUP BY p.id, p.name, p.unit_id ORDER BY last_login DESC";
 
@@ -98,9 +108,17 @@ async fn login_recent(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let count = body.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
-    let limit: Option<i64> = if count > 0 { Some(count.min(10_000)) } else { None };
+    let limit: Option<i64> = if count > 0 {
+        Some(count.min(10_000))
+    } else {
+        None
+    };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let base = if objects { LOGIN_RECENT_OBJ_SQL } else { LOGIN_RECENT_IDS_SQL };
+    let base = if objects {
+        LOGIN_RECENT_OBJ_SQL
+    } else {
+        LOGIN_RECENT_IDS_SQL
+    };
     // row_to_map 不识别 last_login 列时忽略；id 列恒在首位
     let sql = match limit {
         Some(_) => format!("{base} LIMIT $1"),
@@ -112,7 +130,10 @@ async fn login_recent(
             .await
             .map_err(|_| AppError::Internal)?
     } else {
-        client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?
+        client
+            .query(&sql, &[])
+            .await
+            .map_err(|_| AppError::Internal)?
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
@@ -178,9 +199,9 @@ pub async fn person_list_pair_identity(
     let pairs: Vec<Value> = flags
         .iter()
         .map(|flag| {
-            let hit = rows.iter().find(|r| {
-                r.get::<_, String>("id") == *flag || r.get::<_, String>("name") == *flag
-            });
+            let hit = rows
+                .iter()
+                .find(|r| r.get::<_, String>("id") == *flag || r.get::<_, String>("name") == *flag);
             let person = hit.and_then(|r| r.get::<_, Option<String>>("person_id"));
             let mut m = serde_json::Map::new();
             m.insert("identity".to_string(), Value::String(flag.clone()));
@@ -354,14 +375,53 @@ pub async fn person_detail_flag(
     };
     if let Value::Object(ref mut m) = data {
         m.insert("distinguishedName".to_string(), Value::String(pid));
-        m.insert("identityList".to_string(), if f_id { arr(identity_ids) } else { Value::Array(vec![]) });
-        m.insert("unitList".to_string(), if f_unit { arr(unit_ids) } else { Value::Array(vec![]) });
-        m.insert("unitDutyList".to_string(), if f_duty { arr(duty_ids) } else { Value::Array(vec![]) });
-        m.insert("groupList".to_string(), if f_group { arr(group_ids) } else { Value::Array(vec![]) });
-        m.insert("roleList".to_string(), if f_role { arr(role_ids) } else { Value::Array(vec![]) });
+        m.insert(
+            "identityList".to_string(),
+            if f_id {
+                arr(identity_ids)
+            } else {
+                Value::Array(vec![])
+            },
+        );
+        m.insert(
+            "unitList".to_string(),
+            if f_unit {
+                arr(unit_ids)
+            } else {
+                Value::Array(vec![])
+            },
+        );
+        m.insert(
+            "unitDutyList".to_string(),
+            if f_duty {
+                arr(duty_ids)
+            } else {
+                Value::Array(vec![])
+            },
+        );
+        m.insert(
+            "groupList".to_string(),
+            if f_group {
+                arr(group_ids)
+            } else {
+                Value::Array(vec![])
+            },
+        );
+        m.insert(
+            "roleList".to_string(),
+            if f_role {
+                arr(role_ids)
+            } else {
+                Value::Array(vec![])
+            },
+        );
         m.insert(
             "personAttributeList".to_string(),
-            if f_attr { arr(attr_ids) } else { Value::Array(vec![]) },
+            if f_attr {
+                arr(attr_ids)
+            } else {
+                Value::Array(vec![])
+            },
         );
     }
     ok_json(data)
@@ -573,13 +633,29 @@ async fn person_tree_scope(
 }
 
 person_tree_endpoint!(person_list_person_sub_direct, PERSON_SUB_DIRECT_TPL, false);
-person_tree_endpoint!(person_list_person_sub_direct_object, PERSON_SUB_DIRECT_TPL, true);
+person_tree_endpoint!(
+    person_list_person_sub_direct_object,
+    PERSON_SUB_DIRECT_TPL,
+    true
+);
 person_tree_endpoint!(person_list_person_sub_nested, PERSON_SUB_NESTED_TPL, false);
-person_tree_endpoint!(person_list_person_sub_nested_object, PERSON_SUB_NESTED_TPL, true);
+person_tree_endpoint!(
+    person_list_person_sub_nested_object,
+    PERSON_SUB_NESTED_TPL,
+    true
+);
 person_tree_endpoint!(person_list_person_sup_direct, PERSON_SUP_DIRECT_TPL, false);
-person_tree_endpoint!(person_list_person_sup_direct_object, PERSON_SUP_DIRECT_TPL, true);
+person_tree_endpoint!(
+    person_list_person_sup_direct_object,
+    PERSON_SUP_DIRECT_TPL,
+    true
+);
 person_tree_endpoint!(person_list_person_sup_nested, PERSON_SUP_NESTED_TPL, false);
-person_tree_endpoint!(person_list_person_sup_nested_object, PERSON_SUP_NESTED_TPL, true);
+person_tree_endpoint!(
+    person_list_person_sup_nested_object,
+    PERSON_SUP_NESTED_TPL,
+    true
+);
 
 // ── 组织成员（direct / nested / like × id/object） ────────────────────────────
 
@@ -623,7 +699,11 @@ async fn person_of_units(
     if flags.is_empty() {
         return ok_java_list(0, vec![]);
     }
-    let key = if like { string_field(&body, "key") } else { None };
+    let key = if like {
+        string_field(&body, "key")
+    } else {
+        None
+    };
     let filter = if like {
         " AND ($2::text IS NULL OR p.name ILIKE '%' || $2 || '%')"
     } else {
@@ -667,28 +747,48 @@ async fn person_of_units(
     }
 }
 
-person_unit_endpoint!(person_list_unit_sub_direct, UNIT_SUB_DIRECT_PERSONS_TPL, false, false);
+person_unit_endpoint!(
+    person_list_unit_sub_direct,
+    UNIT_SUB_DIRECT_PERSONS_TPL,
+    false,
+    false
+);
 person_unit_endpoint!(
     person_list_unit_sub_direct_object,
     UNIT_SUB_DIRECT_PERSONS_TPL,
     false,
     true
 );
-person_unit_endpoint!(person_list_unit_sub_nested, UNIT_SUB_NESTED_PERSONS_TPL, false, false);
+person_unit_endpoint!(
+    person_list_unit_sub_nested,
+    UNIT_SUB_NESTED_PERSONS_TPL,
+    false,
+    false
+);
 person_unit_endpoint!(
     person_list_unit_sub_nested_object,
     UNIT_SUB_NESTED_PERSONS_TPL,
     false,
     true
 );
-person_unit_endpoint!(person_list_unit_sub_direct_like, UNIT_SUB_DIRECT_PERSONS_TPL, true, false);
+person_unit_endpoint!(
+    person_list_unit_sub_direct_like,
+    UNIT_SUB_DIRECT_PERSONS_TPL,
+    true,
+    false
+);
 person_unit_endpoint!(
     person_list_unit_sub_direct_like_object,
     UNIT_SUB_DIRECT_PERSONS_TPL,
     true,
     true
 );
-person_unit_endpoint!(person_list_unit_sub_nested_like, UNIT_SUB_NESTED_PERSONS_TPL, true, false);
+person_unit_endpoint!(
+    person_list_unit_sub_nested_like,
+    UNIT_SUB_NESTED_PERSONS_TPL,
+    true,
+    false
+);
 person_unit_endpoint!(
     person_list_unit_sub_nested_like_object,
     UNIT_SUB_NESTED_PERSONS_TPL,

@@ -1,9 +1,17 @@
-use axum::{extract::{Extension, Path}, Json, Router};
+use axum::{
+    extract::{Extension, Path},
+    Json, Router,
+};
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, middleware::require_owner, response::ActionResult, session::Session};
+use shared::{
+    error::AppError, middleware::require_owner, response::ActionResult, session::Session,
+};
 
 use crate::{entities, MAX_NAME_LEN, MAX_TEXT_LEN};
 
@@ -32,20 +40,29 @@ pub async fn invoke_list(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = models.iter().map(|m| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(m.id.clone())),
-            ("name".to_string(), Value::String(m.name.clone())),
-            ("alias".to_string(), Value::String(m.alias.clone())),
-            ("category".to_string(), Value::String(m.category.clone())),
-            ("validated".to_string(), Value::Bool(m.validated)),
-            ("creatorPerson".to_string(), Value::String(m.creator_person.clone())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = models
+        .iter()
+        .map(|m| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                ("category".to_string(), Value::String(m.category.clone())),
+                ("validated".to_string(), Value::Bool(m.validated)),
+                (
+                    "creatorPerson".to_string(),
+                    Value::String(m.creator_person.clone()),
+                ),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -60,7 +77,9 @@ pub async fn invoke_create(
         return Err(AppError::BadRequest("name is required".to_string()));
     }
     if req.name.len() > MAX_NAME_LEN {
-        return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters")));
+        return Err(AppError::BadRequest(format!(
+            "name must be at most {MAX_NAME_LEN} characters"
+        )));
     }
 
     let active = entities::cte_invoke::ActiveModel {
@@ -79,9 +98,15 @@ pub async fn invoke_create(
             ("id".to_string(), Value::String(model.id.clone())),
             ("name".to_string(), Value::String(model.name.clone())),
             ("alias".to_string(), Value::String(model.alias.clone())),
-            ("category".to_string(), Value::String(model.category.clone())),
+            (
+                "category".to_string(),
+                Value::String(model.category.clone()),
+            ),
             ("validated".to_string(), Value::Bool(model.validated)),
-            ("creatorPerson".to_string(), Value::String(model.creator_person.clone())),
+            (
+                "creatorPerson".to_string(),
+                Value::String(model.creator_person.clone()),
+            ),
         ]),
     ))))
 }
@@ -103,16 +128,30 @@ pub async fn invoke_update(
 
     let mut active: entities::cte_invoke::ActiveModel = model.into();
     if let Some(name) = req.name {
-        if name.trim().is_empty() { return Err(AppError::BadRequest("name is required".to_string())); }
-        if name.len() > MAX_NAME_LEN { return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters"))); }
+        if name.trim().is_empty() {
+            return Err(AppError::BadRequest("name is required".to_string()));
+        }
+        if name.len() > MAX_NAME_LEN {
+            return Err(AppError::BadRequest(format!(
+                "name must be at most {MAX_NAME_LEN} characters"
+            )));
+        }
         active.name = Set(name);
     }
     if let Some(alias) = req.alias {
-        if alias.len() > MAX_TEXT_LEN { return Err(AppError::BadRequest("alias must be at most 500 characters".to_string())); }
+        if alias.len() > MAX_TEXT_LEN {
+            return Err(AppError::BadRequest(
+                "alias must be at most 500 characters".to_string(),
+            ));
+        }
         active.alias = Set(alias);
     }
     if let Some(category) = req.category {
-        if category.len() > MAX_TEXT_LEN { return Err(AppError::BadRequest("category must be at most 500 characters".to_string())); }
+        if category.len() > MAX_TEXT_LEN {
+            return Err(AppError::BadRequest(
+                "category must be at most 500 characters".to_string(),
+            ));
+        }
         active.category = Set(category);
     }
 
@@ -122,9 +161,15 @@ pub async fn invoke_update(
             ("id".to_string(), Value::String(updated.id.clone())),
             ("name".to_string(), Value::String(updated.name.clone())),
             ("alias".to_string(), Value::String(updated.alias.clone())),
-            ("category".to_string(), Value::String(updated.category.clone())),
+            (
+                "category".to_string(),
+                Value::String(updated.category.clone()),
+            ),
             ("validated".to_string(), Value::Bool(updated.validated)),
-            ("creatorPerson".to_string(), Value::String(updated.creator_person.clone())),
+            (
+                "creatorPerson".to_string(),
+                Value::String(updated.creator_person.clone()),
+            ),
         ]),
     ))))
 }
@@ -159,4 +204,3 @@ pub fn _router(_pool: Pool, _db: Option<DatabaseConnection>) -> Router {
     // panic axum at merge time ("Overlapping method route").
     Router::new()
 }
-

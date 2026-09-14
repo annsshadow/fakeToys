@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
     use crate::{EmpowerCreateRequest, EmpowerInfo, EmpowerUpdateRequest};
-    use axum::{body::Body, http::Request, Router};
     use auth::SessionManager;
+    use axum::{body::Body, http::Request, Router};
     use shared::{
-        middleware::{authorize_middleware, auth_middleware, rate_limit_middleware, SecurityState},
+        middleware::{auth_middleware, authorize_middleware, rate_limit_middleware, SecurityState},
         response::ActionResult,
     };
     use tower::ServiceExt;
@@ -40,7 +40,10 @@ mod tests {
                     deadpool_postgres::tokio_postgres::Config::new(),
                     deadpool_postgres::tokio_postgres::NoTls,
                 );
-                deadpool_postgres::Pool::builder(mgr).max_size(1).build().unwrap()
+                deadpool_postgres::Pool::builder(mgr)
+                    .max_size(1)
+                    .build()
+                    .unwrap()
             };
             let app = build_app(pool);
 
@@ -54,7 +57,10 @@ mod tests {
                 ("POST", "/jaxrs/person/empower/manager"),
                 ("PUT", "/jaxrs/person/empower/manager/some-id"),
                 ("DELETE", "/jaxrs/person/empower/manager/some-id"),
-                ("POST", "/jaxrs/person/empower/manager/list/paging/1/size/10"),
+                (
+                    "POST",
+                    "/jaxrs/person/empower/manager/list/paging/1/size/10",
+                ),
                 ("GET", "/jaxrs/person/empower/list/currentperson"),
                 ("GET", "/jaxrs/person/empower/list/currentperson/enable"),
                 ("GET", "/jaxrs/person/empower/list/to"),

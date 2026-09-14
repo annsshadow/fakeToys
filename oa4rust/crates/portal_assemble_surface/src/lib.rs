@@ -1,7 +1,11 @@
 #[allow(dead_code)]
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post, routing::put, routing::delete,
+    routing::delete,
+    routing::get,
+    routing::post,
+    routing::put,
+    Json, Router,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -48,8 +52,14 @@ pub async fn get_surface(
                 ("html".to_string(), Value::String(row.get("html"))),
                 ("template".to_string(), Value::String(row.get("template"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -116,14 +126,24 @@ pub async fn list_surfaces(
                 ("html".to_string(), Value::String(row.get("html"))),
                 ("template".to_string(), Value::String(row.get("template"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -142,15 +162,16 @@ pub async fn preview_surface(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("preview_url".to_string(), Value::String(format!("/preview/{}", id))),
-                    ("html".to_string(), Value::String(row.get("html"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "preview_url".to_string(),
+                    Value::String(format!("/preview/{}", id)),
+                ),
+                ("html".to_string(), Value::String(row.get("html"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("surface not found"))),
     }
 }
@@ -186,15 +207,16 @@ pub async fn publish_surface(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("published".to_string(), Value::String(row.get("published"))),
-            ("publishedAt".to_string(), Value::String(row.get("published_at"))),
+            (
+                "publishedAt".to_string(),
+                Value::String(row.get("published_at")),
+            ),
         ]),
     ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn surface_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn surface_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -211,15 +233,25 @@ pub async fn surface_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("portalId".to_string(), Value::String(row.get("portal_id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("previewUrl".to_string(), Value::String(row.get("preview_url"))),
+                (
+                    "previewUrl".to_string(),
+                    Value::String(row.get("preview_url")),
+                ),
                 ("published".to_string(), Value::Bool(row.get("published"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -237,15 +269,16 @@ pub async fn surface_preview(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("previewUrl".to_string(), Value::String(format!("/preview/{}", id))),
-                    ("html".to_string(), Value::String(row.get("html"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "previewUrl".to_string(),
+                    Value::String(format!("/preview/{}", id)),
+                ),
+                ("html".to_string(), Value::String(row.get("html"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("surface not found"))),
     }
 }
@@ -255,7 +288,10 @@ pub async fn surface_publish(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let id = body
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("id is required".to_string()))?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -281,7 +317,10 @@ pub async fn surface_publish(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("published".to_string(), Value::Bool(row.get("published"))),
-            ("publishedAt".to_string(), Value::String(row.get("published_at"))),
+            (
+                "publishedAt".to_string(),
+                Value::String(row.get("published_at")),
+            ),
         ]),
     ))))
 }
@@ -371,7 +410,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 #[allow(non_snake_case)]
 pub async fn get_layout(
     pool: Extension<Pool>,
@@ -396,8 +434,14 @@ pub async fn get_layout(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -430,14 +474,24 @@ pub async fn list_layouts(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -511,7 +565,10 @@ pub async fn save_layout(
             ("name".to_string(), Value::String(row.get("name"))),
             ("category".to_string(), Value::String(row.get("category"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            (
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            ),
         ]),
     ))))
 }
@@ -524,10 +581,7 @@ pub async fn delete_layout(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute(
-            "DELETE FROM x_portal_layout WHERE id = $1",
-            &[&id],
-        )
+        .execute("DELETE FROM x_portal_layout WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -538,7 +592,10 @@ pub async fn delete_layout(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -546,8 +603,6 @@ pub async fn delete_layout(
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     portal_assemble_surface_router().layer(axum::extract::Extension(pool))
 }
-
-
 
 #[allow(non_snake_case)]
 pub async fn dict_list_portal_portalFlag(
@@ -573,13 +628,20 @@ pub async fn dict_list_portal_portalFlag(
                 ("appName".to_string(), Value::String(row.get("app_name"))),
                 ("keyName".to_string(), Value::String(row.get("key_name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -607,7 +669,10 @@ pub async fn dict_dictFlag_portal_portalFlag(
                 ("keyName".to_string(), Value::String(row.get("key_name"))),
                 ("appData".to_string(), Value::String(row.get("app_data"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -634,9 +699,7 @@ pub async fn dict_dictFlag_portal_portalFlag_data(
     match row {
         Some(row) => {
             let app_data: Option<String> = row.get("app_data");
-            let mut entries = vec![
-                ("id".to_string(), Value::String(row.get("id"))),
-            ];
+            let mut entries = vec![("id".to_string(), Value::String(row.get("id")))];
             if let Some(data) = app_data {
                 entries.push(("data".to_string(), Value::String(data)));
             }
@@ -705,18 +768,23 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("data".to_string(), Value::String({
-                    let __val: Option<String> = row.get("app_data");
-                    __val.unwrap_or_default()
-                })),
+                (
+                    "data".to_string(),
+                    Value::String({
+                        let __val: Option<String> = row.get("app_data");
+                        __val.unwrap_or_default()
+                    }),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("path".to_string(), Value::String(_path)),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("path".to_string(), Value::String(_path)),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -762,7 +830,10 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
             ("keyName".to_string(), Value::String(row.get("key_name"))),
             ("appData".to_string(), Value::String(row.get("app_data"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            (
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            ),
         ]),
     ))))
 }
@@ -791,13 +862,20 @@ pub async fn file_list_portal_portalFlag(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -823,7 +901,10 @@ pub async fn file_flag(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("fileType".to_string(), Value::String(row.get("file_type"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -878,15 +959,13 @@ pub async fn file_flag_portal_portalFlag_content(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
-                    ("content".to_string(), Value::String(row.get("content"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("file not found"))),
     }
 }
@@ -945,13 +1024,20 @@ pub async fn page_list_portal_portal(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -977,7 +1063,10 @@ pub async fn page_v2_flag_portal_portalFlag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1006,9 +1095,15 @@ pub async fn page_v2_flag_portal_portalFlag_mobile(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get("mobile_content")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1038,7 +1133,10 @@ pub async fn page_v2_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1066,9 +1164,15 @@ pub async fn page_v2_id_mobile(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get("mobile_content")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1099,7 +1203,10 @@ pub async fn page_flag_portal_portalFlag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1128,9 +1235,15 @@ pub async fn page_flag_portal_portalFlag_mobile(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get("mobile_content")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1160,7 +1273,10 @@ pub async fn page_id(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1188,9 +1304,15 @@ pub async fn page_id_mobile(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get("mobile_content")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1199,9 +1321,7 @@ pub async fn page_id_mobile(
 }
 
 #[allow(non_snake_case)]
-pub async fn portal_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1221,13 +1341,20 @@ pub async fn portal_list(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1253,7 +1380,10 @@ pub async fn portal_list_mobile(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
@@ -1288,9 +1418,15 @@ pub async fn portal_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("logo".to_string(), Value::String(row.get("logo"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1314,14 +1450,15 @@ pub async fn portal_flag_corner_mark(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("cornerMark".to_string(), Value::String(row.get("corner_mark"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "cornerMark".to_string(),
+                    Value::String(row.get("corner_mark")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("portal not found"))),
     }
 }
@@ -1342,14 +1479,12 @@ pub async fn portal_id_icon(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("logo".to_string(), Value::String(row.get("logo"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("logo".to_string(), Value::String(row.get("logo"))),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("portal not found"))),
     }
 }
@@ -1370,14 +1505,15 @@ pub async fn portal_id_icon_base64(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("logoBase64".to_string(), Value::String(row.get("logo_base64"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "logoBase64".to_string(),
+                    Value::String(row.get("logo_base64")),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("portal not found"))),
     }
 }
@@ -1406,13 +1542,20 @@ pub async fn script_list_portal_portal(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1439,7 +1582,10 @@ pub async fn script_portal_portal_name_name(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1469,9 +1615,15 @@ pub async fn script_portal_portal_name_name_imported(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("flag".to_string(), Value::String(row.get("flag"))),
-                ("importedContent".to_string(), Value::String(row.get("imported_content"))),
+                (
+                    "importedContent".to_string(),
+                    Value::String(row.get("imported_content")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1502,7 +1654,10 @@ pub async fn script_id(
                 ("flag".to_string(), Value::String(row.get("flag"))),
                 ("content".to_string(), Value::String(row.get("content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1535,13 +1690,20 @@ pub async fn widget_list_portal_portal(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("config".to_string(), Value::String(row.get("config"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1569,7 +1731,10 @@ pub async fn widget_flag_portal_portalFlag(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("config".to_string(), Value::String(row.get("config"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1599,9 +1764,15 @@ pub async fn widget_flag_portal_portalFlag_mobile(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("portalId".to_string(), Value::String(row.get("portal_id"))),
-                ("config".to_string(), Value::String(row.get("mobile_config"))),
+                (
+                    "config".to_string(),
+                    Value::String(row.get("mobile_config")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1633,8 +1804,14 @@ pub async fn widget_id(
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("config".to_string(), Value::String(row.get("config"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1663,14 +1840,23 @@ pub async fn widget_id_mobile(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("portalId".to_string(), Value::String(row.get("portal_id"))),
-                ("config".to_string(), Value::String(row.get("mobile_config"))),
+                (
+                    "config".to_string(),
+                    Value::String(row.get("mobile_config")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("update_time")),
+                ),
             ]));
-        Ok(Json(ActionResult::success(result)))
-    }
-    None => Ok(Json(ActionResult::error("widget not found"))),
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("widget not found"))),
     }
 }
 
@@ -1697,9 +1883,10 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "deleted".to_string(),
+            Value::Number(serde_json::Number::from(result as i64)),
+        )]),
     ))))
 }
 
@@ -1746,7 +1933,10 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
             ("keyName".to_string(), Value::String(row.get("key_name"))),
             ("appData".to_string(), Value::String(row.get("app_data"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            (
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            ),
         ]),
     ))))
 }
@@ -1814,7 +2004,10 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
             ("keyName".to_string(), Value::String(row.get("key_name"))),
             ("appData".to_string(), Value::String(row.get("app_data"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
-            ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            (
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            ),
         ]),
     ))))
 }

@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    
+
     use crate::entities::{cms_article::Model as Article, cms_category::Model as Category};
-    use chrono::NaiveDateTime;
-    use std::str::FromStr;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
+    use chrono::NaiveDateTime;
     use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
+    use std::str::FromStr;
     use tower::ServiceExt;
 
     fn build_test_pool() -> Pool {
@@ -110,8 +110,10 @@ mod tests {
                 .unwrap();
 
             // Will return 500 without DB or 404 if route missing
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 

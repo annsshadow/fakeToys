@@ -1,15 +1,12 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -97,6 +94,8 @@ async fn test_create_query_route_exists() {
         )
         .await
         .unwrap();
-    assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-        || response.status() == StatusCode::OK);
+    assert!(
+        response.status() == StatusCode::INTERNAL_SERVER_ERROR
+            || response.status() == StatusCode::OK
+    );
 }

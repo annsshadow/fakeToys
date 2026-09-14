@@ -98,10 +98,7 @@ pub async fn get(
         "SELECT id, unique_id, name, mobile, email, locked FROM auth_person WHERE {} AND deleted_at IS NULL",
         person_flag_clause(1)
     );
-    let row = match client
-        .query_one(&where_clause, &[&flag])
-        .await
-    {
+    let row = match client.query_one(&where_clause, &[&flag]).await {
         Ok(row) => row,
         Err(_) => return Ok(Json(ActionResult::error("person not found"))),
     };
@@ -110,8 +107,14 @@ pub async fn get(
         ("id".to_string(), Value::String(row.get("id"))),
         ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
-        ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
+        (
+            "mobile".to_string(),
+            Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+        ),
+        (
+            "email".to_string(),
+            Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+        ),
         ("locked".to_string(), Value::Bool(row.get("locked"))),
     ]));
 
@@ -160,7 +163,10 @@ async fn query_page(
     };
 
     let total: i64 = client
-        .query_one("SELECT COUNT(*) as count FROM auth_person WHERE deleted_at IS NULL", &[])
+        .query_one(
+            "SELECT COUNT(*) as count FROM auth_person WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?
         .get("count");
@@ -172,8 +178,14 @@ async fn query_page(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
-                ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
                 ("locked".to_string(), Value::Bool(row.get("locked"))),
             ]))
         })
@@ -252,11 +264,15 @@ pub async fn create(
     Json(req): Json<PersonCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if req.unique_id.trim().is_empty() || req.name.trim().is_empty() || req.password.is_empty() {
-        return Ok(Json(ActionResult::error("unique_id, name and password are required")));
+        return Ok(Json(ActionResult::error(
+            "unique_id, name and password are required",
+        )));
     }
 
     if req.unique_id.len() > 255 || req.name.len() > 255 {
-        return Ok(Json(ActionResult::error("unique_id and name must not exceed 255 characters")));
+        return Ok(Json(ActionResult::error(
+            "unique_id and name must not exceed 255 characters",
+        )));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -355,8 +371,14 @@ pub async fn update(
         ("id".to_string(), Value::String(row.get("id"))),
         ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
-        ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
+        (
+            "mobile".to_string(),
+            Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+        ),
+        (
+            "email".to_string(),
+            Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+        ),
         ("locked".to_string(), Value::Bool(row.get("locked"))),
     ]));
 
@@ -395,15 +417,23 @@ pub async fn delete(
         .map_err(|_| AppError::Internal)?;
 
     let Some(row) = row else {
-        return Ok(Json(ActionResult::error("person not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "person not found or already deleted",
+        )));
     };
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
-        ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
+        (
+            "mobile".to_string(),
+            Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+        ),
+        (
+            "email".to_string(),
+            Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+        ),
         ("locked".to_string(), Value::Bool(row.get("locked"))),
     ]));
 

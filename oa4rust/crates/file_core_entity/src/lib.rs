@@ -81,9 +81,18 @@ pub async fn folder_list_top(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("attachmentCount".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("size".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("folderCount".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "attachmentCount".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "folderCount".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
             ];
             if let Some(superior) = m.superior.clone() {
                 entries.insert(3, ("superior".to_string(), Value::String(superior)));
@@ -110,7 +119,8 @@ pub async fn folder_list_with_folder(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = file_folder::Entity::find()
         .filter(
-            file_folder::Column::Superior.eq(id)
+            file_folder::Column::Superior
+                .eq(id)
                 .and(file_folder::Column::DeletedAt.is_null()),
         )
         .order_by_asc(file_folder::Column::Name)
@@ -126,9 +136,18 @@ pub async fn folder_list_with_folder(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("attachmentCount".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("size".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("folderCount".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "attachmentCount".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "folderCount".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
             ];
             if let Some(superior) = m.superior.clone() {
                 entries.insert(3, ("superior".to_string(), Value::String(superior)));
@@ -167,14 +186,13 @@ pub async fn file_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("\"referenceType\"".to_string(), Value::String(m.reference_type.clone())),
+                (
+                    "\"referenceType\"".to_string(),
+                    Value::String(m.reference_type.clone()),
+                ),
                 (
                     "extension".to_string(),
-                    serde_json::Value::String(
-                        m.extension
-                            .clone()
-                            .unwrap_or_default(),
-                    ),
+                    serde_json::Value::String(m.extension.clone().unwrap_or_default()),
                 ),
                 (
                     "length".to_string(),
@@ -219,9 +237,18 @@ pub async fn complex_top(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("attachmentCount".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("size".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("folderCount".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "attachmentCount".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "folderCount".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
             ];
             if let Some(superior) = m.superior.clone() {
                 entries.insert(3, ("superior".to_string(), Value::String(superior)));
@@ -245,14 +272,13 @@ pub async fn complex_top(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("\"referenceType\"".to_string(), Value::String(m.reference_type.clone())),
+                (
+                    "\"referenceType\"".to_string(),
+                    Value::String(m.reference_type.clone()),
+                ),
                 (
                     "extension".to_string(),
-                    serde_json::Value::String(
-                        m.extension
-                            .clone()
-                            .unwrap_or_default(),
-                    ),
+                    serde_json::Value::String(m.extension.clone().unwrap_or_default()),
                 ),
                 (
                     "length".to_string(),
@@ -362,17 +388,18 @@ pub async fn file_create(
         ("id".to_string(), Value::String(model.id.clone())),
         ("name".to_string(), Value::String(model.name.clone())),
         ("person".to_string(), Value::String(model.person.clone())),
-        ("\"referenceType\"".to_string(), Value::String(model.reference_type.clone())),
+        (
+            "\"referenceType\"".to_string(),
+            Value::String(model.reference_type.clone()),
+        ),
         (
             "extension".to_string(),
-            serde_json::Value::String(
-                model
-                    .extension
-                    .clone()
-                    .unwrap_or_default(),
-            ),
+            serde_json::Value::String(model.extension.clone().unwrap_or_default()),
         ),
-        ("length".to_string(), Value::Number(serde_json::Number::from(model.length))),
+        (
+            "length".to_string(),
+            Value::Number(serde_json::Number::from(model.length)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -383,19 +410,16 @@ pub async fn file_create(
 pub fn file_core_entity_router(_pool: Pool) -> Router {
     Router::new()
         // folder
-        .route("/jaxrs/file/core/entity/folder/list/top", get(folder_list_top))
+        .route(
+            "/jaxrs/file/core/entity/folder/list/top",
+            get(folder_list_top),
+        )
         .route(
             "/jaxrs/file/core/entity/folder/list/{id}",
             get(folder_list_with_folder),
         )
-        .route(
-            "/jaxrs/file/core/entity/folder",
-            post(folder_create),
-        )
-        .route(
-            "/jaxrs/file/core/entity/folder/{id}",
-            delete(folder_delete),
-        )
+        .route("/jaxrs/file/core/entity/folder", post(folder_create))
+        .route("/jaxrs/file/core/entity/folder/{id}", delete(folder_delete))
         // file
         .route("/jaxrs/file/core/entity/file/list", get(file_list))
         .route("/jaxrs/file/core/entity/file", post(file_create))
@@ -407,7 +431,6 @@ pub fn file_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::file_core_entity_router(pool)

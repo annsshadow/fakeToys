@@ -1,12 +1,15 @@
-const fs = require('fs');
-let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8');
+const fs = require('node:fs')
+const path = require('node:path')
+
+const targetPath = path.resolve(__dirname, '../apps/desktop/src/views/FormDesigner.vue')
+let content = fs.readFileSync(targetPath, 'utf8')
 
 // === 1. Enhance FormField interface ===
 const oldInterface = `interface FormField {
   id: string; type: string; label: string; key: string
   placeholder?: string; defaultValue?: string; required?: boolean; disabled?: boolean
   rows?: number; min?: number; max?: number; optionsStr?: string
-}`;
+}`
 const newInterface = `interface FormField {
   id: string; type: string; label: string; key: string
   placeholder?: string; defaultValue?: string; required?: boolean; disabled?: boolean
@@ -36,15 +39,15 @@ interface FormDef {
   submitAction?: string; submitUrl?: string
   fields: FormField[]; updatedAt?: string; version?: string
   settings?: { showReset?: boolean; showSubmit?: boolean; layoutClass?: string }
-}`;
-content = content.replace(oldInterface, newInterface);
+}`
+content = content.replace(oldInterface, newInterface)
 
 // === 2. Enhance layoutTypes and add more field types ===
 const oldLayoutTypes = `const layoutTypes = [
   { type: 'section',  label: '分组', icon: '📁' },
   { type: 'row_start', label: '开始行', icon: '↔️' },
   { type: 'row_end',   label: '结束行', icon: '↩️' },
-]`;
+]`
 const newLayoutTypes = `const layoutTypes = [
   { type: 'section',    label: '分组',     icon: '📁' },
   { type: 'section_end',label: '结束分组', icon: '📂' },
@@ -75,11 +78,11 @@ const extraFieldTypes = [
   { type: 'map',         label: '地图',     icon: '🗺️' },
   { type: 'code',        label: '代码',     icon: '</>' },
 ]
-const fieldTypesExpanded = [...fieldTypes, ...extraFieldTypes];`;
-content = content.replace(oldLayoutTypes, newLayoutTypes);
+const fieldTypesExpanded = [...fieldTypes, ...extraFieldTypes];`
+content = content.replace(oldLayoutTypes, newLayoutTypes)
 
 // === 3. Add more state variables ===
-const oldState = "const mode = ref<'edit'|'preview'>('edit')";
+const oldState = "const mode = ref<'edit'|'preview'>('edit')"
 const newState = `const mode = ref<'edit'|'preview'|'schema'>('edit')
 const selectedField = ref<FormField|null>(null)
 const draggedType = ref<string|null>(null)
@@ -97,10 +100,13 @@ const historyIdx = ref(-1)
 const canUndo = computed(() => historyIdx.value > 0)
 const canRedo = computed(() => historyIdx.value < formHistory.value.length - 1)
 const columnCount = ref<1|2|3>(1)
-const dragDropTarget = ref<number|null>(null)`;
+const dragDropTarget = ref<number|null>(null)`
 // Remove duplicate selectedField declaration
-content = content.replace("const selectedField = ref<FormField|null>(null)\nconst draggedType = ref<string|null>(null)", "");
-content = content.replace(oldState, newState);
+content = content.replace(
+  'const selectedField = ref<FormField|null>(null)\nconst draggedType = ref<string|null>(null)',
+  '',
+)
+content = content.replace(oldState, newState)
 
 // === 4. Enhance makeField to support new fields ===
 const oldMakeField = `function makeField(type: string): FormField {
@@ -118,7 +124,7 @@ const oldMakeField = `function makeField(type: string): FormField {
     section: { label: '分组标题', key: '' },
   }
   return { id: genId(), type, ...d[type], required: false, disabled: false } as FormField
-}`;
+}`
 const newMakeField = `function makeField(type: string): FormField {
   const defaults: Record<string, Partial<FormField>> = {
     text:      { label: '文本字段', key: 'text_field', placeholder: '请输入' },
@@ -169,11 +175,11 @@ const newMakeField = `function makeField(type: string): FormField {
   if (type === 'phone') base.pattern = '^1[3-9]\\d{9}$'
   if (type === 'number') { base.min = 0; base.max = 999999; base.step = 1 }
   return base
-}`;
-content = content.replace(oldMakeField, newMakeField);
+}`
+content = content.replace(oldMakeField, newMakeField)
 
 // === 5. Add advanced functions ===
-const lifecycleMarker = 'onMounted(loadForms)';
+const lifecycleMarker = 'onMounted(loadForms)'
 const advancedCode = `
 // ── Form History ──────────────────────────────────────────────────────
 function pushFormHistory() {
@@ -366,93 +372,33 @@ function onFieldDrop(e: DragEvent, idx: number) {
   pushFormHistory()
 }
 
-onMounted(loadForms)`;
-content = content.replace(lifecycleMarker, advancedCode);
+onMounted(loadForms)`
+content = content.replace(lifecycleMarker, advancedCode)
 
 // === 6. Enhance template - add more palette items and controls ===
 // Add buttons to header
 content = content.replace(
   '<button class="btn btn-outline" @click="loadForms" title="刷新列表">🔄 刷新</button>',
-  '<button class="btn btn-outline" @click="showFieldTemplates=true" title="模板">📐 模板</button>\n        <button class="btn btn-outline" @click="showSchema=!showSchema" title="Schema">📋 Schema</button>\n        <button class="btn btn-outline" :disabled="!canUndo" @click="formUndo" title="撤销">↩</button>\n        <button class="btn btn-outline" :disabled="!canRedo" @click="formRedo" title="重做">↪</button>\n        <button class="btn btn-outline" @click="loadForms" title="刷新列表">🔄 刷新</button>'
-);
+  '<button class="btn btn-outline" @click="showFieldTemplates=true" title="模板">📐 模板</button>\n        <button class="btn btn-outline" @click="showSchema=!showSchema" title="Schema">📋 Schema</button>\n        <button class="btn btn-outline" :disabled="!canUndo" @click="formUndo" title="撤销">↩</button>\n        <button class="btn btn-outline" :disabled="!canRedo" @click="formRedo" title="重做">↪</button>\n        <button class="btn btn-outline" @click="loadForms" title="刷新列表">🔄 刷新</button>',
+)
 
 // Add column layout selector
 content = content.replace(
   '<div class="fd-actions">',
-  '<div class="fd-actions">\n        <div class="col-layout">\n          <span class="col-label">列:</span>\n          <button :class=["col-btn",{active:columnCount===1}]" @click="setColumnCount(1)">1</button>\n          <button :class=["col-btn",{active:columnCount===2}]" @click="setColumnCount(2)">2</button>\n          <button :class=["col-btn",{active:columnCount===3}]" @click="setColumnCount(3)">3</button>\n        </div>'
-);
+  '<div class="fd-actions">\n        <div class="col-layout">\n          <span class="col-label">列:</span>\n          <button :class=["col-btn",{active:columnCount===1}]" @click="setColumnCount(1)">1</button>\n          <button :class=["col-btn",{active:columnCount===2}]" @click="setColumnCount(2)">2</button>\n          <button :class=["col-btn",{active:columnCount===3}]" @click="setColumnCount(3)">3</button>\n        </div>',
+)
 
 // Add export/import to header
 content = content.replace(
   '<button class="btn btn-primary" :disabled="!currentForm || !currentForm.name" @click="saveForm">💾 保存</button>',
-  '<button class="btn btn-outline" @click="downloadFormJson">💾 导出</button>\n        <button class="btn btn-outline" @click="showIoModal=true">📥 导入</button>\n        <button class="btn btn-primary" :disabled="!currentForm || !currentForm.name" @click="saveForm">💾 保存</button>'
-);
+  '<button class="btn btn-outline" @click="downloadFormJson">💾 导出</button>\n        <button class="btn btn-outline" @click="showIoModal=true">📥 导入</button>\n        <button class="btn btn-primary" :disabled="!currentForm || !currentForm.name" @click="saveForm">💾 保存</button>',
+)
 
 // === 7. Add template modals and enhanced UI to template ===
-const templateEndMarker = '  </div>\n</template>';
-const newTemplateContent = `
-    <!-- Field Templates Modal -->
-    <div v-if="showFieldTemplates" class="modal-overlay" @click.self="showFieldTemplates=false">
-      <div class="modal modal-lg glass-card">
-        <div class="modal-header"><h3>📐 表单模板</h3><button class="btn-close" @click="showFieldTemplates=false">✕</button></div>
-        <div class="modal-body">
-          <p class="modal-hint">选择一个模板快速生成常用表单结构</p>
-          <div class="tpl-grid">
-            <div v-for="(tpl, ti) in fieldTemplates" :key="ti" class="tpl-card" @click="applyTemplate(tpl)">
-              <div class="tpl-icon">{{ tpl.icon }}</div>
-              <div class="tpl-name">{{ tpl.name }}</div>
-              <div class="tpl-count">{{ tpl.fields.length }} 个字段</div>
-              <div class="tpl-preview">{{ tpl.fields.map(f=>f.icon||'📝').join(' → ') }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Schema Modal -->
-    <div v-if="showSchema" class="modal-overlay" @click.self="showSchema=false">
-      <div class="modal modal-lg glass-card">
-        <div class="modal-header"><h3>📋 Schema 视图</h3><button class="btn-close" @click="showSchema=false">✕</button></div>
-        <div class="modal-body">
-          <textarea class="schema-editor" readonly :value="schemaJson"></textarea>
-          <div class="modal-actions">
-            <button class="bc" @click="showSchema=false">关闭</button>
-            <button class="bs" @click="navigator.clipboard.writeText(schemaJson)">📋 复制</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Import/Export Modal -->
-    <div v-if="showIoModal" class="modal-overlay" @click.self="showIoModal=false">
-      <div class="modal modal-md glass-card">
-        <div class="modal-header"><h3>📦 导入/导出</h3><button class="btn-close" @click="showIoModal=false">✕</button></div>
-        <div class="modal-body">
-          <div class="io-section">
-            <label>导出 JSON</label>
-            <textarea class="schema-editor" readonly :value="exportFormJson()"></textarea>
-            <button class="bs" @click="downloadFormJson()">💾 下载文件</button>
-            <button class="bc" @click="navigator.clipboard.writeText(exportFormJson())">📋 复制</button>
-          </div>
-          <div class="io-sep"></div>
-          <div class="io-section">
-            <label>导入 JSON</label>
-            <textarea class="schema-editor" v-model="importJsonText" placeholder="// 粘贴JSON表单定义..."></textarea>
-            <button class="bs" :disabled="!importJsonText.trim()" @click="importFormJson(importJsonText)">📥 导入</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Schema editor state -->
-    <script v-if="false"></script>
-  </div>
-</template>
-
-<script setup lang="ts">
-// Note: This replaces the existing script - the imports and state below are handled by the script injection above`;
-// Actually we need to be more careful. Let me insert the modals before the closing </template>
-content = content.replace('  </div>\n</template>', `
+// Insert the modals before the closing </template>.
+content = content.replace(
+  '  </div>\n</template>',
+  String.raw`
     <!-- Field Templates Modal -->
     <div v-if="showFieldTemplates" class="modal-overlay" @click.self="showFieldTemplates=false">
       <div class="modal modal-lg glass-card">
@@ -505,14 +451,18 @@ content = content.replace('  </div>\n</template>', `
   </div>
 </template>
 
-<script setup lang="ts">`;
-content = content.replace('</template>\n\n<script setup lang="ts">', '');
+<script setup lang="ts">`,
+)
+content = content.replace('</template>\n\n<script setup lang="ts">', '')
 
 // Add import statement for computed
-content = content.replace("import { ref, computed, onMounted } from 'vue'", "import { ref, computed, onMounted, watch } from 'vue'");
+content = content.replace(
+  "import { ref, computed, onMounted } from 'vue'",
+  "import { ref, computed, onMounted, watch } from 'vue'",
+)
 
 // === 8. Add more CSS ===
-const styleEnd = '</style>';
+const styleEnd = '</style>'
 const extraCss = `
 /* Template modal */
 .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
@@ -571,9 +521,8 @@ const extraCss = `
 .field-row.type-spacer{height:20px;border:none;background:transparent;cursor:default}
 .field-row.type-divider{height:1px;border:none;background:var(--border-color);margin:8px 0;cursor:default}
 .field-row.type-html{padding:8px;background:rgba(0,212,255,.05);border:1px dashed var(--border-color)}
-.field-row.type-html .fr-info{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}`;
-content = content.replace(styleEnd, extraCss + '\n</style>');
+.field-row.type-html .fr-info{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace}`
+content = content.replace(styleEnd, `${extraCss}\n</style>`)
 
 // Write back
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', content);
-console.log('Done. Lines:', content.split('\n').length);
+fs.writeFileSync(targetPath, content)

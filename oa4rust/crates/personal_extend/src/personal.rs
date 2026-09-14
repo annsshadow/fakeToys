@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    http::HeaderMap,
-    Json,
-};
+use axum::{extract::Extension, http::HeaderMap, Json};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use shared::error::AppError;
@@ -33,7 +29,8 @@ pub async fn get_info(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
-    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
+    let token =
+        shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -77,7 +74,8 @@ pub async fn update_info(
     headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<UpdatePersonalRequest>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
-    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
+    let token =
+        shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -142,7 +140,8 @@ pub async fn get_detail(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
     // 验证当前请求者已登录
-    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
+    let token =
+        shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let _session = session_manager
         .validate_session(&token)
         .await

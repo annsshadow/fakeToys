@@ -57,9 +57,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { toast } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
+import { ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 type Role = { flag?: string; id?: string; name?: string; roleName?: string; title?: string; desc?: string }
 
@@ -75,7 +75,11 @@ async function loadRoles() {
   try {
     const r = await api.get('/jaxrs/role/list')
     roles.value = r.data ?? []
-  } catch { roles.value = [] } finally { loading.value = false }
+  } catch {
+    roles.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 function editRole(r: Role) {
@@ -85,7 +89,10 @@ function editRole(r: Role) {
 }
 
 async function onSave() {
-  if (!form.value.flag.trim()) { toast.info('Flag不能为空'); return }
+  if (!form.value.flag.trim()) {
+    toast.info('Flag不能为空')
+    return
+  }
   creating.value = true
   try {
     if (editingRole.value) {
@@ -97,57 +104,29 @@ async function onSave() {
     editingRole.value = null
     form.value = { name: '', flag: '', desc: '' }
     loadRoles()
-  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '未知错误')) } finally { creating.value = false }
+  } catch (e: any) {
+    toast.error('保存失败: : ' + (e?.message ?? '未知错误'))
+  } finally {
+    creating.value = false
+  }
 }
 
 async function deleteRole(r: Role) {
   if (!confirmMsg(`确定删除角色「${r.name || r.flag}」？`)) return
   try {
     await api.delete(`/jaxrs/role/${r.flag || r.id}`)
-    roles.value = roles.value.filter(x => x.flag !== r.flag)
-  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
+    roles.value = roles.value.filter((x) => x.flag !== r.flag)
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? ''))
+  }
 }
 
 loadRoles()
 
-
-
-const api_permission_manag_343_data = ref<any[]>([]);
-const { data: api_permission_manag_343_q } = useQuery({queryKey: ['api_permission_manag_343', '/jaxrs/permission/management/refresh/all'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/management/refresh/all"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_permission_viewe_710_data = ref<any[]>([]);
-const { data: api_permission_viewe_710_q } = useQuery({queryKey: ['api_permission_viewe_710', '/jaxrs/permission/viewer/appInfo/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/viewer/appInfo/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_permission_publi_309_data = ref<any[]>([]);
-const { data: api_permission_publi_309_q } = useQuery({queryKey: ['api_permission_publi_309', '/jaxrs/permission/publisher/appInfo/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/publisher/appInfo/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-const api_permission_manag_444_data = ref<any[]>([]);
-const { data: api_permission_manag_444_q } = useQuery({queryKey: ['api_permission_manag_444', '/jaxrs/permission/manager/appInfo/a-1'], queryFn: async () => { try { const r = await api.get("/jaxrs/permission/manager/appInfo/a-1"); return (r.data ?? []) as any[]; } catch { return []; } }});
-
-
-
-// Confirmation dialog (replaces window.confirm)
-function confirmMsg(msg: string): Promise<boolean> {
-  return new Promise(resolve => {
-    const overlay = document.createElement('div')
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
-    const box = document.createElement('div')
-    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
-    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
-      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
-      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
-      '</div>'
-    overlay.appendChild(box)
-    document.body.appendChild(overlay)
-    const ok = () => { overlay.remove(); resolve(true) }
-    const cancel = () => { overlay.remove(); resolve(false) }
-    box.querySelector('.tc-ok').addEventListener('click', ok)
-    box.querySelector('.tc-cancel').addEventListener('click', cancel)
-    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
-  })
-}
-
+const api_permission_manag_343_data = ref<any[]>([])
+const api_permission_viewe_710_data = ref<any[]>([])
+const api_permission_publi_309_data = ref<any[]>([])
+const api_permission_manag_444_data = ref<any[]>([])
 </script>
 
 <style scoped>

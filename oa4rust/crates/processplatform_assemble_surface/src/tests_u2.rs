@@ -1,4 +1,4 @@
-﻿//! plan002 U2 鏂板绔偣鐨勮矾鐢卞彲杈炬祴璇曚笌濂戠害娴嬭瘯銆?
+//! plan002 U2 鏂板绔偣鐨勮矾鐢卞彲杈炬祴璇曚笌濂戠害娴嬭瘯銆?
 //!
 //! 璺敱娴嬭瘯浣跨敤 mock_pool锛堟棤娉曞缓杩烇級锛氳姹傚懡涓矾鐢卞悗 handler 杩斿洖 500锛?
 //! 鏂█ 500锛堣€岄潪 404锛夊嵆鍙瘉鏄庤矾鐢卞凡娉ㄥ唽涓斿彲杈俱€?
@@ -40,7 +40,11 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_snap_delete_reachable() {
         assert_eq!(
-            status_of("DELETE", "/jaxrs/processplatform/assemble/surface/snap/snap-1").await,
+            status_of(
+                "DELETE",
+                "/jaxrs/processplatform/assemble/surface/snap/snap-1"
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -48,7 +52,11 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_snap_restore_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/processplatform/assemble/surface/snap/snap-1/restore").await,
+            status_of(
+                "GET",
+                "/jaxrs/processplatform/assemble/surface/snap/snap-1/restore"
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -78,7 +86,11 @@ mod u2_tests {
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", &format!("{}/workcompleted/wc-1/type/snapworkcompleted", base)).await,
+            status_of(
+                "GET",
+                &format!("{}/workcompleted/wc-1/type/snapworkcompleted", base)
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -88,7 +100,11 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_attachment_list_routes_reachable() {
         let base = "/jaxrs/processplatform/assemble/surface/attachment/list";
-        for suffix in ["/job/job-1", "/work/work-1", "/workorworkcompleted/either-1"] {
+        for suffix in [
+            "/job/job-1",
+            "/work/work-1",
+            "/workorworkcompleted/either-1",
+        ] {
             assert_eq!(
                 status_of("GET", &format!("{}{}", base, suffix)).await,
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -102,18 +118,32 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_attachment_by_work_verbs_chained_on_same_path() {
         let uri = "/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1";
-        assert_eq!(status_of("GET", uri).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("DELETE", uri).await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", uri).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("DELETE", uri).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[tokio::test]
     async fn u2_attachment_text_and_available_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text").await,
+            status_of(
+                "GET",
+                "/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text"
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/processplatform/assemble/surface/attachment/att-1/available").await,
+            status_of(
+                "GET",
+                "/jaxrs/processplatform/assemble/surface/attachment/att-1/available"
+            )
+            .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -221,9 +251,24 @@ mod u2_tests {
         // 鐩存帴楠岃瘉 mapper 鐨勫瓧娈靛懡鍚嶅绾︼細閫氳繃鏋勯€?JSON 鏂█杈撳嚭閿泦鍚?
         // 锛圧ow 鏃犳硶鑴辩 PG 杩炴帴鏋勯€狅紝姝ゅ閿佸畾 mapper 杈撳嚭閿笌 Java WO 瀵归綈锛?
         let keys = [
-            "id", "title", "job", "work", "workCompleted", "type", "person", "identity", "unit",
-            "application", "applicationName", "process", "processName", "creatorPerson",
-            "activity", "activityName", "createTime", "updateTime",
+            "id",
+            "title",
+            "job",
+            "work",
+            "workCompleted",
+            "type",
+            "person",
+            "identity",
+            "unit",
+            "application",
+            "applicationName",
+            "process",
+            "processName",
+            "creatorPerson",
+            "activity",
+            "activityName",
+            "createTime",
+            "updateTime",
         ];
         let sample: serde_json::Value = serde_json::from_str(
             r#"{"id":"s1","title":"t","job":"j","work":"w","workCompleted":null,"type":"snap","person":"p","identity":"i","unit":"u","application":"a","applicationName":"an","process":"pr","processName":"prn","creatorPerson":"cp","activity":"ac","activityName":"acn","createTime":"2026-08-22 10:00:00","updateTime":"2026-08-22 10:00:00"}"#,
@@ -241,22 +286,71 @@ mod u2_tests {
     #[tokio::test]
     async fn u2r_phase_c_snap_routes_reachable() {
         let base = "/jaxrs/processplatform/assemble/surface/snap";
-        assert_eq!(status_of("GET", &format!("{}/snap-1/mockdeletetoget", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/list/my/paging/0/size/20", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("POST", &format!("{}/list/my/filter/0/size/20", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/list/snap-1/next/20/application/app-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/list/snap-1/prev/20/application/app-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/list/snap-1/next/20/process/pr-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/list/snap-1/prev/20/process/pr-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("GET", &format!("{}/snap-1/mockdeletetoget", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", &format!("{}/list/my/paging/0/size/20", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("POST", &format!("{}/list/my/filter/0/size/20", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(
+                "GET",
+                &format!("{}/list/snap-1/next/20/application/app-1", base)
+            )
+            .await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(
+                "GET",
+                &format!("{}/list/snap-1/prev/20/application/app-1", base)
+            )
+            .await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", &format!("{}/list/snap-1/next/20/process/pr-1", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", &format!("{}/list/snap-1/prev/20/process/pr-1", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[tokio::test]
     async fn u2r_phase_c_attachment_routes_reachable() {
         let base = "/jaxrs/processplatform/assemble/surface/attachment";
-        assert_eq!(status_of("DELETE", &format!("{}/att-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/att-1/mockdeletetoget", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/att-1/workorworkcompleted/either-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
-        assert_eq!(status_of("GET", &format!("{}/list/workorworkcompleted/either-1", base)).await, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            status_of("DELETE", &format!("{}/att-1", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", &format!("{}/att-1/mockdeletetoget", base)).await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(
+                "GET",
+                &format!("{}/att-1/workorworkcompleted/either-1", base)
+            )
+            .await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(
+                "GET",
+                &format!("{}/list/workorworkcompleted/either-1", base)
+            )
+            .await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 
     #[tokio::test]
@@ -307,9 +401,15 @@ mod u2_tests {
         // applicationdict 10 鍙傚厓缁勩€乨ata 璺緞瀵艰埅鏃忥細璇佹槑闀垮厓缁勬彁鍙栧櫒涓?Java 褰㈢姸涓€鑷?
         let base = "/jaxrs/processplatform/assemble/surface";
         for (method, path) in [
-            ("GET", "/applicationdict/d1/application/a1/p0/p1/p2/p3/p4/p5/p6/p7/data"),
+            (
+                "GET",
+                "/applicationdict/d1/application/a1/p0/p1/p2/p3/p4/p5/p6/p7/data",
+            ),
             ("PUT", "/applicationdict/d1/application/a1/p0/data"),
-            ("DELETE", "/applicationdict/d1/application/a1/p0/p1/p2/p3/p4/p5/p6/p7/data"),
+            (
+                "DELETE",
+                "/applicationdict/d1/application/a1/p0/p1/p2/p3/p4/p5/p6/p7/data",
+            ),
             ("POST", "/data/job/j-1/p0/mockputtopost"),
             ("GET", "/datarecord/get/job/j-1/path/p-1"),
         ] {
@@ -326,7 +426,8 @@ mod u2_tests {
     #[tokio::test]
     async fn u2r_same_path_multi_method_merging() {
         // 鍚屼竴 Java 璺緞鐨?GET/PUT/POST 澶嶇敤鍚屼竴 handler锛屾柟娉曡矾鐢卞簲鍚堝苟涓斾簰涓嶈鐩?
-        let uri = "/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data";
+        let uri =
+            "/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data";
         for method in ["GET", "PUT", "POST"] {
             assert_eq!(
                 status_of(method, uri).await,
@@ -430,11 +531,16 @@ mod u2b_tests {
     use crate::router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use shared::storage::{BlobStorage, DbBlobStorage, FsBlobStorage};
     use tower::ServiceExt;
 
-    async fn respond(method: &str, uri: &str, headers: &[(&str, &str)], body: Body) -> (StatusCode, serde_json::Value) {
+    async fn respond(
+        method: &str,
+        uri: &str,
+        headers: &[(&str, &str)],
+        body: Body,
+    ) -> (StatusCode, serde_json::Value) {
         let mut builder = Request::builder().uri(uri).method(method);
         for (k, v) in headers {
             builder = builder.header(*k, *v);
@@ -444,7 +550,9 @@ mod u2b_tests {
             .await
             .unwrap();
         let status = response.status();
-        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let json = if bytes.is_empty() {
             serde_json::Value::Null
         } else {
@@ -485,7 +593,10 @@ mod u2b_tests {
             ("POST", format!("{b}/upload/with/url")),
             ("GET", format!("{b}/batch/download/job/j-1/site/s-1")),
             ("GET", format!("{b}/batch/download/work/w-1/site/s-1")),
-            ("GET", format!("{b}/batch/download/work/w-1/site/s-1/stream")),
+            (
+                "GET",
+                format!("{b}/batch/download/work/w-1/site/s-1/stream"),
+            ),
         ];
         for (method, path) in cases {
             assert_eq!(
@@ -503,8 +614,14 @@ mod u2b_tests {
     async fn u2b_invoice_endpoints_are_real_routes_not_stubs() {
         let b = "/jaxrs/processplatform/assemble/surface/attachment";
         let cases: Vec<(&str, String)> = vec![
-            ("GET", format!("{b}/invoice/f-1/joborworkorworkcompleted/w-1")),
-            ("GET", format!("{b}/download/invoice/f-1/joborworkorworkcompleted/w-1")),
+            (
+                "GET",
+                format!("{b}/invoice/f-1/joborworkorworkcompleted/w-1"),
+            ),
+            (
+                "GET",
+                format!("{b}/download/invoice/f-1/joborworkorworkcompleted/w-1"),
+            ),
         ];
         for (method, path) in cases {
             assert_ne!(
@@ -517,11 +634,19 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_501_response_body_is_action_result_error_shape() {
-        let (status, json) =
-            respond("POST", "/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf", &[], Body::empty()).await;
+        let (status, json) = respond(
+            "POST",
+            "/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf",
+            &[],
+            Body::empty(),
+        )
+        .await;
         assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
         assert_eq!(json["type"], "error");
-        assert!(json.get("message").is_some(), "ActionResult.message required");
+        assert!(
+            json.get("message").is_some(),
+            "ActionResult.message required"
+        );
         assert!(json["data"].is_null());
     }
 
@@ -535,8 +660,14 @@ mod u2b_tests {
             ("POST", &format!("{b}/upload/work/w-1/callback/cb-1")),
             ("POST", &format!("{b}/upload/workcompleted/wc-1")),
             ("PUT", &format!("{b}/upload/work/w-1/save/as/name.txt")),
-            ("POST", &format!("{b}/upload/work/w-1/save/as/name.txt/mockputtopost")),
-            ("POST", &format!("{b}/v2/upload/workorworkcompleted/either-1")),
+            (
+                "POST",
+                &format!("{b}/upload/work/w-1/save/as/name.txt/mockputtopost"),
+            ),
+            (
+                "POST",
+                &format!("{b}/v2/upload/workorworkcompleted/either-1"),
+            ),
             ("POST", &format!("{b}/batch/upload/manage")),
         ] {
             assert_eq!(
@@ -550,8 +681,18 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2b_base64_upload_route_reachable() {
         let path = "/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64";
-        let (status, _) = respond("POST", path, JSON, Body::from(r#"{"fileName":"a.txt","fileBase64":"aGVsbG8="}"#)).await;
-        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR, "base64 upload route unreachable");
+        let (status, _) = respond(
+            "POST",
+            path,
+            JSON,
+            Body::from(r#"{"fileName":"a.txt","fileBase64":"aGVsbG8="}"#),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "base64 upload route unreachable"
+        );
     }
 
     // 鈹€鈹€ 涓嬭浇鏃忚矾鐢卞彲杈?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -591,11 +732,17 @@ mod u2b_tests {
             ("POST", &format!("{b}/update/att-1/work/w-1/callback/cb-1")),
             ("POST", &format!("{b}/update/att-1/work/w-1/mockputtopost")),
             ("PUT", &format!("{b}/update/content/att-1/work/w-1")),
-            ("POST", &format!("{b}/update/content/att-1/work/w-1/mockputtopost")),
+            (
+                "POST",
+                &format!("{b}/update/content/att-1/work/w-1/mockputtopost"),
+            ),
             ("PUT", &format!("{b}/edit/att-1/work/w-1")),
             ("POST", &format!("{b}/edit/att-1/work/w-1/mockputtopost")),
             ("PUT", &format!("{b}/edit/att-1/work/w-1/text")),
-            ("POST", &format!("{b}/edit/att-1/work/w-1/text/mockputtopost")),
+            (
+                "POST",
+                &format!("{b}/edit/att-1/work/w-1/text/mockputtopost"),
+            ),
             ("POST", &format!("{b}/copy/work/w-1")),
             ("POST", &format!("{b}/copy/work/w-1/soft")),
             ("POST", &format!("{b}/copy/workcompleted/wc-1")),
@@ -606,7 +753,11 @@ mod u2b_tests {
             ("GET", &format!("{b}/att-1/work/w-1/change/site/new-site")),
         ] {
             let needs_json = method == "PUT" || method == "POST";
-            let (headers, body) = if needs_json { (JSON, Body::from("{}")) } else { (&[][..], Body::empty()) };
+            let (headers, body) = if needs_json {
+                (JSON, Body::from("{}"))
+            } else {
+                (&[][..], Body::empty())
+            };
             assert_eq!(
                 respond(method, path, headers, body).await.0,
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -634,8 +785,7 @@ mod u2b_tests {
     // 鈹€鈹€ BlobStorage 鎺ュ叆鐐瑰崟鍏冪骇琛屼负锛欶S 鍥炶鎴愬姛 / DB 鍗犱綅 fail loud 鈹€鈹€鈹€鈹€鈹€鈹€
 
     fn fs_backend(tag: &str) -> FsBlobStorage {
-        let dir = std::env::temp_dir()
-            .join(format!("oa4rust_u2b_{tag}_{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("oa4rust_u2b_{tag}_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         FsBlobStorage::new(dir)
     }
@@ -643,7 +793,9 @@ mod u2b_tests {
     #[tokio::test]
     async fn u2b_fs_backend_persists_upload_roundtrip() {
         let storage = fs_backend("ok");
-        crate::u2_att_persist_verified(&storage, "attachment/a-1/f.bin", b"payload").await.unwrap();
+        crate::u2_att_persist_verified(&storage, "attachment/a-1/f.bin", b"payload")
+            .await
+            .unwrap();
         assert_eq!(
             storage.get("attachment/a-1/f.bin").await.unwrap(),
             b"payload".to_vec(),
@@ -670,10 +822,16 @@ mod u2b_tests {
         use crate::u2_att_blob_key;
         assert!(u2_att_blob_key("a-1", "../escape.txt").is_ok()); // 鍒嗛殧绗﹁鍓ョ涓?_
         let key = u2_att_blob_key("a-1", "../escape.txt").unwrap();
-        assert!(!key.contains(".."), "key must not contain traversal components: {key}");
+        assert!(
+            !key.contains(".."),
+            "key must not contain traversal components: {key}"
+        );
         assert!(u2_att_blob_key("a-1", "").is_err());
         assert!(u2_att_blob_key("a-1", "   ").is_err());
-        assert_eq!(u2_att_blob_key("a-1", "dir/nested.txt").unwrap(), "attachment/a-1/dir_nested.txt");
+        assert_eq!(
+            u2_att_blob_key("a-1", "dir/nested.txt").unwrap(),
+            "attachment/a-1/dir_nested.txt"
+        );
     }
 
     // 鈹€鈹€ 鏃?2锛歞ata work/workcompleted pathN Java 褰㈢姸鍏冪粍鎻愬彇濂戠害 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -816,7 +974,6 @@ mod u2c_tests {
         assert_ne!(status, StatusCode::BAD_REQUEST);
     }
 
-
     #[tokio::test]
     async fn u2c_draft_keylock_write_verb_routes_reachable() {
         for (method, path) in [
@@ -844,7 +1001,10 @@ mod u2c_tests {
         // Java 精确形状（此前 Rust 侧为漂移的字面量路径 /generate/process/name/name/serial/{id}）
         let status = status_of(
             "POST",
-            &format!("{}/serialnumber/generate/process/pr-1/name/serial-1/serial", BASE),
+            &format!(
+                "{}/serialnumber/generate/process/pr-1/name/serial-1/serial",
+                BASE
+            ),
         )
         .await;
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
@@ -857,7 +1017,10 @@ mod u2c_tests {
             StatusCode::INTERNAL_SERVER_ERROR
         );
         // openapi 不触 DB/session：应真实 200 并返回描述符
-        assert_eq!(status_of("GET", &format!("{}/openapi", BASE)).await, StatusCode::OK);
+        assert_eq!(
+            status_of("GET", &format!("{}/openapi", BASE)).await,
+            StatusCode::OK
+        );
     }
 
     #[tokio::test]
@@ -895,7 +1058,12 @@ mod u2c_tests {
         ] {
             let status = status_of("GET", &format!("{}{}", BASE, path)).await;
             assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {}", path);
-            assert_ne!(status, StatusCode::BAD_REQUEST, "extractor mismatch: {}", path);
+            assert_ne!(
+                status,
+                StatusCode::BAD_REQUEST,
+                "extractor mismatch: {}",
+                path
+            );
         }
     }
 
@@ -952,7 +1120,10 @@ mod u2c_tests {
         use crate::U2FilterSql;
         let mut fs = U2FilterSql::default();
         fs.push_eq("xperson", "zhang@x");
-        fs.push_in("\"xapplication\"", &["app-1".to_string(), "app-2".to_string()]);
+        fs.push_in(
+            "\"xapplication\"",
+            &["app-1".to_string(), "app-2".to_string()],
+        );
         fs.push_key_ilike(&["xtitle", "xserial"], "100%_");
         // 所有用户值必须走占位符，不得内联进 SQL 文本
         let where_clause = fs.where_sql();
@@ -970,9 +1141,16 @@ mod u2c_tests {
     #[test]
     fn u2c_paged_result_carries_total_in_action_result_count() {
         use crate::u2_paged_result;
-        let data = vec![serde_json::json!({"id": "a"}), serde_json::json!({"id": "b"})];
+        let data = vec![
+            serde_json::json!({"id": "a"}),
+            serde_json::json!({"id": "b"}),
+        ];
         let result = u2_paged_result(data, 57);
-        assert_eq!(result.0.count, Some(57), "分页 total 必须写入 ActionResult.count");
+        assert_eq!(
+            result.0.count,
+            Some(57),
+            "分页 total 必须写入 ActionResult.count"
+        );
         assert_eq!(result.0.r#type.as_deref(), Some("success"));
         let body = result.0.data.unwrap();
         assert_eq!(body["count"], 57, "data.count 与 total 一致");
@@ -990,9 +1168,14 @@ mod u2c_tests {
         let mut idx = 0usize;
         while let Some(rel) = src[idx..].find(marker) {
             let start = idx + rel + marker.len();
-            let Some(end) = src[start..].find('"') else { break };
+            let Some(end) = src[start..].find('"') else {
+                break;
+            };
             let raw_path = &src[start..start + end];
-            let boundary = src[start..].find(".route(").map(|r| start + r).unwrap_or(src.len());
+            let boundary = src[start..]
+                .find(".route(")
+                .map(|r| start + r)
+                .unwrap_or(src.len());
             let window = &src[start..boundary];
             let method = ["get(", "post(", "put(", "delete("]
                 .iter()
@@ -1002,7 +1185,11 @@ mod u2c_tests {
                 let normalized = raw_path
                     .split('/')
                     .map(|seg| {
-                        if seg.starts_with('{') && seg.ends_with('}') { "{}" } else { seg }
+                        if seg.starts_with('{') && seg.ends_with('}') {
+                            "{}"
+                        } else {
+                            seg
+                        }
                     })
                     .collect::<Vec<_>>()
                     .join("/");
@@ -1013,7 +1200,11 @@ mod u2c_tests {
             }
             idx = start;
         }
-        assert!(duplicates.is_empty(), "归一化后重复注册（将导致路由 panic）: {:?}", duplicates);
+        assert!(
+            duplicates.is_empty(),
+            "归一化后重复注册（将导致路由 panic）: {:?}",
+            duplicates
+        );
     }
 
     #[tokio::test]

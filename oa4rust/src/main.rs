@@ -2,26 +2,25 @@ use std::env;
 use std::sync::Arc;
 
 use anyhow::Context as _;
-use axum::middleware;
-use axum::routing::get;
+use axum::response::IntoResponse;
 use axum::Router;
 use mcp_server::tool_bridge::ToolBridge;
+use openapi::ApiDoc;
 use shared::db::create_pool;
 use shared::middleware::{
-    auth_middleware, authorize_middleware, behavior_comparison_middleware, rate_limit_middleware, security_headers_middleware,
-    trace_middleware, SecurityState,
+    auth_middleware, authorize_middleware, rate_limit_middleware, security_headers_middleware,
+    trace_middleware,
 };
 use shared::rate_limit::RateLimiter;
-use shared::Pool;
 use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
-use tower_http::services::ServeDir;
-use openapi::ApiDoc;
 
 /// OpenAPI JSON endpoint handler.
 async fn openapi_json_handler() -> Result<Vec<u8>, axum::response::Json<serde_json::Value>> {
     use utoipa::OpenApi;
-    let json = ApiDoc::openapi().to_json().map_err(|e| axum::Json(serde_json::json!({"error": e.to_string()})))?;
+    let json = ApiDoc::openapi()
+        .to_json()
+        .map_err(|e| axum::Json(serde_json::json!({"error": e.to_string()})))?;
     Ok(json.into_bytes())
 }
 
@@ -33,11 +32,16 @@ async fn main() -> anyhow::Result<()> {
 
     dotenvy::dotenv().ok();
 
+    let auth_config = shared::config::AuthConfig::from_env()
+        .context("invalid browser authentication configuration")?;
+
     let args: Vec<String> = env::args().collect();
     let http_flag = args.iter().any(|a| a == "--http");
     let migrate_only = args.iter().any(|a| a == "--migrate-only");
 
-    let pool = create_pool().await.context("failed to create database pool")?;
+    let pool = create_pool()
+        .await
+        .context("failed to create database pool")?;
 
     // 启动时自行应用数据库迁移（幂等），无需手工执行 SQL。
     let report = shared::migrate::run_migrations(&pool)
@@ -54,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let session_manager = SessionManager::with_pool(pool.clone());
+    let session_manager = SessionManager::with_pool_and_config(pool.clone(), auth_config.clone());
     let rate_limiter = RateLimiter::new();
 
     // Phase B-U-B2: Redis 为默认 session 存储，不可达时降级为内存+DB 模式
@@ -62,7 +66,9 @@ async fn main() -> anyhow::Result<()> {
     if redis_available {
         tracing::info!("Redis backend initialized for session store and rate limiter");
     } else {
-        tracing::warn!("Redis unreachable; session store and rate limiter using in-memory fallback");
+        tracing::warn!(
+            "Redis unreachable; session store and rate limiter using in-memory fallback"
+        );
     }
 
     // plan002 U7b: LDAP_SYNC_ENABLE=true 时启动 LDAP 用户自动同步定时 worker（幂等）
@@ -70,11 +76,11 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!("LDAP user sync worker started (LDAP_SYNC_ENABLE=true)");
     }
 
-    let app = create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
+    let app =
+        oa4rust::create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
 
     // Mount OpenAPI JSON and Swagger UI before other layers
-    let app = app
-        .route("/openapi.json", axum::routing::get(openapi_json_handler));
+    let app = app.route("/openapi.json", axum::routing::get(openapi_json_handler));
 
     // Optionally mount the MCP HTTP endpoint at /mcp when --http flag is present.
     let security_state = shared::middleware::SecurityState {
@@ -90,14 +96,49 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // ── 静态文件服务（前端构建产物）─────────────────────────────────────
-    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置向上两级再进 dist/web
-    let web_dist = env::var("OA4RUST_WEB_DIST")
-        .unwrap_or_else(|_| "../../dist/web".to_string());
-    let app = app.fallback_service(
-        ServeDir::new(&web_dist)
-            .append_index_html_on_directories(true),
-    );
-    tracing::info!(web_dist, "static frontend files mounted");
+    // OA4RUST_WEB_DIST 环境变量指定 dist 目录，默认相对于二进制位置向上两级再进 dist/web。
+    // SPA 深链回退：/login、/app/** 等前端路由刷新时回 index.html；/jaxrs/** 与
+    // /ws/** 未知路径保持 404（API 客户端不应收到 HTML）。
+    let web_dist = env::var("OA4RUST_WEB_DIST").unwrap_or_else(|_| "../../dist/web".to_string());
+    let web_dist_root = std::path::PathBuf::from(&web_dist);
+    let spa = tower::service_fn(move |req: axum::http::Request<axum::body::Body>| {
+        let web_dist_root = web_dist_root.clone();
+        async move {
+            let path = req.uri().path();
+            if path.starts_with("/jaxrs/") || path.starts_with("/ws/") {
+                return Ok::<_, std::convert::Infallible>(
+                    axum::http::StatusCode::NOT_FOUND.into_response(),
+                );
+            }
+            // 拒绝目录穿越（逐段精确匹配 ".."）
+            if path.split('/').any(|segment| segment == "..") {
+                return Ok(axum::http::StatusCode::FORBIDDEN.into_response());
+            }
+            let rel = path.trim_start_matches('/');
+            let candidate = if rel.is_empty() {
+                web_dist_root.join("index.html")
+            } else {
+                web_dist_root.join(rel)
+            };
+            // 命中静态文件则原样返回；未命中回 index.html（SPA 深链）
+            if let Ok(bytes) = tokio::fs::read(&candidate).await {
+                let mime = mime_for_path(&candidate);
+                return Ok(axum::http::Response::builder()
+                    .header(axum::http::header::CONTENT_TYPE, mime)
+                    .body(axum::body::Body::from(bytes))
+                    .unwrap());
+            }
+            match tokio::fs::read(web_dist_root.join("index.html")).await {
+                Ok(bytes) => Ok(axum::http::Response::builder()
+                    .header(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")
+                    .body(axum::body::Body::from(bytes))
+                    .unwrap()),
+                Err(_) => Ok(axum::http::StatusCode::NOT_FOUND.into_response()),
+            }
+        }
+    });
+    let app = app.fallback_service(spa);
+    tracing::info!(web_dist, "static frontend files mounted with SPA fallback");
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
@@ -141,23 +182,19 @@ fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::Security
             }
             "tools/call" => {
                 let params = req.get("params").cloned().unwrap_or(serde_json::json!({}));
-                let tool_call: ToolCallParams =
-                    match serde_json::from_value(params) {
-                        Ok(p) => p,
-                        Err(e) => {
-                            return axum::Json(JsonRpcResponse::err(
-                                id,
-                                -32600,
-                                format!("invalid params: {}", e),
-                            )
-                            .into_json_value());
-                        }
-                    };
-                match bridge.call_tool(tool_call).await {
-                    Ok(resp) => {
-                        Ok(serde_json::to_value(resp)
-                            .unwrap_or(serde_json::json!({"content": []})))
+                let tool_call: ToolCallParams = match serde_json::from_value(params) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return axum::Json(
+                            JsonRpcResponse::err(id, -32600, format!("invalid params: {}", e))
+                                .into_json_value(),
+                        );
                     }
+                };
+                match bridge.call_tool(tool_call).await {
+                    Ok(resp) => Ok(
+                        serde_json::to_value(resp).unwrap_or(serde_json::json!({"content": []}))
+                    ),
                     Err(e) => {
                         return axum::Json(
                             JsonRpcResponse::err(id, e.code, e.message).into_json_value(),
@@ -179,145 +216,54 @@ fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::Security
         }
     }
 
-    Router::new().route(
-        "/mcp",
-        post(mcp_handler).with_state(Arc::clone(&bridge)),
-    )
-    .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
-    .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
-    .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
-    .layer(middleware::from_fn(security_headers_middleware))
-    .layer(middleware::from_fn(trace_middleware))
-}
-
-/// 构建完整应用 Router（供集成测试使用）。
-pub async fn create_app(
-    pool: Pool,
-    session_manager: SessionManager,
-    rate_limiter: RateLimiter,
-) -> anyhow::Result<Router> {
-    let security_state = SecurityState {
-        session_manager: session_manager.clone(),
-        rate_limiter: rate_limiter.clone(),
-        pool: pool.clone(),
-    };
-
-    let mut app = Router::new()
-        .merge(shared::router::router())
-        .merge(auth::router(pool.clone(), rate_limiter.clone(), session_manager.clone()))
-        .merge(personal::router(pool.clone(), session_manager.clone()))
-        .merge(cms_control::cms_control_router(pool.clone()))
-        .merge(control::control_router(pool.clone()))
-        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager.clone()))
-        .merge(program_init::program_init_router(pool.clone()))
-        .merge(express::router(pool.clone()))
-        .merge(message::router(pool.clone()))
-        .merge(portal::router(pool.clone()))
-        .merge(bbs::router(pool.clone()))
-        .merge(calendar::router(pool.clone()))
-        .merge(component::router(pool.clone()))
-        .merge(file::router(pool.clone()))
-        .merge(ai::router(pool.clone()))
-        .merge(attendance::router(pool.clone()))
-        .merge(correlation::router(pool.clone()))
-        .merge(general::router(pool.clone()))
-        .merge(hotpic::router(pool.clone()))
-        .merge(jpush::router(pool.clone()))
-        .merge(meeting::router(pool.clone()))
-        .merge(mind::router(pool.clone()))
-        .merge(cms_express::router(pool.clone()))
-        .merge(cms_assemble_control::router(pool.clone()))
-        .merge(process_express::router(pool.clone()))
-        .merge(query_express::router(pool.clone()))
-        .merge(process_designer::router(pool.clone()))
-        .merge(program_center::router(pool.clone()))
-        .merge(base::router(pool.clone()))
-        .merge(query_service::router(pool.clone()))
-        .merge(process_bam::router(pool.clone()))
-        .merge(process_surface::router(pool.clone()))
-        .merge(file_assemble_control::router(pool.clone()))
-        .merge(ai_assemble_control::router(pool.clone()))
-        .merge(hotpic_assemble_control::router(pool.clone()))
-        .merge(organization_assemble_express::router(pool.clone()))
-        .merge(organization_assemble_control::router(pool.clone()))
-        .merge(organization_assemble_authentication::router(pool.clone()))
-        .merge(organization_assemble_personal::router(pool.clone()))
-        .merge(mind_assemble_control::router(pool.clone()))
-        .merge(attendance_assemble_control::router(pool.clone()))
-        .merge(general_assemble_control::router(pool.clone()))
-        .merge(meeting_assemble_control::router(pool.clone()))
-        .merge(message_assemble_communicate::router(pool.clone()))
-        .merge(portal_assemble_designer::router(pool.clone()))
-        .merge(correlation_service_processing::router(pool.clone()))
-        .merge(portal_assemble_surface::router(pool.clone()))
-        .merge(processplatform_service_processing::router(pool.clone()))
-        .merge(bbs_assemble_control::router(pool.clone()))
-        .merge(calendar_assemble_control::router(pool.clone()))
-        .merge(component_assemble_control::router(pool.clone()))
-        .merge(jpush_assemble_control::router(pool.clone()))
-        .merge(processplatform_core_entity::router(pool.clone()))
-        .merge(portal_core_entity::router(pool.clone()))
-        .merge(program_center_core_entity::router(pool.clone()).await)
-        .merge(processplatform_core_express::router(pool.clone()))
-        .merge(query_core_entity::router(pool.clone()))
-        .merge(general_core_entity::router(pool.clone()))
-        .merge(organization_core_entity::router(pool.clone()))
-        .merge(cms_core_entity::router(pool.clone()))
-        .merge(query_assemble_designer::router(pool.clone()))
-        .merge(query_assemble_surface::router(pool.clone()))
-        .merge(console::router(pool.clone()))
-        .merge(processplatform_assemble_surface::router(pool.clone()))
-        .merge(bbs_core_entity::router(pool.clone()))
-        .merge(calendar_core_entity::router(pool.clone()))
-        .merge(component_core_entity::router(pool.clone()))
-        .merge(file_core_entity::router(pool.clone()))
-        .merge(ai_core_entity::router(pool.clone()))
-        .merge(attendance_core_entity::router(pool.clone()))
-        .merge(cms_core_express::router(pool.clone()))
-        .merge(correlation_core_entity::router(pool.clone()))
-        .merge(correlation_core_express::router(pool.clone()))
-        .merge(hotpic_core_entity::router(pool.clone()))
-        .merge(jpush_core_entity::router(pool.clone()))
-        .merge(meeting_core_entity::router(pool.clone()))
-        .merge(message_core_entity::router(pool.clone()))
-        .merge(mind_core_entity::router(pool.clone()))
-        .merge(organization_core_express::router(pool.clone()))
-        .merge(processplatform_assemble_bam::router(pool.clone()))
-        .merge(processplatform_assemble_designer::router(pool.clone()))
-        .merge(query_core_express::router(pool.clone()))
-        .merge(query_service_processing::router(pool.clone()))
-        .merge(empower::router::router(pool.clone(), session_manager.clone()))
-        .merge(
-            Router::new()
-                .route("/ws", get(realtime::ws_handler))
-                .route("/ws/{room_id}", get(realtime::ws_room_handler))
-                .route("/ws/{room_id}/stats", get(realtime::ws_stats))
-                .with_state(Arc::new(realtime::RealtimeManager::new())),
-        )
-        .merge(preview::preview_route(preview::LibreOfficePreview::default()))
-        .merge(oa4rust_signature::signature_route(oa4rust_signature::PdfSignatureService::new()));
-
-    // Provide the deadpool Postgres pool to every handler that extracts
-    // `Extension<Pool>` (all *_assemble_control / *_service_processing handlers).
-    // Some crates attach it on their own sub-router; adding it here guarantees
-    // availability for those that don't, eliminating "Missing request extension"
-    // HTTP 500s. Harmless where the crate already adds its own (inner wins).
-    app = app.layer(axum::extract::Extension(pool.clone()));
-
-    // Provide the SeaORM pool to all *_core_entity handlers, which extract it
-    // via `Extension<DatabaseConnection>`. They no longer build their own pool;
-    // the previous block_on approach panicked inside the tokio runtime.
-    if let Ok(sea_db) = shared::db::create_sea_orm_pool().await {
-        app = app.layer(axum::extract::Extension(sea_db));
-    }
-
-    let app = app
-        .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
-        .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
-        .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
+    Router::new()
+        .route("/mcp", post(mcp_handler).with_state(Arc::clone(&bridge)))
+        .layer(middleware::from_fn_with_state(
+            security_state.clone(),
+            authorize_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            security_state.clone(),
+            auth_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            security_state.clone(),
+            shared::middleware::csrf_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            security_state.clone(),
+            rate_limit_middleware,
+        ))
         .layer(middleware::from_fn(security_headers_middleware))
         .layer(middleware::from_fn(trace_middleware))
-        .layer(middleware::from_fn(behavior_comparison_middleware));
+}
 
-    Ok(app)
+/// SPA 静态服务的最小 mime 映射（按扩展名）
+fn mime_for_path(path: &std::path::Path) -> &'static str {
+    match path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "html" => "text/html; charset=utf-8",
+        "js" | "mjs" => "text/javascript; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "json" => "application/json; charset=utf-8",
+        "svg" => "image/svg+xml",
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "ico" => "image/x-icon",
+        "woff" => "font/woff",
+        "woff2" => "font/woff2",
+        "ttf" => "font/ttf",
+        "wasm" => "application/wasm",
+        "map" => "application/json; charset=utf-8",
+        "txt" => "text/plain; charset=utf-8",
+        "webmanifest" => "application/manifest+json",
+        _ => "application/octet-stream",
+    }
 }

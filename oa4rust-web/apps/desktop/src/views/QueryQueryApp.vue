@@ -46,32 +46,100 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, ref } from 'vue'
 
-interface Item { id:string; name?:string; label?:string; title?:string; flag?:string; desc?:string; updateTime?:string; createTime?:string }
+interface Item {
+  id: string
+  name?: string
+  label?: string
+  title?: string
+  flag?: string
+  desc?: string
+  updateTime?: string
+  createTime?: string
+}
 
-const search = ref(''), showCreate = ref(false), showEdit = ref(false), loading = ref(false)
-const items = ref<Item[]>([]), form = ref<Partial<Item>>({}), editingId = ref<string|null>(null)
+const search = ref(''),
+  showCreate = ref(false),
+  showEdit = ref(false),
+  loading = ref(false)
+const items = ref<Item[]>([]),
+  form = ref<Partial<Item>>({}),
+  editingId = ref<string | null>(null)
 const qc = useQueryClient()
 
-const ep = '/jaxrs/query/assemble/designer/list';
-const qk = ['query_Query', 'list'];
+const ep = '/jaxrs/query/assemble/designer/list'
+const qk = ['query_Query', 'list']
 
-const { data } = useQuery({ queryKey: qk, queryFn: async () => { loading.value = true; try { const r = await api.get(ep); return (r as any)?.data ?? [] } finally { loading.value = false } } })
+const { data } = useQuery({
+  queryKey: qk,
+  queryFn: async () => {
+    loading.value = true
+    try {
+      const r = await api.get(ep)
+      return (r as any)?.data ?? []
+    } finally {
+      loading.value = false
+    }
+  },
+})
 items.value = data.value ?? []
 
-const filtered = computed(() => search.value ? items.value.filter(i => (i.name||'').toLowerCase().includes(search.value.toLowerCase()) || (i.flag||'').toLowerCase().includes(search.value.toLowerCase())) : items.value)
+const filtered = computed(() =>
+  search.value
+    ? items.value.filter(
+        (i) =>
+          (i.name || '').toLowerCase().includes(search.value.toLowerCase()) ||
+          (i.flag || '').toLowerCase().includes(search.value.toLowerCase()),
+      )
+    : items.value,
+)
 
-function editItem(item: Item) { form.value = { ...item }; editingId.value = item.id; showEdit.value = true }
-function closeModal() { showCreate.value = false; showEdit.value = false; form.value = {} }
-const saveM = useMutation({ mutationFn: async (data: any) => { if (editingId.value) return api.put(ep + '/' + editingId.value, data); return api.post(ep, data) }, onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); closeModal() } })
-function saveItem() { if (form.value.name) saveM.mutate(form.value) }
-const delM = useMutation({ mutationFn: async (id: string) => api.delete(ep + '/' + id), onSuccess: () => { qc.invalidateQueries({ queryKey: qk }) } })
-function deleteItem(item: Item) { if (confirmMsg('确定删除？')) delM.mutate(item.id) }
-function loadData() { qc.invalidateQueries({ queryKey: qk }) }
-function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return String(t) } }
+function editItem(item: Item) {
+  form.value = { ...item }
+  editingId.value = item.id
+  showEdit.value = true
+}
+function closeModal() {
+  showCreate.value = false
+  showEdit.value = false
+  form.value = {}
+}
+const saveM = useMutation({
+  mutationFn: async (data: any) => {
+    if (editingId.value) return api.put(ep + '/' + editingId.value, data)
+    return api.post(ep, data)
+  },
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: qk })
+    closeModal()
+  },
+})
+function saveItem() {
+  if (form.value.name) saveM.mutate(form.value)
+}
+const delM = useMutation({
+  mutationFn: async (id: string) => api.delete(ep + '/' + id),
+  onSuccess: () => {
+    qc.invalidateQueries({ queryKey: qk })
+  },
+})
+function deleteItem(item: Item) {
+  if (confirmMsg('确定删除？')) delM.mutate(item.id)
+}
+function loadData() {
+  qc.invalidateQueries({ queryKey: qk })
+}
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch {
+    return String(t)
+  }
+}
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}

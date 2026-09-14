@@ -2,9 +2,9 @@
 mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
-    
+
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     // SKIPPED: express_person_list has unresolvable params
@@ -28,8 +28,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_express_info route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "get_express_info route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -46,8 +49,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_express_companies route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "list_express_companies route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -64,8 +70,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "subscribe_express route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "subscribe_express route should be registered"
+        );
     }
-
 }

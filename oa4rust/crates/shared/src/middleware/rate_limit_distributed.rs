@@ -114,7 +114,10 @@ mod tests {
             let entry = counts.entry(key.to_string()).or_insert(0);
             *entry += 1;
             if *entry == 1 {
-                self.ttl_keys.lock().unwrap().push((key.to_string(), window_secs));
+                self.ttl_keys
+                    .lock()
+                    .unwrap()
+                    .push((key.to_string(), window_secs));
             }
             Ok(*entry)
         }
@@ -127,7 +130,9 @@ mod tests {
 
     impl FailingWindowCounter {
         fn new() -> Self {
-            Self { calls: std::sync::atomic::AtomicUsize::new(0) }
+            Self {
+                calls: std::sync::atomic::AtomicUsize::new(0),
+            }
         }
 
         fn calls(&self) -> usize {
@@ -161,7 +166,10 @@ mod tests {
         match window_decision(5, 3, 2) {
             Err(AppError::BadRequest(msg)) => {
                 assert!(msg.contains("5"), "message should contain count: {msg}");
-                assert!(msg.contains("2 minutes"), "message should contain window: {msg}");
+                assert!(
+                    msg.contains("2 minutes"),
+                    "message should contain window: {msg}"
+                );
             }
             other => panic!("expected BadRequest, got {:?}", other),
         }
@@ -210,7 +218,8 @@ mod tests {
         // 无真实 Redis 环境：注入故障计数器，验证运行期降级到内存限流
         let failing = Arc::new(FailingWindowCounter::new());
         let limiter = RateLimiter::new();
-        limiter.set_window_counter_override_for_test(Some(failing.clone() as Arc<dyn WindowCounter>));
+        limiter
+            .set_window_counter_override_for_test(Some(failing.clone() as Arc<dyn WindowCounter>));
 
         // max=2：前两次请求正常放行（Redis 失败后由内存窗口接管），第三次超限
         assert!(limiter.check_rate_limit("7.7.7.7", 2, 1).await.is_ok());
@@ -239,7 +248,7 @@ mod tests {
         assert!(limiter.check_rate_limit("5.5.5.5", 3, 1).await.is_ok());
         assert!(limiter.check_rate_limit("5.5.5.5", 3, 1).await.is_ok());
         assert!(limiter.check_rate_limit("5.5.5.5", 3, 1).await.is_err()); // 第 3 次达到上限即拒
-        // 其他 IP 不受影响
+                                                                           // 其他 IP 不受影响
         assert!(limiter.check_rate_limit("4.4.4.4", 3, 1).await.is_ok());
     }
 }

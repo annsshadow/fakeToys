@@ -1,12 +1,7 @@
-use axum::{
-    routing::get,
-    Router,
-};
+use axum::{routing::get, Router};
 use deadpool_postgres::Pool;
 
-use crate::{
-    state_organization, state_running, state_summary,
-};
+use crate::{state_organization, state_running, state_summary};
 
 pub fn process_bam_router(pool: Pool) -> Router {
     Router::new()

@@ -29,9 +29,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
 import { api } from '@oa4rust/sdk'
+import { useQuery } from '@tanstack/vue-query'
+import { ref } from 'vue'
+
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })
 const events = ref<any[]>([])
@@ -44,12 +45,33 @@ const { data } = useQuery({
       const d = (r as any)?.data ?? {}
       stats.value = d.stats ?? { total: 0, active: 0, completed: 0, failed: 0 }
       events.value = d.events ?? []
-    } finally { loading.value = false }
-  }
+    } finally {
+      loading.value = false
+    }
+  },
 })
-function refresh() { events.value = data.value ? (data.value as any).events ?? [] : [] }
-function fmtTime(t?: string) { if (!t) return ''; try { return new Date(t).toLocaleString('zh-CN') } catch { return String(t) } }
-function statusCls(s?: string) { return s === 'running' || s === 'active' ? 'active' : s === 'completed' ? 'done' : s === 'failed' ? 'failed' : s === 'error' ? 'error' : '' }
+function refresh() {
+  events.value = data.value ? ((data.value as any).events ?? []) : []
+}
+function fmtTime(t?: string) {
+  if (!t) return ''
+  try {
+    return new Date(t).toLocaleString('zh-CN')
+  } catch {
+    return String(t)
+  }
+}
+function statusCls(s?: string) {
+  return s === 'running' || s === 'active'
+    ? 'active'
+    : s === 'completed'
+      ? 'done'
+      : s === 'failed'
+        ? 'failed'
+        : s === 'error'
+          ? 'error'
+          : ''
+}
 </script>
 <style scoped>
 .dash-view{display:flex;flex-direction:column;gap:16px;height:100%}

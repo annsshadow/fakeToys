@@ -2,7 +2,7 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-use super::db::{TestPool, TestContext, setup_postgres_database};
+use super::db::{setup_postgres_database, TestContext, TestPool};
 
 static SEQ: AtomicUsize = AtomicUsize::new(0);
 

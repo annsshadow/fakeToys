@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension, extract::Path,
-    Json, Router,
-};
+use axum::{extract::Extension, extract::Path, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -14,14 +11,14 @@ pub fn jpush_router(pool: Pool) -> Router {
 
 #[allow(non_snake_case)]
 pub async fn hello() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::String("hello".to_string()))))
+    Ok(Json(ActionResult::success(Value::String(
+        "hello".to_string(),
+    ))))
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn device_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn device_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -44,7 +41,11 @@ pub async fn device_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -63,16 +64,14 @@ pub async fn device_get(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
-                    ("platform".to_string(), Value::String(row.get("platform"))),
-                    ("token".to_string(), Value::String(row.get("token"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
+                ("platform".to_string(), Value::String(row.get("platform"))),
+                ("token".to_string(), Value::String(row.get("token"))),
+            ]),
+        )))),
         None => Err(AppError::NotFound),
     }
 }
@@ -85,9 +84,21 @@ pub async fn device_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let user_id = req.get("\"userId\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let platform = req.get("platform").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let token = req.get("token").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let user_id = req
+        .get("\"userId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let platform = req
+        .get("platform")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let token = req
+        .get("token")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -111,9 +122,7 @@ pub async fn device_create(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn template_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn template_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -136,7 +145,11 @@ pub async fn template_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -155,16 +168,14 @@ pub async fn template_get(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
-                    ("title".to_string(), Value::String(row.get("title"))),
-                    ("content".to_string(), Value::String(row.get("content"))),
-                ]),
-            ))))
-        }
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+            ]),
+        )))),
         None => Err(AppError::NotFound),
     }
 }
@@ -177,4 +188,3 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

@@ -60,7 +60,11 @@ mod closure_tests {
             "/jaxrs/person/list/unit/sub/nested/like",
             "/jaxrs/person/list/unit/sub/nested/like/object",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -96,7 +100,11 @@ mod closure_tests {
             "/jaxrs/unit/list/types",
             "/jaxrs/unit/list/types/object",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -113,7 +121,11 @@ mod closure_tests {
             "/jaxrs/identity/list/major/person",
             "/jaxrs/identity/list/major/person/object",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -141,7 +153,11 @@ mod closure_tests {
             "/jaxrs/unitduty/list/unit/object",
             "/jaxrs/unitduty/find/by/unit/name",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -162,7 +178,11 @@ mod closure_tests {
             "/jaxrs/empowerlog",
             "/jaxrs/distinguishedname/list",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -191,7 +211,10 @@ mod closure_tests {
             "   ".to_string(),
             "b".to_string(),
         ];
-        assert_eq!(normalize_flags(flags), vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            normalize_flags(flags),
+            vec!["a".to_string(), "b".to_string()]
+        );
         assert!(normalize_flags(vec![]).is_empty());
     }
 
@@ -213,7 +236,10 @@ mod closure_tests {
             string_field(&serde_json::json!({"name": " x "}), "name"),
             Some(" x ".to_string())
         );
-        assert_eq!(string_field(&serde_json::json!({"name": "  "}), "name"), None);
+        assert_eq!(
+            string_field(&serde_json::json!({"name": "  "}), "name"),
+            None
+        );
         assert_eq!(string_field(&serde_json::json!({"name": 3}), "name"), None);
         assert_eq!(string_field(&serde_json::json!({}), "name"), None);
     }
@@ -224,7 +250,10 @@ mod closure_tests {
         assert_eq!(int_list(&body, "levelList").unwrap(), vec![1, 2, 3]);
         let over: Vec<i64> = (0..=ID_COUNT_LIMIT as i64).collect();
         let body = serde_json::json!({"levelList": over});
-        assert!(int_list(&body, "levelList").is_err(), ">100 levels must be rejected");
+        assert!(
+            int_list(&body, "levelList").is_err(),
+            ">100 levels must be rejected"
+        );
     }
 
     #[test]

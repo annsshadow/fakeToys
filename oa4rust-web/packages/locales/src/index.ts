@@ -103,7 +103,7 @@ export const zhCn = {
     networkError: '网络连接失败',
     timeout: '请求超时',
   },
-};
+}
 
 export const en = {
   common: {
@@ -166,7 +166,7 @@ export const en = {
     networkError: 'Network error',
     timeout: 'Request timeout',
   },
-};
+}
 
 export const es = {
   common: {
@@ -198,15 +198,15 @@ export const es = {
     notFound: 'Página no encontrada',
     unauthorized: 'No autorizado',
   },
-};
+}
 
 /** 所有语言包 */
 export const locales = {
   'zh-cn': zhCn,
   en,
   es,
-};
+}
 
 /** 支持的语言列表 */
-export const supportedLocales = ['zh-cn', 'en', 'es'] as const;
-export type SupportedLocale = (typeof supportedLocales)[number];
+export const supportedLocales = ['zh-cn', 'en', 'es'] as const
+export type SupportedLocale = (typeof supportedLocales)[number]

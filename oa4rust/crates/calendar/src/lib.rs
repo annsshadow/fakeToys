@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json,
-};
+use axum::{extract::Extension, Json};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use shared::{error::AppError, response::ActionResult};
@@ -12,7 +9,6 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 #[derive(Debug, Serialize)]
 pub struct CalendarItem {
@@ -240,19 +236,17 @@ pub async fn calendar_create(
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let name = req.name.ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
+    let name = req
+        .name
+        .ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
     let calendar_type = req
         .calendar_type
         .ok_or_else(|| AppError::BadRequest("type is required".to_string()))?;
-    let target = req
-        .target
-        .unwrap_or_else(|| "person".to_string());
+    let target = req.target.unwrap_or_else(|| "person".to_string());
     let color = req.color.unwrap_or_else(|| "#1462be".to_string());
     let description = req.description;
     let source = req.source;
-    let createor = req
-        .createor
-        .unwrap_or_else(|| "anonymous".to_string());
+    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
     let is_public = req.is_public.unwrap_or(false);
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -303,19 +297,11 @@ pub async fn calendar_update(
         .map_err(|_| AppError::NotFound)?;
 
     let name = req.name.unwrap_or_else(|| existing.get("name"));
-    let calendar_type = req
-        .calendar_type
-        .unwrap_or_else(|| existing.get("type"));
-    let target = req
-        .target
-        .unwrap_or_else(|| existing.get("target"));
-    let color = req
-        .color
-        .unwrap_or_else(|| existing.get("color"));
+    let calendar_type = req.calendar_type.unwrap_or_else(|| existing.get("type"));
+    let target = req.target.unwrap_or_else(|| existing.get("target"));
+    let color = req.color.unwrap_or_else(|| existing.get("color"));
     let description = req.description.or_else(|| existing.get("description"));
-    let is_public = req
-        .is_public
-        .unwrap_or_else(|| existing.get("is_public"));
+    let is_public = req.is_public.unwrap_or_else(|| existing.get("is_public"));
     let status: String = existing.get("status");
     let source: Option<String> = existing.get("source");
     let createor: String = existing.get("createor");
@@ -412,9 +398,7 @@ pub async fn event_create(
         .ok_or_else(|| AppError::BadRequest("endTime is required".to_string()))?;
     let all_day = req.all_day.unwrap_or(false);
     let visibility = req.visibility.unwrap_or_else(|| "PUBLIC".to_string());
-    let createor = req
-        .createor
-        .unwrap_or_else(|| "anonymous".to_string());
+    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -474,12 +458,8 @@ pub async fn event_update(
         .end_time
         .unwrap_or_else(|| existing.get::<_, String>("end_time").clone());
     let all_day = req.all_day.unwrap_or_else(|| existing.get("all_day"));
-    let visibility = req
-        .visibility
-        .unwrap_or_else(|| existing.get("visibility"));
-    let status = req
-        .status
-        .unwrap_or_else(|| existing.get("status"));
+    let visibility = req.visibility.unwrap_or_else(|| existing.get("visibility"));
+    let status = req.status.unwrap_or_else(|| existing.get("status"));
     let calendar_id: String = existing.get("calendar_id");
     let createor: String = existing.get("createor");
 
@@ -595,4 +575,3 @@ pub use routes::calendar_router;
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::calendar_router(pool)
 }
-

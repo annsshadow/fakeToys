@@ -28,38 +28,46 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { api } from '@oa4rust/sdk';
+import { api } from '@oa4rust/sdk'
+import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps<{
-  title: string; subtitle: string; emptyIcon?: string;
-  emptyText?: string; apiPath?: string; iconPrefix?: string;
-}>();
+  title: string
+  subtitle: string
+  emptyIcon?: string
+  emptyText?: string
+  apiPath?: string
+  iconPrefix?: string
+}>()
 
-const loading = ref(false);
-const items = ref<Array<{ id: string; icon: string; title: string; meta: string }>>([]);
+const loading = ref(false)
+const items = ref<Array<{ id: string; icon: string; title: string; meta: string }>>([])
 
 const stats = computed(() => [
   { label: '总计', value: items.value.length, color: 'var(--color-primary)' },
   { label: '待处理', value: 0, color: 'var(--color-warning)' },
   { label: '已完成', value: 0, color: 'var(--color-success)' },
   { label: '已超时', value: 0, color: 'var(--color-error)' },
-]);
+])
 
 onMounted(async () => {
-  if (!props.apiPath) return;
-  loading.value = true;
+  if (!props.apiPath) return
+  loading.value = true
   try {
-    const r = await api.get(props.apiPath);
-    const list = (r.data?.list ?? r.data ?? []) as Array<Record<string, unknown>>;
+    const r = await api.get(props.apiPath)
+    const list = (r.data?.list ?? r.data ?? []) as Array<Record<string, unknown>>
     items.value = list.map((m: any, i: number) => ({
       id: String(m.id ?? m.flag ?? i),
       icon: props.iconPrefix ?? '📄',
       title: String(m.name ?? m.title ?? m.label ?? m.flag ?? '未命名'),
       meta: String(m.desc ?? m.description ?? ''),
-    }));
-  } catch { items.value = []; } finally { loading.value = false; }
-});
+    }))
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}

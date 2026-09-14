@@ -1,4 +1,4 @@
-﻿use super::u2_helpers::*;
+use super::u2_helpers::*;
 use axum::{
     extract::{Extension, Path},
     Json,
@@ -23,7 +23,9 @@ pub async fn unit_create(
     if name.is_empty() {
         return Err(AppError::BadRequest("name is required".to_string()));
     }
-    let parent_flag = opt(&body, &["parentId", "superior"]).unwrap_or_default().to_string();
+    let parent_flag = opt(&body, &["parentId", "superior"])
+        .unwrap_or_default()
+        .to_string();
     let parent_id = if parent_flag.is_empty() {
         String::new()
     } else {
@@ -36,7 +38,11 @@ pub async fn unit_create(
         return err("unit already exists");
     }
     let unit_type = opt(&body, &["type"]).unwrap_or_default().to_string();
-    let sort = body.get("sort").and_then(|v| v.as_i64()).unwrap_or(0).to_string();
+    let sort = body
+        .get("sort")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0)
+        .to_string();
     let creator = session.person_unique.clone();
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -73,7 +79,9 @@ pub async fn unit_edit(
     };
     let name = normalize_key(opt(&body, &["name"]).unwrap_or_default());
     let unit_type = opt(&body, &["type"]).unwrap_or_default().to_string();
-    let pinyin = opt(&body, &["pinyinInitial"]).unwrap_or_default().to_string();
+    let pinyin = opt(&body, &["pinyinInitial"])
+        .unwrap_or_default()
+        .to_string();
     let sort = body
         .get("sort")
         .and_then(|v| v.as_i64())
@@ -124,7 +132,9 @@ pub async fn unit_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, UNIT_TABLE, &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("unit not found"),
     }
@@ -268,7 +278,10 @@ pub async fn unit_list_sub_direct_with_type(
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
-async fn identity_unit_id(client: &deadpool_postgres::Client, identity_flag: &str) -> Result<Option<String>, AppError> {
+async fn identity_unit_id(
+    client: &deadpool_postgres::Client,
+    identity_flag: &str,
+) -> Result<Option<String>, AppError> {
     let row = client
         .query_opt(
             "SELECT unit_id FROM x_org_identity WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
@@ -334,10 +347,7 @@ pub async fn unit_get_with_identity_type(
 }
 
 #[allow(non_snake_case)]
-pub async fn unit_get_sup_direct(
-    pool: Extension<Pool>,
-    Path(flag): Path<String>,
-) -> HandlerResult {
+pub async fn unit_get_sup_direct(pool: Extension<Pool>, Path(flag): Path<String>) -> HandlerResult {
     let client = client_of(&pool).await?;
     let row = client
         .query_opt(
@@ -480,7 +490,9 @@ pub async fn identity_create(
     if normalized_name_dup(&client, IDENTITY_TABLE, "unit_id", &unit_id, &name).await? {
         return err("identity already exists");
     }
-    let person_flag = opt(&body, &["personId", "person"]).unwrap_or_default().to_string();
+    let person_flag = opt(&body, &["personId", "person"])
+        .unwrap_or_default()
+        .to_string();
     let person_id = if person_flag.is_empty() {
         String::new()
     } else {
@@ -564,17 +576,16 @@ pub async fn identity_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, IDENTITY_TABLE, &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("identity not found"),
     }
 }
 
 #[allow(non_snake_case)]
-pub async fn identity_list_like(
-    pool: Extension<Pool>,
-    Json(body): Json<Value>,
-) -> HandlerResult {
+pub async fn identity_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
     let key = opt(&body, &["key", "name"]).unwrap_or_default();
     generic_like_search(&pool, IDENTITY_TABLE, key, false, IDENTITY_EXTRA, false).await
 }
@@ -622,7 +633,9 @@ pub async fn group_create(
     if normalized_name_dup(&client, GROUP_TABLE, "unit_id", &unit_id, &name).await? {
         return err("group already exists");
     }
-    let group_type = opt(&body, &["type", "groupType"]).unwrap_or_default().to_string();
+    let group_type = opt(&body, &["type", "groupType"])
+        .unwrap_or_default()
+        .to_string();
     let description = opt(&body, &["description"]).unwrap_or_default().to_string();
     let creator = session.person_unique.clone();
     let id = uuid::Uuid::new_v4().to_string();
@@ -704,7 +717,10 @@ pub async fn group_delete(
         return err("group not found");
     };
     client
-        .execute("DELETE FROM x_org_group_member WHERE group_id = $1", &[&gid])
+        .execute(
+            "DELETE FROM x_org_group_member WHERE group_id = $1",
+            &[&gid],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     client
@@ -712,7 +728,9 @@ pub async fn group_delete(
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("id".to_string(), Value::String(gid))].into_iter().collect(),
+        vec![("id".to_string(), Value::String(gid))]
+            .into_iter()
+            .collect(),
     ))
 }
 
@@ -938,7 +956,9 @@ pub async fn role_delete(
         .await
         .map_err(|_| AppError::Internal)?;
     ok(Value::Object(
-        vec![("id".to_string(), Value::String(rid))].into_iter().collect(),
+        vec![("id".to_string(), Value::String(rid))]
+            .into_iter()
+            .collect(),
     ))
 }
 
@@ -980,7 +1000,9 @@ pub async fn duty_create(
     if name.is_empty() {
         return Err(AppError::BadRequest("name is required".to_string()));
     }
-    let unit_flag = opt(&body, &["unitId", "unit"]).unwrap_or_default().to_string();
+    let unit_flag = opt(&body, &["unitId", "unit"])
+        .unwrap_or_default()
+        .to_string();
     let unit_id = if unit_flag.is_empty() {
         String::new()
     } else {
@@ -1072,7 +1094,9 @@ pub async fn duty_delete(
     let client = client_of(&pool).await?;
     match soft_delete_generic(&client, DUTY_TABLE, &flag).await? {
         Some(id) => ok(Value::Object(
-            vec![("id".to_string(), Value::String(id))].into_iter().collect(),
+            vec![("id".to_string(), Value::String(id))]
+                .into_iter()
+                .collect(),
         )),
         None => err("unitduty not found"),
     }

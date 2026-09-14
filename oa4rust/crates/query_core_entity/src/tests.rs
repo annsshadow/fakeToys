@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    
+
     use crate::{QueryImport, QueryItem, QueryView};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};

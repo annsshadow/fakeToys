@@ -53,8 +53,10 @@ mod tests {
             .unwrap();
 
         // 由于没有数据库，会返回 INTERNAL_SERVER_ERROR (500) 或 NOT_FOUND (404)
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::NOT_FOUND);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::NOT_FOUND
+        );
     }
 
     #[tokio::test]
@@ -75,8 +77,10 @@ mod tests {
             .unwrap();
 
         // 由于没有数据库，会返回 INTERNAL_SERVER_ERROR (500) 或 NOT_FOUND (404)
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::NOT_FOUND);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::NOT_FOUND
+        );
     }
 
     #[test]
@@ -115,14 +119,18 @@ mod tests {
                     .uri("/jaxrs/hotpic/core/entity/create")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
-                    .body(Body::from(r#"{"application":"OA","infoId":"info-001","title":"热图"}"#))
+                    .body(Body::from(
+                        r#"{"application":"OA","infoId":"info-001","title":"热图"}"#,
+                    ))
                     .unwrap(),
             )
             .await
             .unwrap();
 
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::OK);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::OK
+        );
     }
 
     #[tokio::test]
@@ -142,9 +150,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-            || response.status() == StatusCode::OK
-            || response.status() == StatusCode::NOT_FOUND);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::OK
+                || response.status() == StatusCode::NOT_FOUND
+        );
     }
 
     #[test]
@@ -164,7 +174,8 @@ mod tests {
             "title": "热图",
             "base64": "iVBORw0KGgo="
         }]);
-        let result = shared::response::ActionResult::success(serde_json::json!({"count": 1, "data": data}));
+        let result =
+            shared::response::ActionResult::success(serde_json::json!({"count": 1, "data": data}));
         let json = serde_json::to_value(&result).unwrap();
         let item = &json["data"]["data"][0];
         assert_eq!(item["base64"], "iVBORw0KGgo=");

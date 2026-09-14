@@ -6,8 +6,7 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    dict_list, delete_page, get_page, list_portal_category,
-    portal_id, portal_list, save_page,
+    delete_page, dict_list, get_page, list_portal_category, portal_id, portal_list, save_page,
 };
 
 pub fn router(pool: Pool) -> Router {
