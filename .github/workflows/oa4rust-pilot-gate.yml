@@ -68,7 +68,7 @@ jobs:
         shell: bash
         working-directory: oa4rust
     steps:
-      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Run pilot gate tests
         run: python3 tests/test_pilot_gate.py
       - name: Check Python syntax
@@ -86,7 +86,7 @@ jobs:
     env:
       PILOT_ACCESS_LOG_TOKEN: ${{ secrets.PILOT_ACCESS_LOG_TOKEN }}
     steps:
-      - uses: actions/checkout@b4ffde65e4aa6d8cba74e5f82ac958baa146d45a
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Download dedicated pilot access log
         env:
           ACCESS_LOG_URL: ${{ inputs.access_log_url }}
@@ -128,7 +128,7 @@ jobs:
           "${args[@]}"
       - name: Upload gate evidence
         if: always()
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: oa4rust-pilot-gate-${{ github.run_id }}
           path: oa4rust/target/pilot-gate/
