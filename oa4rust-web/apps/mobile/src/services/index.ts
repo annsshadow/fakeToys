@@ -1,13 +1,26 @@
 /**
  * 移动端业务 API 层（精选子集）。
  *
- * 端点路径与 @oa4rust/apis（桌面端）保持一致，确保与 oa4rust 后端的契约对齐；
- * 但移动端只暴露高频、适合触控交互的模块，避免把 3892 条路由全部拖进移动包。
- * 类型（O2User / OrgGroup / PagedResponse）复用 @oa4rust/sdk 的既有契约。
+ * 所有端点均对齐 oa4rust 后端已注册的 axum 路由（各 crate 的 routes.rs /
+ * u2_router.rs / lib.rs 中的 .route 注册），与桌面端 E2E 实跑通过的流程端点一致
+ * （/jaxrs/task/{id}/complete|reject、processplatform service/processing、
+ * message im 族），确保移动端每个按钮打到真实存在的后端能力，而不是 404 的
+ * "约定式"路径。类型（O2User）复用 @oa4rust/sdk 的既有契约。
  */
 
-import type { O2User, OrgGroup, PagedResponse } from '@oa4rust/sdk'
-import { mapi } from './http'
+import type { ApiResponse, O2User } from '@oa4rust/sdk'
+import { getApiBase, mapi } from './http'
+
+/**
+ * 后端 Java 兼容信封在分页列表端点附带顶层 count（本页条数；
+ * 见 shared::response::ActionResult::java_success）。sdk 的 ApiResponse
+ * 未声明该字段，这里做最小扩展供列表页读取。
+ */
+export type EnvelopeList<T> = ApiResponse<T[]> & { count?: number; size?: number }
+
+function list<T>(p: Promise<ApiResponse<T[]>>): Promise<EnvelopeList<T>> {
+  return p as Promise<EnvelopeList<T>>
+}
 
 // ─────────────────────────────────────────────────────────────
 // 认证（移动端登录/会话）
@@ -22,96 +35,183 @@ export const authApi = {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 工作台 / 门户
+// 流程（待办 / 已办 / 我发起的 + 审批）
+//
+// 列表读 surface 新栈 x_task / x_taskcompleted / x_work（与桌面 ProcessWork.vue 一致）；
+// 审批走 service/processing 引擎的 /jaxrs/task/{id}/complete|reject
+// （桌面 E2E workflow-runtime 实跑通过的真实流程端点）。
 // ─────────────────────────────────────────────────────────────
-export const portalApi = {
-  pageList: (appId: string) => mapi.get(`/jaxrs/portal/assemble/surface/page/list/${appId}`),
-  widgetList: (pageId: string) => mapi.get(`/jaxrs/portal/assemble/surface/widget/list/${pageId}`),
+export interface ProcessTaskRow {
+  id: string
+  work?: string
+  title?: string
+  processName?: string
+  taskStatus?: string
+  createTime?: string
+  [key: string]: unknown
+}
+export interface ProcessWorkRow {
+  id: string
+  title?: string
+  processName?: string
+  applicationName?: string
+  workStatus?: string
+  createTime?: string
+  [key: string]: unknown
 }
 
-// ─────────────────────────────────────────────────────────────
-// 消息（IM 会话）
-// ─────────────────────────────────────────────────────────────
-export const messageApi = {
-  conversationList: (page: number, size: number) =>
-    mapi.post<PagedResponse<unknown>>(
-      `/jaxrs/message/assemble/communicate/conversation/list/paging/${page}/${size}`,
-      undefined,
-    ),
-  msgHistory: (conversationId: string, page: number, size: number) =>
-    mapi.post<PagedResponse<unknown>>(
-      `/jaxrs/message/assemble/communicate/history/${conversationId}/paging/${page}/${size}`,
-      undefined,
-    ),
-  markRead: (conversationId: string) =>
-    mapi.post(`/jaxrs/message/assemble/communicate/conversation/${conversationId}/read`, undefined),
+export interface TaskActionPayload {
+  data?: Record<string, unknown>
+  opinion?: string
+  action: 'approve' | 'reject'
 }
 
-// ─────────────────────────────────────────────────────────────
-// 流程（待办 / 审批）
-// ─────────────────────────────────────────────────────────────
 export const processApi = {
-  workList: (page: number, size: number, status?: string) =>
-    mapi.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/work/list/paging/${page}/${size}`, {
-      status,
-    }),
-  taskList: (page: number, size: number) =>
-    mapi.post<PagedResponse<unknown>>(
-      `/jaxrs/processplatform/assemble/surface/task/list/paging/${page}/${size}`,
-      undefined,
+  /** 待我处理（x_task，task_status active/pending/processing）。 */
+  pendingList: (page: number, size: number) =>
+    list(
+      mapi.get<ProcessTaskRow[]>(`/jaxrs/processplatform/assemble/surface/task/list/my/paging/${page}/size/${size}`),
     ),
-  taskHandle: (taskId: string, action: string, data?: Record<string, unknown>) =>
-    mapi.post(`/jaxrs/processplatform/assemble/surface/task/${taskId}/handle`, { action, ...data }),
+  /** 我已办（x_taskcompleted）。 */
   completedList: (page: number, size: number) =>
-    mapi.post<PagedResponse<unknown>>(
-      `/jaxrs/processplatform/assemble/surface/workcompleted/list/paging/${page}/${size}`,
-      undefined,
+    list(
+      mapi.get<ProcessTaskRow[]>(
+        `/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/size/${size}`,
+      ),
     ),
+  /** 我发起的（x_work）。注意后端此路由仅注册 POST。 */
+  startedList: (page: number, size: number) =>
+    list(
+      mapi.post<ProcessWorkRow[]>(
+        `/jaxrs/processplatform/assemble/surface/work/list/my/paging/${page}/size/${size}`,
+        {},
+      ),
+    ),
+  /** 审批通过：任务置 completed，自动认领下一活动或收尾工作。 */
+  completeTask: (taskId: string, payload?: Omit<TaskActionPayload, 'action'>) =>
+    mapi.post<never>(
+      `/jaxrs/task/${taskId}/complete`,
+      { data: {}, opinion: '', action: 'approve', ...payload },
+      {
+        discardResponse: true,
+      },
+    ),
+  /** 驳回：任务回退并记录处理意见。 */
+  rejectTask: (taskId: string, payload?: Omit<TaskActionPayload, 'action'>) =>
+    mapi.post<never>(
+      `/jaxrs/task/${taskId}/reject`,
+      { data: {}, opinion: '', action: 'reject', ...payload },
+      {
+        discardResponse: true,
+      },
+    ),
+}
+
+// ─────────────────────────────────────────────────────────────
+// 消息（IM 会话 / 收发）
+// ─────────────────────────────────────────────────────────────
+export interface ConversationRow {
+  id: string
+  name?: string
+  type?: string
+  lastMessage?: string
+  [key: string]: unknown
+}
+export interface MessageRow {
+  id: string
+  conversationId?: string
+  content?: string
+  sender?: string
+  type?: string
+  createTime?: string
+  [key: string]: unknown
+}
+
+/**
+ * 取消息行所属会话 ID。后端生成 handler（O2OA 遗留约定）把会话键序列化为
+ * 带引号字面量 `"conversationId"`（JSON 键本身含引号字符），前端解析后需按该
+ * 键读取；同时兼容普通键。返回空串表示无会话归属。
+ */
+export function messageConversationId(row: Record<string, unknown>): string {
+  const quoted = row['"conversationId"']
+  if (typeof quoted === 'string' && quoted) return quoted
+  const plain = row.conversationId
+  return typeof plain === 'string' ? plain : ''
+}
+
+export const messageApi = {
+  conversationList: () =>
+    list(mapi.get<ConversationRow[]>('/jaxrs/message/assemble/communicate/im/conversation/list/my')),
+  msgHistory: (page: number, size: number) =>
+    list(mapi.get<MessageRow[]>(`/jaxrs/message/assemble/communicate/im/msg/list/${page}/size/${size}`)),
+  /**
+   * 真实写入 x_message（sent=true 表示落库成功）。后端按带引号键
+   * `"conversationId"` 读取会话归属，这里同时下发两种键保证可读。
+   */
+  send: (conversationId: string, content: string, sender: string) =>
+    mapi.post<{ sent?: boolean }>('/jaxrs/message/assemble/communicate/im/msg', {
+      ['"conversationId"']: conversationId,
+      conversationId,
+      content,
+      sender,
+      type: 'text',
+    }),
+  markRead: (conversationId: string) =>
+    mapi.post(`/jaxrs/message/assemble/communicate/im/conversation/${conversationId}/read`, undefined),
 }
 
 // ─────────────────────────────────────────────────────────────
 // 文件 / 文档
 // ─────────────────────────────────────────────────────────────
+export interface FileRow {
+  id: string
+  name?: string
+  path?: string
+  size?: number
+  creator?: string
+  createTime?: string
+  [key: string]: unknown
+}
+
 export const fileApi = {
-  fileList: (folderId?: string, page?: number, size?: number) =>
-    mapi.post<PagedResponse<unknown>>('/jaxrs/file/assemble/control/file/list', {
-      folderId,
-      page,
-      size,
-    }),
-  folderList: (parentId?: string) => mapi.get(`/jaxrs/file/assemble/control/folder/list/${parentId || ''}`),
-  /** 返回下载 URL，由调用方经 uni.downloadFile + uni.openDocument 处理。 */
-  fileDownloadUrl: (fileId: string) => `/jaxrs/file/core/entity/file/${fileId}/download`,
-  attachmentList: (fileId: string) => mapi.get(`/jaxrs/file/assemble/control/attachment/list/${fileId}`),
+  /** folderId 对应 x_file.folder_id（移动端以当前用户 unique 作为"我的文件"目录）。 */
+  fileList: (folderId: string) => list(mapi.get<FileRow[]>(`/jaxrs/file/assemble/control/file/list/${folderId}`)),
+  /** 真实下载路由；拼 apiBase 以支持原生 App / 小程序绝对地址场景。 */
+  fileDownloadUrl: (fileId: string) => `${getApiBase()}/jaxrs/file/assemble/control/file/${fileId}/download`,
 }
 
 // ─────────────────────────────────────────────────────────────
-// 组织（人员 / 部门）
+// 组织（通讯录）
 // ─────────────────────────────────────────────────────────────
+export interface PersonRow {
+  id?: string
+  unique?: string
+  flag?: string
+  name?: string
+  mobile?: string
+  email?: string
+  [key: string]: unknown
+}
+
 export const orgApi = {
-  personList: (page: number, size: number, keyword?: string) =>
-    mapi.post<PagedResponse<O2User>>(`/jaxrs/organization/assemble/control/person/list/paging/${page}/${size}`, {
-      keyword,
-    }),
-  groupList: (flag?: string, count?: number) =>
-    mapi.get(`/jaxrs/organization/assemble/control/group/list/${flag || ''}/next/${count || 20}`),
-  groupDetail: (flag: string) =>
-    mapi.get<{ groups?: OrgGroup[] }>(`/jaxrs/organization/assemble/control/group/${flag}`),
+  /** 全员 / 按姓名模糊搜索（POST mockputtopost 别名，body.key 为空返回全员）。 */
+  personSearch: (key?: string) =>
+    list(mapi.post<PersonRow[]>('/jaxrs/organization/assemble/control/person/list/like/mockputtopost', { key })),
+  /** 人员详情。 */
+  personDetail: (flag: string) => mapi.get<PersonRow>(`/jaxrs/organization/assemble/control/person/${flag}`),
 }
 
 // ─────────────────────────────────────────────────────────────
-// 通用（字典 / 工时）
+// 通用（字典）
 // ─────────────────────────────────────────────────────────────
 export const generalApi = {
   dictList: () => mapi.get('/jaxrs/general/dict/list'),
-  worktimeList: (month: string) => mapi.get(`/jaxrs/general/assemble/control/worktime/${month}`),
 }
 
 export const apis = {
   auth: authApi,
-  portal: portalApi,
-  message: messageApi,
   process: processApi,
+  message: messageApi,
   file: fileApi,
   org: orgApi,
   general: generalApi,

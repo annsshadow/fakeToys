@@ -2,8 +2,10 @@
   "pages": [
     { "path": "pages/index/index" },
     { "path": "pages/message/message" },
+    { "path": "pages/chat/chat" },
     { "path": "pages/process/process" },
     { "path": "pages/doc/doc" },
+    { "path": "pages/contacts/contacts" },
     { "path": "pages/mine/mine" },
     { "path": "pages/login/login" }
   ],

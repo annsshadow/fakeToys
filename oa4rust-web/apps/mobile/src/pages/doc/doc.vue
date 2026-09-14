@@ -2,33 +2,35 @@
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { fileApi } from '@/services'
+import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 
+const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 
-function pick(obj: Record<string, unknown>, keys: string[]): string {
-  for (const k of keys) {
-    const v = obj[k]
-    if (typeof v === 'string' && v) return v
-  }
-  return ''
+function nameOf(row: Record<string, unknown>): string {
+  const v = row.name
+  return typeof v === 'string' && v ? v : '文件'
 }
-function payload(resp: { data: unknown }): Record<string, unknown>[] {
-  const d = resp.data
-  if (Array.isArray(d)) return d as Record<string, unknown>[]
-  if (d && typeof d === 'object' && Array.isArray((d as { data?: unknown }).data)) {
-    return (d as { data: Record<string, unknown>[] }).data
+function metaOf(row: Record<string, unknown>): string {
+  const parts: string[] = []
+  const size = row.size
+  if (typeof size === 'number') parts.push(size > 1048576 ? `${(size / 1048576).toFixed(1)} MB` : `${size} B`)
+  for (const k of ['createTime', 'creator']) {
+    const v = row[k]
+    if (typeof v === 'string' && v) parts.push(v)
   }
-  return []
+  return parts.join(' · ')
 }
-
 async function load() {
+  // 未登录或会话未恢复时不请求，避免无意义 401。
+  if (!session.user?.unique) return
   loading.value = true
   try {
-    const resp = await fileApi.fileList(undefined, 1, 50)
-    rows.value = payload(resp)
+    const resp = await fileApi.fileList(session.user.unique)
+    rows.value = resp.data ?? []
   } catch {
     rows.value = []
   } finally {
@@ -53,9 +55,9 @@ function openDocument(filePath: string, name?: string) {
 }
 
 async function downloadAndOpen(row: Record<string, unknown>) {
-  const fileId = pick(row, ['fileId', 'id', 'uuid', 'flag'])
+  const fileId = typeof row.id === 'string' ? row.id : ''
   if (!fileId) return
-  const name = pick(row, ['name', 'fileName', 'title'])
+  const name = nameOf(row)
   uni.showLoading({ title: '下载中…' })
   const task = uni.downloadFile({ url: fileApi.fileDownloadUrl(fileId) })
   task
@@ -79,10 +81,8 @@ async function downloadAndOpen(row: Record<string, unknown>) {
       <view v-for="(row, i) in rows" :key="i" class="item" @tap="downloadAndOpen(row)">
         <text class="icon">📄</text>
         <view class="body">
-          <view class="title">{{ pick(row, ['name', 'fileName', 'title']) || `文件 #${i + 1}` }}</view>
-          <view class="meta">
-            {{ pick(row, ['size', 'createTime', 'owner']) || '' }}
-          </view>
+          <view class="title">{{ nameOf(row) }}</view>
+          <view class="meta">{{ metaOf(row) || ' ' }}</view>
         </view>
       </view>
     </view>

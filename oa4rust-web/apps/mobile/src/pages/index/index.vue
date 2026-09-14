@@ -16,8 +16,9 @@ function displayName(): string {
 async function loadPending() {
   loading.value = true
   try {
-    const resp = await processApi.workList(1, 1)
-    pendingCount.value = resp.data?.total ?? 0
+    const resp = await processApi.pendingList(1, 50)
+    // 信封顶层 count 为本页条数（后端 java_success 语义）；取不到时退回长度。
+    pendingCount.value = resp.count ?? resp.data?.length ?? 0
   } catch {
     pendingCount.value = null
   } finally {
@@ -33,8 +34,8 @@ onShow(async () => {
 function goTab(url: string) {
   uni.switchTab({ url })
 }
-function goDoc() {
-  uni.navigateTo({ url: '/pages/doc/doc' })
+function goPage(url: string) {
+  uni.navigateTo({ url })
 }
 </script>
 
@@ -61,13 +62,13 @@ function goDoc() {
         <text class="cell-emoji">✅</text>
         <text class="cell-text">审批</text>
       </view>
-      <view class="cell" @tap="goDoc">
+      <view class="cell" @tap="goPage('/pages/doc/doc')">
         <text class="cell-emoji">📄</text>
         <text class="cell-text">文档</text>
       </view>
-      <view class="cell" @tap="goTab('/pages/mine/mine')">
-        <text class="cell-emoji">👤</text>
-        <text class="cell-text">我的</text>
+      <view class="cell" @tap="goPage('/pages/contacts/contacts')">
+        <text class="cell-emoji">👥</text>
+        <text class="cell-text">通讯录</text>
       </view>
     </view>
   </view>
