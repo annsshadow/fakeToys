@@ -49,7 +49,8 @@ pub(crate) async fn resolve_current_person_unique(
     session_manager: &SessionManager,
     headers: &HeaderMap,
 ) -> Result<String, AppError> {
-    let token = shared::middleware::extract_token_from_headers(headers).ok_or(AppError::Unauthorized)?;
+    let token =
+        shared::middleware::extract_token_from_headers(headers).ok_or(AppError::Unauthorized)?;
     session_manager
         .validate_session(&token)
         .await
@@ -58,9 +59,18 @@ pub(crate) async fn resolve_current_person_unique(
 }
 
 /// 内部辅助：从 session + pool 执行 require_owner 检查
-async fn check_owner(pool: &Pool, session_manager: &SessionManager, headers: &HeaderMap, owner_id: &str) -> Result<(), AppError> {
-    let token = shared::middleware::extract_token_from_headers(headers).ok_or(AppError::Unauthorized)?;
-    let session = session_manager.validate_session(&token).await.ok_or(AppError::Unauthorized)?;
+async fn check_owner(
+    pool: &Pool,
+    session_manager: &SessionManager,
+    headers: &HeaderMap,
+    owner_id: &str,
+) -> Result<(), AppError> {
+    let token =
+        shared::middleware::extract_token_from_headers(headers).ok_or(AppError::Unauthorized)?;
+    let session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
     shared::middleware::require_owner(pool, &session, owner_id).await
 }
 
@@ -137,7 +147,13 @@ pub async fn get(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
-    check_owner(&pool, &session_manager, &headers, &row.get::<_, String>("from_person")).await?;
+    check_owner(
+        &pool,
+        &session_manager,
+        &headers,
+        &row.get::<_, String>("from_person"),
+    )
+    .await?;
 
     let info = EmpowerInfo {
         id: row.get("id"),
@@ -228,7 +244,9 @@ pub async fn delete(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(serde_json::json!({ "success": true }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "success": true }),
+    )))
 }
 
 /// POST /jaxrs/person/empower/{id}/enable — 启用授权（需 owner 验证）
@@ -451,7 +469,9 @@ pub async fn manager_delete(
         return Ok(Json(ActionResult::error("not found")));
     }
 
-    Ok(Json(ActionResult::success(serde_json::json!({ "success": true }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "success": true }),
+    )))
 }
 
 /// POST /jaxrs/person/empower/manager/list/paging/{page}/size/{size} — 管理员分页查询
@@ -695,4 +715,3 @@ pub async fn list_to_enable(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

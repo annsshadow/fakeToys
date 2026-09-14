@@ -1,13 +1,19 @@
-﻿use deadpool_postgres::Pool;
 use axum::{
     extract::{Extension, Json, Path},
     routing::{get, post},
     Json as AxumJson, Router,
 };
 use chrono::Utc;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use deadpool_postgres::Pool;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, ActionResult},
+};
 
 pub mod entities;
 pub mod routes;
@@ -18,7 +24,6 @@ use entities::{meeting, meeting_room};
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 /// 获取会议室列表
 /// 从数据库查询 x_meeting_room 表
@@ -45,7 +50,10 @@ pub async fn room_list(
             if let Some(val) = option_to_json(m.floor.clone()) {
                 map.insert("floor".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
+            if let Some(val) = option_to_json(
+                m.capacity
+                    .map(|v| Value::Number(serde_json::Number::from(v))),
+            ) {
                 map.insert("capacity".to_string(), val);
             }
             Value::Object(map)
@@ -133,10 +141,16 @@ pub async fn create_room(
         if let Some(val) = option_to_json(m.floor.clone().map(Value::String)) {
             map.insert("floor".to_string(), val);
         }
-        if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
+        if let Some(val) = option_to_json(
+            m.capacity
+                .map(|v| Value::Number(serde_json::Number::from(v))),
+        ) {
             map.insert("capacity".to_string(), val);
         }
-        if let Some(val) = option_to_json(m.order_number.map(|v| Value::Number(serde_json::Number::from(v)))) {
+        if let Some(val) = option_to_json(
+            m.order_number
+                .map(|v| Value::Number(serde_json::Number::from(v))),
+        ) {
             map.insert("orderNumber".to_string(), val);
         }
         map
@@ -164,10 +178,17 @@ pub async fn get_room(
             if let Some(val) = option_to_json(m.floor.clone().map(Value::String)) {
                 map.insert("floor".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
+            if let Some(val) = option_to_json(
+                m.capacity
+                    .map(|v| Value::Number(serde_json::Number::from(v))),
+            ) {
                 map.insert("capacity".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.equipment.clone().and_then(|s| serde_json::from_str::<Value>(&s).ok())) {
+            if let Some(val) = option_to_json(
+                m.equipment
+                    .clone()
+                    .and_then(|s| serde_json::from_str::<Value>(&s).ok()),
+            ) {
                 map.insert("equipment".to_string(), val);
             }
             if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
@@ -176,16 +197,15 @@ pub async fn get_room(
             if let Some(val) = option_to_json(m.photo.clone().map(Value::String)) {
                 map.insert("photo".to_string(), val);
             }
-            if let Some(val) = option_to_json(m.order_number.map(|v| Value::Number(serde_json::Number::from(v)))) {
+            if let Some(val) = option_to_json(
+                m.order_number
+                    .map(|v| Value::Number(serde_json::Number::from(v))),
+            ) {
                 map.insert("orderNumber".to_string(), val);
             }
             map.insert(
                 "createTime".to_string(),
-                Value::String(
-                    m.create_time
-                        .map(|dt| dt.to_string())
-                        .unwrap_or_default(),
-                ),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
             );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
@@ -249,11 +269,13 @@ pub async fn update_room(
         return Ok(Json(ActionResult::error("room not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(rows_affected > 0)),
-        ("name".to_string(), Value::String(name.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(rows_affected > 0)),
+            ("name".to_string(), Value::String(name.to_string())),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -272,10 +294,12 @@ pub async fn delete_room(
         return Ok(Json(ActionResult::error("room not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(rows_affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(rows_affected > 0)),
+        ]),
+    ))))
 }
 
 /// 获取会议列表
@@ -301,8 +325,14 @@ pub async fn meeting_list(
                     "roomId".to_string(),
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
-                ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
-                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(m.start_time.to_string()),
+                ),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(m.end_time.to_string()),
+                ),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -347,8 +377,14 @@ pub async fn meeting_list_by_room(
                     "roomId".to_string(),
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
-                ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
-                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(m.start_time.to_string()),
+                ),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(m.end_time.to_string()),
+                ),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -391,7 +427,9 @@ pub async fn create_meeting(
     let start_time_str = payload
         .get("\"startTime\"")
         .and_then(|v| v.as_str())
-        .ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
+        .ok_or(AppError::BadRequest(
+            "\"startTime\" is required".to_string(),
+        ))?;
     let start_time: chrono::NaiveDateTime = start_time_str
         .parse()
         .map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
@@ -426,16 +464,24 @@ pub async fn create_meeting(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(m.id.clone())),
-        ("title".to_string(), Value::String(m.title.clone())),
-        (
-            "roomId".to_string(),
-            Value::String(m.room_id.clone().unwrap_or(room_id)),
-        ),
-        ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
-        ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(m.id.clone())),
+            ("title".to_string(), Value::String(m.title.clone())),
+            (
+                "roomId".to_string(),
+                Value::String(m.room_id.clone().unwrap_or(room_id)),
+            ),
+            (
+                "\"startTime\"".to_string(),
+                Value::String(m.start_time.to_string()),
+            ),
+            (
+                "\"endTime\"".to_string(),
+                Value::String(m.end_time.to_string()),
+            ),
+        ]),
+    ))))
 }
 
 /// 获取单个会议
@@ -462,19 +508,21 @@ pub async fn get_meeting(
                     "roomId".to_string(),
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
-                ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
-                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(m.start_time.to_string()),
+                ),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(m.end_time.to_string()),
+                ),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -528,11 +576,13 @@ pub async fn update_meeting(
         return Ok(Json(ActionResult::error("meeting not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(rows_affected > 0)),
-        ("title".to_string(), Value::String(title.to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(rows_affected > 0)),
+            ("title".to_string(), Value::String(title.to_string())),
+        ]),
+    ))))
 }
 
 /// 删除会议
@@ -552,10 +602,12 @@ pub async fn delete_meeting(
         return Ok(Json(ActionResult::error("meeting not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(rows_affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(rows_affected > 0)),
+        ]),
+    ))))
 }
 
 /// 创建会议核心实体路由
@@ -572,15 +624,15 @@ pub fn meeting_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
         .route("/jaxrs/meeting/core/entity/room/list", get(room_list))
         .route("/jaxrs/meeting/core/entity/room/create", post(create_room))
         .route("/jaxrs/meeting/core/entity/room/{id}", get(get_room))
-        .route("/jaxrs/meeting/core/entity/room/save/{id}", post(update_room))
+        .route(
+            "/jaxrs/meeting/core/entity/room/save/{id}",
+            post(update_room),
+        )
         .route(
             "/jaxrs/meeting/core/entity/room/delete/{id}",
             post(delete_room),
         )
-        .route(
-            "/jaxrs/meeting/core/entity/meeting/list",
-            get(meeting_list),
-        )
+        .route("/jaxrs/meeting/core/entity/meeting/list", get(meeting_list))
         .route(
             "/jaxrs/meeting/core/entity/meeting/list/by/{roomId}",
             get(meeting_list_by_room),
@@ -589,10 +641,7 @@ pub fn meeting_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
             "/jaxrs/meeting/core/entity/meeting/create",
             post(create_meeting),
         )
-        .route(
-            "/jaxrs/meeting/core/entity/meeting/{id}",
-            get(get_meeting),
-        )
+        .route("/jaxrs/meeting/core/entity/meeting/{id}", get(get_meeting))
         .route(
             "/jaxrs/meeting/core/entity/meeting/save/{id}",
             post(update_meeting),
@@ -607,4 +656,3 @@ pub fn meeting_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::meeting_core_entity_router(pool)
 }
-

@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    http::HeaderMap,
-    Json,
-};
+use axum::{extract::Extension, http::HeaderMap, Json};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
@@ -32,7 +28,9 @@ pub async fn change(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let char_count = req.new_password.chars().count();
     if !(6..=64).contains(&char_count) {
-        return Ok(Json(ActionResult::error("password length must be between 6 and 64")));
+        return Ok(Json(ActionResult::error(
+            "password length must be between 6 and 64",
+        )));
     }
 
     let has_letter = req.new_password.chars().any(|c| c.is_alphabetic());
@@ -73,7 +71,7 @@ pub async fn change(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("success".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+    ))))
 }

@@ -33,16 +33,16 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { api } from '@oa4rust/sdk';
+import { api } from '@oa4rust/sdk'
+import { onMounted, ref } from 'vue'
 
 const stats = ref([
   { label: '待办事项', value: '--', color: 'var(--color-warning)' },
   { label: '应用总数', value: '--', color: 'var(--color-info)' },
   { label: '在线用户', value: '--', color: 'var(--color-success)' },
   { label: '系统状态', value: '正常', color: 'var(--color-primary)' },
-]);
-const apps = ref<Array<{ id: string; name: string; flag: string }>>([]);
+])
+const apps = ref<Array<{ id: string; name: string; flag: string }>>([])
 const designers = [
   { icon: '⚡', title: '流程设计器', desc: '可视化流程编排', path: '/app/process-designer' },
   { icon: '📋', title: '表单设计器', desc: 'JSON表单构建', path: '/app/form-designer' },
@@ -52,28 +52,34 @@ const designers = [
   { icon: '👁', title: 'CMS视图设计', desc: '内容展示视图', path: '/app/cms-view-designer' },
   { icon: '💻', title: 'CMS脚本设计', desc: '内容处理脚本', path: '/app/cms-script-designer' },
   { icon: '📚', title: 'CMS字典设计', desc: '内容字典配置', path: '/app/cms-dict-designer' },
-];
+]
 async function loadStats() {
   try {
     const [p, a] = await Promise.allSettled([
       api.get('/jaxrs/processplatform/assemble/surface/work/count/currentperson'),
       api.get('/jaxrs/program_center/application/list'),
-    ]);
-    const pc = p.status === 'fulfilled' ? ((p as any).value?.data?.count ?? '--') : '--';
-    const ac = a.status === 'fulfilled' ? ((a as any).value?.data?.length ?? '--') : '--';
+    ])
+    const pc = p.status === 'fulfilled' ? ((p as any).value?.data?.count ?? '--') : '--'
+    const ac = a.status === 'fulfilled' ? ((a as any).value?.data?.length ?? '--') : '--'
     stats.value = [
       { label: '待办事项', value: pc, color: 'var(--color-warning)' },
       { label: '应用总数', value: ac, color: 'var(--color-info)' },
       { label: '在线用户', value: '—', color: 'var(--color-success)' },
       { label: '系统状态', value: '正常', color: 'var(--color-primary)' },
-    ];
+    ]
     if (a.status === 'fulfilled') {
-      const list = (a as any).value?.data ?? [];
-      apps.value = list.map((x: any) => ({ id: x.id ?? x.flag, name: x.name ?? x.appName ?? '未命名', flag: x.flag ?? '' }));
+      const list = (a as any).value?.data ?? []
+      apps.value = list.map((x: any) => ({
+        id: x.id ?? x.flag,
+        name: x.name ?? x.appName ?? '未命名',
+        flag: x.flag ?? '',
+      }))
     }
-  } catch { /* silent */ }
+  } catch {
+    /* silent */
+  }
 }
-onMounted(loadStats);
+onMounted(loadStats)
 </script>
 <style scoped>
 .nav-view{display:flex;flex-direction:column;gap:16px;height:100%}

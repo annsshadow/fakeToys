@@ -258,9 +258,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { toast } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
+import { toast } from '../utils/toast'
 
 type QueryDef = {
   id?: string
@@ -278,22 +278,20 @@ const keyword = ref('')
 const qLoading = ref(false)
 const queries = ref<QueryDef[]>([])
 const selected = ref<QueryDef | null>(null)
-const conditions = ref<{field:string;op:string;value:string}[]>([])
-const resultData = ref<Record<string,unknown>[]>([])
+const conditions = ref<{ field: string; op: string; value: string }[]>([])
+const resultData = ref<Record<string, unknown>[]>([])
 const rLoading = ref(false)
 const showModal = ref(false)
 const editingQuery = ref<QueryDef | null>(null)
 const mform = ref({ name: '', category: '', sql: '' })
 
-const resultHeaders = computed(() =>
-  resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
-)
+const resultHeaders = computed(() => (resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []))
 
 const entityFields = computed(() => {
   // Extract from SQL or use defaults
   if (selected.value?.sql) {
     const matches = selected.value.sql.match(/(\w+)\s+AS\s+(\w+)/gi) || []
-    return [...new Set(matches.map(m => m.split(/\s+/).pop()))]
+    return [...new Set(matches.map((m) => m.split(/\s+/).pop()))]
   }
   return ['id', 'name', 'flag', 'status', 'createdAt']
 })
@@ -304,11 +302,15 @@ async function loadQueries() {
     const r = await api.get('/jaxrs/query/assemble/designer/list/all')
     queries.value = r.data ?? []
     if (keyword.value) {
-      queries.value = queries.value.filter(q =>
-        (q.name || q.queryName || '').toLowerCase().includes(keyword.value.toLowerCase())
+      queries.value = queries.value.filter((q) =>
+        (q.name || q.queryName || '').toLowerCase().includes(keyword.value.toLowerCase()),
       )
     }
-  } catch { queries.value = [] } finally { qLoading.value = false }
+  } catch {
+    queries.value = []
+  } finally {
+    qLoading.value = false
+  }
 }
 
 function selectQuery(q: QueryDef) {
@@ -323,7 +325,7 @@ function openCreate() {
   showModal.value = true
 }
 
-function openEdit() {
+async function openEdit() {
   if (!selected.value) return
   editingQuery.value = selected.value
   mform.value = {
@@ -331,16 +333,29 @@ function openEdit() {
     category: selected.value.category || '',
     sql: selected.value.sql || '',
   }
+  // 列表接口不返回定义，回读 get/{id} 的 query 字段补全 SQL
+  if (selected.value.id) {
+    try {
+      const r = await api.get(`/jaxrs/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}`)
+      const detail = (r.data ?? {}) as Record<string, unknown>
+      if (typeof detail.query === 'string' && detail.query) mform.value.sql = detail.query
+    } catch {
+      // 回读失败时保留列表态字段
+    }
+  }
   showModal.value = true
 }
 
 async function saveQuery() {
-  if (!mform.value.name.trim()) { toast.info('请输入查询名称'); return }
+  if (!mform.value.name.trim()) {
+    toast.info('请输入查询名称')
+    return
+  }
   try {
     const data = {
       name: mform.value.name,
       category: mform.value.category,
-      sql: mform.value.sql,
+      query: mform.value.sql,
     }
     if (editingQuery.value?.id) {
       await api.put(`/jaxrs/query/assemble/designer/save/${editingQuery.value.id}`, data)
@@ -349,7 +364,9 @@ async function saveQuery() {
     }
     showModal.value = false
     loadQueries()
-  } catch (e: any) { toast.error('保存失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('保存失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function runQuery() {
@@ -359,14 +376,18 @@ async function runQuery() {
   try {
     const params: Record<string, unknown> = {}
     if (conditions.value.length > 0) {
-      params.conditions = conditions.value.filter(c => c.field && c.value)
+      params.conditions = conditions.value.filter((c) => c.field && c.value)
     }
     const r = await api.post(`/jaxrs/query/assemble/designer/query`, {
       queryId: selected.value.id,
       ...params,
     })
     resultData.value = r.data?.list ?? r.data ?? []
-  } catch (e: any) { toast.error('执行失败: : ' + (e?.message ?? '')) } finally { rLoading.value = false }
+  } catch (e: any) {
+    toast.error('执行失败: : ' + (e?.message ?? ''))
+  } finally {
+    rLoading.value = false
+  }
 }
 
 async function deleteQuery(q: QueryDef) {
@@ -374,8 +395,10 @@ async function deleteQuery(q: QueryDef) {
   try {
     await api.delete(`/jaxrs/query/assemble/designer/delete/${q.id}`)
     if (selected.value?.id === q.id) selected.value = null
-    queries.value = queries.value.filter(x => x.id !== q.id)
-  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
+    queries.value = queries.value.filter((x) => x.id !== q.id)
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? ''))
+  }
 }
 
 loadQueries()
@@ -384,7 +407,10 @@ loadQueries()
 const showSqlEditor = ref(false)
 const sqlEditorForm = ref({ name: '', sql: '', category: '', desc: '' })
 function saveSqlQuery() {
-  if (!sqlEditorForm.value.name.trim()) { toast.info('请输入查询名称'); return }
+  if (!sqlEditorForm.value.name.trim()) {
+    toast.info('请输入查询名称')
+    return
+  }
   // Save via API
   showModal.value = true
   editingQuery.value = null
@@ -394,22 +420,26 @@ function saveSqlQuery() {
 
 // --- Filter Builder ---
 const showFilterBuilder = ref(false)
-const filterRules = ref<Array<{field:string;op:string;value:string;valueFrom?:string;valueTo?:string;connector:string}>>([])
+const filterRules = ref<
+  Array<{ field: string; op: string; value: string; valueFrom?: string; valueTo?: string; connector: string }>
+>([])
 const allFields = computed(() => {
   if (selected.value?.sql) {
     const matches = selected.value.sql.match(/(\w+)\s+[A-Z]/gi) || []
-    return [...new Set(matches.map(m => m.split(/\s+/)[0]))]
+    return [...new Set(matches.map((m) => m.split(/\s+/)[0]))]
   }
   return ['id', 'name', 'flag', 'status', 'createdAt', 'updatedAt']
 })
 const generatedFilterWhere = computed(() => {
-  const valid = filterRules.value.filter(r => r.field && r.value)
+  const valid = filterRules.value.filter((r) => r.field && r.value)
   if (!valid.length) return ''
-  return valid.map(r => {
-    if (r.op === 'between') return `${r.field} BETWEEN ${r.valueFrom || "''"} AND ${r.valueTo || "''"}`
-    if (r.op === 'isnull') return `${r.field} IS NULL`
-    return `${r.field} ${r.op} '${r.value}'`
-  }).join(` ${valid[0]?.connector || 'AND'} `)
+  return valid
+    .map((r) => {
+      if (r.op === 'between') return `${r.field} BETWEEN ${r.valueFrom || "''"} AND ${r.valueTo || "''"}`
+      if (r.op === 'isnull') return `${r.field} IS NULL`
+      return `${r.field} ${r.op} '${r.value}'`
+    })
+    .join(` ${valid[0]?.connector || 'AND'} `)
 })
 function applyFilterRules() {
   const cond = generatedFilterWhere.value
@@ -425,33 +455,43 @@ function applyFilterRules() {
 
 // --- Chart Visualization ---
 const showChartViz = ref(false)
-const chartType = ref('bar'), chartX = ref(''), chartY = ref('')
+const chartType = ref('bar'),
+  chartX = ref(''),
+  chartY = ref('')
 const chartRendered = ref(false)
-const chartColors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316']
-const chartData = ref<Array<{label:string;value:number;h:number}>>([])
-const chartStats = ref<{count:number;max:number;min:number;avg:number}|null>(null)
+const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+const chartData = ref<Array<{ label: string; value: number; h: number }>>([])
+const chartStats = ref<{ count: number; max: number; min: number; avg: number } | null>(null)
 function renderChart() {
   if (!resultData.value.length || !chartX.value || !chartY.value) return
-  const map = new Map<string,number>()
-  resultData.value.forEach(r => {
+  const map = new Map<string, number>()
+  resultData.value.forEach((r) => {
     const key = String(r[chartX.value])
     const val = Number(r[chartY.value]) || 0
     map.set(key, (map.get(key) || 0) + val)
   })
-  const entries = [...map.entries()].sort((a,b) => b[1]-a[1]).slice(0, 20)
-  const maxVal = Math.max(1, ...entries.map(([,v]) => v))
-  const nums = entries.map(([,v]) => v)
-  chartData.value = entries.map(([label, value], i) => ({ label, value, h: Math.round(value/maxVal*150) }))
-  chartStats.value = { count: resultData.value.length, max: Math.max(...nums), min: Math.min(...nums), avg: Math.round(nums.reduce((a:number,b:number)=>a+b,0)/nums.length) }
+  const entries = [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20)
+  const maxVal = Math.max(1, ...entries.map(([, v]) => v))
+  const nums = entries.map(([, v]) => v)
+  chartData.value = entries.map(([label, value], i) => ({ label, value, h: Math.round((value / maxVal) * 150) }))
+  chartStats.value = {
+    count: resultData.value.length,
+    max: Math.max(...nums),
+    min: Math.min(...nums),
+    avg: Math.round(nums.reduce((a: number, b: number) => a + b, 0) / nums.length),
+  }
   chartRendered.value = true
 }
 
 // --- History ---
 const showHistory = ref(false)
-const execHistory = ref<Array<{time:string;sql:string;duration:number;rows:number;success:boolean}>>([])
+const execHistory = ref<Array<{ time: string; sql: string; duration: number; rows: number; success: boolean }>>([])
 function replayHistory(idx: number) {
   const h = execHistory.value[idx]
-  if (h) { sql.value = h.sql; runQuery() }
+  if (h) {
+    sql.value = h.sql
+    runQuery()
+  }
 }
 function copyHistorySql(idx: number) {
   const h = execHistory.value[idx]
@@ -460,39 +500,60 @@ function copyHistorySql(idx: number) {
 
 // --- Import/Export ---
 const showImportExport = ref(false)
-const ieTab = ref<'export'|'import'>('export')
-const exportFmt = ref<'json'|'csv'|'sql'>('json')
+const ieTab = ref<'export' | 'import'>('export')
+const exportFmt = ref<'json' | 'csv' | 'sql'>('json')
 const importJson = ref('')
-const importMsg = ref<{ok:boolean;txt:string}|null>(null)
+const importMsg = ref<{ ok: boolean; txt: string } | null>(null)
 function doExport() {
-  const data = queries.value.map(q => ({ name: q.name||q.queryName, category: q.category||q.entityCategory, sql: q.sql }))
+  const data = queries.value.map((q) => ({
+    name: q.name || q.queryName,
+    category: q.category || q.entityCategory,
+    sql: q.sql,
+  }))
   if (exportFmt.value === 'json') {
-    downloadBlob(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}), 'queries_'+new Date().toISOString().slice(0,10)+'.json')
+    downloadBlob(
+      new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+      'queries_' + new Date().toISOString().slice(0, 10) + '.json',
+    )
   } else if (exportFmt.value === 'csv') {
-    const csv = 'name,category,sql\n' + data.map(d => `"${d.name}","${d.category}","${(d.sql||'').replace(/"/g,'""')}"`).join('\n')
-    downloadBlob(new Blob([csv],{type:'text/csv'}), 'queries_'+new Date().toISOString().slice(0,10)+'.csv')
+    const csv =
+      'name,category,sql\n' +
+      data.map((d) => `"${d.name}","${d.category}","${(d.sql || '').replace(/"/g, '""')}"`).join('\n')
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), 'queries_' + new Date().toISOString().slice(0, 10) + '.csv')
   } else {
-    const sqlStr = data.map(d => `-- ${d.name}\n${d.sql}`).join('\n\n')
-    downloadBlob(new Blob([sqlStr],{type:'text/plain'}), 'queries_'+new Date().toISOString().slice(0,10)+'.sql')
+    const sqlStr = data.map((d) => `-- ${d.name}\n${d.sql}`).join('\n\n')
+    downloadBlob(
+      new Blob([sqlStr], { type: 'text/plain' }),
+      'queries_' + new Date().toISOString().slice(0, 10) + '.sql',
+    )
   }
   showImportExport.value = false
 }
 function downloadBlob(blob: Blob, filename: string) {
   const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob); a.download = filename; a.click()
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
 }
 async function doImport() {
   if (!importJson.value.trim()) return
   try {
     const data = JSON.parse(importJson.value)
-    if (!Array.isArray(data)) { importMsg.value={ok:false,txt:'格式错误'}; return }
-    for (const q of data) {
-      try { await api.post('/jaxrs/query/assemble/designer/create', q) } catch {}
+    if (!Array.isArray(data)) {
+      importMsg.value = { ok: false, txt: '格式错误' }
+      return
     }
-    importMsg.value={ok:true,txt:`成功导入 ${data.length} 条`}
+    for (const q of data) {
+      try {
+        await api.post('/jaxrs/query/assemble/designer/create', q)
+      } catch {}
+    }
+    importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条` }
     loadQueries()
     showImportExport.value = false
-  } catch(e: any) { importMsg.value={ok:false,txt:'导入失败: '+e.message} }
+  } catch (e: any) {
+    importMsg.value = { ok: false, txt: '导入失败: ' + e.message }
+  }
 }
 
 // --- Enhance runQuery with history tracking ---
@@ -501,13 +562,24 @@ async function runQueryEnhanced() {
   const t0 = Date.now()
   try {
     await originalRunQuery()
-    execHistory.value.unshift({ time: new Date().toLocaleTimeString('zh-CN'), sql: conditions.value.length ? JSON.stringify(conditions.value) : sql.value||'', duration: Date.now()-t0, rows: resultData.value.length, success: true })
-  } catch(e: any) {
-    execHistory.value.unshift({ time: new Date().toLocaleTimeString('zh-CN'), sql: '', duration: Date.now()-t0, rows: 0, success: false })
+    execHistory.value.unshift({
+      time: new Date().toLocaleTimeString('zh-CN'),
+      sql: conditions.value.length ? JSON.stringify(conditions.value) : sql.value || '',
+      duration: Date.now() - t0,
+      rows: resultData.value.length,
+      success: true,
+    })
+  } catch (e: any) {
+    execHistory.value.unshift({
+      time: new Date().toLocaleTimeString('zh-CN'),
+      sql: '',
+      duration: Date.now() - t0,
+      rows: 0,
+      success: false,
+    })
     throw e
   }
 }
-
 </script>
 
 <style scoped>

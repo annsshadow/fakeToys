@@ -1,20 +1,17 @@
 #[cfg(test)]
 mod tests {
-    
+
     use axum::{
         body::Body,
-        http::{Request, Method, StatusCode},
+        http::{Method, Request, StatusCode},
     };
-    use deadpool_postgres::{Manager, Pool};
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::util::ServiceExt;
 
     fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            Config::new(),
-            NoTls,
-        );
+        let mgr = Manager::new(Config::new(), NoTls);
         Pool::builder(mgr).max_size(1).build().unwrap()
     }
 

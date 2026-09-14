@@ -13,10 +13,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn mind_router() -> Router {
-    Router::new()
-        .merge(routes::mind_routes())
+    Router::new().merge(routes::mind_routes())
 }
 
 #[axum::debug_handler]
@@ -39,12 +37,27 @@ pub async fn get_mind_with_id(
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
         ("folderId".to_string(), Value::String(row.get("folder_id"))),
-        ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
-        ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+        (
+            "icon".to_string(),
+            Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+        ),
+        (
+            "description".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("description")
+                    .unwrap_or_default(),
+            ),
+        ),
         ("creator".to_string(), Value::String(row.get("creator"))),
-        ("creatorUnit".to_string(), Value::String(row.get("creator_unit"))),
+        (
+            "creatorUnit".to_string(),
+            Value::String(row.get("creator_unit")),
+        ),
         ("shared".to_string(), Value::Bool(row.get("shared"))),
-        ("fileVersion".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("file_version")))),
+        (
+            "fileVersion".to_string(),
+            Value::Number(serde_json::Number::from(row.get::<_, i32>("file_version"))),
+        ),
     ])));
 
     Ok(Json(result))
@@ -52,9 +65,7 @@ pub async fn get_mind_with_id(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_my_folders(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -70,17 +81,36 @@ pub async fn list_my_folders(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
-                ("orderNumber".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("order_number")))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                (
+                    "\"parentId\"".to_string(),
+                    Value::String(row.get("parent_id")),
+                ),
+                (
+                    "orderNumber".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("order_number"))),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("creatorUnit".to_string(), Value::String(row.get("creator_unit"))),
+                (
+                    "creatorUnit".to_string(),
+                    Value::String(row.get("creator_unit")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -106,19 +136,41 @@ pub async fn list_versions_with_mind_id(
                 ("mindId".to_string(), Value::String(row.get("mind_id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("folderId".to_string(), Value::String(row.get("folder_id"))),
-                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("creatorUnit".to_string(), Value::String(row.get("creator_unit"))),
-                ("fileVersion".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("file_version")))),
+                (
+                    "creatorUnit".to_string(),
+                    Value::String(row.get("creator_unit")),
+                ),
+                (
+                    "fileVersion".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("file_version"))),
+                ),
                 ("shared".to_string(), Value::Bool(row.get("shared"))),
-                ("createTime".to_string(), Value::String(row.get::<_, String>("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get::<_, String>("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get::<_, String>("create_time")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get::<_, String>("update_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -129,14 +181,42 @@ pub async fn create_mind(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let folder_id = payload.get("folderId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let icon = payload.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
-    let creator_unit = payload.get("creatorUnit").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let shared = payload.get("shared").and_then(|v| v.as_bool()).unwrap_or(false);
-    let file_version = payload.get("fileVersion").and_then(|v| v.as_i64()).unwrap_or(1) as i32;
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let folder_id = payload
+        .get("folderId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let icon = payload
+        .get("icon")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
+    let creator_unit = payload
+        .get("creatorUnit")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let shared = payload
+        .get("shared")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let file_version = payload
+        .get("fileVersion")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(1) as i32;
 
     client
         .execute(
@@ -146,13 +226,18 @@ pub async fn create_mind(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("folderId".to_string(), Value::String(folder_id)),
-        ("shared".to_string(), Value::Bool(shared)),
-        ("fileVersion".to_string(), Value::Number(serde_json::Number::from(file_version))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("folderId".to_string(), Value::String(folder_id)),
+            ("shared".to_string(), Value::Bool(shared)),
+            (
+                "fileVersion".to_string(),
+                Value::Number(serde_json::Number::from(file_version)),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -171,12 +256,37 @@ pub async fn update_mind(
         .await
         .map_err(|_| AppError::NotFound)?;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("name"));
-    let folder_id = payload.get("folderId").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("folder_id"));
-    let icon = payload.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("icon")).unwrap_or_default();
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("description")).unwrap_or_default();
-    let shared = payload.get("shared").and_then(|v| v.as_bool()).unwrap_or_else(|| row.get("shared"));
-    let file_version = payload.get("fileVersion").and_then(|v| v.as_i64()).map(|i| i as i32).unwrap_or_else(|| row.get::<_, i32>("file_version"));
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| row.get("name"));
+    let folder_id = payload
+        .get("folderId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| row.get("folder_id"));
+    let icon = payload
+        .get("icon")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| row.get::<_, Option<String>>("icon"))
+        .unwrap_or_default();
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| row.get::<_, Option<String>>("description"))
+        .unwrap_or_default();
+    let shared = payload
+        .get("shared")
+        .and_then(|v| v.as_bool())
+        .unwrap_or_else(|| row.get("shared"));
+    let file_version = payload
+        .get("fileVersion")
+        .and_then(|v| v.as_i64())
+        .map(|i| i as i32)
+        .unwrap_or_else(|| row.get::<_, i32>("file_version"));
 
     let count = client
         .execute(
@@ -186,10 +296,15 @@ pub async fn update_mind(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Number(serde_json::Number::from(count as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -208,10 +323,15 @@ pub async fn delete_mind(
         return Ok(Json(ActionResult::error("mind not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Number(serde_json::Number::from(count as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -222,12 +342,33 @@ pub async fn create_folder(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
-    let creator_unit = payload.get("creatorUnit").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let parent_id = payload
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let order_number = payload
+        .get("orderNumber")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0) as i32;
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
+    let creator_unit = payload
+        .get("creatorUnit")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
     client
         .execute(
@@ -237,11 +378,16 @@ pub async fn create_folder(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("orderNumber".to_string(), Value::Number(serde_json::Number::from(order_number))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            (
+                "orderNumber".to_string(),
+                Value::Number(serde_json::Number::from(order_number)),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -260,10 +406,28 @@ pub async fn update_folder(
         .await
         .map_err(|_| AppError::NotFound)?;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("name"));
-    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("parent_id")).unwrap_or_default();
-    let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).map(|i| i as i32).unwrap_or_else(|| row.get::<_, i32>("order_number"));
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("description")).unwrap_or_default();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| row.get("name"));
+    let parent_id = payload
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| row.get::<_, Option<String>>("parent_id"))
+        .unwrap_or_default();
+    let order_number = payload
+        .get("orderNumber")
+        .and_then(|v| v.as_i64())
+        .map(|i| i as i32)
+        .unwrap_or_else(|| row.get::<_, i32>("order_number"));
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| row.get::<_, Option<String>>("description"))
+        .unwrap_or_default();
 
     let count = client
         .execute(
@@ -273,10 +437,15 @@ pub async fn update_folder(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Number(serde_json::Number::from(count as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -295,10 +464,15 @@ pub async fn delete_folder(
         return Ok(Json(ActionResult::error("folder not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Number(serde_json::Number::from(count as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -309,14 +483,43 @@ pub async fn create_version(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let mind_id = payload.get("mindId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let folder_id = payload.get("folderId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
-    let creator_unit = payload.get("creatorUnit").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let file_version = payload.get("fileVersion").and_then(|v| v.as_i64()).unwrap_or(1) as i32;
-    let shared = payload.get("shared").and_then(|v| v.as_bool()).unwrap_or(false);
+    let mind_id = payload
+        .get("mindId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let folder_id = payload
+        .get("folderId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
+    let creator_unit = payload
+        .get("creatorUnit")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let file_version = payload
+        .get("fileVersion")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(1) as i32;
+    let shared = payload
+        .get("shared")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     client
         .execute(
@@ -326,12 +529,17 @@ pub async fn create_version(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("mindId".to_string(), Value::String(mind_id)),
-        ("name".to_string(), Value::String(name)),
-        ("fileVersion".to_string(), Value::Number(serde_json::Number::from(file_version))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("mindId".to_string(), Value::String(mind_id)),
+            ("name".to_string(), Value::String(name)),
+            (
+                "fileVersion".to_string(),
+                Value::Number(serde_json::Number::from(file_version)),
+            ),
+        ]),
+    ))))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

@@ -48,7 +48,8 @@ pub(crate) async fn resolve_current_person_unique(
     session_manager: &SessionManager,
     headers: &HeaderMap,
 ) -> Result<String, AppError> {
-    let token = shared::middleware::extract_token_from_headers(headers).ok_or(AppError::Unauthorized)?;
+    let token =
+        shared::middleware::extract_token_from_headers(headers).ok_or(AppError::Unauthorized)?;
     session_manager
         .validate_session(&token)
         .await
@@ -116,7 +117,10 @@ pub async fn edit_person(
 
     let person_id: String = row.get("id");
 
-    let name = req.name.filter(|s| !s.is_empty()).unwrap_or_else(|| row.get("name"));
+    let name = req
+        .name
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| row.get("name"));
     let db_mobile: Option<String> = row.get("mobile");
     let db_email: Option<String> = row.get("email");
     let mobile = req.mobile.filter(|s| !s.is_empty()).or(db_mobile);
@@ -192,8 +196,14 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         // 电子签名端点
         .route("/jaxrs/person/signature/upload", post(signature::upload))
         .route("/jaxrs/person/signature/list", get(signature::list))
-        .route("/jaxrs/person/signature/delete/{id}", get(signature::delete))
-        .route("/jaxrs/person/signature/manager/list", get(signature::manager_list))
+        .route(
+            "/jaxrs/person/signature/delete/{id}",
+            get(signature::delete),
+        )
+        .route(
+            "/jaxrs/person/signature/manager/list",
+            get(signature::manager_list),
+        )
         // 头像端点
         .route("/jaxrs/person/icon/{person}", get(icon::get))
         .route("/jaxrs/person/icon/upload", post(icon::upload))
@@ -202,16 +212,16 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         // 注：GET/PUT /jaxrs/person/icon 已由 personal_extend 提供同路径实现，
         // 此处仅补齐 octet-stream 上传与 mock 别名，避免跨 crate 路由冲突。
         .route("/jaxrs/person/mockputtopost", post(edit_person))
-        .route(
-            "/jaxrs/person/icon",
-            post(u2::set_icon_octet_stream),
-        )
+        .route("/jaxrs/person/icon", post(u2::set_icon_octet_stream))
         .route(
             "/jaxrs/person/icon/mockputtopost",
             post(u2::upload_multipart_alias),
         )
         // PasswordAction
-        .route("/jaxrs/person/password/mockputtopost", post(password::change))
+        .route(
+            "/jaxrs/person/password/mockputtopost",
+            post(password::change),
+        )
         // RegistAction
         .route("/jaxrs/person/regist/mode", get(u2::regist_mode))
         .route(
@@ -238,9 +248,18 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         .route("/jaxrs/person/custom/{name}", put(u2::custom_edit))
         .route("/jaxrs/person/custom/{name}", post(u2::custom_edit))
         .route("/jaxrs/person/custom/{name}", delete(u2::custom_delete))
-        .route("/jaxrs/person/custom/{name}/mockdeletetoget", get(u2::custom_delete))
-        .route("/jaxrs/person/custom/manager/person/{person}/name/{name}", get(u2::custom_manager_get))
-        .route("/jaxrs/person/custom/manager/person/{person}/name/{name}", put(u2::custom_manager_edit))
+        .route(
+            "/jaxrs/person/custom/{name}/mockdeletetoget",
+            get(u2::custom_delete),
+        )
+        .route(
+            "/jaxrs/person/custom/manager/person/{person}/name/{name}",
+            get(u2::custom_manager_get),
+        )
+        .route(
+            "/jaxrs/person/custom/manager/person/{person}/name/{name}",
+            put(u2::custom_manager_edit),
+        )
         .route(
             "/jaxrs/person/custom/manager/person/{person}/name/{name}/mockputtopost",
             post(u2::custom_manager_edit),
@@ -249,9 +268,18 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
         .route("/jaxrs/person/definition/{name}", get(u2::definition_get))
         .route("/jaxrs/person/definition/{name}", put(u2::definition_edit))
         .route("/jaxrs/person/definition/{name}", post(u2::definition_edit))
-        .route("/jaxrs/person/definition/{name}", delete(u2::definition_delete))
-        .route("/jaxrs/person/definition/{name}/mockdeletetoget", get(u2::definition_delete))
-        .route("/jaxrs/person/definition/{name}/mockputtopost", post(u2::definition_edit))
+        .route(
+            "/jaxrs/person/definition/{name}",
+            delete(u2::definition_delete),
+        )
+        .route(
+            "/jaxrs/person/definition/{name}/mockdeletetoget",
+            get(u2::definition_delete),
+        )
+        .route(
+            "/jaxrs/person/definition/{name}/mockputtopost",
+            post(u2::definition_edit),
+        )
         // EmpowerAction 残余
         .route(
             "/jaxrs/person/empower/list/{id}/next/{count}",
@@ -332,4 +360,3 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

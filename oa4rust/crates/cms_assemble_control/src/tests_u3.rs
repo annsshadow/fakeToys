@@ -1,4 +1,4 @@
-﻿//! plan002 U2 收尾重试批次（U3，Java canonical 对齐缺口）的测试。
+//! plan002 U2 收尾重试批次（U3，Java canonical 对齐缺口）的测试。
 //!
 //! 三层（与 tests_u2 一致）：
 //!   1. 路由可达性：mock_pool 无法建连，命中路由后断言 ≠404/405，
@@ -11,9 +11,10 @@
 #[cfg(test)]
 mod u3_tests {
     use crate::{
-        categoryinfo_ext_content_save_u3, comment_commend_u3, correlation_create_u3, document_batch_delete_u3, document_batch_modify_u3,
-        file_delete_u3, permission_save_manager_app_u3, review_v2_search_u3,
-        script_post_nested_u3, u3_normalize_path_levels, viewrecord_unread_u3,
+        categoryinfo_ext_content_save_u3, comment_commend_u3, correlation_create_u3,
+        document_batch_delete_u3, document_batch_modify_u3, file_delete_u3,
+        permission_save_manager_app_u3, review_v2_search_u3, script_post_nested_u3,
+        u3_normalize_path_levels, viewrecord_unread_u3,
     };
     use axum::body::Body;
     use axum::extract::Extension;
@@ -72,7 +73,11 @@ mod u3_tests {
             "/jaxrs/document/d-1/view",
             "/jaxrs/document/d-1/view/count",
         ] {
-            assert_ne!(status_of("GET", uri).await, StatusCode::NOT_FOUND, "GET {uri}");
+            assert_ne!(
+                status_of("GET", uri).await,
+                StatusCode::NOT_FOUND,
+                "GET {uri}"
+            );
             assert_ne!(
                 status_of("GET", uri).await,
                 StatusCode::METHOD_NOT_ALLOWED,
@@ -85,7 +90,11 @@ mod u3_tests {
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/filter/list/i-1/next/10/mockputtopost").await,
+            status_of(
+                "POST",
+                "/jaxrs/document/filter/list/i-1/next/10/mockputtopost"
+            )
+            .await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
@@ -134,9 +143,16 @@ mod u3_tests {
             "/jaxrs/fileinfo/download/transfer/flag/x",
             "/jaxrs/fileinfo/download/document/d-1/stream",
         ] {
-            assert_ne!(status_of("GET", uri).await, StatusCode::NOT_FOUND, "GET {uri}");
+            assert_ne!(
+                status_of("GET", uri).await,
+                StatusCode::NOT_FOUND,
+                "GET {uri}"
+            );
         }
-        assert_ne!(status_of("POST", "/jaxrs/file/f-1/upload").await, StatusCode::NOT_FOUND);
+        assert_ne!(
+            status_of("POST", "/jaxrs/file/f-1/upload").await,
+            StatusCode::NOT_FOUND
+        );
         assert_ne!(
             status_of("POST", "/jaxrs/fileinfo/upload/with/url").await,
             StatusCode::NOT_FOUND
@@ -174,7 +190,11 @@ mod u3_tests {
             "/jaxrs/log/list/filter/1/size/10",
             "/jaxrs/image/encode/base64",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
         for (method, uri) in [
             ("PUT", "/jaxrs/design/appdict/da-1"),
@@ -184,7 +204,11 @@ mod u3_tests {
             ("PUT", "/jaxrs/templateform/list/category"),
             ("PUT", "/jaxrs/categoryinfo/bind/c-1/view"),
         ] {
-            assert_ne!(status_of(method, uri).await, StatusCode::NOT_FOUND, "{method} {uri}");
+            assert_ne!(
+                status_of(method, uri).await,
+                StatusCode::NOT_FOUND,
+                "{method} {uri}"
+            );
         }
         // permission save 家族 ×6
         for uri in [
@@ -195,7 +219,11 @@ mod u3_tests {
             "/jaxrs/permission/publisher/categoryInfo/c-1",
             "/jaxrs/permission/viewer/categoryInfo/c-1",
         ] {
-            assert_ne!(status_of("POST", uri).await, StatusCode::NOT_FOUND, "POST {uri}");
+            assert_ne!(
+                status_of("POST", uri).await,
+                StatusCode::NOT_FOUND,
+                "POST {uri}"
+            );
         }
     }
 
@@ -209,7 +237,10 @@ mod u3_tests {
             ("GET", "/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile"),
             ("GET", "/jaxrs/anonymous/fileinfo/list/document/d-1"),
             ("GET", "/jaxrs/anonymous/fileinfo/fi-1/document/d-1"),
-            ("GET", "/jaxrs/anonymous/fileinfo/download/document/d-1/stream"),
+            (
+                "GET",
+                "/jaxrs/anonymous/fileinfo/download/document/d-1/stream",
+            ),
             ("GET", "/jaxrs/formversion/fv-1"),
             ("GET", "/jaxrs/formversion/list/form/f-1"),
             ("GET", "/jaxrs/scriptversion/sv-1"),
@@ -233,7 +264,11 @@ mod u3_tests {
             ("GET", "/jaxrs/form/f-1/mockdeletetoget"),
             ("GET", "/jaxrs/form/v2/f-1/mobile"),
         ] {
-            assert_ne!(status_of(method, uri).await, StatusCode::NOT_FOUND, "{method} {uri}");
+            assert_ne!(
+                status_of(method, uri).await,
+                StatusCode::NOT_FOUND,
+                "{method} {uri}"
+            );
         }
         for (method, uri) in [
             ("PUT", "/jaxrs/comment/list/i-1/next/10"),
@@ -246,7 +281,11 @@ mod u3_tests {
             ("PUT", "/jaxrs/document/draft/list/i-1/next/10"),
             ("POST", "/jaxrs/log/filter/list/i-1/next/10"),
         ] {
-            assert_ne!(status_of(method, uri).await, StatusCode::NOT_FOUND, "{method} {uri}");
+            assert_ne!(
+                status_of(method, uri).await,
+                StatusCode::NOT_FOUND,
+                "{method} {uri}"
+            );
         }
         assert_ne!(
             status_of("POST", "/jaxrs/appinfo/a-1/icon/size/64").await,
@@ -311,7 +350,10 @@ mod u3_tests {
         .await;
         match r {
             Err(AppError::Internal) => {}
-            other => panic!("expected Internal(fail closed), got {:?}", other.map(|_| "ok")),
+            other => panic!(
+                "expected Internal(fail closed), got {:?}",
+                other.map(|_| "ok")
+            ),
         }
         let r = comment_commend_u3(
             Extension(mock_pool()),
@@ -335,8 +377,11 @@ mod u3_tests {
             Err(AppError::BadRequest(_)) => {}
             other => panic!("expected BadRequest, got {:?}", other.map(|_| "ok")),
         }
-        let r = review_v2_search_u3(Extension(mock_pool()), axum::extract::Json(json!({"keyword": ""})))
-            .await;
+        let r = review_v2_search_u3(
+            Extension(mock_pool()),
+            axum::extract::Json(json!({"keyword": ""})),
+        )
+        .await;
         // 空 keyword 合法（全量搜索），DB 不可用 → Internal
         assert!(matches!(r, Err(AppError::Internal)));
         let r = viewrecord_unread_u3(Extension(mock_pool()), Extension(session(OWNER))).await;
@@ -372,7 +417,10 @@ mod u3_tests {
     #[test]
     fn u3_normalize_path_levels_dedupes_shapes() {
         assert_eq!(u3_normalize_path_levels(&["b".into(), "a".into()]), "a/b");
-        assert_eq!(u3_normalize_path_levels(&[" a ".into(), "".into(), "a".into()]), "a/a");
+        assert_eq!(
+            u3_normalize_path_levels(&[" a ".into(), "".into(), "a".into()]),
+            "a/a"
+        );
         assert_eq!(u3_normalize_path_levels(&[]), "");
     }
 
@@ -398,7 +446,9 @@ mod u3_tests {
         };
         let resp = app.oneshot(req).await.unwrap();
         let status = resp.status();
-        let bytes = axum::body::to_bytes(resp.into_body(), 1_048_576).await.unwrap();
+        let bytes = axum::body::to_bytes(resp.into_body(), 1_048_576)
+            .await
+            .unwrap();
         let json = if bytes.is_empty() {
             serde_json::Value::Null
         } else {
@@ -432,7 +482,8 @@ mod u3_tests {
                 .unwrap();
         }
 
-        let (status, body) = call("GET", "/jaxrs/document/batch/u3-batch-x/status", None, None).await;
+        let (status, body) =
+            call("GET", "/jaxrs/document/batch/u3-batch-x/status", None, None).await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["data"]["count"], serde_json::json!(2));
 
@@ -447,8 +498,13 @@ mod u3_tests {
         assert_eq!(status, StatusCode::FORBIDDEN);
 
         // mockdeletetoget 只预览不删除
-        let (status, body) =
-            call("GET", "/jaxrs/document/batch/u3-batch-x/mockdeletetoget", None, None).await;
+        let (status, body) = call(
+            "GET",
+            "/jaxrs/document/batch/u3-batch-x/mockdeletetoget",
+            None,
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["data"]["wouldDelete"], serde_json::json!(2));
 
@@ -461,12 +517,21 @@ mod u3_tests {
             person_unique: "__admin__".to_string(),
             ..session(STRANGER)
         };
-        let (status, body) = call("DELETE", "/jaxrs/document/batch/u3-batch-x", None, Some(admin)).await;
+        let (status, body) = call(
+            "DELETE",
+            "/jaxrs/document/batch/u3-batch-x",
+            None,
+            Some(admin),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["data"]["deleted"], serde_json::json!(2));
 
         let _ = client
-            .execute("DELETE FROM x_cms_data_document WHERE batch_name = 'u3-batch-x'", &[])
+            .execute(
+                "DELETE FROM x_cms_data_document WHERE batch_name = 'u3-batch-x'",
+                &[],
+            )
             .await;
     }
 
@@ -484,7 +549,13 @@ mod u3_tests {
             person_unique: "__admin__".to_string(),
             ..session(STRANGER)
         };
-        let _ = call("DELETE", "/jaxrs/design/appdict/u3-dedup-target", None, Some(admin.clone())).await;
+        let _ = call(
+            "DELETE",
+            "/jaxrs/design/appdict/u3-dedup-target",
+            None,
+            Some(admin.clone()),
+        )
+        .await;
 
         let payload = json!({
             "appInfoFlag": "app-u3",
@@ -492,8 +563,13 @@ mod u3_tests {
             "pathLevels": ["b", "a"],
             "dataValue": {"v": 1}
         });
-        let (status, body) =
-            call("POST", "/jaxrs/design/appdict", Some(payload), Some(admin.clone())).await;
+        let (status, body) = call(
+            "POST",
+            "/jaxrs/design/appdict",
+            Some(payload),
+            Some(admin.clone()),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         let created_id = body["data"]["id"].as_str().unwrap_or_default().to_string();
 
@@ -504,7 +580,13 @@ mod u3_tests {
             "pathLevels": ["a", "b"],
             "dataValue": {"v": 2}
         });
-        let (status, body) = call("POST", "/jaxrs/design/appdict", Some(dup_payload), Some(admin)).await;
+        let (status, body) = call(
+            "POST",
+            "/jaxrs/design/appdict",
+            Some(dup_payload),
+            Some(admin),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(body["type"], serde_json::json!("error"), "{body}");
 
@@ -524,8 +606,12 @@ mod u3_tests {
         }
         let pool = test_pool();
         let client = pool.get().await.unwrap();
-        let _ = client.execute("DELETE FROM x_cms_comment WHERE id = 'u3-cmt'", &[]).await;
-        let _ = client.execute("DELETE FROM x_cms_commend WHERE doc_id = 'u3-doc'", &[]).await;
+        let _ = client
+            .execute("DELETE FROM x_cms_comment WHERE id = 'u3-cmt'", &[])
+            .await;
+        let _ = client
+            .execute("DELETE FROM x_cms_commend WHERE doc_id = 'u3-doc'", &[])
+            .await;
         client
             .execute(
                 "INSERT INTO x_cms_comment (id, doc_id, person_id, content) VALUES ('u3-cmt', 'u3-doc', 'other', 'hi')",
@@ -534,18 +620,32 @@ mod u3_tests {
             .await
             .unwrap();
 
-        let (status, body) =
-            call("GET", "/jaxrs/comment/u3-cmt/commend", None, Some(session(OWNER))).await;
+        let (status, body) = call(
+            "GET",
+            "/jaxrs/comment/u3-cmt/commend",
+            None,
+            Some(session(OWNER)),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["data"]["commended"], serde_json::json!(true));
 
-        let (status, body) =
-            call("GET", "/jaxrs/comment/u3-cmt/uncommend", None, Some(session(OWNER))).await;
+        let (status, body) = call(
+            "GET",
+            "/jaxrs/comment/u3-cmt/uncommend",
+            None,
+            Some(session(OWNER)),
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["data"]["uncommended"], serde_json::json!(true));
 
-        let _ = client.execute("DELETE FROM x_cms_comment WHERE id = 'u3-cmt'", &[]).await;
-        let _ = client.execute("DELETE FROM x_cms_commend WHERE doc_id = 'u3-doc'", &[]).await;
+        let _ = client
+            .execute("DELETE FROM x_cms_comment WHERE id = 'u3-cmt'", &[])
+            .await;
+        let _ = client
+            .execute("DELETE FROM x_cms_commend WHERE doc_id = 'u3-doc'", &[])
+            .await;
     }
 
     #[tokio::test]
@@ -556,7 +656,10 @@ mod u3_tests {
         let pool = test_pool();
         let client = pool.get().await.unwrap();
         let _ = client
-            .execute("DELETE FROM x_cms_data_document WHERE id LIKE 'u3-review-%'", &[])
+            .execute(
+                "DELETE FROM x_cms_data_document WHERE id LIKE 'u3-review-%'",
+                &[],
+            )
             .await;
         client
             .execute(
@@ -575,8 +678,13 @@ mod u3_tests {
             .await
             .unwrap();
 
-        let (status, body) =
-            call("POST", "/jaxrs/review/v2/search", Some(json!({"keyword": "needle"})), None).await;
+        let (status, body) = call(
+            "POST",
+            "/jaxrs/review/v2/search",
+            Some(json!({"keyword": "needle"})),
+            None,
+        )
+        .await;
         assert_eq!(status, StatusCode::OK, "{body}");
         // java_success format: {"count":N,"data":[...]}
         let ids: Vec<&str> = body["data"]
@@ -587,7 +695,10 @@ mod u3_tests {
         assert!(!ids.contains(&"u3-review-draft"), "{body}");
 
         let _ = client
-            .execute("DELETE FROM x_cms_data_document WHERE id LIKE 'u3-review-%'", &[])
+            .execute(
+                "DELETE FROM x_cms_data_document WHERE id LIKE 'u3-review-%'",
+                &[],
+            )
             .await;
     }
 
@@ -599,7 +710,10 @@ mod u3_tests {
         let pool = test_pool();
         let client = pool.get().await.unwrap();
         let _ = client
-            .execute("DELETE FROM x_cms_correlation WHERE doc_id = 'u3-cor-doc'", &[])
+            .execute(
+                "DELETE FROM x_cms_correlation WHERE doc_id = 'u3-cor-doc'",
+                &[],
+            )
             .await;
 
         let (status, body) = call(
@@ -622,7 +736,10 @@ mod u3_tests {
         assert_eq!(cnt.get::<_, i64>("cnt"), 1);
 
         let _ = client
-            .execute("DELETE FROM x_cms_correlation WHERE doc_id = 'u3-cor-doc'", &[])
+            .execute(
+                "DELETE FROM x_cms_correlation WHERE doc_id = 'u3-cor-doc'",
+                &[],
+            )
             .await;
     }
 }

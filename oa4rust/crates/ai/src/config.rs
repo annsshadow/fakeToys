@@ -8,9 +8,7 @@ use shared::{error::AppError, response::ActionResult};
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn config_get(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -25,13 +23,31 @@ pub async fn config_get(
             ("config".to_string(), Value::String("base".to_string())),
             ("version".to_string(), Value::String("1.0.0".to_string())),
             ("enabled".to_string(), Value::Bool(false)),
-            ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
-            ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
-            ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
-            ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
+            (
+                "appIconUrl".to_string(),
+                Value::String(std::env::var("APP_ICON_URL").unwrap_or_default()),
+            ),
+            (
+                "o2AiToken".to_string(),
+                Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default()),
+            ),
+            (
+                "aliApiUrl".to_string(),
+                Value::String(std::env::var("ALI_API_URL").unwrap_or_default()),
+            ),
+            (
+                "deepSeekApiUrl".to_string(),
+                Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default()),
+            ),
             ("o2AiFileList".to_string(), Value::Array(vec![])),
-            ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
-            ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
+            (
+                "o2AiBaseUrl".to_string(),
+                Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default()),
+            ),
+            (
+                "appName".to_string(),
+                Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string())),
+            ),
             ("o2AiEnable".to_string(), Value::Bool(false)),
             ("title".to_string(), Value::String(String::new())),
             ("desc".to_string(), Value::String(String::new())),
@@ -42,15 +58,36 @@ pub async fn config_get(
             ("config".to_string(), Value::String(row.get("xname"))),
             ("version".to_string(), Value::String("1.0.0".to_string())),
             ("enabled".to_string(), Value::Bool(row.get("xenable"))),
-            ("appIconUrl".to_string(), Value::String(std::env::var("APP_ICON_URL").unwrap_or_default())),
-            ("o2AiToken".to_string(), Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default())),
-            ("aliApiUrl".to_string(), Value::String(std::env::var("ALI_API_URL").unwrap_or_default())),
-            ("deepSeekApiUrl".to_string(), Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default())),
+            (
+                "appIconUrl".to_string(),
+                Value::String(std::env::var("APP_ICON_URL").unwrap_or_default()),
+            ),
+            (
+                "o2AiToken".to_string(),
+                Value::String(std::env::var("O2_AI_TOKEN").unwrap_or_default()),
+            ),
+            (
+                "aliApiUrl".to_string(),
+                Value::String(std::env::var("ALI_API_URL").unwrap_or_default()),
+            ),
+            (
+                "deepSeekApiUrl".to_string(),
+                Value::String(std::env::var("DEEPSEEK_API_URL").unwrap_or_default()),
+            ),
             ("o2AiFileList".to_string(), Value::Array(vec![])),
-            ("o2AiBaseUrl".to_string(), Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default())),
-            ("appName".to_string(), Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string()))),
+            (
+                "o2AiBaseUrl".to_string(),
+                Value::String(std::env::var("O2_AI_BASE_URL").unwrap_or_default()),
+            ),
+            (
+                "appName".to_string(),
+                Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string())),
+            ),
             ("o2AiEnable".to_string(), Value::Bool(row.get("xenable"))),
-            ("title".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
+            (
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+            ),
             ("desc".to_string(), Value::String(String::new())),
         ]))
     };
@@ -139,18 +176,32 @@ pub async fn config_list_model_paging(
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("type".to_string(), Value::String(row.get("type"))),
                     ("model".to_string(), Value::String(row.get("model"))),
-                    ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
+                    (
+                        "\"completionUrl\"".to_string(),
+                        Value::String(row.get("\"completionUrl\"")),
+                    ),
                     ("enable".to_string(), Value::Bool(row.get("enable"))),
-                    ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
+                    (
+                        "\"asDefault\"".to_string(),
+                        Value::Bool(row.get("\"asDefault\"")),
+                    ),
                     ("desc".to_string(), Value::String(row.get("desc"))),
                 ]
                 .into_iter()
-                .chain(api_key_val.into_iter().map(|v| ("\"apiKey\"".to_string(), v))),
+                .chain(
+                    api_key_val
+                        .into_iter()
+                        .map(|v| ("\"apiKey\"".to_string(), v)),
+                ),
             ))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        size,
+    )))
 }
 
 #[axum::debug_handler]
@@ -172,13 +223,15 @@ pub async fn config_get_model(
     match row {
         Some(row) => {
             let api_key: Option<String> = row.get("\"apiKey\"");
-            let masked_key: Option<Value> = api_key.map(|k| {
-                if k.len() > 4 {
-                    format!("{}****", &k[k.len() - 4..])
-                } else {
-                    "****".to_string()
-                }
-            }).map(Value::String);
+            let masked_key: Option<Value> = api_key
+                .map(|k| {
+                    if k.len() > 4 {
+                        format!("{}****", &k[k.len() - 4..])
+                    } else {
+                        "****".to_string()
+                    }
+                })
+                .map(Value::String);
 
             let result = Value::Object(serde_json::Map::from_iter(
                 [
@@ -186,13 +239,23 @@ pub async fn config_get_model(
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("type".to_string(), Value::String(row.get("type"))),
                     ("model".to_string(), Value::String(row.get("model"))),
-                    ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
+                    (
+                        "\"completionUrl\"".to_string(),
+                        Value::String(row.get("\"completionUrl\"")),
+                    ),
                     ("enable".to_string(), Value::Bool(row.get("enable"))),
-                    ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
+                    (
+                        "\"asDefault\"".to_string(),
+                        Value::Bool(row.get("\"asDefault\"")),
+                    ),
                     ("desc".to_string(), Value::String(row.get("desc"))),
                 ]
                 .into_iter()
-                .chain(masked_key.into_iter().map(|v| ("\"apiKey\"".to_string(), v))),
+                .chain(
+                    masked_key
+                        .into_iter()
+                        .map(|v| ("\"apiKey\"".to_string(), v)),
+                ),
             ));
             Ok(Json(ActionResult::success(result)))
         }
@@ -213,7 +276,11 @@ pub async fn config_list_mcp_paging(
 
     let data: Vec<Value> = vec![];
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), total, size)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total,
+        size,
+    )))
 }
 
 #[axum::debug_handler]
@@ -251,5 +318,9 @@ pub async fn list_enable_model(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }

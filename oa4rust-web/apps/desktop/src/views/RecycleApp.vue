@@ -39,11 +39,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { toast } from '../utils/toast'
 import { api } from '@oa4rust/sdk'
+import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
-type RecycleItem = { id: string; name?: string; title?: string; fileName?: string; deleted?: boolean; deletedAt?: string; deleteTime?: string }
+type RecycleItem = {
+  id: string
+  name?: string
+  title?: string
+  fileName?: string
+  deleted?: boolean
+  deletedAt?: string
+  deleteTime?: string
+}
 
 const loading = ref(false)
 const items = ref<RecycleItem[]>([])
@@ -55,22 +63,30 @@ async function loadItems() {
   try {
     const r = await api.get('/jaxrs/recycle/list')
     items.value = r.data ?? []
-  } catch { items.value = [] } finally { loading.value = false }
+  } catch {
+    items.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function resume(item: RecycleItem) {
   try {
     await api.post(`/jaxrs/recycle/resume/${item.id}`, null)
-    items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { toast.error('恢复失败: : ' + (e?.message ?? '')) }
+    items.value = items.value.filter((i) => i.id !== item.id)
+  } catch (e: any) {
+    toast.error('恢复失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function permanentDelete(item: RecycleItem) {
   if (!confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`)) return
   try {
     await api.delete(`/jaxrs/recycle/${item.id}`)
-    items.value = items.value.filter(i => i.id !== item.id)
-  } catch (e: any) { toast.error('删除失败: : ' + (e?.message ?? '')) }
+    items.value = items.value.filter((i) => i.id !== item.id)
+  } catch (e: any) {
+    toast.error('删除失败: : ' + (e?.message ?? ''))
+  }
 }
 
 async function emptyRecycle() {
@@ -78,7 +94,9 @@ async function emptyRecycle() {
   try {
     await api.post('/jaxrs/recycle/empty', null)
     items.value = []
-  } catch (e: any) { toast.error('清空失败: : ' + (e?.message ?? '')) }
+  } catch (e: any) {
+    toast.error('清空失败: : ' + (e?.message ?? ''))
+  }
 }
 
 function formatDate(d?: string) {
@@ -86,33 +104,6 @@ function formatDate(d?: string) {
 }
 
 loadItems()
-
-
-
-
-
-// Confirmation dialog (replaces window.confirm)
-function confirmMsg(msg: string): Promise<boolean> {
-  return new Promise(resolve => {
-    const overlay = document.createElement('div')
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center'
-    const box = document.createElement('div')
-    box.style.cssText = 'background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:16px'
-    box.innerHTML = '<p style="margin:0;color:var(--text-primary);font-size:14px">' + msg + '</p>' +
-      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-      '<button class="tc-cancel" style="padding:6px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer">取消</button>' +
-      '<button class="tc-ok" style="padding:6px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:#000;cursor:pointer;font-weight:600">确认</button>' +
-      '</div>'
-    overlay.appendChild(box)
-    document.body.appendChild(overlay)
-    const ok = () => { overlay.remove(); resolve(true) }
-    const cancel = () => { overlay.remove(); resolve(false) }
-    box.querySelector('.tc-ok').addEventListener('click', ok)
-    box.querySelector('.tc-cancel').addEventListener('click', cancel)
-    overlay.addEventListener('click', e => { if (e.target === overlay) cancel() })
-  })
-}
-
 </script>
 
 <style scoped>

@@ -134,7 +134,9 @@ pub async fn list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(json!({ "signatures": signatures }))))
+    Ok(Json(ActionResult::success(
+        json!({ "signatures": signatures }),
+    )))
 }
 
 /// GET /jaxrs/person/signature/delete/{id}
@@ -209,5 +211,7 @@ pub async fn manager_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::success(json!({ "signatures": signatures }))))
+    Ok(Json(ActionResult::success(
+        json!({ "signatures": signatures }),
+    )))
 }

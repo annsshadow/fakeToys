@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension, extract::Path,
-    routing::get, routing::post,
-    Json, Router,
-};
+use axum::{extract::Extension, extract::Path, routing::get, routing::post, Json, Router};
 use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
@@ -77,16 +73,14 @@ pub async fn device_get(
         .map_err(|_| AppError::Internal)?;
 
     match model {
-        Some(m) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(m.id.clone())),
-                    ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
-                    ("platform".to_string(), Value::String(m.platform.clone())),
-                    ("token".to_string(), Value::String(m.token.clone())),
-                ]),
-            ))))
-        }
+        Some(m) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
+                ("platform".to_string(), Value::String(m.platform.clone())),
+                ("token".to_string(), Value::String(m.token.clone())),
+            ]),
+        )))),
         None => Err(AppError::NotFound),
     }
 }
@@ -97,9 +91,21 @@ pub async fn device_create(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let user_id = req.get("\"userId\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let platform = req.get("platform").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let token = req.get("token").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let user_id = req
+        .get("\"userId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let platform = req
+        .get("platform")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let token = req
+        .get("token")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let active_model = jpush_device::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -109,7 +115,10 @@ pub async fn device_create(
         create_time: sea_orm::ActiveValue::NotSet,
     };
 
-    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -167,16 +176,14 @@ pub async fn template_get(
         .map_err(|_| AppError::Internal)?;
 
     match model {
-        Some(m) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(m.id.clone())),
-                    ("name".to_string(), Value::String(m.name.clone())),
-                    ("title".to_string(), Value::String(m.title.clone())),
-                    ("content".to_string(), Value::String(m.content.clone())),
-                ]),
-            ))))
-        }
+        Some(m) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
+                ("content".to_string(), Value::String(m.content.clone())),
+            ]),
+        )))),
         None => Err(AppError::NotFound),
     }
 }
@@ -192,7 +199,10 @@ pub fn jpush_core_entity_router(_pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/jpush/core/entity/device/list", get(device_list))
         .route("/jaxrs/jpush/core/entity/device/{id}", get(device_get))
-        .route("/jaxrs/jpush/core/entity/device/create", post(device_create))
+        .route(
+            "/jaxrs/jpush/core/entity/device/create",
+            post(device_create),
+        )
         .route("/jaxrs/jpush/core/entity/template/list", get(template_list))
         .route("/jaxrs/jpush/core/entity/template/{id}", get(template_get))
 }
@@ -201,7 +211,6 @@ pub fn jpush_core_entity_router(_pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::jpush_core_entity_router(pool)

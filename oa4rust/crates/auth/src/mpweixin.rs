@@ -1,3 +1,4 @@
+use axum::response::{IntoResponse, Response};
 use axum::{
     extract::Extension,
     extract::Path,
@@ -53,7 +54,11 @@ pub fn spawn_template_queue_worker() {
     tokio::spawn(async move {
         while let Some(task) = rx.recv().await {
             if let Err(e) = send_template_via_wechat(&task).await {
-                tracing::warn!("template message async send failed (touser={}): {}", task.touser, e);
+                tracing::warn!(
+                    "template message async send failed (touser={}): {}",
+                    task.touser,
+                    e
+                );
             }
         }
     });
@@ -83,7 +88,6 @@ async fn send_template_via_wechat(task: &TemplateMessageTask) -> Result<Value, S
         .map_err(|e| format!("decode: {e}"))?;
     Ok(send_resp)
 }
-
 
 // ──────────────────────────────────────────────────────────────────────────────
 // mpweixin — 微信小程序 OAuth 登录
@@ -147,7 +151,10 @@ static WECHAT_ACCESS_TOKEN: OnceLock<std::sync::Mutex<(String, std::time::Instan
 
 fn wechat_token_cache() -> &'static std::sync::Mutex<(String, std::time::Instant)> {
     WECHAT_ACCESS_TOKEN.get_or_init(|| {
-        std::sync::Mutex::new((String::new(), std::time::Instant::now() - std::time::Duration::from_secs(7000)))
+        std::sync::Mutex::new((
+            String::new(),
+            std::time::Instant::now() - std::time::Duration::from_secs(7000),
+        ))
     })
 }
 
@@ -196,12 +203,12 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
     Ok(token)
 }
 
-/// 按 openid 查找或创建本地用户，并签发会话 token
+/// 按 openid 查找或创建本地用户，并签发会话
 async fn mpweixin_login_or_create(
     pool: &Pool,
     session_manager: &SessionManager,
     openid: &str,
-) -> Result<Value, AppError> {
+) -> Result<(Value, Option<String>), AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let unique_id = format!("{MPWEXIN_UNIQUE_PREFIX}{openid}");
@@ -224,23 +231,30 @@ async fn mpweixin_login_or_create(
             let person_email: Option<String> = r.get("email");
 
             let token = uuid::Uuid::new_v4().to_string();
-            let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+            session_manager
+                .create_session(person_unique.clone(), token.clone())
+                .await?;
 
-            Ok(serde_json::json!({
-                "token": session.token,
-                "person": {
-                    "id": person_id,
-                    "unique": person_unique,
-                    "name": person_name,
-                    "mobile": person_mobile.unwrap_or_default(),
-                    "email": person_email.unwrap_or_default(),
-                },
-            }))
+            Ok((
+                serde_json::json!({
+                    "person": {
+                        "id": person_id,
+                        "unique": person_unique,
+                        "name": person_name,
+                        "mobile": person_mobile.unwrap_or_default(),
+                        "email": person_email.unwrap_or_default(),
+                    },
+                }),
+                Some(token),
+            ))
         }
-        None => Ok(serde_json::json!({
-            "unbind": true,
-            "mpwxopenId": openid,
-        })),
+        None => Ok((
+            serde_json::json!({
+                "unbind": true,
+                "mpwxopenId": openid,
+            }),
+            None,
+        )),
     }
 }
 
@@ -249,13 +263,17 @@ pub async fn mpweixin_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     if code.is_empty() {
-        return Ok(Json(ActionResult::error("code is required")));
+        return Ok(Json(ActionResult::<Value>::error("code is required")).into_response());
     }
     let openid = mpweixin_openid(&code).await?;
-    let result = mpweixin_login_or_create(&pool, &session_manager, &openid).await?;
-    Ok(Json(ActionResult::success(result)))
+    let (result, session_token) =
+        mpweixin_login_or_create(&pool, &session_manager, &openid).await?;
+    match session_token {
+        Some(token) => Ok(crate::session_response(result, &token, &session_manager)),
+        None => Ok(Json(ActionResult::success(result)).into_response()),
+    }
 }
 
 /// GET /jaxrs/mpweixin/bind/code/{code} —— 绑定 openid 到当前登录用户
@@ -282,7 +300,9 @@ pub async fn mpweixin_bind_code(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(serde_json::json!({ "value": true }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "value": true }),
+    )))
 }
 
 /// GET /jaxrs/mpweixin/bind/openid/{openid} —— 直接绑定 openid 到当前用户
@@ -315,7 +335,9 @@ pub async fn mpweixin_bind_openid(
         return Ok(Json(ActionResult::error("user not found")));
     }
 
-    Ok(Json(ActionResult::success(serde_json::json!({ "value": true }))))
+    Ok(Json(ActionResult::success(
+        serde_json::json!({ "value": true }),
+    )))
 }
 
 /// POST /jaxrs/mpweixin/menu/test/send/to/{person} —— 管理员测试发送模板消息
@@ -382,7 +404,10 @@ pub async fn mpweixin_test_send(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = send_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = send_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         let errmsg = send_resp
             .get("errmsg")
@@ -409,8 +434,14 @@ pub fn router() -> Router {
     Router::new()
         .route("/jaxrs/mpweixin/login/code/{code}", get(mpweixin_login))
         .route("/jaxrs/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
-        .route("/jaxrs/mpweixin/bind/openid/{openid}", get(mpweixin_bind_openid))
-        .route("/jaxrs/mpweixin/menu/test/send/to/{person}", post(mpweixin_test_send))
+        .route(
+            "/jaxrs/mpweixin/bind/openid/{openid}",
+            get(mpweixin_bind_openid),
+        )
+        .route(
+            "/jaxrs/mpweixin/menu/test/send/to/{person}",
+            post(mpweixin_test_send),
+        )
 }
 
 #[cfg(test)]

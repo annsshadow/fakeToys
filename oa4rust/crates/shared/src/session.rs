@@ -1,3 +1,4 @@
+use base64::Engine;
 use chrono::{Duration, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;
 use hmac::{Hmac, Mac};
@@ -7,8 +8,8 @@ use sha2::Sha256;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::warn;
-use base64::Engine;
 
+use crate::config::{AuthConfig, DEFAULT_SESSION_TTL_SECONDS};
 use crate::error::AppError;
 use crate::messaging::{MessageBus, TokenThresholdEvent};
 use crate::redis::RedisPool;
@@ -23,7 +24,6 @@ use crate::redis::RedisPool;
 type HmacSha256 = Hmac<Sha256>;
 
 const SESSION_KEY_PREFIX: &str = "oa4rust:session:";
-const SESSION_TTL_SECONDS: u64 = 7200;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Session {
@@ -38,6 +38,7 @@ pub struct SessionManager {
     pub sessions: Arc<RwLock<std::collections::HashMap<String, Session>>>,
     pub pool: Option<Pool>,
     pub hmac_secret: Option<String>,
+    pub auth_config: AuthConfig,
     pub redis_pool: Arc<std::sync::Mutex<Option<RedisPool>>>,
     pub message_bus: Option<Arc<dyn MessageBus<TokenThresholdEvent>>>,
 }
@@ -50,10 +51,19 @@ impl Default for SessionManager {
 
 impl SessionManager {
     pub fn new() -> Self {
+        Self::with_config(AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: false,
+            session_ttl_seconds: DEFAULT_SESSION_TTL_SECONDS,
+        })
+    }
+
+    pub fn with_config(auth_config: AuthConfig) -> Self {
         let manager = Self {
             sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
+            auth_config,
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
@@ -61,10 +71,22 @@ impl SessionManager {
     }
 
     pub fn with_pool(pool: Pool) -> Self {
+        Self::with_pool_and_config(
+            pool,
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: DEFAULT_SESSION_TTL_SECONDS,
+            },
+        )
+    }
+
+    pub fn with_pool_and_config(pool: Pool, auth_config: AuthConfig) -> Self {
         let manager = Self {
             sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
+            auth_config,
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
         };
@@ -80,7 +102,10 @@ impl SessionManager {
                 if let Some(pool) = &scanner.pool {
                     if let Ok(client) = pool.get().await {
                         if let Ok(rows) = client
-                            .query("SELECT DISTINCT person_unique FROM auth_token_threshold", &[])
+                            .query(
+                                "SELECT DISTINCT person_unique FROM auth_token_threshold",
+                                &[],
+                            )
                             .await
                         {
                             for row in rows {
@@ -114,11 +139,7 @@ impl SessionManager {
         };
 
         let result = rt.block_on(async {
-            tokio::time::timeout(
-                std::time::Duration::from_secs(2),
-                RedisPool::from_url(&url),
-            )
-            .await
+            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url)).await
         });
 
         match result {
@@ -132,7 +153,9 @@ impl SessionManager {
                 false
             }
             Err(_) => {
-                warn!("Redis connection timed out after 2s; session store falling back to in-memory");
+                warn!(
+                    "Redis connection timed out after 2s; session store falling back to in-memory"
+                );
                 false
             }
         }
@@ -148,11 +171,9 @@ impl SessionManager {
             return true;
         }
 
-        let result = tokio::time::timeout(
-            std::time::Duration::from_secs(2),
-            RedisPool::from_url(&url),
-        )
-        .await;
+        let result =
+            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url))
+                .await;
 
         match result {
             Ok(Ok(pool)) => {
@@ -165,7 +186,9 @@ impl SessionManager {
                 false
             }
             Err(_) => {
-                warn!("Redis connection timed out after 2s; session store falling back to in-memory");
+                warn!(
+                    "Redis connection timed out after 2s; session store falling back to in-memory"
+                );
                 false
             }
         }
@@ -180,7 +203,11 @@ impl SessionManager {
             let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
             mac.update(token.as_bytes());
             let signature = mac.finalize().into_bytes();
-            format!("{}.{}", token, base64::engine::general_purpose::URL_SAFE.encode(signature))
+            format!(
+                "{}.{}",
+                token,
+                base64::engine::general_purpose::URL_SAFE.encode(signature)
+            )
         } else {
             token.to_string()
         }
@@ -189,25 +216,35 @@ impl SessionManager {
     fn verify_and_extract(&self, signed_token: &str) -> Option<String> {
         if let Some(secret) = &self.hmac_secret {
             let parts: Vec<&str> = signed_token.split('.').collect();
-            if parts.len() != 2 { return None; }
+            if parts.len() != 2 {
+                return None;
+            }
             let token = parts[0];
             let sig = parts[1];
             let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
             mac.update(token.as_bytes());
             let expected = base64::engine::general_purpose::URL_SAFE.decode(sig).ok()?;
-            if mac.verify_slice(&expected).is_ok() { Some(token.to_string()) } else { None }
+            if mac.verify_slice(&expected).is_ok() {
+                Some(token.to_string())
+            } else {
+                None
+            }
         } else {
             Some(signed_token.to_string())
         }
     }
 
-    pub async fn create_session(&self, person_unique: String, token: String) -> Result<Session, AppError> {
+    pub async fn create_session(
+        &self,
+        person_unique: String,
+        token: String,
+    ) -> Result<Session, AppError> {
         let now = Utc::now().naive_utc();
         if self.check_token_threshold(now, &person_unique).await {
             return Err(AppError::BadRequest("too many active sessions".to_string()));
         }
 
-        let expires_at = now + Duration::hours(2).to_std().unwrap_or_default();
+        let expires_at = now + Duration::seconds(self.auth_config.session_ttl_seconds as i64);
         let session = Session {
             token: token.clone(),
             person_unique,
@@ -215,7 +252,10 @@ impl SessionManager {
             expires_at,
         };
 
-        self.sessions.write().await.insert(token.clone(), session.clone());
+        self.sessions
+            .write()
+            .await
+            .insert(token.clone(), session.clone());
 
         if let Some(ref pool) = self.get_redis_pool() {
             let signed_token = self.sign_token(&token);
@@ -223,17 +263,35 @@ impl SessionManager {
             let session_json = match serde_json::to_string(&session) {
                 Ok(j) => j,
                 Err(_) => {
-                    Self::persist_to_db(&self.pool, &self.hmac_secret, &token, &session, &now, &expires_at).await;
+                    Self::persist_to_db(
+                        &self.pool,
+                        &self.hmac_secret,
+                        &token,
+                        &session,
+                        &now,
+                        &expires_at,
+                    )
+                    .await;
                     return Ok(session);
                 }
             };
             let mut guard = pool.0.manager.lock().await;
             if let Some(conn) = guard.as_mut() {
-                let _ = conn.set_ex::<_, _, ()>(key, session_json, SESSION_TTL_SECONDS).await;
+                let _ = conn
+                    .set_ex::<_, _, ()>(key, session_json, self.auth_config.session_ttl_seconds)
+                    .await;
             }
         }
 
-        Self::persist_to_db(&self.pool, &self.hmac_secret, &token, &session, &now, &expires_at).await;
+        Self::persist_to_db(
+            &self.pool,
+            &self.hmac_secret,
+            &token,
+            &session,
+            &now,
+            &expires_at,
+        )
+        .await;
         Ok(session)
     }
 
@@ -251,27 +309,47 @@ impl SessionManager {
                     let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
                     mac.update(token.as_bytes());
                     let signature = mac.finalize().into_bytes();
-                    format!("{}.{}", token, base64::engine::general_purpose::URL_SAFE.encode(signature))
-                } else { token.to_string() };
+                    format!(
+                        "{}.{}",
+                        token,
+                        base64::engine::general_purpose::URL_SAFE.encode(signature)
+                    )
+                } else {
+                    token.to_string()
+                };
                 let created_at_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
                 let expires_at_str = expires_at.format("%Y-%m-%d %H:%M:%S").to_string();
-                let _ = client.execute(
-                    "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
+                let _ = client
+                    .execute(
+                        "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
                      VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (token) DO UPDATE SET expires_at = $3",
-                    &[&signed_token, &session.person_unique, &expires_at_str, &created_at_str],
-                ).await;
+                        &[
+                            &signed_token,
+                            &session.person_unique,
+                            &expires_at_str,
+                            &created_at_str,
+                        ],
+                    )
+                    .await;
             }
         }
     }
 
-    pub async fn check_token_threshold(&self, token_created_at: NaiveDateTime, person_unique: &str) -> bool {
+    pub async fn check_token_threshold(
+        &self,
+        token_created_at: NaiveDateTime,
+        person_unique: &str,
+    ) -> bool {
         let pool = match &self.pool {
             Some(p) => p,
             None => return false,
         };
 
-        let client = match pool.get().await { Ok(c) => c, Err(_) => return false };
+        let client = match pool.get().await {
+            Ok(c) => c,
+            Err(_) => return false,
+        };
 
         let threshold: Option<NaiveDateTime> = match client
             .query_opt(
@@ -301,41 +379,54 @@ impl SessionManager {
         };
 
         match session {
-            Some(s) if s.expires_at > Utc::now().naive_utc() => {
-                Some(s)
+            Some(s) if s.expires_at > Utc::now().naive_utc() => Some(s),
+            Some(s) => {
+                tracing::debug!(
+                    token_prefix = %&token[..token.len().min(8)],
+                    in_memory_expires_at = %s.expires_at,
+                    now = %Utc::now().naive_utc(),
+                    "session validation: in-memory session expired"
+                );
+                self.remove_session(token).await;
+                None
             }
-            Some(_) => { self.remove_session(token).await; None }
-                None => {
-                    if let Some(ref pool) = self.get_redis_pool() {
-                        let signed_token = self.sign_token(token);
-                        let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-                        let result: Option<String> = {
-                            let mut guard = pool.0.manager.lock().await;
-                            if let Some(conn) = guard.as_mut() {
-                                conn.get::<_, Option<String>>(key.clone()).await.ok().flatten()
-                            } else {
-                                None
-                            }
-                        };
+            None => {
+                if let Some(ref pool) = self.get_redis_pool() {
+                    let signed_token = self.sign_token(token);
+                    let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
+                    let result: Option<String> = {
+                        let mut guard = pool.0.manager.lock().await;
+                        if let Some(conn) = guard.as_mut() {
+                            conn.get::<_, Option<String>>(key.clone())
+                                .await
+                                .ok()
+                                .flatten()
+                        } else {
+                            None
+                        }
+                    };
 
-                        if let Some(session_json) = result {
-                            if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
-                                if session.expires_at > Utc::now().naive_utc() {
-                                    self.sessions.write().await.insert(token.to_string(), session.clone());
-                                    return Some(session);
-                                } else {
-                                    let _ = {
-                                        let mut guard = pool.0.manager.lock().await;
-                                        if let Some(conn) = guard.as_mut() {
-                                            conn.del::<_, ()>(key).await.ok()
-                                        } else {
-                                            None
-                                        }
-                                    };
-                                }
+                    if let Some(session_json) = result {
+                        if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
+                            if session.expires_at > Utc::now().naive_utc() {
+                                self.sessions
+                                    .write()
+                                    .await
+                                    .insert(token.to_string(), session.clone());
+                                return Some(session);
+                            } else {
+                                let _ = {
+                                    let mut guard = pool.0.manager.lock().await;
+                                    if let Some(conn) = guard.as_mut() {
+                                        conn.del::<_, ()>(key).await.ok()
+                                    } else {
+                                        None
+                                    }
+                                };
                             }
                         }
                     }
+                }
 
                 if let Some(pg_pool) = &self.pool {
                     if let Ok(client) = pg_pool.get().await {
@@ -349,18 +440,26 @@ impl SessionManager {
                             )
                             .await
                         {
-                            let raw_token = self.verify_and_extract(&row.get::<_, String>("token"))?;
+                            let raw_token =
+                                self.verify_and_extract(&row.get::<_, String>("token"))?;
                             let created_at_str: String = row.get("created_at");
                             let expires_at_str: String = row.get("expires_at");
-                            let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S").ok()?;
-                            let expires_at = NaiveDateTime::parse_from_str(&expires_at_str, "%Y-%m-%d %H:%M:%S").ok()?;
+                            let created_at =
+                                NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S")
+                                    .ok()?;
+                            let expires_at =
+                                NaiveDateTime::parse_from_str(&expires_at_str, "%Y-%m-%d %H:%M:%S")
+                                    .ok()?;
                             let session = Session {
                                 token: raw_token,
                                 person_unique: row.get("person_id"),
                                 created_at,
                                 expires_at,
                             };
-                            self.sessions.write().await.insert(token.to_string(), session.clone());
+                            self.sessions
+                                .write()
+                                .await
+                                .insert(token.to_string(), session.clone());
                             return Some(session);
                         }
                     }
@@ -385,7 +484,12 @@ impl SessionManager {
         if let Some(pg_pool) = &self.pool {
             if let Ok(client) = pg_pool.get().await {
                 let signed_token = self.sign_token(token);
-                let _ = client.execute("DELETE FROM auth_session WHERE token = $1", &[&signed_token]).await;
+                let _ = client
+                    .execute(
+                        "DELETE FROM auth_session WHERE token = $1",
+                        &[&signed_token],
+                    )
+                    .await;
             }
         }
     }
@@ -393,7 +497,11 @@ impl SessionManager {
     pub async fn remove_sessions_by_person(&self, person_unique: &str) {
         let tokens_to_remove: Vec<String> = {
             let sessions = self.sessions.write().await;
-            sessions.iter().filter(|(_, s)| s.person_unique == person_unique).map(|(t, _)| t.clone()).collect()
+            sessions
+                .iter()
+                .filter(|(_, s)| s.person_unique == person_unique)
+                .map(|(t, _)| t.clone())
+                .collect()
         };
         for token in &tokens_to_remove {
             self.sessions.write().await.remove(token);
@@ -404,7 +512,10 @@ impl SessionManager {
             let keys: Vec<String> = {
                 let mut guard = pool.0.manager.lock().await;
                 if let Some(conn) = guard.as_mut() {
-                    conn.keys::<_, Vec<String>>(pattern.clone()).await.ok().unwrap_or_default()
+                    conn.keys::<_, Vec<String>>(pattern.clone())
+                        .await
+                        .ok()
+                        .unwrap_or_default()
                 } else {
                     Vec::new()
                 }
@@ -414,7 +525,10 @@ impl SessionManager {
                 let result: Option<String> = {
                     let mut guard = pool.0.manager.lock().await;
                     if let Some(conn) = guard.as_mut() {
-                        conn.get::<_, Option<String>>(key.clone()).await.ok().flatten()
+                        conn.get::<_, Option<String>>(key.clone())
+                            .await
+                            .ok()
+                            .flatten()
                     } else {
                         None
                     }
@@ -438,10 +552,13 @@ impl SessionManager {
 
         if let Some(pg_pool) = &self.pool {
             if let Ok(client) = pg_pool.get().await {
-                if let Err(e) = client.execute(
-                    "DELETE FROM auth_session WHERE person_id = $1",
-                    &[&person_unique],
-                ).await {
+                if let Err(e) = client
+                    .execute(
+                        "DELETE FROM auth_session WHERE person_id = $1",
+                        &[&person_unique],
+                    )
+                    .await
+                {
                     tracing::warn!(person = %person_unique, error = %e, "failed to batch-delete auth_session rows");
                 }
             }
@@ -451,18 +568,27 @@ impl SessionManager {
     pub async fn broadcast_logout(&self, person_unique: &str) {
         let pool = match &self.pool {
             Some(p) => p,
-            None => { tracing::debug!(person = %person_unique, "single-instance mode: skipping broadcast"); return; }
+            None => {
+                tracing::debug!(person = %person_unique, "single-instance mode: skipping broadcast");
+                return;
+            }
         };
 
-        let client = match pool.get().await { Ok(c) => c, Err(_) => return };
+        let client = match pool.get().await {
+            Ok(c) => c,
+            Err(_) => return,
+        };
 
         let threshold: NaiveDateTime = match client
-            .query_opt("SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1", &[&person_unique])
+            .query_opt(
+                "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
+                &[&person_unique],
+            )
             .await
         {
             Ok(Some(row)) => {
                 let threshold_str: String = row.get("threshold_time");
-                
+
                 match NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
                     Ok(t) => t,
                     Err(_) => return,
@@ -473,7 +599,11 @@ impl SessionManager {
 
         let expired_tokens: Vec<String> = {
             let sessions = self.sessions.read().await;
-            sessions.iter().filter(|(_, s)| s.person_unique == person_unique && s.created_at < threshold).map(|(t, _)| t.clone()).collect()
+            sessions
+                .iter()
+                .filter(|(_, s)| s.person_unique == person_unique && s.created_at < threshold)
+                .map(|(t, _)| t.clone())
+                .collect()
         };
         for token in &expired_tokens {
             self.sessions.write().await.remove(token);
@@ -501,7 +631,11 @@ impl SessionManager {
         let now = Utc::now().naive_utc();
         let expired: Vec<String> = {
             let sessions = self.sessions.read().await;
-            sessions.iter().filter(|(_, s)| s.expires_at < now).map(|(t, _)| t.clone()).collect()
+            sessions
+                .iter()
+                .filter(|(_, s)| s.expires_at < now)
+                .map(|(t, _)| t.clone())
+                .collect()
         };
         if expired.is_empty() {
             return;

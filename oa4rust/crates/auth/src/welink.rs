@@ -1,3 +1,4 @@
+use axum::response::{IntoResponse, Response};
 use axum::{extract::Extension, extract::Path, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Serialize;
@@ -23,7 +24,6 @@ const WELINK_API_BASE: &str = "https://open.welink.huaweicloud.com";
 
 #[derive(Debug, Serialize)]
 pub struct WelinkLoginResponse {
-    pub token: String,
     pub person: WelinkPersonInfo,
     pub role_list: Vec<String>,
 }
@@ -59,7 +59,10 @@ async fn welink_access_token(config: &WelinkConfig) -> Result<String, AppError> 
     let client = welink_client();
     let resp: Value = client
         .get(format!("{WELINK_API_BASE}/api/auth/v2/token"))
-        .query(&[("app_key", &config.app_key), ("app_secret", &config.app_secret)])
+        .query(&[
+            ("app_key", &config.app_key),
+            ("app_secret", &config.app_secret),
+        ])
         .send()
         .await
         .map_err(|_| AppError::Internal)?
@@ -117,7 +120,7 @@ pub async fn welink_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
-) -> Result<Json<ActionResult<WelinkLoginResponse>>, AppError> {
+) -> Result<Response, AppError> {
     let config = welink_config().ok_or(AppError::Internal)?;
     let user_id = welink_user_id(&config, &code).await?;
     let unique_id = format!("{WELINK_UNIQUE_PREFIX}{user_id}");
@@ -142,31 +145,38 @@ pub async fn welink_login(
                 r.get::<_, Option<String>>("email"),
                 r.get::<_, Option<String>>("icon"),
             ),
-            None => return Ok(Json(ActionResult::error("user not bound to WeLink"))),
+            None => {
+                return Ok(Json(ActionResult::<WelinkLoginResponse>::error(
+                    "user not bound to WeLink",
+                ))
+                .into_response())
+            }
         };
 
     let role_list = fetch_role_list(&pool, &person_id).await?;
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager
+    session_manager
         .create_session(person_unique.clone(), token.clone())
         .await?;
 
-    Ok(Json(ActionResult::success(WelinkLoginResponse {
-        token: session.token,
-        person: WelinkPersonInfo {
-            unique: person_unique,
-            name: person_name,
-            mobile: person_mobile,
-            email: person_email,
-            icon: person_icon,
+    Ok(crate::session_response(
+        WelinkLoginResponse {
+            person: WelinkPersonInfo {
+                unique: person_unique,
+                name: person_name,
+                mobile: person_mobile,
+                email: person_email,
+                icon: person_icon,
+            },
+            role_list,
         },
-        role_list,
-    })))
+        &token,
+        &session_manager,
+    ))
 }
 
 /// WeLink SSO 路由
 pub fn router() -> Router {
-    Router::new()
-        .route("/jaxrs/welink/code/{code}", get(welink_login))
+    Router::new().route("/jaxrs/welink/code/{code}", get(welink_login))
 }

@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use axum::{Router, extract::State, Json};
+use axum::{extract::State, Json, Router};
 use chrono::Utc;
-use rsa::{pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey}, RsaPrivateKey, RsaPublicKey};
+use ring::{rand::SystemRandom, signature};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use thiserror::Error;
 use tracing::warn;
+use zeroize::Zeroizing;
 
 #[derive(Debug, Error)]
 pub enum SignatureError {
@@ -156,56 +156,65 @@ impl PdfSignatureService {
         Self
     }
 
-    fn parse_private_key(pem: &str) -> SignatureResult<RsaPrivateKey> {
-        let pem = pem.trim();
-        let key_data = if let Some(start) = pem.find("-----BEGIN") {
-            let end = pem.find("-----END").unwrap_or(pem.len());
-            pem[start..end].replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replace("-----BEGIN RSA PRIVATE KEY-----", "")
-                .replace("-----END RSA PRIVATE KEY-----", "")
-                .replace(['\n', '\r', ' '], "")
-        } else {
-            pem.to_string()
+    fn decode_pem_block(
+        pem: &str,
+        begin: &str,
+        end: &str,
+        invalid: SignatureError,
+    ) -> SignatureResult<Zeroizing<Vec<u8>>> {
+        let body = match (pem.find(begin), pem.find(end)) {
+            (Some(start), Some(end_pos)) if end_pos > start => &pem[start + begin.len()..end_pos],
+            _ => pem.trim(),
         };
-        let key_bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, key_data)
-            .map_err(|_| SignatureError::InvalidKey)?;
-        RsaPrivateKey::from_pkcs1_der(&key_bytes)
-            .or_else(|_| {
-                use rsa::pkcs8::DecodePrivateKey;
-                RsaPrivateKey::from_pkcs8_der(&key_bytes)
-            })
-            .map_err(|_| SignatureError::InvalidKey)
+        base64::Engine::decode(
+            &base64::engine::general_purpose::STANDARD,
+            body.replace(['\n', '\r', ' '], ""),
+        )
+        .map(Zeroizing::new)
+        .map_err(|_| invalid)
     }
 
-    fn parse_public_key(cert_pem: &str) -> SignatureResult<RsaPublicKey> {
-        let cert_data = if let Some(start) = cert_pem.find("-----BEGIN CERTIFICATE-----") {
-            let end = cert_pem.find("-----END CERTIFICATE-----").unwrap_or(cert_pem.len());
-            cert_pem[start..end]
-                .replace("-----BEGIN CERTIFICATE-----", "")
-                .replace("-----END CERTIFICATE-----", "")
-                .replace(['\n', '\r', ' '], "")
+    fn parse_private_key(pem: &str) -> SignatureResult<signature::RsaKeyPair> {
+        let is_pkcs8 = pem.contains("-----BEGIN PRIVATE KEY-----");
+        let (begin, end) = if is_pkcs8 {
+            ("-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----")
         } else {
-            cert_pem.trim().to_string()
+            (
+                "-----BEGIN RSA PRIVATE KEY-----",
+                "-----END RSA PRIVATE KEY-----",
+            )
         };
-        let cert_bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, cert_data)
-            .map_err(|_| SignatureError::InvalidCertificate)?;
-        
+        let key_bytes = Self::decode_pem_block(pem, begin, end, SignatureError::InvalidKey)?;
+        if is_pkcs8 {
+            signature::RsaKeyPair::from_pkcs8(key_bytes.as_slice())
+        } else {
+            signature::RsaKeyPair::from_der(key_bytes.as_slice())
+        }
+        .map_err(|_| SignatureError::InvalidKey)
+    }
+
+    fn parse_public_key(cert_pem: &str) -> SignatureResult<Vec<u8>> {
+        let cert_bytes = Self::decode_pem_block(
+            cert_pem,
+            "-----BEGIN CERTIFICATE-----",
+            "-----END CERTIFICATE-----",
+            SignatureError::InvalidCertificate,
+        )?;
         let (_, cert) = x509_parser::parse_x509_certificate(&cert_bytes)
             .map_err(|_| SignatureError::InvalidCertificate)?;
-        
-        let public_key_der = cert.public_key().subject_public_key.data.clone();
-        RsaPublicKey::from_pkcs1_der(&public_key_der)
-            .or_else(|_| {
-                use rsa::pkcs8::DecodePublicKey;
-                RsaPublicKey::from_public_key_der(&public_key_der)
-            })
-            .map_err(|_| SignatureError::InvalidKey)
+        match cert.public_key().parsed() {
+            Ok(x509_parser::public_key::PublicKey::RSA(_)) => {
+                Ok(cert.public_key().subject_public_key.data.to_vec())
+            }
+            _ => Err(SignatureError::InvalidKey),
+        }
     }
 
     fn extract_signer_info(cert_pem: &str) -> SignatureResult<(Option<String>, Option<String>)> {
         let cert_data = if let Some(start) = cert_pem.find("-----BEGIN CERTIFICATE-----") {
-            let end = cert_pem.find("-----END CERTIFICATE-----").unwrap_or(cert_pem.len());
+            let end = cert_pem
+                .find("-----END CERTIFICATE-----")
+                .unwrap_or(cert_pem.len());
             cert_pem[start..end]
                 .replace("-----BEGIN CERTIFICATE-----", "")
                 .replace("-----END CERTIFICATE-----", "")
@@ -213,29 +222,29 @@ impl PdfSignatureService {
         } else {
             cert_pem.trim().to_string()
         };
-        let cert_bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, cert_data)
-            .map_err(|_| SignatureError::InvalidCertificate)?;
-        
+        let cert_bytes =
+            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, cert_data)
+                .map_err(|_| SignatureError::InvalidCertificate)?;
+
         let (_, cert) = x509_parser::parse_x509_certificate(&cert_bytes)
             .map_err(|_| SignatureError::InvalidCertificate)?;
-        
+
         let subject = cert.subject().to_string();
         let signing_time = Some(Utc::now().to_rfc3339());
         Ok((Some(subject), signing_time))
     }
 
-    fn compute_sha256(data: &[u8]) -> [u8; 32] {
-        let mut hasher = Sha256::new();
-        hasher.update(data);
-        let result = hasher.finalize();
-        let mut hash = [0u8; 32];
-        hash.copy_from_slice(&result);
-        hash
+    fn verify_signature(public_key: &[u8], message: &[u8], signature_bytes: &[u8]) -> bool {
+        signature::UnparsedPublicKey::new(&signature::RSA_PKCS1_2048_8192_SHA256, public_key)
+            .verify(message, signature_bytes)
+            .is_ok()
     }
 
     fn verify_certificate_dates(cert_pem: &str) -> SignatureResult<()> {
         let cert_data = if let Some(start) = cert_pem.find("-----BEGIN CERTIFICATE-----") {
-            let end = cert_pem.find("-----END CERTIFICATE-----").unwrap_or(cert_pem.len());
+            let end = cert_pem
+                .find("-----END CERTIFICATE-----")
+                .unwrap_or(cert_pem.len());
             cert_pem[start..end]
                 .replace("-----BEGIN CERTIFICATE-----", "")
                 .replace("-----END CERTIFICATE-----", "")
@@ -244,8 +253,9 @@ impl PdfSignatureService {
             cert_pem.trim().to_string()
         };
 
-        let cert_bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, cert_data)
-            .map_err(|_| SignatureError::InvalidCertificate)?;
+        let cert_bytes =
+            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, cert_data)
+                .map_err(|_| SignatureError::InvalidCertificate)?;
 
         let (_, cert) = x509_parser::parse_x509_certificate(&cert_bytes)
             .map_err(|_| SignatureError::InvalidCertificate)?;
@@ -253,11 +263,12 @@ impl PdfSignatureService {
         let now = std::time::SystemTime::now();
         let not_before: std::time::SystemTime = cert.validity().not_before.to_datetime().into();
         let not_after: std::time::SystemTime = cert.validity().not_after.to_datetime().into();
-        
+
         if now < not_before || now > not_after {
-            return Err(SignatureError::VerificationFailed(
-                format!("certificate not valid: not_before={:?}, not_after={:?}", not_before, not_after)
-            ));
+            return Err(SignatureError::VerificationFailed(format!(
+                "certificate not valid: not_before={:?}, not_after={:?}",
+                not_before, not_after
+            )));
         }
 
         Ok(())
@@ -298,10 +309,12 @@ impl PdfSignatureService {
         let mut chain = Vec::with_capacity(certs.len());
 
         for (i, cert_bytes) in certs.iter().enumerate() {
-            let (_, cert) =
-                x509_parser::parse_x509_certificate(cert_bytes).map_err(|_| {
-                    SignatureError::ChainVerification(format!("failed to parse certificate at depth {}", i))
-                })?;
+            let (_, cert) = x509_parser::parse_x509_certificate(cert_bytes).map_err(|_| {
+                SignatureError::ChainVerification(format!(
+                    "failed to parse certificate at depth {}",
+                    i
+                ))
+            })?;
 
             let subject = cert.subject().to_string();
             let issuer = cert.issuer().to_string();
@@ -316,10 +329,10 @@ impl PdfSignatureService {
             let mut signature_valid = false;
             if !is_self_signed || certs.len() == 1 {
                 if let Some(issuer_bytes) = certs.get(i + 1) {
-                    if let Ok((_, issuer_cert)) =
-                        x509_parser::parse_x509_certificate(issuer_bytes)
+                    if let Ok((_, issuer_cert)) = x509_parser::parse_x509_certificate(issuer_bytes)
                     {
-                        signature_valid = PdfSignatureService::verify_cert_signature(&cert, &issuer_cert).is_ok();
+                        signature_valid =
+                            PdfSignatureService::verify_cert_signature(&cert, &issuer_cert).is_ok();
                     }
                 }
             }
@@ -343,7 +356,9 @@ impl PdfSignatureService {
             if chain[i].issuer != chain[i + 1].subject {
                 return Err(SignatureError::ChainVerification(format!(
                     "issuer/subject mismatch at depth {}: issuer={}, expected={}",
-                    i, chain[i].issuer, chain[i + 1].subject
+                    i,
+                    chain[i].issuer,
+                    chain[i + 1].subject
                 )));
             }
             if !chain[i].signature_valid {
@@ -369,9 +384,9 @@ impl PdfSignatureService {
         issuer_cert: &x509_parser::certificate::X509Certificate,
     ) -> SignatureResult<()> {
         let spki = issuer_cert.public_key();
-        subject_cert
-            .verify_signature(Some(spki))
-            .map_err(|e| SignatureError::ChainVerification(format!("invalid certificate signature: {:?}", e)))?;
+        subject_cert.verify_signature(Some(spki)).map_err(|e| {
+            SignatureError::ChainVerification(format!("invalid certificate signature: {:?}", e))
+        })?;
         Ok(())
     }
 
@@ -380,10 +395,8 @@ impl PdfSignatureService {
         let mut statuses = Vec::with_capacity(certs.len());
 
         for cert_bytes in &certs {
-            let (_, cert) =
-                x509_parser::parse_x509_certificate(cert_bytes).map_err(|_| {
-                    SignatureError::InvalidCertificate
-                })?;
+            let (_, cert) = x509_parser::parse_x509_certificate(cert_bytes)
+                .map_err(|_| SignatureError::InvalidCertificate)?;
 
             let subject = cert.subject().to_string();
             let issuer = cert.issuer().to_string();
@@ -397,10 +410,9 @@ impl PdfSignatureService {
                 let oid_str = ext.oid.to_string();
                 if oid_str == "2.5.29.31" {
                     revocation_reason = Some("CRL distribution points extension present; live CRL/OCSP check requires network access to the issuing CA".into());
-                } else if oid_str == "2.5.29.1"
-                    && revocation_reason.is_none() {
-                        revocation_reason = Some("AuthorityInfoAccess extension present; live OCSP check requires network access".into());
-                    }
+                } else if oid_str == "2.5.29.1" && revocation_reason.is_none() {
+                    revocation_reason = Some("AuthorityInfoAccess extension present; live OCSP check requires network access".into());
+                }
             }
 
             statuses.push(CertStatus {
@@ -422,26 +434,31 @@ impl PdfSignatureService {
 impl SignatureService for PdfSignatureService {
     async fn sign_pdf(&self, pdf_data: &[u8], info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
         let private_key = Self::parse_private_key(&info.private_key_pem)?;
-        let _public_key = Self::parse_public_key(&info.cert_pem)?;
-        
+        let public_key = Self::parse_public_key(&info.cert_pem)?;
+        if private_key.public().as_ref() != public_key.as_slice() {
+            return Err(SignatureError::InvalidKey);
+        }
+
         Self::verify_certificate_dates(&info.cert_pem)?;
-        
-        let hash = Self::compute_sha256(pdf_data);
-        let signature = private_key.sign(
-            rsa::pkcs1v15::Pkcs1v15Sign::new::<sha2::Sha256>(),
-            &hash
-        )
-        .map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
-        
-        let signature_hex = hex::encode(signature);
-        
-        let signed_pdf = self.embed_signature(pdf_data, &signature_hex, info)?;
-        Ok(signed_pdf)
+
+        let mut signature_bytes = vec![0; private_key.public().modulus_len()];
+        private_key
+            .sign(
+                &signature::RSA_PKCS1_SHA256,
+                &SystemRandom::new(),
+                pdf_data,
+                &mut signature_bytes,
+            )
+            .map_err(|_| SignatureError::PdfOperation("RSA signing failed".to_string()))?;
+        let signature_hex = hex::encode(&signature_bytes);
+        signature_bytes.fill(0);
+
+        self.embed_signature(pdf_data, &signature_hex, info)
     }
 
     async fn verify_pdf(&self, pdf_data: &[u8]) -> SignatureResult<VerificationResult> {
         let sig = self.extract_signature(pdf_data)?;
-        
+
         let public_key = match Self::parse_public_key(&sig.cert_pem) {
             Ok(k) => k,
             Err(e) => {
@@ -456,7 +473,7 @@ impl SignatureService for PdfSignatureService {
                 });
             }
         };
-        
+
         if let Err(e) = Self::verify_certificate_dates(&sig.cert_pem) {
             return Ok(VerificationResult {
                 valid: false,
@@ -468,12 +485,11 @@ impl SignatureService for PdfSignatureService {
                 error: Some(format!("certificate date verification failed: {}", e)),
             });
         }
-        
+
         let chain = Self::verify_cert_chain(&sig.cert_pem).ok();
-        
-        let hash = Self::compute_sha256(&sig.pdf_without_signature);
+
         let signature_bytes = match hex::decode(&sig.signature_hex) {
-            Ok(b) => b,
+            Ok(bytes) => bytes,
             Err(e) => {
                 return Ok(VerificationResult {
                     valid: false,
@@ -482,21 +498,18 @@ impl SignatureService for PdfSignatureService {
                     reason: Some(sig.reason),
                     chain,
                     cert_pem: sig.cert_pem.clone(),
-                    error: Some(format!("invalid signature hex: {}", e)),
+                    error: Some(format!("invalid signature hex: {e}")),
                 });
             }
         };
-        
-        let valid = public_key.verify(
-            rsa::pkcs1v15::Pkcs1v15Sign::new::<sha2::Sha256>(),
-            &hash,
-            &signature_bytes
-        ).is_ok();
-        
-        let (signer, signing_time) = Self::extract_signer_info(&sig.cert_pem).unwrap_or((None, None));
-        
+        let valid =
+            Self::verify_signature(&public_key, &sig.pdf_without_signature, &signature_bytes);
+
+        let (signer, signing_time) =
+            Self::extract_signer_info(&sig.cert_pem).unwrap_or((None, None));
+
         let chain_valid = chain.as_ref().map(|c| !c.is_empty()).unwrap_or(false);
-        
+
         Ok(VerificationResult {
             valid,
             signer,
@@ -504,7 +517,11 @@ impl SignatureService for PdfSignatureService {
             reason: Some(sig.reason),
             chain,
             cert_pem: sig.cert_pem,
-            error: if valid && chain_valid { None } else { Some("signature or chain verification failed".to_string()) },
+            error: if valid && chain_valid {
+                None
+            } else {
+                Some("signature or chain verification failed".to_string())
+            },
         })
     }
 }
@@ -517,37 +534,62 @@ struct EmbeddedSignature {
 }
 
 impl PdfSignatureService {
-    fn embed_signature(&self, pdf_data: &[u8], signature_hex: &str, info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
+    fn embed_signature(
+        &self,
+        pdf_data: &[u8],
+        signature_hex: &str,
+        info: &SignatureInfo,
+    ) -> SignatureResult<Vec<u8>> {
         let mut doc = match lopdf::Document::load_mem(pdf_data) {
             Ok(d) => d,
             Err(_) => {
                 return self.embed_signature_fallback(pdf_data, signature_hex, info);
             }
         };
-        
+
         let mut sig_dict = lopdf::Dictionary::new();
         sig_dict.set("Type", lopdf::Object::Name(b"Sig".to_vec()));
         sig_dict.set("Filter", lopdf::Object::Name(b"Adobe.PPKLite".to_vec()));
-        sig_dict.set("SubFilter", lopdf::Object::Name(b"adbe.pkcs7.detached".to_vec()));
-        sig_dict.set("Name", lopdf::Object::string_literal(info.signer_name().unwrap_or("Unknown")));
-        sig_dict.set("Location", lopdf::Object::string_literal(info.location.as_str()));
-        sig_dict.set("Reason", lopdf::Object::string_literal(info.reason.as_str()));
+        sig_dict.set(
+            "SubFilter",
+            lopdf::Object::Name(b"adbe.pkcs7.detached".to_vec()),
+        );
+        sig_dict.set(
+            "Name",
+            lopdf::Object::string_literal(info.signer_name().unwrap_or("Unknown")),
+        );
+        sig_dict.set(
+            "Location",
+            lopdf::Object::string_literal(info.location.as_str()),
+        );
+        sig_dict.set(
+            "Reason",
+            lopdf::Object::string_literal(info.reason.as_str()),
+        );
         sig_dict.set("M", lopdf::Object::string_literal(Utc::now().to_rfc3339()));
-        sig_dict.set("ByteRange", lopdf::Object::Array(vec![
-            lopdf::Object::Integer(0),
-            lopdf::Object::Integer(0),
-            lopdf::Object::Integer(0),
-            lopdf::Object::Integer(0),
-        ]));
+        sig_dict.set(
+            "ByteRange",
+            lopdf::Object::Array(vec![
+                lopdf::Object::Integer(0),
+                lopdf::Object::Integer(0),
+                lopdf::Object::Integer(0),
+                lopdf::Object::Integer(0),
+            ]),
+        );
         sig_dict.set("Contents", lopdf::Object::string_literal(signature_hex));
-        
-        let sig_id = (doc.objects.len() as u32, 0u16);
-        doc.objects.insert(sig_id, lopdf::Object::Dictionary(sig_dict));
-        
+
+        let sig_id = doc.new_object_id();
+        doc.objects
+            .insert(sig_id, lopdf::Object::Dictionary(sig_dict));
+
         let mut buf = Vec::new();
-        doc.save_to(&mut buf).map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
-        
-        if let Some(pos) = buf.windows(signature_hex.len()).position(|w| w == signature_hex.as_bytes()) {
+        doc.save_to(&mut buf)
+            .map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
+
+        if let Some(pos) = buf
+            .windows(signature_hex.len())
+            .position(|w| w == signature_hex.as_bytes())
+        {
             let sig_len = signature_hex.len();
             let file_size = buf.len();
             let byte_range = vec![
@@ -556,21 +598,27 @@ impl PdfSignatureService {
                 lopdf::Object::Integer((pos + sig_len) as i64),
                 lopdf::Object::Integer((file_size - pos - sig_len) as i64),
             ];
-            
+
             if let Some(lopdf::Object::Dictionary(ref mut dict)) = doc.objects.get_mut(&sig_id) {
                 dict.set("ByteRange", lopdf::Object::Array(byte_range));
             }
-            
+
             buf.clear();
-            doc.save_to(&mut buf).map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
+            doc.save_to(&mut buf)
+                .map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
         } else {
             warn!("could not locate signature hex in PDF output; ByteRange remains placeholder");
         }
-        
+
         Ok(buf)
     }
-    
-    fn embed_signature_fallback(&self, pdf_data: &[u8], signature_hex: &str, _info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
+
+    fn embed_signature_fallback(
+        &self,
+        pdf_data: &[u8],
+        signature_hex: &str,
+        _info: &SignatureInfo,
+    ) -> SignatureResult<Vec<u8>> {
         let marker = b"/SignaturePlaceholder<</Contents<";
         if let Some(pos) = pdf_data.windows(marker.len()).position(|w| w == marker) {
             let insert_pos = pos + marker.len() + 2;
@@ -586,16 +634,16 @@ impl PdfSignatureService {
             Ok(result)
         }
     }
-    
+
     fn extract_signature(&self, pdf_data: &[u8]) -> SignatureResult<EmbeddedSignature> {
         let content_start = pdf_data.windows(10).position(|w| w == b"/Contents<");
         let content_end = pdf_data.windows(2).position(|w| w == b">>").map(|p| p + 2);
-        
+
         if let (Some(start), Some(end)) = (content_start, content_end) {
             let sig_hex = String::from_utf8_lossy(&pdf_data[start + 10..end - 2]).to_string();
             let cert_pem = String::new();
             let reason = String::new();
-            
+
             Ok(EmbeddedSignature {
                 signature_hex: sig_hex,
                 pdf_without_signature: pdf_data.to_vec(),
@@ -603,7 +651,9 @@ impl PdfSignatureService {
                 reason,
             })
         } else {
-            Err(SignatureError::PdfOperation("no signature found".to_string()))
+            Err(SignatureError::PdfOperation(
+                "no signature found".to_string(),
+            ))
         }
     }
 }
@@ -615,7 +665,8 @@ trait SignatureInfoExt {
 impl SignatureInfoExt for SignatureInfo {
     fn signer_name(&self) -> Option<&str> {
         self.signer_name.as_deref().or_else(|| {
-            self.cert_pem.lines()
+            self.cert_pem
+                .lines()
                 .find(|l| l.starts_with("Subject: "))
                 .map(|l| l.trim_start_matches("Subject: "))
         })
@@ -626,19 +677,21 @@ pub async fn sign_pdf_handler(
     State(service): State<Arc<dyn SignatureService>>,
     Json(req): Json<SignPdfRequest>,
 ) -> Json<SignPdfResponse> {
-    let file_data = match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
-        Ok(data) => data,
-        Err(_) => {
-            return Json(SignPdfResponse {
-                success: false,
-                signed_data: None,
-                message: "invalid base64 file data".to_string(),
-            });
-        }
-    };
+    let file_data =
+        match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
+            Ok(data) => data,
+            Err(_) => {
+                return Json(SignPdfResponse {
+                    success: false,
+                    signed_data: None,
+                    message: "invalid base64 file data".to_string(),
+                });
+            }
+        };
     match service.sign_pdf(&file_data, &req.signature_info).await {
         Ok(signed) => {
-            let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, signed);
+            let encoded =
+                base64::Engine::encode(&base64::engine::general_purpose::STANDARD, signed);
             Json(SignPdfResponse {
                 success: true,
                 signed_data: Some(encoded),
@@ -657,16 +710,17 @@ pub async fn verify_pdf_handler(
     State(service): State<Arc<dyn SignatureService>>,
     Json(req): Json<VerifyPdfRequest>,
 ) -> Json<VerifyPdfResponse> {
-    let file_data = match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
-        Ok(data) => data,
-        Err(_) => {
-            return Json(VerifyPdfResponse {
-                success: false,
-                result: None,
-                message: "invalid base64 file data".to_string(),
-            });
-        }
-    };
+    let file_data =
+        match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
+            Ok(data) => data,
+            Err(_) => {
+                return Json(VerifyPdfResponse {
+                    success: false,
+                    result: None,
+                    message: "invalid base64 file data".to_string(),
+                });
+            }
+        };
     match service.verify_pdf(&file_data).await {
         Ok(result) => Json(VerifyPdfResponse {
             success: true,
@@ -685,26 +739,28 @@ pub async fn signature_status_handler(
     State(service): State<Arc<dyn SignatureService>>,
     Json(req): Json<SignatureStatusRequest>,
 ) -> Json<SignatureStatusResponse> {
-    let file_data = match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
-        Ok(data) => data,
-        Err(_) => {
-            return Json(SignatureStatusResponse {
-                success: false,
-                signature_valid: false,
-                chain: None,
-                revocation: None,
-                signer: None,
-                signing_time: None,
-                message: "invalid base64 file data".to_string(),
-            });
-        }
-    };
+    let file_data =
+        match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
+            Ok(data) => data,
+            Err(_) => {
+                return Json(SignatureStatusResponse {
+                    success: false,
+                    signature_valid: false,
+                    chain: None,
+                    revocation: None,
+                    signer: None,
+                    signing_time: None,
+                    message: "invalid base64 file data".to_string(),
+                });
+            }
+        };
 
     match service.verify_pdf(&file_data).await {
         Ok(result) => {
             let chain = PdfSignatureService::verify_cert_chain(&result.cert_pem).ok();
             let chain_response = chain.as_ref().map(|links| SignatureChainResponse {
-                valid: links.iter().all(|l| l.signature_valid) && links.last().map(|l| l.is_self_signed).unwrap_or(false),
+                valid: links.iter().all(|l| l.signature_valid)
+                    && links.last().map(|l| l.is_self_signed).unwrap_or(false),
                 chain: links.clone(),
                 error: None,
             });
@@ -735,8 +791,14 @@ pub async fn signature_status_handler(
 pub fn signature_route<S: SignatureService + 'static>(service: S) -> Router {
     Router::new()
         .route("/signature/pdf/sign", axum::routing::post(sign_pdf_handler))
-        .route("/signature/pdf/verify", axum::routing::post(verify_pdf_handler))
-        .route("/signature/pdf/status", axum::routing::post(signature_status_handler))
+        .route(
+            "/signature/pdf/verify",
+            axum::routing::post(verify_pdf_handler),
+        )
+        .route(
+            "/signature/pdf/status",
+            axum::routing::post(signature_status_handler),
+        )
         .with_state(Arc::new(service))
 }
 
@@ -747,16 +809,119 @@ mod tests {
     use axum::http::{Request, StatusCode};
     use tower::util::ServiceExt;
 
+    const TEST_PRIVATE_KEY: &str = r#"-----BEGIN PRIVATE KEY-----
+MIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQDYtYImjDsJZuR9
+hRuRVSkApAZJcsgZWFRbwNlj8bWvY/yuttvpCUgqOvRNSHsh9+czU03FSSfF6R0n
+r01tp3pWHoWhB9Ucqggi8QYoOkMtS0iyk7L8IAwZ5OoWfkQR93XuWUD3dhUR3vMe
+gV8HGUOTRdnfDvVq01HknMpJqjOiTa8ejmYQJFW17FBR2nidi5Ob2tkvrwtqqVQI
+6oWxkE5M5f/RmuQmlVMEhdAbk7rMgXKX+2cr+0whL6sJI0Toe/mkq/ik3uAPCVbR
+RoDvlFgpp2wOg6qfje61KNmgs60Bj5lhu97TNUWhTukH5dyYZrOWDX00vHURmYiq
+o1cMxkmlAgMBAAECgf9PViQIv9wyhr/m+ze47vR3cj/3auOBgFTwJfE3extsYa6g
+R/xW8MfePEVQsH+ANzOYFrypNkm848W6eoF6scd7anhIpoc0Ie8t+A9XORm0ND8i
+BQ0eQJ1J+gRj4mRCL519JRN5E15OAe3G2bKM9Pny/wMn7XyyrXHNwEOj7Ugy23TS
+/HuSCIkLH/4Zl6ztSddiCo52FfdDBKsjNe5Pb8dTIx31C4syidWLE7X+WPmCGOe9
+N5jhQfLAsEU5wQlJHAB20RGICIp7ZqFDBCySpq5GZDyJOX7BdHBpYcCP+END+dU3
+M2mey7VqH02zEYulgIaUZAcIUA2pv3dbH0P8QjECgYEA9RI08RRDts1plqWu/h2V
+XXmX5FiKA6OZwsAiAszmjGcH7mFZ7OjaVQS8SjVZ37oaOkWpwFPz0MRbIJmWmw7t
+ICZdZQJcxHLuFyJgUm+kv+dJQue/PJoCojzE2cZpiqW/SLet6d2Uv0mKiqe5eWWC
+5rFRI/v56f3WhN6Wn1lSDg0CgYEA4l+DQpmm+IifdYeraLE6EbOAlHkghnLiO7pR
+WniGTxGmO13nlU7OLZOubKsJOzgk1r0egRjEbE+1rDToXPTuHxjT3+yWPp8mBUVW
+f77INMMoG2Nr4AnuAqE+rU1Q1WLmqCfDGRvn289aARTzuRuxtU0QRsQywSp1uZyd
+Tj7YW/kCgYBIALRrTE/kyo9GQqGaaaiz0QDOhzDthsirTnXvqrHl+HN9Fz8revKC
+3iRQDUK9l9kS29rW9hOBd99qQZXdMtJ6iqsP/VSyJy5Kv7/bGJAoDdUZgitOq9Uw
+Q3h2n3Ps12vO+qBvQLnuRbYdrM+ymh+OlfRIBUVU+U5otVk9simIlQKBgB3ygMzo
+wtwSRvYncpexCnuZAaOiupjOzfsU1PphA3OmZBVqgN6RxFjnNqYNonUBIm5+KnDt
+s96YVPJpNWxGwtG+WRlAlUfHiiIcYCsaNCY2wzGMX5MN/Ty/1CjdF5qDMPyB9h92
+P6AmuEN4YB3W+hWAEm0qO4Sud1CM1YqqabkRAoGBANkZ81w+1EmxFVsSlur4QrYo
+SwKCbi5mRa/9UWVJk2Ik86GdZjF4HtaEgrT7AhmtIjL3f0zxWf5ql4zDLoooHlPK
+BYV3lH/SjS3ZF2uO5pnNSmiK7sRcizFASOh7VqIP4C4pXJuw3aTlJbhPwkK3m7wZ
+owlYFraS332MS/YEInRe
+-----END PRIVATE KEY-----"#;
+
+    const TEST_CERT: &str = r#"-----BEGIN CERTIFICATE-----
+MIIDQzCCAiugAwIBAgIUKZT19jSpQB7w+is3HNR5y7YZAvAwDQYJKoZIhvcNAQEL
+BQAwMDEcMBoGA1UEAwwTb2E0cnVzdCB0ZXN0IHNpZ25lcjEQMA4GA1UECgwHb2E0
+cnVzdDAgFw0yNjA5MDkxNDUyNTNaGA8yMTI2MDgxNjE0NTI1M1owMDEcMBoGA1UE
+AwwTb2E0cnVzdCB0ZXN0IHNpZ25lcjEQMA4GA1UECgwHb2E0cnVzdDCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBANi1giaMOwlm5H2FG5FVKQCkBklyyBlY
+VFvA2WPxta9j/K622+kJSCo69E1IeyH35zNTTcVJJ8XpHSevTW2nelYehaEH1Ryq
+CCLxBig6Qy1LSLKTsvwgDBnk6hZ+RBH3de5ZQPd2FRHe8x6BXwcZQ5NF2d8O9WrT
+UeScykmqM6JNrx6OZhAkVbXsUFHaeJ2Lk5va2S+vC2qpVAjqhbGQTkzl/9Ga5CaV
+UwSF0BuTusyBcpf7Zyv7TCEvqwkjROh7+aSr+KTe4A8JVtFGgO+UWCmnbA6Dqp+N
+7rUo2aCzrQGPmWG73tM1RaFO6Qfl3Jhms5YNfTS8dRGZiKqjVwzGSaUCAwEAAaNT
+MFEwHQYDVR0OBBYEFBucxZPWa3T672lBEf0JAUcXXq2xMB8GA1UdIwQYMBaAFBuc
+xZPWa3T672lBEf0JAUcXXq2xMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL
+BQADggEBAEeIxp1XFnXJ2BUmA5GbIR8r5OYI/llZdjb/8016ejsRGDZN/kzEPAPs
+vUqvFNiNSGHi7jOmI1qrABWkApKHTNGMMnJRbFu58OncofXewrfAbv/LnVi69peP
+yEuKpe3hStUAUbEDuiQB2aH/fVLoyR8WYtLtU1XJL2KZvZ98qGGc7NT+QF9XEIy3
+L653yB7J70eOQ7aoqSZPT/j0UGUFK+HEqDpucFQbQ0VW/VNbp5soH/DGqHh9S3ec
+lRqp8wDDxkCNB7iD86UPs9zN/1dXq9JpS6VayLlCVGApd47qLq8mndZ6cBvhKYeB
+S8ARr2vqmeZSYIJABzClXMa1aS2XpA4=
+-----END CERTIFICATE-----"#;
+
+    #[test]
+    fn test_ring_rsa_sign_and_verify_fixed_fixture() {
+        let private_key = PdfSignatureService::parse_private_key(TEST_PRIVATE_KEY).unwrap();
+        let public_key = PdfSignatureService::parse_public_key(TEST_CERT).unwrap();
+        assert_eq!(private_key.public().as_ref(), public_key.as_slice());
+
+        let message = b"oa4rust signature fixture";
+        let mut signature_bytes = vec![0; private_key.public().modulus_len()];
+        private_key
+            .sign(
+                &signature::RSA_PKCS1_SHA256,
+                &SystemRandom::new(),
+                message,
+                &mut signature_bytes,
+            )
+            .unwrap();
+        assert!(PdfSignatureService::verify_signature(
+            &public_key,
+            message,
+            &signature_bytes,
+        ));
+        assert!(!PdfSignatureService::verify_signature(
+            &public_key,
+            b"tampered",
+            &signature_bytes,
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_sign_pdf_with_fixed_fixture() {
+        let info = SignatureInfo::new(
+            "approval",
+            "Beijing",
+            "signer@example.test",
+            TEST_CERT,
+            TEST_PRIVATE_KEY,
+        );
+        let signed = PdfSignatureService::new()
+            .sign_pdf(b"%PDF-1.4\ntest", &info)
+            .await
+            .expect("fixed fixture should sign");
+        assert!(signed.windows(13).any(|window| window == b"%% Signature:"));
+        assert!(signed.len() > b"%PDF-1.4\ntest".len());
+    }
+
+    #[test]
+    fn test_private_key_fixture_rejects_invalid_material() {
+        assert!(PdfSignatureService::parse_private_key("not a private key").is_err());
+    }
+
     #[tokio::test]
     async fn test_sign_pdf_route() {
         let service = PdfSignatureService::new();
         let app = signature_route(service);
-        
+
         let req = SignPdfRequest {
-            file_data: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, b"%PDF-1.4\ntest"),
+            file_data: base64::Engine::encode(
+                &base64::engine::general_purpose::STANDARD,
+                b"%PDF-1.4\ntest",
+            ),
             signature_info: SignatureInfo::new("test", "location", "contact", "dummy", "dummy"),
         };
-        
+
         let response = app
             .oneshot(
                 Request::builder()
@@ -768,7 +933,7 @@ mod tests {
             )
             .await
             .unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::OK);
     }
 
@@ -776,11 +941,14 @@ mod tests {
     async fn test_verify_pdf_route() {
         let service = PdfSignatureService::new();
         let app = signature_route(service);
-        
+
         let req = VerifyPdfRequest {
-            file_data: base64::Engine::encode(&base64::engine::general_purpose::STANDARD, b"%PDF-1.4\ntest"),
+            file_data: base64::Engine::encode(
+                &base64::engine::general_purpose::STANDARD,
+                b"%PDF-1.4\ntest",
+            ),
         };
-        
+
         let response = app
             .oneshot(
                 Request::builder()
@@ -792,7 +960,7 @@ mod tests {
             )
             .await
             .unwrap();
-        
+
         assert_eq!(response.status(), StatusCode::OK);
     }
 }

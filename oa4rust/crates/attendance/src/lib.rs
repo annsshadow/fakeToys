@@ -14,7 +14,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 // --- Request/Response DTOs ---
 
 #[derive(Debug, Serialize, serde::Deserialize)]
@@ -58,9 +57,7 @@ pub struct StatisticalCycleInfo {
 // --- Handlers ---
 
 #[allow(non_snake_case)]
-pub async fn list_admins(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -78,15 +75,25 @@ pub async fn list_admins(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("unitName".to_string(), Value::String(row.get("unit_name"))),
                 ("unitOu".to_string(), Value::String(row.get("unit_ou"))),
-                ("adminName".to_string(), Value::String(row.get("admin_name"))),
+                (
+                    "adminName".to_string(),
+                    Value::String(row.get("admin_name")),
+                ),
                 ("admin".to_string(), Value::String(row.get("admin"))),
-                ("adminLevel".to_string(), Value::String(row.get("admin_level"))),
+                (
+                    "adminLevel".to_string(),
+                    Value::String(row.get("admin_level")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -108,20 +115,42 @@ pub async fn list_employee_configs(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("topUnitName".to_string(), Value::String(row.get("top_unit_name"))),
-                ("topUnitOu".to_string(), Value::String(row.get("top_unit_ou"))),
+                (
+                    "topUnitName".to_string(),
+                    Value::String(row.get("top_unit_name")),
+                ),
+                (
+                    "topUnitOu".to_string(),
+                    Value::String(row.get("top_unit_ou")),
+                ),
                 ("unitName".to_string(), Value::String(row.get("unit_name"))),
                 ("unitOu".to_string(), Value::String(row.get("unit_ou"))),
-                ("employeeName".to_string(), Value::String(row.get("employee_name"))),
-                ("employeeNumber".to_string(), Value::String(row.get("employee_number"))),
-                ("configType".to_string(), Value::String(row.get("config_type"))),
-                ("empInTopUnitTime".to_string(), Value::String(row.get("emp_in_top_unit_time"))),
+                (
+                    "employeeName".to_string(),
+                    Value::String(row.get("employee_name")),
+                ),
+                (
+                    "employeeNumber".to_string(),
+                    Value::String(row.get("employee_number")),
+                ),
+                (
+                    "configType".to_string(),
+                    Value::String(row.get("config_type")),
+                ),
+                (
+                    "empInTopUnitTime".to_string(),
+                    Value::String(row.get("emp_in_top_unit_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -143,21 +172,44 @@ pub async fn list_statistical_cycles(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("topUnitName".to_string(), Value::String(row.get("top_unit_name"))),
+                (
+                    "topUnitName".to_string(),
+                    Value::String(row.get("top_unit_name")),
+                ),
                 ("unitName".to_string(), Value::String(row.get("unit_name"))),
-                ("cycleYear".to_string(), Value::String(row.get("cycle_year"))),
-                ("cycleMonth".to_string(), Value::String(row.get("cycle_month"))),
-                ("cycleStartDateString".to_string(), Value::String(row.get("cycle_start_date_string"))),
-                ("cycleEndDateString".to_string(), Value::String(row.get("cycle_end_date_string"))),
-                ("description".to_string(), Value::String(row.get("description"))),
+                (
+                    "cycleYear".to_string(),
+                    Value::String(row.get("cycle_year")),
+                ),
+                (
+                    "cycleMonth".to_string(),
+                    Value::String(row.get("cycle_month")),
+                ),
+                (
+                    "cycleStartDateString".to_string(),
+                    Value::String(row.get("cycle_start_date_string")),
+                ),
+                (
+                    "cycleEndDateString".to_string(),
+                    Value::String(row.get("cycle_end_date_string")),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(row.get("description")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub fn attendance_router(pool: Pool) -> Router {
@@ -167,7 +219,6 @@ pub fn attendance_router(pool: Pool) -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::attendance_router(pool)
 }
-
 
 #[allow(non_snake_case)]
 pub async fn list_check_in_records(
@@ -189,7 +240,10 @@ pub async fn list_check_in_records(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
-                ("checkInTime".to_string(), Value::String(row.get("check_in_time"))),
+                (
+                    "checkInTime".to_string(),
+                    Value::String(row.get("check_in_time")),
+                ),
                 (
                     "checkOutTime".to_string(),
                     row.get::<_, Option<String>>("check_out_time")
@@ -202,7 +256,11 @@ pub async fn list_check_in_records(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -225,14 +283,24 @@ pub async fn list_schedule_rules(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
-                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(row.get("start_time")),
+                ),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(row.get("end_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -255,15 +323,25 @@ pub async fn list_appeal_records(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("appeal_status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get("appeal_status")),
+                ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -273,10 +351,26 @@ pub async fn submit_appeal(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let appeal_date = payload.get("appealDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let reason = payload.get("reason").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let person_id = payload
+        .get("personId")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let appeal_date = payload
+        .get("appealDate")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let reason = payload
+        .get("reason")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let creator = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .unwrap_or("system")
+        .to_string();
 
     let new_id = uuid::Uuid::new_v4().to_string();
 
@@ -294,7 +388,10 @@ pub async fn submit_appeal(
             ("personId".to_string(), Value::String(person_id)),
             ("appealDate".to_string(), Value::String(appeal_date)),
             ("status".to_string(), Value::String("appealed".to_string())),
-            ("submitted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "submitted".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -306,8 +403,15 @@ pub async fn audit_appeal(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let audit_status = payload.get("auditStatus").and_then(|v| v.as_str()).unwrap_or("approved");
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let audit_status = payload
+        .get("auditStatus")
+        .and_then(|v| v.as_str())
+        .unwrap_or("approved");
 
     let result = client
         .execute(
@@ -324,7 +428,10 @@ pub async fn audit_appeal(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("audited".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "audited".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }
@@ -351,7 +458,10 @@ pub async fn archive_appeal(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("archived".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+            (
+                "archived".to_string(),
+                Value::Number(serde_json::Number::from(result as i64)),
+            ),
         ]),
     ))))
 }

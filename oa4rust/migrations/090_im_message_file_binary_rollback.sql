@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS "x_message_file" DROP COLUMN IF EXISTS "mime";
+ALTER TABLE IF EXISTS "x_message_file" DROP COLUMN IF EXISTS "content";

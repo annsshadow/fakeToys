@@ -7,7 +7,7 @@ mod u2_tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use shared::session::Session;
-    
+
     use tower::ServiceExt;
 
     const ADMIN: &str = "admin";
@@ -42,7 +42,9 @@ mod u2_tests {
             .await
             .unwrap();
         let status = response.status();
-        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
         let json = if bytes.is_empty() {
             serde_json::Value::Null
         } else {
@@ -57,7 +59,15 @@ mod u2_tests {
         headers: &[(&str, &str)],
         body: Body,
     ) -> (StatusCode, serde_json::Value) {
-        respond_inner(shared::testing::mock_pool(), method, uri, headers, body, None).await
+        respond_inner(
+            shared::testing::mock_pool(),
+            method,
+            uri,
+            headers,
+            body,
+            None,
+        )
+        .await
     }
 
     async fn respond_auth(
@@ -67,7 +77,15 @@ mod u2_tests {
         body: Body,
         person: &str,
     ) -> (StatusCode, serde_json::Value) {
-        respond_inner(shared::testing::mock_pool(), method, uri, headers, body, Some(person)).await
+        respond_inner(
+            shared::testing::mock_pool(),
+            method,
+            uri,
+            headers,
+            body,
+            Some(person),
+        )
+        .await
     }
 
     async fn respond_db(
@@ -77,7 +95,15 @@ mod u2_tests {
         body: Body,
         person: &str,
     ) -> (StatusCode, serde_json::Value) {
-        respond_inner(shared::testing::test_pool(), method, uri, headers, body, Some(person)).await
+        respond_inner(
+            shared::testing::test_pool(),
+            method,
+            uri,
+            headers,
+            body,
+            Some(person),
+        )
+        .await
     }
 
     fn multipart_body(filename: &str) -> Body {
@@ -159,24 +185,35 @@ mod u2_tests {
             respond_db("POST", &path, MP, multipart_body("a.txt"), NON_ADMIN).await;
 
         if fs_env {
-            assert_eq!(status, StatusCode::OK, "fs backend must persist and succeed: {json}");
+            assert_eq!(
+                status,
+                StatusCode::OK,
+                "fs backend must persist and succeed: {json}"
+            );
             assert_eq!(json["data"]["uploaded"], true);
         } else {
             assert_eq!(
-                status, StatusCode::NOT_IMPLEMENTED,
+                status,
+                StatusCode::NOT_IMPLEMENTED,
                 "db placeholder must fail loud with exact 501, body={json}"
             );
             assert_eq!(json["type"], "error", "must not fake success: {json}");
             // 红线核心：501 时不允许残留"看起来已入库"的元数据行
             let cnt: i64 = client
-                .query_one("SELECT COUNT(*) AS n FROM x_meeting_attachment WHERE meeting_id = $1", &[&mid])
+                .query_one(
+                    "SELECT COUNT(*) AS n FROM x_meeting_attachment WHERE meeting_id = $1",
+                    &[&mid],
+                )
                 .await
                 .unwrap()
                 .get("n");
             assert_eq!(cnt, 0, "failed upload must not leave metadata rows behind");
         }
 
-        client.execute("DELETE FROM x_meeting WHERE id = $1", &[&mid]).await.unwrap();
+        client
+            .execute("DELETE FROM x_meeting WHERE id = $1", &[&mid])
+            .await
+            .unwrap();
     }
 
     // ── 3. 各族新路由可达性（!=404） ─────────────────────────────────────────
@@ -195,7 +232,10 @@ mod u2_tests {
             ("GET", format!("{b}/list/a-1/next/5")),
             ("GET", format!("{b}/list/a-1/prev/5")),
             ("POST", format!("{b}/meeting/m-1/upload/false")),
-            ("POST", format!("{b}/meeting/m-1/upload/false/callback/cb-1")),
+            (
+                "POST",
+                format!("{b}/meeting/m-1/upload/false/callback/cb-1"),
+            ),
         ];
         for (method, path) in cases {
             let (headers, body): (&[(&str, &str)], Body) = if path.contains("/upload") {
@@ -206,7 +246,11 @@ mod u2_tests {
                 (&[], Body::empty())
             };
             let (status, _) = respond(method, &path, headers, body).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -232,10 +276,17 @@ mod u2_tests {
             ("PUT", format!("{b}/m-1")),
         ];
         for (method, path) in cases {
-            let (headers, body): (&[(&str, &str)], Body) =
-                if matches!(method, "PUT" | "POST") { (JSON, Body::from("{}")) } else { (&[], Body::empty()) };
+            let (headers, body): (&[(&str, &str)], Body) = if matches!(method, "PUT" | "POST") {
+                (JSON, Body::from("{}"))
+            } else {
+                (&[], Body::empty())
+            };
             let (status, _) = respond_auth(method, &path, headers, body, NON_ADMIN).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -247,8 +298,14 @@ mod u2_tests {
             ("PUT", format!("{b}/building/b-1")),
             ("DELETE", format!("{b}/building/b-1")),
             ("GET", format!("{b}/building/list/start/0/completed/0")),
-            ("GET", format!("{b}/building/list/start/0/completed/0/allmeeting")),
-            ("GET", format!("{b}/building/list/start/0/completed/0/room/r-1/meeting/m-1")),
+            (
+                "GET",
+                format!("{b}/building/list/start/0/completed/0/allmeeting"),
+            ),
+            (
+                "GET",
+                format!("{b}/building/list/start/0/completed/0/room/r-1/meeting/m-1"),
+            ),
             ("POST", format!("{b}/config")),
             ("GET", format!("{b}/config/system/config/manage")),
             ("POST", format!("{b}/room")),
@@ -262,12 +319,29 @@ mod u2_tests {
             ("POST", format!("{b}/meeting/list/1/size/20/manage")),
             ("GET", format!("{b}/meeting/list/forward/monthcount/3/all")),
             ("POST", format!("{b}/meeting/list/invite/1/size/20")),
-            ("GET", format!("{b}/meeting/list/year/2026/month/8/day/23/r-1")),
+            (
+                "GET",
+                format!("{b}/meeting/list/year/2026/month/8/day/23/r-1"),
+            ),
         ];
         for (method, path) in cases {
             let needs_body = matches!(method, "PUT" | "POST");
-            let (status, _) = respond(method, &path, JSON, if needs_body { Body::from("{}") } else { Body::empty() }).await;
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            let (status, _) = respond(
+                method,
+                &path,
+                JSON,
+                if needs_body {
+                    Body::from("{}")
+                } else {
+                    Body::empty()
+                },
+            )
+            .await;
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -282,13 +356,24 @@ mod u2_tests {
             ("PUT", format!("{b}/meeting/m-1")),
             ("DELETE", format!("{b}/attachment/a-1")),
             ("PUT", format!("{b}/attachment/a-1/update")),
-            ("POST", format!("{b}/attachment/create/from/processplatform")),
+            (
+                "POST",
+                format!("{b}/attachment/create/from/processplatform"),
+            ),
         ];
         for (method, path) in cases {
             let (headers, body) = (JSON, Body::from("{}"));
             let (status, _) = respond(method, &path, headers, body).await;
-            assert_ne!(status, StatusCode::OK, "unguarded write succeeded without session: {method} {path}");
-            assert_ne!(status, StatusCode::NOT_FOUND, "route missing: {method} {path}");
+            assert_ne!(
+                status,
+                StatusCode::OK,
+                "unguarded write succeeded without session: {method} {path}"
+            );
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route missing: {method} {path}"
+            );
         }
     }
 
@@ -310,7 +395,10 @@ mod u2_tests {
         let client = pool.get().await.unwrap();
         let mid = format!("u2-del-{}", uuid::Uuid::new_v4());
         // 自愈清理：移除历史运行残留
-        client.execute("DELETE FROM x_meeting WHERE id LIKE 'u2-del-%'", &[]).await.unwrap();
+        client
+            .execute("DELETE FROM x_meeting WHERE id LIKE 'u2-del-%'", &[])
+            .await
+            .unwrap();
         client
             .execute(
                 "INSERT INTO x_meeting (id, title, start_time, end_time, creator) VALUES ($1,'t',NOW(),NOW(),$2)",
@@ -348,31 +436,51 @@ mod u2_tests {
 
         // 非 admin → 403（Java buildingEditAvailable ≈ manager/MeetingManager ≈ is_admin）
         let (st, _) = respond_db(
-            "POST", path, JSON,
+            "POST",
+            path,
+            JSON,
             Body::from(format!(r#"{{"name":"{name}"}}"#)),
             NON_ADMIN,
-        ).await;
-        assert_eq!(st, StatusCode::FORBIDDEN, "non-admin room create must be 403");
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::FORBIDDEN,
+            "non-admin room create must be 403"
+        );
 
         // admin 创建成功
         let (st, json) = respond_db(
-            "POST", path, JSON,
+            "POST",
+            path,
+            JSON,
             Body::from(format!(r#"{{"name":"{name}","capacity":10}}"#)),
             ADMIN,
-        ).await;
+        )
+        .await;
         assert_eq!(st, StatusCode::OK, "admin create must succeed: {json}");
         let rid = json["data"]["id"].as_str().unwrap().to_string();
 
         // 归一化变体同名 → 400 冲突（查重生效）
         let variant = name.to_uppercase();
         let (st, _) = respond_db(
-            "POST", path, JSON,
+            "POST",
+            path,
+            JSON,
             Body::from(format!(r#"{{"name":"  {variant} "}}"#)),
             ADMIN,
-        ).await;
-        assert_eq!(st, StatusCode::BAD_REQUEST, "normalized duplicate must be rejected");
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::BAD_REQUEST,
+            "normalized duplicate must be rejected"
+        );
 
-        client.execute("DELETE FROM x_meeting_room WHERE id = $1", &[&rid]).await.unwrap();
+        client
+            .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&rid])
+            .await
+            .unwrap();
     }
 
     /// config upsert 往返：save 写入 → manage 读视图可见 → 再 save 更新值。
@@ -388,14 +496,20 @@ mod u2_tests {
         let path = "/jaxrs/meeting/assemble/control/config";
 
         let (st, json) = respond_db(
-            "POST", path, JSON,
+            "POST",
+            path,
+            JSON,
             Body::from(format!(r#"{{"configKey":"{key}","configValue":"v1"}}"#)),
             ADMIN,
-        ).await;
+        )
+        .await;
         assert_eq!(st, StatusCode::OK, "save must succeed: {json}");
 
         let rows = client
-            .query_opt("SELECT config_value FROM x_meeting_config WHERE config_key = $1", &[&key])
+            .query_opt(
+                "SELECT config_value FROM x_meeting_config WHERE config_key = $1",
+                &[&key],
+            )
             .await
             .unwrap()
             .expect("row must exist");
@@ -403,19 +517,31 @@ mod u2_tests {
 
         // upsert 更新而非新增第二行
         let (st, _) = respond_db(
-            "POST", path, JSON,
+            "POST",
+            path,
+            JSON,
             Body::from(format!(r#"{{"configKey":"{key}","configValue":"v2"}}"#)),
             ADMIN,
-        ).await;
+        )
+        .await;
         assert_eq!(st, StatusCode::OK);
         let cnt: i64 = client
-            .query_one("SELECT COUNT(*) AS n FROM x_meeting_config WHERE config_key = $1", &[&key])
+            .query_one(
+                "SELECT COUNT(*) AS n FROM x_meeting_config WHERE config_key = $1",
+                &[&key],
+            )
             .await
             .unwrap()
             .get("n");
         assert_eq!(cnt, 1, "upsert must not duplicate rows");
 
-        client.execute("DELETE FROM x_meeting_config WHERE config_key = $1", &[&key]).await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_meeting_config WHERE config_key = $1",
+                &[&key],
+            )
+            .await
+            .unwrap();
     }
 
     /// room setPhoto：multipart 上传落 x_meeting_room_photo 行，
@@ -430,8 +556,17 @@ mod u2_tests {
         let client = pool.get().await.unwrap();
         let rid = format!("u2-photo-{}", uuid::Uuid::new_v4());
         // 自愈清理：移除历史运行残留
-        client.execute("DELETE FROM x_meeting_room_photo WHERE room_id LIKE 'u2-photo-%'", &[]).await.unwrap();
-        client.execute("DELETE FROM x_meeting_room WHERE id LIKE 'u2-photo-%'", &[]).await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_meeting_room_photo WHERE room_id LIKE 'u2-photo-%'",
+                &[],
+            )
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_meeting_room WHERE id LIKE 'u2-photo-%'", &[])
+            .await
+            .unwrap();
 
         client
             .execute(
@@ -446,14 +581,26 @@ mod u2_tests {
         assert_eq!(st, StatusCode::OK, "photo upload should succeed: {json}");
 
         let cnt: i64 = client
-            .query_one("SELECT COUNT(*) AS n FROM x_meeting_room_photo WHERE room_id = $1", &[&rid])
+            .query_one(
+                "SELECT COUNT(*) AS n FROM x_meeting_room_photo WHERE room_id = $1",
+                &[&rid],
+            )
             .await
             .unwrap()
             .get("n");
         assert!(cnt >= 1, "photo row must persist with room_id linkage");
 
-        client.execute("DELETE FROM x_meeting_room_photo WHERE room_id = $1", &[&rid]).await.unwrap();
-        client.execute("DELETE FROM x_meeting_room WHERE id = $1", &[&rid]).await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_meeting_room_photo WHERE room_id = $1",
+                &[&rid],
+            )
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&rid])
+            .await
+            .unwrap();
     }
 
     /// 附件引用生命周期：processplatform 引用创建 → 按 meeting 列表可见。
@@ -467,7 +614,10 @@ mod u2_tests {
         let client = pool.get().await.unwrap();
         // 自愈清理：先移除历史运行可能残留的同前缀数据，保证测试幂等
         client
-            .execute("DELETE FROM x_meeting_attachment WHERE meeting_id LIKE 'u2-ref-%'", &[])
+            .execute(
+                "DELETE FROM x_meeting_attachment WHERE meeting_id LIKE 'u2-ref-%'",
+                &[],
+            )
             .await
             .unwrap();
         client
@@ -490,15 +640,42 @@ mod u2_tests {
             JSON,
             Body::from(format!(r#"{{"meetingId":"{mid}","title":"ref-doc"}}"#)),
             NON_ADMIN,
-        ).await;
-        assert_eq!(st, StatusCode::OK, "reference create should succeed: {json}");
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::OK,
+            "reference create should succeed: {json}"
+        );
 
-        let (st, json) = respond_db("GET", &format!("{b}/list/meeting/{mid}"), &[], Body::empty(), NON_ADMIN).await;
+        let (st, json) = respond_db(
+            "GET",
+            &format!("{b}/list/meeting/{mid}"),
+            &[],
+            Body::empty(),
+            NON_ADMIN,
+        )
+        .await;
         assert_eq!(st, StatusCode::OK);
         // java_success format: data is directly an array
-        assert!(json["data"].as_array().map(|a| !a.is_empty()).unwrap_or(false), "listed attachments must be non-empty: {json}");
+        assert!(
+            json["data"]
+                .as_array()
+                .map(|a| !a.is_empty())
+                .unwrap_or(false),
+            "listed attachments must be non-empty: {json}"
+        );
 
-        client.execute("DELETE FROM x_meeting_attachment WHERE meeting_id = $1", &[&mid]).await.unwrap();
-        client.execute("DELETE FROM x_meeting WHERE id = $1", &[&mid]).await.unwrap();
+        client
+            .execute(
+                "DELETE FROM x_meeting_attachment WHERE meeting_id = $1",
+                &[&mid],
+            )
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM x_meeting WHERE id = $1", &[&mid])
+            .await
+            .unwrap();
     }
 }

@@ -1,12 +1,12 @@
-const fs = require('fs');
-let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8');
+const fs = require('fs')
+let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', 'utf8')
 
 // === Add enhanced palette with more field types ===
 const oldPalette = `const layoutTypes = [
   { type: 'section',  label: '分组', icon: '📁' },
   { type: 'row_start', label: '开始行', icon: '↔️' },
   { type: 'row_end',   label: '结束行', icon: '↩️' },
-]`;
+]`
 const newPalette = `const layoutTypes = [
   { type: 'section',    label: '分组',     icon: '📁' },
   { type: 'section_end',label: '结束分组', icon: '📂' },
@@ -34,8 +34,8 @@ const extraFieldTypes = [
   { type: 'upload',      label: '上传',     icon: '📤' },
   { type: 'map',         label: '地图',     icon: '🗺️' },
   { type: 'code',        label: '代码',     icon: '</>' },
-]`;
-content = content.replace(oldPalette, newPalette);
+]`
+content = content.replace(oldPalette, newPalette)
 
 // === Update fieldTypes to include extra types ===
 const oldFieldTypes = `const fieldTypes = [
@@ -49,7 +49,7 @@ const oldFieldTypes = `const fieldTypes = [
   { type: 'file',     label: '文件',   icon: '📎' },
   { type: 'email',    label: '邮箱',   icon: '✉' },
   { type: 'phone',    label: '手机',   icon: '📱' },
-]`;
+]`
 const newFieldTypes = `const fieldTypes = [
   { type: 'text',     label: '文本',     icon: '📝' },
   { type: 'textarea', label: '多行文本', icon: '📄' },
@@ -82,8 +82,8 @@ const newFieldTypes = `const fieldTypes = [
   { type: 'code',     label: '代码',     icon: '</>' },
   { type: 'signature',label: '签字',     icon: '✍️' },
   { type: 'avatar',   label: '头像',     icon: '👤' },
-]`;
-content = content.replace(oldFieldTypes, newFieldTypes);
+]`
+content = content.replace(oldFieldTypes, newFieldTypes)
 
 // === Enhance makeField to support all types ===
 const oldMakeField = `function makeField(type: string): FormField {
@@ -101,7 +101,7 @@ const oldMakeField = `function makeField(type: string): FormField {
     section: { label: '分组标题', key: '' },
   }
   return { id: genId(), type, ...d[type], required: false, disabled: false } as FormField
-}`;
+}`
 const newMakeField = `function makeField(type: string): FormField {
   const defaults: Record<string, Partial<FormField>> = {
     text: { label: '文本字段', key: 'text_field', placeholder: '请输入' },
@@ -167,11 +167,11 @@ const newMakeField = `function makeField(type: string): FormField {
   if (type === 'phone') base.pattern = '^1[3-9]\\\\d{9}$'
   if (type === 'number') { base.min = 0; base.max = 999999; base.step = 1 }
   return base
-}`;
-content = content.replace(oldMakeField, newMakeField);
+}`
+content = content.replace(oldMakeField, newMakeField)
 
 // === Add more advanced functions ===
-const lifecycleMarker = 'onMounted(loadForms)';
+const lifecycleMarker = 'onMounted(loadForms)'
 const advancedFuncs = `
 // --- Enhanced Field Management ---
 function duplicateField(idx: number) {
@@ -446,11 +446,11 @@ function applyTemplate(tpl: typeof fieldTemplates[0]) {
   pushFormHistory()
 }
 
-onMounted(loadForms)`;
-content = content.replace(lifecycleMarker, advancedFuncs);
+onMounted(loadForms)`
+content = content.replace(lifecycleMarker, advancedFuncs)
 
 // === Add CSS for new features ===
-const styleEnd = '</style>';
+const styleEnd = '</style>'
 const extraCss = `
 /* Templates */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200}
@@ -510,9 +510,9 @@ const extraCss = `
 /* Spacer/Divider styling */
 .spacer-preview{height:20px;background:repeating-linear-gradient(90deg,var(--border-color),var(--border-color) 4px,transparent 4px,transparent 8px);border-radius:2px;margin:4px 0}
 .divider-preview{height:1px;background:var(--border-color);margin:8px 0}
-`;
-content = content.replace(styleEnd, extraCss + '\n</style>');
+`
+content = content.replace(styleEnd, extraCss + '\n</style>')
 
 // Write back
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', content);
-console.log('Lines:', content.split('\n').length);
+fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/FormDesigner.vue', content)
+console.log('Lines:', content.split('\n').length)

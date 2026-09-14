@@ -2,8 +2,6 @@ use deadpool_postgres::Pool;
 use serde::Serialize;
 use shared::error::AppError;
 
-pub mod index;
-
 #[derive(Debug, Serialize, Clone)]
 pub struct Document {
     pub id: String,
@@ -144,7 +142,7 @@ pub async fn search_messages(
 
 #[cfg(test)]
 mod tests {
-    use crate::{search_documents, search_subjects, search_messages, Document, Subject, Message};
+    use crate::{search_documents, search_messages, search_subjects, Document, Message, Subject};
     use deadpool_postgres::{Manager, Pool};
 
     fn build_test_pool() -> Pool {
@@ -160,6 +158,13 @@ mod tests {
         let pool = build_test_pool();
         let result = search_documents(&pool, "测试", 10).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_search_documents_smart_falls_back_to_empty_without_db() {
+        let pool = build_test_pool();
+        let result = crate::search_documents_smart(&pool, "测试", 10).await;
+        assert!(result.is_empty());
     }
 
     #[tokio::test]
@@ -216,49 +221,12 @@ mod tests {
     }
 }
 
-/// Tantivy-first document search with automatic PostgreSQL fallback.
-///
-/// On any Tantivy error (index build failure, ingest failure, query parse
-/// error) this silently degrades to the original `to_tsvector` implementation,
-/// so the endpoint stays available even when the local index is unusable.
+/// PostgreSQL full-text document search that preserves the endpoint's
+/// historical empty-list fallback when the database query is unavailable.
 pub async fn search_documents_smart(pool: &Pool, query: &str, limit: i32) -> Vec<Document> {
-    match index::documents_search_ids(pool, query, limit).await {
-        Ok(ids) if !ids.is_empty() => match fetch_documents_by_ids(pool, &ids).await {
-            Ok(docs) => docs,
-            Err(_) => search_documents_pg_fallback(pool, query, limit).await,
-        },
-        Ok(_) => Vec::new(),
-        Err(_) => search_documents_pg_fallback(pool, query, limit).await,
-    }
-}
-
-async fn fetch_documents_by_ids(pool: &Pool, ids: &[String]) -> Result<Vec<Document>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, title, content FROM x_cms_document WHERE id = ANY($1)",
-            &[&ids],
-        )
+    search_documents(pool, query, limit)
         .await
-        .map_err(|_| AppError::Internal)?;
-    let mut by_id: std::collections::HashMap<String, Document> = rows
-        .iter()
-        .map(|row| {
-            let d = Document {
-                id: row.get("id"),
-                title: row.get("title"),
-                content: row.get("content"),
-                rank: None,
-            };
-            (d.id.clone(), d)
-        })
-        .collect();
-    // preserve Tantivy rank order
-    Ok(ids.iter().filter_map(|id| by_id.remove(id)).collect())
-}
-
-async fn search_documents_pg_fallback(pool: &Pool, query: &str, limit: i32) -> Vec<Document> {
-    search_documents(pool, query, limit).await.unwrap_or_default()
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

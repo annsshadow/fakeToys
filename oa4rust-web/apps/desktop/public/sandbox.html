@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Sandbox</title></head>
+<body>
+<script>
+// This page runs inside a sandboxed iframe (sandbox="allow-scripts").
+// It has NO access to window.document, window.localStorage, or fetch().
+// Only safe JS globals are available: console, Math, JSON, Array, Object, etc.
+window.addEventListener('message', (e) => {
+  if (!e.data || !e.data.__oa4rust_sandbox_code) return;
+  var code = e.data.__oa4rust_sandbox_code;
+  var start = performance.now();
+  let result;
+  let error;
+  try {
+    // eslint-disable-next-line no-eval -- intentionally isolated in sandbox iframe
+    result = eval(code);
+  } catch (err) {
+    error = String(err);
+  }
+  var elapsed = performance.now() - start;
+  window.parent.postMessage({
+    __oa4rust_sandbox_result: true,
+    ok: error === undefined,
+    output: error === undefined ? (result !== undefined ? String(result) : '(no return value)') : undefined,
+    error,
+    executionTimeMs: Math.round(elapsed * 100) / 100,
+  }, '*');
+});
+</script>
+</body>
+</html>

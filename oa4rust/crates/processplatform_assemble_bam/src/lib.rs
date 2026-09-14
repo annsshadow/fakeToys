@@ -1,7 +1,4 @@
-use axum::{
-    extract::Extension,
-    Json, Router, routing::get, routing::post, routing::delete,
-};
+use axum::{extract::Extension, routing::delete, routing::get, routing::post, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
@@ -46,7 +43,10 @@ pub async fn get_bam_config(
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(row.get("xname"))),
             ("enabled".to_string(), Value::Bool(row.get("xenabled"))),
-            ("definition".to_string(), Value::String(row.get("xdefinition"))),
+            (
+                "definition".to_string(),
+                Value::String(row.get("xdefinition")),
+            ),
         ]),
     ))))
 }
@@ -112,7 +112,11 @@ pub async fn list_bams(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 鍒犻櫎BAM瀹炰緥
@@ -155,13 +159,20 @@ pub async fn get_bam_status(
         0
     };
 
-    let status = if active_metrics > 0 { "running" } else { "idle" };
+    let status = if active_metrics > 0 {
+        "running"
+    } else {
+        "idle"
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("status".to_string(), Value::String(status.to_string())),
-            ("activeMetrics".to_string(), Value::Number(serde_json::Number::from(active_metrics))),
+            (
+                "activeMetrics".to_string(),
+                Value::Number(serde_json::Number::from(active_metrics)),
+            ),
         ]),
     ))))
 }
@@ -269,7 +280,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     processplatform_assemble_bam_router().layer(axum::extract::Extension(pool))
 }
@@ -295,20 +305,36 @@ pub async fn period_list_completed_task_application(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-            ("application".to_string(), Value::String(r.get("application"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(r.get("task_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -328,19 +354,32 @@ pub async fn period_list_completed_task_unit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(r.get("task_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -359,18 +398,31 @@ pub async fn period_list_completed_work_application(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "workStatus".to_string(),
+                    Value::String(r.get("work_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -390,18 +442,31 @@ pub async fn period_list_completed_work_unit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "workStatus".to_string(),
+                    Value::String(r.get("work_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -411,7 +476,11 @@ pub async fn period_list_completed_work_unit(
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -424,14 +493,22 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([(
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+            )]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -449,15 +526,28 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, _unit_id, person_id)): axum::extract::Path<(String, String, String, String)>,
+    axum::extract::Path((application_id, process_id, _unit_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -470,21 +560,35 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("activity".to_string(), Value::String(r.get("activity"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("activity".to_string(), Value::String(r.get("activity"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, _unit_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, _unit_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -497,15 +601,25 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("process".to_string(), Value::String(r.get("process"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -524,15 +638,28 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -553,15 +680,27 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -572,9 +711,17 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -591,21 +738,31 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("process".to_string(), Value::String(r.get("process"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_completed_work_unit_unit_person_person_by_application(
     pool: Extension<Pool>,
-    axum::extract::Path(person_id ): axum::extract::Path<String>,
+    axum::extract::Path(person_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -616,15 +773,28 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -634,7 +804,11 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -647,21 +821,33 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<(String, String, String, String)>,
+    axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<
+        (String, String, String, String),
+    >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -673,15 +859,27 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -694,15 +892,25 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("activity".to_string(), Value::String(r.get("activity"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("activity".to_string(), Value::String(r.get("activity"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -721,15 +929,25 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("process".to_string(), Value::String(r.get("process"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -748,15 +966,28 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -777,15 +1008,27 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -796,9 +1039,17 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -815,15 +1066,25 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("process".to_string(), Value::String(r.get("process"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -840,15 +1101,28 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -858,7 +1132,11 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, activity_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -871,21 +1149,33 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<(String, String, String, String)>,
+    axum::extract::Path((application_id, process_id, activity_id, person_id)): axum::extract::Path<
+        (String, String, String, String),
+    >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -897,15 +1187,27 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -918,15 +1220,25 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("activity".to_string(), Value::String(r.get("activity"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("activity".to_string(), Value::String(r.get("activity"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -945,15 +1257,25 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("process".to_string(), Value::String(r.get("process"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -972,15 +1294,28 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1001,15 +1336,27 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
 pub async fn period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person(
     pool: Extension<Pool>,
-    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((application_id, process_id, person_id)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -1020,9 +1367,17 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let cnt: i64 = if !rows.is_empty() { rows[0].get("cnt") } else { 0 };
+    let cnt: i64 = if !rows.is_empty() {
+        rows[0].get("cnt")
+    } else {
+        0
+    };
 
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), cnt, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(vec![]),
+        cnt,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1039,15 +1394,25 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("process".to_string(), Value::String(r.get("process"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1064,15 +1429,28 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "count".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1096,19 +1474,32 @@ pub async fn period_list_expired_task_application(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(r.get("task_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1128,19 +1519,32 @@ pub async fn period_list_expired_task_unit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(r.get("task_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1159,18 +1563,31 @@ pub async fn period_list_expired_work_application(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "workStatus".to_string(),
+                    Value::String(r.get("work_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Object(serde_json::Map::new()),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1190,18 +1607,31 @@ pub async fn period_list_expired_work_unit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "workStatus".to_string(),
+                    Value::String(r.get("work_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1225,19 +1655,32 @@ pub async fn period_list_start_task_application(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(r.get("task_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1257,19 +1700,32 @@ pub async fn period_list_start_task_unit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("person".to_string(), Value::String(r.get("person"))),
-            ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(r.get("task_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1288,18 +1744,31 @@ pub async fn period_list_start_work_application(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "workStatus".to_string(),
+                    Value::String(r.get("work_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1319,18 +1788,31 @@ pub async fn period_list_start_work_unit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            ("title".to_string(), Value::String(r.get("title"))),
-            ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
-            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "workStatus".to_string(),
+                    Value::String(r.get("work_status")),
+                ),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(r.get("start_time")),
+                ),
+                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -1344,38 +1826,63 @@ pub async fn state_applicationtstubs_trigger(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let total_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE deleted_at IS NULL", &[])
+        .query(
+            "SELECT COUNT(*) as cnt FROM x_work WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_works: i64 = if !total_works.is_empty() { total_works[0].get("cnt") } else { 0 };
+    let total_works: i64 = if !total_works.is_empty() {
+        total_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let pending_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'pending' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let pending_works: i64 = if !pending_works.is_empty() { pending_works[0].get("cnt") } else { 0 };
+    let pending_works: i64 = if !pending_works.is_empty() {
+        pending_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let triggered_apps = client
         .query("SELECT COALESCE(application, '') AS application FROM x_work WHERE deleted_at IS NULL AND application IS NOT NULL GROUP BY application ORDER BY application", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = triggered_apps.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String(r.get("application"))),
-            ("totalWorks".to_string(), Value::Number(serde_json::Number::from(total_works))),
-            ("pendingWorks".to_string(), Value::Number(serde_json::Number::from(pending_works))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = triggered_apps
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "application".to_string(),
+                    Value::String(r.get("application")),
+                ),
+                (
+                    "totalWorks".to_string(),
+                    Value::Number(serde_json::Number::from(total_works)),
+                ),
+                (
+                    "pendingWorks".to_string(),
+                    Value::Number(serde_json::Number::from(pending_works)),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
-pub async fn state_category(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
@@ -1395,19 +1902,41 @@ pub async fn state_category(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("category".to_string(), Value::String(r.get("category"))),
-            ("total".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("total")))),
-            ("pending".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("pending")))),
-            ("processing".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("processing")))),
-            ("completed".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("completed")))),
-            ("expired".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("expired")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("category".to_string(), Value::String(r.get("category"))),
+                (
+                    "total".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("total"))),
+                ),
+                (
+                    "pending".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("pending"))),
+                ),
+                (
+                    "processing".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("processing"))),
+                ),
+                (
+                    "completed".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("completed"))),
+                ),
+                (
+                    "expired".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("expired"))),
+                ),
+            ]))
+        })
+        .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1432,25 +1961,51 @@ pub async fn state_category_trigger(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let row = if !rows.is_empty() { &rows[0] } else {
+    let row = if !rows.is_empty() {
+        &rows[0]
+    } else {
         return Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("category".to_string(), Value::String(category)),
-                ("total".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("pending".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("processing".to_string(), Value::Number(serde_json::Number::from(0))),
-                ("completed".to_string(), Value::Number(serde_json::Number::from(0))),
+                (
+                    "total".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "pending".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "processing".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
+                (
+                    "completed".to_string(),
+                    Value::Number(serde_json::Number::from(0)),
+                ),
             ]),
-        ))))
+        ))));
     };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("category".to_string(), Value::String(category)),
-            ("total".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("total")))),
-            ("pending".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("pending")))),
-            ("processing".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("processing")))),
-            ("completed".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("completed")))),
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i64>("total"))),
+            ),
+            (
+                "pending".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i64>("pending"))),
+            ),
+            (
+                "processing".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i64>("processing"))),
+            ),
+            (
+                "completed".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i64>("completed"))),
+            ),
         ]),
     ))))
 }
@@ -1462,154 +2017,283 @@ pub async fn state_organization(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let total_persons = client
-        .query("SELECT COUNT(*) as cnt FROM x_org_person WHERE deleted_at IS NULL", &[])
+        .query(
+            "SELECT COUNT(*) as cnt FROM x_org_person WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_persons: i64 = if !total_persons.is_empty() { total_persons[0].get("cnt") } else { 0 };
+    let total_persons: i64 = if !total_persons.is_empty() {
+        total_persons[0].get("cnt")
+    } else {
+        0
+    };
 
     let total_units = client
-        .query("SELECT COUNT(*) as cnt FROM x_org_unit WHERE deleted_at IS NULL", &[])
+        .query(
+            "SELECT COUNT(*) as cnt FROM x_org_unit WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_units: i64 = if !total_units.is_empty() { total_units[0].get("cnt") } else { 0 };
+    let total_units: i64 = if !total_units.is_empty() {
+        total_units[0].get("cnt")
+    } else {
+        0
+    };
 
     let total_groups = client
-        .query("SELECT COUNT(*) as cnt FROM x_org_group WHERE deleted_at IS NULL", &[])
+        .query(
+            "SELECT COUNT(*) as cnt FROM x_org_group WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_groups: i64 = if !total_groups.is_empty() { total_groups[0].get("cnt") } else { 0 };
+    let total_groups: i64 = if !total_groups.is_empty() {
+        total_groups[0].get("cnt")
+    } else {
+        0
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("totalPersons".to_string(), Value::Number(serde_json::Number::from(total_persons))),
-            ("totalUnits".to_string(), Value::Number(serde_json::Number::from(total_units))),
-            ("totalGroups".to_string(), Value::Number(serde_json::Number::from(total_groups))),
+            (
+                "totalPersons".to_string(),
+                Value::Number(serde_json::Number::from(total_persons)),
+            ),
+            (
+                "totalUnits".to_string(),
+                Value::Number(serde_json::Number::from(total_units)),
+            ),
+            (
+                "totalGroups".to_string(),
+                Value::Number(serde_json::Number::from(total_groups)),
+            ),
         ]),
     ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn state_running(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pending_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'pending' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let pending_works: i64 = if !pending_works.is_empty() { pending_works[0].get("cnt") } else { 0 };
+    let pending_works: i64 = if !pending_works.is_empty() {
+        pending_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let processing_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'processing' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let processing_works: i64 = if !processing_works.is_empty() { processing_works[0].get("cnt") } else { 0 };
+    let processing_works: i64 = if !processing_works.is_empty() {
+        processing_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let pending_tasks = client
         .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'pending' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let pending_tasks: i64 = if !pending_tasks.is_empty() { pending_tasks[0].get("cnt") } else { 0 };
+    let pending_tasks: i64 = if !pending_tasks.is_empty() {
+        pending_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     let processing_tasks = client
         .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'processing' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let processing_tasks: i64 = if !processing_tasks.is_empty() { processing_tasks[0].get("cnt") } else { 0 };
+    let processing_tasks: i64 = if !processing_tasks.is_empty() {
+        processing_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     let started_tasks = client
         .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'started' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let started_tasks: i64 = if !started_tasks.is_empty() { started_tasks[0].get("cnt") } else { 0 };
+    let started_tasks: i64 = if !started_tasks.is_empty() {
+        started_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("pendingWork".to_string(), Value::Number(serde_json::Number::from(pending_works))),
-            ("processingWork".to_string(), Value::Number(serde_json::Number::from(processing_works))),
-            ("pendingTask".to_string(), Value::Number(serde_json::Number::from(pending_tasks))),
-            ("processingTask".to_string(), Value::Number(serde_json::Number::from(processing_tasks))),
-            ("startedTask".to_string(), Value::Number(serde_json::Number::from(started_tasks))),
+            (
+                "pendingWork".to_string(),
+                Value::Number(serde_json::Number::from(pending_works)),
+            ),
+            (
+                "processingWork".to_string(),
+                Value::Number(serde_json::Number::from(processing_works)),
+            ),
+            (
+                "pendingTask".to_string(),
+                Value::Number(serde_json::Number::from(pending_tasks)),
+            ),
+            (
+                "processingTask".to_string(),
+                Value::Number(serde_json::Number::from(processing_tasks)),
+            ),
+            (
+                "startedTask".to_string(),
+                Value::Number(serde_json::Number::from(started_tasks)),
+            ),
         ]),
     ))))
 }
 
 #[allow(non_snake_case)]
-pub async fn state_summary(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let total_works = client
-        .query("SELECT COUNT(*) as cnt FROM x_work WHERE deleted_at IS NULL", &[])
+        .query(
+            "SELECT COUNT(*) as cnt FROM x_work WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_works: i64 = if !total_works.is_empty() { total_works[0].get("cnt") } else { 0 };
+    let total_works: i64 = if !total_works.is_empty() {
+        total_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let total_tasks = client
-        .query("SELECT COUNT(*) as cnt FROM x_task WHERE deleted_at IS NULL", &[])
+        .query(
+            "SELECT COUNT(*) as cnt FROM x_task WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    let total_tasks: i64 = if !total_tasks.is_empty() { total_tasks[0].get("cnt") } else { 0 };
+    let total_tasks: i64 = if !total_tasks.is_empty() {
+        total_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     let completed_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'completed' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let completed_works: i64 = if !completed_works.is_empty() { completed_works[0].get("cnt") } else { 0 };
+    let completed_works: i64 = if !completed_works.is_empty() {
+        completed_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let completed_tasks = client
         .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'completed' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let completed_tasks: i64 = if !completed_tasks.is_empty() { completed_tasks[0].get("cnt") } else { 0 };
+    let completed_tasks: i64 = if !completed_tasks.is_empty() {
+        completed_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     let pending_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'pending' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let pending_works: i64 = if !pending_works.is_empty() { pending_works[0].get("cnt") } else { 0 };
+    let pending_works: i64 = if !pending_works.is_empty() {
+        pending_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let pending_tasks = client
         .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'pending' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let pending_tasks: i64 = if !pending_tasks.is_empty() { pending_tasks[0].get("cnt") } else { 0 };
+    let pending_tasks: i64 = if !pending_tasks.is_empty() {
+        pending_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     let processing_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'processing' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let processing_works: i64 = if !processing_works.is_empty() { processing_works[0].get("cnt") } else { 0 };
+    let processing_works: i64 = if !processing_works.is_empty() {
+        processing_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let expired_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'expired' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let expired_works: i64 = if !expired_works.is_empty() { expired_works[0].get("cnt") } else { 0 };
+    let expired_works: i64 = if !expired_works.is_empty() {
+        expired_works[0].get("cnt")
+    } else {
+        0
+    };
 
     let expired_tasks = client
         .query("SELECT COUNT(*) as cnt FROM x_task WHERE task_status = 'expired' AND deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    let expired_tasks: i64 = if !expired_tasks.is_empty() { expired_tasks[0].get("cnt") } else { 0 };
+    let expired_tasks: i64 = if !expired_tasks.is_empty() {
+        expired_tasks[0].get("cnt")
+    } else {
+        0
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("totalWork".to_string(), Value::Number(serde_json::Number::from(total_works))),
-            ("totalTask".to_string(), Value::Number(serde_json::Number::from(total_tasks))),
-            ("completedWork".to_string(), Value::Number(serde_json::Number::from(completed_works))),
-            ("completedTask".to_string(), Value::Number(serde_json::Number::from(completed_tasks))),
-            ("pendingWork".to_string(), Value::Number(serde_json::Number::from(pending_works))),
-            ("pendingTask".to_string(), Value::Number(serde_json::Number::from(pending_tasks))),
-            ("processingWork".to_string(), Value::Number(serde_json::Number::from(processing_works))),
-            ("expiredWork".to_string(), Value::Number(serde_json::Number::from(expired_works))),
-            ("expiredTask".to_string(), Value::Number(serde_json::Number::from(expired_tasks))),
+            (
+                "totalWork".to_string(),
+                Value::Number(serde_json::Number::from(total_works)),
+            ),
+            (
+                "totalTask".to_string(),
+                Value::Number(serde_json::Number::from(total_tasks)),
+            ),
+            (
+                "completedWork".to_string(),
+                Value::Number(serde_json::Number::from(completed_works)),
+            ),
+            (
+                "completedTask".to_string(),
+                Value::Number(serde_json::Number::from(completed_tasks)),
+            ),
+            (
+                "pendingWork".to_string(),
+                Value::Number(serde_json::Number::from(pending_works)),
+            ),
+            (
+                "pendingTask".to_string(),
+                Value::Number(serde_json::Number::from(pending_tasks)),
+            ),
+            (
+                "processingWork".to_string(),
+                Value::Number(serde_json::Number::from(processing_works)),
+            ),
+            (
+                "expiredWork".to_string(),
+                Value::Number(serde_json::Number::from(expired_works)),
+            ),
+            (
+                "expiredTask".to_string(),
+                Value::Number(serde_json::Number::from(expired_tasks)),
+            ),
         ]),
     ))))
 }
-
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 // plan002 U2 路 Java 绮剧‘璺緞闂悎锛?2 涓洃鎺х鐐癸級
@@ -1701,7 +2385,10 @@ async fn period_count_query_shaped(
                 _ => per_col,
             };
             (
-                format!("SELECT COALESCE({}, '') AS key, COUNT(*)::bigint AS cnt", key_col),
+                format!(
+                    "SELECT COALESCE({}, '') AS key, COUNT(*)::bigint AS cnt",
+                    key_col
+                ),
                 " GROUP BY key ORDER BY cnt DESC, key",
             )
         }
@@ -1734,7 +2421,10 @@ async fn period_count_query_shaped(
                 .map(|r| {
                     Value::Object(serde_json::Map::from_iter([
                         ("key".to_string(), Value::String(r.get("key"))),
-                        ("count".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt")))),
+                        (
+                            "count".to_string(),
+                            Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
+                        ),
                     ]))
                 })
                 .collect();
@@ -1742,16 +2432,28 @@ async fn period_count_query_shaped(
             if java_shape {
                 // Java returns LinkedHashMap<String, List<Wo>> (Object with month keys)
                 // When empty DB, return empty Object {} to match Java type
-                return Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), 0, 0)));
+                return Ok(Json(ActionResult::java_success(
+                    Value::Object(serde_json::Map::new()),
+                    0,
+                    0,
+                )));
             }
             let count2 = count;
-            Ok(Json(ActionResult::java_success(Value::Array(data), count2, 0)))
+            Ok(Json(ActionResult::java_success(
+                Value::Array(data),
+                count2,
+                0,
+            )))
         }
         None => {
             let total: i64 = rows.first().map(|r| r.get("cnt")).unwrap_or(0);
             // total 鍨嬬鐐?Java 瀹炴祴杩斿洖瑁告暟缁勶紙绌烘暟鎹椂涓?[]锛夛紝璁℃暟鏀句俊灏?
             if java_shape {
-                return Ok(Json(ActionResult::java_success(Value::Object(serde_json::Map::new()), total, 0)));
+                return Ok(Json(ActionResult::java_success(
+                    Value::Object(serde_json::Map::new()),
+                    total,
+                    0,
+                )));
             }
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([(
@@ -1764,67 +2466,125 @@ async fn period_count_query_shaped(
 }
 
 /// GET /period/list/{period}/task/applicationstubs — list of application stubs for application
-async fn bam_stubs_task(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
-    period_count_query_shaped(&pool.0, "task", period, &PeriodFilter::default(), Some("application"), true).await
+async fn bam_stubs_task(
+    pool: Extension<Pool>,
+    period: &'static str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    period_count_query_shaped(
+        &pool.0,
+        "task",
+        period,
+        &PeriodFilter::default(),
+        Some("application"),
+        true,
+    )
+    .await
 }
 
 /// GET /period/list/{period}/task/unitstubs — list of unit stubs for application
-async fn bam_stubs_task_unit(pool: Extension<Pool>, period: &'static str) -> Result<Json<ActionResult<Value>>, AppError> {
-    period_count_query_shaped(&pool.0, "task", period, &PeriodFilter::default(), Some("unit"), true).await
+async fn bam_stubs_task_unit(
+    pool: Extension<Pool>,
+    period: &'static str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    period_count_query_shaped(
+        &pool.0,
+        "task",
+        period,
+        &PeriodFilter::default(),
+        Some("unit"),
+        true,
+    )
+    .await
 }
 
 /// GET /period/list/{period}/work/*stubs 鈥斺€?鎸夊簲鐢?鍗曚綅鍒嗙粍鐨勫伐浣滈噺妗╁垪琛ㄣ€?
-async fn bam_stubs_work(pool: Extension<Pool>, period: &'static str, by_unit: bool) -> Result<Json<ActionResult<Value>>, AppError> {
+async fn bam_stubs_work(
+    pool: Extension<Pool>,
+    period: &'static str,
+    by_unit: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let group = if by_unit { "unit" } else { "application" };
-    period_count_query_shaped(&pool.0, "work", period, &PeriodFilter::default(), Some(group), true).await
+    period_count_query_shaped(
+        &pool.0,
+        "work",
+        period,
+        &PeriodFilter::default(),
+        Some(group),
+        true,
+    )
+    .await
 }
 
 #[allow(non_snake_case)]
-pub async fn bam_stubs_completed_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_completed_task_by_application(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task(pool, "completed").await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_completed_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_completed_task_by_unit(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task_unit(pool, "completed").await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_completed_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_completed_work_by_application(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "completed", false).await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_completed_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_completed_work_by_unit(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "completed", true).await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_expired_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_expired_task_by_application(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task(pool, "expired").await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_expired_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_expired_task_by_unit(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task_unit(pool, "expired").await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_expired_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_expired_work_by_application(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "expired", false).await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_expired_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_expired_work_by_unit(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "expired", true).await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_start_task_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_start_task_by_application(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task(pool, "start").await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_start_task_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_start_task_by_unit(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_task_unit(pool, "start").await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_start_work_by_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_start_work_by_application(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "start", false).await
 }
 #[allow(non_snake_case)]
-pub async fn bam_stubs_start_work_by_unit(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_stubs_start_work_by_unit(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     bam_stubs_work(pool, "start", true).await
 }
 
@@ -1835,149 +2595,560 @@ type BamPath5 = axum::extract::Path<(String, String, String, String, String)>;
 
 /// completed/task stubs — Java path unique alias (no double-count)
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_task_by_unit(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
-    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            activity: Some(ac),
+            ..Default::default()
+        },
+        Some("unit"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_task_total(
+    pool: Extension<Pool>,
+    p: BamPath5,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
-    period_count_query_shaped(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
+    period_count_query_shaped(
+        &pool.0,
+        "task",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            activity: Some(ac),
+            unit: Some(u),
+            person: Some(pe),
+        },
+        None,
+        true,
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_task_by_activity(
+    pool: Extension<Pool>,
+    p: BamPath4,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("activity"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_task_by_process(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "completed", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("process"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_task_by_application(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
-    period_count_query(&pool.0, "task", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "completed",
+        &PeriodFilter {
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("application"),
+    )
+    .await
 }
 
 /// completed/work 鍥涚鍒囩墖銆?
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_work_by_unit(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
-    period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            ..Default::default()
+        },
+        Some("unit"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_work_total(
+    pool: Extension<Pool>,
+    p: BamPath4,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query_shaped(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
+    period_count_query_shaped(
+        &pool.0,
+        "work",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        None,
+        true,
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_work_by_process(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
-    period_count_query(&pool.0, "work", "completed", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "completed",
+        &PeriodFilter {
+            application: Some(a),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("process"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_completed_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_completed_work_by_application(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
-    period_count_query(&pool.0, "work", "completed", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "completed",
+        &PeriodFilter {
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("application"),
+    )
+    .await
 }
 
 /// expired/task 浜旂鍒囩墖銆?
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_task_by_unit(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
-    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            activity: Some(ac),
+            ..Default::default()
+        },
+        Some("unit"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_task_total(
+    pool: Extension<Pool>,
+    p: BamPath5,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
-    period_count_query_shaped(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
+    period_count_query_shaped(
+        &pool.0,
+        "task",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            activity: Some(ac),
+            unit: Some(u),
+            person: Some(pe),
+        },
+        None,
+        true,
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_task_by_activity(
+    pool: Extension<Pool>,
+    p: BamPath4,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("activity"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_task_by_process(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "expired", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("process"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_task_by_application(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
-    period_count_query(&pool.0, "task", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "expired",
+        &PeriodFilter {
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("application"),
+    )
+    .await
 }
 
 /// expired/work 鍥涚鍒囩墖銆?
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_work_by_unit(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
-    period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            ..Default::default()
+        },
+        Some("unit"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_work_total(
+    pool: Extension<Pool>,
+    p: BamPath4,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query_shaped(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
+    period_count_query_shaped(
+        &pool.0,
+        "work",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        None,
+        true,
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_work_by_process(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
-    period_count_query(&pool.0, "work", "expired", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "expired",
+        &PeriodFilter {
+            application: Some(a),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("process"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_expired_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_expired_work_by_application(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
-    period_count_query(&pool.0, "work", "expired", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "expired",
+        &PeriodFilter {
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("application"),
+    )
+    .await
 }
 
 /// start/task 浜旂鍒囩墖銆?
 #[allow(non_snake_case)]
-pub async fn bam_count_start_task_by_unit(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_task_by_unit(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac) = p.0;
-    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), ..Default::default() }, Some("unit")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            activity: Some(ac),
+            ..Default::default()
+        },
+        Some("unit"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_task_total(pool: Extension<Pool>, p: BamPath5) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_task_total(
+    pool: Extension<Pool>,
+    p: BamPath5,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, ac, u, pe) = p.0;
-    period_count_query_shaped(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), activity: Some(ac), unit: Some(u), person: Some(pe) }, None, true).await
+    period_count_query_shaped(
+        &pool.0,
+        "task",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            activity: Some(ac),
+            unit: Some(u),
+            person: Some(pe),
+        },
+        None,
+        true,
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_task_by_activity(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_task_by_activity(
+    pool: Extension<Pool>,
+    p: BamPath4,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, Some("activity")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("activity"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_task_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_task_by_process(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
-    period_count_query(&pool.0, "task", "start", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("process"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_task_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_task_by_application(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
-    period_count_query(&pool.0, "task", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+    period_count_query(
+        &pool.0,
+        "task",
+        "start",
+        &PeriodFilter {
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("application"),
+    )
+    .await
 }
 
 /// start/work 鍥涚鍒囩墖銆?
 #[allow(non_snake_case)]
-pub async fn bam_count_start_work_by_unit(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_work_by_unit(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr) = p.0;
-    period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), ..Default::default() }, Some("unit")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            ..Default::default()
+        },
+        Some("unit"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_work_total(pool: Extension<Pool>, p: BamPath4) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_work_total(
+    pool: Extension<Pool>,
+    p: BamPath4,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, pr, u, pe) = p.0;
-    period_count_query_shaped(&pool.0, "work", "start", &PeriodFilter { application: Some(a), process: Some(pr), unit: Some(u), person: Some(pe), ..Default::default() }, None, true).await
+    period_count_query_shaped(
+        &pool.0,
+        "work",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            process: Some(pr),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        None,
+        true,
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_work_by_process(pool: Extension<Pool>, p: BamPath3) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_work_by_process(
+    pool: Extension<Pool>,
+    p: BamPath3,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (a, u, pe) = p.0;
-    period_count_query(&pool.0, "work", "start", &PeriodFilter { application: Some(a), unit: Some(u), person: Some(pe), ..Default::default() }, Some("process")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "start",
+        &PeriodFilter {
+            application: Some(a),
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("process"),
+    )
+    .await
 }
 #[allow(non_snake_case)]
-pub async fn bam_count_start_work_by_application(pool: Extension<Pool>, p: BamPath2) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bam_count_start_work_by_application(
+    pool: Extension<Pool>,
+    p: BamPath2,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let (u, pe) = p.0;
-    period_count_query(&pool.0, "work", "start", &PeriodFilter { unit: Some(u), person: Some(pe), ..Default::default() }, Some("application")).await
+    period_count_query(
+        &pool.0,
+        "work",
+        "start",
+        &PeriodFilter {
+            unit: Some(u),
+            person: Some(pe),
+            ..Default::default()
+        },
+        Some("application"),
+    )
+    .await
 }
 
 /// GET /state/category/trigger — unclassified triggers with incomplete status (direct SQL)
@@ -2003,21 +3174,42 @@ pub async fn state_category_trigger_all(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows.iter().map(|r| {
-        Value::Object(serde_json::Map::from_iter([
-            ("category".to_string(), Value::String(r.get("category"))),
-            ("total".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("total")))),
-            ("pending".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("pending")))),
-            ("processing".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("processing")))),
-            ("completed".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("completed")))),
-            ("expired".to_string(), Value::Number(serde_json::Number::from(r.get::<_, i64>("expired")))),
-        ]))
-    }).collect();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("category".to_string(), Value::String(r.get("category"))),
+                (
+                    "total".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("total"))),
+                ),
+                (
+                    "pending".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("pending"))),
+                ),
+                (
+                    "processing".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("processing"))),
+                ),
+                (
+                    "completed".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("completed"))),
+                ),
+                (
+                    "expired".to_string(),
+                    Value::Number(serde_json::Number::from(r.get::<_, i64>("expired"))),
+                ),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("triggered".to_string(), Value::Bool(true)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))

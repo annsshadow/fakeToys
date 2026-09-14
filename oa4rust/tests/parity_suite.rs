@@ -27,6 +27,8 @@ fn parity_suite_runner_placeholder() {
     // The real test execution happens via the parity crate's test modules.
     // This test exists so `cargo test --test parity_suite` produces a
     // discoverable test target.  Run `cargo test -p parity` for full output.
-    assert!(parity::ParityReport::default().is_clean(),
-        "parity tests run via `cargo test -p parity`; this target is a CI entry-point");
+    assert!(
+        parity::ParityReport::default().is_clean(),
+        "parity tests run via `cargo test -p parity`; this target is a CI entry-point"
+    );
 }

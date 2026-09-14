@@ -3,7 +3,7 @@ mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    
+
     use tower::util::ServiceExt;
 
     #[tokio::test]
@@ -20,8 +20,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "send_message route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "send_message route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -38,8 +41,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "receive_list route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "receive_list route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -56,8 +62,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "mark_read route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "mark_read route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -74,8 +83,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "consume_list_consume_count_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "consume_list_consume_count_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -92,8 +104,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "consume_list_consume_currentperson_count_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "consume_list_consume_currentperson_count_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -110,8 +125,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "consume_list_consume_person_person_count_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "consume_list_consume_person_person_count_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -128,8 +146,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "consume_type_type route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "consume_type_type route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -146,8 +167,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "consume_type_type_mockputtopost route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "consume_type_type_mockputtopost route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -164,8 +188,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "consume_id_type_type route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "consume_id_type_type route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -182,8 +209,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -200,8 +230,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_business_businessId route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_business_businessId route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -218,8 +251,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_list_my route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_list_my route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -236,8 +272,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_list_with_person route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_list_with_person route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -254,8 +293,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_mockputtopost route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_mockputtopost route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -272,8 +314,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -290,8 +335,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_group route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_group route should be registered"
+        );
     }
 
     // SKIPPED: im_manager_config_post not accessible
@@ -309,8 +357,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_update route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_update route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -327,8 +378,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_group_mockdeletetoget route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_group_mockdeletetoget route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -345,8 +399,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_group_quit_self route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_group_quit_self route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -363,8 +420,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_icon route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_icon route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -381,8 +441,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_read route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_read route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -399,8 +462,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_read_mockputtopost route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_read_mockputtopost route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -417,8 +483,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_single route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_single route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -435,8 +504,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_single_mockdeletetoget route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_single_mockdeletetoget route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -453,8 +525,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_top_cancel route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_top_cancel route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -471,8 +546,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_top_cancel_mockputtopost route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_top_cancel_mockputtopost route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -489,8 +567,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_top_set route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_top_set route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -507,8 +588,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_conversation_id_top_set_mockputtopost route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_conversation_id_top_set_mockputtopost route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -525,8 +609,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_manager_config route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_manager_config route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -543,8 +630,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -561,8 +651,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_clear route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_clear route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -579,8 +672,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_collection route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_collection route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -597,8 +693,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_collection_list_page_size_size route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_collection_list_page_size_size route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -615,8 +714,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_collection_remove route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_collection_remove route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -633,7 +735,12 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+        // Route-presence probe: an unregistered path hits the axum fallback
+        // (empty 404 body); this handler may legitimately answer 404 for a
+        // missing x_message_file row but always with a body, so assert the
+        // body is non-empty instead of the status.
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+        assert!(!bytes.is_empty(),
             "im_msg_download_id route should be registered");
     }
 
@@ -651,8 +758,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_download_id_image_width_width_height_height route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_download_id_image_width_width_height_height route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -669,8 +779,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_list_object route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_list_object route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -687,8 +800,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_list_page_size_size route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_list_page_size_size route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -705,8 +821,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_revoke_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "im_msg_revoke_id route should be registered"
+        );
     }
 
     // SKIPPED: im_msg_upload_conversationId_type_type not accessible
@@ -724,8 +843,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_currentperson_consumed route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_currentperson_consumed route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -742,8 +864,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_currentperson_consumed_all route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_currentperson_consumed_all route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -760,8 +885,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_currentperson_consumed_mockputtopost route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_currentperson_consumed_mockputtopost route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -778,8 +906,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_consumed_count_count_asc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_consumed_count_count_asc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -796,8 +927,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_consumed_count_count_desc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_consumed_count_count_desc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -814,8 +948,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_count_count_asc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_count_count_asc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -832,8 +969,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_count_count_desc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_count_count_desc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -850,8 +990,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_noim_count_count_desc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_noim_count_count_desc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -868,8 +1011,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_not_consumed_count_count_asc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_not_consumed_count_count_asc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -886,8 +1032,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_currentperson_not_consumed_count_count_desc route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_currentperson_not_consumed_count_count_desc route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -904,8 +1053,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_id_next_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_id_next_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -922,8 +1074,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "instant_list_id_prev_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "instant_list_id_prev_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -940,8 +1095,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "mass_enable_type route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "mass_enable_type route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -958,8 +1116,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "mass_list_id_next_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "mass_list_id_next_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -976,8 +1137,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "mass_list_id_prev_count route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "mass_list_id_prev_count route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -994,8 +1158,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "mass_id route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "mass_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1012,8 +1179,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "mass_id_mockdeletetoget route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "mass_id_mockdeletetoget route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1030,8 +1200,11 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "message_custom_create route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "message_custom_create route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -1048,8 +1221,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "message_list_paging_page_size_size route should be registered");
+        assert_ne!(
+            response.status(),
+            StatusCode::NOT_FOUND,
+            "message_list_paging_page_size_size route should be registered"
+        );
     }
-
 }

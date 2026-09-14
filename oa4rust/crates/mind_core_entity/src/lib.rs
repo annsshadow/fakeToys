@@ -1,16 +1,19 @@
 use axum::{
     extract::{Extension, Json, Path},
-    routing::{get, post, delete},
+    routing::{delete, get, post},
     Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect,
+};
 use serde_json::{Map, Value};
 use shared::{error::AppError, response::ActionResult};
 
 pub mod entities;
 pub mod routes;
 
-use entities::{mind_mind, mind_folder, mind_version};
+use entities::{mind_folder, mind_mind, mind_version};
 
 fn build_json_object(pairs: &[(&str, Option<Value>)]) -> Value {
     let mut map = Map::new();
@@ -168,7 +171,11 @@ pub async fn create_mind(
     use mind_mind::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let folder_id = payload
         .get("folderId")
         .and_then(|v| v.as_str())
@@ -193,16 +200,15 @@ pub async fn create_mind(
         create_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active
-        .insert(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("folderId".to_string(), Value::String(folder_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("folderId".to_string(), Value::String(folder_id)),
+        ]),
+    ))))
 }
 
 /// 更新思维导图
@@ -242,17 +248,16 @@ pub async fn update_mind(
     active.folder_id = sea_orm::ActiveValue::Set(folder_id.clone());
     active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
 
-    active
-        .update(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("folderId".to_string(), Value::String(folder_id)),
-        ("description".to_string(), Value::String(description)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("folderId".to_string(), Value::String(folder_id)),
+            ("description".to_string(), Value::String(description)),
+        ]),
+    ))))
 }
 
 /// 删除思维导图
@@ -270,13 +275,15 @@ pub async fn delete_mind(
         return Ok(Json(ActionResult::error("mind not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        (
-            "rowsAffected".to_string(),
-            Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "rowsAffected".to_string(),
+                Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// 创建文件夹
@@ -288,8 +295,15 @@ pub async fn create_folder(
     use mind_folder::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let parent_id = payload
+        .get("\"parentId\"")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let order_number = payload
         .get("orderNumber")
         .and_then(|v| v.as_i64())
@@ -313,19 +327,18 @@ pub async fn create_folder(
         creator: sea_orm::ActiveValue::Set(creator.clone()),
     };
 
-    active
-        .insert(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        (
-            "orderNumber".to_string(),
-            Value::Number(serde_json::Number::from(order_number)),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            (
+                "orderNumber".to_string(),
+                Value::Number(serde_json::Number::from(order_number)),
+            ),
+        ]),
+    ))))
 }
 
 /// 更新文件夹
@@ -372,21 +385,20 @@ pub async fn update_folder(
     active.order_number = sea_orm::ActiveValue::Set(order_number);
     active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
 
-    active
-        .update(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("parentId".to_string(), Value::String(parent_id)),
-        (
-            "orderNumber".to_string(),
-            Value::Number(serde_json::Number::from(order_number)),
-        ),
-        ("description".to_string(), Value::String(description)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("parentId".to_string(), Value::String(parent_id)),
+            (
+                "orderNumber".to_string(),
+                Value::Number(serde_json::Number::from(order_number)),
+            ),
+            ("description".to_string(), Value::String(description)),
+        ]),
+    ))))
 }
 
 /// 删除文件夹
@@ -404,13 +416,15 @@ pub async fn delete_folder(
         return Ok(Json(ActionResult::error("folder not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        (
-            "rowsAffected".to_string(),
-            Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "rowsAffected".to_string(),
+                Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// 创建版本
@@ -427,7 +441,11 @@ pub async fn create_version(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let folder_id = payload
         .get("folderId")
         .and_then(|v| v.as_str())
@@ -451,7 +469,10 @@ pub async fn create_version(
         .get("fileVersion")
         .and_then(|v| v.as_i64())
         .unwrap_or(1) as i32;
-    let shared = payload.get("shared").and_then(|v| v.as_bool()).unwrap_or(false);
+    let shared = payload
+        .get("shared")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let active = ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -467,20 +488,19 @@ pub async fn create_version(
         update_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active
-        .insert(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("mindId".to_string(), Value::String(mind_id)),
-        ("name".to_string(), Value::String(name)),
-        (
-            "fileVersion".to_string(),
-            Value::Number(serde_json::Number::from(file_version)),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("mindId".to_string(), Value::String(mind_id)),
+            ("name".to_string(), Value::String(name)),
+            (
+                "fileVersion".to_string(),
+                Value::Number(serde_json::Number::from(file_version)),
+            ),
+        ]),
+    ))))
 }
 
 /// 创建思维导图核心实体路由
@@ -505,7 +525,6 @@ pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::mind_core_entity_router(pool)

@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use serde_json::Value;
     use tower::util::ServiceExt;
 
-    use crate::{router as program_center_router, modules_all};
+    use crate::{modules_all, router as program_center_router};
     use shared::error::AppError;
     use shared::response::ActionResult;
 
@@ -59,8 +59,11 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert_ne!(response.status(), StatusCode::NOT_FOUND,
-                "route /jaxrs/program/applications should be registered");
+            assert_ne!(
+                response.status(),
+                StatusCode::NOT_FOUND,
+                "route /jaxrs/program/applications should be registered"
+            );
         });
     }
 
@@ -200,6 +203,4 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
-
-
 }

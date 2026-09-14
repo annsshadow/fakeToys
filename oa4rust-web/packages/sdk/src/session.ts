@@ -1,81 +1,123 @@
-import { ref, readonly } from 'vue';
-import { defineStore } from 'pinia';
-import type { O2User, SessionState } from './types.js';
-import { api } from './api.js';
+import { defineStore } from 'pinia'
+import { computed, readonly, ref } from 'vue'
+import { AuthenticationError, api } from './api.js'
+import type { O2User, SessionState } from './types.js'
 
-const STORAGE_KEY = 'oa4rust_session';
+const LEGACY_STORAGE_KEYS = ['oa4rust_session']
+let initPromise: Promise<void> | null = null
+let legacyStorageCleared = false
 
-function loadStored(): { token: string; user: O2User } | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as { token: string; user: O2User };
-  } catch { return null; }
+function clearLegacyStorage(): void {
+  if (legacyStorageCleared) return
+  legacyStorageCleared = true
+  for (const name of ['localStorage', 'sessionStorage'] as const) {
+    let storage: Storage | undefined
+    try {
+      storage = globalThis[name]
+    } catch {
+      continue
+    }
+    for (const key of LEGACY_STORAGE_KEYS) storage?.removeItem(key)
+  }
 }
 
-function storeSession(token: string, user: O2User): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user }));
-}
-
-function clearStored(): void {
-  localStorage.removeItem(STORAGE_KEY);
+function isAuthenticatedUser(user: O2User | null | undefined): user is O2User {
+  return Boolean(user?.unique)
 }
 
 export const useSessionStore = defineStore('session', () => {
-  const state = ref<SessionState>({ token: null, user: null, loading: true, systemUninitialized: false });
+  const state = ref<SessionState>({
+    user: null,
+    loading: false,
+    initialized: false,
+    systemUninitialized: false,
+  })
+  api.setAuthenticationFailureHandler(() => {
+    state.value.user = null
+    state.value.initialized = true
+  })
 
-  async function init(): Promise<void> {
-    state.value.loading = true;
-    const stored = loadStored();
-    if (stored?.token) { state.value.token = stored.token; state.value.user = stored.user; }
+  async function restoreCurrentUser(): Promise<void> {
     try {
-      const resp = await api.get('/jaxrs/authentication/who');
-      const who = (resp as any)?.data;
-      if (who) {
-        state.value.user = who;
-        if (!state.value.token) state.value.token = stored?.token ?? '';
-        storeSession(state.value.token!, who);
-      } else { await logout(); }
-    } catch { await logout(); }
-    finally { state.value.loading = false; }
-  }
-
-  async function login(username: string, password: string, captchaId?: string, captchaAnswer?: string): Promise<O2User> {
-    const resp = await api.post('/jaxrs/authentication/login', { username, password, captchaId, captchaAnswer });
-    const body = (resp as any)?.data;
-    const token = body?.token;
-    const person = body?.person;
-    if (token && person) { state.value.token = token; state.value.user = person; storeSession(token, person); }
-    return person;
-  }
-
-  async function logout(): Promise<void> {
-    try { await api.post('/jaxrs/authentication/logout', null, { requireAuth: false }); }
-    finally { state.value.token = null; state.value.user = null; clearStored(); }
-  }
-
-  async function refresh(): Promise<void> {
-    const resp = await api.post('/jaxrs/authentication/refresh', null, { requireAuth: false });
-    const token = (resp as any)?.data?.token;
-    if (token) {
-      state.value.token = token;
-      const stored = loadStored();
-      if (stored) storeSession(token, stored.user!);
+      const resp = await api.get<O2User>('/jaxrs/authentication/who', { requireAuth: false })
+      state.value.user = isAuthenticatedUser(resp.data) ? resp.data : null
+    } catch {
+      state.value.user = null
     }
   }
 
-  async function switchUser(targetUnique: string): Promise<O2User> {
-    const resp = await api.post('/jaxrs/authentication/switchuser', { targetUnique });
-    const user = (resp as any)?.data;
-    if (user) { state.value.user = user; storeSession(state.value.token!, user); }
-    return user;
+  async function init(force = false): Promise<void> {
+    clearLegacyStorage()
+    if (state.value.initialized && !force) return
+    if (!initPromise) {
+      state.value.loading = true
+      initPromise = restoreCurrentUser().finally(() => {
+        state.value.loading = false
+        state.value.initialized = true
+        initPromise = null
+      })
+    }
+    await initPromise
   }
+
+  async function login(
+    credential: string,
+    password: string,
+    captchaId?: string,
+    captchaAnswer?: string,
+  ): Promise<O2User> {
+    await api.post<never>(
+      '/jaxrs/authentication/login',
+      { credential, password, captchaId, captchaAnswer },
+      { requireAuth: false, discardResponse: true },
+    )
+    await init(true)
+    if (!state.value.user) throw new AuthenticationError('Login did not create a session')
+    return state.value.user
+  }
+
+  async function logout(): Promise<void> {
+    try {
+      await api.post('/jaxrs/authentication/logout', null, {
+        requireAuth: false,
+        discardResponse: true,
+      })
+    } catch {
+      // The local session is ending regardless; a failed server-side call must not
+      // block clearing the local user or surface an error to the caller.
+    } finally {
+      state.value.user = null
+      state.value.initialized = true
+    }
+  }
+
+  async function refresh(): Promise<void> {
+    await api.refreshSession()
+    await init(true)
+  }
+
+  async function switchUser(targetUnique: string): Promise<O2User> {
+    await api.post('/jaxrs/authentication/switchuser', { targetUnique }, { discardResponse: true })
+    await init(true)
+    if (!state.value.user) throw new AuthenticationError('User switch did not create a session')
+    return state.value.user
+  }
+
+  // Pinia setup stores snapshot object-literal getters at setup time; a computed
+  // ref stays live so the router guard and views see current auth state.
+  const isAuthenticated = computed(() => isAuthenticatedUser(state.value.user))
 
   return {
     state: readonly(state),
-    init, login, logout, refresh, switchUser,
-    get isAuthenticated() { return !!state.value.token && !!state.value.user; },
-  };
-});
+    isAuthenticated,
+    init,
+    login,
+    logout,
+    refresh,
+    switchUser,
+  }
+})
 
-export function useSession() { return useSessionStore(); }
+export function useSession() {
+  return useSessionStore()
+}

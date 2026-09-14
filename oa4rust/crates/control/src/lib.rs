@@ -11,4 +11,3 @@ pub use routes::control_router;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-

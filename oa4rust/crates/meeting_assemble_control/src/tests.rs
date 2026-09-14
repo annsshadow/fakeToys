@@ -2,7 +2,7 @@
 mod tests {
     use crate::{meeting_assemble_control_router, MeetingControl};
     use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use shared::response::ActionResult;
     use shared::testing::test_pool;
     use tower::ServiceExt;
@@ -21,7 +21,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[ignore = "requires a running PostgreSQL server"]
@@ -35,7 +38,9 @@ mod tests {
                     .uri("/jaxrs/meeting/assemble/control/create")
                     .method("POST")
                     .header("content-type", "application/json")
-                    .body(Body::from(r#"{"meetingId":"meeting-001","controlType":"RECORDER","enabled":true}"#))
+                    .body(Body::from(
+                        r#"{"meetingId":"meeting-001","controlType":"RECORDER","enabled":true}"#,
+                    ))
                     .unwrap(),
             )
             .await
@@ -58,7 +63,10 @@ mod tests {
             )
             .await
             .unwrap();
-        assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[ignore = "requires a running PostgreSQL server"]
@@ -110,7 +118,9 @@ mod tests {
                     .uri("/jaxrs/meeting/assemble/control/meeting/create")
                     .method("POST")
                     .header("content-type", "application/json")
-                    .body(Body::from(r#"{"title":"Test","startTime":"2024-01-01","endTime":"2024-01-02"}"#))
+                    .body(Body::from(
+                        r#"{"title":"Test","startTime":"2024-01-01","endTime":"2024-01-02"}"#,
+                    ))
                     .unwrap(),
             )
             .await
@@ -490,6 +500,4 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
-
-
 }

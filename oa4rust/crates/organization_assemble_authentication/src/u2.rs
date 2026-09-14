@@ -27,11 +27,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use shared::{
-    error::AppError,
-    response::ActionResult,
-    session::SessionManager,
-};
+use shared::{error::AppError, response::ActionResult, session::SessionManager};
 
 // ── mode ────────────────────────────────────────────────────────────────────
 
@@ -120,7 +116,9 @@ pub async fn captcha_login(
         || req.captcha_id.trim().is_empty()
         || req.captcha_answer.trim().is_empty()
     {
-        return Ok(Json(ActionResult::error("credential, password, captchaId and captchaAnswer are required")));
+        return Ok(Json(ActionResult::error(
+            "credential, password, captchaId and captchaAnswer are required",
+        )));
     }
 
     use captcha_store::VerifyResult;
@@ -158,7 +156,9 @@ pub async fn captcha_login(
 
     let person_unique: String = row.get("unique_id");
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+    let session = session_manager
+        .create_session(person_unique.clone(), token.clone())
+        .await?;
 
     Ok(Json(ActionResult::success(json!({
         "token": session.token,
@@ -245,7 +245,11 @@ pub async fn captcha_default_alias() -> Result<Json<ActionResult<Value>>, AppErr
 pub async fn sso_encrypt_get(
     Path((client, key, credential)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let req = auth::sso::SsoEncryptRequest { client, key, credential };
+    let req = auth::sso::SsoEncryptRequest {
+        client,
+        key,
+        credential,
+    };
     auth::sso::sso_encrypt(Json(req)).await
 }
 
@@ -275,7 +279,11 @@ pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(Value::Array(items), total_items as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(items),
+        total_items as i64,
+        0,
+    )))
 }
 
 // ── dingding/info ───────────────────────────────────────────────────────────
@@ -294,9 +302,15 @@ pub struct DingdingInfoWi {
 pub async fn dingding_info(
     Json(wi): Json<DingdingInfoWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let corp_id = std::env::var("DINGDING_CORP_ID").ok().filter(|s| !s.is_empty());
-    let agent_id = std::env::var("DINGDING_AGENT_ID").ok().filter(|s| !s.is_empty());
-    let jsticket = std::env::var("DINGDING_JSAPI_TICKET").ok().filter(|s| !s.is_empty());
+    let corp_id = std::env::var("DINGDING_CORP_ID")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let agent_id = std::env::var("DINGDING_AGENT_ID")
+        .ok()
+        .filter(|s| !s.is_empty());
+    let jsticket = std::env::var("DINGDING_JSAPI_TICKET")
+        .ok()
+        .filter(|s| !s.is_empty());
     let (Some(corp_id), Some(agent_id), Some(jsticket)) = (corp_id, agent_id, jsticket) else {
         return Ok(Json(ActionResult::error("dingding not configured")));
     };
@@ -306,9 +320,8 @@ pub async fn dingding_info(
 
     let nonce_str = "o2oa";
     let timestamp = chrono::Utc::now().timestamp();
-    let plain = format!(
-        "jsapi_ticket={jsticket}&noncestr={nonce_str}&timestamp={timestamp}&url={url}"
-    );
+    let plain =
+        format!("jsapi_ticket={jsticket}&noncestr={nonce_str}&timestamp={timestamp}&url={url}");
     let signature = {
         use sha1::{Digest, Sha1};
         let mut hasher = Sha1::new();

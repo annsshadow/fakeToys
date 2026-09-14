@@ -37,8 +37,12 @@ impl SecretCipher {
     /// 即可用新密钥重写密文（密文格式 base64(nonce || ciphertext+tag)，含随机 nonce）。
     fn key() -> Result<[u8; 16], AppError> {
         let raw = std::env::var("SECRET_ENCRYPTION_KEY").map_err(|_| {
-            tracing::warn!("SECRET_ENCRYPTION_KEY not configured; refusing to use default fallback");
-            AppError::BadRequest("SECRET_ENCRYPTION_KEY environment variable is not configured".into())
+            tracing::warn!(
+                "SECRET_ENCRYPTION_KEY not configured; refusing to use default fallback"
+            );
+            AppError::BadRequest(
+                "SECRET_ENCRYPTION_KEY environment variable is not configured".into(),
+            )
         })?;
         let digest = Sha256::digest(raw.as_bytes());
         let mut key = [0u8; 16];
@@ -137,7 +141,9 @@ pub async fn set(
         return Ok(Json(ActionResult::error("secret cannot be empty")));
     }
     if req.secret.len() > 1024 {
-        return Ok(Json(ActionResult::error("secret too long (max 1024 chars)")));
+        return Ok(Json(ActionResult::error(
+            "secret too long (max 1024 chars)",
+        )));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -334,7 +340,9 @@ pub async fn external_datasources_set(
     Json(req): Json<ExternalDataSourcesRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if req.external_data_sources.is_empty() {
-        return Ok(Json(ActionResult::error("externalDataSources cannot be empty")));
+        return Ok(Json(ActionResult::error(
+            "externalDataSources cannot be empty",
+        )));
     }
     for ds in &req.external_data_sources {
         if ds.name.trim().is_empty() {
@@ -386,10 +394,15 @@ pub async fn external_datasources_set_cancel(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
-        .execute("DELETE FROM init_external_datasource WHERE applied = false", &[])
+        .execute(
+            "DELETE FROM init_external_datasource WHERE applied = false",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(json!({ "value": affected > 0 }))))
+    Ok(Json(ActionResult::success(
+        json!({ "value": affected > 0 }),
+    )))
 }
 
 /// POST /jaxrs/externaldatasources/validate —— 逐个数据源做真实 TCP 连通性探测
@@ -433,7 +446,11 @@ pub async fn external_datasources_validate(
         }
     }
     let total_results = results.len();
-    Ok(Json(ActionResult::java_success(Value::Array(results), total_results as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(results),
+        total_results as i64,
+        0,
+    )))
 }
 
 // --- h2 域 ---
@@ -476,7 +493,9 @@ pub async fn restore_upload(
         return Ok(Json(ActionResult::error("upload body is empty")));
     }
     if body.len() > RESTORE_MAX_BYTES {
-        return Ok(Json(ActionResult::error("upload exceeds size limit (200MB)")));
+        return Ok(Json(ActionResult::error(
+            "upload exceeds size limit (200MB)",
+        )));
     }
 
     // stamp 对齐 Java DateTools compact 格式 yyyyMMddHHmmss
@@ -499,7 +518,9 @@ pub async fn restore_upload(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(json!({ "value": true, "id": id, "stamp": stamp }))))
+    Ok(Json(ActionResult::success(
+        json!({ "value": true, "id": id, "stamp": stamp }),
+    )))
 }
 
 /// GET /jaxrs/restore/upload/cancel —— 作废最近一次未落实的上传
@@ -517,7 +538,9 @@ pub async fn restore_upload_cancel(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(json!({ "value": affected > 0 }))))
+    Ok(Json(ActionResult::success(
+        json!({ "value": affected > 0 }),
+    )))
 }
 
 // --- server 域 ---
@@ -528,7 +551,10 @@ pub async fn server_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let ds_applied = client
-        .execute("UPDATE init_external_datasource SET applied = true WHERE applied = false", &[])
+        .execute(
+            "UPDATE init_external_datasource SET applied = true WHERE applied = false",
+            &[],
+        )
         .await
         .map_err(|e| {
             tracing::error!("[server_execute] apply datasources failed: {}", e);
@@ -582,8 +608,7 @@ pub async fn server_execute_status(
     match row {
         Some(r) => {
             let raw: String = r.get("messages");
-            let messages: Value =
-                serde_json::from_str(&raw).unwrap_or_else(|_| json!([]));
+            let messages: Value = serde_json::from_str(&raw).unwrap_or_else(|_| json!([]));
             Ok(Json(ActionResult::success(json!({
                 "status": r.get::<_, String>("status"),
                 "messages": messages,
@@ -650,11 +675,26 @@ pub fn program_init_router(pool: Pool) -> Router {
         .route("/jaxrs/secret/set", post(set))
         .route("/jaxrs/secret/set/cancel", get(set_cancel))
         // plan002 U2：externaldatasources 域（5 条）
-        .route("/jaxrs/externaldatasources/check", get(external_datasources_check))
-        .route("/jaxrs/externaldatasources/list", get(external_datasources_list))
-        .route("/jaxrs/externaldatasources/set", post(external_datasources_set))
-        .route("/jaxrs/externaldatasources/set/cancel", get(external_datasources_set_cancel))
-        .route("/jaxrs/externaldatasources/validate", post(external_datasources_validate))
+        .route(
+            "/jaxrs/externaldatasources/check",
+            get(external_datasources_check),
+        )
+        .route(
+            "/jaxrs/externaldatasources/list",
+            get(external_datasources_list),
+        )
+        .route(
+            "/jaxrs/externaldatasources/set",
+            post(external_datasources_set),
+        )
+        .route(
+            "/jaxrs/externaldatasources/set/cancel",
+            get(external_datasources_set_cancel),
+        )
+        .route(
+            "/jaxrs/externaldatasources/validate",
+            post(external_datasources_validate),
+        )
         // h2 域（1 条）
         .route("/jaxrs/h2/check", get(h2_check))
         // restore 域（2 条）
