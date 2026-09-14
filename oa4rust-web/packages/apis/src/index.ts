@@ -1,6 +1,10 @@
 /**
- * @oa4rust/apis — 业务 API 层
- * 全部覆盖 oa4rust 3892 条路由定义
+ * @oa4rust/apis — 业务 API 层（精选模块）
+ *
+ * 端点路径以 oa4rust 后端实际注册的 axum 路由为准（各 crate 的 routes.rs /
+ * u2_router.rs / lib.rs 中的 .route 注册）：有真实路由的方法已对齐；
+ * 后端未实现的遗留 o2web 表面用 @dead 注释标出（调用将 404）。
+ * 注意：桌面端视图实际直接经 @oa4rust/sdk 的 api 调字面路径，本包当前无视图消费方。
  */
 
 import { api, type PagedResponse } from '@oa4rust/sdk'
@@ -48,7 +52,9 @@ export const orgApi = {
   groupList: (flag?: string, count?: number) =>
     api.get(`/jaxrs/organization/assemble/control/group/list/${flag || ''}/next/${count || 20}`),
   groupDetail: (flag: string) => api.get(`/jaxrs/organization/assemble/control/group/${flag}`),
+  /** @dead 后端未注册 group/{flag}/sub|sup 子/上级树（仅有 group/list/person/{p}/sup|sub 按人员族）。 */
   groupSub: (flag: string) => api.get(`/jaxrs/organization/assemble/control/group/${flag}/sub/nested`),
+  /** @dead 后端未注册 group/{flag}/sup/nested。 */
   groupSup: (flag: string) => api.get(`/jaxrs/organization/assemble/control/group/${flag}/sup/nested`),
   groupAddMember: (flag: string, data: unknown) =>
     api.post(`/jaxrs/organization/assemble/control/group/${flag}/add/member`, data),
@@ -56,10 +62,11 @@ export const orgApi = {
     api.post(`/jaxrs/organization/assemble/control/group/${flag}/delete/member`, data),
 
   // 人员
-  personList: (page: number, size: number, keyword?: string) =>
+  /** 分页人员列表（后端 POST person/list/filter/{page}/size/{size}；keyword 无后端字段，保留参数但不下发）。 */
+  personList: (page: number, size: number, _keyword?: string) =>
     api.post<PagedResponse<import('@oa4rust/sdk').O2User>>(
-      `/jaxrs/organization/assemble/control/person/list/paging/${page}/${size}`,
-      { keyword },
+      `/jaxrs/organization/assemble/control/person/list/filter/${page}/size/${size}`,
+      {},
     ),
   personDetail: (id: string) => api.get(`/jaxrs/organization/assemble/control/person/${id}`),
   personCreate: (data: unknown) => api.post('/jaxrs/organization/assemble/control/person', data),
@@ -96,38 +103,42 @@ export const orgApi = {
 // 工作流模块 (1600+ routes)
 // ─────────────────────────────────────────────────────────────
 export const processApi = {
-  // 工作表面（待办/审批）
-  workList: (page: number, size: number, status?: string) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/work/list/paging/${page}/${size}`, {
-      status,
-    }),
+  // 工作表面（待办/审批）。端点对齐 oa4rust 已注册路由：列表读 surface 新栈
+  // x_task / x_taskcompleted / x_work / x_read（与桌面 ProcessWork E2E 一致），
+  // 审批走引擎 /jaxrs/task/{id}/complete|reject。
+  /** 我发起的工作；后端该路由仅注册 POST，status 参数无对应后端能力，保留签名但忽略。 */
+  workList: (page: number, size: number, _status?: string) =>
+    api.post<PagedResponse<unknown>>(
+      `/jaxrs/processplatform/assemble/surface/work/list/my/paging/${page}/size/${size}`,
+      {},
+    ),
   workDetail: (id: string) => api.get(`/jaxrs/processplatform/assemble/surface/work/${id}`),
-  workStart: (data: unknown) => api.post('/jaxrs/processplatform/assemble/surface/work/start', data),
+  /** 发起流程（真实引擎端点，桌面 E2E 实跑通过）。 */
+  workStart: (data: unknown) => api.post('/jaxrs/processplatform/service/processing/work', data),
+  /** 待我处理任务（surface x_task）。 */
   taskList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/task/list/paging/${page}/${size}`),
-  taskHandle: (taskId: string, action: string, data?: Record<string, unknown>) =>
-    api.post(`/jaxrs/processplatform/assemble/surface/task/${taskId}/handle`, { action, ...data }),
-  dataList: (page: number, size: number, processId?: string) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/data/list/paging/${page}/${size}`, {
-      processId,
-    }),
-  attachmentList: (workId: string) => api.get(`/jaxrs/processplatform/assemble/surface/attachment/list/${workId}`),
-  reviewList: (workId: string) => api.get(`/jaxrs/processplatform/assemble/surface/review/list/${workId}`),
+    api.get<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/task/list/my/paging/${page}/size/${size}`),
+  /** 审批通过/驳回（引擎端点；body { data, opinion, action }，后端当前只读路径参数）。 */
+  taskHandle: (taskId: string, action: 'approve' | 'reject', data?: Record<string, unknown>) =>
+    action === 'reject'
+      ? api.post(`/jaxrs/task/${taskId}/reject`, { data: {}, opinion: '', action: 'reject', ...data })
+      : api.post(`/jaxrs/task/${taskId}/complete`, { data: {}, opinion: '', action: 'approve', ...data }),
   formView: (workId: string) => api.get(`/jaxrs/processplatform/assemble/surface/form/view/${workId}`),
   snapView: (workId: string) => api.get(`/jaxrs/processplatform/assemble/surface/snap/${workId}`),
   applicationDict: (flag: string) => api.get(`/jaxrs/processplatform/assemble/surface/applicationdict/${flag}`),
 
-  // 已办
+  // 已办 / 已读（surface 新栈）
   completedList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(
-      `/jaxrs/processplatform/assemble/surface/workcompleted/list/paging/${page}/${size}`,
+    api.get<PagedResponse<unknown>>(
+      `/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/size/${size}`,
     ),
   readList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/read/list/paging/${page}/${size}`),
+    api.get<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/surface/read/list/my/paging/${page}/size/${size}`),
 
   // 流程设计器
-  processList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/processplatform/assemble/designer/process/list/paging/${page}/${size}`),
+  /** 设计器全量列表（后端无 designer 分页变体，page/size 忽略）。 */
+  processList: (_page?: number, _size?: number) =>
+    api.get<PagedResponse<unknown>>('/jaxrs/processplatform/assemble/designer/list/all'),
   processCreate: (data: unknown) => api.post('/jaxrs/processplatform/assemble/designer/process', data),
   processUpdate: (id: string, data: unknown) => api.put(`/jaxrs/processplatform/assemble/designer/process/${id}`, data),
   processDelete: (id: string) => api.delete(`/jaxrs/processplatform/assemble/designer/process/${id}`),
@@ -136,7 +147,6 @@ export const processApi = {
   // BAM 监控
   bamPeriod: (startTime: string, endTime: string) =>
     api.post('/jaxrs/processplatform/assemble/bam/period', { startTime, endTime }),
-  bamTrace: (workId: string) => api.get(`/jaxrs/processplatform/assemble/bam/trace/${workId}`),
 
   // 服务处理
   serviceWorkList: (page: number, size: number) =>
@@ -148,48 +158,66 @@ export const processApi = {
 // 门户模块 (125 routes)
 // ─────────────────────────────────────────────────────────────
 export const portalApi = {
-  pageList: (appId: string) => api.get(`/jaxrs/portal/assemble/surface/page/list/${appId}`),
-  pageDetail: (pageId: string) => api.get(`/jaxrs/portal/assemble/surface/page/${pageId}`),
-  pageCreate: (data: unknown) => api.post('/jaxrs/portal/assemble/surface/page', data),
-  pageUpdate: (id: string, data: unknown) => api.put(`/jaxrs/portal/assemble/surface/page/${id}`, data),
-  pageDelete: (id: string) => api.delete(`/jaxrs/portal/assemble/surface/page/${id}`),
+  /** 门户页面列表（后端 GET surface/page/list/portal/{portal}）。 */
+  pageList: (appId: string) => api.get(`/jaxrs/portal/assemble/surface/page/list/portal/${appId}`),
+  /** 页面详情（后端 GET surface/page/v2/{id}，非 surface/page/{id} 旧路径）。 */
+  pageDetail: (pageId: string) => api.get(`/jaxrs/portal/assemble/surface/page/v2/${pageId}`),
+  /** 新建页面（后端 POST designer/page/create）。 */
+  pageCreate: (data: unknown) => api.post('/jaxrs/portal/assemble/designer/page/create', data),
+  /** 保存页面（后端 PUT/POST designer/page/save/{id}）。 */
+  pageUpdate: (id: string, data: unknown) => api.put(`/jaxrs/portal/assemble/designer/page/save/${id}`, data),
+  /** 删除页面（后端 DELETE/POST designer/page/delete/{id}）。 */
+  pageDelete: (id: string) => api.delete(`/jaxrs/portal/assemble/designer/page/delete/${id}`),
+  /** @dead 后端 widget 列表族需 portal/flag 参数（widget/portal/{flag}/{portalflag}），无单 page 列表。 */
   widgetList: (pageId: string) => api.get(`/jaxrs/portal/assemble/surface/widget/list/${pageId}`),
+  /** @dead 后端无裸 designer/page/list（需 /portal/{portalId} 或 /{category}）。 */
   designerPageList: () => api.get('/jaxrs/portal/assemble/designer/page/list'),
+  /** @dead 后端无裸 designer/script/list（需 /manager 或 /portal/{portalId}）。 */
   designerScriptList: () => api.get('/jaxrs/portal/assemble/designer/script/list'),
   request: createRequest('/jaxrs/portal/assemble'),
 }
 
 // ─────────────────────────────────────────────────────────────
-// 即时通讯 (64 routes)
+// 即时通讯 (im 族，端点对齐 oa4rust 已注册路由)
 // ─────────────────────────────────────────────────────────────
 export const messageApi = {
-  conversationList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/message/assemble/communicate/conversation/list/paging/${page}/${size}`),
-  msgHistory: (conversationId: string, page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(
-      `/jaxrs/message/assemble/communicate/history/${conversationId}/paging/${page}/${size}`,
-    ),
+  /** 我的会话列表（后端 im/conversation/list/my，无分页参数）。 */
+  conversationList: (_page?: number, _size?: number) =>
+    api.get('/jaxrs/message/assemble/communicate/im/conversation/list/my'),
+  /** 消息历史（后端 im/msg/list/{page}/size/{size} 返回全量，按会话过滤需前端处理）。 */
+  msgHistory: (_conversationId?: string, page = 1, size = 50) =>
+    api.get<PagedResponse<unknown>>(`/jaxrs/message/assemble/communicate/im/msg/list/${page}/size/${size}`),
+  /** 发消息（后端 im/msg；会话键按遗留约定需带引号字面量 "\"conversationId\""）。 */
   msgSend: (data: { conversationId: string; content: string; type: string }) =>
-    api.post('/jaxrs/message/assemble/communicate/im/send', data),
+    api.post('/jaxrs/message/assemble/communicate/im/msg', {
+      ['"conversationId"']: data.conversationId,
+      conversationId: data.conversationId,
+      content: data.content,
+      type: data.type,
+    }),
+  /** 收藏消息列表（后端 im/msg/collection/list/{page}/size/{size}）。 */
   collectionList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/message/assemble/communicate/collection/list/paging/${page}/${size}`),
+    api.get<PagedResponse<unknown>>(`/jaxrs/message/assemble/communicate/im/msg/collection/list/${page}/size/${size}`),
+  /** 标记会话已读（后端 im/conversation/{id}/read）。 */
   markRead: (conversationId: string) =>
-    api.post(`/jaxrs/message/assemble/communicate/conversation/${conversationId}/read`, null),
+    api.post(`/jaxrs/message/assemble/communicate/im/conversation/${conversationId}/read`),
   request: createRequest('/jaxrs/message/assemble/communicate'),
 }
 
 // ─────────────────────────────────────────────────────────────
-// 文件模块 (32 routes)
+// 文件模块 (端点对齐 oa4rust 已注册路由)
 // ─────────────────────────────────────────────────────────────
 export const fileApi = {
-  fileList: (folderId?: string, page?: number, size?: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/file/assemble/control/file/list`, { folderId, page, size }),
-  folderList: (parentId?: string) => api.get(`/jaxrs/file/assemble/control/folder/list/${parentId || ''}`),
+  /** 目录文件列表（后端 GET file/list/{folderId}，无分页参数）。 */
+  fileList: (folderId: string, _page?: number, _size?: number) =>
+    api.get<PagedResponse<unknown>>(`/jaxrs/file/assemble/control/file/list/${folderId}`),
+  /** 目录列表（后端 GET file/core/entity/folder/list/{parentId}）。 */
+  folderList: (parentId: string) => api.get(`/jaxrs/file/core/entity/folder/list/${parentId}`),
   fileUpload: (formData: FormData) => api.upload('/jaxrs/file/assemble/control/file/upload', formData),
-  fileDownload: (fileId: string) => window.open(`/jaxrs/file/core/entity/file/${fileId}/download`),
+  /** 下载（后端 GET file/assemble/control/file/{id}/download，非 core/entity 旧路径）。 */
+  fileDownload: (fileId: string) => window.open(`/jaxrs/file/assemble/control/file/${fileId}/download`),
   fileDelete: (fileId: string) => api.delete(`/jaxrs/file/assemble/control/file/${fileId}`),
   fileShare: (fileId: string, data: unknown) => api.post(`/jaxrs/file/assemble/control/file/${fileId}/share`, data),
-  attachmentList: (fileId: string) => api.get(`/jaxrs/file/assemble/control/attachment/list/${fileId}`),
   request: createRequest('/jaxrs/file/assemble/control'),
 }
 
@@ -198,14 +226,16 @@ export const fileApi = {
 // ─────────────────────────────────────────────────────────────
 export const generalApi = {
   dictList: () => api.get('/jaxrs/general/dict/list'),
-  dictCreate: (data: unknown) => api.post('/jaxrs/general/dict', data),
-  dictUpdate: (id: string, data: unknown) => api.put(`/jaxrs/general/dict/${id}`, data),
-  dictDelete: (id: string) => api.delete(`/jaxrs/general/dict/${id}`),
+  dictCreate: (data: unknown) => api.post('/jaxrs/general/dict/create', data),
+  dictUpdate: (id: string, data: unknown) => api.post(`/jaxrs/general/dict/update/${id}`, data),
+  dictDelete: (id: string) => api.post(`/jaxrs/general/dict/delete/${id}`),
   dictItemList: (dictId: string) => api.get(`/jaxrs/general/dict/item/list/${dictId}`),
   dictItemCreate: (dictId: string, data: unknown) => api.post(`/jaxrs/general/dict/item/${dictId}`, data),
+  /** @dead 后端未注册 general/file 直传路由（仅 general/file/create 等），暂留原路径。 */
   fileUpload: (formData: FormData) => api.upload('/jaxrs/general/file', formData),
-  invoiceList: (page: number, size: number) =>
-    api.post<PagedResponse<unknown>>(`/jaxrs/general/invoice/list/paging/${page}/${size}`),
+  /** 发票列表（后端 GET general/invoice/list，无分页参数）。 */
+  invoiceList: () => api.get<PagedResponse<unknown>>('/jaxrs/general/invoice/list'),
+  /** @dead 后端未注册按月工时列表（仅有 worktime/between|forward|indefined 计算族）。 */
   worktimeList: (month: string) => api.get(`/jaxrs/general/assemble/control/worktime/${month}`),
   request: createRequest('/jaxrs/general'),
 }
