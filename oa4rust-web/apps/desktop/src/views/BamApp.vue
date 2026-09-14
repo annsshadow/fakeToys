@@ -41,10 +41,22 @@ const { data } = useQuery({
   queryFn: async () => {
     loading.value = true
     try {
-      const r = await api.get('/jaxrs/processplatform/assemble/bam/list')
-      const d = (r as any)?.data ?? {}
-      stats.value = d.stats ?? { total: 0, active: 0, completed: 0, failed: 0 }
-      events.value = d.events ?? []
+      // 后端已注册 bam/state/summary（真实 x_work/x_task 统计）；无事件列表端点，events 保持空态。
+      const r = await api.get('/jaxrs/processplatform/assemble/bam/state/summary')
+      const d = ((r as any)?.data ?? {}) as Record<string, number>
+      const totalWork = d.totalWork ?? 0
+      const totalTask = d.totalTask ?? 0
+      const completedWork = d.completedWork ?? 0
+      const pendingTask = d.pendingTask ?? 0
+      const processingTask = d.processingTask ?? 0
+      const expiredTask = d.expiredTask ?? 0
+      stats.value = {
+        total: totalWork + totalTask,
+        active: pendingTask + processingTask,
+        completed: completedWork,
+        failed: expiredTask,
+      }
+      events.value = []
     } finally {
       loading.value = false
     }
