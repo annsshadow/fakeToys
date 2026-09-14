@@ -8,6 +8,7 @@
 target/
 build/
 dist/
+unpackage/
 .mvn/
 *.class
 *.jar

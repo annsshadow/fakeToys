@@ -1,0 +1,15 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "baseUrl": ".",
+    "types": ["@dcloudio/types", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@oa4rust/sdk": ["../../packages/sdk/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "unpackage"]
+}
