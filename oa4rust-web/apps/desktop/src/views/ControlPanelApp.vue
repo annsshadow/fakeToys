@@ -13,9 +13,9 @@
     <div class="content-panel glass-card">
       <h3 class="panel-title">设计器中心</h3>
       <div class="nav-grid">
-        <router-link v-for="item in designers" :key="item.path" :to="item.path" class="nav-card">
+        <router-link v-for="item in designers" :key="item.path" :to="item.path" class="nav-card" :class="{ 'is-unavailable': item.unavailable }">
           <div class="nc-icon">{{ item.icon }}</div>
-          <div class="nc-title">{{ item.title }}</div>
+          <div class="nc-title">{{ item.title }}<span v-if="item.unavailable" class="nc-unavailable">未启用</span></div>
           <div class="nc-desc">{{ item.desc }}</div>
         </router-link>
       </div>
@@ -48,10 +48,31 @@ const designers = [
   { icon: '📋', title: '表单设计器', desc: 'JSON表单构建', path: '/app/form-designer' },
   { icon: '🔍', title: '查询设计器', desc: 'SQL与可视化查询', path: '/app/query-designer' },
   { icon: '🖼', title: '门户设计器', desc: '页面与组件设计', path: '/app/portal-designer' },
-  { icon: '📝', title: 'CMS表单设计', desc: '内容模型表单', path: '/app/cms-form-designer' },
-  { icon: '👁', title: 'CMS视图设计', desc: '内容展示视图', path: '/app/cms-view-designer' },
+  // 以下 CMS 设计家族中，表单/视图/字典在 oa4rust 后端无对应路由/表（未实现），
+  // 入口标记为"未启用"，避免客户进入死功能（页面内亦显示未启用提示）。
+  // 脚本设计走 /jaxrs/script/* 已注册路由，保持可用。
+  {
+    icon: '📝',
+    title: 'CMS表单设计',
+    desc: '内容模型表单 · 后端未启用',
+    path: '/app/cms-form-designer',
+    unavailable: true,
+  },
+  {
+    icon: '👁',
+    title: 'CMS视图设计',
+    desc: '内容展示视图 · 后端未启用',
+    path: '/app/cms-view-designer',
+    unavailable: true,
+  },
   { icon: '💻', title: 'CMS脚本设计', desc: '内容处理脚本', path: '/app/cms-script-designer' },
-  { icon: '📚', title: 'CMS字典设计', desc: '内容字典配置', path: '/app/cms-dict-designer' },
+  {
+    icon: '📚',
+    title: 'CMS字典设计',
+    desc: '内容字典配置 · 后端未启用',
+    path: '/app/cms-dict-designer',
+    unavailable: true,
+  },
 ]
 async function loadStats() {
   try {
@@ -99,6 +120,9 @@ onMounted(loadStats)
 .nc-icon{font-size:28px;margin-bottom:6px}
 .nc-title{font-size:13px;font-weight:600;color:var(--text-primary)}
 .nc-desc{font-size:11px;color:var(--text-muted);margin-top:4px}
+.nav-card.is-unavailable{opacity:.55;cursor:not-allowed}
+.nav-card.is-unavailable:hover{border-color:var(--border-subtle);transform:none}
+.nc-unavailable{margin-left:6px;font-size:10px;font-weight:400;color:var(--text-muted);border:1px solid var(--border-subtle);border-radius:6px;padding:1px 5px}
 .app-list{display:flex;flex-direction:column;gap:6px}
 .app-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);text-decoration:none;color:inherit;transition:all var(--transition-fast)}
 .app-item:hover{border-color:var(--color-primary)}

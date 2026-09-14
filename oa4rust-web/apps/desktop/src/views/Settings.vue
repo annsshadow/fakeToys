@@ -4,6 +4,7 @@
       <h1>系统设置</h1>
       <p class="subtitle">系统参数配置与管理</p>
     </div>
+    <div class="backend-off">⚠️ 系统参数后端暂未启用（systemconfig 未实现），设置保存暂不生效，界面为功能预览</div>
 
     <!-- 侧边导航 -->
     <div class="settings-layout">
@@ -69,8 +70,6 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
-import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 
 const activeSection = ref('basic')
@@ -100,12 +99,8 @@ const toggles = ref([
   { key: 'twoFactor', label: '双重认证', on: false },
 ])
 
-const { data } = useQuery({
-  queryKey: ['settings'],
-  queryFn: () => api.get('/jaxrs/systemconfig/list').then((r: any) => r.data ?? {}),
-  staleTime: 300_000,
-})
-if (data.value) Object.assign(cfg.value, data.value)
+// 后端未启用 systemconfig 家族（无对应路由/数据表），跳过死端点请求；
+// 设置项为前端预览态，saveCfg/saveToggles 暂为空操作（与下方 banner 一致）。
 
 function saveCfg(_section: string) {}
 function saveToggles() {}
@@ -113,6 +108,7 @@ function saveToggles() {}
 
 <style scoped>
 .settings-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.backend-off{margin:0 0 16px;padding:10px 16px;border-radius:var(--radius-md);border:1px dashed var(--border-subtle);color:var(--text-muted);font-size:12px}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}
