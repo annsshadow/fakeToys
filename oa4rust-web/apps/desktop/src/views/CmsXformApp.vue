@@ -5,8 +5,9 @@
         <h1>CMS XForm</h1>
         <p class="subtitle">/jaxrs/cms/assemble/control/xform/list</p>
       </div>
-      <button class="btn-primary" @click="showCreate=true">+ 新建</button>
+      <button class="btn-primary" disabled title="后端未启用该模块">+ 新建</button>
     </div>
+    <div class="backend-off">⚠️ 该模块后端暂未启用（oa4rust 无对应路由/数据表），列表与增删改不可用，界面为功能预览</div>
     <div class="content-panel glass-card">
       <div class="toolbar">
         <input v-model="search" placeholder="搜索..." class="search-input" />
@@ -73,13 +74,9 @@ const qk = ['cms_Xform', 'list']
 const { data } = useQuery({
   queryKey: qk,
   queryFn: async () => {
-    loading.value = true
-    try {
-      const r = await api.get(ep)
-      return (r as any)?.data ?? []
-    } finally {
-      loading.value = false
-    }
+    // 后端未启用该模块（无对应路由/数据表），跳过死端点请求，直接空态渲染。
+    loading.value = false
+    return []
   },
 })
 items.value = data.value ?? []
@@ -170,4 +167,5 @@ function fmtTime(t?: string) {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.backend-off{padding:10px 16px;border-radius:var(--radius-md);border:1px dashed var(--border-color);color:var(--text-muted);font-size:12px}
 </style>
