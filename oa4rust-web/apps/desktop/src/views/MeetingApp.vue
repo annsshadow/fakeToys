@@ -184,7 +184,8 @@ async function leaveMeeting(m: M) {
 
 async function loadReservations() {
   try {
-    const r = await api.get('/jaxrs/meeting/assemble/control/reservation/list')
+    // 后端真实路由为 meeting/list/apply/{page}/size/{size}（reservation 旧面未注册）。
+    const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list/apply/1/size/50')
     reservations.value = r.data ?? []
   } catch {
     reservations.value = []

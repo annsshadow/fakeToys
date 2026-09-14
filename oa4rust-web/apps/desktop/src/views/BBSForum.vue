@@ -281,10 +281,10 @@ watch(repliesData, (d) => {
   if (d) replies.value = d
 })
 
-// 创建帖子
+// 创建帖子（后端已注册路由为 /jaxrs/bbs/subject/create，非 assemble/control 旧面）
 const createMutation = useMutation({
   mutationFn: (data: { sectionId: string; title: string; content: string }) =>
-    api.post('/jaxrs/bbs/assemble/control/subject/create', data),
+    api.post('/jaxrs/bbs/subject/create', data),
   onSuccess: () => {
     showNewTopic.value = false
     refetch()
