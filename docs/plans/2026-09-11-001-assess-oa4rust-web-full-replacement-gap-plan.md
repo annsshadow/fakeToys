@@ -3,7 +3,8 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 13  # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达成）——Playwright 对运行中双栈 5/5 通过
+rev: 14  # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈 o2server/o2web 未上线，无影子迁移/生产切流前提；「功能可替换」= 项 1/2/3/5 达成（门禁级功能等价，非逐字节等价），S4 不阻塞；保留「不宣布 100% 完全替代」边界
+      # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达成）——Playwright 对运行中双栈 5/5 通过
       # （designer-roundtrip process/form/query/portal + workflow-runtime 发起→填报→审批→收尾）；
       # 根因修复：ProcessDesigner 死模板未定义标识符（simState/ganttRows/branchStates 等）+ 行129 v-for/v-if 防御；
       # get_flow create_time/update_time to_char 消 panic；create/save_flow 去 ::jsonb（列实为 text）；
@@ -14,7 +15,7 @@ rev: 13  # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达�
       # 项1 复验（2026-09-14）：干净双栈（全新 o2server + 干净 Rust DB，双侧全播种）重跑 behavior_compare
       # = 136 FAIL / 1877 PASS / 2029 SKIP ≤ 基线 170，gate 无回归（较 rev12 153 下降）——本次后端改动未使 gate 回归
       # 项3/项5 复核：W13 crud-view manifest（47 项裁决，壳视 replacementClaim:false）+ 守卫测试 6/6；§五 四条书面边界声明在档
-      # 项4 S4：离线门禁 pilot_gate 4/4 达成；真实试点流量为外部阻塞（需部署），留档
+      # 项4 S4：离线门禁 pilot_gate 4/4 达成；v14 重新定位为上线前稳定性金丝雀（旧栈未上线→无影子迁移前提），不阻塞「功能可替换」，真实试点流量待上线时验证
       # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
       # （person custom/definition 删除族对齐 WoId {id} + queryview reload/dynamic 对齐 WrapBoolean）；
       # 双栈容器同环境 A/B 实测 gate 观测 156→153（-3，1857→1860 PASS，基线 170 通过）；
@@ -218,12 +219,17 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
    - 四设计器保存 round-trip 无 404；Selector 在四设计器可复用；
    - **不含**任何"导入历史数据"验收项（无此数据）。
 3. **无伪装实装**：38 crud-view 全部转"真实装"或"书面范围外"；`views/` 不得以壳冒充分替代。
-4. **金丝雀试用通过**（S4）：pilot 真实使用一个观察窗口内 5xx/错误预算达标，替代"影子流量无差异"这一原 v1 判据。
+4. **上线前稳定性金丝雀**（S4，v14 重新定位）：pilot 真实使用一个观察窗口内 5xx/错误预算达标，替代"影子流量无差异"这一原 v1 判据。**因旧栈 o2server/o2web 未上线，无生产影子/切流前提**，S4 从「宣布完全替代的前置 gate」降级为「真正上线前的稳定性验证」，**不作为「功能可替换」的达成条件**。
 5. **书面边界声明**：IM 完整协议、无历史迁移、参考锚点局限、Java prompt 不一致——对外披露。
 
-> **未满足 1、2 之前不得宣布完全替代**；v1 的"R1 影子流量报告归档"要求已删除，由 S1+S2+S4 三件套取代。
+> **未满足 1、2 之前不得宣布完全替代**；v1 的"R1 影子流量报告归档"要求已删除，由 S1+S2+S4 三件套取代。**v14 口径（旧栈未上线）**：「**功能可替换**」以**项 1/2/3/5 达成 + 行为门禁无回归**为判据（门禁级功能等价，非逐字节等价），**现已达成**；S4 仅为上线前稳定性金丝雀，不阻塞「功能可替换」。仍**不宣布"100% 逐字节完全替代并可下线旧栈"**——136 条残余行为差异（多为 program_center/ai_assemble_control 定时注册类，环境性，非工作流域）+ 2029 条跳过 + 书面范围外（IM 完整协议、历史迁移）客观存在。
 >
 > **rev13 状态（2026-09-14）**：项 2「前端 E2E 闭环」已在运行中双栈本地达成——S3 Playwright 实跑 5/5（process/form/query/portal 四设计器保存 round-trip 无 404 + workflow-runtime 发起→填报→审批→收尾）。项 1「后端 behavior_compare」已于 2026-09-14 在干净双栈（全新 `o2oa/o2server` 容器 + 干净 Rust DB，双侧全播种：Java 经 `seed_java.py --init --process-form`、Rust 经自动迁移 + 091 + `seed_fixtures.sql`）本地复验：**136 FAIL / 1877 PASS / 2029 SKIP ≤ 基线 170，gate 无回归**（较 rev12 观测 153 下降，PASS 1856→1877）。项 3「无伪装实装」已复核在档——W13 crud-view manifest（47 项：1 实装 + 2 书面范围外 + 44 仍阻塞，壳视 `replacementClaim:false`）+ `w13-w14-closure.test.ts` 守卫 6/6；项 5「书面边界声明」已复核在档——§五 四条（IM 完整协议 / 无历史迁移 / 参考锚点局限 / Java prompt 不一致）。**项 1/2/3/5 视为 gate 达成**；项 4（S4 金丝雀真实流量）保留为待部署的外部 gate（离线门禁 pilot_gate 4/4 已达成，真实试点流量 + 观察窗口 5xx/错误预算需部署后签核；交接 runbook 见 `docs/ops/s4-pilot-canary-runbook.md`）。在项 4 真实流量达标前**不宣布完全替代**。
+
+> **rev14 口径（2026-09-15，用户确认）**：o2server/o2web 本身**未上线**，无生产流量可影子/切流 → S4 的「生产金丝雀迁移」前提不成立。据此重定「完全替代」口径：
+> 1.「**功能可替换**」= 项 1/2/3/5 全部 gate 达成（覆盖 100%、行为门禁无回归、核心工作流 E2E 闭环、无伪装实装、边界已声明），**现已达成**；
+> 2. S4 重新定位为「**上线前稳定性金丝雀**」——真正上线时跑一个观察窗口、核对 5xx/错误预算即可，**不作为宣布功能可替换的前置**；
+> 3. 保留边界：**不宣布"100% 完全替代并下线旧栈"**，因 136 条残余差异 + 2029 条跳过 + 书面范围外（IM 完整协议、历史迁移）客观存在。
 
 ---
 
