@@ -103,7 +103,8 @@ async fn test_page_create_returns_error_without_db() {
         "name": "Test Page",
         "content": "<div>content</div>",
         "status": "active"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .clone()
@@ -131,7 +132,8 @@ async fn test_page_update_returns_error_without_db() {
         "name": "Updated Page",
         "content": "<div>updated</div>",
         "status": "active"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .clone()
@@ -156,7 +158,8 @@ async fn test_page_remove_returns_error_without_db() {
 
     let req = serde_json::to_string(&serde_json::json!({
         "id": "page-1"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .clone()

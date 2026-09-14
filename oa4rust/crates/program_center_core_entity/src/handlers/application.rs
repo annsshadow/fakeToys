@@ -1,9 +1,14 @@
-use axum::{extract::{Extension, Path}, Json, Router};
+use axum::{
+    extract::{Extension, Path},
+    Json, Router,
+};
 use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, middleware::require_owner, response::ActionResult, session::Session};
+use shared::{
+    error::AppError, middleware::require_owner, response::ActionResult, session::Session,
+};
 
 use crate::{entities, MAX_NAME_LEN};
 
@@ -35,21 +40,33 @@ pub async fn application_list(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = models.iter().map(|m| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(m.id.clone())),
-            ("name".to_string(), Value::String(m.name.clone())),
-            ("category".to_string(), Value::String(m.category.clone())),
-            ("subCategory".to_string(), Value::String(m.sub_category.clone())),
-            ("version".to_string(), Value::String(m.version.clone())),
-            ("publisher".to_string(), Value::String(m.publisher.clone())),
-            ("creatorPerson".to_string(), Value::String(m.creator_person.clone())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = models
+        .iter()
+        .map(|m| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("category".to_string(), Value::String(m.category.clone())),
+                (
+                    "subCategory".to_string(),
+                    Value::String(m.sub_category.clone()),
+                ),
+                ("version".to_string(), Value::String(m.version.clone())),
+                ("publisher".to_string(), Value::String(m.publisher.clone())),
+                (
+                    "creatorPerson".to_string(),
+                    Value::String(m.creator_person.clone()),
+                ),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -64,7 +81,9 @@ pub async fn application_create(
         return Err(AppError::BadRequest("name is required".to_string()));
     }
     if req.name.len() > MAX_NAME_LEN {
-        return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters")));
+        return Err(AppError::BadRequest(format!(
+            "name must be at most {MAX_NAME_LEN} characters"
+        )));
     }
 
     let active = entities::application::ActiveModel {
@@ -83,11 +102,23 @@ pub async fn application_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(model.id.clone())),
             ("name".to_string(), Value::String(model.name.clone())),
-            ("category".to_string(), Value::String(model.category.clone())),
-            ("subCategory".to_string(), Value::String(model.sub_category.clone())),
+            (
+                "category".to_string(),
+                Value::String(model.category.clone()),
+            ),
+            (
+                "subCategory".to_string(),
+                Value::String(model.sub_category.clone()),
+            ),
             ("version".to_string(), Value::String(model.version.clone())),
-            ("publisher".to_string(), Value::String(model.publisher.clone())),
-            ("creatorPerson".to_string(), Value::String(model.creator_person.clone())),
+            (
+                "publisher".to_string(),
+                Value::String(model.publisher.clone()),
+            ),
+            (
+                "creatorPerson".to_string(),
+                Value::String(model.creator_person.clone()),
+            ),
         ]),
     ))))
 }
@@ -109,25 +140,54 @@ pub async fn application_update(
 
     let mut active: entities::application::ActiveModel = model.into();
     if let Some(name) = req.name {
-        if name.trim().is_empty() { return Err(AppError::BadRequest("name is required".to_string())); }
-        if name.len() > MAX_NAME_LEN { return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters"))); }
+        if name.trim().is_empty() {
+            return Err(AppError::BadRequest("name is required".to_string()));
+        }
+        if name.len() > MAX_NAME_LEN {
+            return Err(AppError::BadRequest(format!(
+                "name must be at most {MAX_NAME_LEN} characters"
+            )));
+        }
         active.name = Set(name);
     }
-    if let Some(v) = req.category { active.category = Set(v); }
-    if let Some(v) = req.sub_category { active.sub_category = Set(v); }
-    if let Some(v) = req.version { active.version = Set(v); }
-    if let Some(v) = req.publisher { active.publisher = Set(v); }
+    if let Some(v) = req.category {
+        active.category = Set(v);
+    }
+    if let Some(v) = req.sub_category {
+        active.sub_category = Set(v);
+    }
+    if let Some(v) = req.version {
+        active.version = Set(v);
+    }
+    if let Some(v) = req.publisher {
+        active.publisher = Set(v);
+    }
 
     let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(updated.id.clone())),
             ("name".to_string(), Value::String(updated.name.clone())),
-            ("category".to_string(), Value::String(updated.category.clone())),
-            ("subCategory".to_string(), Value::String(updated.sub_category.clone())),
-            ("version".to_string(), Value::String(updated.version.clone())),
-            ("publisher".to_string(), Value::String(updated.publisher.clone())),
-            ("creatorPerson".to_string(), Value::String(updated.creator_person.clone())),
+            (
+                "category".to_string(),
+                Value::String(updated.category.clone()),
+            ),
+            (
+                "subCategory".to_string(),
+                Value::String(updated.sub_category.clone()),
+            ),
+            (
+                "version".to_string(),
+                Value::String(updated.version.clone()),
+            ),
+            (
+                "publisher".to_string(),
+                Value::String(updated.publisher.clone()),
+            ),
+            (
+                "creatorPerson".to_string(),
+                Value::String(updated.creator_person.clone()),
+            ),
         ]),
     ))))
 }
@@ -162,4 +222,3 @@ pub fn _router(_pool: Pool, _db: Option<DatabaseConnection>) -> Router {
     // panic axum at merge time ("Overlapping method route").
     Router::new()
 }
-

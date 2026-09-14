@@ -315,6 +315,9 @@ mod tests {
         let pool = build_test_pool();
         let router = crate::program_center_core_entity_router(pool).await;
         // Verify router is non-empty by checking it has at least one route
-        assert!(format!("{:?}", router) != "Router {}", "router should have routes registered");
+        assert!(
+            format!("{:?}", router) != "Router {}",
+            "router should have routes registered"
+        );
     }
 }

@@ -1,15 +1,11 @@
-use axum::{
-    extract::Extension,
-    routing::get, routing::post,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, routing::post, Json, Router};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, session::Session};
+use sqlparser::ast::Statement;
 use sqlparser::dialect::PostgreSqlDialect;
 use sqlparser::parser::Parser;
-use sqlparser::ast::Statement;
 
 /// 查询核心服务Express模块
 /// 提供查询核心相关的快速响应服务
@@ -30,7 +26,10 @@ pub async fn execute_query(
     session: Extension<Session>,
     axum::extract::Json(req): Json<QueryRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let raw_sql = req.query.as_deref().ok_or(AppError::BadRequest("query is required".to_string()))?;
+    let raw_sql = req
+        .query
+        .as_deref()
+        .ok_or(AppError::BadRequest("query is required".to_string()))?;
     let raw_sql = raw_sql.trim();
     if raw_sql.is_empty() {
         return Err(AppError::BadRequest("query is required".to_string()));
@@ -42,7 +41,9 @@ pub async fn execute_query(
         .map_err(|e| AppError::BadRequest(format!("SQL parse error: {}", e)))?;
 
     if statements.len() != 1 {
-        return Err(AppError::BadRequest("only single statement allowed".to_string()));
+        return Err(AppError::BadRequest(
+            "only single statement allowed".to_string(),
+        ));
     }
 
     match &statements[0] {
@@ -88,10 +89,14 @@ pub async fn execute_query(
         ("query".to_string(), Value::String(raw_sql.to_string())),
         ("filteredQuery".to_string(), Value::String(final_sql)),
         ("params".to_string(), req.params.unwrap_or_default()),
-        ("timeout".to_string(), Value::Number(serde_json::Number::from(
-            req.timeout.unwrap_or(30000),
-        ))),
-        ("rowCount".to_string(), Value::Number(serde_json::Number::from(row_count))),
+        (
+            "timeout".to_string(),
+            Value::Number(serde_json::Number::from(req.timeout.unwrap_or(30000))),
+        ),
+        (
+            "rowCount".to_string(),
+            Value::Number(serde_json::Number::from(row_count)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -116,10 +121,7 @@ async fn get_permission_filters(
     };
 
     let unit_ids: Vec<String> = match client
-        .query(
-            "SELECT id FROM auth_unit WHERE deleted_at IS NULL",
-            &[],
-        )
+        .query("SELECT id FROM auth_unit WHERE deleted_at IS NULL", &[])
         .await
     {
         Ok(rows) => rows.iter().map(|r| r.get::<_, String>("id")).collect(),
@@ -127,8 +129,16 @@ async fn get_permission_filters(
     };
 
     (
-        if ident_names.is_empty() { None } else { Some(ident_names) },
-        if unit_ids.is_empty() { None } else { Some(unit_ids) },
+        if ident_names.is_empty() {
+            None
+        } else {
+            Some(ident_names)
+        },
+        if unit_ids.is_empty() {
+            None
+        } else {
+            Some(unit_ids)
+        },
     )
 }
 
@@ -139,13 +149,19 @@ fn build_where_clause(
 ) -> String {
     let mut clauses: Vec<String> = Vec::new();
     if let Some(idents) = identity_list {
-        let params: Vec<String> = idents.iter().map(|s| format!("'{}'", s.replace("'", "''"))).collect();
+        let params: Vec<String> = idents
+            .iter()
+            .map(|s| format!("'{}'", s.replace("'", "''")))
+            .collect();
         if !params.is_empty() {
             clauses.push(format!("(x_identity IN ({}))", params.join(", ")));
         }
     }
     if let Some(units) = unit_list {
-        let params: Vec<String> = units.iter().map(|s| format!("'{}'", s.replace("'", "''"))).collect();
+        let params: Vec<String> = units
+            .iter()
+            .map(|s| format!("'{}'", s.replace("'", "''")))
+            .collect();
         if !params.is_empty() {
             clauses.push(format!("(x_unit_id IN ({}))", params.join(", ")));
         }
@@ -161,8 +177,7 @@ fn inject_where(sql: &str, where_clause: &str) -> String {
         // 简单处理：在 LIMIT 前插入 WHERE 条件
         if let Some(limit_pos) = upper.find(" LIMIT ") {
             let base = &sql[..limit_pos];
-            format!("{} AND ({}) ", base.trim_end(), where_clause)
-                + &sql[limit_pos..]
+            format!("{} AND ({}) ", base.trim_end(), where_clause) + &sql[limit_pos..]
         } else {
             format!("{} WHERE ({}) ", sql.trim_end(), where_clause)
         }
@@ -192,16 +207,27 @@ pub async fn get_query_history(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("query".to_string(), Value::String(row.get("name"))),
-                ("executedAt".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "executedAt".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("limit".to_string(), Value::Number(serde_json::Number::from(limit))),
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "limit".to_string(),
+                Value::Number(serde_json::Number::from(limit)),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// 缓存查询结果
@@ -240,7 +266,10 @@ pub async fn cache_query_result(
         serde_json::Map::from_iter([
             ("queryId".to_string(), Value::String(query_id)),
             ("cached".to_string(), Value::Bool(cached)),
-            ("ttl".to_string(), Value::Number(serde_json::Number::from(ttl))),
+            (
+                "ttl".to_string(),
+                Value::Number(serde_json::Number::from(ttl)),
+            ),
         ]),
     ))))
 }
@@ -278,8 +307,14 @@ pub async fn get_cache_status(
         serde_json::Map::from_iter([
             ("queryId".to_string(), Value::String(query_id)),
             ("cached".to_string(), Value::Bool(cached)),
-            ("hits".to_string(), Value::Number(serde_json::Number::from(hits))),
-            ("misses".to_string(), Value::Number(serde_json::Number::from(misses))),
+            (
+                "hits".to_string(),
+                Value::Number(serde_json::Number::from(hits)),
+            ),
+            (
+                "misses".to_string(),
+                Value::Number(serde_json::Number::from(misses)),
+            ),
         ]),
     ))))
 }
@@ -289,9 +324,18 @@ pub async fn get_cache_status(
 pub fn query_core_express_router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/query/core/express/execute", post(execute_query))
-        .route("/jaxrs/query/core/express/history/{limit}", get(get_query_history))
-        .route("/jaxrs/query/core/express/cache/{queryId}", post(cache_query_result))
-        .route("/jaxrs/query/core/express/cache/status/{queryId}", get(get_cache_status))
+        .route(
+            "/jaxrs/query/core/express/history/{limit}",
+            get(get_query_history),
+        )
+        .route(
+            "/jaxrs/query/core/express/cache/{queryId}",
+            post(cache_query_result),
+        )
+        .route(
+            "/jaxrs/query/core/express/cache/status/{queryId}",
+            get(get_cache_status),
+        )
         .layer(Extension(pool))
 }
 
@@ -299,7 +343,6 @@ pub fn query_core_express_router(pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_core_express_router(pool)

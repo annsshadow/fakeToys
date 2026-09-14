@@ -233,33 +233,85 @@ pub async fn unit_list_unit_sup_nested_object(
     unit_tree_scope(pool, body, "sup", true, true).await
 }
 
-/// POST /jaxrs/unit/check/unit/has/person: does each unit contain persons?
+/// POST /jaxrs/unit/check/unit/has/person: does the person hold an identity
+/// within the given unit? (Java UnitAction#checkHasPerson → ActionHasPerson)
+///
+/// Wi = {person, unit, recursive(default true)}; Wo = WrapBoolean →
+/// `data: {value: <bool>}`. person/unit 均可按 id 或名称定位；基础判定 =
+/// 该人身份组织的"自身 + 子孙"集合包含目标组织；recursive 时再查目标组织
+/// 是否处于任一身份组织的祖先链（sup-nested）。空载荷或查无对象 → false。
 pub async fn unit_check_unit_has_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let flags = string_list(&body, "unitList");
-    capped(&flags)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let mut map = serde_json::Map::new();
-    for flag in &flags {
-        map.insert(flag.clone(), Value::Bool(false));
-    }
-    if !flags.is_empty() {
-        let rows = client
-            .query(
-                "SELECT DISTINCT u.id FROM x_org_unit u \
-                 JOIN x_org_person p ON p.unit_id = u.id AND p.deleted_at IS NULL \
-                 WHERE u.deleted_at IS NULL AND (u.id = ANY($1) OR u.name = ANY($1))",
-                &[&flags],
+    let person = body.get("person").and_then(Value::as_str).unwrap_or("").trim();
+    let unit = body.get("unit").and_then(Value::as_str).unwrap_or("").trim();
+    let recursive = body.get("recursive").and_then(Value::as_bool).unwrap_or(true);
+
+    let mut value = false;
+    if !person.is_empty() && !unit.is_empty() {
+        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let person_row = client
+            .query_opt(
+                "SELECT id FROM x_org_person WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
+                &[&person, &person],
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        for row in rows {
-            let id: String = row.get("id");
-            map.insert(id, Value::Bool(true));
+        let target_row = client
+            .query_opt(
+                "SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
+                &[&unit, &unit],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if let (Some(prow), Some(trow)) = (person_row, target_row) {
+            let person_id: String = prow.get("id");
+            let target_id: String = trow.get("id");
+            let seed_rows = client
+                .query(
+                    "SELECT DISTINCT unit_id FROM x_org_identity \
+                     WHERE person_id = $1 AND deleted_at IS NULL AND unit_id IS NOT NULL",
+                    &[&person_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let seeds: Vec<String> =
+                seed_rows.iter().map(|r| r.get::<_, String>("unit_id")).collect();
+            if !seeds.is_empty() {
+                // 基础判定：身份组织的自身 + 全部子孙组织
+                let sub_rows = client
+                    .query(
+                        "WITH RECURSIVE sub AS (\
+                         SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) \
+                         UNION \
+                         SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL) \
+                         SELECT id FROM sub",
+                        &[&seeds],
+                    )
+                    .await
+                    .map_err(|_| AppError::Internal)?;
+                value = sub_rows.iter().any(|r| r.get::<_, String>("id") == target_id);
+                // recursive 判定：目标组织位于任一身份组织的祖先链（sup-nested）
+                if !value && recursive {
+                    let sup_rows = client
+                        .query(
+                            "WITH RECURSIVE sup AS (\
+                             SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) \
+                             UNION \
+                             SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) \
+                             SELECT id FROM sup",
+                            &[&seeds],
+                        )
+                        .await
+                        .map_err(|_| AppError::Internal)?;
+                    value = sup_rows.iter().any(|r| r.get::<_, String>("id") == target_id);
+                }
+            }
         }
     }
+    let mut map = serde_json::Map::new();
+    map.insert("value".to_string(), Value::Bool(value));
     Ok(AxumJson(ActionResult::success(Value::Object(map))))
 }
 

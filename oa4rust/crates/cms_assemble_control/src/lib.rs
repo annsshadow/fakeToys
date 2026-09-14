@@ -1,29 +1,25 @@
 #![allow(dead_code, non_snake_case)]
-use axum::{
-    extract::Extension,
-    Json,
-    Router,
-};
-use deadpool_postgres::Pool;
-use serde_json::Value;
-use shared::{error::AppError, response::ActionResult, response::row_to_json};
+use axum::{extract::Extension, Json, Router};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use deadpool_postgres::tokio_postgres::types::ToSql;
+use deadpool_postgres::Pool;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::Value;
+use shared::{error::AppError, response::row_to_json, response::ActionResult};
 use std::collections::HashMap;
-use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
 pub mod routes;
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_data_appdict;
+#[cfg(test)]
 mod tests_generated;
 #[cfg(test)]
 mod tests_u2;
 #[cfg(test)]
-mod tests_data_appdict;
-#[cfg(test)]
 mod tests_u3;
-
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -46,9 +42,18 @@ pub async fn application_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("alias".to_string(), Value::String(row.get("alias"))),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
-                ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
-                ("enabled".to_string(), Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or_default())),
-                ("manager".to_string(), Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default())),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or_default()),
+                ),
+                (
+                    "manager".to_string(),
+                    Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -74,13 +79,24 @@ pub async fn get_control_config(
     let data = if let Some(row) = rows.first() {
         Value::Object(serde_json::Map::from_iter([
             ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-            ("maxCategoryCount".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_category_count")))),
-            ("allowAnonymous".to_string(), Value::Bool(row.get("allow_anonymous"))),
+            (
+                "maxCategoryCount".to_string(),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, i64>("max_category_count"),
+                )),
+            ),
+            (
+                "allowAnonymous".to_string(),
+                Value::Bool(row.get("allow_anonymous")),
+            ),
         ]))
     } else {
         Value::Object(serde_json::Map::from_iter([
             ("enabled".to_string(), Value::Bool(true)),
-            ("maxCategoryCount".to_string(), Value::Number(serde_json::Number::from(100i64))),
+            (
+                "maxCategoryCount".to_string(),
+                Value::Number(serde_json::Number::from(100i64)),
+            ),
             ("allowAnonymous".to_string(), Value::Bool(false)),
         ]))
     };
@@ -114,7 +130,12 @@ pub async fn list_control_sections(
         })
         .collect();
 
-    let count = sections.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(sections), count, 0)))
+    let count = sections.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(sections),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -125,9 +146,18 @@ pub async fn update_control_config(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let enabled = body.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
-    let max_category_count = body.get("maxCategoryCount").and_then(|v| v.as_i64()).unwrap_or(500);
-    let allow_anonymous = body.get("allowAnonymous").and_then(|v| v.as_bool()).unwrap_or(false);
+    let enabled = body
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let max_category_count = body
+        .get("maxCategoryCount")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(500);
+    let allow_anonymous = body
+        .get("allowAnonymous")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     client
         .execute(
@@ -153,6 +183,84 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::cms_assemble_control_router(pool)
 }
 
+/// O2OA 表单定义以 JSON 文本落库，但 API 始终读写 JSON 对象。
+/// 自定义 Serialize/Deserialize 同时兼容旧调用方传入 JSON 字符串。
+#[derive(Debug, Clone, PartialEq)]
+struct FormDefinition(Value);
+
+impl FormDefinition {
+    fn parse(value: Value) -> Result<Self, String> {
+        fn validate_module_lists(value: &Value) -> Result<(), String> {
+            match value {
+                Value::Object(object) => {
+                    if !object
+                        .get("moduleList")
+                        .map(|modules| modules.is_object())
+                        .unwrap_or(true)
+                    {
+                        return Err("definition.moduleList must be a JSON object".to_string());
+                    }
+                    for child in object.values() {
+                        validate_module_lists(child)?;
+                    }
+                }
+                Value::Array(values) => {
+                    for child in values {
+                        validate_module_lists(child)?;
+                    }
+                }
+                _ => {}
+            }
+            Ok(())
+        }
+
+        let value = match value {
+            Value::String(raw) => serde_json::from_str(&raw)
+                .map_err(|error| format!("definition must be valid JSON: {error}"))?,
+            value => value,
+        };
+        if !value.is_object() {
+            return Err("definition must be a JSON object".to_string());
+        }
+        validate_module_lists(&value)?;
+        Ok(Self(value))
+    }
+
+    fn from_db(raw: Option<String>) -> Result<Self, AppError> {
+        match raw {
+            None => Ok(Self(Value::Object(serde_json::Map::new()))),
+            Some(raw) if raw.trim().is_empty() => Ok(Self(Value::Object(serde_json::Map::new()))),
+            Some(raw) => Self::parse(Value::String(raw))
+                .map_err(|message| AppError::BadRequest(format!("stored {message}"))),
+        }
+    }
+
+    fn to_db(&self) -> Result<String, AppError> {
+        serde_json::to_string(&self.0).map_err(|_| AppError::Internal)
+    }
+
+    fn into_value(self) -> Value {
+        self.0
+    }
+}
+
+impl Serialize for FormDefinition {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for FormDefinition {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Self::parse(Value::deserialize(deserializer)?).map_err(serde::de::Error::custom)
+    }
+}
 
 // ─── Helper: generic list handler ───────────────────────────────────────────
 
@@ -168,10 +276,17 @@ async fn list_from_table_inner(
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
         table,
-        if where_clause.is_empty() { String::new() } else { format!(" WHERE {}", where_clause) }
+        if where_clause.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", where_clause)
+        }
     );
     let count_row = client
-        .query_one(&count_sql, &params.iter().map(|(p, _)| *p).collect::<Vec<_>>()[..])
+        .query_one(
+            &count_sql,
+            &params.iter().map(|(p, _)| *p).collect::<Vec<_>>()[..],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     let count: i64 = count_row.get("count");
@@ -179,10 +294,17 @@ async fn list_from_table_inner(
     let data_sql = format!(
         "SELECT * FROM {}{}",
         table,
-        if where_clause.is_empty() { String::new() } else { format!(" WHERE {}", where_clause) }
+        if where_clause.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", where_clause)
+        }
     );
     let rows = client
-        .query(&data_sql, &params.iter().map(|(p, _)| *p).collect::<Vec<_>>()[..])
+        .query(
+            &data_sql,
+            &params.iter().map(|(p, _)| *p).collect::<Vec<_>>()[..],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -200,7 +322,10 @@ async fn list_from_table(
 ) -> Result<Value, AppError> {
     let (count, data) = list_from_table_inner(pool, table, where_clause, params).await?;
     Ok(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        ),
         ("data".to_string(), Value::Array(data)),
     ])))
 }
@@ -233,7 +358,11 @@ async fn list_from_table_filtered_inner(
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
         table,
-        if where_clause.is_empty() { String::new() } else { format!(" WHERE {}", where_clause) }
+        if where_clause.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", where_clause)
+        }
     );
     let count_row = client
         .query_one(&count_sql, params)
@@ -244,7 +373,11 @@ async fn list_from_table_filtered_inner(
     let data_sql = format!(
         "SELECT * FROM {}{}",
         table,
-        if where_clause.is_empty() { String::new() } else { format!(" WHERE {}", where_clause) }
+        if where_clause.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", where_clause)
+        }
     );
     let rows = client
         .query(&data_sql, params)
@@ -265,7 +398,10 @@ async fn list_from_table_filtered(
 ) -> Result<Value, AppError> {
     let (count, data) = list_from_table_filtered_inner(pool, table, where_clause, params).await?;
     Ok(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(count)),
+        ),
         ("data".to_string(), Value::Array(data)),
     ])))
 }
@@ -289,22 +425,23 @@ async fn list_from_table_filtered_java(
 async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
-        .execute(
-            &format!("DELETE FROM {} WHERE id = $1", table),
-            &[&id],
-        )
+        .execute(&format!("DELETE FROM {} WHERE id = $1", table), &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Value::Object(serde_json::Map::from_iter([
-        ("deleted".to_string(), Value::Bool(true)),
-    ])))
+    Ok(Value::Object(serde_json::Map::from_iter([(
+        "deleted".to_string(),
+        Value::Bool(true),
+    )])))
 }
 
 async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Option<Value>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            &format!("SELECT * FROM {} WHERE id = $1 AND deleted_at::text IS NULL", table),
+            &format!(
+                "SELECT * FROM {} WHERE id = $1 AND deleted_at::text IS NULL",
+                table
+            ),
             &[&id],
         )
         .await
@@ -326,7 +463,10 @@ async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, 
         .map_err(|_| AppError::Internal)?;
     Ok(Value::Object(serde_json::Map::from_iter([
         ("deleted".to_string(), Value::Bool(true)),
-        ("count".to_string(), Value::Number(serde_json::Number::from(affected as i64))),
+        (
+            "count".to_string(),
+            Value::Number(serde_json::Number::from(affected as i64)),
+        ),
     ])))
 }
 
@@ -335,30 +475,44 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = body.get("id").and_then(|v| v.as_str()).unwrap_or("");
     if id.is_empty() {
-        return Ok(Value::Object(serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(false)),
-        ])));
+        return Ok(Value::Object(serde_json::Map::from_iter([(
+            "saved".to_string(),
+            Value::Bool(false),
+        )])));
     }
     let cols: Vec<&str> = body
         .as_object()
         .map(|m| m.keys().map(|k| k.as_str()).collect())
         .unwrap_or_default();
     if cols.is_empty() {
-        return Ok(Value::Object(serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(false)),
-        ])));
+        return Ok(Value::Object(serde_json::Map::from_iter([(
+            "saved".to_string(),
+            Value::Bool(false),
+        )])));
     }
-    let _sets: Vec<String> = cols.iter().enumerate().map(|(i, c)| format!("{} = ${}", c, i + 2)).collect();
-    let _placeholders: Vec<String> = cols.iter().enumerate().map(|(i, _)| format!("${}", i + 2)).collect();
+    let _sets: Vec<String> = cols
+        .iter()
+        .enumerate()
+        .map(|(i, c)| format!("{} = ${}", c, i + 2))
+        .collect();
+    let _placeholders: Vec<String> = cols
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("${}", i + 2))
+        .collect();
     let values: Vec<Box<dyn ToSql + Sync>> = cols
         .iter()
         .map(|c| match body.get(*c) {
             Some(v) => match v {
                 Value::Bool(b) => Box::new(*b) as Box<dyn ToSql + Sync>,
                 Value::Number(n) => {
-                    if let Some(i) = n.as_i64() { Box::new(i) as Box<dyn ToSql + Sync> }
-                    else if let Some(f) = n.as_f64() { Box::new(f as i64) }
-                    else { Box::new(0i64) }
+                    if let Some(i) = n.as_i64() {
+                        Box::new(i) as Box<dyn ToSql + Sync>
+                    } else if let Some(f) = n.as_f64() {
+                        Box::new(f as i64)
+                    } else {
+                        Box::new(0i64)
+                    }
                 }
                 Value::String(s) => Box::new(s.as_str()),
                 _ => Box::new("" as &str),
@@ -379,10 +533,14 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
     params.extend(values);
     let params_refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|p| p.as_ref()).collect();
 
-    client.execute(&sql, &params_refs).await.map_err(|_| AppError::Internal)?;
-    Ok(Value::Object(serde_json::Map::from_iter([
-        ("saved".to_string(), Value::Bool(true)),
-    ])))
+    client
+        .execute(&sql, &params_refs)
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Value::Object(serde_json::Map::from_iter([(
+        "saved".to_string(),
+        Value::Bool(true),
+    )])))
 }
 
 // ─── anonymous_* stubs ──────────────────────────────────────────────────────
@@ -437,11 +595,29 @@ pub async fn anonymous_document_id_view(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("authorId".to_string(), Value::String(row.get::<_, Option<String>>("author_id").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "authorId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("author_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -479,7 +655,10 @@ pub async fn appinfo_alias_alias(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("alias".to_string(), Value::String(row.get("alias"))),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
-                ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("manager".to_string(), Value::String(row.get("manager"))),
             ]));
@@ -565,7 +744,10 @@ pub async fn appinfo_get_user_publish_appId(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("alias".to_string(), Value::String(row.get("alias"))),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
-                ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("manager".to_string(), Value::String(row.get("manager"))),
             ]));
@@ -731,7 +913,10 @@ pub async fn appinfo_appId_icon_size_size(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("alias".to_string(), Value::String(row.get("alias"))),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
-                ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
                 ("manager".to_string(), Value::String(row.get("manager"))),
             ]));
@@ -743,9 +928,7 @@ pub async fn appinfo_appId_icon_size_size(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn appinfo_flag(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appinfo_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
@@ -769,9 +952,18 @@ pub async fn appinfo_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("alias".to_string(), Value::String(row.get("alias"))),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
-                ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
-                ("enabled".to_string(), Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or_default())),
-                ("manager".to_string(), Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default())),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or_default()),
+                ),
+                (
+                    "manager".to_string(),
+                    Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -834,17 +1026,49 @@ pub async fn appinfo_id_permission(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("appId".to_string(), Value::String(row.get("app_id"))),
-            ("categoryId".to_string(), Value::String(row.get::<_, Option<String>>("category_id").unwrap_or_default())),
-            ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-            ("roleType".to_string(), Value::String(row.get::<_, Option<String>>("role_type").unwrap_or_default())),
-            ("permissionLevel".to_string(), Value::String(row.get::<_, Option<String>>("permission_level").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "categoryId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("category_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "roleType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("role_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "permissionLevel".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission_level")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ─── categoryinfo_* stubs ───────────────────────────────────────────────────
@@ -868,11 +1092,34 @@ pub async fn categoryinfo_alias_alias(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
-                ("sortOrder".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("sort_order").unwrap_or(0)))),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("extContent".to_string(), Value::String(row.get::<_, Option<String>>("ext_content").unwrap_or_default())),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "sortOrder".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("sort_order").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "extContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("ext_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -899,8 +1146,17 @@ pub async fn categoryinfo_bind_categoryId_view(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -938,11 +1194,34 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
-                ("sortOrder".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("sort_order").unwrap_or(0)))),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("extContent".to_string(), Value::String(row.get::<_, Option<String>>("ext_content").unwrap_or_default())),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "sortOrder".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("sort_order").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "extContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("ext_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -992,7 +1271,13 @@ pub async fn categoryinfo_extContent(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("extContent".to_string(), Value::String(row.get::<_, Option<String>>("ext_content").unwrap_or_default())),
+                (
+                    "extContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("ext_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1131,11 +1416,34 @@ pub async fn categoryinfo_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
-                ("sortOrder".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("sort_order").unwrap_or(0)))),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("extContent".to_string(), Value::String(row.get::<_, Option<String>>("ext_content").unwrap_or_default())),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "sortOrder".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("sort_order").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "extContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("ext_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1162,10 +1470,27 @@ pub async fn categoryinfo_id_control(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
-                ("sortOrder".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("sort_order").unwrap_or(0)))),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "sortOrder".to_string(),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("sort_order").unwrap_or(0),
+                    )),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1192,8 +1517,17 @@ pub async fn categoryinfo_id_execute_projection(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1227,17 +1561,46 @@ pub async fn categoryinfo_id_permission(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("appId".to_string(), Value::String(row.get("app_id"))),
-            ("categoryId".to_string(), Value::String(row.get("category_id"))),
-            ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-            ("roleType".to_string(), Value::String(row.get::<_, Option<String>>("role_type").unwrap_or_default())),
-            ("permissionLevel".to_string(), Value::String(row.get::<_, Option<String>>("permission_level").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "categoryId".to_string(),
+                    Value::String(row.get("category_id")),
+                ),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "roleType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("role_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "permissionLevel".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission_level")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ─── comment_* / commend_* stubs ────────────────────────────────────────────
@@ -1269,8 +1632,20 @@ pub async fn commend_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1345,10 +1720,31 @@ pub async fn comment_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "parentId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1383,8 +1779,20 @@ pub async fn comment_id_commend(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1419,7 +1827,10 @@ pub async fn comment_id_uncommend(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
+        serde_json::Map::from_iter([(
+            "deleted".to_string(),
+            Value::Number(serde_json::Number::from(affected as i64)),
+        )]),
     ))))
 }
 
@@ -1459,9 +1870,24 @@ pub async fn correlation_doc_docId_delete(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("relatedDocId".to_string(), Value::String(row.get("related_doc_id"))),
-                ("correlationType".to_string(), Value::String(row.get::<_, Option<String>>("correlation_type").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "relatedDocId".to_string(),
+                    Value::String(row.get("related_doc_id")),
+                ),
+                (
+                    "correlationType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("correlation_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1493,7 +1919,10 @@ pub async fn correlation_update_doc_docId(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let correlation_type = body.get("correlationType").and_then(|v| v.as_str()).unwrap_or("");
+    let correlation_type = body
+        .get("correlationType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     client
         .execute(
             "INSERT INTO x_cms_correlation (id, doc_id, related_doc_id, correlation_type) VALUES (gen_random_uuid()::text, $1, $2, $3) ON CONFLICT (doc_id, related_doc_id) DO UPDATE SET correlation_type = $3",
@@ -1513,9 +1942,24 @@ pub async fn correlation_update_doc_docId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("relatedDocId".to_string(), Value::String(row.get("related_doc_id"))),
-                ("correlationType".to_string(), Value::String(row.get::<_, Option<String>>("correlation_type").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "relatedDocId".to_string(),
+                    Value::String(row.get("related_doc_id")),
+                ),
+                (
+                    "correlationType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("correlation_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1547,9 +1991,24 @@ fn field_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("docId".to_string(), Value::String(row.get("doc_id"))),
-        ("fieldName".to_string(), Value::String(row.get("field_name"))),
-        ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
-        ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+        (
+            "fieldName".to_string(),
+            Value::String(row.get("field_name")),
+        ),
+        (
+            "fieldValue".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("field_value")
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
+        ),
     ]))
 }
 
@@ -1607,7 +2066,14 @@ async fn gate_doc_writer(
     session: &shared::session::Session,
     doc_id: &str,
 ) -> Result<U2Gate, AppError> {
-    u2_check_owner(pool, "x_cms_data_document", "creator", doc_id, &session.person_unique).await
+    u2_check_owner(
+        pool,
+        "x_cms_data_document",
+        "creator",
+        doc_id,
+        &session.person_unique,
+    )
+    .await
 }
 
 /// data/document/{id} 基座写端点（PUT/POST）：body 顶层每个 key 落一行字段。
@@ -1632,7 +2098,11 @@ async fn write_doc_fields_base(
     }
     let obj = match body.as_object() {
         Some(obj) if !obj.is_empty() => obj,
-        _ => return Err(AppError::BadRequest("json object body required".to_string())),
+        _ => {
+            return Err(AppError::BadRequest(
+                "json object body required".to_string(),
+            ))
+        }
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let mut affected: i64 = 0;
@@ -1659,11 +2129,20 @@ async fn write_doc_fields_base(
             affected += 1;
         }
     }
-    let key = if mode == FieldWriteMode::Create { "created" } else { "updated" };
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("documentId".to_string(), Value::String(id.to_string())),
-        (key.to_string(), Value::Number(serde_json::Number::from(affected))),
-    ])))))
+    let key = if mode == FieldWriteMode::Create {
+        "created"
+    } else {
+        "updated"
+    };
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("documentId".to_string(), Value::String(id.to_string())),
+            (
+                key.to_string(),
+                Value::Number(serde_json::Number::from(affected)),
+            ),
+        ]),
+    ))))
 }
 
 /// data/document/{id} DELETE：软删该文档全部数据字段行。
@@ -1686,10 +2165,15 @@ async fn delete_doc_fields_base(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("documentId".to_string(), Value::String(id.to_string())),
-        ("deleted".to_string(), Value::Number(serde_json::Number::from(deleted as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("documentId".to_string(), Value::String(id.to_string())),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(deleted as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// data/document/{id}/{path...} 路径级写端点共享实现：
@@ -1721,11 +2205,13 @@ async fn write_doc_field_path(
             let value = body.expect("upsert requires body");
             let value_str = serde_json::to_string(value).unwrap_or_default();
             upsert_doc_field(pool, doc_id, &field_name, &value_str).await?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(doc_id.to_string())),
-                ("fieldName".to_string(), Value::String(field_name)),
-                ("updated".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id.to_string())),
+                    ("fieldName".to_string(), Value::String(field_name)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
         PathWriteMode::InsertIfAbsent => {
             let value = body.expect("create requires body");
@@ -1747,11 +2233,13 @@ async fn write_doc_field_path(
             if inserted == 0 {
                 return Ok(Json(ActionResult::error("field already exists")));
             }
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(doc_id.to_string())),
-                ("fieldName".to_string(), Value::String(field_name)),
-                ("created".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id.to_string())),
+                    ("fieldName".to_string(), Value::String(field_name)),
+                    ("created".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
         PathWriteMode::Remove => {
             let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1766,11 +2254,13 @@ async fn write_doc_field_path(
             if deleted == 0 {
                 return Ok(Json(ActionResult::error("field not found")));
             }
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(doc_id.to_string())),
-                ("fieldName".to_string(), Value::String(field_name)),
-                ("deleted".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id.to_string())),
+                    ("fieldName".to_string(), Value::String(field_name)),
+                    ("deleted".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
     }
 }
@@ -1785,7 +2275,12 @@ macro_rules! data_path_read_handler {
             let (doc_id, rest) = paths.split_first().expect("non-empty path tuple");
             let field_name = compose_field_path(rest);
             let data = query_doc_fields_by_name(&pool, doc_id, &field_name).await?;
-            let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+            let count = data.len() as i64;
+            Ok(Json(ActionResult::java_success(
+                Value::Array(data),
+                count,
+                0,
+            )))
         }
     };
 }
@@ -1795,8 +2290,14 @@ data_path_read_handler!(data_document_id_path0_path1_path2, 4);
 data_path_read_handler!(data_document_id_path0_path1_path2_path3, 5);
 data_path_read_handler!(data_document_id_path0_path1_path2_path3_path4, 6);
 data_path_read_handler!(data_document_id_path0_path1_path2_path3_path4_path5, 7);
-data_path_read_handler!(data_document_id_path0_path1_path2_path3_path4_path5_path6, 8);
-data_path_read_handler!(data_document_id_path0_path1_path2_path3_path4_path5_path6_path7, 9);
+data_path_read_handler!(
+    data_document_id_path0_path1_path2_path3_path4_path5_path6,
+    8
+);
+data_path_read_handler!(
+    data_document_id_path0_path1_path2_path3_path4_path5_path6_path7,
+    9
+);
 
 /// 路径级 mockdeletetoget / mockputtopost / update / create / delete 的宏生成器。
 ///
@@ -1836,8 +2337,15 @@ macro_rules! data_path_write_handlers {
             axum::extract::Path(paths): axum::extract::Path<[String; $arity]>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
             let (doc_id, rest) = paths.split_first().expect("non-empty path tuple");
-            write_doc_field_path(&pool, &session, doc_id, rest.to_vec(), None, PathWriteMode::Remove)
-                .await
+            write_doc_field_path(
+                &pool,
+                &session,
+                doc_id,
+                rest.to_vec(),
+                None,
+                PathWriteMode::Remove,
+            )
+            .await
         }
 
         #[axum::debug_handler]
@@ -1848,8 +2356,15 @@ macro_rules! data_path_write_handlers {
             body: axum::extract::Json<Value>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
             let (doc_id, rest) = paths.split_first().expect("non-empty path tuple");
-            write_doc_field_path(&pool, &session, doc_id, rest.to_vec(), Some(&body), PathWriteMode::Upsert)
-                .await
+            write_doc_field_path(
+                &pool,
+                &session,
+                doc_id,
+                rest.to_vec(),
+                Some(&body),
+                PathWriteMode::Upsert,
+            )
+            .await
         }
 
         #[axum::debug_handler]
@@ -1860,8 +2375,15 @@ macro_rules! data_path_write_handlers {
             body: axum::extract::Json<Value>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
             let (doc_id, rest) = paths.split_first().expect("non-empty path tuple");
-            write_doc_field_path(&pool, &session, doc_id, rest.to_vec(), Some(&body), PathWriteMode::InsertIfAbsent)
-                .await
+            write_doc_field_path(
+                &pool,
+                &session,
+                doc_id,
+                rest.to_vec(),
+                Some(&body),
+                PathWriteMode::InsertIfAbsent,
+            )
+            .await
         }
 
         /// POST {paths}/mockputtopost：PUT 的动词别名（MockPutToPost）。
@@ -1885,11 +2407,16 @@ macro_rules! data_path_write_handlers {
                 .map(String::from)
                 .unwrap_or_else(|| serde_json::to_string(&body.0).unwrap_or_default());
             upsert_doc_field(&pool, doc_id, &compose_field_path(rest), &value).await?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(doc_id.to_string())),
-                ("fieldName".to_string(), Value::String(compose_field_path(rest))),
-                ("updated".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id.to_string())),
+                    (
+                        "fieldName".to_string(),
+                        Value::String(compose_field_path(rest)),
+                    ),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
     };
 }
@@ -2018,15 +2545,50 @@ pub async fn data_document_id_array_data(
         Some(row) => {
             let data = vec![Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("authorId".to_string(), Value::String(row.get::<_, Option<String>>("author_id").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("publishTime".to_string(), Value::String(row.get::<_, Option<String>>("publish_time").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "authorId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("author_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "publishTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("publish_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))];
-            let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+            let count = data.len() as i64;
+            Ok(Json(ActionResult::java_success(
+                Value::Array(data),
+                count,
+                0,
+            )))
         }
         None => Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0))),
     }
@@ -2072,16 +2634,39 @@ pub async fn data_document_id_path0(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fieldName".to_string(), Value::String(row.get("field_name"))),
-            ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fieldName".to_string(),
+                    Value::String(row.get("field_name")),
+                ),
+                (
+                    "fieldValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ─── design_* / document_cipher_* stubs ─────────────────────────────────────
@@ -2120,12 +2705,42 @@ pub async fn design_appdict_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
-                ("appDictFlag".to_string(), Value::String(row.get::<_, Option<String>>("app_dict_flag").unwrap_or_default())),
-                ("pathLevels".to_string(), Value::String(row.get::<_, Option<String>>("path_levels").unwrap_or_default())),
-                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "appInfoFlag".to_string(),
+                    Value::String(row.get("app_info_flag")),
+                ),
+                (
+                    "appDictFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_dict_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "pathLevels".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("path_levels")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "dataValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("data_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2158,12 +2773,42 @@ pub async fn design_appdict_id_mockdeletetoget(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
-                ("appDictFlag".to_string(), Value::String(row.get::<_, Option<String>>("app_dict_flag").unwrap_or_default())),
-                ("pathLevels".to_string(), Value::String(row.get::<_, Option<String>>("path_levels").unwrap_or_default())),
-                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "appInfoFlag".to_string(),
+                    Value::String(row.get("app_info_flag")),
+                ),
+                (
+                    "appDictFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_dict_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "pathLevels".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("path_levels")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "dataValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("data_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2198,12 +2843,42 @@ pub async fn design_appdict_id_mockputtopost(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
-                ("appDictFlag".to_string(), Value::String(row.get::<_, Option<String>>("app_dict_flag").unwrap_or_default())),
-                ("pathLevels".to_string(), Value::String(row.get::<_, Option<String>>("path_levels").unwrap_or_default())),
-                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "appInfoFlag".to_string(),
+                    Value::String(row.get("app_info_flag")),
+                ),
+                (
+                    "appDictFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_dict_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "pathLevels".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("path_levels")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "dataValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("data_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2226,18 +2901,56 @@ pub async fn designer_search(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
-            ("appDictFlag".to_string(), Value::String(row.get::<_, Option<String>>("app_dict_flag").unwrap_or_default())),
-            ("pathLevels".to_string(), Value::String(row.get::<_, Option<String>>("path_levels").unwrap_or_default())),
-            ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
-            ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "appInfoFlag".to_string(),
+                    Value::String(row.get("app_info_flag")),
+                ),
+                (
+                    "appDictFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_dict_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "pathLevels".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("path_levels")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "dataValue".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("data_value")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2264,7 +2977,10 @@ pub async fn document_cipher_publish_content(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let cipher_text = body.get("cipherText").and_then(|v| v.as_str()).unwrap_or("");
+    let cipher_text = body
+        .get("cipherText")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let person_id = body.get("personId").and_then(|v| v.as_str()).unwrap_or("");
     client
         .execute(
@@ -2285,9 +3001,21 @@ pub async fn document_cipher_publish_content(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("cipherText".to_string(), Value::String(row.get::<_, Option<String>>("cipher_text").unwrap_or_default())),
+                (
+                    "cipherText".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("cipher_text")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2303,7 +3031,10 @@ pub async fn document_cipher_publish_content_mockputtopost(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let cipher_text = body.get("cipherText").and_then(|v| v.as_str()).unwrap_or("");
+    let cipher_text = body
+        .get("cipherText")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let person_id = body.get("personId").and_then(|v| v.as_str()).unwrap_or("");
     client
         .execute(
@@ -2324,9 +3055,21 @@ pub async fn document_cipher_publish_content_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("cipherText".to_string(), Value::String(row.get::<_, Option<String>>("cipher_text").unwrap_or_default())),
+                (
+                    "cipherText".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("cipher_text")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2353,9 +3096,21 @@ pub async fn document_cipher_id_permission_read_person_person(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("cipherText".to_string(), Value::String(row.get::<_, Option<String>>("cipher_text").unwrap_or_default())),
+                (
+                    "cipherText".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("cipher_text")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2390,8 +3145,17 @@ pub async fn document_cipher_id_persist_view_record(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("viewId".to_string(), Value::String(row.get::<_, Option<String>>("view_id").unwrap_or_default())),
-                ("recordData".to_string(), Value::String(row.get::<_, Option<String>>("record_data").unwrap_or_default())),
+                (
+                    "viewId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("view_id").unwrap_or_default()),
+                ),
+                (
+                    "recordData".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("record_data")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2428,9 +3192,7 @@ pub async fn file_list_id_prev_count(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn file_flag(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
@@ -2461,12 +3223,39 @@ pub async fn file_flag_appInfo_appInfoFlag_content(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("contentBase64".to_string(), Value::String(row.get::<_, Option<String>>("content_base64").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "contentBase64".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_base64")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2493,11 +3282,32 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2530,13 +3340,43 @@ pub async fn file_flag_mockdeletetoget(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("contentBase64".to_string(), Value::String(row.get::<_, Option<String>>("content_base64").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "contentBase64".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_base64")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2563,11 +3403,32 @@ pub async fn file_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2593,8 +3454,20 @@ pub async fn file_id_content(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("contentBase64".to_string(), Value::String(row.get::<_, Option<String>>("content_base64").unwrap_or_default())),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
+                (
+                    "contentBase64".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_base64")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2620,10 +3493,28 @@ pub async fn file_id_download(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("contentBase64".to_string(), Value::String(row.get::<_, Option<String>>("content_base64").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "contentBase64".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_base64")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2640,8 +3531,14 @@ pub async fn file_id_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let content_base64 = body.get("contentBase64").and_then(|v| v.as_str()).unwrap_or("");
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_base64 = body
+        .get("contentBase64")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let row = client
         .query_one(
@@ -2662,8 +3559,14 @@ pub async fn file_id_upload(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let content_base64 = body.get("contentBase64").and_then(|v| v.as_str()).unwrap_or("");
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_base64 = body
+        .get("contentBase64")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let row = client
         .query_one(
@@ -2689,19 +3592,57 @@ pub async fn anonymous_fileinfo_download_document_id(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-            ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-            ("uploadPerson".to_string(), Value::String(row.get::<_, Option<String>>("upload_person").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "uploadPerson".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("upload_person")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2718,19 +3659,57 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-            ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-            ("uploadPerson".to_string(), Value::String(row.get::<_, Option<String>>("upload_person").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "uploadPerson".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("upload_person")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2747,17 +3726,43 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-            ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2768,9 +3773,15 @@ pub async fn fileinfo_copy_to_doc_docId(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_one(
             "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
@@ -2795,19 +3806,57 @@ pub async fn fileinfo_download_document_id(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-            ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-            ("uploadPerson".to_string(), Value::String(row.get::<_, Option<String>>("upload_person").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "uploadPerson".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("upload_person")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2824,17 +3873,43 @@ pub async fn fileinfo_download_document_id_stream(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-            ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2851,17 +3926,43 @@ pub async fn fileinfo_download_transfer_flag_flag(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-            ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-            ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -2872,9 +3973,15 @@ pub async fn fileinfo_edit_id_doc_docId(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5 RETURNING *",
@@ -2896,9 +4003,15 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5 RETURNING *",
@@ -2944,9 +4057,15 @@ pub async fn fileinfo_replace_to_doc_docId(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5 RETURNING *",
@@ -2968,9 +4087,15 @@ pub async fn fileinfo_update_document_docId_attachment_id(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE doc_id = $4 AND file_id = $5 RETURNING *",
@@ -2988,13 +4113,23 @@ pub async fn fileinfo_update_document_docId_attachment_id(
 #[allow(non_snake_case)]
 pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
     pool: Extension<Pool>,
-    axum::extract::Path((doc_id, attachment_id, _callback)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((doc_id, attachment_id, _callback)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE doc_id = $4 AND file_id = $5 RETURNING *",
@@ -3016,9 +4151,15 @@ pub async fn fileinfo_update_id_content(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE id = $4 RETURNING *",
@@ -3040,9 +4181,15 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_one(
             "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
@@ -3061,9 +4208,15 @@ pub async fn fileinfo_upload_document_docId(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_one(
             "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
@@ -3082,9 +4235,15 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_one(
             "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
@@ -3103,9 +4262,15 @@ pub async fn fileinfo_upload_with_url(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
+    let original_name = body
+        .get("originalName")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
+    let content_type = body
+        .get("contentType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let row = client
         .query_one(
             "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
@@ -3135,12 +4300,42 @@ pub async fn fileinfo_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-                ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("uploadPerson".to_string(), Value::String(row.get::<_, Option<String>>("upload_person").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "uploadPerson".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("upload_person")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3167,9 +4362,24 @@ pub async fn fileinfo_id_binary_base64_size(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3181,7 +4391,11 @@ pub async fn fileinfo_id_binary_base64_size(
 #[allow(non_snake_case)]
 pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
     pool: Extension<Pool>,
-    axum::extract::Path((file_id, doc_id, _seq_number)): axum::extract::Path<(String, String, String)>,
+    axum::extract::Path((file_id, doc_id, _seq_number)): axum::extract::Path<(
+        String,
+        String,
+        String,
+    )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3216,10 +4430,28 @@ pub async fn fileinfo_id_document_documentId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-                ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3266,12 +4498,42 @@ pub async fn fileinfo_id_online_info(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-                ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
-                ("uploadPerson".to_string(), Value::String(row.get::<_, Option<String>>("upload_person").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "uploadPerson".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("upload_person")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3298,10 +4560,28 @@ pub async fn fileinfo_id_preview_pdf(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("fileId".to_string(), Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default())),
-                ("originalName".to_string(), Value::String(row.get::<_, Option<String>>("original_name").unwrap_or_default())),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
+                (
+                    "fileId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
+                ),
+                (
+                    "originalName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("original_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                ),
+                (
+                    "contentType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("content_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3309,54 +4589,252 @@ pub async fn fileinfo_id_preview_pdf(
     }
 }
 
+fn form_definition_from_body(body: &Value) -> Result<Option<FormDefinition>, AppError> {
+    body.get("definition")
+        .cloned()
+        .map(FormDefinition::parse)
+        .transpose()
+        .map_err(AppError::BadRequest)
+}
+
+fn form_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Result<Value, AppError> {
+    let definition = FormDefinition::from_db(
+        row.try_get::<_, Option<String>>("definition")
+            .map_err(|_| AppError::Internal)?,
+    )?;
+    let mut form = serde_json::Map::from_iter([
+        (
+            "id".to_string(),
+            Value::String(row.try_get("id").map_err(|_| AppError::Internal)?),
+        ),
+        (
+            "appId".to_string(),
+            Value::String(row.try_get("app_id").map_err(|_| AppError::Internal)?),
+        ),
+        (
+            "name".to_string(),
+            Value::String(
+                row.try_get::<_, Option<String>>("name")
+                    .map_err(|_| AppError::Internal)?
+                    .unwrap_or_default(),
+            ),
+        ),
+        ("definition".to_string(), definition.into_value()),
+        (
+            "status".to_string(),
+            Value::String(
+                row.try_get::<_, Option<String>>("status")
+                    .map_err(|_| AppError::Internal)?
+                    .unwrap_or_default(),
+            ),
+        ),
+    ]);
+    for (db_name, json_name) in [("creator", "creator"), ("create_time", "createTime")] {
+        if let Ok(Some(value)) = row.try_get::<_, Option<String>>(db_name) {
+            form.insert(json_name.to_string(), Value::String(value));
+        }
+    }
+    Ok(Value::Object(form))
+}
+
+fn form_runtime_envelope(
+    row: &deadpool_postgres::tokio_postgres::Row,
+    mobile: bool,
+) -> Result<Value, AppError> {
+    let definition = FormDefinition::from_db(
+        row.try_get::<_, Option<String>>("definition")
+            .map_err(|_| AppError::Internal)?,
+    )?;
+    let has_mobile =
+        definition.0.get("mobileData").is_some() || definition.0.get("mobile").is_some();
+    let layout = if mobile {
+        definition
+            .0
+            .get("mobileData")
+            .or_else(|| definition.0.get("mobile"))
+    } else {
+        definition
+            .0
+            .get("pcData")
+            .or_else(|| definition.0.get("desktop"))
+    }
+    .unwrap_or(&definition.0);
+    let data = serde_json::to_string(layout).map_err(|_| AppError::Internal)?;
+    let form = serde_json::json!({
+        "id": row.try_get::<_, String>("id").map_err(|_| AppError::Internal)?,
+        "appId": row.try_get::<_, String>("app_id").map_err(|_| AppError::Internal)?,
+        "name": row.try_get::<_, Option<String>>("name").map_err(|_| AppError::Internal)?.unwrap_or_default(),
+        "hasMobile": has_mobile,
+        "data": data,
+        "definition": definition,
+    });
+    Ok(serde_json::json!({
+        "form": form,
+        "relatedFormMap": {},
+        "relatedScriptMap": {},
+    }))
+}
+
+async fn form_runtime_by_id(
+    pool: &Pool,
+    id: &str,
+    mobile: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, definition FROM x_cms_form \
+             WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(form_runtime_envelope(
+            &row, mobile,
+        )?))),
+        None => Ok(Json(ActionResult::error("form not found"))),
+    }
+}
+
+async fn form_runtime_by_document(
+    pool: &Pool,
+    doc_id: &str,
+    mobile: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, definition FROM x_cms_form \
+             WHERE id = (SELECT form_id FROM x_cms_data_document \
+             WHERE id = $1 AND deleted_at IS NULL) AND deleted_at IS NULL",
+            &[&doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(form_runtime_envelope(
+            &row, mobile,
+        )?))),
+        None => Ok(Json(ActionResult::error("form not found"))),
+    }
+}
+
 // ─── form_* / form_v2_* stubs ───────────────────────────────────────────────
+
+async fn form_filter_list(
+    pool: &Pool,
+    app_id: &str,
+    count: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let limit = count.parse::<i64>().unwrap_or(20).clamp(1, 1000);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, name, definition, status, creator, create_time::text \
+             FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT $2",
+            &[&app_id, &limit],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let forms = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = forms.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(forms),
+        count,
+        0,
+    )))
+}
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
+    axum::extract::Path((_id, count, app_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    form_filter_list(&pool, &app_id, &count).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn form_list_all(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+pub async fn form_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, name, definition, status, creator, create_time::text \
+             FROM x_cms_form WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let forms = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = forms.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(forms),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_list_app_appId(
     pool: Extension<Pool>,
+    axum::extract::Path(app_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, name, definition, status, creator, create_time::text \
+             FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&app_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let forms = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = forms.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(forms),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -3381,27 +4859,7 @@ pub async fn anonymous_form_v2_lookup_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, false).await
 }
 
 #[axum::debug_handler]
@@ -3410,27 +4868,7 @@ pub async fn anonymous_form_v2_lookup_document_docId_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, true).await
 }
 
 #[axum::debug_handler]
@@ -3439,27 +4877,7 @@ pub async fn anonymous_form_v2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_id(&pool, &id, false).await
 }
 
 #[axum::debug_handler]
@@ -3468,27 +4886,7 @@ pub async fn anonymous_form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_id(&pool, &id, true).await
 }
 
 #[axum::debug_handler]
@@ -3506,16 +4904,7 @@ pub async fn anonymous_form_id(
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
+        Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
     }
 }
@@ -3534,18 +4923,16 @@ pub async fn form_formFlag_appinfo_appFlag(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("appId".to_string(), Value::String(row.get("app_id"))),
-            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-            ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-            ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data = rows
+        .iter()
+        .map(form_row_to_json)
+        .collect::<Result<Vec<_>, _>>()?;
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -3563,18 +4950,7 @@ pub async fn form_id(
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
+        Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
     }
 }
@@ -3607,17 +4983,24 @@ pub async fn form_id_mockputtopost(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let definition = body.get("definition").and_then(|v| v.as_str()).unwrap_or("");
-    let status = body.get("status").and_then(|v| v.as_str()).unwrap_or("draft");
+    let app_id = u2_body_str(&body, "appId")
+        .filter(|app_id| !app_id.trim().is_empty())
+        .ok_or_else(|| AppError::BadRequest("appId required".to_string()))?;
+    let name = u2_body_str(&body, "name").unwrap_or_default();
+    let definition = form_definition_from_body(&body)?
+        .ok_or_else(|| AppError::BadRequest("definition required".to_string()))?
+        .to_db()?;
+    let status = u2_body_str(&body, "status").unwrap_or_else(|| "draft".to_string());
     let row = client
         .query_one(
-            "INSERT INTO x_cms_form (id, name, definition, status) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = $2, definition = $3, status = $4 RETURNING *",
-            &[&id, &name, &definition, &status],
+            "INSERT INTO x_cms_form (id, app_id, name, definition, status) VALUES ($1, $2, $3, $4, $5) \
+             ON CONFLICT (id) DO UPDATE SET app_id = $2, name = $3, definition = $4, status = $5 \
+             RETURNING id, app_id, name, definition, status",
+            &[&id, &app_id, &name, &definition, &status],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(row_to_json(&row))))
+    Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
 #[axum::debug_handler]
@@ -3626,27 +5009,7 @@ pub async fn form_v2_lookup_document_docId(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, false).await
 }
 
 #[axum::debug_handler]
@@ -3655,35 +5018,16 @@ pub async fn form_v2_lookup_document_docId_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
-            &[&doc_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_document(&pool, &doc_id, true).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_v2_id(
     pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
+    form_runtime_by_id(&pool, &id, false).await
 }
 
 #[axum::debug_handler]
@@ -3692,27 +5036,7 @@ pub async fn form_v2_id_mobile(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("form not found"))),
-    }
+    form_runtime_by_id(&pool, &id, true).await
 }
 
 #[axum::debug_handler]
@@ -3721,7 +5045,13 @@ pub async fn formversion_list_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(form_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_v2", &format!("deleted_at IS NULL AND id = '{}'", form_id), &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_form_v2",
+        &format!("deleted_at IS NULL AND id = '{}'", form_id),
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3743,9 +5073,21 @@ pub async fn formversion_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "definition".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("definition")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3813,9 +5155,7 @@ pub async fn log_list_level_operationLevel(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn log_id(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn log_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 
@@ -3823,9 +5163,7 @@ pub async fn log_id(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn output_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_output", "deleted_at IS NULL", &[]).await
 }
 
@@ -3843,17 +5181,40 @@ pub async fn output_appInfoFlag_select(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("appId".to_string(), Value::String(row.get("app_id"))),
-            ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-            ("config".to_string(), Value::String(row.get::<_, Option<String>>("config").unwrap_or_default())),
-            ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -3883,7 +5244,13 @@ pub async fn output_appInfoFlag_select_mockputtopost(
 pub async fn permission_appInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manage'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'manage'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3891,7 +5258,13 @@ pub async fn permission_appInfo_id_manageable(
 pub async fn permission_appInfo_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'manager'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3899,7 +5272,13 @@ pub async fn permission_appInfo_id_managers(
 pub async fn permission_appInfo_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'publisher'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3907,7 +5286,13 @@ pub async fn permission_appInfo_id_publishers(
 pub async fn permission_appInfo_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'viewer'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3915,7 +5300,13 @@ pub async fn permission_appInfo_id_viewers(
 pub async fn permission_category_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'manager'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3923,7 +5314,13 @@ pub async fn permission_category_id_managers(
 pub async fn permission_category_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'publisher'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3931,7 +5328,13 @@ pub async fn permission_category_id_publishers(
 pub async fn permission_category_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'viewer'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3939,7 +5342,13 @@ pub async fn permission_category_id_viewers(
 pub async fn permission_categoryInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manage'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'manage'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3949,11 +5358,17 @@ pub async fn permission_management_refresh_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let affected = client
-        .execute("UPDATE x_cms_permission SET deleted_at = NOW() WHERE deleted_at IS NULL", &[])
+        .execute(
+            "UPDATE x_cms_permission SET deleted_at = NOW() WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
+        serde_json::Map::from_iter([(
+            "deleted".to_string(),
+            Value::Number(serde_json::Number::from(affected as i64)),
+        )]),
     ))))
 }
 
@@ -3969,7 +5384,10 @@ pub async fn permission_management_refresh_category_categoryId(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
+        serde_json::Map::from_iter([(
+            "deleted".to_string(),
+            Value::Number(serde_json::Number::from(affected as i64)),
+        )]),
     ))))
 }
 
@@ -3978,7 +5396,13 @@ pub async fn permission_management_refresh_category_categoryId(
 pub async fn permission_manager_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'manager'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3986,7 +5410,13 @@ pub async fn permission_manager_appInfo_id(
 pub async fn permission_manager_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'manager'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'manager'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -3994,7 +5424,13 @@ pub async fn permission_manager_categoryInfo_id(
 pub async fn permission_publisher_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'publisher'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -4002,7 +5438,13 @@ pub async fn permission_publisher_appInfo_id(
 pub async fn permission_publisher_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'publisher'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'publisher'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -4010,7 +5452,13 @@ pub async fn permission_publisher_categoryInfo_id(
 pub async fn permission_viewer_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'viewer'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -4018,7 +5466,13 @@ pub async fn permission_viewer_appInfo_id(
 pub async fn permission_viewer_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_permission", "deleted_at IS NULL AND role_type = 'viewer'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_permission",
+        "deleted_at IS NULL AND role_type = 'viewer'",
+        &[],
+    )
+    .await
 }
 
 // ─── review_* / script_* stubs ──────────────────────────────────────────────
@@ -4038,15 +5492,35 @@ pub async fn review_v2_search(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("docId".to_string(), Value::String(row.get("doc_id"))),
-            ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
-            ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-        ]))
-    }).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -4109,8 +5583,44 @@ pub async fn script_flag_appInfo_appInfoFlag(
 #[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    // W7：按 id 返回单个脚本（原实现忽略 id 返回全表，设计器无法加载单脚本）
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, unique_name, script_content, creator, create_time::text \
+             FROM x_cms_script WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "uniqueName".to_string(),
+                    row.get::<_, Option<String>>("unique_name").into(),
+                ),
+                (
+                    "scriptContent".to_string(),
+                    row.get::<_, Option<String>>("script_content").into(),
+                ),
+                (
+                    "creator".to_string(),
+                    row.get::<_, Option<String>>("creator").into(),
+                ),
+                (
+                    "createTime".to_string(),
+                    row.get::<_, Option<String>>("create_time").into(),
+                ),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4134,7 +5644,10 @@ pub async fn script_id_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let script_content = body.get("scriptContent").and_then(|v| v.as_str()).unwrap_or("");
+    let script_content = body
+        .get("scriptContent")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     client
         .execute(
             "INSERT INTO x_cms_script (id, name, script_content) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET name = $2, script_content = $3",
@@ -4154,9 +5667,24 @@ pub async fn script_id_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("scriptContent".to_string(), Value::String(row.get::<_, Option<String>>("script_content").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "scriptContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4183,12 +5711,36 @@ pub async fn script_uniqueName_app_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("uniqueName".to_string(), Value::String(row.get::<_, Option<String>>("unique_name").unwrap_or_default())),
-                ("scriptContent".to_string(), Value::String(row.get::<_, Option<String>>("script_content").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "uniqueName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unique_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "scriptContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("imported".to_string(), Value::Bool(row.get("imported"))),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4215,9 +5767,24 @@ pub async fn script_uniqueName_app_flag_imported(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("uniqueName".to_string(), Value::String(row.get::<_, Option<String>>("unique_name").unwrap_or_default())),
-                ("scriptContent".to_string(), Value::String(row.get::<_, Option<String>>("script_content").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "uniqueName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unique_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "scriptContent".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_content")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 ("imported".to_string(), Value::Bool(row.get("imported"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -4232,7 +5799,13 @@ pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     axum::extract::Path(script_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", &format!("deleted_at IS NULL AND id = '{}'", script_id), &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_script",
+        &format!("deleted_at IS NULL AND id = '{}'", script_id),
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -4254,7 +5827,10 @@ pub async fn scriptversion_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4269,7 +5845,13 @@ pub async fn scriptversion_id(
 pub async fn searchfilter_list_archive_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'archive'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_searchfilter",
+        "deleted_at IS NULL AND filter_type = 'archive'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -4277,7 +5859,13 @@ pub async fn searchfilter_list_archive_filter_category_categoryId(
 pub async fn searchfilter_list_draft_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'draft'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_searchfilter",
+        "deleted_at IS NULL AND filter_type = 'draft'",
+        &[],
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -4285,7 +5873,13 @@ pub async fn searchfilter_list_draft_filter_category_categoryId(
 pub async fn searchfilter_list_publish_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_searchfilter", "deleted_at IS NULL AND filter_type = 'publish'", &[]).await
+    list_from_table_filtered_java(
+        &pool,
+        "x_cms_searchfilter",
+        "deleted_at IS NULL AND filter_type = 'publish'",
+        &[],
+    )
+    .await
 }
 
 // ─── surface_appdict 家族（Java AppDictAction / AppDictAnonymousAction 对齐）──
@@ -4303,15 +5897,24 @@ fn appdict_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         .unwrap_or_default();
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
-        ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+        (
+            "appInfoFlag".to_string(),
+            Value::String(row.get("app_info_flag")),
+        ),
+        (
+            "appDictFlag".to_string(),
+            Value::String(row.get("app_dict_flag")),
+        ),
         (
             "pathLevels".to_string(),
             serde_json::to_value(path_levels).unwrap_or(Value::Array(vec![])),
         ),
         (
             "dataValue".to_string(),
-            Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("data_value")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "creator".to_string(),
@@ -4319,7 +5922,10 @@ fn appdict_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "createTime".to_string(),
-            Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]))
 }
@@ -4363,7 +5969,12 @@ async fn appdict_data_get(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 写门禁：目标字典已有行时要求会话用户为其 creator 或管理员；
@@ -4427,9 +6038,8 @@ async fn appdict_data_write(
     let depth = paths.len() as i32;
 
     // 精确路径定位：$1 dict、$2 app、$3 深度、$4.. 各级路径
-    let mut target = String::from(
-        "app_dict_flag = $1 AND app_info_flag = $2 AND cardinality(path_levels) = $3",
-    );
+    let mut target =
+        String::from("app_dict_flag = $1 AND app_info_flag = $2 AND cardinality(path_levels) = $3");
     for i in 0..paths.len() {
         target.push_str(&format!(" AND path_levels[{}] = ${}", i + 1, i + 4));
     }
@@ -4512,8 +6122,14 @@ async fn appdict_data_write(
             let key = if created { "created" } else { "updated" };
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("appDictFlag".to_string(), Value::String(app_dict_flag.to_string())),
-                    ("appInfoFlag".to_string(), Value::String(app_info_flag.to_string())),
+                    (
+                        "appDictFlag".to_string(),
+                        Value::String(app_dict_flag.to_string()),
+                    ),
+                    (
+                        "appInfoFlag".to_string(),
+                        Value::String(app_info_flag.to_string()),
+                    ),
                     (
                         "pathLevels".to_string(),
                         serde_json::to_value(paths).unwrap_or(Value::Array(vec![])),
@@ -4562,8 +6178,16 @@ macro_rules! appdict_depth_family {
             body: axum::extract::Json<Value>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
             let value = appdict_body_value(&body);
-            appdict_data_write(&pool, &session, &paths[0], &paths[1], &paths[2..], &value, AppdictWriteMode::Upsert)
-                .await
+            appdict_data_write(
+                &pool,
+                &session,
+                &paths[0],
+                &paths[1],
+                &paths[2..],
+                &value,
+                AppdictWriteMode::Upsert,
+            )
+            .await
         }
 
         #[axum::debug_handler]
@@ -4592,8 +6216,16 @@ macro_rules! appdict_depth_family {
             session: Extension<shared::session::Session>,
             axum::extract::Path(paths): axum::extract::Path<[String; $arity]>,
         ) -> Result<Json<ActionResult<Value>>, AppError> {
-            appdict_data_write(&pool, &session, &paths[0], &paths[1], &paths[2..], "", AppdictWriteMode::Remove)
-                .await
+            appdict_data_write(
+                &pool,
+                &session,
+                &paths[0],
+                &paths[1],
+                &paths[2..],
+                "",
+                AppdictWriteMode::Remove,
+            )
+            .await
         }
     };
 }
@@ -4616,7 +6248,12 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}
@@ -4694,7 +6331,12 @@ pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
-    let count = data.len() as i64; Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET surface/appdict/list/appInfo/{appInfoFlag}
@@ -4704,7 +6346,8 @@ pub async fn surface_appdict_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    anonymous_surface_appdict_list_appInfo_appInfoFlag(pool, axum::extract::Path(app_info_flag)).await
+    anonymous_surface_appdict_list_appInfo_appInfoFlag(pool, axum::extract::Path(app_info_flag))
+        .await
 }
 
 // ── 路径深度 0..=7 端点族 ──
@@ -4766,7 +6409,6 @@ appdict_depth_family!(10;
     surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_delete
 );
 
-
 // ─── templateform_* stubs ───────────────────────────────────────────────────
 
 #[axum::debug_handler]
@@ -4812,9 +6454,21 @@ pub async fn templateform_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
-                ("definition".to_string(), Value::String(row.get::<_, Option<String>>("definition").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "definition".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("definition")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4838,9 +6492,7 @@ pub async fn templateform_id_mockdeletetoget(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn uuid_random(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn uuid_random(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
     let uuid = uuid::Uuid::new_v4().to_string();
     Ok(Json(ActionResult::success(Value::Object(
@@ -4852,9 +6504,7 @@ pub async fn uuid_random(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn view_list_all(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn view_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
@@ -4892,9 +6542,7 @@ pub async fn view_viewdata_list_id_next_count(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn view_id(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn view_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
@@ -4919,7 +6567,10 @@ pub async fn view_id_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let view_config = body.get("viewConfig").and_then(|v| v.as_str()).unwrap_or("");
+    let view_config = body
+        .get("viewConfig")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     client
         .execute(
             "INSERT INTO x_cms_view (id, name, view_config) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET name = $2, view_config = $3",
@@ -4939,9 +6590,24 @@ pub async fn view_id_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewConfig".to_string(), Value::String(row.get::<_, Option<String>>("view_config").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "viewConfig".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_config")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -4975,9 +6641,7 @@ pub async fn viewcategory_list_view_viewId(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn viewcategory_id(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn viewcategory_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
@@ -5038,7 +6702,10 @@ pub async fn viewfieldconfig_id_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let field_name = body.get("fieldName").and_then(|v| v.as_str()).unwrap_or("");
-    let field_config = body.get("fieldConfig").and_then(|v| v.as_str()).unwrap_or("");
+    let field_config = body
+        .get("fieldConfig")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     client
         .execute(
             "INSERT INTO x_cms_viewfieldconfig (id, field_name, field_config) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET field_name = $2, field_config = $3",
@@ -5057,10 +6724,28 @@ pub async fn viewfieldconfig_id_mockputtopost(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("fieldName".to_string(), Value::String(row.get("field_name"))),
-                ("fieldConfig".to_string(), Value::String(row.get::<_, Option<String>>("field_config").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "fieldName".to_string(),
+                    Value::String(row.get("field_name")),
+                ),
+                (
+                    "fieldConfig".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_config")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -5091,8 +6776,11 @@ pub async fn viewrecord_document_docId_has_view(
         .await
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
+    // W12 收敛：对齐 Java ActionQueryHasViewDocument 信封——Wo extends WrapBoolean，
+    // 键名为 `value`（非 `hasView`）。Java 按 viewerName=当前用户 DN 计数；当前
+    // 种子无 x_cms_viewrecord 数据，双侧对任意 docId 均为 value:false，键名对齐即可闭合。
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("hasView".to_string(), Value::Bool(count > 0))]),
+        serde_json::Map::from_iter([("value".to_string(), Value::Bool(count > 0))]),
     ))))
 }
 
@@ -5115,13 +6803,28 @@ pub async fn image_encode_base64(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    let data_url = body.get("dataUrl").and_then(|v| v.as_str()).unwrap_or_default();
-    let b64_str: String = data_url.replace("data:image/", "").split(',').next_back().unwrap_or("").to_string();
+    let data_url = body
+        .get("dataUrl")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let b64_str: String = data_url
+        .replace("data:image/", "")
+        .split(',')
+        .next_back()
+        .unwrap_or("")
+        .to_string();
     let decoded = BASE64.decode(&b64_str).ok();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(decoded.is_some())),
-            ("message".to_string(), Value::String(if decoded.is_some() { "Image encoded to base64".to_string() } else { "Invalid base64 image".to_string() })),
+            (
+                "message".to_string(),
+                Value::String(if decoded.is_some() {
+                    "Image encoded to base64".to_string()
+                } else {
+                    "Invalid base64 image".to_string()
+                }),
+            ),
         ]),
     ))))
 }
@@ -5134,15 +6837,29 @@ pub async fn image_encode_base64_size_size(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    let data_url = body.get("dataUrl").and_then(|v| v.as_str()).unwrap_or_default();
-    let b64_str: String = data_url.replace("data:image/", "").split(',').next_back().unwrap_or("").to_string();
+    let data_url = body
+        .get("dataUrl")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let b64_str: String = data_url
+        .replace("data:image/", "")
+        .split(',')
+        .next_back()
+        .unwrap_or("")
+        .to_string();
     let decoded = BASE64.decode(&b64_str).ok();
     let size = decoded.as_ref().map(|d| d.len()).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(decoded.is_some())),
-            ("message".to_string(), Value::String("Image encoded to base64 with size".to_string())),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+            (
+                "message".to_string(),
+                Value::String("Image encoded to base64 with size".to_string()),
+            ),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(size)),
+            ),
         ]),
     ))))
 }
@@ -5160,9 +6877,18 @@ pub async fn image_resize_id_id_width_width_height_height(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(width > 0 && height > 0)),
-            ("message".to_string(), Value::String("Image resized".to_string())),
-            ("width".to_string(), Value::Number(serde_json::Number::from(width))),
-            ("height".to_string(), Value::Number(serde_json::Number::from(height))),
+            (
+                "message".to_string(),
+                Value::String("Image resized".to_string()),
+            ),
+            (
+                "width".to_string(),
+                Value::Number(serde_json::Number::from(width)),
+            ),
+            (
+                "height".to_string(),
+                Value::Number(serde_json::Number::from(height)),
+            ),
         ]),
     ))))
 }
@@ -5185,190 +6911,249 @@ pub async fn import_app_info_app_info_flag(
     list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
-// STUB: input_compare - input processing utility, no DB table mapping
+// ─── W12：CMS 导入（input）族 ───────────────────────────────────────────────
+// 对齐 Java x_cms_assemble_control jaxrs/input（ActionCompare/Cover/Create/
+// PrepareCover/PrepareCreate）。WrapCms 载荷：{id, appName, appAlias, ...}。
+// 说明：x_cms_appinfo 无 appName 列，名称解析按 alias 承载（与既有
+// appinfo 处理器一致）；prepare 族完整导入对账逻辑属 CMS 导入子系统，
+// 当前实现空载荷路径（无子实体载荷时返回空对账列表）。
+
+fn input_app_id(body: &Value) -> Option<&str> {
+    body.get("id")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+}
+
+fn input_app_name(body: &Value) -> Option<&str> {
+    body.get("appName")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+}
+
+fn input_app_alias(body: &Value) -> Option<&str> {
+    body.get("appAlias")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+}
+
+/// Java BaseAction.getAppInfo 解析序：id → name → alias
+async fn input_resolve_appinfo(
+    client: &deadpool_postgres::Client,
+    body: &Value,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    if let Some(id) = input_app_id(body) {
+        let row = client
+            .query_opt(
+                "SELECT id, alias FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if row.is_some() {
+            return Ok(row);
+        }
+    }
+    let key = input_app_name(body).or_else(|| input_app_alias(body));
+    if let Some(key) = key {
+        return client
+            .query_opt(
+                "SELECT id, alias FROM x_cms_appinfo WHERE alias = $1 AND deleted_at IS NULL",
+                &[&key],
+            )
+            .await
+            .map_err(|_| AppError::Internal);
+    }
+    Ok(None)
+}
+
+/// compare / compare(mockputtopost)：导入前存在性对账，返回 CompareAppInfo 形状
+async fn input_compare_impl(
+    pool: &Pool,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let existing = input_resolve_appinfo(&client, body).await?;
+
+    // Java WrapCms 继承 JpaObject：id 缺省时自动生成唯一 token 并回显
+    let echoed_id = input_app_id(body)
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(echoed_id));
+    if let Some(name) = input_app_name(body) {
+        map.insert("name".to_string(), Value::String(name.to_string()));
+    }
+    if let Some(alias) = input_app_alias(body) {
+        map.insert("alias".to_string(), Value::String(alias.to_string()));
+    }
+    map.insert("exist".to_string(), Value::Bool(existing.is_some()));
+    if let Some(row) = &existing {
+        let exist_id: String = row.get("id");
+        let exist_alias: String = row.get::<_, Option<String>>("alias").unwrap_or_default();
+        map.insert("existId".to_string(), Value::String(exist_id));
+        map.insert("existName".to_string(), Value::String(exist_alias.clone()));
+        map.insert("existAlias".to_string(), Value::String(exist_alias));
+    }
+    Ok(Json(ActionResult::success(Value::Object(map))))
+}
+
+/// create / create(mockputtopost)：新建导入——id 已存在时报错，否则落库
+async fn input_create_impl(
+    pool: &Pool,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = input_app_id(body)
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let exists = {
+        let row = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        row.is_some()
+    };
+    if exists {
+        return Ok(Json(ActionResult::error("appinfo already exists")));
+    }
+    let alias = input_app_alias(body)
+        .or_else(|| input_app_name(body))
+        .unwrap_or("");
+    client
+        .execute(
+            "INSERT INTO x_cms_appinfo (id, app_type, alias, enabled, creator) \
+             VALUES ($1, 'cms', NULLIF($2, ''), true, 'system')",
+            &[&id, &alias],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+/// cover / cover(mockputtopost)：覆盖导入——存在则覆盖，否则新建
+async fn input_cover_impl(
+    pool: &Pool,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = input_app_id(body)
+        .map(str::to_string)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let alias = input_app_alias(body)
+        .or_else(|| input_app_name(body))
+        .unwrap_or("");
+    client
+        .execute(
+            "INSERT INTO x_cms_appinfo (id, app_type, alias, enabled, creator) \
+             VALUES ($1, 'cms', NULLIF($2, ''), true, 'system') \
+             ON CONFLICT (id) DO UPDATE SET alias = EXCLUDED.alias",
+            &[&id, &alias],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+/// prepare/cover、prepare/create：无子实体载荷时返回空对账列表
+async fn input_prepare_impl() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Array(Vec::new()))))
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_compare(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let a = body.get("a").and_then(|v| v.as_str()).unwrap_or_default();
-    let b = body.get("b").and_then(|v| v.as_str()).unwrap_or_default();
-    let equal = a == b;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(equal)),
-            ("message".to_string(), Value::String("Input compared".to_string())),
-            ("equal".to_string(), Value::Bool(equal)),
-        ]),
-    ))))
+    input_compare_impl(&pool, &body).await
 }
 
-// STUB: input_compare_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_compare_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let a = body.get("a").and_then(|v| v.as_str()).unwrap_or_default();
-    let b = body.get("b").and_then(|v| v.as_str()).unwrap_or_default();
-    let equal = a == b;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(equal)),
-            ("message".to_string(), Value::String("Input compared and saved".to_string())),
-            ("equal".to_string(), Value::Bool(equal)),
-        ]),
-    ))))
+    input_compare_impl(&pool, &body).await
 }
 
-// STUB: input_cover - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_cover(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let covered = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(covered)),
-            ("message".to_string(), Value::String("Input covered".to_string())),
-            ("covered".to_string(), Value::Bool(covered)),
-        ]),
-    ))))
+    input_cover_impl(&pool, &body).await
 }
 
-// STUB: input_cover_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_cover_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let covered = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(covered)),
-            ("message".to_string(), Value::String("Input covered and saved".to_string())),
-            ("covered".to_string(), Value::Bool(covered)),
-        ]),
-    ))))
+    input_cover_impl(&pool, &body).await
 }
 
-// STUB: input_create - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_create(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let saved = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(saved)),
-            ("message".to_string(), Value::String("Input created".to_string())),
-        ]),
-    ))))
+    input_create_impl(&pool, &body).await
 }
 
-// STUB: input_create_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_create_mockputtopost(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let saved = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(saved)),
-            ("message".to_string(), Value::String("Input created and saved".to_string())),
-        ]),
-    ))))
+    input_create_impl(&pool, &body).await
 }
 
-// STUB: input_prepare_cover - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_cover(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let prepared = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(prepared)),
-            ("message".to_string(), Value::String("Cover prepared".to_string())),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
-// STUB: input_prepare_cover_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_cover_mockputtopost(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let prepared = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(prepared)),
-            ("message".to_string(), Value::String("Cover prepared and saved".to_string())),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
-// STUB: input_prepare_create - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_create(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let prepared = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(prepared)),
-            ("message".to_string(), Value::String("Create prepared".to_string())),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
-// STUB: input_prepare_create_mockputtopost - input processing utility, no DB table mapping
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn input_prepare_create_mockputtopost(
-    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool;
-    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
-    let saved = !value.is_empty();
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(saved)),
-            ("message".to_string(), Value::String("Create prepared and saved".to_string())),
-        ]),
-    ))))
+    let _ = body;
+    input_prepare_impl().await
 }
 
 // ─── document_id_view_count ─────────────────────────────────────────────────
@@ -5395,7 +7180,10 @@ pub async fn document_id_view_count(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
-                    ("viewCount".to_string(), Value::Number(serde_json::Number::from(new_count))),
+                    (
+                        "viewCount".to_string(),
+                        Value::Number(serde_json::Number::from(new_count)),
+                    ),
                 ]),
             ))))
         }
@@ -5416,10 +7204,7 @@ pub async fn commend_list_paging(
         .ok_or_else(|| AppError::BadRequest("doc_id is required".to_string()))?
         .clone();
 
-    let page: i64 = params
-        .get("page")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(1);
+    let page: i64 = params.get("page").and_then(|v| v.parse().ok()).unwrap_or(1);
     let size: i64 = params
         .get("size")
         .and_then(|v| v.parse().ok())
@@ -5451,12 +7236,19 @@ pub async fn commend_list_paging(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
                 ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ─── document_search ─────────────────────────────────────────────────────────
@@ -5484,17 +7276,29 @@ pub async fn document_search(
         .map(|doc| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(doc.id.clone())),
-                ("title".to_string(), Value::String(doc.title.clone().unwrap_or_default())),
-                ("content".to_string(), Value::String(doc.content.clone().unwrap_or_default())),
-                ("rank".to_string(), Value::Number(serde_json::Number::from_f64(doc.rank.unwrap_or(0.0)).unwrap())),
+                (
+                    "title".to_string(),
+                    Value::String(doc.title.clone().unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(doc.content.clone().unwrap_or_default()),
+                ),
+                (
+                    "rank".to_string(),
+                    Value::Number(serde_json::Number::from_f64(doc.rank.unwrap_or(0.0)).unwrap()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
-
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -5520,9 +7324,10 @@ pub async fn queryview_flag_definition(
                 if let Ok(json) = serde_json::from_str::<Value>(c) {
                     if let Some(fields) = json.get("fields").and_then(|v| v.as_array()) {
                         return Ok(Json(ActionResult::success(Value::Object(
-                            serde_json::Map::from_iter([
-                                ("fields".to_string(), Value::Array(fields.clone())),
-                            ]),
+                            serde_json::Map::from_iter([(
+                                "fields".to_string(),
+                                Value::Array(fields.clone()),
+                            )]),
                         ))));
                     }
                 }
@@ -5601,10 +7406,7 @@ async fn u2_check_owner(
     u2_gate_by_sql(pool, &sql, id, person_unique).await
 }
 
-async fn u2_require_admin(
-    pool: &Pool,
-    session: &shared::session::Session,
-) -> Result<(), AppError> {
+async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
     if shared::middleware::is_admin(pool, &session.person_unique).await {
         Ok(())
     } else {
@@ -5652,7 +7454,15 @@ pub async fn document_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_data_document",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -5703,7 +7513,15 @@ pub async fn document_u2_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_data_document",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -5735,11 +7553,7 @@ pub async fn document_u2_update(
     }
 }
 
-async fn document_u2_set_status(
-    pool: &Pool,
-    id: &str,
-    status: &str,
-) -> Result<bool, AppError> {
+async fn document_u2_set_status(pool: &Pool, id: &str, status: &str) -> Result<bool, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let sql: &str = if status == "published" {
         "UPDATE x_cms_data_document SET status = 'published', publish_time = NOW() \
@@ -5778,7 +7592,15 @@ pub async fn document_u2_publish(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_data_document",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -5795,7 +7617,15 @@ pub async fn document_u2_publish_cancel(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_data_document",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -5859,7 +7689,10 @@ pub async fn document_u2_uncommend(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(id)),
-            ("removed".to_string(), Value::Number(serde_json::Number::from(removed as i64))),
+            (
+                "removed".to_string(),
+                Value::Number(serde_json::Number::from(removed as i64)),
+            ),
         ]),
     ))))
 }
@@ -5870,7 +7703,15 @@ async fn document_u2_set_top(
     id: &str,
     top: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(pool, "x_cms_data_document", "creator", id, &session.person_unique).await? {
+    match u2_check_owner(
+        pool,
+        "x_cms_data_document",
+        "creator",
+        id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -5943,7 +7784,10 @@ pub async fn document_u2_category_change(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("categoryId".to_string(), Value::String(category_id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(updated as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(updated as i64)),
+            ),
         ]),
     ))))
 }
@@ -6012,7 +7856,10 @@ pub async fn document_u2_fields(
         .collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(names.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(names.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(names)),
         ]),
     ))))
@@ -6041,7 +7888,10 @@ pub async fn document_u2_filter_count(
         .map_err(|_| AppError::Internal)?;
     let total: i64 = row.get("total");
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("total".to_string(), Value::Number(serde_json::Number::from(total)))]),
+        serde_json::Map::from_iter([(
+            "total".to_string(),
+            Value::Number(serde_json::Number::from(total)),
+        )]),
     ))))
 }
 
@@ -6095,7 +7945,15 @@ pub async fn comment_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_comment", "person_id", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_comment",
+        "person_id",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("comment not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6136,9 +7994,18 @@ pub async fn comment_u2_list_page_size_size(
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
-            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            (
+                "page".to_string(),
+                Value::Number(serde_json::Number::from(page)),
+            ),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(size)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -6153,7 +8020,8 @@ pub async fn correlation_u2_doc_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let gate_sql = "SELECT creator AS owner FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL";
+    let gate_sql =
+        "SELECT creator AS owner FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL";
     match u2_gate_by_sql(&pool, gate_sql, &doc_id, &session.person_unique).await? {
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
@@ -6169,7 +8037,10 @@ pub async fn correlation_u2_doc_delete(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("docId".to_string(), Value::String(doc_id)),
-                    ("deleted".to_string(), Value::Number(serde_json::Number::from(removed as i64))),
+                    (
+                        "deleted".to_string(),
+                        Value::Number(serde_json::Number::from(removed as i64)),
+                    ),
                 ]),
             ))))
         }
@@ -6257,7 +8128,15 @@ pub async fn fileinfo_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_fileinfo", "upload_person", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_fileinfo",
+        "upload_person",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("fileinfo not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6347,7 +8226,10 @@ pub async fn fileinfo_u2_copy_to_doc(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("docId".to_string(), Value::String(doc_id)),
-                    ("copied".to_string(), Value::Number(serde_json::Number::from(copied as i64))),
+                    (
+                        "copied".to_string(),
+                        Value::Number(serde_json::Number::from(copied as i64)),
+                    ),
                 ]),
             ))))
         }
@@ -6382,7 +8264,10 @@ pub async fn fileinfo_u2_replace_to_doc(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("docId".to_string(), Value::String(doc_id)),
-                    ("moved".to_string(), Value::Number(serde_json::Number::from(moved as i64))),
+                    (
+                        "moved".to_string(),
+                        Value::Number(serde_json::Number::from(moved as i64)),
+                    ),
                 ]),
             ))))
         }
@@ -6398,36 +8283,128 @@ pub async fn form_u2_create(
     session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W12/E2E：全局表单设计器无应用上下文，缺省落 default 桶（对齐 script 处理）
     let app_id = match u2_body_str(&body, "appId") {
-        Some(a) if !a.is_empty() => a,
-        _ => return Err(AppError::BadRequest("appId required".to_string())),
+        Some(a) if !a.is_empty() => a.to_string(),
+        _ => "default".to_string(),
     };
+    let definition = form_definition_from_body(&body)?
+        .ok_or_else(|| AppError::BadRequest("definition required".to_string()))?
+        .to_db()?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let app = client
-        .query_opt(
-            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
-            &[&app_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if app.is_none() {
-        return Ok(Json(ActionResult::error("application not found")));
+    // default 桶跳过应用存在性校验（全局设计器场景）
+    if app_id != "default" {
+        let app = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&app_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if app.is_none() {
+            return Ok(Json(ActionResult::error("application not found")));
+        }
     }
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
-    let definition = u2_body_str(&body, "definition").unwrap_or_default();
-    client
-        .execute(
+    let status = u2_body_str(&body, "status").unwrap_or_else(|| "draft".to_string());
+    let row = client
+        .query_one(
             "INSERT INTO x_cms_form (id, app_id, name, definition, status, creator) \
-             VALUES ($1, $2, $3, $4, 'draft', $5)",
-            &[&id, &app_id, &name, &definition, &session.person_unique],
+             VALUES ($1, $2, $3, $4, $5, $6) \
+             RETURNING id, app_id, name, definition, status, creator, create_time::text",
+            &[
+                &id,
+                &app_id,
+                &name,
+                &definition,
+                &status,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
+}
+
+/// POST /jaxrs/form/submit
+///
+/// W6 ③ 后端补缺：表单预览提交的落地校验。按 formId 加载 definition，
+/// 对 moduleList 中 required 模块做必填校验并返回逐字段错误；只校验不落库，
+/// 真实业务提交走文档 form_id 契约（W4）。
+#[allow(non_snake_case)]
+pub async fn form_submit(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let form_id = body
+        .get("formId")
+        .or_else(|| body.get("formFlag"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    if form_id.trim().is_empty() {
+        return Err(AppError::BadRequest("formId is required".to_string()));
+    }
+    let data = match body.get("data") {
+        Some(data) if data.is_object() => data,
+        _ => {
+            return Err(AppError::BadRequest(
+                "data must be a JSON object".to_string(),
+            ))
+        }
+    };
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT definition FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
+            &[&form_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::BadRequest("form not found".to_string()))?;
+    let definition = FormDefinition::from_db(row.get("definition"))?;
+
+    let mut errors = serde_json::Map::new();
+    if let Some(modules) = definition.0.get("moduleList").and_then(Value::as_object) {
+        for (module_id, module) in modules {
+            let required = module
+                .get("required")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+                || module
+                    .get("validation")
+                    .and_then(|validation| validation.get("required"))
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
+            if !required {
+                continue;
+            }
+            // 数据键与前端 xform 契约一致：name 优先，其次 key，最后模块 id
+            let key = module
+                .get("name")
+                .and_then(Value::as_str)
+                .or_else(|| module.get("key").and_then(Value::as_str))
+                .unwrap_or(module_id);
+            let missing = match data.get(key) {
+                None | Some(Value::Null) => true,
+                Some(Value::String(text)) => text.is_empty(),
+                Some(Value::Array(items)) => items.is_empty(),
+                _ => false,
+            };
+            if missing {
+                let label = module.get("label").and_then(Value::as_str).unwrap_or(key);
+                errors.insert(key.to_string(), Value::String(format!("{label} 为必填项")));
+            }
+        }
+    }
+
+    let valid = errors.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("appId".to_string(), Value::String(app_id)),
+            ("valid".to_string(), Value::Bool(valid)),
+            ("errors".to_string(), Value::Object(errors)),
         ]),
     ))))
 }
@@ -6440,34 +8417,29 @@ pub async fn form_u2_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let definition = form_definition_from_body(&body)?
+        .map(|definition| definition.to_db())
+        .transpose()?;
     match u2_check_owner(&pool, "x_cms_form", "creator", &id, &session.person_unique).await? {
         U2Gate::NotFound => Ok(Json(ActionResult::error("form not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
             let client = pool.get().await.map_err(|_| AppError::Internal)?;
             let name = u2_body_str(&body, "name");
-            let definition = u2_body_str(&body, "definition");
             let status = u2_body_str(&body, "status");
-            let affected = client
-                .execute(
+            let row = client
+                .query_one(
                     "UPDATE x_cms_form SET \
                      name = COALESCE($2, name), \
                      definition = COALESCE($3, definition), \
                      status = COALESCE($4, status) \
-                     WHERE id = $1 AND deleted_at IS NULL",
+                     WHERE id = $1 AND deleted_at IS NULL \
+                     RETURNING id, app_id, name, definition, status, creator, create_time::text",
                     &[&id, &name, &definition, &status],
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            if affected == 0 {
-                return Ok(Json(ActionResult::error("form not found")));
-            }
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("updated".to_string(), Value::Bool(true)),
-                ]),
-            ))))
+            Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
         }
     }
 }
@@ -6500,20 +8472,24 @@ pub async fn script_u2_create(
     session: Extension<shared::session::Session>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W7：全局脚本设计器无应用上下文，缺 appId 时落入 default 桶；
+    // 携带真实 appId 时仍校验应用存在
     let app_id = match u2_body_str(&body, "appId") {
-        Some(a) if !a.is_empty() => a,
-        _ => return Err(AppError::BadRequest("appId required".to_string())),
+        Some(a) if !a.is_empty() => a.to_string(),
+        _ => "default".to_string(),
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let app = client
-        .query_opt(
-            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
-            &[&app_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if app.is_none() {
-        return Ok(Json(ActionResult::error("application not found")));
+    if app_id != "default" {
+        let app = client
+            .query_opt(
+                "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+                &[&app_id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if app.is_none() {
+            return Ok(Json(ActionResult::error("application not found")));
+        }
     }
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
@@ -6543,7 +8519,15 @@ pub async fn script_u2_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_script", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_script",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("script not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6584,7 +8568,15 @@ pub async fn script_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_script", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_script",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("script not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6639,7 +8631,15 @@ pub async fn templateform_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_templateform", "creator_person", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_templateform",
+        "creator_person",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("templateform not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6671,7 +8671,14 @@ pub async fn view_u2_create(
         .execute(
             "INSERT INTO x_cms_view (id, app_id, category_id, name, view_config, creator) \
              VALUES ($1, $2, $3, $4, $5, $6)",
-            &[&id, &app_id, &category_id, &name, &view_config, &session.person_unique],
+            &[
+                &id,
+                &app_id,
+                &category_id,
+                &name,
+                &view_config,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6771,7 +8778,15 @@ pub async fn viewcategory_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_viewcategory", "creator", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_viewcategory",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("viewcategory not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6783,8 +8798,7 @@ pub async fn viewcategory_u2_delete(
     }
 }
 
-const U2_VIEW_FIELD_OWNER_SQL: &str =
-    "SELECT v.creator AS owner FROM x_cms_viewfieldconfig vfc \
+const U2_VIEW_FIELD_OWNER_SQL: &str = "SELECT v.creator AS owner FROM x_cms_viewfieldconfig vfc \
      JOIN x_cms_view v ON v.id = vfc.view_id WHERE vfc.id = $1 AND vfc.deleted_at IS NULL";
 
 #[axum::debug_handler]
@@ -6909,7 +8923,14 @@ pub async fn appinfo_u2_create(
         .execute(
             "INSERT INTO x_cms_appinfo (id, alias, app_type, icon, enabled, manager, creator) \
              VALUES ($1, $2, $3, $4, true, $5, $6)",
-            &[&id, &alias, &app_type, &icon, &manager, &session.person_unique],
+            &[
+                &id,
+                &alias,
+                &app_type,
+                &icon,
+                &manager,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -6928,7 +8949,15 @@ pub async fn appinfo_u2_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_appinfo", "manager", &id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_appinfo",
+        "manager",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -6951,7 +8980,8 @@ pub async fn categoryinfo_u2_create(
         Some(a) if !a.is_empty() => a,
         _ => return Err(AppError::BadRequest("appId required".to_string())),
     };
-    let gate_sql = "SELECT manager AS owner FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL";
+    let gate_sql =
+        "SELECT manager AS owner FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL";
     match u2_gate_by_sql(&pool, gate_sql, &app_id, &session.person_unique).await? {
         U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
@@ -7007,7 +9037,11 @@ async fn u2_write_permissions(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let role_type = match u2_body_str(body, "roleType") {
         Some(r) if ["manager", "publisher", "viewer"].contains(&r.as_str()) => r,
-        _ => return Err(AppError::BadRequest("roleType must be manager/publisher/viewer".to_string())),
+        _ => {
+            return Err(AppError::BadRequest(
+                "roleType must be manager/publisher/viewer".to_string(),
+            ))
+        }
     };
     let person_ids = u2_body_strs(body, "personIds");
     if person_ids.is_empty() {
@@ -7041,7 +9075,10 @@ async fn u2_write_permissions(
         serde_json::Map::from_iter([
             ("scopeId".to_string(), Value::String(scope_id.to_string())),
             ("roleType".to_string(), Value::String(role_type)),
-            ("granted".to_string(), Value::Number(serde_json::Number::from(granted as i64))),
+            (
+                "granted".to_string(),
+                Value::Number(serde_json::Number::from(granted as i64)),
+            ),
         ]),
     ))))
 }
@@ -7100,7 +9137,15 @@ pub async fn appconfig_u2_update(
     axum::extract::Path(app_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    match u2_check_owner(&pool, "x_cms_appinfo", "manager", &app_id, &session.person_unique).await? {
+    match u2_check_owner(
+        &pool,
+        "x_cms_appinfo",
+        "manager",
+        &app_id,
+        &session.person_unique,
+    )
+    .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -7200,7 +9245,10 @@ pub async fn designer_u2_search(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("keyword".to_string(), Value::String(keyword)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(results.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(results.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(results)),
         ]),
     ))))
@@ -7217,7 +9265,14 @@ async fn u3_gate_document(
     session: &shared::session::Session,
     id: &str,
 ) -> Result<U2Gate, AppError> {
-    u2_check_owner(pool, "x_cms_data_document", "creator", id, &session.person_unique).await
+    u2_check_owner(
+        pool,
+        "x_cms_data_document",
+        "creator",
+        id,
+        &session.person_unique,
+    )
+    .await
 }
 
 async fn u3_field_upsert(
@@ -7261,16 +9316,16 @@ async fn u3_bulk_publish_status(
             )
             .await
             .map_err(|_| AppError::Internal)?
-        } else {
-            client
-                .execute(
-                    "UPDATE x_cms_data_document SET status = 'draft', publish_time = NULL \
+    } else {
+        client
+            .execute(
+                "UPDATE x_cms_data_document SET status = 'draft', publish_time = NULL \
                      WHERE id = ANY($1) AND deleted_at IS NULL",
-                    &[&ids.to_vec()],
-                )
-                .await
-                .map_err(|_| AppError::Internal)?
-        };
+                &[&ids.to_vec()],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
     Ok(affected)
 }
 
@@ -7333,7 +9388,11 @@ async fn u3_save_scope_permissions(
             if person_ids.is_empty() {
                 return Err(AppError::BadRequest("personIds required".to_string()));
             }
-            let scope_col = if scope == "appInfo" { "app_id" } else { "category_id" };
+            let scope_col = if scope == "appInfo" {
+                "app_id"
+            } else {
+                "category_id"
+            };
             let client = pool.get().await.map_err(|_| AppError::Internal)?;
             client
                 .execute(
@@ -7364,7 +9423,10 @@ async fn u3_save_scope_permissions(
                     ("scope".to_string(), Value::String(scope.to_string())),
                     ("scopeId".to_string(), Value::String(id.to_string())),
                     ("roleType".to_string(), Value::String(role_type.to_string())),
-                    ("granted".to_string(), Value::Number(serde_json::Number::from(granted as i64))),
+                    (
+                        "granted".to_string(),
+                        Value::Number(serde_json::Number::from(granted as i64)),
+                    ),
                 ]),
             ))))
         }
@@ -7489,7 +9551,10 @@ pub async fn comment_uncommend_u3(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("uncommended".to_string(), Value::Bool(true)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(affected as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(affected as i64)),
+            ),
         ]),
     ))))
 }
@@ -7535,7 +9600,10 @@ pub async fn correlation_create_u3(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
-            ("created".to_string(), Value::Number(serde_json::Number::from(created as i64))),
+            (
+                "created".to_string(),
+                Value::Number(serde_json::Number::from(created as i64)),
+            ),
         ]),
     ))))
 }
@@ -7579,7 +9647,10 @@ pub async fn correlation_update_u3(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
-            ("updated".to_string(), Value::Number(serde_json::Number::from(updated as i64))),
+            (
+                "updated".to_string(),
+                Value::Number(serde_json::Number::from(updated as i64)),
+            ),
         ]),
     ))))
 }
@@ -7587,7 +9658,11 @@ pub async fn correlation_update_u3(
 // ── design/appdict CRUD（canonical，含归一化查重）──────────────────────────
 
 fn u3_normalize_path_levels(raw_levels: &[String]) -> String {
-    let mut parts: Vec<String> = raw_levels.iter().map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+    let mut parts: Vec<String> = raw_levels
+        .iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
     parts.sort();
     parts.join("/")
 }
@@ -7607,7 +9682,9 @@ pub async fn design_appdict_create_u3(
         .or_else(|| u2_body_str(&body, "name"))
         .unwrap_or_default();
     if app_info_flag.is_empty() || app_dict_flag.is_empty() {
-        return Err(AppError::BadRequest("appInfoFlag/appDictFlag required".to_string()));
+        return Err(AppError::BadRequest(
+            "appInfoFlag/appDictFlag required".to_string(),
+        ));
     }
     let path_levels = u3_normalize_path_levels(&u2_body_strs(&body, "pathLevels"));
     let data_value = match body.get("dataValue") {
@@ -7724,7 +9801,11 @@ pub async fn review_v2_search_u3(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 // ── document 管理面 ─────────────────────────────────────────────────────────
@@ -7788,9 +9869,10 @@ async fn u3_batch_modify_impl(
         }
     }
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("modified".to_string(), Value::Number(serde_json::Number::from(written as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "modified".to_string(),
+            Value::Number(serde_json::Number::from(written as i64)),
+        )]),
     ))))
 }
 
@@ -7892,7 +9974,10 @@ pub async fn document_batch_delete_u3(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("batchName".to_string(), Value::String(batch_name)),
-            ("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64))),
+            (
+                "deleted".to_string(),
+                Value::Number(serde_json::Number::from(affected as i64)),
+            ),
         ]),
     ))))
 }
@@ -7935,9 +10020,10 @@ async fn u3_publish_content_impl(
     }
     let affected = u3_bulk_publish_status(pool, &ids, "published").await?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("published".to_string(), Value::Number(serde_json::Number::from(affected as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "published".to_string(),
+            Value::Number(serde_json::Number::from(affected as i64)),
+        )]),
     ))))
 }
 
@@ -7975,9 +10061,10 @@ async fn u3_cipher_publish_workflow_impl(
     let person_id = u2_body_str(body, "personId").unwrap_or_default();
     let written = u3_cipher_upsert(pool, &ids, &cipher_text, &person_id).await?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("ciphered".to_string(), Value::Number(serde_json::Number::from(written as i64))),
-        ]),
+        serde_json::Map::from_iter([(
+            "ciphered".to_string(),
+            Value::Number(serde_json::Number::from(written as i64)),
+        )]),
     ))))
 }
 
@@ -8022,7 +10109,10 @@ pub async fn document_cipher_permission_read_u3(
     let status: String = doc.get::<_, Option<String>>("status").unwrap_or_default();
     let readable = shared::middleware::is_admin(&pool, &person).await
         || person == creator
-        || person == doc.get::<_, Option<String>>("author_id").unwrap_or_default()
+        || person
+            == doc
+                .get::<_, Option<String>>("author_id")
+                .unwrap_or_default()
         || status == "published";
     let _ = &session;
     Ok(Json(ActionResult::success(Value::Object(
@@ -8134,7 +10224,10 @@ pub async fn document_control_u3(
             ("allowRead".to_string(), Value::Bool(true)),
             ("allowEdit".to_string(), Value::Bool(allow_manage)),
             ("allowManage".to_string(), Value::Bool(allow_manage)),
-            ("controller".to_string(), Value::String(if admin { "admin".to_string() } else { creator })),
+            (
+                "controller".to_string(),
+                Value::String(if admin { "admin".to_string() } else { creator }),
+            ),
         ]),
     ))))
 }
@@ -8191,7 +10284,10 @@ pub async fn document_permission_read_u3(
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
     let readable = admin
         || row.get::<_, Option<String>>("creator").unwrap_or_default() == session.person_unique
-        || row.get::<_, Option<String>>("author_id").unwrap_or_default() == session.person_unique
+        || row
+            .get::<_, Option<String>>("author_id")
+            .unwrap_or_default()
+            == session.person_unique
         || row.get::<_, Option<String>>("status").unwrap_or_default() == "published";
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8220,7 +10316,9 @@ pub async fn document_persons_u3(
         None => return Ok(Json(ActionResult::error("document not found"))),
     };
     let app_id: String = doc.get::<_, Option<String>>("app_id").unwrap_or_default();
-    let category_id: String = doc.get::<_, Option<String>>("category_id").unwrap_or_default();
+    let category_id: String = doc
+        .get::<_, Option<String>>("category_id")
+        .unwrap_or_default();
     let rows = client
         .query(
             "SELECT DISTINCT person_id FROM x_cms_permission \
@@ -8240,7 +10338,10 @@ pub async fn document_persons_u3(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("count".to_string(), Value::Number(serde_json::Number::from(persons.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(persons.len() as i64)),
+            ),
             ("persons".to_string(), Value::Array(persons)),
         ]),
     ))))
@@ -8323,7 +10424,9 @@ pub async fn document_list_document_data_u3(
         let mut map = serde_json::Map::new();
         for fr in &field_rows {
             let name: String = fr.get("field_name");
-            let value: String = fr.get::<_, Option<String>>("field_value").unwrap_or_default();
+            let value: String = fr
+                .get::<_, Option<String>>("field_value")
+                .unwrap_or_default();
             map.insert(name, Value::String(value));
         }
         let mut obj = row_to_json(doc);
@@ -8486,8 +10589,12 @@ pub async fn fileinfo_binary_base64_u3(
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("fileinfo not found"))),
     };
-    let original_name: String = row.get::<_, Option<String>>("original_name").unwrap_or_default();
-    let base64_raw: String = row.get::<_, Option<String>>("content_base64").unwrap_or_default();
+    let original_name: String = row
+        .get::<_, Option<String>>("original_name")
+        .unwrap_or_default();
+    let base64_raw: String = row
+        .get::<_, Option<String>>("content_base64")
+        .unwrap_or_default();
     let limit = size.parse::<usize>().unwrap_or(0);
     let truncated: String = if limit > 0 && base64_raw.len() > limit {
         base64_raw[..limit].to_string()
@@ -8549,7 +10656,7 @@ pub async fn form_get_with_appinfo_u3(
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
     }
 }
@@ -8573,8 +10680,16 @@ macro_rules! u3_permission_save_handler {
 u3_permission_save_handler!(permission_save_manager_app_u3, "manager", "appInfo");
 u3_permission_save_handler!(permission_save_publisher_app_u3, "publisher", "appInfo");
 u3_permission_save_handler!(permission_save_viewer_app_u3, "viewer", "appInfo");
-u3_permission_save_handler!(permission_save_manager_category_u3, "manager", "categoryInfo");
-u3_permission_save_handler!(permission_save_publisher_category_u3, "publisher", "categoryInfo");
+u3_permission_save_handler!(
+    permission_save_manager_category_u3,
+    "manager",
+    "categoryInfo"
+);
+u3_permission_save_handler!(
+    permission_save_publisher_category_u3,
+    "publisher",
+    "categoryInfo"
+);
 u3_permission_save_handler!(permission_save_viewer_category_u3, "viewer", "categoryInfo");
 
 // ── script nested import / load ────────────────────────────────────────────
@@ -8610,8 +10725,10 @@ pub async fn script_post_nested_u3(
             let mut imported = 0u64;
             for script in &scripts {
                 let name = script.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                let content =
-                    script.get("scriptContent").and_then(|v| v.as_str()).unwrap_or("");
+                let content = script
+                    .get("scriptContent")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 imported += client
                     .execute(
                         "INSERT INTO x_cms_script (id, app_id, name, script_content, imported, creator) \
@@ -8625,7 +10742,10 @@ pub async fn script_post_nested_u3(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("appId".to_string(), Value::String(flag)),
-                    ("imported".to_string(), Value::Number(serde_json::Number::from(imported as i64))),
+                    (
+                        "imported".to_string(),
+                        Value::Number(serde_json::Number::from(imported as i64)),
+                    ),
                 ]),
             ))))
         }
@@ -8662,7 +10782,10 @@ pub async fn script_load_u3(
     let scripts: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(scripts.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(scripts.len() as i64)),
+            ),
             ("scripts".to_string(), Value::Array(scripts)),
         ]),
     ))))
@@ -8708,8 +10831,14 @@ pub async fn viewrecord_unread_u3(
         .collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("person".to_string(), Value::String(session.person_unique.clone())),
-            ("count".to_string(), Value::Number(serde_json::Number::from(unread.len() as i64))),
+            (
+                "person".to_string(),
+                Value::String(session.person_unique.clone()),
+            ),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(unread.len() as i64)),
+            ),
             ("docIds".to_string(), Value::Array(unread)),
         ]),
     ))))

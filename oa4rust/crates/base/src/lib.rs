@@ -14,7 +14,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-
 /// Echo 接口（健康检查）
 ///
 /// 返回固定的 `{"type":"echo","message":"pong"}` 响应，用于验证服务是否正常运行。
@@ -34,10 +33,12 @@ mod tests_generated;
 )]
 #[allow(non_snake_case)]
 pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("type".to_string(), Value::String("echo".to_string())),
-        ("message".to_string(), Value::String("pong".to_string())),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("type".to_string(), Value::String("echo".to_string())),
+            ("message".to_string(), Value::String("pong".to_string())),
+        ]),
+    ))))
 }
 
 /// 查询数据库缓存表数量
@@ -61,22 +62,28 @@ pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
     tag = "base"
 )]
 #[allow(non_snake_case)]
-pub async fn cache_detail(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn cache_detail(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_one("SELECT count(*) AS cache_count FROM pg_class WHERE relname LIKE 'cache_%'", &[])
+        .query_one(
+            "SELECT count(*) AS cache_count FROM pg_class WHERE relname LIKE 'cache_%'",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
     let count: i64 = row.get("cache_count");
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("status".to_string(), Value::String("running".to_string())),
-        ("cacheCount".to_string(), Value::Number(serde_json::Number::from(count))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("status".to_string(), Value::String("running".to_string())),
+            (
+                "cacheCount".to_string(),
+                Value::Number(serde_json::Number::from(count)),
+            ),
+        ]),
+    ))))
 }
 
 /// 获取 OpenAPI 基础信息
@@ -136,7 +143,10 @@ pub fn sanitize_resource_path(input: &str) -> Option<Vec<String>> {
         if seg == ".." {
             return None;
         }
-        if seg.bytes().any(|b| !b.is_ascii_alphanumeric() && b != b'-' && b != b'_' && b != b'.') {
+        if seg
+            .bytes()
+            .any(|b| !b.is_ascii_alphanumeric() && b != b'-' && b != b'_' && b != b'.')
+        {
             return None;
         }
         segments.push(seg.to_string());
@@ -152,9 +162,7 @@ fn web_root() -> std::path::PathBuf {
 
 /// POST /jaxrs/base/cache —— 接收缓存刷新指令（回显 className）
 #[allow(non_snake_case)]
-pub async fn cache_receive(
-    Json(body): Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn cache_receive(Json(body): Json<Value>) -> Result<Json<ActionResult<Value>>, AppError> {
     let class_name = body
         .get("className")
         .and_then(|v| v.as_str())
@@ -165,10 +173,7 @@ pub async fn cache_receive(
         Some(cn) => {
             tracing::info!(className = %cn, "cache clear instruction received");
             Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([(
-                    "value".to_string(),
-                    Value::String(cn.to_string()),
-                )]),
+                serde_json::Map::from_iter([("value".to_string(), Value::String(cn.to_string()))]),
             ))))
         }
     }
@@ -247,9 +252,7 @@ fn walk_resource_dir(
     files: &mut Vec<Value>,
     folders: &mut Vec<Value>,
 ) -> bool {
-    if depth > RESOURCE_WALK_MAX_DEPTH
-        || files.len() + folders.len() >= RESOURCE_WALK_MAX_ENTRIES
-    {
+    if depth > RESOURCE_WALK_MAX_DEPTH || files.len() + folders.len() >= RESOURCE_WALK_MAX_ENTRIES {
         return false;
     }
     let Ok(entries) = std::fs::read_dir(dir) else {

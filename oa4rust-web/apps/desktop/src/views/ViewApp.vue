@@ -52,8 +52,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { api } from '@oa4rust/sdk'
+import { ref } from 'vue'
 
 type ViewItem = { id: string; name?: string; viewName?: string; title?: string }
 
@@ -69,7 +69,11 @@ async function loadViews() {
   try {
     const r = await api.get('/jaxrs/view/list')
     views.value = r.data ?? []
-  } catch { views.value = [] } finally { loading.value = false }
+  } catch {
+    views.value = []
+  } finally {
+    loading.value = false
+  }
 }
 
 async function viewData(v: ViewItem) {
@@ -82,7 +86,11 @@ async function viewData(v: ViewItem) {
     const list = r.data?.list ?? r.data ?? []
     dataResult.value = Array.isArray(list) ? list : []
     if (dataResult.value.length > 0) cols.value = Object.keys(dataResult.value[0])
-  } catch { dataResult.value = [] } finally { dataLoading.value = false }
+  } catch {
+    dataResult.value = []
+  } finally {
+    dataLoading.value = false
+  }
 }
 
 loadViews()

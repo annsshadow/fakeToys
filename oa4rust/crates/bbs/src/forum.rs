@@ -15,9 +15,7 @@ use shared::{error::AppError, response::ActionResult};
     ),
     tag = "bbs"
 )]
-pub async fn view_all(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client

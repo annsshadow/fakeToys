@@ -113,9 +113,10 @@ pub async fn soft_delete_isolation() {
         .cloned()
         .expect("data_integrity scenarios require PostgreSQL pool");
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -173,7 +174,10 @@ pub async fn soft_delete_isolation() {
             .await
             .expect("visibility check failed")
             .get(0);
-        assert_eq!(visible, 1, "fresh document invisible to default list filter");
+        assert_eq!(
+            visible, 1,
+            "fresh document invisible to default list filter"
+        );
     }
 
     // Step 3: Soft delete through the real HTTP layer.
@@ -198,7 +202,10 @@ pub async fn soft_delete_isolation() {
             .await
             .expect("post-delete visibility check failed")
             .get(0);
-        assert_eq!(visible, 0, "soft-deleted document still visible to default filter");
+        assert_eq!(
+            visible, 0,
+            "soft-deleted document still visible to default filter"
+        );
 
         let marked: i64 = db
             .query_one(
@@ -209,7 +216,10 @@ pub async fn soft_delete_isolation() {
             .await
             .expect("deleted_at marker check failed")
             .get(0);
-        assert_eq!(marked, 1, "physical row missing deleted_at marker after soft delete");
+        assert_eq!(
+            marked, 1,
+            "physical row missing deleted_at marker after soft delete"
+        );
     }
     info!(doc_id = %doc_id, "soft-deleted: hidden from default filter, marker present");
 

@@ -158,14 +158,22 @@ impl ComparisonReport {
                     entries.iter().filter(|e| e.status == "FAIL").count(),
                     entries.iter().filter(|e| e.status == "SKIP").count(),
                 );
-                md.push_str(&format!("### `{}` — {} pass, {} fail, {} skip\n\n", crate_name, pass, fail, skip));
+                md.push_str(&format!(
+                    "### `{}` — {} pass, {} fail, {} skip\n\n",
+                    crate_name, pass, fail, skip
+                ));
                 md.push_str("| # | Method | Endpoint | Status | Rust | Java | Differences |\n");
                 md.push_str("|---|--------|----------|--------|-------|-------|-------------|\n");
                 for (i, entry) in entries.iter().enumerate() {
                     let diffs = if entry.differences.is_empty() {
                         "—".to_string()
                     } else {
-                        entry.differences.iter().map(|d| d.replace('|', "\\|")).collect::<Vec<_>>().join("<br>")
+                        entry
+                            .differences
+                            .iter()
+                            .map(|d| d.replace('|', "\\|"))
+                            .collect::<Vec<_>>()
+                            .join("<br>")
                     };
                     md.push_str(&format!(
                         "| {} | {} | {} | {} | {:?} | {:?} | {} |\n",

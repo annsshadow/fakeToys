@@ -1,16 +1,13 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -99,7 +96,8 @@ async fn test_create_bam_route_exists() {
     let req = serde_json::to_string(&json!({
         "name": "My BAM",
         "definition": "process-def"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -180,17 +178,32 @@ async fn test_get_bam_status_route_exists() {
 #[test]
 fn test_period_predicate_completed_semantics() {
     // 口径：completed = 状态已完成
-    assert_eq!(period_predicate("task", "completed"), "t.task_status = 'completed'");
-    assert_eq!(period_predicate("work", "completed"), "w.work_status = 'completed'");
+    assert_eq!(
+        period_predicate("task", "completed"),
+        "t.task_status = 'completed'"
+    );
+    assert_eq!(
+        period_predicate("work", "completed"),
+        "w.work_status = 'completed'"
+    );
 }
 
 #[test]
 fn test_period_predicate_expired_requires_overdue_and_unfinished() {
     // 口径：expired 必须同时满足"有截止时间、已过期、未完成"，防止把未到期的也算超时
     let p = period_predicate("task", "expired");
-    assert!(p.contains("t.end_time IS NOT NULL"), "expired 必须要求 end_time 非空");
-    assert!(p.contains("t.end_time < NOW()"), "expired 必须要求已过截止时间");
-    assert!(p.contains("IS DISTINCT FROM 'completed'"), "expired 必须排除已完成");
+    assert!(
+        p.contains("t.end_time IS NOT NULL"),
+        "expired 必须要求 end_time 非空"
+    );
+    assert!(
+        p.contains("t.end_time < NOW()"),
+        "expired 必须要求已过截止时间"
+    );
+    assert!(
+        p.contains("IS DISTINCT FROM 'completed'"),
+        "expired 必须排除已完成"
+    );
 }
 
 #[test]
@@ -218,8 +231,16 @@ async fn bam_u2_route_status(method: Method, uri: &str) -> axum::http::StatusCod
 
 #[tokio::test]
 async fn test_bam_stubs_completed_task_applicationstubs_registered() {
-    let status = bam_u2_route_status(Method::GET, "/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs").await;
-    assert_ne!(status, StatusCode::NOT_FOUND, "applicationstubs 桩端点应注册为 Java 精确路径");
+    let status = bam_u2_route_status(
+        Method::GET,
+        "/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs",
+    )
+    .await;
+    assert_ne!(
+        status,
+        StatusCode::NOT_FOUND,
+        "applicationstubs 桩端点应注册为 Java 精确路径"
+    );
 }
 
 #[tokio::test]
@@ -229,7 +250,11 @@ async fn test_bam_count_completed_task_by_unit_registered() {
         "/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit",
     )
     .await;
-    assert_ne!(status, StatusCode::NOT_FOUND, "count...by/unit 精确路径应注册");
+    assert_ne!(
+        status,
+        StatusCode::NOT_FOUND,
+        "count...by/unit 精确路径应注册"
+    );
 }
 
 #[tokio::test]
@@ -239,24 +264,44 @@ async fn test_bam_count_start_work_total_registered() {
         "/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1",
     )
     .await;
-    assert_ne!(status, StatusCode::NOT_FOUND, "start/work 总数切片应注册且动词为 GET");
+    assert_ne!(
+        status,
+        StatusCode::NOT_FOUND,
+        "start/work 总数切片应注册且动词为 GET"
+    );
 }
 
 #[tokio::test]
 async fn test_bam_state_category_exact_path_registered() {
-    let status = bam_u2_route_status(Method::GET, "/jaxrs/processplatform/assemble/bam/state/category").await;
+    let status = bam_u2_route_status(
+        Method::GET,
+        "/jaxrs/processplatform/assemble/bam/state/category",
+    )
+    .await;
     assert_ne!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn test_bam_state_category_trigger_all_registered() {
-    let status = bam_u2_route_status(Method::GET, "/jaxrs/processplatform/assemble/bam/state/category/trigger").await;
-    assert_ne!(status, StatusCode::NOT_FOUND, "/state/category/trigger 应为无参 GET");
+    let status = bam_u2_route_status(
+        Method::GET,
+        "/jaxrs/processplatform/assemble/bam/state/category/trigger",
+    )
+    .await;
+    assert_ne!(
+        status,
+        StatusCode::NOT_FOUND,
+        "/state/category/trigger 应为无参 GET"
+    );
 }
 
 #[tokio::test]
 async fn test_bam_state_applicationtstubs_trigger_registered() {
-    let status = bam_u2_route_status(Method::GET, "/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger").await;
+    let status = bam_u2_route_status(
+        Method::GET,
+        "/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger",
+    )
+    .await;
     assert_ne!(status, StatusCode::NOT_FOUND);
 }
 
@@ -268,7 +313,11 @@ async fn test_bam_count_endpoint_rejects_wrong_verb() {
         "/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1",
     )
     .await;
-    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED, "GET-only 端点对 POST 应返回 405 而非命中处理");
+    assert_eq!(
+        status,
+        StatusCode::METHOD_NOT_ALLOWED,
+        "GET-only 端点对 POST 应返回 405 而非命中处理"
+    );
 }
 
 #[test]

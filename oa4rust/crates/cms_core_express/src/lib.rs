@@ -1,8 +1,4 @@
-use axum::{
-    extract::Extension,
-    routing::get,
-    Json, Router,
-};
+use axum::{extract::Extension, routing::get, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -20,9 +16,7 @@ pub struct CmsContent {
 
 /// 获取 CMS 内容列表
 /// 从数据库查询 x_cms_content 表
-pub async fn content_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn content_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -38,14 +32,21 @@ pub async fn content_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("categoryId".to_string(), Value::String(row.get("category_id"))),
+                (
+                    "categoryId".to_string(),
+                    Value::String(row.get("category_id")),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 获取 CMS 内容详情
@@ -66,7 +67,10 @@ pub async fn content_detail(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("title".to_string(), Value::String(row.get("title"))),
-        ("categoryId".to_string(), Value::String(row.get("category_id"))),
+        (
+            "categoryId".to_string(),
+            Value::String(row.get("category_id")),
+        ),
         ("status".to_string(), Value::String(row.get("status"))),
         (
             "content".to_string(),
@@ -86,7 +90,10 @@ pub async fn content_detail(
 pub fn cms_core_express_router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/cms/core/express/content/list", get(content_list))
-        .route("/jaxrs/cms/core/express/content/detail/{id}", get(content_detail))
+        .route(
+            "/jaxrs/cms/core/express/content/detail/{id}",
+            get(content_detail),
+        )
         .layer(Extension(pool))
 }
 
@@ -94,7 +101,6 @@ pub fn cms_core_express_router(pool: Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::cms_core_express_router(pool)

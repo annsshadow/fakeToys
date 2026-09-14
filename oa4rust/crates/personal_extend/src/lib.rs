@@ -28,4 +28,3 @@ mod password {
         pub password: String,
     }
 }
-

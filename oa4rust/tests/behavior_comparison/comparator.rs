@@ -26,6 +26,26 @@ fn is_upload_endpoint(path: &str) -> bool {
         .any(|pattern| path.contains(pattern))
 }
 
+/// 对比过程中会销毁对比会话自身的登出端点。
+///
+/// sweep 一旦执行 `DELETE /jaxrs/authentication` 等登出动作，当前 Bearer
+/// 会话即被删除，其后全部受保护请求 401（实测一次运行产生 ~2000 条假
+/// FAIL/SKIP）。与上传类端点同理整类 SKIP；登出语义由 auth crate 单测覆盖。
+fn is_session_destructive_endpoint(method: &str, path: &str) -> bool {
+    let logout_paths = [
+        "/jaxrs/authentication/logout",
+        "/jaxrs/authentication/safe/logout",
+        "/jaxrs/organization/assemble/authentication/authentication/safe/logout",
+        "/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget",
+        "/jaxrs/authentication/switchuser",
+        "/jaxrs/organization/assemble/authentication/authentication/switchuser",
+        "/jaxrs/bbs/assemble/control/logout",
+    ];
+    logout_paths.iter().any(|p| path.contains(p))
+        || (method.eq_ignore_ascii_case("DELETE")
+            && (path.ends_with("/authentication") || path.ends_with("/adminlogin")))
+}
+
 /// Result of comparing a single endpoint.
 #[derive(Debug, Clone)]
 pub struct ComparisonResult {
@@ -134,15 +154,14 @@ impl EndpointComparator {
     ///
     /// 同时发送 `Authorization: Bearer`（Rust 侧）与 `x-token`（O2OA v9 Java 侧）。
     fn auth_headers_for(&self, base_url: &str) -> Option<HashMap<String, String>> {
-        self.token_for(base_url)
-            .map(|t| {
-                [
-                    ("Authorization".to_string(), format!("Bearer {}", t)),
-                    ("x-token".to_string(), t.clone()),
-                ]
-                .into_iter()
-                .collect()
-            })
+        self.token_for(base_url).map(|t| {
+            [
+                ("Authorization".to_string(), format!("Bearer {}", t)),
+                ("x-token".to_string(), t.clone()),
+            ]
+            .into_iter()
+            .collect()
+        })
     }
 
     /// Construct the full Java URL for an endpoint definition.
@@ -163,12 +182,7 @@ impl EndpointComparator {
     /// Rust 服务则注册在裸路径 POST /jaxrs/authentication（及别名 /login）。
     /// 依次尝试候选路径，首个拿到 token 者胜出。注意 O2OA 对未知裸 /jaxrs/* 会挂起，
     /// 因此 v9 war 路径必须排在裸路径之前（Java 首跳即命中，不会触达挂起路径）。
-    pub async fn login(
-        &self,
-        base_url: &str,
-        credential: &str,
-        password: &str,
-    ) -> Option<String> {
+    pub async fn login(&self, base_url: &str, credential: &str, password: &str) -> Option<String> {
         let base = base_url.trim_end_matches('/');
         let body = serde_json::json!({"credential": credential, "password": password});
         let candidates = [
@@ -186,6 +200,11 @@ impl EndpointComparator {
     }
 
     /// POST one candidate login URL and extract data.token from the response.
+    ///
+    /// 2026-09-10 加固后 Rust 登录不再返回 body token，改为 Set-Cookie
+    /// （`oa4rust_session=<token>`，HttpOnly）。因此先扫 Set-Cookie 提取会话
+    /// 值（后续经 `Authorization: Bearer` 发送，中间件兼容），再回退 data.token
+    /// （Java 侧路径）。
     async fn try_login(&self, url: &str, body: &serde_json::Value) -> Option<String> {
         let resp = self
             .client
@@ -199,6 +218,21 @@ impl EndpointComparator {
         if !resp.status().is_success() {
             return None;
         }
+        for cookie in resp.headers().get_all(reqwest::header::SET_COOKIE) {
+            let Ok(value) = cookie.to_str() else {
+                continue;
+            };
+            for part in value.split(';') {
+                if let Some((name, val)) = part.trim().split_once('=') {
+                    if name.trim() == shared::middleware::token::SESSION_COOKIE_NAME {
+                        let token = val.trim().trim_matches('"');
+                        if !token.is_empty() {
+                            return Some(token.to_string());
+                        }
+                    }
+                }
+            }
+        }
         let json: serde_json::Value = resp.json().await.ok()?;
         json.get("data")
             .and_then(|d| d.get("token"))
@@ -211,6 +245,27 @@ impl EndpointComparator {
         // java_war 为空 = 清单生成时未找到 Java 对应端点（Rust 扩展或伪影），
         // 直接 SKIP 不发请求；否则 O2OA 对未知路径挂起会导致每条 15s 超时。
         if def.java_war.is_empty() {
+            return ComparisonResult {
+                endpoint: def.rust_path.to_string(),
+                method: def.method.to_string(),
+                crate_name: def.crate_name.to_string(),
+                rust_status: None,
+                java_status: None,
+                rust_response: None,
+                java_response: None,
+                is_equivalent: true,
+                differences: vec![],
+                status: ComparisonStatus::Skip,
+            };
+        }
+        // 登出类端点跳过：执行即销毁对比会话，其后 ~2000 条受保护请求全部
+        // 401（实测）。必须在实际发请求之前整类排除；登出语义由 auth
+        // crate 的单元测试覆盖。
+        if is_session_destructive_endpoint(def.method, def.rust_path) {
+            eprintln!(
+                "[behavior_compare] SKIP session-destructive: {} {}",
+                def.method, def.rust_path
+            );
             return ComparisonResult {
                 endpoint: def.rust_path.to_string(),
                 method: def.method.to_string(),
@@ -337,7 +392,9 @@ impl EndpointComparator {
             // JSON 提交，Rust 侧 axum `Json<T>` 提取器对空体/无 Content-Type
             // 返回 415，而 Java 对空体走字段默认值。发 `{}` 逼近真实客户端
             // 流量，消除系统性 415-vs-2xx/5xx 假差异（实测 ~700 条）。
-            request = request.header("Content-Type", "application/json").body("{}");
+            request = request
+                .header("Content-Type", "application/json")
+                .body("{}");
         }
 
         match request.send().await {
@@ -372,20 +429,23 @@ impl EndpointComparator {
 
     /// Check if two root-level ActionResult envelopes are asymmetric due to
     /// one being a success response and the other an error response.
-    fn is_envelope_asymmetric(rust_env: &serde_json::Map<String, serde_json::Value>,
-                              java_env: &serde_json::Map<String, serde_json::Value>) -> bool {
+    fn is_envelope_asymmetric(
+        rust_env: &serde_json::Map<String, serde_json::Value>,
+        java_env: &serde_json::Map<String, serde_json::Value>,
+    ) -> bool {
         let rust_type = rust_env.get("type").and_then(|v| v.as_str());
         let java_type = java_env.get("type").and_then(|v| v.as_str());
         // One must be success, the other error
-        let one_success = matches!((rust_type, java_type),
-            (Some("success"), Some("error")) | (Some("error"), Some("success")));
+        let one_success = matches!(
+            (rust_type, java_type),
+            (Some("success"), Some("error")) | (Some("error"), Some("success"))
+        );
         if !one_success {
             return false;
         }
         // Check data/prompt fields for exception-vs-data asymmetry
-        let is_exception_string = |s: &str| -> bool {
-            s.starts_with("com.x.") && s.contains("Exception")
-        };
+        let is_exception_string =
+            |s: &str| -> bool { s.starts_with("com.x.") && s.contains("Exception") };
         let rust_data = rust_env.get("data").or_else(|| rust_env.get("prompt"));
         let java_data = java_env.get("data").or_else(|| java_env.get("prompt"));
         match (rust_data, java_data) {
@@ -407,7 +467,10 @@ impl EndpointComparator {
         match (rust, java) {
             (serde_json::Value::Array(ra), serde_json::Value::Object(jo))
             | (serde_json::Value::Object(jo), serde_json::Value::Array(ra)) => {
-                ra.is_empty() && jo.values().all(|v| matches!(v, serde_json::Value::Array(a) if a.is_empty()))
+                ra.is_empty()
+                    && jo
+                        .values()
+                        .all(|v| matches!(v, serde_json::Value::Array(a) if a.is_empty()))
             }
             _ => false,
         }
@@ -507,7 +570,14 @@ impl EndpointComparator {
                         // 修复（plan002 U2）：此处必须取两侧的“子值”递归比较；
                         // 原实现误传整个父对象 rust，导致每个键都与全信封比较，
                         // 任何对象型响应都会产生虚假 type-differs（0/7 无法收敛的根因之一）。
-                        Self::recurse(self, ro.get(key).unwrap(), jv, &field_path, diffs, java_seen);
+                        Self::recurse(
+                            self,
+                            ro.get(key).unwrap(),
+                            jv,
+                            &field_path,
+                            diffs,
+                            java_seen,
+                        );
                         rust_unmatched.remove(key);
                         java_unmatched.remove(key);
                     }
@@ -547,8 +617,7 @@ impl EndpointComparator {
                 for key in rust_unmatched {
                     // 空数组 ≈ 缺字段：Gson 对"无集合"与"空集合"分别走
                     // 省略字段 / 输出 []，业务语义等价（实测 ~90 条假差异）。
-                    if matches!(ro.get(&key), Some(serde_json::Value::Array(a)) if a.is_empty())
-                    {
+                    if matches!(ro.get(&key), Some(serde_json::Value::Array(a)) if a.is_empty()) {
                         continue;
                     }
                     let field_path = if path == "root" {
@@ -562,9 +631,18 @@ impl EndpointComparator {
                     if path == "root"
                         && matches!(
                             key.as_str(),
-                            "prompt" | "data" | "status" | "url" | "servlet"
-                                | "message" | "count" | "position" | "spent"
-                                | "date" | "type" | "size"
+                            "prompt"
+                                | "data"
+                                | "status"
+                                | "url"
+                                | "servlet"
+                                | "message"
+                                | "count"
+                                | "position"
+                                | "spent"
+                                | "date"
+                                | "type"
+                                | "size"
                         )
                     {
                         continue;
@@ -576,8 +654,13 @@ impl EndpointComparator {
                         let key_lower = key.to_lowercase();
                         let is_semantic_key = matches!(
                             key_lower.as_str(),
-                            "id" | "value" | "deleted" | "saved" | "success"
-                                | "message" | "count" | "status"
+                            "id" | "value"
+                                | "deleted"
+                                | "saved"
+                                | "success"
+                                | "message"
+                                | "count"
+                                | "status"
                         );
                         if !is_semantic_key {
                             continue;
@@ -596,14 +679,15 @@ impl EndpointComparator {
                     }
                     // 工作流时间端点特殊处理：indefined/isHoliday/isWorkday 是 Java 自定义字段，
                     // Rust 不返回这些字段属于正常行为差异
-                    if path == "root" && matches!(key.as_str(), "indefined" | "isHoliday" | "isWorkday") {
+                    if path == "root"
+                        && matches!(key.as_str(), "indefined" | "isHoliday" | "isWorkday")
+                    {
                         continue;
                     }
                     diffs.push(format!("{}: missing in Java", field_path));
                 }
                 for key in java_unmatched {
-                    if matches!(jo.get(&key), Some(serde_json::Value::Array(a)) if a.is_empty())
-                    {
+                    if matches!(jo.get(&key), Some(serde_json::Value::Array(a)) if a.is_empty()) {
                         continue;
                     }
                     let field_path = if path == "root" {
@@ -616,8 +700,16 @@ impl EndpointComparator {
                     if path == "root"
                         && matches!(
                             key.as_str(),
-                            "status" | "url" | "servlet" | "position" | "spent" | "size"
-                                | "count" | "type" | "date" | "message"
+                            "status"
+                                | "url"
+                                | "servlet"
+                                | "position"
+                                | "spent"
+                                | "size"
+                                | "count"
+                                | "type"
+                                | "date"
+                                | "message"
                         )
                     {
                         continue;
@@ -688,11 +780,7 @@ impl EndpointComparator {
     }
 
     /// Find a Java key that is allowlist-equivalent to the given Rust key among unmatched keys.
-    fn find_java_key(
-        &self,
-        rust_key: &str,
-        java_unmatched: &HashSet<String>,
-    ) -> Option<String> {
+    fn find_java_key(&self, rust_key: &str, java_unmatched: &HashSet<String>) -> Option<String> {
         for jk in java_unmatched {
             if self.allowlist.is_allowed(rust_key, jk) {
                 return Some(jk.clone());
@@ -718,19 +806,27 @@ mod envelope_tests {
     #[test]
     fn test_envelope_asymmetry_suppressed() {
         let c = EndpointComparator::new("http://x", "http://y");
-        
+
         // Rust success (Array) vs Java error (String exception)
         let rust = serde_json::json!([]);
         let java = serde_json::json!("com.x.base.core.project.exception.ExceptionEntityNotExist");
         let diffs = c.find_differences(&rust, &java);
-        assert!(diffs.is_empty(), "Envelope asymmetry should be suppressed, got: {:?}", diffs);
-        
+        assert!(
+            diffs.is_empty(),
+            "Envelope asymmetry should be suppressed, got: {:?}",
+            diffs
+        );
+
         // Reverse: Rust error vs Java success
         let rust = serde_json::json!("com.x.base.core.project.exception.ExceptionEntityNotExist");
         let java = serde_json::json!([]);
         let diffs = c.find_differences(&rust, &java);
-        assert!(diffs.is_empty(), "Reverse envelope asymmetry should be suppressed, got: {:?}", diffs);
-        
+        assert!(
+            diffs.is_empty(),
+            "Reverse envelope asymmetry should be suppressed, got: {:?}",
+            diffs
+        );
+
         // Normal type differ should still be reported
         let rust = serde_json::json!(123);
         let java = serde_json::json!("not a number");
@@ -742,30 +838,51 @@ mod envelope_tests {
     #[test]
     fn test_empty_object_wrapper() {
         let c = EndpointComparator::new("http://x", "http://y");
-        
+
         // Rust Array[] vs Java Object{key:[]} - should be equivalent
         let rust = serde_json::json!([]);
         let java = serde_json::json!({"personList": []});
         let diffs = c.find_differences(&rust, &java);
-        assert!(diffs.is_empty(), "Empty object wrapper should be suppressed, got: {:?}", diffs);
-        
+        assert!(
+            diffs.is_empty(),
+            "Empty object wrapper should be suppressed, got: {:?}",
+            diffs
+        );
+
         // Rust Object{} vs Java Array[] - should be equivalent
         let rust = serde_json::json!({});
         let java = serde_json::json!([]);
         let diffs = c.find_differences(&rust, &java);
-        assert!(diffs.is_empty(), "Empty object vs empty array should be suppressed, got: {:?}", diffs);
+        assert!(
+            diffs.is_empty(),
+            "Empty object vs empty array should be suppressed, got: {:?}",
+            diffs
+        );
     }
 
     #[test]
     fn test_envelope_asymmetric_detection() {
         // Success vs Error with exception in data
-        let rust_env = serde_json::json!({"data": [], "type": "success"}).as_object().unwrap().clone();
+        let rust_env = serde_json::json!({"data": [], "type": "success"})
+            .as_object()
+            .unwrap()
+            .clone();
         let java_env = serde_json::json!({"data": "com.x.base.core.project.exception.ExceptionEntityNotExist", "type": "error"}).as_object().unwrap().clone();
-        assert!(EndpointComparator::is_envelope_asymmetric(&rust_env, &java_env));
-        
+        assert!(EndpointComparator::is_envelope_asymmetric(
+            &rust_env, &java_env
+        ));
+
         // Both success - not asymmetric
-        let rust_env = serde_json::json!({"data": [], "type": "success"}).as_object().unwrap().clone();
-        let java_env = serde_json::json!({"data": [], "type": "success"}).as_object().unwrap().clone();
-        assert!(!EndpointComparator::is_envelope_asymmetric(&rust_env, &java_env));
+        let rust_env = serde_json::json!({"data": [], "type": "success"})
+            .as_object()
+            .unwrap()
+            .clone();
+        let java_env = serde_json::json!({"data": [], "type": "success"})
+            .as_object()
+            .unwrap()
+            .clone();
+        assert!(!EndpointComparator::is_envelope_asymmetric(
+            &rust_env, &java_env
+        ));
     }
 }

@@ -1,4 +1,4 @@
-﻿//! plan002 U2 — BBS 端点全量闭合（对照 jaxrs 静态提取的 106 条 Java 全集补齐）。
+//! plan002 U2 — BBS 端点全量闭合（对照 jaxrs 静态提取的 106 条 Java 全集补齐）。
 //!
 //! 分层约定（沿用 cms_assemble_control U2 先例）：
 //! - 读操作公开；写操作按 IDOR 门禁：
@@ -64,9 +64,17 @@ pub(crate) enum U2Gate {
     Allowed,
 }
 
-async fn u2_gate_by_sql(pool: &Pool, sql: &str, id: &str, person_unique: &str) -> Result<U2Gate, AppError> {
+async fn u2_gate_by_sql(
+    pool: &Pool,
+    sql: &str,
+    id: &str,
+    person_unique: &str,
+) -> Result<U2Gate, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client.query_opt(sql, &[&id]).await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
     match row {
         None => Ok(U2Gate::NotFound),
         Some(r) => {
@@ -145,8 +153,7 @@ pub fn like_escape(input: &str) -> String {
 // base64（纯逻辑，无新增依赖）
 // ══════════════════════════════════════════════════════════════════
 
-const B64_ALPHABET: &[u8; 64] =
-    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const B64_ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 pub fn base64_encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
@@ -266,7 +273,10 @@ unimplemented_endpoint!(
     "multipart upload pending shared::storage wiring (plan002 U6b)"
 );
 // Java PictureAction.pictureEncode：图片解码缩放后转 base64，需要图像引擎。
-unimplemented_endpoint!(picture_encode_501, "image decode/resize engine not available");
+unimplemented_endpoint!(
+    picture_encode_501,
+    "image decode/resize engine not available"
+);
 unimplemented_endpoint!(
     picture_section_icon_501,
     "icon upload pending shared::storage wiring (plan002 U6b)"
@@ -379,21 +389,29 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
                 ),
                 (
                     "creator".to_string(),
-                    r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 ("authorId".to_string(), Value::String(r.get("author_id"))),
                 (
                     "forumId".to_string(),
-                    r.get::<_, Option<String>>("forum_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("forum_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 ("sectionId".to_string(), Value::String(r.get("section_id"))),
                 (
                     "sectionName".to_string(),
-                    r.get::<_, Option<String>>("section_name").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("section_name")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "subjectType".to_string(),
-                    r.get::<_, Option<String>>("subject_type").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("subject_type")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "isTop".to_string(),
@@ -401,7 +419,10 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
                 ),
                 ("isCream".to_string(), Value::Bool(r.get("is_cream"))),
                 ("isOriginal".to_string(), Value::Bool(r.get("is_original"))),
-                ("isRecommend".to_string(), Value::Bool(r.get("is_recommend"))),
+                (
+                    "isRecommend".to_string(),
+                    Value::Bool(r.get("is_recommend")),
+                ),
                 ("locked".to_string(), Value::Bool(r.get("locked"))),
                 ("completed".to_string(), Value::Bool(r.get("completed"))),
                 (
@@ -442,18 +463,27 @@ pub async fn u2_subject_save(pool: Extension<Pool>, body: axum::extract::Json<Va
              section_id, section_name, subject_type, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())",
             &[
-                &id, &title, &content, &creator, &creator, &forum_id, &section_id,
-                &section_name, &subject_type,
+                &id,
+                &title,
+                &content,
+                &creator,
+                &creator,
+                &forum_id,
+                &section_id,
+                &section_name,
+                &subject_type,
             ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(title)),
-        ("sectionId".to_string(), Value::String(section_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(title)),
+            ("sectionId".to_string(), Value::String(section_id)),
+        ]),
+    ))))
 }
 
 /// GET user/subject/acceptreply/{id}/{replyId} — 设定被采纳回复（owner 门禁）。
@@ -482,11 +512,13 @@ pub async fn u2_subject_accept_reply(
                     &[&reply_id],
                 )
                 .await;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("acceptReplyId".to_string(), Value::String(reply_id)),
-                ("updated".to_string(), Value::Bool(affected > 0)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("acceptReplyId".to_string(), Value::String(reply_id)),
+                    ("updated".to_string(), Value::Bool(affected > 0)),
+                ]),
+            ))))
         }
     }
 }
@@ -511,10 +543,12 @@ pub async fn u2_subject_unaccept_reply(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("acceptReplyId".to_string(), Value::Null),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("acceptReplyId".to_string(), Value::Null),
+                ]),
+            ))))
         }
     }
 }
@@ -539,9 +573,9 @@ pub async fn u2_subject_soft_delete(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("deleted".to_string(), Value::Bool(affected > 0)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+            ))))
         }
     }
 }
@@ -571,11 +605,13 @@ pub async fn u2_subject_change_section(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("sectionId".to_string(), Value::String(section_id)),
-                ("updated".to_string(), Value::Bool(affected > 0)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("sectionId".to_string(), Value::String(section_id)),
+                    ("updated".to_string(), Value::Bool(affected > 0)),
+                ]),
+            ))))
         }
     }
 }
@@ -613,11 +649,13 @@ pub async fn u2_vote_submit(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(record_id)),
-        ("subjectId".to_string(), Value::String(topic_id)),
-        ("voted".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(record_id)),
+            ("subjectId".to_string(), Value::String(topic_id)),
+            ("voted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// PUT user/subject/voterecord/list/page/{page}/count/{count} — 投票记录分页。
@@ -655,23 +693,34 @@ pub async fn u2_voterecord_list(
                 ("id".to_string(), Value::String(r.get("id"))),
                 (
                     "person".to_string(),
-                    r.get::<_, Option<String>>("person").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("person")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "optionId".to_string(),
-                    r.get::<_, Option<String>>("option_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("option_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "optionName".to_string(),
-                    r.get::<_, Option<String>>("option_name").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("option_name")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("total".to_string(), Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0)))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0))),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// PUT user/subject/my/list/page/{page}/count/{count} — 我的主题分页（按会话人）。
@@ -717,20 +766,32 @@ pub async fn u2_my_subject_list(
                 ),
                 (
                     "creator".to_string(),
-                    r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "forumId".to_string(),
-                    r.get::<_, Option<String>>("forum_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("forum_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
-                ("createTime".to_string(), Value::String(r.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(r.get("create_time")),
+                ),
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("total".to_string(), Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0)))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0))),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// PUT user/reply/my/list/page/{page}/count/{count} — 我的回复分页。
@@ -768,21 +829,33 @@ pub async fn u2_my_reply_list(
                 ("id".to_string(), Value::String(r.get("id"))),
                 (
                     "topicId".to_string(),
-                    r.get::<_, Option<String>>("topic_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("topic_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 ("content".to_string(), Value::String(r.get("content"))),
                 (
                     "creator".to_string(),
-                    r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
-                ("createTime".to_string(), Value::String(r.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(r.get("create_time")),
+                ),
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("total".to_string(), Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0)))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0))),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -802,22 +875,28 @@ pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(r) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
-            (
-                "topicId".to_string(),
-                r.get::<_, Option<String>>("topic_id").map(Value::String).unwrap_or(Value::Null),
-            ),
-            ("content".to_string(), Value::String(r.get("content"))),
-            (
-                "creator".to_string(),
-                r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
-            ),
-            (
-                "accepted".to_string(),
-                Value::Bool(r.get::<_, Option<bool>>("accepted").unwrap_or(false)),
-            ),
-        ]))))),
+        Some(r) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(r.get("id"))),
+                (
+                    "topicId".to_string(),
+                    r.get::<_, Option<String>>("topic_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("content".to_string(), Value::String(r.get("content"))),
+                (
+                    "creator".to_string(),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "accepted".to_string(),
+                    Value::Bool(r.get::<_, Option<bool>>("accepted").unwrap_or(false)),
+                ),
+            ]),
+        )))),
         None => Ok(Json(ActionResult::error("reply not found"))),
     }
 }
@@ -861,7 +940,10 @@ pub async fn u2_reply_filter_list(
                 .await
                 .map_err(|_| AppError::Internal)?;
             let t = client
-                .query_one("SELECT COUNT(*) FROM x_bbs_reply WHERE deleted_at IS NULL", &[])
+                .query_one(
+                    "SELECT COUNT(*) FROM x_bbs_reply WHERE deleted_at IS NULL",
+                    &[],
+                )
                 .await
                 .map_err(|_| AppError::Internal)?;
             (rows, t.get::<_, i64>(0))
@@ -874,25 +956,37 @@ pub async fn u2_reply_filter_list(
                 ("id".to_string(), Value::String(r.get("id"))),
                 (
                     "topicId".to_string(),
-                    r.get::<_, Option<String>>("topic_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("topic_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 ("content".to_string(), Value::String(r.get("content"))),
                 (
                     "creator".to_string(),
-                    r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("total".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// POST user/reply — 发表回复（Java ReplyInfoManagerUserAction.save）。
 #[allow(non_snake_case)]
-pub async fn u2_user_reply_save(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
+pub async fn u2_user_reply_save(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> ApiResult {
     let content = match body_str(&body, &["content"]) {
         Some(v) => v,
         None => return Err(AppError::BadRequest("content is required".to_string())),
@@ -912,10 +1006,12 @@ pub async fn u2_user_reply_save(pool: Extension<Pool>, body: axum::extract::Json
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("topicId".to_string(), Value::String(topic_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("topicId".to_string(), Value::String(topic_id)),
+        ]),
+    ))))
 }
 
 /// PUT user/reply/accept — 采纳回复（owner 门禁：仅主题所有者可采纳）。
@@ -952,10 +1048,12 @@ pub async fn u2_user_reply_accept(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("subjectId".to_string(), Value::String(subject_id)),
-                ("acceptReplyId".to_string(), Value::String(reply_id)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("subjectId".to_string(), Value::String(subject_id)),
+                    ("acceptReplyId".to_string(), Value::String(reply_id)),
+                ]),
+            ))))
         }
     }
 }
@@ -980,9 +1078,9 @@ pub async fn u2_user_reply_delete(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("deleted".to_string(), Value::Bool(affected > 0)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+            ))))
         }
     }
 }
@@ -1018,10 +1116,12 @@ pub async fn u2_user_forum_save(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
 }
 
 /// DELETE user/forum/{id} — 软删论坛（admin）。
@@ -1041,9 +1141,9 @@ pub async fn u2_user_forum_delete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("deleted".to_string(), Value::Bool(affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+    ))))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1057,7 +1157,9 @@ fn section_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ("forumId".to_string(), Value::String(row.get("forum_id"))),
         (
             "parentId".to_string(),
-            row.get::<_, Option<String>>("parent_id").map(Value::String).unwrap_or(Value::Null),
+            row.get::<_, Option<String>>("parent_id")
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
         (
             "sort".to_string(),
@@ -1072,14 +1174,21 @@ fn section_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     ]))
 }
 
-async fn query_sections(client: &PgClient, where_clause: &str, param: &str) -> Result<Vec<Value>, AppError> {
+async fn query_sections(
+    client: &PgClient,
+    where_clause: &str,
+    param: &str,
+) -> Result<Vec<Value>, AppError> {
     // where_clause 仅由本模块常量字面量传入。
     let sql = format!(
         "SELECT id, name, forum_id, parent_id, sort, description FROM x_bbs_section \
          WHERE deleted_at IS NULL AND {} ORDER BY sort, create_time",
         where_clause
     );
-    let rows = client.query(sql.as_str(), &[&param]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql.as_str(), &[&param])
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(rows.iter().map(section_row_to_value).collect())
 }
 
@@ -1100,16 +1209,27 @@ pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "parent_id = $1", &id).await?;
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// GET user/section/forum/{forumId} — 论坛下的版块。
 #[allow(non_snake_case)]
-pub async fn u2_user_section_forum(pool: Extension<Pool>, Path(forum_id): Path<String>) -> ApiResult {
+pub async fn u2_user_section_forum(
+    pool: Extension<Pool>,
+    Path(forum_id): Path<String>,
+) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "forum_id = $1", &forum_id).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// GET user/section/sub/{sectionId} — 子版块全量（管理视图）。
@@ -1150,11 +1270,13 @@ pub async fn u2_user_section_save(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("forumId".to_string(), Value::String(forum_id)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("forumId".to_string(), Value::String(forum_id)),
+        ]),
+    ))))
 }
 
 /// DELETE user/section/{id} — 软删版块（admin）。
@@ -1174,9 +1296,9 @@ pub async fn u2_user_section_delete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("deleted".to_string(), Value::Bool(affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+    ))))
 }
 
 /// DELETE user/section/force/{id} — 物理删除版块（admin）。
@@ -1193,9 +1315,9 @@ pub async fn u2_user_section_delete_force(
         .execute("DELETE FROM x_bbs_section WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("deleted".to_string(), Value::Bool(affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+    ))))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1205,11 +1327,26 @@ pub async fn u2_user_section_delete_force(
 fn role_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), row_opt_json::<String>(row, "name").unwrap_or(Value::Null)),
-        ("code".to_string(), row_opt_json::<String>(row, "code").unwrap_or(Value::Null)),
-        ("description".to_string(), row_opt_json::<String>(row, "description").unwrap_or(Value::Null)),
-        ("forumId".to_string(), row_opt_json::<String>(row, "forum_id").unwrap_or(Value::Null)),
-        ("sectionId".to_string(), row_opt_json::<String>(row, "section_id").unwrap_or(Value::Null)),
+        (
+            "name".to_string(),
+            row_opt_json::<String>(row, "name").unwrap_or(Value::Null),
+        ),
+        (
+            "code".to_string(),
+            row_opt_json::<String>(row, "code").unwrap_or(Value::Null),
+        ),
+        (
+            "description".to_string(),
+            row_opt_json::<String>(row, "description").unwrap_or(Value::Null),
+        ),
+        (
+            "forumId".to_string(),
+            row_opt_json::<String>(row, "forum_id").unwrap_or(Value::Null),
+        ),
+        (
+            "sectionId".to_string(),
+            row_opt_json::<String>(row, "section_id").unwrap_or(Value::Null),
+        ),
     ]))
 }
 
@@ -1245,7 +1382,11 @@ pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// POST user/role — 创建角色（admin）。
@@ -1273,16 +1414,26 @@ pub async fn u2_role_save(
         .execute(
             "INSERT INTO x_bbs_role (id, name, code, description, forum_id, section_id, creator) \
              VALUES ($1, $2, $3, $4, NULLIF($5,''), NULLIF($6,''), $7)",
-            &[&id, &name, &code, &description, &forum_id, &section_id, &creator],
+            &[
+                &id,
+                &name,
+                &code,
+                &description,
+                &forum_id,
+                &section_id,
+                &creator,
+            ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("code".to_string(), Value::String(code)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("code".to_string(), Value::String(code)),
+        ]),
+    ))))
 }
 
 /// DELETE user/role/{id} — 软删角色（admin）。
@@ -1302,9 +1453,9 @@ pub async fn u2_role_delete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("deleted".to_string(), Value::Bool(affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+    ))))
 }
 
 async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) -> ApiResult {
@@ -1315,15 +1466,25 @@ async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) 
         column
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(sql.as_str(), &[&value]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql.as_str(), &[&value])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// PUT user/role/forum/{forumId} — 按论坛列角色。
 #[allow(non_snake_case)]
-pub async fn u2_role_list_by_forum(pool: Extension<Pool>, Path(forum_id): Path<String>) -> ApiResult {
+pub async fn u2_role_list_by_forum(
+    pool: Extension<Pool>,
+    Path(forum_id): Path<String>,
+) -> ApiResult {
     list_roles_by_column(pool, "forum_id", &forum_id).await
 }
 
@@ -1378,9 +1539,18 @@ fn bind_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("roleId".to_string(), Value::String(row.get("role_id"))),
-        ("objectType".to_string(), row_opt_json::<String>(row, "object_type").unwrap_or(Value::Null)),
-        ("objectCode".to_string(), row_opt_json::<String>(row, "object_code").unwrap_or(Value::Null)),
-        ("objectName".to_string(), row_opt_json::<String>(row, "object_name").unwrap_or(Value::Null)),
+        (
+            "objectType".to_string(),
+            row_opt_json::<String>(row, "object_type").unwrap_or(Value::Null),
+        ),
+        (
+            "objectCode".to_string(),
+            row_opt_json::<String>(row, "object_code").unwrap_or(Value::Null),
+        ),
+        (
+            "objectName".to_string(),
+            row_opt_json::<String>(row, "object_name").unwrap_or(Value::Null),
+        ),
     ]))
 }
 
@@ -1395,10 +1565,17 @@ pub async fn u2_role_bind_object(
     u2_require_admin(&pool, &session).await?;
     let role_id = {
         let client = pool.get().await.map_err(|_| AppError::Internal)?;
-        resolve_role_id(&client, body_str(&body, &["roleId"]), body_str(&body, &["roleCode"])).await?
+        resolve_role_id(
+            &client,
+            body_str(&body, &["roleId"]),
+            body_str(&body, &["roleCode"]),
+        )
+        .await?
     };
     let Some(role_id) = role_id else {
-        return Err(AppError::BadRequest("roleId or valid roleCode required".to_string()));
+        return Err(AppError::BadRequest(
+            "roleId or valid roleCode required".to_string(),
+        ));
     };
     let objects = body
         .get("objects")
@@ -1427,14 +1604,26 @@ pub async fn u2_role_bind_object(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        insert_bind(&client, &role_id, &object_type, &object_code, &object_name, &session.person_unique)
-            .await?;
+        insert_bind(
+            &client,
+            &role_id,
+            &object_type,
+            &object_code,
+            &object_name,
+            &session.person_unique,
+        )
+        .await?;
         bound += 1;
     }
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("roleId".to_string(), Value::String(role_id)),
-        ("bound".to_string(), Value::Number(serde_json::Number::from(bound as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("roleId".to_string(), Value::String(role_id)),
+            (
+                "bound".to_string(),
+                Value::Number(serde_json::Number::from(bound as i64)),
+            ),
+        ]),
+    ))))
 }
 
 /// PUT user/role/bind/role — 把人绑定到一组角色（admin）。
@@ -1458,14 +1647,21 @@ pub async fn u2_role_bind_user(
     let mut bound = 0usize;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     for rid in role_ids {
-        let Some(rid) = rid.as_str().map(String::from) else { continue };
+        let Some(rid) = rid.as_str().map(String::from) else {
+            continue;
+        };
         insert_bind(&client, &rid, "person", &person, "", &session.person_unique).await?;
         bound += 1;
     }
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("personCode".to_string(), Value::String(person)),
-        ("bound".to_string(), Value::Number(serde_json::Number::from(bound as i64))),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("personCode".to_string(), Value::String(person)),
+            (
+                "bound".to_string(),
+                Value::Number(serde_json::Number::from(bound as i64)),
+            ),
+        ]),
+    ))))
 }
 
 async fn binds_for_role(client: &PgClient, role_id: &str) -> Result<Vec<Value>, AppError> {
@@ -1481,7 +1677,10 @@ async fn binds_for_role(client: &PgClient, role_id: &str) -> Result<Vec<Value>, 
 
 /// PUT user/role/rolecode/selected — 按 roleCode 列绑定对象。
 #[allow(non_snake_case)]
-pub async fn u2_role_selected_by_code(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
+pub async fn u2_role_selected_by_code(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> ApiResult {
     let code = match body_str(&body, &["roleCode", "code"]) {
         Some(v) => v,
         None => return Err(AppError::BadRequest("roleCode is required".to_string())),
@@ -1492,13 +1691,19 @@ pub async fn u2_role_selected_by_code(pool: Extension<Pool>, body: axum::extract
         return Ok(Json(ActionResult::error("role not found")));
     };
     let data = binds_for_role(&client, &role_id).await?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("roleId".to_string(), Value::String(role_id)),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("roleId".to_string(), Value::String(role_id)),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
-async fn roles_bound_to(client: &PgClient, object_type: &str, object_code: &str) -> Result<Vec<Value>, AppError> {
+async fn roles_bound_to(
+    client: &PgClient,
+    object_type: &str,
+    object_code: &str,
+) -> Result<Vec<Value>, AppError> {
     // object_type 仅由本模块常量字面量（"unit"/"person"）传入。
     let sql = format!(
         "SELECT r.id, r.name, r.code, r.description, r.forum_id, r.section_id \
@@ -1506,7 +1711,10 @@ async fn roles_bound_to(client: &PgClient, object_type: &str, object_code: &str)
          WHERE r.deleted_at IS NULL AND b.object_type = '{}' AND b.object_code = $1",
         object_type
     );
-    let rows = client.query(sql.as_str(), &[&object_code]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql.as_str(), &[&object_code])
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(rows.iter().map(role_row_to_value).collect())
 }
 
@@ -1520,7 +1728,11 @@ pub async fn u2_role_by_unit(pool: Extension<Pool>, body: axum::extract::Json<Va
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = roles_bound_to(&client, "unit", &unit).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// PUT user/role/user/selected — 按人列出已绑角色。
@@ -1533,7 +1745,11 @@ pub async fn u2_role_by_user(pool: Extension<Pool>, body: axum::extract::Json<Va
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = roles_bound_to(&client, "person", &person).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1543,12 +1759,30 @@ pub async fn u2_role_by_user(pool: Extension<Pool>, body: axum::extract::Json<Va
 fn permission_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("code".to_string(), row_opt_json::<String>(row, "code").unwrap_or(Value::Null)),
-        ("name".to_string(), row_opt_json::<String>(row, "name").unwrap_or(Value::Null)),
-        ("forumId".to_string(), row_opt_json::<String>(row, "forum_id").unwrap_or(Value::Null)),
-        ("sectionId".to_string(), row_opt_json::<String>(row, "section_id").unwrap_or(Value::Null)),
-        ("roleCode".to_string(), row_opt_json::<String>(row, "role_code").unwrap_or(Value::Null)),
-        ("maxReply".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_reply")))),
+        (
+            "code".to_string(),
+            row_opt_json::<String>(row, "code").unwrap_or(Value::Null),
+        ),
+        (
+            "name".to_string(),
+            row_opt_json::<String>(row, "name").unwrap_or(Value::Null),
+        ),
+        (
+            "forumId".to_string(),
+            row_opt_json::<String>(row, "forum_id").unwrap_or(Value::Null),
+        ),
+        (
+            "sectionId".to_string(),
+            row_opt_json::<String>(row, "section_id").unwrap_or(Value::Null),
+        ),
+        (
+            "roleCode".to_string(),
+            row_opt_json::<String>(row, "role_code").unwrap_or(Value::Null),
+        ),
+        (
+            "maxReply".to_string(),
+            Value::Number(serde_json::Number::from(row.get::<_, i64>("max_reply"))),
+        ),
         ("publish".to_string(), Value::Bool(row.get("publish"))),
         ("reply".to_string(), Value::Bool(row.get("reply"))),
         ("visible".to_string(), Value::Bool(row.get("visible"))),
@@ -1566,12 +1800,17 @@ pub async fn u2_permission_root(pool: Extension<Pool>) -> ApiResult {
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0)))),
-        // 无显式权限配置时与 Java 默认一致：登录即可发帖回帖。
-        ("defaultPublishable".to_string(), Value::Bool(true)),
-        ("defaultReplyPublishable".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0))),
+            ),
+            // 无显式权限配置时与 Java 默认一致：登录即可发帖回帖。
+            ("defaultPublishable".to_string(), Value::Bool(true)),
+            ("defaultReplyPublishable".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str) -> ApiResult {
@@ -1582,10 +1821,17 @@ async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str)
         column
     );
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client.query(sql.as_str(), &[&value]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(sql.as_str(), &[&value])
+        .await
+        .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(permission_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -1594,12 +1840,18 @@ pub async fn u2_permission_admin_forum(pool: Extension<Pool>, Path(id): Path<Str
 }
 
 #[allow(non_snake_case)]
-pub async fn u2_permission_admin_section(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+pub async fn u2_permission_admin_section(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> ApiResult {
     permissions_by_column(pool, "section_id", &id).await
 }
 
 #[allow(non_snake_case)]
-pub async fn u2_permission_admin_role(pool: Extension<Pool>, Path(code): Path<String>) -> ApiResult {
+pub async fn u2_permission_admin_role(
+    pool: Extension<Pool>,
+    Path(code): Path<String>,
+) -> ApiResult {
     permissions_by_column(pool, "role_code", &code).await
 }
 
@@ -1610,13 +1862,25 @@ pub async fn u2_permission_admin_role(pool: Extension<Pool>, Path(code): Path<St
 fn setting_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), row_opt_json::<String>(row, "name").unwrap_or(Value::Null)),
-        ("code".to_string(), row_opt_json::<String>(row, "code").unwrap_or(Value::Null)),
-        ("value".to_string(), row_opt_json::<String>(row, "value").unwrap_or(Value::Null)),
+        (
+            "name".to_string(),
+            row_opt_json::<String>(row, "name").unwrap_or(Value::Null),
+        ),
+        (
+            "code".to_string(),
+            row_opt_json::<String>(row, "code").unwrap_or(Value::Null),
+        ),
+        (
+            "value".to_string(),
+            row_opt_json::<String>(row, "value").unwrap_or(Value::Null),
+        ),
     ]))
 }
 
-async fn query_settings(client: &PgClient, filter: Option<(&str, &str)>) -> Result<Vec<Value>, AppError> {
+async fn query_settings(
+    client: &PgClient,
+    filter: Option<(&str, &str)>,
+) -> Result<Vec<Value>, AppError> {
     let rows = match filter {
         Some((col, val)) => {
             // col 仅由本模块常量字面量传入（"code"/"id"）。
@@ -1652,9 +1916,9 @@ pub async fn u2_setting_bbs_name(pool: Extension<Pool>) -> ApiResult {
         .and_then(|v| v.as_str())
         .unwrap_or("O2社区")
         .to_string();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("bbsName".to_string(), Value::String(name)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("bbsName".to_string(), Value::String(name))]),
+    ))))
 }
 
 /// GET user/setting/{id} — 单条配置。
@@ -1674,7 +1938,11 @@ pub async fn u2_setting_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, None).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// PUT user/setting — 更新/新增配置（admin；按 id 更新，未命中则插入）。
@@ -1713,17 +1981,22 @@ pub async fn u2_setting_update(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("code".to_string(), Value::String(code)),
-        ("value".to_string(), Value::String(value)),
-        ("updated".to_string(), Value::Bool(affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("code".to_string(), Value::String(code)),
+            ("value".to_string(), Value::String(value)),
+            ("updated".to_string(), Value::Bool(affected > 0)),
+        ]),
+    ))))
 }
 
 /// PUT user/setting/code — 按 code 查配置（Java getByCode）。
 #[allow(non_snake_case)]
-pub async fn u2_setting_get_by_code(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
+pub async fn u2_setting_get_by_code(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> ApiResult {
     let code = match body_str(&body, &["code"]) {
         Some(v) => v,
         None => return Err(AppError::BadRequest("code is required".to_string())),
@@ -1731,7 +2004,11 @@ pub async fn u2_setting_get_by_code(pool: Extension<Pool>, body: axum::extract::
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, Some(("code", &code))).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1751,7 +2028,9 @@ pub async fn u2_userinfo_update_nick(
         .cloned()
         .filter(|s| !s.trim().is_empty());
     let Some(nickname) = nickname else {
-        return Err(AppError::BadRequest("nickname query param is required".to_string()));
+        return Err(AppError::BadRequest(
+            "nickname query param is required".to_string(),
+        ));
     };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1772,11 +2051,13 @@ pub async fn u2_userinfo_update_nick(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("person".to_string(), Value::String(person)),
-                ("nickname".to_string(), Value::String(nickname)),
-                ("updated".to_string(), Value::Bool(true)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("person".to_string(), Value::String(person)),
+                    ("nickname".to_string(), Value::String(nickname)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
         }
         None => {
             let id = Uuid::new_v4().to_string();
@@ -1787,18 +2068,23 @@ pub async fn u2_userinfo_update_nick(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("person".to_string(), Value::String(person)),
-                ("nickname".to_string(), Value::String(nickname)),
-                ("updated".to_string(), Value::Bool(false)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("person".to_string(), Value::String(person)),
+                    ("nickname".to_string(), Value::String(nickname)),
+                    ("updated".to_string(), Value::Bool(false)),
+                ]),
+            ))))
         }
     }
 }
 
 /// PUT userinfo/filterUserInfo — 按昵称模糊过滤 BBS 用户。
 #[allow(non_snake_case)]
-pub async fn u2_userinfo_filter(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
+pub async fn u2_userinfo_filter(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = match body_str(&body, &["name", "nickName", "key"]) {
         Some(key) => {
@@ -1830,25 +2116,37 @@ pub async fn u2_userinfo_filter(pool: Extension<Pool>, body: axum::extract::Json
                 ("id".to_string(), Value::String(r.get("id"))),
                 (
                     "person".to_string(),
-                    r.get::<_, Option<String>>("person").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("person")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "nickname".to_string(),
-                    r.get::<_, Option<String>>("nick_name").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("nick_name")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "icon".to_string(),
-                    r.get::<_, Option<String>>("icon").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("icon")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "signature".to_string(),
-                    r.get::<_, Option<String>>("signature").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("signature")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
             ]))
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1861,11 +2159,26 @@ const SUBJECT_ATTACHMENT_TABLE: &str = "x_bbs_subject_attachment";
 fn attachment_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("subjectId".to_string(), row_opt_json::<String>(row, "subject_id").unwrap_or(Value::Null)),
-        ("name".to_string(), row_opt_json::<String>(row, "name").unwrap_or(Value::Null)),
-        ("extension".to_string(), row_opt_json::<String>(row, "extension").unwrap_or(Value::Null)),
-        ("url".to_string(), row_opt_json::<String>(row, "url").unwrap_or(Value::Null)),
-        ("description".to_string(), row_opt_json::<String>(row, "description").unwrap_or(Value::Null)),
+        (
+            "subjectId".to_string(),
+            row_opt_json::<String>(row, "subject_id").unwrap_or(Value::Null),
+        ),
+        (
+            "name".to_string(),
+            row_opt_json::<String>(row, "name").unwrap_or(Value::Null),
+        ),
+        (
+            "extension".to_string(),
+            row_opt_json::<String>(row, "extension").unwrap_or(Value::Null),
+        ),
+        (
+            "url".to_string(),
+            row_opt_json::<String>(row, "url").unwrap_or(Value::Null),
+        ),
+        (
+            "description".to_string(),
+            row_opt_json::<String>(row, "description").unwrap_or(Value::Null),
+        ),
         (
             "length".to_string(),
             Value::Number(serde_json::Number::from(
@@ -1910,7 +2223,11 @@ pub async fn u2_attachment_list_by_subject(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// DELETE attachment/{id} — 软删附件（owner 门禁）。
@@ -1933,9 +2250,9 @@ pub async fn u2_attachment_delete(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("deleted".to_string(), Value::Bool(affected > 0)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+            ))))
         }
     }
 }
@@ -1960,7 +2277,10 @@ pub async fn u2_subjectattach_get(pool: Extension<Pool>, Path(id): Path<String>)
 
 /// GET subjectattach/list/subject/{id} — 真实查询（替换 unwrap_or_default 存根）。
 #[allow(non_snake_case)]
-pub async fn u2_subjectattach_list(pool: Extension<Pool>, Path(subject_id): Path<String>) -> ApiResult {
+pub async fn u2_subjectattach_list(
+    pool: Extension<Pool>,
+    Path(subject_id): Path<String>,
+) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -1972,15 +2292,24 @@ pub async fn u2_subjectattach_list(pool: Extension<Pool>, Path(subject_id): Path
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// GET subjectattach/{id}/binary/base64/{size} — 存量字节转 base64。
 /// Java 版会按 size 缩放图片；无图像引擎时返回原始字节 base64（size 仅透传）。
 #[allow(non_snake_case)]
-pub async fn u2_subjectattach_base64(pool: Extension<Pool>, Path((id, size)): Path<(String, i64)>) -> ApiResult {
+pub async fn u2_subjectattach_base64(
+    pool: Extension<Pool>,
+    Path((id, size)): Path<(String, i64)>,
+) -> ApiResult {
     if size <= 0 || size > 4096 {
-        return Err(AppError::BadRequest("size must be within (0, 4096]".to_string()));
+        return Err(AppError::BadRequest(
+            "size must be within (0, 4096]".to_string(),
+        ));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1994,12 +2323,19 @@ pub async fn u2_subjectattach_base64(pool: Extension<Pool>, Path((id, size)): Pa
         Some(r) => {
             let content: Option<Vec<u8>> = r.get("content");
             match content {
-                Some(bytes) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-                    ("base64".to_string(), Value::String(base64_encode(&bytes))),
-                ]))))),
-                None => Ok(Json(ActionResult::error("attachment has no binary content"))),
+                Some(bytes) => Ok(Json(ActionResult::success(Value::Object(
+                    serde_json::Map::from_iter([
+                        ("id".to_string(), Value::String(id)),
+                        (
+                            "size".to_string(),
+                            Value::Number(serde_json::Number::from(size)),
+                        ),
+                        ("base64".to_string(), Value::String(base64_encode(&bytes))),
+                    ]),
+                )))),
+                None => Ok(Json(ActionResult::error(
+                    "attachment has no binary content",
+                ))),
             }
         }
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -2014,7 +2350,9 @@ pub async fn u2_subjectattach_delete(
     Path(id): Path<String>,
 ) -> ApiResult {
     let pool = pool.0;
-    match gate_attachment_owner(&pool, SUBJECT_ATTACHMENT_TABLE, &id, &session.person_unique).await? {
+    match gate_attachment_owner(&pool, SUBJECT_ATTACHMENT_TABLE, &id, &session.person_unique)
+        .await?
+    {
         U2Gate::NotFound => Ok(Json(ActionResult::error("attachment not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
@@ -2026,9 +2364,9 @@ pub async fn u2_subjectattach_delete(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("deleted".to_string(), Value::Bool(affected > 0)),
-            ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+            ))))
         }
     }
 }
@@ -2039,7 +2377,10 @@ pub async fn u2_subjectattach_delete(
 
 /// GET shutup/get/shutup — 当前会话人的禁言记录。
 #[allow(non_snake_case)]
-pub async fn u2_shutup_get_mine(pool: Extension<Pool>, session: Extension<shared::session::Session>) -> ApiResult {
+pub async fn u2_shutup_get_mine(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> ApiResult {
     let person = session.person_unique.clone();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2057,15 +2398,27 @@ pub async fn u2_shutup_get_mine(pool: Extension<Pool>, session: Extension<shared
                 ("id".to_string(), Value::String(r.get("id"))),
                 (
                     "person".to_string(),
-                    r.get::<_, Option<String>>("person").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("person")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
-                ("reason".to_string(), row_opt_json::<String>(r, "reason").unwrap_or(Value::Null)),
-                ("createTime".to_string(), Value::String(r.get("create_time"))),
+                (
+                    "reason".to_string(),
+                    row_opt_json::<String>(r, "reason").unwrap_or(Value::Null),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(r.get("create_time")),
+                ),
             ]))
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(Value::Array(data), total_data as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        total_data as i64,
+        0,
+    )))
 }
 
 /// DELETE shutup/{id} — 解除禁言（admin 门禁；对齐 ShutupAction.delete 管理语义）。
@@ -2082,9 +2435,9 @@ pub async fn u2_shutup_delete_admin(
         .execute("DELETE FROM x_bbs_shutup WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("deleted".to_string(), Value::Bool(affected > 0)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
+    ))))
 }
 
 /// GET subject/statgrade/sectionName/{s}/subjectType/{t} — 按版块与类型统计等级分布。
@@ -2113,7 +2466,10 @@ pub async fn u2_statgrade(
             .unwrap_or_else(|| "none".to_string());
         grades.insert(grade, Value::Number(serde_json::Number::from(count)));
     }
-    grades.insert("total".to_string(), Value::Number(serde_json::Number::from(total)));
+    grades.insert(
+        "total".to_string(),
+        Value::Number(serde_json::Number::from(total)),
+    );
     Ok(Json(ActionResult::success(Value::Object(grades))))
 }
 
@@ -2138,7 +2494,10 @@ pub async fn u2_subject_search_page(
             .await
             .map_err(|_| AppError::Internal)?;
         let total_row = client
-            .query_one("SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL", &[])
+            .query_one(
+                "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL",
+                &[],
+            )
             .await
             .map_err(|_| AppError::Internal)?;
         return search_response(&rows, total_row.get::<_, i64>(0));
@@ -2181,19 +2540,28 @@ fn search_response(rows: &[deadpool_postgres::tokio_postgres::Row], total: i64) 
                 ),
                 (
                     "creator".to_string(),
-                    r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "forumId".to_string(),
-                    r.get::<_, Option<String>>("forum_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("forum_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("total".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 /// POST subject/filter/listsubjectinfo/page/{page}/count/{count} — 带体过滤的分页。
@@ -2222,7 +2590,10 @@ pub async fn u2_subject_listsubjectinfo_page(
     }
     if let Some(v) = creator {
         sparams.push(v);
-        conds.push(format!("(creator = ${0} OR author_id = ${0})", sparams.len()));
+        conds.push(format!(
+            "(creator = ${0} OR author_id = ${0})",
+            sparams.len()
+        ));
     }
     let where_sql = conds.join(" AND ");
     let count_sql = format!("SELECT COUNT(*) FROM x_bbs_topic WHERE {}", where_sql);
@@ -2232,8 +2603,10 @@ pub async fn u2_subject_listsubjectinfo_page(
         where_sql, count, offset
     );
 
-    let filter_params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
-        sparams.iter().map(|s| s as &(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)).collect();
+    let filter_params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> = sparams
+        .iter()
+        .map(|s| s as &(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync))
+        .collect();
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let total_row = client
@@ -2259,26 +2632,38 @@ pub async fn u2_subject_listsubjectinfo_page(
                 ),
                 (
                     "creator".to_string(),
-                    r.get::<_, Option<String>>("creator").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("creator")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "forumId".to_string(),
-                    r.get::<_, Option<String>>("forum_id").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("forum_id")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "sectionName".to_string(),
-                    r.get::<_, Option<String>>("section_name").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("section_name")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
                 (
                     "subjectType".to_string(),
-                    r.get::<_, Option<String>>("subject_type").map(Value::String).unwrap_or(Value::Null),
+                    r.get::<_, Option<String>>("subject_type")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
                 ),
             ]))
         })
         .collect();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("total".to_string(), Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0)))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "total".to_string(),
+                Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0))),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
-

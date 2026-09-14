@@ -30,14 +30,22 @@ impl RedisPool {
     }
 
     /// 从 URL 创建连接池，支持自定义重试次数和延迟
-    pub async fn from_url_with_retry(url: &str, max_retries: u32, retry_delay: Duration) -> anyhow::Result<Self> {
-        let client = redis::Client::open(url.to_string()).context("failed to create Redis client")?;
+    pub async fn from_url_with_retry(
+        url: &str,
+        max_retries: u32,
+        retry_delay: Duration,
+    ) -> anyhow::Result<Self> {
+        let client =
+            redis::Client::open(url.to_string()).context("failed to create Redis client")?;
         let mut last_err = None;
         for attempt in 0..=max_retries {
             match client.get_connection_manager().await {
                 Ok(manager) => {
                     if attempt > 0 {
-                        tracing::info!(attempt = attempt, "Redis connection established after retries");
+                        tracing::info!(
+                            attempt = attempt,
+                            "Redis connection established after retries"
+                        );
                     }
                     return Ok(Self(Arc::new(InnerRedisPool {
                         manager: Mutex::new(Some(manager)),
@@ -55,7 +63,11 @@ impl RedisPool {
             }
         }
         let err = last_err.unwrap();
-        Err(anyhow::anyhow!("failed to connect to Redis after {} retries: {}", max_retries, err))
+        Err(anyhow::anyhow!(
+            "failed to connect to Redis after {} retries: {}",
+            max_retries,
+            err
+        ))
     }
 
     /// 获取连接并执行异步操作（带重试）
@@ -84,7 +96,8 @@ impl RedisPool {
 
     /// 尝试重连 Redis
     pub async fn reconnect(&self) -> anyhow::Result<()> {
-        let client = redis::Client::open(self.0.url.to_string()).context("failed to create Redis client")?;
+        let client =
+            redis::Client::open(self.0.url.to_string()).context("failed to create Redis client")?;
         let manager = client.get_connection_manager().await?;
         let mut guard = self.0.manager.lock().await;
         *guard = Some(manager);
@@ -94,7 +107,9 @@ impl RedisPool {
 
 /// 读取环境变量中的 Redis URL
 pub fn redis_url_from_env() -> Option<String> {
-    std::env::var("REDIS_URL").ok().filter(|s| !s.trim().is_empty())
+    std::env::var("REDIS_URL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
 }
 
 #[cfg(test)]

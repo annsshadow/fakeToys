@@ -11,6 +11,7 @@ use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use super::constants::*;
+use crate::config::AuthConfig;
 use crate::error::AppError;
 use crate::rate_limit::RateLimiter;
 use crate::session::SessionManager;
@@ -19,41 +20,51 @@ use crate::session::SessionManager;
 // CORS 中间件
 //
 // 允许 o2web 前端跨域访问，支持凭据（Authorization/Cookie）。
-// 仅允许 GET/POST/HEAD/OPTIONS 方法，允许 Authorization/Content-Type 头。
+// 允许常用读写方法，允许 Authorization/Content-Type 头。
 // ──────────────────────────────────────────────────────────────────────────────
 pub fn cors_middleware() -> CorsLayer {
+    let config = AuthConfig::from_env().expect("invalid browser authentication configuration");
+    cors_middleware_for_origin(&config.public_origin)
+}
+
+pub fn cors_middleware_for_origin(public_origin: &str) -> CorsLayer {
     use tower_http::cors::AllowOrigin;
 
-    let origins: Vec<String> = env::var("CORS_ALLOW_ORIGIN")
-        .unwrap_or_default()
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-
-    let allow_origin = if origins.is_empty() {
-        AllowOrigin::exact(
-            "http://localhost:3000"
-                .parse::<HeaderValue>()
-                .expect("default origin parse"),
-        )
-    } else {
-        let header_values: Vec<HeaderValue> = origins
-            .into_iter()
-            .filter_map(|o| o.parse::<HeaderValue>().ok())
-            .collect();
-        if header_values.len() == 1 {
-            AllowOrigin::exact(header_values.into_iter().next().unwrap())
-        } else {
-            AllowOrigin::list(header_values)
+    // 除配置的 public_origin 外，放行其回环镜像（localhost ⇄ 127.0.0.1）：
+    // 同源访问经 127.0.0.1 时浏览器同样携带 Origin，精确单源白名单会把它
+    // 当跨域拒绝（实测 POST 同源 403）。
+    let mut origins = vec![public_origin
+        .parse::<HeaderValue>()
+        .expect("validated APP_PUBLIC_ORIGIN must be a valid header value")];
+    if let Ok(url) = url::Url::parse(public_origin) {
+        let port = url.port();
+        if let Some(host) = url.host_str() {
+            let mirror_host = match host {
+                "localhost" => Some("127.0.0.1"),
+                "127.0.0.1" => Some("localhost"),
+                _ => None,
+            };
+            if let Some(mirror) = mirror_host {
+                let mirror_origin = match port {
+                    Some(port) => format!("{}://{}:{}", url.scheme(), mirror, port),
+                    None => format!("{}://{}", url.scheme(), mirror),
+                };
+                if let Ok(value) = mirror_origin.parse::<HeaderValue>() {
+                    origins.push(value);
+                }
+            }
         }
-    };
+    }
+    let allow_origin = AllowOrigin::list(origins);
 
     CorsLayer::new()
         .allow_origin(allow_origin)
         .allow_methods([
             axum::http::Method::GET,
             axum::http::Method::POST,
+            axum::http::Method::PUT,
+            axum::http::Method::PATCH,
+            axum::http::Method::DELETE,
             axum::http::Method::HEAD,
             axum::http::Method::OPTIONS,
         ])
@@ -98,7 +109,9 @@ pub(crate) fn is_auth_exempt(path: &str) -> bool {
 
 pub(crate) fn is_auth_rate_limited(path: &str) -> bool {
     AUTH_RATE_LIMIT_EXACT.contains(&path)
-        || AUTH_RATE_LIMIT_PREFIXES.iter().any(|prefix| path_starts_with_segment(path, prefix))
+        || AUTH_RATE_LIMIT_PREFIXES
+            .iter()
+            .any(|prefix| path_starts_with_segment(path, prefix))
 }
 
 /// 路径段前缀匹配：`path` 等于 `prefix` 或 `prefix + "/"` 开头。
@@ -150,7 +163,10 @@ fn trusted_proxy_ips() -> &'static Vec<String> {
 
 fn first_xff_ip(request: &Request<Body>) -> Option<String> {
     let xff = request.headers().get("x-forwarded-for")?.to_str().ok()?;
-    xff.split(',').next().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+    xff.split(',')
+        .next()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 /// 从请求提取客户端 IP：可信代理来源的 X-Forwarded-For 第一个值，否则 socket 地址。
@@ -185,7 +201,12 @@ pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
 
     // 仅对服务端错误（5xx）打 warning 日志，避免正常请求污染日志
     if response.status().is_server_error() {
-        warn!(?method, ?uri, status = response.status().as_u16(), "server error");
+        warn!(
+            ?method,
+            ?uri,
+            status = response.status().as_u16(),
+            "server error"
+        );
     }
 
     response
@@ -241,18 +262,44 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     }
 
     let mut response = next.run(request).await;
-    response
-        .headers_mut()
-        .insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
+    response.headers_mut().insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
     response
         .headers_mut()
         .insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    response
-        .headers_mut()
-        .insert(header::REFERRER_POLICY, HeaderValue::from_static("strict-origin-when-cross-origin"));
+    response.headers_mut().insert(
+        header::REFERRER_POLICY,
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+
+    // Strict Content-Security-Policy (enforced, not report-only).
+    // - script-src allows 'unsafe-eval' for ECharts/CodeMirror runtime compilation.
+    // - style-src allows 'unsafe-inline' for Vue dynamic styles and Chart.js injection.
+    // - connect-src allows WebSocket (ws://*) and API calls.
+    // - frame-src/object-src blocked; base-uri/form-action restricted.
+    response.headers_mut().insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_str(
+            "default-src 'self'; \
+             script-src 'self' 'unsafe-eval'; \
+             style-src 'self' 'unsafe-inline'; \
+             img-src 'self' data: blob:; \
+             connect-src 'self' ws://localhost:* wss://* ws:*; \
+             font-src 'self'; \
+             object-src 'none'; \
+             frame-src 'none'; \
+             base-uri 'self'; \
+             form-action 'self'; \
+             upgrade-insecure-requests",
+        )
+        .unwrap(),
+    );
+
     response
 }
 

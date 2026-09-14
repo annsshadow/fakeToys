@@ -1,15 +1,15 @@
-use axum::{extract::Extension, extract::Path, extract::Query, Json};
+use axum::{extract::Extension, extract::Path, extract::Query, response::Response, Json};
+use base64::Engine;
 use deadpool_postgres::Pool;
+use hmac::{Hmac, Mac};
 use serde::Deserialize;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
-use sha2::{Digest, Sha256};
-use base64::Engine;
-use hmac::{Hmac, Mac};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // oauth — 企业微信 / 钉钉第三方登录
@@ -85,10 +85,13 @@ fn pkce_store() -> &'static Mutex<HashMap<String, PkceEntry>> {
 
 fn store_pkce(state: &str, code_verifier: &str) {
     let mut store = pkce_store().lock().unwrap();
-    store.insert(state.to_string(), PkceEntry {
-        code_verifier: code_verifier.to_string(),
-        expires_at: chrono::Utc::now() + chrono::Duration::minutes(10),
-    });
+    store.insert(
+        state.to_string(),
+        PkceEntry {
+            code_verifier: code_verifier.to_string(),
+            expires_at: chrono::Utc::now() + chrono::Duration::minutes(10),
+        },
+    );
 }
 
 fn validate_and_remove_pkce(state: &str, code_verifier: &str) -> bool {
@@ -121,7 +124,12 @@ pub fn verify_wechat_signature(token: &str, signature: &str, timestamp: &str, no
 
 /// 验证钉钉签名
 /// 算法：密钥 + 换行 + timestamp，计算 HMAC-SHA256，与 signature 对比
-pub fn verify_dingtalk_signature(app_secret: &str, signature: &str, timestamp: &str, _nonce: &str) -> bool {
+pub fn verify_dingtalk_signature(
+    app_secret: &str,
+    signature: &str,
+    timestamp: &str,
+    _nonce: &str,
+) -> bool {
     let key = format!("{}{}", app_secret, timestamp);
     let mut mac = Hmac::<Sha256>::new_from_slice(app_secret.as_bytes())
         .expect("HMAC can take key of any size");
@@ -265,7 +273,10 @@ async fn qywx_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppErr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = token_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = token_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -284,7 +295,10 @@ async fn qywx_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppErr
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = user_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = user_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -311,7 +325,10 @@ async fn dingding_user_id(config: &OAuthConfig, code: &str) -> Result<String, Ap
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = token_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = token_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -333,7 +350,10 @@ async fn dingding_user_id(config: &OAuthConfig, code: &str) -> Result<String, Ap
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let errcode = user_resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errcode = user_resp
+        .get("errcode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(-1);
     if errcode != 0 {
         return Err(AppError::Internal);
     }
@@ -359,7 +379,11 @@ fn validate_redirect_uri(redirect_uri: &str) -> Result<(), AppError> {
         };
         let host = host.to_string();
         let port = if port_str.is_empty() {
-            if scheme == "https" { 443 } else { 80 }
+            if scheme == "https" {
+                443
+            } else {
+                80
+            }
         } else {
             port_str.parse().ok()?
         };
@@ -373,7 +397,9 @@ fn validate_redirect_uri(redirect_uri: &str) -> Result<(), AppError> {
     if base == redirect {
         Ok(())
     } else {
-        Err(AppError::BadRequest("redirect_uri not in whitelist".to_string()))
+        Err(AppError::BadRequest(
+            "redirect_uri not in whitelist".to_string(),
+        ))
     }
 }
 
@@ -382,7 +408,7 @@ async fn login_or_create_user(
     pool: &Pool,
     session_manager: &SessionManager,
     unique_id: String,
-) -> Result<Value, AppError> {
+) -> Result<Response, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
@@ -395,7 +421,11 @@ async fn login_or_create_user(
         .map_err(|_| AppError::Internal)?;
 
     let (person_id, person_unique, person_name) = match row {
-        Some(r) => (r.get::<_, String>("id"), r.get::<_, String>("unique_id"), r.get::<_, String>("name")),
+        Some(r) => (
+            r.get::<_, String>("id"),
+            r.get::<_, String>("unique_id"),
+            r.get::<_, String>("name"),
+        ),
         None => {
             let id = uuid::Uuid::new_v4().to_string();
             let password_hash = crate::password::hash_password(&uuid::Uuid::new_v4().to_string());
@@ -412,16 +442,21 @@ async fn login_or_create_user(
     };
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
+    let session = session_manager
+        .create_session(person_unique.clone(), token)
+        .await?;
 
-    Ok(json!({
-        "token": session.token,
-        "person": {
-            "id": person_id,
-            "unique": person_unique,
-            "name": person_name,
-        },
-    }))
+    Ok(crate::session_response(
+        json!({
+            "person": {
+                "id": person_id,
+                "unique": person_unique,
+                "name": person_name,
+            },
+        }),
+        &session.token,
+        session_manager,
+    ))
 }
 
 /// GET /jaxrs/authentication/oauth/list —— 可用第三方登录提供方
@@ -440,14 +475,20 @@ pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
         }),
     ];
     let total_providers = providers.len();
-    Ok(Json(ActionResult::java_success(Value::Array(providers), total_providers as i64, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(providers),
+        total_providers as i64,
+        0,
+    )))
 }
 
 fn provider_config(name: &str) -> Result<OAuthConfig, AppError> {
     match name {
         QYWX_NAME => qywx_config().ok_or(AppError::Internal),
         DINGDING_NAME => dingding_config().ok_or(AppError::Internal),
-        _ => Err(AppError::BadRequest(format!("unknown oauth provider: {name}"))),
+        _ => Err(AppError::BadRequest(format!(
+            "unknown oauth provider: {name}"
+        ))),
     }
 }
 
@@ -499,7 +540,7 @@ async fn provider_login(
     session_manager: Extension<SessionManager>,
     name: &str,
     code: &str,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     let config = provider_config(name)?;
     let user_id = match name {
         QYWX_NAME => qywx_user_id(&config, code).await?,
@@ -511,8 +552,7 @@ async fn provider_login(
         DINGDING_NAME => DINGDING_UNIQUE_PREFIX,
         _ => unreachable!(),
     };
-    let result = login_or_create_user(&pool, &session_manager, format!("{prefix}{user_id}")).await?;
-    Ok(Json(ActionResult::success(result)))
+    login_or_create_user(&pool, &session_manager, format!("{prefix}{user_id}")).await
 }
 
 #[derive(Deserialize)]
@@ -528,13 +568,15 @@ pub async fn oauth_login_qywx(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
     }
     if let Some(verifier) = &params.code_verifier {
         if !validate_and_remove_pkce(&params.state, verifier) {
-            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+            return Err(AppError::BadRequest(
+                "invalid PKCE code_verifier".to_string(),
+            ));
         }
     }
     provider_login(pool, session_manager, QYWX_NAME, &code).await
@@ -547,13 +589,15 @@ pub async fn oauth_login_dingding(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
     }
     if let Some(verifier) = &params.code_verifier {
         if !validate_and_remove_pkce(&params.state, verifier) {
-            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+            return Err(AppError::BadRequest(
+                "invalid PKCE code_verifier".to_string(),
+            ));
         }
     }
     provider_login(pool, session_manager, DINGDING_NAME, &code).await
@@ -566,14 +610,16 @@ pub async fn oauth_login_name(
     session_manager: Extension<SessionManager>,
     Path((name, code, redirect_uri)): Path<(String, String, String)>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     validate_redirect_uri(&redirect_uri)?;
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
     }
     if let Some(verifier) = &params.code_verifier {
         if !validate_and_remove_pkce(&params.state, verifier) {
-            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+            return Err(AppError::BadRequest(
+                "invalid PKCE code_verifier".to_string(),
+            ));
         }
     }
     provider_login(pool, session_manager, &name, &code).await
@@ -590,14 +636,16 @@ pub async fn oauth_bind_name(
     session_manager: Extension<SessionManager>,
     Path((name, code, redirect_uri)): Path<(String, String, String)>,
     Query(params): Query<OAuthStateQuery>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Response, AppError> {
     validate_redirect_uri(&redirect_uri)?;
     if !validate_state(&params.state) {
         return Err(AppError::BadRequest("invalid or expired state".to_string()));
     }
     if let Some(verifier) = &params.code_verifier {
         if !validate_and_remove_pkce(&params.state, verifier) {
-            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+            return Err(AppError::BadRequest(
+                "invalid PKCE code_verifier".to_string(),
+            ));
         }
     }
     provider_login(pool, session_manager, &name, &code).await

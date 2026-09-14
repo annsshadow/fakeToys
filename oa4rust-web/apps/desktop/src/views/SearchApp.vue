@@ -21,8 +21,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
 import { api } from '@oa4rust/sdk'
+import { ref } from 'vue'
+
 const query = ref('')
 const results = ref<any[]>([])
 const loading = ref(false)

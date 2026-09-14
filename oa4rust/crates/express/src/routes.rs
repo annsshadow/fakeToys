@@ -22,7 +22,10 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/express/identity/list", post(express_identity_list))
         .route("/jaxrs/express/group/list", post(express_group_list))
         .route("/jaxrs/express/role/list", post(express_role_list))
-        .route("/jaxrs/express/person/with/unit", post(express_person_with_unit))
+        .route(
+            "/jaxrs/express/person/with/unit",
+            post(express_person_with_unit),
+        )
         .route(
             "/jaxrs/express/person/with/identity",
             post(express_person_with_identity),

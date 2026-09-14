@@ -1,16 +1,13 @@
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -71,7 +68,8 @@ async fn test_create_surface_route_exists() {
         "name": "My Surface",
         "query": "select * from test",
         "template": "default"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -134,7 +132,8 @@ async fn test_save_surface_route_exists() {
     let req = serde_json::to_string(&json!({
         "name": "My Surface",
         "query": "select * from test"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -169,7 +168,6 @@ async fn test_delete_surface_route_exists() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
-
 
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 缺口闭合测试：新注册路由存在性 + sqlparser 安全约束 + 格式化/参数化
@@ -354,8 +352,13 @@ async fn test_u2_table_row_insert_route_exists() {
 
 #[test]
 fn test_u2_surface_validate_rejects_update() {
-    let err = u2_closures::validate_single_select("UPDATE x_query_view SET name = 'x'").unwrap_err();
-    assert!(err.contains("only SELECT"), "UPDATE must be rejected, got: {}", err);
+    let err =
+        u2_closures::validate_single_select("UPDATE x_query_view SET name = 'x'").unwrap_err();
+    assert!(
+        err.contains("only SELECT"),
+        "UPDATE must be rejected, got: {}",
+        err
+    );
 }
 
 #[test]
@@ -375,8 +378,10 @@ fn test_u2_surface_validate_accepts_select_with_join() {
 #[test]
 fn test_u2_surface_parameterize_named_params() {
     let params = json!({"flag": "v1", "limit0": 5});
-    let (sql, values) =
-        u2_closures::parameterize_statement_sql("SELECT * FROM v WHERE flag = :flag AND n <> :limit0", &params);
+    let (sql, values) = u2_closures::parameterize_statement_sql(
+        "SELECT * FROM v WHERE flag = :flag AND n <> :limit0",
+        &params,
+    );
     assert!(sql.contains("$1") && sql.contains("$2"));
     assert_eq!(values.len(), 2);
 }
@@ -387,7 +392,6 @@ fn test_u2_surface_format_sql_inserts_newlines() {
     assert!(out.contains('\n'), "keywords should break lines: {}", out);
     assert!(out.to_uppercase().contains("ORDER BY"));
 }
-
 
 #[tokio::test]
 async fn test_u2_importmodel_record_delete_route_exists() {
@@ -422,7 +426,6 @@ async fn test_u2_importmodel_reexecute_record_route_exists() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
-
 
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 v9 缺口闭合测试：Java 精确路径/动词注册 + 纯函数契约
@@ -459,7 +462,11 @@ async fn test_v9_importmodel_record_family_java_paths_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(get.status(), StatusCode::INTERNAL_SERVER_ERROR, "GET /importmodel/record/{{id}}");
+    assert_eq!(
+        get.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "GET /importmodel/record/{{id}}"
+    );
 
     let status = crate::router(pool.clone())
         .oneshot(
@@ -471,7 +478,11 @@ async fn test_v9_importmodel_record_family_java_paths_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(status.status(), StatusCode::INTERNAL_SERVER_ERROR, "GET .../status");
+    assert_eq!(
+        status.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "GET .../status"
+    );
 
     let del = crate::router(pool)
         .oneshot(
@@ -483,7 +494,11 @@ async fn test_v9_importmodel_record_family_java_paths_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(del.status(), StatusCode::INTERNAL_SERVER_ERROR, "DELETE /importmodel/record/{{id}} 动词补齐");
+    assert_eq!(
+        del.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "DELETE /importmodel/record/{{id}} 动词补齐"
+    );
 }
 
 #[tokio::test]
@@ -547,7 +562,11 @@ async fn test_v9_stat_execute_with_query_java_verb_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(put.status(), StatusCode::INTERNAL_SERVER_ERROR, "PUT /stat/flag/{{flag}}/query/{{qf}}/execute");
+    assert_eq!(
+        put.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "PUT /stat/flag/{{flag}}/query/{{qf}}/execute"
+    );
 
     let mock = crate::router(pool)
         .oneshot(
@@ -596,7 +615,11 @@ async fn test_v9_table_paging_post_java_verb_routes_exist() {
         )
         .await
         .unwrap();
-    assert_eq!(paging.status(), StatusCode::INTERNAL_SERVER_ERROR, "POST /table/list/paging/{{page}}/size/{{size}}");
+    assert_eq!(
+        paging.status(),
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "POST /table/list/paging/{{page}}/size/{{size}}"
+    );
 
     let row_paging = crate::router(pool)
         .oneshot(
@@ -632,9 +655,15 @@ async fn test_v9_table_row_select_post_java_verb_route_exists() {
 #[tokio::test]
 async fn test_v9_view_bundle_excel_execute_java_verbs_exist() {
     for (uri, label) in [
-        ("/jaxrs/queryview/view/v-1/bundle", "PUT /view/{{id}}/bundle"),
+        (
+            "/jaxrs/queryview/view/v-1/bundle",
+            "PUT /view/{{id}}/bundle",
+        ),
         ("/jaxrs/queryview/view/v-1/excel", "PUT /view/{{id}}/excel"),
-        ("/jaxrs/queryview/view/v-1/execute", "PUT /view/{{id}}/execute"),
+        (
+            "/jaxrs/queryview/view/v-1/execute",
+            "PUT /view/{{id}}/execute",
+        ),
     ] {
         let response = crate::router(build_test_pool())
             .oneshot(
@@ -647,7 +676,12 @@ async fn test_v9_view_bundle_excel_execute_java_verbs_exist() {
             )
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR, "{} 动词补齐", label);
+        assert_eq!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "{} 动词补齐",
+            label
+        );
     }
 }
 
@@ -690,6 +724,12 @@ fn test_v9_format_sql_contract_for_statement_format_endpoint() {
     // statement/{{id}}/format 输出契约：主要关键字前换行，保持语义不变
     let formatted = u2_closures::format_sql("SELECT a FROM t WHERE x = 1 ORDER BY a");
     assert!(formatted.contains('\n'), "关键字前应换行: {}", formatted);
-    assert!(formatted.to_uppercase().contains("SELECT"), "SELECT 必须保留");
-    assert!(formatted.to_uppercase().contains("ORDER BY"), "ORDER BY 必须保留");
+    assert!(
+        formatted.to_uppercase().contains("SELECT"),
+        "SELECT 必须保留"
+    );
+    assert!(
+        formatted.to_uppercase().contains("ORDER BY"),
+        "ORDER BY 必须保留"
+    );
 }

@@ -2,7 +2,7 @@ use deadpool_postgres::{Client, Pool};
 use serde_json::Value;
 use shared::{
     error::AppError,
-    response::{ActionResult, row_to_json},
+    response::{row_to_json, ActionResult},
 };
 
 pub const MAX_BATCH_IDS: usize = 100;
@@ -126,8 +126,7 @@ pub async fn resolve_generic_id(
     table: &str,
     flag: &str,
 ) -> Result<Option<String>, AppError> {
-    let sql =
-        format!("SELECT id FROM {table} WHERE (id = $1 OR name = $1) AND deleted_at IS NULL");
+    let sql = format!("SELECT id FROM {table} WHERE (id = $1 OR name = $1) AND deleted_at IS NULL");
     let row = client
         .query_opt(&sql, &[&flag])
         .await
@@ -144,9 +143,11 @@ pub async fn soft_delete_generic(
     let Some(id) = resolve_generic_id(client, table, flag).await? else {
         return Ok(None);
     };
-    let sql =
-        format!("UPDATE {table} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
-    client.execute(&sql, &[&id]).await.map_err(|_| AppError::Internal)?;
+    let sql = format!("UPDATE {table} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
+    client
+        .execute(&sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Some(id))
 }
 
@@ -208,18 +209,21 @@ fn select_cols(extra_cols: &[&str]) -> String {
 }
 
 #[allow(non_snake_case)]
-pub async fn generic_list_all(
-    pool: &Pool,
-    table: &str,
-    extra_cols: &[&str],
-) -> HandlerResult {
+pub async fn generic_list_all(pool: &Pool, table: &str, extra_cols: &[&str]) -> HandlerResult {
     let client = client_of(pool).await?;
     let cols = select_cols(extra_cols);
     let sql = format!(
         "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
     );
-    let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+    let rows = client
+        .query(&sql, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    list_ok_java(
+        rows.iter()
+            .map(|r| entity_row_json(r, extra_cols))
+            .collect(),
+    )
 }
 
 #[allow(non_snake_case)]
@@ -238,11 +242,22 @@ pub async fn generic_like_search(
         let sql = format!(
             "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
         );
-        let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(&sql, &[])
+            .await
+            .map_err(|_| AppError::Internal)?;
         return if java_bare {
-            list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+            list_ok_java(
+                rows.iter()
+                    .map(|r| entity_row_json(r, extra_cols))
+                    .collect(),
+            )
         } else {
-            list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+            list_ok(
+                rows.iter()
+                    .map(|r| entity_row_json(r, extra_cols))
+                    .collect(),
+            )
         };
     }
     let (pattern, cond) = if pinyin_mode {
@@ -256,11 +271,22 @@ pub async fn generic_like_search(
     let sql = format!(
         "SELECT {cols} FROM {table} WHERE deleted_at IS NULL AND {cond} ORDER BY create_time::text DESC"
     );
-    let rows = client.query(&sql, &[&pattern]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&pattern])
+        .await
+        .map_err(|_| AppError::Internal)?;
     if java_bare {
-        list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        list_ok_java(
+            rows.iter()
+                .map(|r| entity_row_json(r, extra_cols))
+                .collect(),
+        )
     } else {
-        list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        list_ok(
+            rows.iter()
+                .map(|r| entity_row_json(r, extra_cols))
+                .collect(),
+        )
     }
 }
 
@@ -279,22 +305,44 @@ pub async fn generic_pinyininitial_filter(
         let sql = format!(
             "SELECT {cols} FROM {table} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
         );
-        let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+        let rows = client
+            .query(&sql, &[])
+            .await
+            .map_err(|_| AppError::Internal)?;
         return if java_bare {
-            list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+            list_ok_java(
+                rows.iter()
+                    .map(|r| entity_row_json(r, extra_cols))
+                    .collect(),
+            )
         } else {
-            list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+            list_ok(
+                rows.iter()
+                    .map(|r| entity_row_json(r, extra_cols))
+                    .collect(),
+            )
         };
     }
     let owned: Vec<String> = initials.to_vec();
     let sql = format!(
         "SELECT {cols} FROM {table} WHERE deleted_at IS NULL AND LEFT(LOWER(COALESCE(pinyin_initial, name)), 1) = ANY($1)"
     );
-    let rows = client.query(&sql, &[&owned]).await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(&sql, &[&owned])
+        .await
+        .map_err(|_| AppError::Internal)?;
     if java_bare {
-        list_ok_java(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        list_ok_java(
+            rows.iter()
+                .map(|r| entity_row_json(r, extra_cols))
+                .collect(),
+        )
     } else {
-        list_ok(rows.iter().map(|r| entity_row_json(r, extra_cols)).collect())
+        list_ok(
+            rows.iter()
+                .map(|r| entity_row_json(r, extra_cols))
+                .collect(),
+        )
     }
 }
 

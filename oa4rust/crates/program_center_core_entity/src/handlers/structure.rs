@@ -1,11 +1,17 @@
-use axum::{extract::{Extension, Path}, Json, Router};
+use axum::{
+    extract::{Extension, Path},
+    Json, Router,
+};
 use deadpool_postgres::Pool;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
+    QuerySelect, Set,
+};
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, middleware::is_admin, response::ActionResult, session::Session};
 
-use crate::{entities, MAX_NAME_LEN, MAX_TEXT_LEN, MAX_LONG_TEXT_LEN};
+use crate::{entities, MAX_LONG_TEXT_LEN, MAX_NAME_LEN, MAX_TEXT_LEN};
 
 #[derive(Debug, Deserialize)]
 pub struct StructureCreateRequest {
@@ -34,20 +40,35 @@ pub async fn structure_list(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = models.iter().map(|m| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(m.id.clone())),
-            ("name".to_string(), Value::String(m.name.clone())),
-            ("type".to_string(), Value::String(m.extension.clone().unwrap_or_default())),
-            ("storage".to_string(), Value::String(m.storage.clone())),
-            ("length".to_string(), Value::Number(serde_json::Number::from(m.length.unwrap_or(0)))),
-            ("description".to_string(), Value::String(m.description.clone())),
-        ]))
-    }).collect();
+    let data: Vec<Value> = models
+        .iter()
+        .map(|m| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                (
+                    "type".to_string(),
+                    Value::String(m.extension.clone().unwrap_or_default()),
+                ),
+                ("storage".to_string(), Value::String(m.storage.clone())),
+                (
+                    "length".to_string(),
+                    Value::Number(serde_json::Number::from(m.length.unwrap_or(0))),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(m.description.clone()),
+                ),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -62,14 +83,20 @@ pub async fn structure_create(
         return Err(AppError::BadRequest("name is required".to_string()));
     }
     if req.name.len() > MAX_NAME_LEN {
-        return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters")));
+        return Err(AppError::BadRequest(format!(
+            "name must be at most {MAX_NAME_LEN} characters"
+        )));
     }
     if req.storage.len() > MAX_TEXT_LEN {
-        return Err(AppError::BadRequest("storage must be at most 500 characters".to_string()));
+        return Err(AppError::BadRequest(
+            "storage must be at most 500 characters".to_string(),
+        ));
     }
     if let Some(ref desc) = req.description {
         if desc.len() > MAX_LONG_TEXT_LEN {
-            return Err(AppError::BadRequest(format!("description must be at most {MAX_LONG_TEXT_LEN} characters")));
+            return Err(AppError::BadRequest(format!(
+                "description must be at most {MAX_LONG_TEXT_LEN} characters"
+            )));
         }
     }
 
@@ -88,10 +115,19 @@ pub async fn structure_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(model.id.clone())),
             ("name".to_string(), Value::String(model.name.clone())),
-            ("type".to_string(), Value::String(model.extension.clone().unwrap_or_default())),
+            (
+                "type".to_string(),
+                Value::String(model.extension.clone().unwrap_or_default()),
+            ),
             ("storage".to_string(), Value::String(model.storage.clone())),
-            ("length".to_string(), Value::Number(serde_json::Number::from(model.length.unwrap_or(0)))),
-            ("description".to_string(), Value::String(model.description.clone())),
+            (
+                "length".to_string(),
+                Value::Number(serde_json::Number::from(model.length.unwrap_or(0))),
+            ),
+            (
+                "description".to_string(),
+                Value::String(model.description.clone()),
+            ),
         ]),
     ))))
 }
@@ -115,20 +151,38 @@ pub async fn structure_update(
 
     let mut active: entities::cte_structure::ActiveModel = model.into();
     if let Some(name) = req.name {
-        if name.trim().is_empty() { return Err(AppError::BadRequest("name is required".to_string())); }
-        if name.len() > MAX_NAME_LEN { return Err(AppError::BadRequest(format!("name must be at most {MAX_NAME_LEN} characters"))); }
+        if name.trim().is_empty() {
+            return Err(AppError::BadRequest("name is required".to_string()));
+        }
+        if name.len() > MAX_NAME_LEN {
+            return Err(AppError::BadRequest(format!(
+                "name must be at most {MAX_NAME_LEN} characters"
+            )));
+        }
         active.name = Set(name);
     }
     if let Some(storage) = req.storage {
-        if storage.len() > MAX_TEXT_LEN { return Err(AppError::BadRequest("storage must be at most 500 characters".to_string())); }
+        if storage.len() > MAX_TEXT_LEN {
+            return Err(AppError::BadRequest(
+                "storage must be at most 500 characters".to_string(),
+            ));
+        }
         active.storage = Set(storage);
     }
     if let Some(extension) = req.extension {
-        if extension.len() > MAX_TEXT_LEN { return Err(AppError::BadRequest("extension must be at most 500 characters".to_string())); }
+        if extension.len() > MAX_TEXT_LEN {
+            return Err(AppError::BadRequest(
+                "extension must be at most 500 characters".to_string(),
+            ));
+        }
         active.extension = Set(Some(extension));
     }
     if let Some(description) = req.description {
-        if description.len() > MAX_LONG_TEXT_LEN { return Err(AppError::BadRequest(format!("description must be at most {MAX_LONG_TEXT_LEN} characters"))); }
+        if description.len() > MAX_LONG_TEXT_LEN {
+            return Err(AppError::BadRequest(format!(
+                "description must be at most {MAX_LONG_TEXT_LEN} characters"
+            )));
+        }
         active.description = Set(description);
     }
 
@@ -137,10 +191,22 @@ pub async fn structure_update(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(updated.id.clone())),
             ("name".to_string(), Value::String(updated.name.clone())),
-            ("type".to_string(), Value::String(updated.extension.clone().unwrap_or_default())),
-            ("storage".to_string(), Value::String(updated.storage.clone())),
-            ("length".to_string(), Value::Number(serde_json::Number::from(updated.length.unwrap_or(0)))),
-            ("description".to_string(), Value::String(updated.description.clone())),
+            (
+                "type".to_string(),
+                Value::String(updated.extension.clone().unwrap_or_default()),
+            ),
+            (
+                "storage".to_string(),
+                Value::String(updated.storage.clone()),
+            ),
+            (
+                "length".to_string(),
+                Value::Number(serde_json::Number::from(updated.length.unwrap_or(0))),
+            ),
+            (
+                "description".to_string(),
+                Value::String(updated.description.clone()),
+            ),
         ]),
     ))))
 }
@@ -177,4 +243,3 @@ pub fn _router(_pool: Pool, _db: Option<DatabaseConnection>) -> Router {
     // panic axum at merge time ("Overlapping method route").
     Router::new()
 }
-

@@ -1,8 +1,9 @@
-const fs = require('fs');
-let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8');
+const fs = require('fs')
+let content = fs.readFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', 'utf8')
 
 // === 12. Add advanced node type configurations ===
-const nodeTypesEnd = "const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']";
+const nodeTypesEnd =
+  "const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']"
 const nodeTypesExtra = `const allNodeTypes = ['start','task','approval','timer','end','gate_and','gate_or','gate_xor','subprocess','script','parallel']
 
 // ── Advanced Node Configuration ─────────────────────────────────────
@@ -143,22 +144,23 @@ const zoomPresets = [
   { label: '_fit', value: -1 },
 ]
 `
-;
-content = content.replace(nodeTypesEnd, nodeTypesExtra);
+content = content.replace(nodeTypesEnd, nodeTypesExtra)
 
 // === 13. Add conditional flow editor to template ===
-const oldFlowLabel = '<div class="pg"><label>流向标签</label><input :value="getEdgeProp(\'flowLabel\')" @input="_setEdgeProp(\'flowLabel\', $event.target.value)" class="pi" placeholder="如: 通过/拒绝" /></div>';
+const oldFlowLabel =
+  '<div class="pg"><label>流向标签</label><input :value="getEdgeProp(\'flowLabel\')" @input="_setEdgeProp(\'flowLabel\', $event.target.value)" class="pi" placeholder="如: 通过/拒绝" /></div>'
 const newFlowLabel = `<div class="pg"><label>流向标签</label><input :value="getEdgeProp('flowLabel')" @input="_setEdgeProp('flowLabel',$event.target.value)" class="pi" placeholder="如: 通过/拒绝" /></div>
             <div class="pg"><label>连线样式</label>
               <select :value="getEdgeProp('edgeStyle')" @change="_setEdgeProp('edgeStyle',$event.target.value)" class="pi">
                 <option value="default">默认</option><option value="dashed">虚线</option>
                 <option value="thick">粗线</option><option value="dotted">点线</option>
               </select>
-            </div>`;
-content = content.replace(oldFlowLabel, newFlowLabel);
+            </div>`
+content = content.replace(oldFlowLabel, newFlowLabel)
 
 // === 14. Add advanced node config panel to template ===
-const propsEmptyMarker = '<div v-else class="props-empty">\n          <p>选择节点或连线编辑属性</p>\n          <p v-if="currentProcess" class="hint">双击子流程节点进入嵌套编辑</p>\n        </div>';
+const propsEmptyMarker =
+  '<div v-else class="props-empty">\n          <p>选择节点或连线编辑属性</p>\n          <p v-if="currentProcess" class="hint">双击子流程节点进入嵌套编辑</p>\n        </div>'
 const propsEmptyEnhanced = `<div v-else class="props-empty">
           <p>选择节点或连线编辑属性</p>
           <p class="hint">双击子流程节点进入嵌套编辑</p>
@@ -167,11 +169,11 @@ const propsEmptyEnhanced = `<div v-else class="props-empty">
             <button class="btn-sm" @click="showRulesModal=true">🔗 规则</button>
             <button class="btn-sm" @click="runValidation()">🔍 验证</button>
           </div>
-        </div>`;
-content = content.replace(propsEmptyMarker, propsEmptyEnhanced);
+        </div>`
+content = content.replace(propsEmptyMarker, propsEmptyEnhanced)
 
 // === 15. Add CSS for new components ===
-const styleEndMarker2 = '</style>';
+const styleEndMarker2 = '</style>'
 const extraStyles = `
 /* Quick actions in empty props */
 .quick-actions{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap}
@@ -210,9 +212,9 @@ const extraStyles = `
 .edge-predicted{animation:predictedPulse 1s ease-in-out infinite}
 /* Node type badge colors */
 .node-type-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:var(--radius-sm);font-size:9px;font-weight:600}
-`;
-content = content.replace(styleEndMarker2, extraStyles + '</style>');
+`
+content = content.replace(styleEndMarker2, extraStyles + '</style>')
 
 // Write back
-fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content);
-console.log('Done. Lines:', content.split('\n').length);
+fs.writeFileSync('D:/WORKSPACE/fakeToys/oa4rust-web/apps/desktop/src/views/ProcessDesigner.vue', content)
+console.log('Done. Lines:', content.split('\n').length)

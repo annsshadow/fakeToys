@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::entities::{bbs_forum_info::Model as ForumInfo, bbs_section_info::Model as SectionInfo, bbs_subject_info::Model as SubjectInfo};
+    use crate::entities::{
+        bbs_forum_info::Model as ForumInfo, bbs_section_info::Model as SectionInfo,
+        bbs_subject_info::Model as SubjectInfo,
+    };
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -127,8 +130,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -152,8 +157,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -176,8 +183,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -201,8 +210,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -225,8 +236,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -244,14 +257,18 @@ mod tests {
                         .uri("/jaxrs/bbs/core/entity/subject")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
-                        .body(Body::from(r#"{"title":"测试帖子","sectionId":"section-001"}"#))
+                        .body(Body::from(
+                            r#"{"title":"测试帖子","sectionId":"section-001"}"#,
+                        ))
                         .unwrap(),
                 )
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 
@@ -274,8 +291,10 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                || response.status() == StatusCode::NOT_FOUND);
+            assert!(
+                response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                    || response.status() == StatusCode::NOT_FOUND
+            );
         });
     }
 

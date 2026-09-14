@@ -1,11 +1,12 @@
 #[allow(dead_code, non_snake_case)]
-use axum::{
-    extract::{Extension, Json, Path},
-};
+use axum::extract::{Extension, Json, Path};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
+use shared::{
+    error::AppError,
+    response::{option_to_json, row_opt_json, ActionResult},
+};
 
 pub mod routes;
 
@@ -34,9 +35,7 @@ pub struct ApplicationRemoveRequest {
 }
 
 #[allow(non_snake_case)]
-pub async fn application_list_summary(
-    pool: Extension<Pool>,
-) -> Json<ActionResult<Value>> {
+pub async fn application_list_summary(pool: Extension<Pool>) -> Json<ActionResult<Value>> {
     let client = match pool.get().await {
         Ok(client) => client,
         Err(_) => {
@@ -50,12 +49,12 @@ pub async fn application_list_summary(
             &[],
         )
         .await
-        {
-            Ok(rows) => rows,
-            Err(_) => {
-                return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
-            }
-        };
+    {
+        Ok(rows) => rows,
+        Err(_) => {
+            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
+        }
+    };
 
     let data: Vec<Value> = rows
         .iter()
@@ -97,17 +96,27 @@ pub async fn application_list(
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
             }
-            if let Some(val) = option_to_json::<Value>(row.get::<_, Option<String>>("form_definition").and_then(|s| serde_json::from_str(&s).ok())) {
+            if let Some(val) = option_to_json::<Value>(
+                row.get::<_, Option<String>>("form_definition")
+                    .and_then(|s| serde_json::from_str(&s).ok()),
+            ) {
                 map.insert("formDefinition".to_string(), val);
             }
             map.insert("status".to_string(), Value::String(row.get("status")));
-            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(Value::Array(data), count, 0)))
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -130,11 +139,17 @@ pub async fn application_get(
     if let Some(val) = row_opt_json::<String>(&row, "description") {
         result_map.insert("description".to_string(), val);
     }
-    if let Some(val) = option_to_json::<Value>(row.get::<_, Option<String>>("form_definition").and_then(|s| serde_json::from_str(&s).ok())) {
+    if let Some(val) = option_to_json::<Value>(
+        row.get::<_, Option<String>>("form_definition")
+            .and_then(|s| serde_json::from_str(&s).ok()),
+    ) {
         result_map.insert("formDefinition".to_string(), val);
     }
     result_map.insert("status".to_string(), Value::String(row.get("status")));
-    result_map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+    result_map.insert(
+        "createTime".to_string(),
+        Value::String(row.get("create_time")),
+    );
     let result = Value::Object(result_map);
 
     Ok(Json(ActionResult::success(result)))
@@ -166,10 +181,7 @@ pub async fn application_create(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(req.name)),
-        (
-            "description".to_string(),
-            Value::String(description),
-        ),
+        ("description".to_string(), Value::String(description)),
         ("formDefinition".to_string(), Value::String(form_definition)),
         ("status".to_string(), Value::String(status)),
     ]));
@@ -210,11 +222,17 @@ pub async fn application_update(
     if let Some(val) = row_opt_json::<String>(&row, "description") {
         result_map.insert("description".to_string(), val);
     }
-    if let Some(val) = option_to_json::<Value>(row.get::<_, Option<String>>("form_definition").and_then(|s| serde_json::from_str(&s).ok())) {
+    if let Some(val) = option_to_json::<Value>(
+        row.get::<_, Option<String>>("form_definition")
+            .and_then(|s| serde_json::from_str(&s).ok()),
+    ) {
         result_map.insert("formDefinition".to_string(), val);
     }
     result_map.insert("status".to_string(), Value::String(row.get("status")));
-    result_map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+    result_map.insert(
+        "createTime".to_string(),
+        Value::String(row.get("create_time")),
+    );
     let result = Value::Object(result_map);
 
     Ok(Json(ActionResult::success(result)))
@@ -235,7 +253,9 @@ pub async fn application_remove(
         .map_err(|_| AppError::Internal)?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("application not found or already deleted")));
+        return Ok(Json(ActionResult::error(
+            "application not found or already deleted",
+        )));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -258,22 +278,31 @@ pub async fn designer_get_route(
     };
 
     let row = match client
-        .query_one("SELECT id, name, process_id, type, description FROM route WHERE id = $1", &[&id])
+        .query_one(
+            "SELECT id, name, process_id, type, description FROM route WHERE id = $1",
+            &[&id],
+        )
         .await
-        {
-            Ok(row) => row,
-            Err(_) => {
-                return Json(ActionResult::success(Value::Object(
-                    serde_json::Map::from_iter([]),
-                )));
-            }
-        };
+    {
+        Ok(row) => row,
+        Err(_) => {
+            return Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([]),
+            )));
+        }
+    };
 
     let mut route_map = serde_json::Map::new();
     route_map.insert("id".to_string(), Value::String(row.get("id")));
     route_map.insert("name".to_string(), Value::String(row.get("name")));
-    route_map.insert("processId".to_string(), Value::String(row.get("process_id")));
-    route_map.insert("type".to_string(), Value::String(row.get::<_, String>("type")));
+    route_map.insert(
+        "processId".to_string(),
+        Value::String(row.get("process_id")),
+    );
+    route_map.insert(
+        "type".to_string(),
+        Value::String(row.get::<_, String>("type")),
+    );
     if let Some(val) = row_opt_json::<String>(&row, "description") {
         route_map.insert("description".to_string(), val);
     }
@@ -288,7 +317,6 @@ pub async fn designer_get_route(
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::process_designer_router(pool)

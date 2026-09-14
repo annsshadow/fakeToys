@@ -31,7 +31,10 @@ pub async fn record_list(
                 [
                     ("id".to_string(), Value::String(m.id.clone())),
                     ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
-                    ("checkInTime".to_string(), Value::String(m.check_in_time.clone())),
+                    (
+                        "checkInTime".to_string(),
+                        Value::String(m.check_in_time.clone()),
+                    ),
                     ("status".to_string(), Value::String(m.status.clone())),
                 ]
                 .into_iter()
@@ -73,7 +76,10 @@ pub async fn rule_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                ("\"startTime\"".to_string(), Value::String(m.start_time.clone())),
+                (
+                    "\"startTime\"".to_string(),
+                    Value::String(m.start_time.clone()),
+                ),
                 ("\"endTime\"".to_string(), Value::String(m.end_time.clone())),
             ]))
         })
@@ -98,13 +104,21 @@ pub async fn record_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     use attendance_record::ActiveModel;
 
-    let user_id = payload.get("\"userId\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let user_id = payload
+        .get("\"userId\"")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let check_in_time = payload
         .get("checkInTime")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("normal").to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("normal")
+        .to_string();
     let new_id = uuid::Uuid::new_v4().to_string();
 
     let active = ActiveModel {
@@ -116,10 +130,7 @@ pub async fn record_create(
         create_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active
-        .insert(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
     let created = attendance_record::Entity::find_by_id(new_id.clone())
         .one(&db.0)
@@ -141,8 +152,14 @@ pub async fn record_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     use attendance_record::ActiveModel;
 
-    let check_out_time = payload.get("checkOutTime").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let status = payload.get("status").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let check_out_time = payload
+        .get("checkOutTime")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     let model = attendance_record::Entity::find_by_id(id.clone())
         .one(&db.0)
@@ -155,10 +172,7 @@ pub async fn record_update(
     let status_val = status.clone().unwrap_or(model.status.clone());
     active.status = sea_orm::ActiveValue::Set(status_val);
 
-    active
-        .update(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     let updated = attendance_record::Entity::find_by_id(id.clone())
         .one(&db.0)
@@ -189,7 +203,10 @@ pub async fn record_delete(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(deleted.rows_affected > 0)),
+            (
+                "deleted".to_string(),
+                Value::Bool(deleted.rows_affected > 0),
+            ),
         ]),
     ))))
 }
@@ -202,7 +219,11 @@ pub async fn rule_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     use attendance_rule::ActiveModel;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let start_time = payload
         .get("\"startTime\"")
         .and_then(|v| v.as_str())
@@ -225,10 +246,7 @@ pub async fn rule_create(
         update_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active
-        .insert(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
     let created = attendance_rule::Entity::find_by_id(new_id.clone())
         .one(&db.0)
@@ -250,8 +268,14 @@ pub async fn rule_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     use attendance_rule::ActiveModel;
 
-    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let start_time = payload
+        .get("\"startTime\"")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let end_time = payload
         .get("\"endTime\"")
         .or_else(|| payload.get("EndTime"))
@@ -266,7 +290,8 @@ pub async fn rule_update(
 
     let mut active: ActiveModel = model.clone().into();
     active.name = sea_orm::ActiveValue::Set(
-        name.or_else(|| Some(model.name.clone())).unwrap_or_default(),
+        name.or_else(|| Some(model.name.clone()))
+            .unwrap_or_default(),
     );
     active.start_time = sea_orm::ActiveValue::Set(
         start_time
@@ -279,10 +304,7 @@ pub async fn rule_update(
             .unwrap_or_default(),
     );
 
-    active
-        .update(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     let updated = attendance_rule::Entity::find_by_id(id.clone())
         .one(&db.0)
@@ -313,7 +335,10 @@ pub async fn rule_delete(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(deleted.rows_affected > 0)),
+            (
+                "deleted".to_string(),
+                Value::Bool(deleted.rows_affected > 0),
+            ),
         ]),
     ))))
 }
@@ -338,10 +363,7 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
             "/jaxrs/attendance/core/entity/record/{id}/delete",
             get(record_delete),
         )
-        .route(
-            "/jaxrs/attendance/core/entity/rule/list",
-            get(rule_list),
-        )
+        .route("/jaxrs/attendance/core/entity/rule/list", get(rule_list))
         .route(
             "/jaxrs/attendance/core/entity/rule/create",
             post(rule_create),
@@ -360,7 +382,6 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 mod tests;
 #[cfg(test)]
 mod tests_generated;
-
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::attendance_core_entity_router(pool)

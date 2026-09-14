@@ -9,8 +9,7 @@ use std::sync::OnceLock;
 
 use super::constants::*;
 use super::security::{
-    client_ip, is_auth_exempt, is_auth_rate_limited,
-    requires_admin, SecurityState,
+    client_ip, is_auth_exempt, is_auth_rate_limited, requires_admin, SecurityState,
 };
 use crate::error::AppError;
 use crate::response::error_response;
@@ -173,19 +172,37 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/authentication/code", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/authentication/refresh", PermissionLevel::Public);
         // 新增认证端点：显式覆盖，避免继承 /jaxrs/authentication 的 Public 权限
-        registry.register_prefix("/jaxrs/authentication/two_factor", PermissionLevel::Authenticated);
-        registry.register_exact("/jaxrs/authentication/safe/logout", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/authentication/check/token", PermissionLevel::Authenticated);
+        registry.register_prefix(
+            "/jaxrs/authentication/two_factor",
+            PermissionLevel::Authenticated,
+        );
+        registry.register_exact(
+            "/jaxrs/authentication/safe/logout",
+            PermissionLevel::Authenticated,
+        );
+        registry.register_prefix(
+            "/jaxrs/authentication/check/token",
+            PermissionLevel::Authenticated,
+        );
         registry.register_exact("/jaxrs/authentication/switchuser", PermissionLevel::Admin);
-        registry.register_exact("/jaxrs/authentication/switchuser/mockputtopost", PermissionLevel::Admin);
+        registry.register_exact(
+            "/jaxrs/authentication/switchuser/mockputtopost",
+            PermissionLevel::Admin,
+        );
         registry.register_prefix("/jaxrs/authentication/sso", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
         // organization_assemble_authentication: 认证前置端点（登录模式、验证码密钥、登出）
-        registry.register_prefix("/jaxrs/organization/assemble/authentication/authentication", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/organization/assemble/authentication/authentication",
+            PermissionLevel::Public,
+        );
         // program_center: 认证查询
-        registry.register_prefix("/jaxrs/program_center/authentication", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/program_center/authentication",
+            PermissionLevel::Public,
+        );
         // 自服务端点：改密和头像，登录用户即可操作
         registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
         // GET icon is public per R8 (头像端点无权限也可访问)
@@ -224,48 +241,135 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/unit/identity", PermissionLevel::Public);
         // 批量查询 / 汇总端点：Java 侧无需认证（R401J200 消除）
         registry.register_prefix("/jaxrs/document/batch", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/file/assemble/control/file/referencetype", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/meeting/assemble/control/config", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/attendance/assemble/control/dingding", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/attendance/assemble/control/qywx", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/attendance/assemble/control/statistic", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/attendance/assemble/control/attendancestatisticalcycle", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/application/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/file/assemble/control/file/referencetype",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/meeting/assemble/control/config",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/attendance/assemble/control/dingding",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/attendance/assemble/control/qywx",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/attendance/assemble/control/statistic",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/attendance/assemble/control/attendancestatisticalcycle",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/application/list",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage",
+            PermissionLevel::Public,
+        );
         registry.register_prefix("/jaxrs/program_center/adminlogin", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/applications", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/center/applications", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/program_center/applications",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/program_center/center/applications",
+            PermissionLevel::Public,
+        );
         registry.register_prefix("/jaxrs/queryview/morelikethis", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/queryview/search", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/script/list/manager", PermissionLevel::Public);
         // processplatform assemble/surface 查询端点：Java 侧无需认证（消除 R401/R500）
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/application/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/control/workorworkcompleted", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/readrecord/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/record/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/sign/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/touch/expire", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/touch/passexpired", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/touch/touchdetained", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/assemble/surface/work/count", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/processplatform/service/processing/touch/mergeitem", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/application/list",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/control/workorworkcompleted",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/readrecord/list",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/record/list",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/sign/list",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/touch/expire",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/touch/passexpired",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/touch/touchdetained",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/assemble/surface/work/count",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/processplatform/service/processing/touch/mergeitem",
+            PermissionLevel::Public,
+        );
         // program_center 查询端点
-        registry.register_prefix("/jaxrs/program_center/datastructure", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/dingding/get/callback", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/jest/clear/cache", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/market/cloud/unit/is/vip", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/market/installed/version", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/program_center/datastructure",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/program_center/dingding/get/callback",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/program_center/jest/clear/cache",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/program_center/market/cloud/unit/is/vip",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/program_center/market/installed/version",
+            PermissionLevel::Public,
+        );
         // 剩余 program_center 查询/管理端点
         registry.register_prefix("/jaxrs/program_center/appstyle", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/program_center/cachedispatch", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/program_center/cachedispatch",
+            PermissionLevel::Public,
+        );
         registry.register_prefix("/jaxrs/ai/chat/delete", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/calendar/assemble/control/calendar/follow", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/calendar/assemble/control/calendar/follow",
+            PermissionLevel::Public,
+        );
         registry.register_prefix("/jaxrs/person/nick/name", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/unit/list/all", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/person/list/all", PermissionLevel::Public);
         // attendance statistic 端点
-        registry.register_prefix("/jaxrs/attendance/assemble/control/dingdingstatistic", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/attendance/assemble/control/qywxstatistic", PermissionLevel::Public);
+        registry.register_prefix(
+            "/jaxrs/attendance/assemble/control/dingdingstatistic",
+            PermissionLevel::Public,
+        );
+        registry.register_prefix(
+            "/jaxrs/attendance/assemble/control/qywxstatistic",
+            PermissionLevel::Public,
+        );
         // 现有管理端点（person/unit/role/group）：注册 Authenticated 保持向后兼容
         registry.register_prefix("/jaxrs/person", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/unit", PermissionLevel::Authenticated);
@@ -274,8 +378,14 @@ impl PermissionRegistry {
         // 组织核心实体写操作端点
         registry.register_prefix("/jaxrs/organization/person", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/organization/group", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/organization/definition", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/organization/identity", PermissionLevel::Authenticated);
+        registry.register_prefix(
+            "/jaxrs/organization/definition",
+            PermissionLevel::Authenticated,
+        );
+        registry.register_prefix(
+            "/jaxrs/organization/identity",
+            PermissionLevel::Authenticated,
+        );
         registry.register_prefix("/jaxrs/organization/custom", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/organization/bind", PermissionLevel::Authenticated);
         // 通用 jaxrs 端点兜底
@@ -394,11 +504,7 @@ pub(crate) async fn check_permission(
 /// 所有权检查辅助函数：验证当前会话用户是否拥有指定资源。
 /// 适用于 handler 中需要在执行写操作前校验资源所有权的场景。
 /// 返回 Ok(()) 表示是所有者或 admin，Err(AppError::Forbidden) 表示无权限。
-pub async fn require_owner(
-    pool: &Pool,
-    session: &Session,
-    owner_id: &str,
-) -> Result<(), AppError> {
+pub async fn require_owner(pool: &Pool, session: &Session, owner_id: &str) -> Result<(), AppError> {
     if is_admin(pool, &session.person_unique).await {
         return Ok(());
     }
@@ -448,9 +554,10 @@ pub async fn authorize_middleware(
         | PermissionLevel::Role(_)
         | PermissionLevel::Group(_)
         | PermissionLevel::Owner => next.run(request).await,
-        PermissionLevel::Forbidden => {
-            error_response(StatusCode::FORBIDDEN, format!("forbidden: insufficient permissions for {}", path))
-        }
+        PermissionLevel::Forbidden => error_response(
+            StatusCode::FORBIDDEN,
+            format!("forbidden: insufficient permissions for {}", path),
+        ),
     }
 }
 

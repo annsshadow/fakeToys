@@ -169,8 +169,7 @@ pub fn render_png(width: u32, height: u32) -> Result<(String, Vec<u8>), CaptchaE
     c.add_chars(4)
         .apply_filter(captcha::filters::Grid::new(20, 20))
         .view(width, height);
-    c.as_tuple()
-        .ok_or(CaptchaError::NotFound)
+    c.as_tuple().ok_or(CaptchaError::NotFound)
 }
 
 /// 生成验证码并存储，返回 (captcha_id, PNG 字节)
@@ -205,7 +204,7 @@ mod tests {
         assert_eq!(store.verify(&id, "0000"), VerifyResult::WrongAnswer); // attempts=2
         assert_eq!(store.verify(&id, "0000"), VerifyResult::WrongAnswer); // attempts=3
         assert_eq!(store.verify(&id, "0000"), VerifyResult::WrongAnswer); // attempts=4
-        // 5th wrong attempt triggers TooManyAttempts (attempts=5 >= MAX_ATTEMPTS=5)
+                                                                          // 5th wrong attempt triggers TooManyAttempts (attempts=5 >= MAX_ATTEMPTS=5)
         assert_eq!(store.verify(&id, "0000"), VerifyResult::TooManyAttempts);
         assert_eq!(store.verify(&id, "1234"), VerifyResult::NotFound);
     }

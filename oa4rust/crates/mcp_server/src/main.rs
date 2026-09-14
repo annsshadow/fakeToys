@@ -115,12 +115,10 @@ async fn mcp_http_handler(
                 match serde_json::from_value(params) {
                     Ok(p) => p,
                     Err(e) => {
-                        return axum::Json(JsonRpcResponse::err(
-                            id,
-                            -32600,
-                            format!("invalid params: {}", e),
-                        )
-                        .into_json_value());
+                        return axum::Json(
+                            JsonRpcResponse::err(id, -32600, format!("invalid params: {}", e))
+                                .into_json_value(),
+                        );
                     }
                 };
             match bridge.call_tool(tool_call).await {

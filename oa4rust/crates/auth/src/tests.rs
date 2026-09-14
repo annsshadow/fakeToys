@@ -5,10 +5,228 @@ mod tests {
     use crate::SessionManager;
     use base64::Engine;
     use shared::response::ActionResult;
-    
+
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use tower::util::ServiceExt;
+
+    fn auth_config(secure: bool) -> shared::config::AuthConfig {
+        shared::config::AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: secure,
+            session_ttl_seconds: 7200,
+        }
+    }
+
+    #[test]
+    fn test_session_cookie_attributes() {
+        for secure in [false, true] {
+            let cookie = crate::make_session_cookie("token", &auth_config(secure));
+            assert!(cookie.starts_with("oa4rust_session=token"));
+            for attribute in [
+                "HttpOnly",
+                "SameSite=Lax",
+                "Path=/",
+                "Max-Age=7200",
+                "Expires=",
+            ] {
+                assert!(cookie.contains(attribute));
+            }
+            assert!(!cookie.contains("Domain="));
+            assert_eq!(cookie.contains("Secure"), secure);
+        }
+        let clear = crate::make_clear_cookie(&auth_config(true));
+        for attribute in [
+            "Max-Age=0",
+            "Expires=",
+            "HttpOnly",
+            "Secure",
+            "SameSite=Lax",
+            "Path=/",
+        ] {
+            assert!(clear.contains(attribute));
+        }
+        assert!(!clear.contains("Domain="));
+    }
+
+    #[tokio::test]
+    async fn test_refresh_empty_body_and_logout_idempotent() {
+        let pool = shared::testing::test_pool();
+        let mut manager = SessionManager::new();
+        manager.auth_config = auth_config(false);
+        manager
+            .create_session("user".to_string(), "old".to_string())
+            .await
+            .unwrap();
+        let app = crate::router(pool, RateLimiter::new(), manager.clone());
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/jaxrs/authentication/refresh")
+                    .header("cookie", "oa4rust_session=old")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.headers()["set-cookie"]
+            .to_str()
+            .unwrap()
+            .starts_with("oa4rust_session="));
+        assert!(manager.validate_session("old").await.is_none());
+
+        for _ in 0..2 {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .method("DELETE")
+                        .uri("/jaxrs/authentication")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(response.headers()["cache-control"], "no-store");
+            assert!(response.headers()["set-cookie"]
+                .to_str()
+                .unwrap()
+                .contains("Max-Age=0"));
+        }
+    }
+
+    // U12 matrix #5: refresh is a browser contract and only accepts the HttpOnly
+    // session cookie; Bearer-only refresh must be rejected.
+    #[tokio::test]
+    async fn test_refresh_rejects_bearer_only() {
+        let pool = shared::testing::test_pool();
+        let mut manager = SessionManager::new();
+        manager.auth_config = auth_config(false);
+        manager
+            .create_session("user".to_string(), "good".to_string())
+            .await
+            .unwrap();
+        let app = crate::router(pool, RateLimiter::new(), manager.clone());
+
+        // Bearer-only: refresh rejects Bearer (cookie-only browser contract).
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/jaxrs/authentication/refresh")
+                    .header("authorization", "Bearer good")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::UNAUTHORIZED,
+            "Bearer-only refresh must be 401"
+        );
+        // Old session must still be valid (no rotation happened).
+        assert!(manager.validate_session("good").await.is_some());
+
+        // Cookie + Bearer: cookie wins, rotation succeeds, old session invalidated.
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/jaxrs/authentication/refresh")
+                    .header("cookie", "oa4rust_session=good")
+                    .header("authorization", "Bearer good")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(
+            manager.validate_session("good").await.is_none(),
+            "old session should be rotated out"
+        );
+    }
+
+    // U12 matrix #4: current-user credential semantics. No credentials at all ->
+    // anonymous 200 (Java probe compatibility); invalid credentials -> 401, and an
+    // invalid cookie never falls back to a valid Bearer.
+    #[tokio::test]
+    async fn test_whoami_no_credentials_is_anonymous() {
+        let pool = shared::testing::test_pool();
+        let manager = SessionManager::new();
+        let app = crate::router(pool, RateLimiter::new(), manager);
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/jaxrs/authentication/who")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 8192)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["data"]["tokenType"], "anonymous");
+    }
+
+    #[tokio::test]
+    async fn test_whoami_invalid_cookie_is_unauthorized() {
+        let pool = shared::testing::test_pool();
+        let manager = SessionManager::new();
+        let app = crate::router(pool, RateLimiter::new(), manager);
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/jaxrs/authentication/who")
+                    .header("cookie", "oa4rust_session=bogus")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn test_whoami_invalid_cookie_with_valid_bearer_is_unauthorized() {
+        let pool = shared::testing::test_pool();
+        let mut manager = SessionManager::new();
+        manager
+            .create_session("user".to_string(), "good".to_string())
+            .await
+            .unwrap();
+        let app = crate::router(pool, RateLimiter::new(), manager);
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/jaxrs/authentication/who")
+                    .header("cookie", "oa4rust_session=bogus")
+                    .header("authorization", "Bearer good")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        // The invalid cookie must win (no Bearer fallback) -> 401 even though a
+        // valid Bearer session exists.
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
 
     #[test]
     fn test_verify_password_md5() {
@@ -62,7 +280,8 @@ mod tests {
 
     #[test]
     fn test_action_result_all_fields() {
-        let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({"key": "value"}));
+        let result: ActionResult<serde_json::Value> =
+            ActionResult::success(serde_json::json!({"key": "value"}));
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
         // Java 成功信封元数据字段恒填充（2026-08-25 行为对比结论）
@@ -80,7 +299,10 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            let session = manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
+            let session = manager
+                .create_session("user1".to_string(), "token1".to_string())
+                .await
+                .unwrap();
             assert_eq!(session.person_unique, "user1");
             assert_eq!(session.token, "token1");
 
@@ -98,7 +320,10 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
+            manager
+                .create_session("user1".to_string(), "token1".to_string())
+                .await
+                .unwrap();
             assert!(manager.validate_session("token1").await.is_some());
 
             manager.remove_session("token1").await;
@@ -111,8 +336,14 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
-            manager.create_session("user2".to_string(), "token2".to_string()).await.unwrap();
+            manager
+                .create_session("user1".to_string(), "token1".to_string())
+                .await
+                .unwrap();
+            manager
+                .create_session("user2".to_string(), "token2".to_string())
+                .await
+                .unwrap();
 
             assert!(manager.validate_session("token1").await.is_some());
             assert!(manager.validate_session("token2").await.is_some());
@@ -126,10 +357,19 @@ mod tests {
         rt.block_on(async {
             let manager = SessionManager::new();
             // 为 user1 创建多个 session
-            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
-            manager.create_session("user1".to_string(), "token2".to_string()).await.unwrap();
+            manager
+                .create_session("user1".to_string(), "token1".to_string())
+                .await
+                .unwrap();
+            manager
+                .create_session("user1".to_string(), "token2".to_string())
+                .await
+                .unwrap();
             // 为 user2 创建 session
-            manager.create_session("user2".to_string(), "token3".to_string()).await.unwrap();
+            manager
+                .create_session("user2".to_string(), "token3".to_string())
+                .await
+                .unwrap();
 
             // 验证三个 session 都有效
             assert!(manager.validate_session("token1").await.is_some());
@@ -263,7 +503,9 @@ mod tests {
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
-            eprintln!("skipping test_oidc_get_or_create_person_inserts: DATABASE_URL not reachable");
+            eprintln!(
+                "skipping test_oidc_get_or_create_person_inserts: DATABASE_URL not reachable"
+            );
             return;
         }
 
@@ -298,7 +540,9 @@ mod tests {
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
-            eprintln!("skipping test_oidc_get_or_create_person_existing: DATABASE_URL not reachable");
+            eprintln!(
+                "skipping test_oidc_get_or_create_person_existing: DATABASE_URL not reachable"
+            );
             return;
         }
 
@@ -313,7 +557,12 @@ mod tests {
                     "INSERT INTO auth_person (id, unique_id, name, password_hash) \
                      VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
-                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User", &"{bcrypt}$2b$12$dummy"],
+                    &[
+                        &"person-oidc-existing",
+                        &unique_id,
+                        &"Pre-existing OIDC User",
+                        &"{bcrypt}$2b$12$dummy",
+                    ],
                 )
                 .await;
         }
@@ -436,16 +685,15 @@ mod tests {
             position: None,
         };
         let response = crate::LoginResponse {
-            token: "test-token".to_string(),
-            token_type: "Bearer".to_string(),
             role_list: vec!["admin".to_string(), "user".to_string()],
             password_expired: false,
             identity_list: vec!["identity1".to_string()],
             person,
         };
-        assert_eq!(response.token, "test-token");
-        assert_eq!(response.token_type, "Bearer");
-        assert_eq!(response.role_list, vec!["admin".to_string(), "user".to_string()]);
+        assert_eq!(
+            response.role_list,
+            vec!["admin".to_string(), "user".to_string()]
+        );
         assert!(!response.password_expired);
         assert_eq!(response.identity_list, vec!["identity1".to_string()]);
         assert_eq!(response.person.unique, "user001");
@@ -466,8 +714,6 @@ mod tests {
             position: None,
         };
         let response = crate::LoginResponse {
-            token: "expired-token".to_string(),
-            token_type: "Bearer".to_string(),
             role_list: vec![],
             password_expired: true,
             identity_list: vec![],
@@ -564,8 +810,6 @@ mod tests {
             position: None,
         };
         let response = crate::LoginResponse {
-            token: "t".to_string(),
-            token_type: "Bearer".to_string(),
             role_list: vec!["admin".to_string()],
             password_expired: false,
             identity_list: vec![],
@@ -575,8 +819,7 @@ mod tests {
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
         let data = result.data.unwrap();
-        assert_eq!(data.token, "t");
-        assert_eq!(data.token_type, "Bearer");
+        assert_eq!(data.role_list, vec!["admin".to_string()]);
     }
 
     // --- U3 新增测试用例：安全注销广播 ---
@@ -586,8 +829,14 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
-            manager.create_session("user1".to_string(), "token2".to_string()).await.unwrap();
+            manager
+                .create_session("user1".to_string(), "token1".to_string())
+                .await
+                .unwrap();
+            manager
+                .create_session("user1".to_string(), "token2".to_string())
+                .await
+                .unwrap();
 
             // 单实例模式（无 pool）：broadcast_logout 应正常返回，不报错
             manager.broadcast_logout("user1").await;
@@ -603,9 +852,18 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
-            manager.create_session("user1".to_string(), "token2".to_string()).await.unwrap();
-            manager.create_session("user2".to_string(), "token3".to_string()).await.unwrap();
+            manager
+                .create_session("user1".to_string(), "token1".to_string())
+                .await
+                .unwrap();
+            manager
+                .create_session("user1".to_string(), "token2".to_string())
+                .await
+                .unwrap();
+            manager
+                .create_session("user2".to_string(), "token3".to_string())
+                .await
+                .unwrap();
 
             // 先批量移除
             manager.remove_sessions_by_person("user1").await;
@@ -792,11 +1050,13 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "success");
-        assert!(json["data"]["token"].as_str().is_some());
-        assert!(!json["data"]["token"].as_str().unwrap().is_empty());
+        assert!(json["data"].get("token").is_none());
+        assert!(json["data"].get("token_type").is_none());
     }
 
     // --- U6 新增测试用例：LDAP + two_factor 安全验证 ---
@@ -878,9 +1138,7 @@ mod tests {
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
-            eprintln!(
-                "skipping test_two_factor_login_phase1: DATABASE_URL not reachable"
-            );
+            eprintln!("skipping test_two_factor_login_phase1: DATABASE_URL not reachable");
             return;
         }
 
@@ -933,7 +1191,9 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
-        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"]["value"], true);
@@ -999,7 +1259,9 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
-        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "success");
         let temp_token = json["data"]["temp_token"].as_str().unwrap().to_string();
@@ -1039,10 +1301,12 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
-        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "success");
-        assert!(!json["data"]["token"].as_str().unwrap().is_empty());
+        assert!(json["data"].get("token").is_none());
     }
 
     #[tokio::test]
@@ -1050,9 +1314,7 @@ mod tests {
         use shared::testing::is_db_available;
 
         if !is_db_available().await {
-            eprintln!(
-                "skipping test_two_factor_invalid_temp_token: DATABASE_URL not reachable"
-            );
+            eprintln!("skipping test_two_factor_invalid_temp_token: DATABASE_URL not reachable");
             return;
         }
 
@@ -1080,7 +1342,9 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
-        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["type"], "error");
     }
