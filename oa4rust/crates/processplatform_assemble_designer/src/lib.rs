@@ -76,8 +76,7 @@ pub async fn get_flow(
     let row = client
         .query_one(
             "SELECT id, name, category, process_definition, version, creator, \
-             to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time, \
-             to_char(update_time, 'YYYY-MM-DD HH24:MI:SS') AS update_time \
+             create_time, update_time \
              FROM x_process_definition WHERE id = $1",
             &[&id],
         )
@@ -93,9 +92,9 @@ pub async fn get_flow(
         ),
         (
             "version".to_string(),
-            Value::Number(serde_json::Number::from(row.get::<_, i32>("version"))),
+            Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("version").unwrap_or(0))),
         ),
-        ("creator".to_string(), Value::String(row.get("creator"))),
+        ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
         (
             "createTime".to_string(),
             Value::String(
@@ -158,7 +157,7 @@ pub async fn list_flows(
     let rows = if category.is_empty() || category == "all" {
         client
             .query(
-                "SELECT id, name, category, version, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_process_definition \
+                "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
                  WHERE 1=1 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
                 &[&size, &offset],
             )
@@ -167,7 +166,7 @@ pub async fn list_flows(
     } else {
         client
             .query(
-                "SELECT id, name, category, version, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_process_definition \
+                "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
                  WHERE category = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
                 &[&category, &size, &offset],
             )
@@ -187,9 +186,11 @@ pub async fn list_flows(
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("version"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("version").unwrap_or(0),
+                    )),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
                 (
                     "createTime".to_string(),
                     Value::String(
