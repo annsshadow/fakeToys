@@ -56,8 +56,7 @@ test('creates and round-trips a form through the web designer', async ({ page })
   // W5 契约：保存载荷 definition 为 O2OA moduleList 结构的 JSON 字符串
   // （顶层不再摊开 moduleList，而是包在 definition 字段里；断言该结构存在）
   const formBody = saved.request().postDataJSON()
-  const definition =
-    typeof formBody.definition === 'string' ? JSON.parse(formBody.definition) : formBody.definition
+  const definition = typeof formBody.definition === 'string' ? JSON.parse(formBody.definition) : formBody.definition
   expect(definition?.moduleList).toEqual(expect.any(Object))
   await expect(page.getByText(name, { exact: true })).toBeVisible()
 
