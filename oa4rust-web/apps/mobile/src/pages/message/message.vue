@@ -8,37 +8,26 @@ const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 
-/** 从未知形状的会话对象中稳妥取出展示字段（后端契约可能演进）。 */
-function pick(obj: Record<string, unknown>, keys: string[]): string {
-  for (const k of keys) {
-    const v = obj[k]
+function conversationId(row: Record<string, unknown>): string {
+  for (const k of ['id', 'conversationId', 'uuid', 'flag']) {
+    const v = row[k]
     if (typeof v === 'string' && v) return v
   }
   return ''
 }
-function conversationId(obj: Record<string, unknown>): string {
-  const v = pick(obj, ['conversationId', 'id', 'uuid', 'flag'])
-  return v
-}
-function conversationTitle(obj: Record<string, unknown>): string {
-  const v = pick(obj, ['title', 'name', 'subject', 'peerName', 'contact'])
-  return v || '会话'
-}
-
-function payload(resp: { data: unknown }): Record<string, unknown>[] {
-  const d = resp.data
-  if (Array.isArray(d)) return d as Record<string, unknown>[]
-  if (d && typeof d === 'object' && Array.isArray((d as { data?: unknown }).data)) {
-    return (d as { data: Record<string, unknown>[] }).data
+function conversationTitle(row: Record<string, unknown>): string {
+  for (const k of ['name', 'title', 'subject']) {
+    const v = row[k]
+    if (typeof v === 'string' && v) return v
   }
-  return []
+  return '会话'
 }
 
 async function load() {
   loading.value = true
   try {
-    const resp = await messageApi.conversationList(1, 50)
-    rows.value = payload(resp)
+    const resp = await messageApi.conversationList()
+    rows.value = resp.data ?? []
   } catch {
     rows.value = []
   } finally {
@@ -52,14 +41,11 @@ onShow(async () => {
   load()
 })
 
-async function openConversation(row: Record<string, unknown>) {
+function openConversation(row: Record<string, unknown>) {
   const id = conversationId(row)
   if (!id) return
-  try {
-    await messageApi.markRead(id)
-  } catch {
-    /* 标记失败不影响列表交互 */
-  }
+  const name = conversationTitle(row)
+  uni.navigateTo({ url: `/pages/chat/chat?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}` })
 }
 </script>
 
@@ -70,7 +56,7 @@ async function openConversation(row: Record<string, unknown>) {
     <view v-else class="list">
       <view v-for="(row, i) in rows" :key="i" class="item" @tap="openConversation(row)">
         <view class="title">{{ conversationTitle(row) }}</view>
-        <view class="meta">{{ pick(row, ['lastMessage', 'preview', 'content']) || ' ' }}</view>
+        <view class="meta">{{ (row.lastMessage as string) || ' ' }}</view>
       </view>
     </view>
   </view>
