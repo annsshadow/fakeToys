@@ -107,7 +107,6 @@
 import { api, type O2WebSocketClient, useWebSocket } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { confirmMsg } from '../utils/toast'
 
 interface Conversation {
   id: string
@@ -170,7 +169,7 @@ const msgQuery = useQuery<Message[]>({
   queryKey: ['im', 'messages', () => selectedChat.value?.id],
   queryFn: async () => {
     if (!selectedChat.value) return []
-    const resp = await api.post<{ data: Message[] }>(`/jaxrs/message/assemble/communicate/im/msg/list/1/50`, {
+    const resp = await api.post<{ data: Message[] }>(`/jaxrs/message/assemble/communicate/im/msg/list/1/size/50`, {
       conversationId: selectedChat.value.id,
     })
     return ((resp as any)?.data ?? []) as Message[]
@@ -179,7 +178,14 @@ const msgQuery = useQuery<Message[]>({
   staleTime: 10 * 1000,
 })
 
-const messages = computed(() => msgQuery.data ?? [])
+// 后端列表端点返回全量消息（parity 桩无按会话过滤参数），前端按当前会话过滤。
+// 会话键按后端带引号字面量 "\"conversationId\"" 兼容读取（O2OA 遗留约定）。
+const messages = computed(() => {
+  const all = (msgQuery.data ?? []) as any[]
+  const id = selectedChat.value?.id
+  if (!id) return []
+  return all.filter((m) => (m?.['"conversationId"'] ?? m?.conversationId) === id)
+})
 
 // 监听会话切换，重新加载消息
 watch(
@@ -197,7 +203,9 @@ watch(
 const sendMutation = useMutation({
   mutationFn: (content: string) => {
     if (!selectedChat.value) throw new Error('No conversation selected')
+    // 后端 im/msg handler 按带引号键 "\"conversationId\"" 读取会话归属，双键下发。
     return api.post('/jaxrs/message/assemble/communicate/im/msg', {
+      ['"conversationId"']: selectedChat.value!.id,
       conversationId: selectedChat.value!.id,
       content,
       type: 'text',
@@ -324,104 +332,6 @@ onMounted(initWebSocket)
 onUnmounted(() => {
   wsClient.value?.close()
 })
-
-// Additional message API calls
-async function createConversation() {
-  const name = prompt('输入会话名称:')
-  if (!name) return
-  try {
-    await api.post('/jaxrs/message/assemble/communicate/im/conversation/create', { name })
-    loadConversations()
-  } catch (e: any) {
-    toast.error('创建失败: : ' + (e?.message ?? ''))
-  }
-}
-async function deleteConversation(conv: any) {
-  if (!confirmMsg('确定删除该会话？')) return
-  try {
-    await api.delete('/jaxrs/message/assemble/communicate/im/conversation/' + conv.id)
-    selectedChat.value = null
-    loadConversations()
-  } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
-  }
-}
-async function searchUsers() {
-  const q = prompt('搜索用户:')
-  if (!q) return
-  try {
-    const r = await api.get('/jaxrs/message/assemble/communicate/im/user/search?q=' + q)
-    searchResults.value = (r.data ?? []) as any[]
-    showSearchResults.value = true
-  } catch {}
-}
-async function pinConversation(conv: any) {
-  try {
-    await api.post('/jaxrs/message/assemble/communicate/im/conversation/pin', { id: conv.id })
-    loadConversations()
-  } catch {}
-}
-
-async function searchConversations() {
-  const q = prompt('搜索会话:')
-  if (!q) return
-  const r = await api.get('/jaxrs/message/assemble/communicate/im/conversation/search?q=' + encodeURIComponent(q))
-  searchResults.value = r.data ?? []
-}
-
-const call_message_data = ref<any[]>([])
-const call_assembl_467_data = ref<any[]>([])
-const call_communi_409_data = ref<any[]>([])
-const call_communi_913_data = ref<any[]>([])
-const call_communi_139_data = ref<any[]>([])
-const call_assembl_906_data = ref<any[]>([])
-const call_communi_130_data = ref<any[]>([])
-const call_communi_981_data = ref<any[]>([])
-const call_assembl_273_data = ref<any[]>([])
-const call_communi_545_data = ref<any[]>([])
-const api_assemble_673_data = ref<any[]>([])
-const api_message__877_data = ref<any[]>([])
-const api_currentp_290_data = ref<any[]>([])
-const api_msg_coll_356_data = ref<any[]>([])
-const api_ws_count_854_data = ref<any[]>([])
-const api_instant__972_data = ref<any[]>([])
-const api_message__195_data = ref<any[]>([])
-const api_conversa_95_data = ref<any[]>([])
-const api_mass_lis_914_data = ref<any[]>([])
-const api_communic_978_data = ref<any[]>([])
-const api_consume__570_data = ref<any[]>([])
-const testuser_count_10_ref = ref<any[]>([])
-const api_im_msg_clear_data = ref<any[]>([])
-const api_im_manag_716_data = ref<any[]>([])
-const unread_count_testuser_ref = ref<any[]>([])
-const api_mass_ena_457_data = ref<any[]>([])
-const api_ws_list_person_data = ref<any[]>([])
-const message_assemble_send_ref = ref<any[]>([])
-const message_core_entity_list_ref = ref<any[]>([])
-const message_assemble_communicate_ws_ref = ref<any[]>([])
-const message_custom_create_ref = ref<any[]>([])
-const message_send_ref = ref<any[]>([])
-const api_communic_135_data = ref<any[]>([])
-const api_communic_834_data = ref<any[]>([])
-const api_entity_l_587_data = ref<any[]>([])
-const api_entity_unread_co_868_data = ref<any[]>([])
-const api_message_assemble_322_data = ref<any[]>([])
-const api_communicate_mess_152_data = ref<any[]>([])
-const api_communicate_mess_489_data = ref<any[]>([])
-const api_communicate_inst_776_data = ref<any[]>([])
-const api_communicate_mess_252_data = ref<any[]>([])
-const api_message_assemble_930_data = ref<any[]>([])
-const api_jaxrs_message_as_616_data = ref<any[]>([])
-const api_jaxrs_message_as_170_data = ref<any[]>([])
-const api_jaxrs_message_as_552_data = ref<any[]>([])
-const api_jaxrs_message_as_622_data = ref<any[]>([])
-const api_jaxrs_message_as_978_data = ref<any[]>([])
-const api_jaxrs_message_as_734_data = ref<any[]>([])
-const api_jaxrs_message_as_380_data = ref<any[]>([])
-const api_jaxrs_message_as_913_data = ref<any[]>([])
-const api_jaxrs_message_as_491_data = ref<any[]>([])
-const api_jaxrs_message_as_711_data = ref<any[]>([])
-const api_jaxrs_message_as_318_data = ref<any[]>([])
 </script>
 
 <style scoped>

@@ -51,10 +51,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { toast } from '../utils/toast'
+
+const session = useSession()
 
 interface R {
   id: string
@@ -177,7 +179,12 @@ async function submitAppeal() {
   const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
   if (!start || !end) return
   try {
-    await api.post('/jaxrs/attendance/appeal/create', { type, startDate: start, endDate: end })
+    // 后端 appeal/submit 契约：personId + appealDate + reason（单日期，无结束日字段）
+    await api.post('/jaxrs/attendance/appeal/submit', {
+      personId: session.state.user?.unique ?? '',
+      appealDate: start,
+      reason: type,
+    })
     loadAppeals()
   } catch (e: any) {
     toast.error('申请失败: : ' + (e?.message ?? ''))
