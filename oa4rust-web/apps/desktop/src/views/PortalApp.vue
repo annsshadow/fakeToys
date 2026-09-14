@@ -47,7 +47,7 @@ const queryClient = useQueryClient()
 const { data } = useQuery({
   queryKey: ['portal', 'pages'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/portal/assemble/surface/page/list/default')
+    const resp = await api.get('/jaxrs/portal/assemble/surface/page/list/portal/default')
     return ((resp as any)?.data ?? []) as PortalPage[]
   },
   staleTime: 60_000,

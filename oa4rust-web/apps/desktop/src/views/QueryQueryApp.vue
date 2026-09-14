@@ -70,7 +70,14 @@ const items = ref<Item[]>([]),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
 
-const ep = '/jaxrs/query/assemble/designer/list'
+// 与后端已注册路由对齐：列表用 list/all（无参全量），CRUD 走 designer 资源端点
+// （create / save/{id} / delete/{id}），而非旧 o2web 的 list 型 CRUD。
+const ep = {
+  list: '/jaxrs/query/assemble/designer/list/all',
+  create: '/jaxrs/query/assemble/designer/create',
+  save: '/jaxrs/query/assemble/designer/save',
+  remove: '/jaxrs/query/assemble/designer/delete',
+}
 const qk = ['query_Query', 'list']
 
 const { data } = useQuery({
@@ -78,7 +85,7 @@ const { data } = useQuery({
   queryFn: async () => {
     loading.value = true
     try {
-      const r = await api.get(ep)
+      const r = await api.get(ep.list)
       return (r as any)?.data ?? []
     } finally {
       loading.value = false
@@ -109,8 +116,8 @@ function closeModal() {
 }
 const saveM = useMutation({
   mutationFn: async (data: any) => {
-    if (editingId.value) return api.put(ep + '/' + editingId.value, data)
-    return api.post(ep, data)
+    if (editingId.value) return api.put(ep.save + '/' + editingId.value, data)
+    return api.post(ep.create, data)
   },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
@@ -121,7 +128,7 @@ function saveItem() {
   if (form.value.name) saveM.mutate(form.value)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.delete(ep + '/' + id),
+  mutationFn: async (id: string) => api.delete(ep.remove + '/' + id),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

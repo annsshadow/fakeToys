@@ -197,7 +197,7 @@ async function loadDict() {
 async function loadMarket() {
   loadingMarket.value = true
   try {
-    const r = await api.post('/jaxrs/program_center/market/list/paging/1/20', {})
+    const r = await api.post('/jaxrs/program_center/market/list/paging/1/size/20', {})
     markets.value = r.data?.list ?? r.data ?? []
   } catch {
     markets.value = []

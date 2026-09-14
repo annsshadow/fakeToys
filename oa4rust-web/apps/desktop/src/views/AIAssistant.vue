@@ -134,7 +134,7 @@ function addMcp() {
 }
 
 onMounted(() => {
-  api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/1/20').then((r: any) => {
+  api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20').then((r: any) => {
     mcps.value = (r.data ?? []) as typeof mcps.value
   })
 })

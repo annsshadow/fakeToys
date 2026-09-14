@@ -112,7 +112,7 @@ const configData = ref({ base: null, models: [] as any[] })
 
 async function loadConversations() {
   try {
-    const r = await api.get('/jaxrs/ai_assemble_control/chat/list/paging/1/20')
+    const r = await api.get('/jaxrs/ai_assemble_control/chat/list/paging/1/size/20')
     conversations.value = r.data?.list ?? r.data ?? []
   } catch {
     conversations.value = []
@@ -123,7 +123,7 @@ async function selectChat(chat: ChatItem) {
   currentChat.value = chat
   messages.value = []
   try {
-    const r = await api.get(`/jaxrs/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/50`)
+    const r = await api.get(`/jaxrs/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50`)
     const list = r.data?.list ?? []
     messages.value = list.map((m: any) => ({
       role: m.type === 'user' ? 'user' : 'assistant',

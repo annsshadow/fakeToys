@@ -73,7 +73,7 @@ const sq = ref(''),
   qc = useQueryClient()
 const { data } = useQuery({
   queryKey: ['query', 'defs'],
-  queryFn: () => api.get('/jaxrs/query/assemble/designer/list').then((r: any) => (r.data ?? []) as Q[]),
+  queryFn: () => api.get('/jaxrs/query/assemble/designer/list/all').then((r: any) => (r.data ?? []) as Q[]),
 })
 qs2.value = data.value ?? []
 const qsFiltered = computed(() =>
