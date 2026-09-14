@@ -1,0 +1,28 @@
+{
+  "pages": [
+    { "path": "pages/index/index" },
+    { "path": "pages/message/message" },
+    { "path": "pages/process/process" },
+    { "path": "pages/doc/doc" },
+    { "path": "pages/mine/mine" },
+    { "path": "pages/login/login" }
+  ],
+  "tabBar": {
+    "color": "#90979f",
+    "selectedColor": "#2d8cf0",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "工作台" },
+      { "pagePath": "pages/message/message", "text": "消息" },
+      { "pagePath": "pages/process/process", "text": "审批" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "OA4Rust",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fa"
+  }
+}
