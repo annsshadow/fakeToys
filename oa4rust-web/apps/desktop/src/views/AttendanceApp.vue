@@ -139,7 +139,8 @@ function audit(a: A, action: string) {
   am.mutate({ id: a.id, status: action })
 }
 function exportData() {
-  window.open('/jaxrs/attendance/assemble/control/export')
+  // 后端未注册考勤导出路由，提示而非 404 页面。
+  toast.error('考勤导出功能后端暂未启用')
 }
 onMounted(loadData)
 
