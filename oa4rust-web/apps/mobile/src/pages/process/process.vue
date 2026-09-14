@@ -4,44 +4,49 @@ import { ref } from 'vue'
 import { processApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 
-type TabKey = 'pending' | 'done'
+type TabKey = 'pending' | 'done' | 'started'
+const tabs: { key: TabKey; label: string }[] = [
+  { key: 'pending', label: '待办' },
+  { key: 'done', label: '已办' },
+  { key: 'started', label: '我发起' },
+]
 const active = ref<TabKey>('pending')
 const rows = ref<Record<string, unknown>[]>([])
 const total = ref(0)
 const loading = ref(false)
 const busy = ref(false)
 
-function pick(obj: Record<string, unknown>, keys: string[]): string {
-  for (const k of keys) {
-    const v = obj[k]
+function titleOf(row: Record<string, unknown>, i: number): string {
+  for (const k of ['title', 'subject', 'processName']) {
+    const v = row[k]
     if (typeof v === 'string' && v) return v
   }
-  return ''
+  return `流程 #${i + 1}`
 }
-function payload(resp: { data: unknown }): { items: Record<string, unknown>[]; total: number } {
-  const d = resp.data
-  let items: Record<string, unknown>[] = []
-  let t = 0
-  if (Array.isArray(d)) {
-    items = d as Record<string, unknown>[]
-  } else if (d && typeof d === 'object') {
-    const o = d as { data?: unknown; total?: unknown }
-    if (Array.isArray(o.data)) items = o.data as Record<string, unknown>[]
-    if (typeof o.total === 'number') t = o.total
+function metaOf(row: Record<string, unknown>): string {
+  const parts: string[] = []
+  for (const k of ['applicationName', 'taskStatus', 'workStatus', 'createTime']) {
+    const v = row[k]
+    if (typeof v === 'string' && v) parts.push(v)
   }
-  return { items, total: t || items.length }
+  return parts.join(' · ')
 }
 
 async function load() {
   loading.value = true
+  rows.value = []
+  total.value = 0
   try {
-    const resp = active.value === 'pending' ? await processApi.workList(1, 50) : await processApi.completedList(1, 50)
-    const p = payload(resp)
-    rows.value = p.items
-    total.value = p.total
+    const resp =
+      active.value === 'pending'
+        ? await processApi.pendingList(1, 50)
+        : active.value === 'done'
+          ? await processApi.completedList(1, 50)
+          : await processApi.startedList(1, 50)
+    rows.value = resp.data ?? []
+    total.value = resp.count ?? rows.value.length
   } catch {
     rows.value = []
-    total.value = 0
   } finally {
     loading.value = false
   }
@@ -58,12 +63,27 @@ function switchTab(key: TabKey) {
   load()
 }
 
-async function handle(row: Record<string, unknown>, action: string) {
-  const taskId = pick(row, ['taskId', 'id', 'uuid', 'flag'])
+/** 审批动作：先收集处理意见（可留空），再走 /jaxrs/task/{id}/complete|reject。 */
+function act(row: Record<string, unknown>, action: 'approve' | 'reject') {
+  const taskId = typeof row.id === 'string' ? row.id : ''
   if (!taskId || busy.value) return
+  uni.showModal({
+    title: action === 'approve' ? '审批通过' : '驳回',
+    content: '填写处理意见（可选）',
+    placeholder: '处理意见',
+    showInput: true,
+    success: (r) => {
+      if (!r.confirm) return
+      void runAction(taskId, action, r.content?.trim() || '')
+    },
+  })
+}
+
+async function runAction(taskId: string, action: 'approve' | 'reject', opinion: string) {
   busy.value = true
   try {
-    await processApi.taskHandle(taskId, action)
+    if (action === 'approve') await processApi.completeTask(taskId, { opinion })
+    else await processApi.rejectTask(taskId, { opinion })
     uni.showToast({ title: action === 'approve' ? '已通过' : '已驳回', icon: 'success' })
     load()
   } catch (e) {
@@ -77,29 +97,22 @@ async function handle(row: Record<string, unknown>, action: string) {
 <template>
   <view class="page">
     <view class="tabs">
-      <view class="tab" :class="{ on: active === 'pending' }" @tap="switchTab('pending')">
-        待办
-      </view>
-      <view class="tab" :class="{ on: active === 'done' }" @tap="switchTab('done')">
-        已办
+      <view v-for="t in tabs" :key="t.key" class="tab" :class="{ on: active === t.key }" @tap="switchTab(t.key)">
+        {{ t.label }}
       </view>
     </view>
 
     <view v-if="loading && rows.length === 0" class="tip">加载中…</view>
-    <view v-else-if="rows.length === 0" class="tip">暂无{{ active === 'pending' ? '待办' : '已办' }}</view>
+    <view v-else-if="rows.length === 0" class="tip">暂无{{ tabs.find((t) => t.key === active)?.label }}</view>
     <view v-else class="list">
       <view v-for="(row, i) in rows" :key="i" class="item">
-        <view class="title">
-          {{ pick(row, ['title', 'subject', 'name', 'processName']) || `流程 #${i + 1}` }}
-        </view>
-        <view class="meta">
-          {{ pick(row, ['status', 'applicant', 'createTime']) || ' ' }}
-        </view>
+        <view class="title">{{ titleOf(row, i) }}</view>
+        <view class="meta">{{ metaOf(row) || ' ' }}</view>
         <view v-if="active === 'pending'" class="actions">
-          <button size="mini" type="default" :disabled="busy" @tap="handle(row, 'reject')">
+          <button size="mini" type="default" :disabled="busy" @tap="act(row, 'reject')">
             驳回
           </button>
-          <button size="mini" type="primary" :disabled="busy" @tap="handle(row, 'approve')">
+          <button size="mini" type="primary" :disabled="busy" @tap="act(row, 'approve')">
             通过
           </button>
         </view>

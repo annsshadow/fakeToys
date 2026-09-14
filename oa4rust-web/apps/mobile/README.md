@@ -24,8 +24,10 @@ monorepo 的一个 workspace 成员（`apps/mobile`），与桌面端 `apps/desk
   （401 自动 refresh 重试、403 权限错误、统一 `ApiError` / `ApiResponse`），
   底层换成 `uni.request` / `uni.uploadFile` 以跨平台运行。
 - **精选端点**（`src/services/index.ts`）：只暴露适合移动端的高频模块
-  （auth / portal / message / process / file / org / general），路径与
-  `@oa4rust/apis` 保持一致，不把 3892 条路由全量打进移动包。
+  （auth / process / message / file / org / general），端点全部对齐 `oa4rust`
+  后端**已注册的 axum 路由**（与各 crate 的 `routes.rs` / `u2_router.rs` 一致，
+  含桌面 E2E 实跑通过的 `/jaxrs/task/{id}/complete|reject` 审批与
+  `message im` 会话收发族），不把 3892 条路由全量打进移动包。
 
 ## 鉴权模型（重要）
 
@@ -46,5 +48,7 @@ pnpm --filter @oa4rust/mobile typecheck             # tsc 检查（SDK 经 tscon
 pnpm --filter @oa4rust/mobile dev:h5                # 启动 H5（默认 :5174）
 ```
 
-页面：`login`（登录）、`index`（工作台）、`message`（消息）、`process`（审批）、
-`doc`（文档）、`mine`（我的），底部 tabBar 4 项。
+页面：`login`（登录）、`index`（工作台，待办计数 + 宫格入口）、`message`（会话列表）、
+`chat`（会话详情：历史 + 发消息 + 标记已读）、`process`（审批：待办/已办/我发起 +
+通过/驳回）、`doc`（我的文件：列表 + 下载预览）、`contacts`（通讯录搜索）、
+`mine`（我的），底部 tabBar 4 项（工作台/消息/审批/我的）。
