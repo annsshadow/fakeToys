@@ -105,6 +105,20 @@ export const processApi = {
         discardResponse: true,
       },
     ),
+  /** 可发起的流程清单（桌面 ProcessWork「发起流程」同源端点）。 */
+  startableProcesses: () =>
+    list(mapi.get<Record<string, unknown>[]>('/jaxrs/processplatform/assemble/designer/list/all')),
+  /** 流程定义（用于取绑定表单 flag）。 */
+  getProcess: (processId: string) =>
+    mapi.get<Record<string, unknown>>(`/jaxrs/processplatform/assemble/designer/get/${processId}`),
+  /** 表单定义（O2OA moduleList JSON；移动端做简版渲染）。 */
+  getForm: (formFlag: string) => mapi.get<Record<string, unknown>>(`/jaxrs/form/${formFlag}`),
+  /** 发起：创建工作实例，返回 work id（与桌面 submitStart 一致）。 */
+  startWork: (processId: string, title: string) =>
+    mapi.post<{ id?: string }>('/jaxrs/processplatform/service/processing/work', { process: processId, title }),
+  /** 填报：把表单数据写回工作实例（仅当流程绑定了表单时调用）。 */
+  saveWorkData: (workId: string, values: Record<string, unknown>) =>
+    mapi.put<never>(`/jaxrs/processplatform/service/processing/data/work/${workId}`, values, { discardResponse: true }),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -158,6 +172,18 @@ export const messageApi = {
     }),
   markRead: (conversationId: string) =>
     mapi.post(`/jaxrs/message/assemble/communicate/im/conversation/${conversationId}/read`, undefined),
+  /**
+   * 发起单聊：后端 im_conversation 创建一条 type=single 会话并返回新会话 id。
+   * 传对方姓名作为会话名；随后用 send() 在该会话内发消息即可。
+   */
+  startConversation: (name: string) =>
+    mapi.post<{ id?: string; name?: string; type?: string; created?: boolean }>(
+      '/jaxrs/message/assemble/communicate/im/conversation',
+      {
+        name,
+        type: 'single',
+      },
+    ),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -178,6 +204,47 @@ export const fileApi = {
   fileList: (folderId: string) => list(mapi.get<FileRow[]>(`/jaxrs/file/assemble/control/file/list/${folderId}`)),
   /** 真实下载路由；拼 apiBase 以支持原生 App / 小程序绝对地址场景。 */
   fileDownloadUrl: (fileId: string) => `${getApiBase()}/jaxrs/file/assemble/control/file/${fileId}/download`,
+  /**
+   * 二进制上传：multipart（file 字段 + 可选 name）写入附件存储 FILE_FILE。
+   * filePath 为本端临时文件路径（uni.chooseImage/chooseMessageFile 返回值）。
+   * 落点是附件存储（FILE_FILE），而非「我的文件」x_file 列表。
+   */
+  upload: (folderId: string, filePath: string, fileName: string) =>
+    mapi.upload<Record<string, unknown>>(`/jaxrs/attachment/upload/folder/${folderId}`, filePath, {
+      name: 'file',
+      formData: { name: fileName },
+    }),
+  /** 附件存储 FILE_FILE：当前用户的附件清单（上传落点即在此列出，而非 x_file）。 */
+  attachmentList: (owner: string) => list(mapi.get<FileRow[]>(`/jaxrs/attachment/list/editor/${owner}`)),
+  /** 附件存储 FILE_FILE 下载（拼 apiBase 支持原生 App / 小程序绝对地址）。 */
+  attachmentDownloadUrl: (attId: string) => `${getApiBase()}/jaxrs/attachment/${attId}/download`,
+}
+
+// ─────────────────────────────────────────────────────────────
+// 考勤（移动端本人打卡）
+// ─────────────────────────────────────────────────────────────
+export interface AttendancePreCheck {
+  date?: string
+  group?: { id?: string; groupName?: string; checkType?: string; workPlaceIdList?: string } | null
+  canCheckIn?: boolean
+  records?: Array<{
+    id?: string
+    checkInType?: string
+    checkInResult?: string
+    sourceType?: string
+    createTime?: string
+  }>
+}
+
+export const attendanceApi = {
+  /** 今日状态：命中考勤组 + 今日已有打卡记录。 */
+  preCheck: () => mapi.get<AttendancePreCheck>('/jaxrs/attendance/assemble/control/v2/mobile/check/pre'),
+  /** 打卡：checkInType 取 'checkIn'（上班）/ 'checkOut'（下班）；重复打卡返回 duplicated=true。 */
+  check: (checkInType: 'checkIn' | 'checkOut') =>
+    mapi.post<{ id?: string; duplicated?: boolean }>('/jaxrs/attendance/assemble/control/v2/mobile/check', {
+      checkInType,
+      sourceType: '移动端',
+    }),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -213,6 +280,7 @@ export const apis = {
   process: processApi,
   message: messageApi,
   file: fileApi,
+  attendance: attendanceApi,
   org: orgApi,
   general: generalApi,
 }
