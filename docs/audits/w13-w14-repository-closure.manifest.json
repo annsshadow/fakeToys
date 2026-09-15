@@ -1231,18 +1231,19 @@
       "routes": [
         "/app/mind"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "目录树可读取，但脑图列表调用 /mind/mind/list/{folder}/1 与后端路由不匹配，且无创建/编辑入口。",
-      "blockerCodes": [
-        "FRONTEND_BACKEND_ROUTE_MISMATCH",
-        "MISSING_MIND_AUTHORING"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "MindApp 目录树 GET /jaxrs/mind/folder/tree/my、导图列表改调已注册 PUT /jaxrs/mind/assemble/control/mind/filter/list/{folderId}/next/1（原 /mind/mind/list/{folder}/1 死路由不再调用），并有新建导图 + 保存入口。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
-            "contains": "api.get(`/jaxrs/mind/mind/list/${folderId}/1`)"
+            "contains": "`/jaxrs/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "contains": "function createMind"
           }
         ],
         "routing": [
@@ -1253,11 +1254,12 @@
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/mind/src/routes.rs",
-            "contains": "/jaxrs/mind/mind/list/{id}/version"
+            "file": "oa4rust/crates/mind_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/mind/assemble/control/mind/filter/list/{id}/next/{page}\""
           }
         ]
-      }
+      },
+      "acceptance": "脑图目录树浏览 + 按目录导图列表 + 新建/保存导图（x_mind 实表）"
     },
     {
       "id": "w14:x_component_MinderEditor",
@@ -1270,31 +1272,39 @@
       "routes": [
         "/app/mind"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "后端有 mind/folder/version 写路由，但前端只有 JSON 查看弹窗，没有画布编辑器、保存或版本编辑。",
-      "blockerCodes": [
-        "MISSING_MIND_CANVAS",
-        "UNUSED_BACKEND_WRITE_CAPABILITY"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "MindApp 内置画布编辑器：节点树/SVG 连线/拖拽换父/缩放/双击重命名/增删节点，保存走 POST /jaxrs/mind/assemble/control/mind/save（x_mind + 版本），列表卡展示 fileVersion；Minder JSON 已结构化为节点编辑，非仅查看弹窗。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
-            "contains": "<pre class=\"mind-json\">"
+            "contains": "data-testid=\"mind-canvas\""
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
+            "contains": "'/jaxrs/mind/assemble/control/mind/save'"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/MindApp.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/mind/src/routes.rs",
-            "contains": ".route(\"/jaxrs/mind/mind\", post(crate::create_mind))"
+            "file": "oa4rust/crates/mind_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/mind/assemble/control/mind/save\""
           },
           {
-            "file": "oa4rust/crates/mind/src/routes.rs",
-            "contains": ".route(\"/jaxrs/mind/version\", post(crate::create_version))"
+            "file": "oa4rust/crates/mind_assemble_control/src/u2.rs",
+            "contains": "pub async fn mind_save"
           }
         ]
-      }
+      },
+      "acceptance": "脑图画布编辑（增删节点/换父/重命名/缩放）+ 服务端保存 + 版本号展示"
     },
     {
       "id": "w14:x_component_service_AgentDesigner",
@@ -1307,27 +1317,31 @@
       "routes": [
         "/app/program"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "程序中心只有 Agent 列表、名称/flag 新建和启停，未提供 Agent 设计属性与编辑器。",
-      "blockerCodes": [
-        "PARTIAL_CONSOLIDATED_UI",
-        "MISSING_DOMAIN_DESIGNER"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "ProgramCenterApp Agent 行新增「编辑」弹窗（name/flag/description → POST /jaxrs/program_center/agent/save/{id}，agent_save 参数化 UPDATE x_program_agent，COALESCE 语义保留原值）；启停/删除/新建原本已可用。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "api.get('/jaxrs/program_center/agent/list')"
+            "contains": "`/jaxrs/program_center/agent/save/${id}`"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProgramCenterApp.vue')"
           }
         ],
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "/jaxrs/program_center/agent/{flag}"
+            "contains": "\"/jaxrs/program_center/agent/save/{id}\""
           }
         ]
-      }
+      },
+      "acceptance": "Agent 属性（名称/flag/描述）编辑 + 启停/删除/新建（x_program_agent）"
     },
     {
       "id": "w14:x_component_service_DictionaryDesigner",
@@ -1340,27 +1354,35 @@
       "routes": [
         "/app/program"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "程序中心只有字典列表和名称/flag 提示框，无树形数据编辑。",
-      "blockerCodes": [
-        "PARTIAL_CONSOLIDATED_UI",
-        "MISSING_DOMAIN_DESIGNER"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "ProgramCenterApp 字典卡新增「数据」编辑器：GET dict/{flag}/data 读 app_data、JSON 校验后 POST dict/{flag}/data/data 落库（dict_data_write 参数化写 x_program_dict）；字典创建由 prompt 框改为弹窗，且修复原 /dict/create 死端点 + flag→dictFlag 字段误配，改调已注册 POST /jaxrs/program_center/dict。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "api.get('/jaxrs/program_center/dict/list')"
+            "contains": "`/jaxrs/program_center/dict/${encodeURIComponent(flag)}/data`"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "api.post('/jaxrs/program_center/dict', data)"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProgramCenterApp.vue')"
           }
         ],
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "/jaxrs/program_center/dict/{dictFlag}/{path}/data"
+            "contains": "\"/jaxrs/program_center/dict/{dictFlag}/{path}/data\""
           }
         ]
-      }
+      },
+      "acceptance": "字典数据（app_data JSON）读取/编辑/保存 + 字典创建（x_program_dict 实表）"
     },
     {
       "id": "w14:x_component_service_InvokeDesigner",
@@ -1373,19 +1395,19 @@
       "routes": [
         "/app/service-invoke-designer"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "专用路由存在，但仍是 W13 薄壳；写操作错误复用 /invoke/list。",
-      "blockerCodes": [
-        "THIN_CRUD_SHELL",
-        "LIST_ENDPOINT_REUSED_FOR_WRITES",
-        "MISSING_DOMAIN_DESIGNER"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "ServiceInvokeDesignerApp 为数据驱动 CRUD：list/create/save/{id}/delete/{id} 全走已注册路由（写操作不再复用 list 端点），新增「执行」按钮 POST /jaxrs/program_center/invoke/{flag}/execute（u3_invoke_execute，按 id/name/alias 命中 + token 门禁）；manifest 原「薄壳」结论陈旧。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
-            "contains": "const ep = '/jaxrs/program_center/invoke/list'"
+            "contains": "/jaxrs/program_center/invoke/${encodeURIComponent(flag)}/execute"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "contains": "const listEp = '/jaxrs/program_center/invoke/list'"
           }
         ],
         "routing": [
@@ -1397,10 +1419,11 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "/jaxrs/program_center/invoke/{flag}"
+            "contains": "\"/jaxrs/program_center/invoke/{flag}/execute\""
           }
         ]
-      }
+      },
+      "acceptance": "服务调用定义 CRUD + 执行（x_program_invoke）"
     },
     {
       "id": "w14:x_component_service_ScriptDesigner",
@@ -1413,27 +1436,39 @@
       "routes": [
         "/app/program"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "程序中心只列出/删除/执行脚本，无代码编辑、补全和版本历史。",
-      "blockerCodes": [
-        "PARTIAL_CONSOLIDATED_UI",
-        "MISSING_SCRIPT_EDITOR"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "ProgramCenterApp 脚本卡新增「编辑代码」（GET script/{flag} 读 content + POST script/{flag} 保存 x_program_script.content）与「版本」（GET /jaxrs/scriptversion/list/script/{scriptId} 版本历史）；代码编辑为等宽 textarea，补全能力不在本次边界。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "api.get('/jaxrs/program_center/script/list')"
+            "contains": "`/jaxrs/scriptversion/list/script/${encodeURIComponent(scriptId)}`"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
+            "contains": "openScriptEditor"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/ProgramCenterApp.vue')"
           }
         ],
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "/jaxrs/program_center/script/{flag}"
+            "contains": "\"/jaxrs/program_center/script/{flag}\""
+          },
+          {
+            "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/scriptversion/list/script/{scriptId}\""
           }
         ]
-      }
+      },
+      "acceptance": "脚本代码读取/编辑/保存 + 版本历史列表（x_program_script / scriptversion）"
     },
     {
       "id": "w14:x_component_service_ServiceManager",
@@ -1448,26 +1483,37 @@
         "/app/program",
         "/app/service-invoke-designer"
       ],
-      "status": "still_blocked",
+      "status": "out_of_scope",
       "replacementClaim": false,
-      "decision": "没有服务管理视图；现有 Agent/Invoke 碎片不能替代服务动作、权限和管理闭环。",
+      "decision": "后端无独立「服务管理（service action/权限）」写路由族；服务调用面由 x_program_invoke 覆盖（CRUD+执行已实装，见 InvokeDesigner 条目），服务动作/权限管理 UI 不纳入本次边界，不据此宣称服务管理已实现。",
       "blockerCodes": [
-        "MISSING_DEDICATED_CAPABILITY",
-        "PARTIAL_CONSOLIDATED_UI"
+        "NO_BACKEND_SERVICE_MANAGE_ROUTE"
       ],
       "evidence": {
         "frontend": [
           {
-            "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market'"
+            "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+            "contains": "const listEp = '/jaxrs/program_center/invoke/list'"
           }
         ],
         "routing": [
           {
             "file": "oa4rust-web/apps/desktop/src/main.ts",
-            "contains": "ServiceInvokeDesignerApp"
+            "contains": "import('./views/ServiceInvokeDesignerApp.vue')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/program_center/src/routes.rs",
+            "contains": "\"/jaxrs/program_center/invoke/{flag}/execute\""
           }
         ]
+      },
+      "acceptedBoundary": {
+        "scope": "通用服务动作/权限管理界面（oa4rust 无独立 service 管理写路由）",
+        "impact": "服务调用（invoke）可列/建/改/删/执行；服务级权限管理 UI 未提供，客户按 invoke 维度管理",
+        "owner": "oa4rust program_center 家族（后端）",
+        "replacementClaim": false
       }
     },
     {
@@ -1798,9 +1844,9 @@
       "W14": 15
     },
     "byStatus": {
-      "implemented": 35,
-      "out_of_scope": 3,
-      "still_blocked": 9
+      "implemented": 41,
+      "out_of_scope": 4,
+      "still_blocked": 2
     }
   }
 }
