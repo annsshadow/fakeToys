@@ -629,4 +629,36 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    // ── cms/assemble/control/* 斜杠路径家族路由注册 ─────────────────────────
+    // 这 4 条是前端 Java 斜杠口径调用、此前未注册（桌面契约守卫 KNOWN_BACKEND_GAPS）的端点；
+    // 现在补齐真实 list handler，此测试锁定"已注册"（非 404），DB 缺数据时返回 500/200 而非 404。
+    async fn get_status(app: &axum::Router, uri: &str) -> StatusCode {
+        app.clone()
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+
+    #[tokio::test]
+    async fn test_cms_assemble_control_list_routes_registered() {
+        let pool = build_test_pool();
+        let app = crate::cms_assemble_control_router(pool);
+        for uri in [
+            "/jaxrs/cms/assemble/control/dict/list",
+            "/jaxrs/cms/assemble/control/form/list",
+            "/jaxrs/cms/assemble/control/view/list",
+            "/jaxrs/cms/assemble/control/xform/list",
+        ] {
+            let status = get_status(&app, uri).await;
+            assert_ne!(status, StatusCode::NOT_FOUND, "route {} should be registered", uri);
+        }
+    }
 }

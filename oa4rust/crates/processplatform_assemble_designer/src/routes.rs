@@ -5,13 +5,17 @@ use axum::{
 };
 use deadpool_postgres::Pool;
 
-use crate::{create_flow, delete_flow, get_flow, list_flows, preview_flow, save_flow};
+use crate::{
+    create_flow, delete_flow, designer_bare_list, get_flow, list_flows, preview_flow, save_flow,
+};
 
 pub fn router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/processplatform/assemble/designer/create", post(create_flow))
         .route("/jaxrs/processplatform/assemble/designer/get/{id}", get(get_flow))
         .route("/jaxrs/processplatform/assemble/designer/list/{category}", get(list_flows))
+        // 裸根（桌面 ProcessDesigner 配置串引用）：返回全部流程定义
+        .route("/jaxrs/processplatform/assemble/designer", get(designer_bare_list))
         .route("/jaxrs/processplatform/assemble/designer/save/{id}", post(save_flow))
         .route("/jaxrs/processplatform/assemble/designer/delete/{id}", post(delete_flow))
         .route("/jaxrs/processplatform/assemble/designer/preview/{id}", get(preview_flow))
@@ -141,5 +145,24 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/assemble/designer/workcompleted/process/{processFlag}/merge/data", get(crate::workcompleted_process_processFlag_merge_data))
         .route("/jaxrs/processplatform/assemble/designer/workcompleted/application/merge/data/{applicationFlag}", post(crate::workcompleted_application_applicationFlag_merge_data))
         .route("/jaxrs/processplatform/assemble/designer/workcompleted/process/merge/data/{processFlag}", post(crate::workcompleted_process_processFlag_merge_data))
+        // ── dict / form / xform 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
+        .route("/jaxrs/processplatform/assemble/designer/dict/list", get(crate::dict_list))
+        .route("/jaxrs/processplatform/assemble/designer/dict/create", post(crate::dict_create))
+        .route("/jaxrs/processplatform/assemble/designer/dict/save/{id}", put(crate::dict_save))
+        .route("/jaxrs/processplatform/assemble/designer/dict/save/{id}", post(crate::dict_save))
+        .route("/jaxrs/processplatform/assemble/designer/dict/delete/{id}", delete(crate::dict_delete))
+        .route("/jaxrs/processplatform/assemble/designer/dict/delete/{id}", post(crate::dict_delete))
+        .route("/jaxrs/processplatform/assemble/designer/form/list", get(crate::form_list))
+        .route("/jaxrs/processplatform/assemble/designer/form/create", post(crate::form_create))
+        .route("/jaxrs/processplatform/assemble/designer/form/save/{id}", put(crate::form_save))
+        .route("/jaxrs/processplatform/assemble/designer/form/save/{id}", post(crate::form_save))
+        .route("/jaxrs/processplatform/assemble/designer/form/delete/{id}", delete(crate::form_delete))
+        .route("/jaxrs/processplatform/assemble/designer/form/delete/{id}", post(crate::form_delete))
+        .route("/jaxrs/processplatform/assemble/designer/xform/list", get(crate::xform_list))
+        .route("/jaxrs/processplatform/assemble/designer/xform/create", post(crate::xform_create))
+        .route("/jaxrs/processplatform/assemble/designer/xform/save/{id}", put(crate::xform_save))
+        .route("/jaxrs/processplatform/assemble/designer/xform/save/{id}", post(crate::xform_save))
+        .route("/jaxrs/processplatform/assemble/designer/xform/delete/{id}", delete(crate::xform_delete))
+        .route("/jaxrs/processplatform/assemble/designer/xform/delete/{id}", post(crate::xform_delete))
         .layer(Extension(pool))
 }

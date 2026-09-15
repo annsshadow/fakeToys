@@ -440,6 +440,8 @@ pub fn portal_assemble_designer_router() -> Router {
         )
         .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
         .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
+        // 裸根（桌面 PortalDesignerApp 配置串引用）：返回门户设计器列表
+        .route("/jaxrs/portal/assemble/designer", get(list_designs))
         .route(
             "/jaxrs/portal/assemble/designer/save/{id}",
             post(save_design),
@@ -699,6 +701,21 @@ pub fn portal_assemble_designer_router() -> Router {
             "/jaxrs/portal/assemble/designer/script/list/manager",
             post(crate::script_list_manager),
         )
+        // ── dict / page / widget 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
+        // 注：page/create、page/save/{id}、page/delete/{id} 已被 U2 类型化 handler 占用
+        .route("/jaxrs/portal/assemble/designer/dict/list", get(dict_list))
+        .route("/jaxrs/portal/assemble/designer/dict/create", post(dict_create))
+        .route("/jaxrs/portal/assemble/designer/dict/save/{id}", put(dict_save))
+        .route("/jaxrs/portal/assemble/designer/dict/save/{id}", post(dict_save))
+        .route("/jaxrs/portal/assemble/designer/dict/delete/{id}", delete(dict_delete))
+        .route("/jaxrs/portal/assemble/designer/dict/delete/{id}", post(dict_delete))
+        .route("/jaxrs/portal/assemble/designer/page/list", get(page_list))
+        .route("/jaxrs/portal/assemble/designer/widget/list", get(widget_list))
+        .route("/jaxrs/portal/assemble/designer/widget/create", post(widget_create))
+        .route("/jaxrs/portal/assemble/designer/widget/save/{id}", put(widget_save))
+        .route("/jaxrs/portal/assemble/designer/widget/save/{id}", post(widget_save))
+        .route("/jaxrs/portal/assemble/designer/widget/delete/{id}", delete(widget_delete))
+        .route("/jaxrs/portal/assemble/designer/widget/delete/{id}", post(widget_delete))
 }
 
 #[cfg(test)]
@@ -726,16 +743,25 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
                 ),
             ]))
         })
@@ -2791,6 +2817,278 @@ pub async fn update_widget(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dict / page / widget 斜杠路径家族（桌面设计器视图 list + shared::crud 通用参数化写）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── dict/list（门户字典，查 x_portal_dict）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appName".to_string(), Value::String(row.get("app_name"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── dict 家族 CRUD（x_portal_dict，通用参数化写）──
+fn dict_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_portal_dict",
+        columns: &[
+            ("name", "name"),
+            ("appName", "app_name"),
+            ("appData", "app_data"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── page/list（门户页面设计器，查 x_portal_page；注意：page/create、page/save/{id}、
+//    page/delete/{id} 已被 U2 类型化 handler（create_page/save_page/delete_page，
+//    含 IDOR 门禁与 content JSON 序列化）占用，不能再重复注册同 path+method）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time, update_time \
+             FROM x_portal_page WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
+            Value::Object(map)
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── widget/list（门户小部件设计器，查 x_portal_widget）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, portal_id, category, config, creator, create_time \
+             FROM x_portal_widget WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "portalId".to_string(),
+                    Value::String(row.get("portal_id")),
+                ),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("config".to_string(), Value::String(row.get("config"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get("creator")),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── widget 家族 CRUD（x_portal_widget，通用参数化写）──
+fn widget_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_portal_widget",
+        columns: &[
+            ("name", "name"),
+            ("portalId", "portal_id"),
+            ("category", "category"),
+            ("config", "config"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &widget_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &widget_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &widget_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
         ]),
     ))))
 }

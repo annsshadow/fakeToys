@@ -230,4 +230,39 @@ mod tests {
         assert_eq!(json["title"], "测试文章");
         assert_eq!(json["publish_time"], "2024-01-01T10:00:00");
     }
+
+    // cms/core/entity/* 斜杠路径家族（093 迁移建表）：路由已注册，无 DB 时返回 500 而非 404。
+    #[test]
+    fn test_cms_core_entity_list_routes_registered() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let pool = build_test_pool();
+            let app = crate::cms_core_entity_router(pool);
+            for uri in [
+                "/jaxrs/cms/core/entity/column/list",
+                "/jaxrs/cms/core/entity/column_manager/list",
+                "/jaxrs/cms/core/entity/index/list",
+                "/jaxrs/cms/core/entity/module/list",
+                "/jaxrs/cms/core/entity/note/list",
+            ] {
+                let response = app
+                    .clone()
+                    .oneshot(
+                        Request::builder()
+                            .uri(uri)
+                            .method(axum::http::Method::GET)
+                            .body(Body::empty())
+                            .unwrap(),
+                    )
+                    .await
+                    .unwrap();
+                assert_ne!(
+                    response.status(),
+                    StatusCode::NOT_FOUND,
+                    "route {} should be registered",
+                    uri
+                );
+            }
+        });
+    }
 }

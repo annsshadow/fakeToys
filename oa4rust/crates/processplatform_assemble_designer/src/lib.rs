@@ -1,6 +1,6 @@
 #[allow(dead_code, non_snake_case)]
 use axum::{
-    extract::{Extension, Query},
+    extract::{Extension, Path, Query},
     Json,
 };
 use deadpool_postgres::tokio_postgres::Row;
@@ -219,6 +219,42 @@ pub async fn list_flows(
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
+}
+
+/// GET /jaxrs/processplatform/assemble/designer（裸根，桌面 ProcessDesigner 配置串引用）：
+/// 返回全部流程定义（等价 category=all，取前 100 条）。
+#[allow(non_snake_case)]
+pub async fn designer_bare_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, version::text AS version, creator, create_time::text AS create_time \
+             FROM x_process_definition ORDER BY create_time DESC LIMIT 100",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("version".to_string(), Value::String(row.get::<_, Option<String>>("version").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 保存流程定义
@@ -4499,12 +4535,12 @@ pub async fn script_by_name_exact(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, \"xname\", xapplication, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM pp_e_script \
+        "SELECT xid, \"xname\", xapplication, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM pp_e_script \
              WHERE xapplication = $1 AND \"xname\" = $2 ORDER BY \"xcreateTime\" DESC NULLS LAST",
-            &[&application_id, &name],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+        &[&application_id, &name],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_app_data).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4513,6 +4549,348 @@ pub async fn script_by_name_exact(
                 Value::Number(serde_json::Number::from(data.len() as i64)),
             ),
             ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dict / form / xform 斜杠路径家族（设计器桌面视图 + shared::crud 通用参数化写）
+// dict/form 复用既有 pp_e_* 双轨表（以 list SQL 为准），xform 查 x_pp_xform（097）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── dict/list（流程字典设计器，查 pp_e_applicationdict）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xapplication, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE deleted_at IS NULL ORDER BY \"xcreateTime\" DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                (
+                    "application".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xapplication").unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("xcreateTime")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("xupdateTime")),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── dict 家族 CRUD（pp_e_applicationdict，通用参数化写）──
+fn dict_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "pp_e_applicationdict",
+        columns: &[
+            ("name", "xname"),
+            ("application", "xapplication"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── form/list（流程表单设计器，查 pp_e_form）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xapplication, \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE deleted_at IS NULL ORDER BY \"xcreateTime\" DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                (
+                    "application".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xapplication").unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("xcreateTime")),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get("xupdateTime")),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── form 家族 CRUD（pp_e_form，通用参数化写）──
+fn form_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "pp_e_form",
+        columns: &[
+            ("name", "xname"),
+            ("application", "xapplication"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &form_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &form_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &form_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── xform/list（流程 XForm 设计器，查 x_pp_xform 097）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, definition, status, creator, create_time::text AS create_time, update_time::text AS update_time \
+             FROM x_pp_xform WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "definition".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("definition").unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── xform 家族 CRUD（x_pp_xform 097，通用参数化写）──
+fn xform_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_pp_xform",
+        columns: &[
+            ("name", "name"),
+            ("definition", "definition"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &xform_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &xform_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &xform_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
         ]),
     ))))
 }
