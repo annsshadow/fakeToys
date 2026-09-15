@@ -139,6 +139,43 @@ pub async fn list_surfaces(
     )))
 }
 
+// ── surface/explorer/list（桌面 QueryExplorerApp 配置串引用，查 x_query_view 保存的查询）──
+#[allow(non_snake_case)]
+pub async fn explorer_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, query_type, create_time FROM x_query_view ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("queryType".to_string(), Value::String(row.get("query_type"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
 #[allow(non_snake_case)]
 pub async fn save_surface(
     pool: Extension<Pool>,
@@ -230,6 +267,7 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/query/assemble/surface/get/{id}", get(get_surface))
         .route("/jaxrs/query/assemble/surface/create", post(create_surface))
         .route("/jaxrs/query/assemble/surface/list/{category}", get(list_surfaces))
+        .route("/jaxrs/query/assemble/surface/explorer/list", get(explorer_list))
         .route("/jaxrs/query/assemble/surface/save/{id}", post(save_surface))
         .route("/jaxrs/query/assemble/surface/delete/{id}", post(delete_surface))
         .route("/jaxrs/query/assemble/surface/preview/{id}", get(preview_surface))

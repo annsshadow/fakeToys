@@ -199,6 +199,103 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     )))
 }
 
+// ── ann/list（AI 模块公告/模型公告，桌面 AIAssistant 配置串引用，查 x_ai_ann 096）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, title, content, category, status, creator, create_time::text AS create_time \
+             FROM x_ai_ann WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
+                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── ann 家族 CRUD（x_ai_ann 096，通用参数化写）──
+fn ann_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_ai_ann",
+        columns: &[
+            ("title", "title"),
+            ("content", "content"),
+            ("category", "category"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &ann_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &ann_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &ann_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn update_ai_control_config(

@@ -143,6 +143,46 @@ pub async fn list_surfaces(
     }
 }
 
+// ── surface/process_manager/list（桌面 ProcessManagerApp 配置串引用，查 x_process_definition）──
+#[allow(non_snake_case)]
+pub async fn process_manager_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, status, version::text AS version, creator, \
+                    create_time::text AS create_time, update_time::text AS update_time \
+             FROM x_process_definition ORDER BY create_time DESC LIMIT 200",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                ("version".to_string(), Value::String(row.get::<_, Option<String>>("version").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
 #[allow(non_snake_case)]
 pub async fn preview_surface(
     pool: Extension<Pool>,

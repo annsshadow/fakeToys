@@ -9,6 +9,29 @@ pub mod routes;
 #[cfg(test)]
 mod tests_u2;
 
+// ── message/unread/count（裸路径，桌面 Dashboard 引用；统计未读消息）────────────
+// 未读 = x_message_consume 中 read_status 非 'read' 的待消费条目。
+#[allow(non_snake_case)]
+pub async fn unread_count(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*)::int AS c FROM x_message_consume WHERE (read_status IS NULL OR read_status = '' OR read_status <> 'read')",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i32 = row.get("c");
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(count as i64))),
+            ("im".to_string(), Value::Number(serde_json::Number::from(count as i64))),
+        ]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,

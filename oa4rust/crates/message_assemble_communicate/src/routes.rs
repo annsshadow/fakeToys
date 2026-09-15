@@ -31,7 +31,7 @@ use crate::{
     instant_list_id_prev_count, mark_read, mass_create, mass_enable_type, mass_enable_type_get,
     mass_id, mass_id_mockdeletetoget, mass_list_id_next_count, mass_list_id_prev_count,
     message_custom_create, message_list_paging_page_size_size, receive_list, send_message,
-    ws_count_person, ws_create, ws_list_person, ws_list_person_current_node,
+    unread_count, ws_count_person, ws_create, ws_list_person, ws_list_person_current_node,
 };
 
 pub fn router(pool: Pool) -> Router {
@@ -39,6 +39,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/message/assemble/communicate/send", post(send_message))
         .route("/jaxrs/message/assemble/communicate/receive/{consume}", get(receive_list))
         .route("/jaxrs/message/assemble/communicate/mark_read/{id}", post(mark_read))
+        // ── message/unread/count 裸路径（补齐 KNOWN_BACKEND_GAPS，桌面 Dashboard 引用）──
+        .route("/jaxrs/message/unread/count", get(unread_count))
         // connector（Java ConnectorAction POST /connector）
         .route("/jaxrs/message/assemble/communicate/connector", post(connector_create))
         // ws（Java WsAction）

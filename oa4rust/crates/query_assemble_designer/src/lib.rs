@@ -531,6 +531,113 @@ pub async fn delete_designer(
     ))))
 }
 
+// ── 裸路径变体（桌面 QueryQueryApp 以配置串引用 save/delete，list 为无参全量）──
+#[allow(non_snake_case)]
+pub async fn list_designers_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, create_time, update_time FROM x_query_design \
+             WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn save_designer_bare(
+    pool: Extension<Pool>,
+    Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category = req.get("category").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let query = req.get("query").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+
+    let updated = client
+        .execute(
+            "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3, update_time = NOW() \
+             WHERE id = $4 AND deleted_at IS NULL",
+            &[&name, &category, &query, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let saved = if updated > 0 {
+        updated
+    } else {
+        // 不存在则新建（upsert 语义），使裸 save 可创建。
+        let new_id = if id.is_empty() {
+            uuid::Uuid::new_v4().to_string()
+        } else {
+            id.clone()
+        };
+        let r = client
+            .execute(
+                "INSERT INTO x_query_design (id, name, category, query_definition, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, NOW(), NOW())",
+                &[&new_id, &name, &category, &query],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        r
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(saved))),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_designer_bare(
+    pool: Extension<Pool>,
+    Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let result = client
+        .execute(
+            "UPDATE x_query_design SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("query design not found or already deleted")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
 pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
     use u2_closures as u2;
     let router = Router::new()
@@ -539,6 +646,12 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/list/{category}", get(list_designers))
         .route("/jaxrs/query/assemble/designer/save/{id}", post(save_designer))
         .route("/jaxrs/query/assemble/designer/delete/{id}", post(delete_designer))
+        // 裸路径变体（桌面配置串引用；list 无参全量，save/delete id 走 body）
+        .route("/jaxrs/query/assemble/designer/list", get(list_designers_all))
+        .route("/jaxrs/query/assemble/designer/save", put(save_designer_bare))
+        .route("/jaxrs/query/assemble/designer/save", post(save_designer_bare))
+        .route("/jaxrs/query/assemble/designer/delete", delete(delete_designer_bare))
+        .route("/jaxrs/query/assemble/designer/delete", post(delete_designer_bare))
         .route("/jaxrs/query/assemble/designer/{id}/{count}", get(crate::id_count))
         .route("/jaxrs/query/assemble/designer/importmodel/{id}", post(crate::importmodel_id))
         .route("/jaxrs/query/assemble/designer/importmodel/permission/{id}", post(crate::importmodel_id_permission))
@@ -685,7 +798,20 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/view/{id}", put(u2::view_edit).delete(u2::view_delete))
         .route("/jaxrs/query/assemble/designer/view/{id}/bundle", put(u2::view_bundle_put))
         .route("/jaxrs/query/assemble/designer/view/{id}/permission", post(u2::view_permission_set))
-        .route("/jaxrs/query/assemble/designer/view/{id}/simulate", put(u2::view_simulate_put));
+        .route("/jaxrs/query/assemble/designer/view/{id}/simulate", put(u2::view_simulate_put))
+        // ── importer / stat 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
+        .route("/jaxrs/query/assemble/designer/importer/list", get(importer_list))
+        .route("/jaxrs/query/assemble/designer/importer/create", post(importer_create))
+        .route("/jaxrs/query/assemble/designer/importer/save/{id}", put(importer_save))
+        .route("/jaxrs/query/assemble/designer/importer/save/{id}", post(importer_save))
+        .route("/jaxrs/query/assemble/designer/importer/delete/{id}", delete(importer_delete))
+        .route("/jaxrs/query/assemble/designer/importer/delete/{id}", post(importer_delete))
+        .route("/jaxrs/query/assemble/designer/stat/list", get(stat_list))
+        .route("/jaxrs/query/assemble/designer/stat/create", post(stat_create))
+        .route("/jaxrs/query/assemble/designer/stat/save/{id}", put(stat_save))
+        .route("/jaxrs/query/assemble/designer/stat/save/{id}", post(stat_save))
+        // DELETE /stat/delete/{id} 已由 U2 的 u2::stat_delete 占用（同表软删），此处仅补 POST
+        .route("/jaxrs/query/assemble/designer/stat/delete/{id}", post(stat_delete));
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
@@ -2884,4 +3010,216 @@ pub async fn view_id_simulate(
         }
         None => Ok(Json(ActionResult::error("view not found"))),
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// importer / stat 斜杠路径家族（设计器桌面视图 + shared::crud 通用参数化写）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── importer/list（查询导入设计器，查 x_query_import_model）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, model_flag, query_flag, creator, create_time FROM x_query_import_model WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(row.get("model_flag")),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── importer 家族 CRUD（x_query_import_model，通用参数化写）──
+fn importer_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_query_import_model",
+        columns: &[
+            ("name", "name"),
+            ("modelFlag", "model_flag"),
+            ("queryFlag", "query_flag"),
+            ("content", "content"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &importer_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &importer_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &importer_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── stat/list（查询统计设计器，查 x_query_stat）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(row.get("query_flag")),
+                ),
+                ("statType".to_string(), Value::String(row.get("stat_type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── stat 家族 CRUD（x_query_stat，通用参数化写）──
+fn stat_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_query_stat",
+        columns: &[
+            ("name", "name"),
+            ("queryFlag", "query_flag"),
+            ("statType", "stat_type"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &stat_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &stat_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &stat_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }

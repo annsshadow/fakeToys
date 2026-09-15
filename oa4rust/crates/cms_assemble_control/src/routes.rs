@@ -56,7 +56,8 @@ use crate::{
     comment_list_id_prev_count, comment_list_id_prev_count_mockputtopost, comment_u2_create,
     comment_u2_delete, comment_u2_list_page_size_size, comment_uncommend_u3, correlation_create_u3,
     correlation_doc_docId, correlation_list_doc_docId, correlation_list_doc_docId_site_site,
-    correlation_u2_doc_delete, correlation_update_u3, data_document_id,
+    correlation_u2_doc_delete, correlation_update_u3, cms_control_dict_list, cms_control_form_list,
+    cms_control_view_list, cms_control_xform_list, data_document_id,
     data_document_id_array_data, data_document_id_create, data_document_id_delete,
     data_document_id_mockdeletetoget, data_document_id_mockputtopost, data_document_id_path0,
     data_document_id_path0_create, data_document_id_path0_delete,
@@ -100,7 +101,8 @@ use crate::{
     design_appdict_create_u3, design_appdict_delete_u3, design_appdict_id,
     design_appdict_id_mockdeletetoget, design_appdict_id_mockputtopost,
     design_appdict_list_appInfo_appId, design_appdict_list_paging_page_size_size,
-    design_appdict_update_u3, designer_u2_search, document_achive_u3,
+    design_appdict_update_u3, designer_u2_search, dict_create, dict_delete, dict_save,
+    document_achive_u3,
     document_batch_delete_mock_u3, document_batch_delete_u3, document_batch_modify_mock_u3,
     document_batch_modify_u3, document_batch_name_status_u3, document_batch_status_u3,
     document_cipher_filter_list_page_size_size,
@@ -132,7 +134,7 @@ use crate::{
     fileinfo_update_document_docId_attachment_id_callback_callback, fileinfo_update_id_content,
     fileinfo_upload_doc_docId_save_as_flag, fileinfo_upload_document_docId,
     fileinfo_upload_document_docId_callback_callback, fileinfo_upload_with_url_u3,
-    form_filter_list_id_next_count_app_appId,
+    form_create, form_delete, form_save, form_filter_list_id_next_count_app_appId,
     form_filter_list_id_next_count_app_appId_mockputtopost,
     form_filter_list_id_prev_count_app_appId,
     form_filter_list_id_prev_count_app_appId_mockputtopost, form_get_with_appinfo_u3, form_id,
@@ -145,7 +147,8 @@ use crate::{
     input_compare_mockputtopost, input_cover, input_cover_mockputtopost, input_create,
     input_create_mockputtopost, input_prepare_cover, input_prepare_cover_mockputtopost,
     input_prepare_create, input_prepare_create_mockputtopost, list_control_sections,
-    log_filter_list_id_next_count, log_filter_list_id_prev_count, log_id, log_list_app_appId,
+    log_filter_list_id_next_count, log_filter_list_id_prev_count, log_id, log_list,
+    log_list_app_appId,
     log_list_category_categoryId, log_list_document_documentId, log_list_filter_page_size_size,
     log_list_level_operationLevel, output_appInfoFlag_select,
     output_appInfoFlag_select_mockputtopost, output_list, permission_appInfo_id_manageable,
@@ -201,9 +204,11 @@ use crate::{
     surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_post,
     surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_put,
     surface_appdict_appDictFlag_appInfo_appInfoFlag_update,
-    surface_appdict_list_appInfo_appInfoFlag, templateform_id, templateform_id_mockdeletetoget,
+    surface_appdict_list_appInfo_appInfoFlag, templateform_create, templateform_delete,
+    templateform_save, templateform_id, templateform_id_mockdeletetoget,
     templateform_list, templateform_list_category, templateform_list_category_mockputtopost,
-    templateform_u2_create, templateform_u2_delete, update_control_config, uuid_random, view_id,
+    templateform_u2_create, templateform_u2_delete, update_control_config, uuid_random,
+    view_create, view_delete, view_save, view_id,
     view_id_mockdeletetoget, view_id_mockputtopost, view_list_all, view_list_app_appId,
     view_list_category_categoryId, view_list_form_formId, view_u2_create, view_u2_delete,
     view_u2_update, view_viewdata_list_id_next_count, viewcategory_id,
@@ -214,6 +219,7 @@ use crate::{
     viewfieldconfig_u2_delete, viewfieldconfig_u2_update, viewrecord_by_person_u3,
     viewrecord_document_docId_filter_list_id_next_count, viewrecord_document_docId_has_view,
     viewrecord_list_install_log_paging_page_size_size, viewrecord_unread_u3,
+    xform_create, xform_delete, xform_save,
 };
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -232,6 +238,56 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/application/{id}", get(application_id))
         .route("/jaxrs/cms_assemble_control/document/search", get(document_search))
         .route("/jaxrs/anonymous/document/{id}/view", get(anonymous_document_id_view))
+        // ── cms/assemble/control/* 斜杠路径家族（前端 Java 口径补齐，查真实表）──
+        .route("/jaxrs/cms/assemble/control/dict/list", get(cms_control_dict_list))
+        .route("/jaxrs/cms/assemble/control/form/list", get(cms_control_form_list))
+        .route("/jaxrs/cms/assemble/control/view/list", get(cms_control_view_list))
+        .route("/jaxrs/cms/assemble/control/xform/list", get(cms_control_xform_list))
+        // ── dict/form/view/xform 家族 CRUD（通用参数化写，shared::crud 白名单）──
+        .route(
+            "/jaxrs/cms/assemble/control/dict/create",
+            post(dict_create),
+        )
+        .route("/jaxrs/cms/assemble/control/dict/save/{id}", put(dict_save))
+        .route("/jaxrs/cms/assemble/control/dict/save/{id}", post(dict_save))
+        .route("/jaxrs/cms/assemble/control/dict/delete/{id}", delete(dict_delete))
+        .route("/jaxrs/cms/assemble/control/dict/delete/{id}", post(dict_delete))
+        .route(
+            "/jaxrs/cms/assemble/control/form/create",
+            post(form_create),
+        )
+        .route("/jaxrs/cms/assemble/control/form/save/{id}", put(form_save))
+        .route("/jaxrs/cms/assemble/control/form/save/{id}", post(form_save))
+        .route("/jaxrs/cms/assemble/control/form/delete/{id}", delete(form_delete))
+        .route("/jaxrs/cms/assemble/control/form/delete/{id}", post(form_delete))
+        .route(
+            "/jaxrs/cms/assemble/control/view/create",
+            post(view_create),
+        )
+        .route("/jaxrs/cms/assemble/control/view/save/{id}", put(view_save))
+        .route("/jaxrs/cms/assemble/control/view/save/{id}", post(view_save))
+        .route("/jaxrs/cms/assemble/control/view/delete/{id}", delete(view_delete))
+        .route("/jaxrs/cms/assemble/control/view/delete/{id}", post(view_delete))
+        .route(
+            "/jaxrs/cms/assemble/control/xform/create",
+            post(xform_create),
+        )
+        .route(
+            "/jaxrs/cms/assemble/control/xform/save/{id}",
+            put(xform_save),
+        )
+        .route(
+            "/jaxrs/cms/assemble/control/xform/save/{id}",
+            post(xform_save),
+        )
+        .route(
+            "/jaxrs/cms/assemble/control/xform/delete/{id}",
+            delete(xform_delete),
+        )
+        .route(
+            "/jaxrs/cms/assemble/control/xform/delete/{id}",
+            post(xform_delete),
+        )
         // ── data/document 家族（Java DataAction 对齐：{path0}..{path7} 通配 + 全动词）──
         .route("/jaxrs/data/document/{id}", get(data_document_id))
         .route("/jaxrs/data/document/{id}", put(data_document_id_update))
@@ -403,6 +459,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/form/list/{id}/formfield", get(form_list_id_formfield))
         .route("/jaxrs/form/{id}", get(form_id))
         .route("/jaxrs/form/v2/{id}", get(form_v2_id))
+        .route("/jaxrs/log/list", get(log_list))
         .route("/jaxrs/log/list/app/{appId}", get(log_list_app_appId))
         .route("/jaxrs/log/list/category/{categoryId}", get(log_list_category_categoryId))
         .route("/jaxrs/log/list/document/{documentId}", get(log_list_document_documentId))
@@ -430,6 +487,11 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/templateform/list", get(templateform_list))
         .route("/jaxrs/templateform/list/category", get(templateform_list_category))
         .route("/jaxrs/templateform/list/category/mockputtopost", post(templateform_list_category_mockputtopost))
+        .route("/jaxrs/templateform/create", post(templateform_create))
+        .route("/jaxrs/templateform/save/{id}", put(templateform_save))
+        .route("/jaxrs/templateform/save/{id}", post(templateform_save))
+        .route("/jaxrs/templateform/delete/{id}", delete(templateform_delete))
+        .route("/jaxrs/templateform/delete/{id}", post(templateform_delete))
         .route("/jaxrs/uuid/random", get(uuid_random))
         .route("/jaxrs/view/list/all", get(view_list_all))
         .route("/jaxrs/view/list/app/{appId}", get(view_list_app_appId))

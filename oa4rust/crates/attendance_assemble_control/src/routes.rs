@@ -16,6 +16,8 @@ pub fn attendance_assemble_control_routes(pool: Pool) -> Router {
         // 同一路径逐方法独立注册：POST 与 PUT
         .route("/jaxrs/attendance/assemble/control/rule/{id}/toggle", post(crate::toggle_control_rule))
         .route("/jaxrs/attendance/assemble/control/rule/{id}/toggle", put(crate::toggle_control_rule))
+        .route("/jaxrs/attendance/assemble/control/rule/create", post(crate::create_control_rule))
+        .route("/jaxrs/attendance/assemble/control/statistics/list", get(crate::list_statistics))
         // 同一路径逐方法独立注册：GET 与 DELETE
         .route("/jaxrs/attendance/assemble/control/attendanceadmin/list/all", get(crate::attendanceadmin_list_all))
         .route("/jaxrs/attendance/assemble/control/attendanceadmin/{id}", get(crate::attendanceadmin_id))

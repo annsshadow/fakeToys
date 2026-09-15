@@ -747,3 +747,80 @@ pub async fn person_list_delete_paging(
         .map_err(|_| AppError::Internal)?;
     list_ok(rows.iter().map(person_row_json).collect())
 }
+
+// ── threemember/list（桌面 ThreeMemberApp「三方成员管理」引用，列组织成员 x_org_person）──
+#[allow(non_snake_case)]
+pub async fn threemember_list(pool: Extension<Pool>) -> HandlerResult {
+    let client = client_of(&pool).await?;
+    let sql = format!(
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
+    );
+    let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
+    list_ok_java(rows.iter().map(person_row_json).collect())
+}
+
+// ── threemember 家族 CRUD（x_org_person 022+069，通用参数化写；BIGINT/TIMESTAMP/状态列不映射）──
+fn threemember_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_org_person",
+        columns: &[
+            ("name", "name"),
+            ("mobile", "mobile"),
+            ("email", "email"),
+            ("unitId", "unit_id"),
+            ("icon", "icon"),
+            ("status", "status"),
+            ("statusDes", "status_des"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn threemember_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> HandlerResult {
+    let id = shared::crud_create(&pool, &threemember_spec(), &body.0).await?;
+    ok(Value::Object(
+        vec![
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]
+        .into_iter()
+        .collect(),
+    ))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn threemember_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> HandlerResult {
+    let saved = shared::crud_save(&pool, &threemember_spec(), &id, &body.0).await?;
+    ok(Value::Object(
+        vec![
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]
+        .into_iter()
+        .collect(),
+    ))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn threemember_delete(pool: Extension<Pool>, Path(id): Path<String>) -> HandlerResult {
+    let deleted = shared::crud_delete(&pool, &threemember_spec(), &id).await?;
+    ok(Value::Object(
+        vec![
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]
+        .into_iter()
+        .collect(),
+    ))
+}

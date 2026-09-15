@@ -58,6 +58,103 @@ pub async fn get_general_control_status(
     Ok(Json(ActionResult::success(Value::Object(data))))
 }
 
+// ── general/assemble/control/list（裸路径，桌面 CommonApp「公共组件库」引用）──
+#[allow(non_snake_case)]
+pub async fn general_control_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, system_name, maintenance_mode, allow_registration, version, \
+                    create_time::text AS create_time \
+             FROM x_general_assemble_control_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("systemName".to_string(), Value::String(row.get("system_name"))),
+                ("maintenanceMode".to_string(), Value::Bool(row.get("maintenance_mode"))),
+                ("allowRegistration".to_string(), Value::Bool(row.get("allow_registration"))),
+                ("version".to_string(), Value::String(row.get("version"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── general control 家族 CRUD（x_general_assemble_control_config 032/037，通用参数化写）──
+fn general_control_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_general_assemble_control_config",
+        columns: &[
+            ("systemName", "system_name"),
+            ("maintenanceMode", "maintenance_mode"),
+            ("allowRegistration", "allow_registration"),
+            ("version", "version"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn general_control_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &general_control_spec(), &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn general_control_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &general_control_spec(), &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn general_control_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &general_control_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn update_general_control_status(
     pool: Extension<Pool>,
