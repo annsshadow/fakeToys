@@ -46,7 +46,9 @@ pub async fn crud_create(
         .collect();
 
     let mut placeholders: Vec<String> = vec!["$1".to_string()];
-    for i in 1..values.len() {
+    // 占位符数 = 列数 + 1（$1 是 id）；旧实现 1..values.len() 少算末位，
+    // INSERT 字段数多于表达式（42601）——所有 ≥1 列 create 全 500。
+    for i in 1..=values.len() {
         placeholders.push(format!("${}", i + 1));
     }
     let sql = format!(

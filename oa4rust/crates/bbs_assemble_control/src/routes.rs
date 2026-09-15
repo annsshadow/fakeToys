@@ -9,9 +9,10 @@ use crate::{
     create_reply, create_topic, forum_view_all, get_control_config, get_forum,
     list_control_sections, list_forums, login, logout, mobile_view_all,
     permission_section_sectionId, permission_subject_subjectId, reply_list_sub_id,
-    section_viewforum_forumId, shutup_create, shutup_delete, shutup_list, subject_creamed_list,
-    subject_filter_list, subject_index_list, subject_statgrade, subject_top_sectionId,
-    subject_view_id, topic_recommended_index, update_control_config, user_forum_list, user_info,
+    section_create, section_delete, section_update, section_viewforum_forumId,
+    shutup_create, shutup_delete, shutup_list, subject_creamed_list, subject_filter_list,
+    subject_index_list, subject_statgrade, subject_top_sectionId, subject_view_id,
+    topic_recommended_index, update_control_config, user_forum_list, user_info,
     user_section_list, uuid_generate,
 };
 
@@ -28,6 +29,19 @@ pub fn router(pool: Pool) -> Router {
         .route(
             "/jaxrs/bbs/assemble/control/section/list",
             get(list_control_sections),
+        )
+        // 版块发布/管理写路由（x_bbs_assemble_control_section；无 deleted_at → 硬删）
+        .route(
+            "/jaxrs/bbs/assemble/control/section/create",
+            post(section_create),
+        )
+        .route(
+            "/jaxrs/bbs/assemble/control/section/save/{id}",
+            put(section_update).post(section_update),
+        )
+        .route(
+            "/jaxrs/bbs/assemble/control/section/delete/{id}",
+            delete(section_delete).post(section_delete),
         )
         .route("/jaxrs/bbs/assemble/control/forum/list", get(list_forums))
         .route(
