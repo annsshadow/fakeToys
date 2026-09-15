@@ -31,9 +31,9 @@ BIOS 发布 CFMWS 来传达活跃的 SPA 范围，在LMH 的平台上，这些�
  +--------+------------+-------------------+------------------+-------------------+------+
  | Window | CFMWS Base |    CFMWS Size     | HDM Decoder Base |  HDM Decoder Size | Ways |
  +========+============+===================+==================+===================+======+
- |  鈥?    |   0 GB     |       2 GB        |      0 GB        |       3 GB        |  12  |
+ |      |   0 GB     |       2 GB        |      0 GB        |       3 GB        |  12  |
  +--------+------------+-------------------+------------------+-------------------+------+
- |  鈥?    |   4 GB     | NIW**256MB Aligned |      4 GB        | NIW**256MB Aligned |  12  |
+ |      |   4 GB     | NIW**256MB Aligned |      4 GB        | NIW**256MB Aligned |  12  |
  +--------+------------+-------------------+------------------+-------------------+------+
 
 HDM decoder base HDM decoder size 代表一12 路区域的全部 12 Endpoint Decoder 以及所有中Switch Decoder。它们由 BIOS 根据 NIW * 256MB 规则配置，产3GB HPA 范围大小。CFMWS Base CFMWS Size 用于配置 Root Decoder HPA 范围，结果（2GB）比层次结构Switch Endpoint Decoder 的范围（3GB）更小

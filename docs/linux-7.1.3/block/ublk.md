@@ -304,7 +304,7 @@ I/O 缓冲区时，整个数据路径就变成了零拷贝
 ```
 
      if (iod->op_flags & UBLK_IO_F_SHMEM_ZC) {
-         /* Data is already in our shared mapping 鈥?zero copy */
+         /* Data is already in our shared mapping zero copy */
          index  = ublk_shmem_zc_index(iod->addr);
          offset = ublk_shmem_zc_offset(iod->addr);
          buf = shmem_table[index].mmap_base + offset;

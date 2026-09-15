@@ -1,4 +1,4 @@
-﻿## VFIO 鈥，鈥淰irtual Function I/O鈥?[1]_
+﻿## VFIO 鈥，鈥淰irtual Function I/O[1]_
 
 
 如今许多现代系统都提DMA 与中断重映射设施，以帮助确保 I/O 设备在其被分配的边界内运行。这包括带有 AMD-Vi Intel VT-d x86 硬件、带有可分区端点（Partitionable Endpoints，PEs）的 POWER 系统，以及嵌入式 PowerPC 系统（如 Freescale PAMU）。VFIO 驱动是一个与 IOMMU/设备无关的框架，用于在安全、受 IOMMU 保护的环境中向用户空间暴露直接的设备访问。换句话说，它允许安[^2]_、非特权的用户空间驱动
