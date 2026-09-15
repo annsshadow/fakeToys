@@ -80,7 +80,7 @@ async function resume(item: RecycleItem) {
 }
 
 async function permanentDelete(item: RecycleItem) {
-  if (!confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`)) return
+  if (!(await confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`))) return
   try {
     await api.delete(`/jaxrs/recycle/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
@@ -90,7 +90,7 @@ async function permanentDelete(item: RecycleItem) {
 }
 
 async function emptyRecycle() {
-  if (!confirmMsg('确定清空回收站？所有项目将被永久删除。')) return
+  if (!(await confirmMsg('确定清空回收站？所有项目将被永久删除。'))) return
   try {
     await api.post('/jaxrs/recycle/empty', null)
     items.value = []

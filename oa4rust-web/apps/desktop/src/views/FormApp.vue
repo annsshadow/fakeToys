@@ -320,7 +320,7 @@ async function saveForm() {
 }
 
 async function deleteForm(f: FormItem) {
-  if (!confirmMsg('确定删除表单「' + (f.name || f.id) + '」？')) return
+  if (!(await confirmMsg('确定删除表单「' + (f.name || f.id) + '」？'))) return
   try {
     await api.delete('/jaxrs/form/delete/' + f.id)
     items.value = items.value.filter((x) => x.id !== f.id)

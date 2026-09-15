@@ -374,17 +374,17 @@ const deleteDictM = useMutation({
     toast.success('字典已删除')
   },
 })
-function deleteAgent(a: Agent) {
-  if (confirmMsg('确定删除该Agent？')) deleteAgentM.mutate(a.id!)
+async function deleteAgent(a: Agent) {
+  if (await confirmMsg('确定删除该Agent？')) deleteAgentM.mutate(a.id!)
 }
-function deleteApp(a: App) {
-  if (confirmMsg('确定删除该Application？')) deleteAppM.mutate(a.id!)
+async function deleteApp(a: App) {
+  if (await confirmMsg('确定删除该Application？')) deleteAppM.mutate(a.id!)
 }
-function deleteScript(s: Script) {
-  if (confirmMsg('确定删除该Script？')) deleteScriptM.mutate(s.id!)
+async function deleteScript(s: Script) {
+  if (await confirmMsg('确定删除该Script？')) deleteScriptM.mutate(s.id!)
 }
-function deleteDict(d: Dict) {
-  if (confirmMsg('确定删除该字典？')) deleteDictM.mutate(d.id!)
+async function deleteDict(d: Dict) {
+  if (await confirmMsg('确定删除该字典？')) deleteDictM.mutate(d.id!)
 }
 
 // 新建字典（POST /jaxrs/program_center/dict；DictCreateRequest 的 flag 键名为 dictFlag，
@@ -563,9 +563,9 @@ const runScriptM = useMutation({
   onSuccess: () => toast.success('脚本已执行'),
   onError: () => toast.error('执行失败'),
 })
-function runScript(s: Script) {
+async function runScript(s: Script) {
   if (!s.flag) return
-  if (!confirmMsg(`确认执行脚本「${s.flag}」？`)) return
+  if (!(await confirmMsg(`确认执行脚本「${s.flag}」？`))) return
   runScriptM.mutate(s.flag)
 }
 
@@ -596,8 +596,8 @@ const eraseImageM = useMutation({
   onSuccess: () => toast.success('图片已清除'),
   onError: () => toast.error('操作失败'),
 })
-function eraseAppStyleImage(type: string, flag: string) {
-  if (!confirmMsg(`确认清除 ${type} 图片？`)) return
+async function eraseAppStyleImage(type: string, flag: string) {
+  if (!(await confirmMsg(`确认清除 ${type} 图片？`))) return
   eraseImageM.mutate({ type, flag })
 }
 
@@ -637,29 +637,11 @@ function setMarketCover(flag: string) {
 }
 
 // MPWeixin 扩展
-const wxCheckM = useMutation({
-  mutationFn: () => api.get('/jaxrs/program_center/mpweixin/check'),
-  onSuccess: () => toast.success('微信检查通过'),
-  onError: () => toast.error('检查失败'),
-})
-function checkWx() {
-  wxCheckM.mutate()
-}
+// 注：后端 /jaxrs/program_center/mpweixin/check 与 /mpweixin/menu/add 为无参占位注册，
+// 其 handler 需 Path 参数 → 运行时必 500（同 BBS 裸路由问题），且无参数化正确路由可改调；
+// 小程序菜单管理（list/delete/update 参数化路由可用但无对应管理 UI）暂不提供入口，
+// 移除死调用避免客户打到 500。
 
-const wxMenuAddM = useMutation({
-  mutationFn: (data: unknown) => api.post('/jaxrs/program_center/mpweixin/menu/add', data),
-  onSuccess: () => toast.success('菜单已添加'),
-  onError: () => toast.error('操作失败'),
-})
-function addWxMenu() {
-  const json = prompt('输入菜单JSON:')
-  if (!json) return
-  try {
-    wxMenuAddM.mutate(JSON.parse(json))
-  } catch {
-    toast.error('JSON格式错误')
-  }
-}
 const file_download_pk_1_ref = ref<any[]>([])
 const mass_0_10_ref = ref<any[]>([])
 const m_1_install_log_ref = ref<any[]>([])

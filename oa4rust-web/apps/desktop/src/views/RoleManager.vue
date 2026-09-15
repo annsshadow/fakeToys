@@ -112,7 +112,7 @@ async function onSave() {
 }
 
 async function deleteRole(r: Role) {
-  if (!confirmMsg(`确定删除角色「${r.name || r.flag}」？`)) return
+  if (!(await confirmMsg(`确定删除角色「${r.name || r.flag}」？`))) return
   try {
     await api.delete(`/jaxrs/role/${r.flag || r.id}`)
     roles.value = roles.value.filter((x) => x.flag !== r.flag)

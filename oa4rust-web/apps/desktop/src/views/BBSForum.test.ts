@@ -82,8 +82,18 @@ describe('BBSForum contracts', () => {
     expect(source).not.toContain('api.post(`/jaxrs/bbs/assemble/control/list/reply/filter`')
   })
 
-  it('drops the inert add-section control (no backend section-create route exists)', () => {
-    expect(source).not.toContain('add-section-btn')
-    expect(source).not.toContain('新建版块')
+  it('wires the add-section control to registered section write routes', () => {
+    // 版块发布/管理后端已实装（x_bbs_assemble_control_section 硬删），
+    // 加号/重命名/删除必须打到这些路由，而非无事件死控件。
+    expect(source).toContain('@click="openNewSection()"')
+    expect(source).toContain("api.post('/jaxrs/bbs/assemble/control/section/create', { name })")
+    expect(source).toContain('`/jaxrs/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`')
+    expect(source).toContain('`/jaxrs/bbs/assemble/control/section/delete/${sec.id}`')
+  })
+
+  it('covers the personal page (my replies) with the registered user/reply/my route', () => {
+    // 论坛个人主页：「我的」页签 = 我的主题（listsubjectinfo）+ 我的回复（user/reply/my）。
+    expect(source).toContain('user/reply/my/list/page/${page.value}/count/${pageSize}')
+    expect(source).toContain('我的回复')
   })
 })

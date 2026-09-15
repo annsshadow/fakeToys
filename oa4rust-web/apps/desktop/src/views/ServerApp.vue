@@ -79,7 +79,7 @@ async function executeCommand() {
 }
 
 async function stopServer() {
-  if (!confirmMsg('确定要停止服务器？所有连接将被断开。')) return
+  if (!(await confirmMsg('确定要停止服务器？所有连接将被断开。'))) return
   try {
     await api.post('/jaxrs/server/stop', null)
     execOutput.value = '服务器已停止'

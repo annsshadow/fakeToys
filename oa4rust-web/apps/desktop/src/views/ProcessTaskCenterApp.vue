@@ -105,8 +105,8 @@ const delM = useMutation({
   mutationFn: async (id: string) => api.delete(`/jaxrs/processplatform/service/processing/task/${id}`),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
 })
-function deleteTask(item: Item) {
-  if (confirmMsg('确定删除该任务？')) delM.mutate(item.id)
+async function deleteTask(item: Item) {
+  if (await confirmMsg('确定删除该任务？')) delM.mutate(item.id)
 }
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
