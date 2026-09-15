@@ -1,31 +1,46 @@
 <template>
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div><h1>神经网络AI配置</h1><p class="subtitle">/jaxrs/ai/assemble/control/ann/list</p></div>
-      <button class="btn-primary" @click="showCreate=true">+ 新建</button>
+      <div>
+        <h1>神经网络AI配置</h1>
+        <p class="subtitle">/jaxrs/ai/assemble/control/ann/*</p>
+      </div>
+      <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
-      <div class="toolbar"><input v-model="search" placeholder="搜索..." class="search-input" /><button class="btn-refresh" @click="loadData">🔄 刷新</button></div>
+      <div class="toolbar">
+        <input v-model="search" placeholder="搜索标题 / 分类..." class="search-input" />
+        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+      </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
-      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧠</div><p>暂无数据</p></div>
+      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧠</div><p>暂无AI公告配置</p></div>
       <table v-else class="data-table">
-        <thead><tr><th>名称</th><th>标识</th><th>更新时间</th><th>操作</th></tr></thead>
+        <thead><tr><th>标题</th><th>分类</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.name||item.label||'—' }}</td>
-            <td class="mono">{{ item.flag||item.id||'—' }}</td>
-            <td>{{ fmtTime(item.updateTime||item.createTime) }}</td>
-            <td><button class="btn-sm" @click="editItem(item)">编辑</button><button class="btn-sm btn-del" @click="deleteItem(item)">删除</button></td>
+            <td>{{ item.title||'—' }}</td>
+            <td>{{ item.category||'—' }}</td>
+            <td>{{ item.status||'active' }}</td>
+            <td>{{ fmtTime(item.createTime) }}</td>
+            <td>
+              <button class="btn-sm" @click="editItem(item)">编辑</button>
+              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
     <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
-        <h3>{{ showEdit?'编辑':'新建' }}神经网络AI配置</h3>
-        <div class="form-group"><label>名称</label><input v-model="form.name" class="form-input" /></div>
-        <div class="form-group"><label>标识</label><input v-model="form.flag" class="form-input" /></div>
-        <div class="modal-actions"><button class="btn-cancel" @click="closeModal">取消</button><button class="btn-save" :disabled="!form.name" @click="saveItem">保存</button></div>
+        <h3>{{ showEdit?'编辑':'新建' }}AI公告配置</h3>
+        <div class="form-group"><label>标题</label><input v-model="form.title" placeholder="标题" class="form-input" /></div>
+        <div class="form-group"><label>分类</label><input v-model="form.category" placeholder="如 model / notice" class="form-input mono" /></div>
+        <div class="form-group"><label>状态</label><input v-model="form.status" placeholder="active / disabled" class="form-input" /></div>
+        <div class="form-group"><label>内容</label><textarea v-model="form.content" rows="4" placeholder="公告内容" class="form-textarea"></textarea></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="closeModal">取消</button>
+          <button class="btn-save" :disabled="!form.title?.trim()||saving" @click="saveItem">{{ saving?'保存中…':'保存' }}</button>
+        </div>
       </div>
     </div>
   </div>
@@ -34,47 +49,61 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { confirmMsg } from '../utils/toast'
 
 interface Item {
   id: string
-  name?: string
-  label?: string
-  flag?: string
-  updateTime?: string
+  title?: string
+  content?: string
+  category?: string
+  status?: string
+  creator?: string
   createTime?: string
 }
+
+const listEp = '/jaxrs/ai/assemble/control/ann/list'
+const createEp = '/jaxrs/ai/assemble/control/ann/create'
+const qk = ['ANN', 'list']
+
 const search = ref(''),
   showCreate = ref(false),
   showEdit = ref(false),
-  loading = ref(false)
+  loading = ref(false),
+  saving = ref(false)
 const items = ref<Item[]>([]),
   form = ref<Partial<Item>>({}),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
-const ep = '/jaxrs/ai/assemble/control/ann/list'
-const qk = ['ANN', 'list']
+
 const { data } = useQuery({
   queryKey: qk,
   queryFn: async () => {
     loading.value = true
     try {
-      const r = await api.get(ep)
-      return (r as any)?.data ?? []
+      const r = (await api.get(listEp)) as unknown as { data?: unknown }
+      return Array.isArray(r?.data) ? (r.data as Item[]) : []
     } finally {
       loading.value = false
     }
   },
 })
-items.value = data.value ?? []
+items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
+
 const filtered = computed(() =>
   search.value
     ? items.value.filter(
         (i) =>
-          (i.name || '').toLowerCase().includes(search.value.toLowerCase()) ||
-          (i.flag || '').toLowerCase().includes(search.value.toLowerCase()),
+          (i.title || '').toLowerCase().includes(search.value.toLowerCase()) ||
+          (i.category || '').toLowerCase().includes(search.value.toLowerCase()),
       )
     : items.value,
 )
+
+function openCreate() {
+  form.value = { title: '', category: '', status: 'active', content: '' }
+  editingId.value = null
+  showCreate.value = true
+}
 function editItem(item: Item) {
   form.value = { ...item }
   editingId.value = item.id
@@ -86,23 +115,31 @@ function closeModal() {
   form.value = {}
 }
 const saveM = useMutation({
-  mutationFn: async (d: any) => (editingId.value ? api.put(ep + '/' + editingId.value, d) : api.post(ep, d)),
+  mutationFn: async (payload: Item) => {
+    saving.value = true
+    try {
+      if (editingId.value) return api.put(`/jaxrs/ai/assemble/control/ann/save/${editingId.value}`, payload)
+      return api.post(createEp, payload)
+    } finally {
+      saving.value = false
+    }
+  },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
 })
 function saveItem() {
-  if (form.value.name) saveM.mutate(form.value)
+  saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.delete(ep + '/' + id),
+  mutationFn: async (id: string) => api.post(`/jaxrs/ai/assemble/control/ann/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },
 })
 function deleteItem(item: Item) {
-  if (confirmMsg('确定删除？')) delM.mutate(item.id)
+  if (confirmMsg('确定删除该配置？')) delM.mutate(item.id)
 }
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
@@ -140,7 +177,7 @@ function fmtTime(t?: string) {
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}
 .form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px}
-.form-input{width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;box-sizing:border-box}
+.form-input,.form-textarea{width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;box-sizing:border-box}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}
 .btn-save{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
