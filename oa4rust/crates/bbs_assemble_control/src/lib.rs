@@ -202,6 +202,80 @@ pub async fn list_control_sections(
     )))
 }
 
+// ── 版块发布/管理写路由（W14 x_component_ForumSection）──────────────────────
+// x_bbs_assemble_control_section 无 deleted_at 列 → 硬删（shared::crud 惯例，
+// 表/列白名单静态、值全 $N 占位符防注入）；creator 缺省取会话登录人。
+fn section_create_spec() -> shared::CrudSpec {
+    shared::CrudSpec {
+        table: "x_bbs_assemble_control_section",
+        columns: &[("name", "name"), ("creator", "creator")],
+        soft_delete: false,
+    }
+}
+fn section_update_spec() -> shared::CrudSpec {
+    shared::CrudSpec {
+        table: "x_bbs_assemble_control_section",
+        columns: &[("name", "name")],
+        soft_delete: false,
+    }
+}
+
+#[axum::debug_handler]
+pub async fn section_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut obj = match body.0 {
+        Value::Object(o) => o,
+        _ => serde_json::Map::new(),
+    };
+    if !obj
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty())
+    {
+        obj.insert("creator".to_string(), Value::String(session.person_unique.clone()));
+    }
+    let id = shared::crud_create(&pool, &section_create_spec(), &Value::Object(obj)).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn section_update(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &section_update_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn section_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &section_create_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn update_control_config(

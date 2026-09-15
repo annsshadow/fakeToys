@@ -795,3 +795,86 @@ async fn test_vote_submit_persists_record_and_count() {
         .execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id])
         .await;
 }
+
+/// 版块发布/管理写路由行为契约（W14 x_component_ForumSection）：
+/// create → rename（save）→ 库内可见 → 硬删。无 deleted_at 列，删除即硬删。
+#[tokio::test]
+async fn test_section_crud_roundtrip() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping test_section_crud_roundtrip: DB not reachable");
+        return;
+    }
+    let pool = test_pool();
+    let session = make_session("w14-section-iter", "section");
+    let app = crate::router(pool.clone()).layer(axum::extract::Extension(session));
+
+    // 1) 新建版块（creator 缺省取会话登录人）
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        "/jaxrs/bbs/assemble/control/section/create",
+        Some(json!({ "name": "w14-section-it" })),
+        None,
+    ).await;
+    assert_eq!(st, StatusCode::OK, "section create 必须 200: {body}");
+    let id = body["data"]["id"].as_str().unwrap().to_string();
+    assert!(!id.is_empty(), "section create 必须返回新 id");
+
+    let client = pool.get().await.unwrap();
+    let row = client
+        .query_one(
+            "SELECT name, creator FROM x_bbs_assemble_control_section WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(row.get::<_, String>("name"), "w14-section-it");
+    assert_eq!(row.get::<_, String>("creator"), "w14-section-iter");
+
+    // 2) 重命名（POST 别名；update spec 只写 name 列）
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("/jaxrs/bbs/assemble/control/section/save/{}", id),
+        Some(json!({ "name": "w14-section-it-renamed" })),
+        None,
+    ).await;
+    assert_eq!(st, StatusCode::OK, "section save 必须 200: {body}");
+    assert_eq!(body["data"]["saved"], Value::Bool(true));
+    let renamed = client
+        .query_one("SELECT name FROM x_bbs_assemble_control_section WHERE id = $1", &[&id])
+        .await
+        .unwrap();
+    assert_eq!(renamed.get::<_, String>("name"), "w14-section-it-renamed");
+
+    // 3) section/list 可见
+    let (st, body) = send_with_session(app.clone(), Method::GET, "/jaxrs/bbs/assemble/control/section/list", None, None).await;
+    assert_eq!(st, StatusCode::OK);
+    let names: Vec<&str> = body["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|s| s["name"].as_str())
+        .collect();
+    assert!(names.contains(&"w14-section-it-renamed"), "list 必须含新建版块: {names:?}");
+
+    // 4) 硬删（无 deleted_at 列 → DELETE）
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("/jaxrs/bbs/assemble/control/section/delete/{}", id),
+        None,
+        None,
+    ).await;
+    assert_eq!(st, StatusCode::OK, "section delete 必须 200: {body}");
+    assert_eq!(body["data"]["deleted"], Value::Bool(true));
+    let gone = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_bbs_assemble_control_section WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(gone.get::<_, i64>(0), 0, "硬删后行必须不存在");
+}
