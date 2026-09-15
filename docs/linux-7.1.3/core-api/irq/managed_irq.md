@@ -73,7 +73,7 @@ managed_irq 子参数指定一CPU 掩码，受管中断应当尽量避免。这�
     /proc/irq/48/smp_affinity_list:4-7
 
   The two queue interrupts are evenly distributed. Interrupt 48 is placed on CPU4
-  because the managed_irq mask avoids CPUs 5鈥? when possible.
+  because the managed_irq mask avoids CPUs 5 when possible.
 
   Replacing the managed_irq argument with "isolcpus=managed_irq,1-3,4-5,7"
   results in::

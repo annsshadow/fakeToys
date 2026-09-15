@@ -77,7 +77,7 @@
   Ruijie Meng, Zhen Dong, Jialin Li, Ivan Beschastnikh, and Abhik Roychoudhury.
   2022. Linear-time temporal logic guided greybox fuzzing. In Proceedings of the
   44th International Conference on Software Engineering (ICSE '22).  Association
-  for Computing Machinery, New York, NY, USA, 1343鈥?355.
+  for Computing Machinery, New York, NY, USA, 1343355.
   https://doi.org/10.1145/3510003.3510082
 
 ```

@@ -86,7 +86,7 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
 
 - `Documentation/dev-tools/testing-strategy.rst` 测试策略文档（KUnit/kselftest 选型、优先级、checklist- `Documentation/dev-tools/testing-overview.rst` 框架概述
 - `Documentation/fault-injection/fault-injection.rst` 内核故障注入框架文档
-- `tools/testing/selftests/kselftest_harness.h` 鈥?kselftest  harness
+- `tools/testing/selftests/kselftest_harness.h` kselftest  harness
 
 ---
 
@@ -229,7 +229,7 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
 **Patterns to follow:**
 - `tools/testing/coverage/coverage_harness.py` 覆盖率收集和报告生成
 - `tools/testing/coverage/gcov_parser.py` gcov 数据解析
-- `tools/testing/orchestrator/base_runner.py` 鈥?SuiteResult 鏁版嵁缁撴瀯
+- `tools/testing/orchestrator/base_runner.py` SuiteResult 鏁版嵁缁撴瀯
 
 **Test scenarios:**
 - Happy path: `--coverage` 运行时，四引擎数据合并输出为单个 lcov 文件

@@ -329,7 +329,7 @@
       pp 760-768, 2005.
   10 - J. Goossens, S. Funk and S. Baruah, Priority-Driven Scheduling of
        Periodic Task Systems on Multiprocessors. Real-Time Systems Journal,
-       vol. 25, no. 2鈥?, pp. 187鈥?05, 2003.
+       vol. 25, no. 2, pp. 18705, 2003.
   11 - R. Davis and A. Burns. A Survey of Hard Real-Time Scheduling for
        Multiprocessor Systems. ACM Computing Surveys, vol. 43, no. 4, 2011.
        http://www-users.cs.york.ac.uk/~robdavis/papers/MPSurveyv5.0.pdf

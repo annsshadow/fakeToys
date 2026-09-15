@@ -85,8 +85,8 @@ MCFG 表必须描述非热插拔主机桥ECAM 空间 [^8^]。由MCFG 是静态�
     Extended Address Space Descriptor (.4)
       General Flags: Bit [^0^] Consumer/Producer:
 
-        - 1 鈥?This device consumes this resource
-        - 0 鈥?This device produces and consumes this resource
+        - 1 This device consumes this resource
+        - 0 This device produces and consumes this resource
 
 [^5^] ACPI 6.2，第 19.6.43 节：
     ResourceUsage specifies whether the Memory range is consumed by

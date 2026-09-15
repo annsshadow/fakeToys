@@ -138,7 +138,7 @@ htree 的根位于 `struct dx_root` 中，其长度为一个完整的数据块�
      - 本条目的文件类型x2（目录）（如果设置了特性标志）   - - 0x8
      - char
      - dot.name[^4^]
-     - 鈥?\0\0\0鈥?   - - 0xC
+     - \0\0\0   - - 0xC
      - __le32
      - dotdot.inode
      - 鐖剁洰褰曠殑 inode 鍙枫€?   - - 0x10
@@ -153,7 +153,7 @@ htree 的根位于 `struct dx_root` 中，其长度为一个完整的数据块�
      - 本条目的文件类型x2（目录）（如果设置了特性标志）   - - 0x14
      - char
      - dotdot_name[^4^]
-     - 鈥?.\0\0鈥?   - - 0x18
+     - .\0\0   - - 0x18
      - __le32
      - struct dx_root_info.reserved_zero
      - 零   - - 0x1C
