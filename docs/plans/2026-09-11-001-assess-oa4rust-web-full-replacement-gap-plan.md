@@ -3,7 +3,11 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 14  # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈 o2server/o2web 未上线，无影子迁移/生产切流前提；「功能可替换」= 项 1/2/3/5 达成（门禁级功能等价，非逐字节等价），S4 不阻塞；保留「不宣布 100% 完全替代」边界
+rev: 15  # v15：S4 真实流量 gate 彻底移除——无旧系统（o2server/o2web 从未上线），不需要真实流量，改好即上线；
+      # 上线判据 = 静态门禁全绿 + 仓内 live E2E + 上线后常态监控（非前置）；
+      # 已删 pilot-gate workflow / shadow-traffic.sh / java-drill conf / rollback-playbook / s4-pilot-canary-runbook；
+      # pilot_gate.py 降级为可选离线观测工具（非门禁）；REALIZE_RUNBOOK §4.2 口径同步改写
+      # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈 o2server/o2web 未上线，无影子迁移/生产切流前提；「功能可替换」= 项 1/2/3/5 达成（门禁级功能等价，非逐字节等价），S4 不阻塞；保留「不宣布 100% 完全替代」边界
       # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达成）——Playwright 对运行中双栈 5/5 通过
       # （designer-roundtrip process/form/query/portal + workflow-runtime 发起→填报→审批→收尾）；
       # 根因修复：ProcessDesigner 死模板未定义标识符（simState/ganttRows/branchStates 等）+ 行129 v-for/v-if 防御；
@@ -15,7 +19,7 @@ rev: 14  # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈
       # 项1 复验（2026-09-14）：干净双栈（全新 o2server + 干净 Rust DB，双侧全播种）重跑 behavior_compare
       # = 136 FAIL / 1877 PASS / 2029 SKIP ≤ 基线 170，gate 无回归（较 rev12 153 下降）——本次后端改动未使 gate 回归
       # 项3/项5 复核：W13 crud-view manifest（47 项裁决，壳视 replacementClaim:false）+ 守卫测试 6/6；§五 四条书面边界声明在档
-      # 项4 S4：离线门禁 pilot_gate 4/4 达成；v14 重新定位为上线前稳定性金丝雀（旧栈未上线→无影子迁移前提），不阻塞「功能可替换」，真实试点流量待上线时验证
+      # 项4 S4：v15 起真实流量 gate 彻底移除（无旧系统、不需要真实流量，改好即上线）；离线 pilot_gate 4/4 保留为可选观测工具，非门禁
       # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
       # （person custom/definition 删除族对齐 WoId {id} + queryview reload/dynamic 对齐 WrapBoolean）；
       # 双栈容器同环境 A/B 实测 gate 观测 156→153（-3，1857→1860 PASS，基线 170 通过）；
@@ -231,6 +235,13 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 > 2. S4 重新定位为「**上线前稳定性金丝雀**」——真正上线时跑一个观察窗口、核对 5xx/错误预算即可，**不作为宣布功能可替换的前置**；
 > 3. 保留边界：**不宣布"100% 完全替代并下线旧栈"**，因 136 条残余差异 + 2029 条跳过 + 书面范围外（IM 完整协议、历史迁移）客观存在。
 
+> **rev15 口径（2026-09-15，用户指令：不需要真实流量，改好即上线，没有旧系统）**：S4 真实流量 gate **彻底移除**（rev14 的「上线前金丝雀观察窗口」也一并取消）：
+> 1. **上线判据** = 静态门禁全绿（workspace `cargo test` / behavior_compare 基线无回归 / 前端 vitest+typecheck+build / 契约守卫）+ 仓内 live E2E 通过 + 上线后常态监控（5xx 告警，非前置条件）。不再需要任何真实试点流量或外部签核。
+> 2. **已删除**：`.github/workflows/oa4rust-pilot-gate.yml`、`oa4rust/deploy/shadow-traffic.sh`、`oa4rust/deploy/nginx-auth-routes-java-drill.conf`、`oa4rust/deploy/rollback-playbook.md`、`docs/ops/s4-pilot-canary-runbook.md`（均为旧系统/真实流量机制，无旧系统后作废）。`scripts/pilot_gate.py` + 测试降级为**可选离线观测工具**（对任意 access log 离线核算 5xx，非门禁）。`docs/REALIZE_RUNBOOK.md §4.2` 同步改写。
+> 3. rev14 第 3 条「不宣布 100% 完全替代」边界仍保留（136 残余差异 + 2029 跳过客观存在）；但**上线不再以 S4 为前置**——缺口家族/壳视图/IM 完整协议/复杂表单/FILE_FILE 落点已在 2026-09-15 批次全部闭环（见本文档 rev15 附注与 `oa4rust-web` 契约守卫）。
+
+**rev15 附注（2026-09-15 批次闭环）**：27 后端缺口家族实装（KNOWN_BACKEND_GAPS 52→0 清除，契约守卫 fixture 全量 4090 路由）；44 桌面 CRUD 壳视图数据驱动化（W13 manifest 33 implemented）；IM 完整协议（realtime crate：WS 5 IM 事件 + presence/roster + receipt 回执 + 房间切换，16 单测 + 401 握手守卫测试；前端 IMChat presence/receipt/joinRoom(conv.id) + P2P WebRTC 语音信令复用 IM 房间通道）；移动端发起流程复杂控件（附件/富文本/布局容器）；文件上传落点 = 附件存储 FILE_FILE（非 x_file 列表）。三端门禁：cargo test 7436 ok/0 failed、vitest 105/105、typecheck 6 工程、desktop+mobile 3 build、biome 0 error。
+
 ---
 
 ## 八、相关文档
@@ -243,7 +254,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 - `oa4rust/migrations/056_seed_process_definition_test_data.sql` — 流程种子原为 `'{}'` 占位；rev8 已由 `091_seed_real_process_definition.sql` upsert 真实 activities/form 种子覆盖
 - `docs/plans/2026-09-04-003-frontend-completion-audit.md` — 前端旧口径（~8%，已被本计划 §三取代）
 - `docs/plans/2026-09-09-001-...httponly-cookie-cargo-audit-rustsec-db-biome-plan.md` — 安全/工具链加固（正交轨道）
-- `docs/ops/s4-pilot-canary-runbook.md` — 项 4（S4 金丝雀）试点部署 + 专属 Nginx 访问日志采集 + `pilot-gate` workflow 输入的交接 runbook（使项 4 可签核的外部操作件，非项 4 达成证据）
+- ~~`docs/ops/s4-pilot-canary-runbook.md`~~ — 项 4（S4 金丝雀）交接 runbook；**rev15 起已删除**（S4 真实流量 gate 移除，无旧系统/无真实流量前提）
 
 ---
 
