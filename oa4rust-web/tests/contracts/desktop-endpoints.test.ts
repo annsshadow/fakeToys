@@ -15,35 +15,10 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
  * Rust port has not implemented; they are documented here, not fabricated.
  */
 
-const KNOWN_BACKEND_GAPS: string[] = [
-  '/jaxrs/ai/assemble/control/ann/list',
-  '/jaxrs/attendance/assemble/control/rule/create',
-  '/jaxrs/attendance/assemble/control/statistics/list',
-  '/jaxrs/cms/assemble/control/dict/list',
-  '/jaxrs/cms/assemble/control/form/list',
-  '/jaxrs/cms/assemble/control/view/list',
-  '/jaxrs/cms/assemble/control/xform/list',
-  '/jaxrs/cms/core/entity/column/list',
-  '/jaxrs/cms/core/entity/column_manager/list',
-  '/jaxrs/cms/core/entity/index/list',
-  '/jaxrs/cms/core/entity/module/list',
-  '/jaxrs/cms/core/entity/note/list',
-  '/jaxrs/config/create',
-  '/jaxrs/ftsearch/list',
-  '/jaxrs/general/assemble/control/list',
-  '/jaxrs/message/unread/count',
-  '/jaxrs/organization/assemble/control/threemember/list',
-  '/jaxrs/person/signature/save',
-  '/jaxrs/personal/face/list',
-  '/jaxrs/portal/assemble/designer',
-  '/jaxrs/processplatform/assemble/designer',
-  '/jaxrs/processplatform/assemble/surface/process_manager/list',
-  '/jaxrs/query/assemble/designer/delete',
-  '/jaxrs/query/assemble/designer/list',
-  '/jaxrs/query/assemble/designer/save',
-  '/jaxrs/query/assemble/surface/explorer/list',
-  '/jaxrs/server/deploy/list',
-]
+// 2026-09-15：原 27 条缺口家族已在 oa4rust 各 crate 实装（handler + 迁移 093-096），
+// 并登记进 backend-registered-routes.fixture.ts，故此处清空。若日后新增未实现端点，
+// 在此显式声明（不虚构），并在 fixture 之外由本守卫拦下。
+const KNOWN_BACKEND_GAPS: string[] = []
 
 const desktopSrcRoot = resolve(import.meta.dirname, '../../apps/desktop/src')
 
