@@ -70,6 +70,14 @@ function goPage(url: string) {
         <text class="cell-emoji">👥</text>
         <text class="cell-text">通讯录</text>
       </view>
+      <view class="cell" @tap="goTab('/pages/attendance/attendance')">
+        <text class="cell-emoji">🕘</text>
+        <text class="cell-text">考勤</text>
+      </view>
+      <view class="cell" @tap="goPage('/pages/process/start')">
+        <text class="cell-emoji">🚀</text>
+        <text class="cell-text">发起流程</text>
+      </view>
     </view>
   </view>
 </template>

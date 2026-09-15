@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { orgApi } from '@/services'
+import { messageApi, orgApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 
 const keyword = ref('')
 const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
+const busyId = ref('')
 
 function nameOf(row: Record<string, unknown>): string {
   for (const k of ['name', 'displayName']) {
@@ -46,6 +47,27 @@ onShow(async () => {
 function doSearch() {
   void search()
 }
+
+/** 发起单聊：创建一条 type=single 会话（名字取对方姓名），随即进入聊天页。 */
+async function startChat(row: Record<string, unknown>): Promise<void> {
+  const flag = typeof row.flag === 'string' ? row.flag : ''
+  if (!flag || busyId.value) return
+  const name = nameOf(row)
+  busyId.value = flag
+  uni.showLoading({ title: '发起会话…' })
+  try {
+    const resp = await messageApi.startConversation(name)
+    const id = String(resp.data?.id ?? '')
+    if (!id) throw new Error('后端未返回会话 ID')
+    uni.hideLoading()
+    uni.navigateTo({ url: `/pages/chat/chat?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}` })
+  } catch (e) {
+    uni.hideLoading()
+    uni.showToast({ title: e instanceof Error ? e.message : '发起会话失败', icon: 'none' })
+  } finally {
+    busyId.value = ''
+  }
+}
 </script>
 
 <template>
@@ -69,10 +91,13 @@ function doSearch() {
     <view v-else class="list">
       <view v-for="(row, i) in rows" :key="i" class="item">
         <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
-        <view class="body">
+        <view class="body" @tap="startChat(row)">
           <view class="title">{{ nameOf(row) }}</view>
           <view class="meta">{{ subOf(row) || ' ' }}</view>
         </view>
+        <button class="chat-btn" size="mini" type="primary" :disabled="busyId !== ''" @tap="startChat(row)">
+          聊天
+        </button>
       </view>
     </view>
   </view>
@@ -137,5 +162,8 @@ function doSearch() {
   margin-top: 6rpx;
   font-size: 24rpx;
   color: #90979f;
+}
+.chat-btn {
+  flex-shrink: 0;
 }
 </style>
