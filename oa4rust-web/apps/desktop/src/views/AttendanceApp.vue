@@ -5,7 +5,7 @@
       <p class="subtitle">/jaxrs/attendance/assemble/control/*</p>
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
-        <button class="eb" @click="exportData">📤 导出</button>
+        <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
       </div>
     </div>
     <div class="stats-row">
@@ -138,9 +138,37 @@ const am = useMutation({
 function audit(a: A, action: string) {
   am.mutate({ id: a.id, status: action })
 }
-function exportData() {
-  // 后端未注册考勤导出路由，提示而非 404 页面。
-  toast.error('考勤导出功能后端暂未启用')
+const exporting = ref(false)
+async function exportData() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    // 按所选月份区间调后端 v2 统计导出端点，返回 {status,count} 聚合行，
+    // 前端落成 CSV（带 BOM 保证 Excel 中文不乱码）本地下载。
+    const ym = month.value || new Date().toISOString().slice(0, 7)
+    const [y, m] = ym.split('-')
+    const endDate = new Date(Number(y), Number(m), 0).toISOString().slice(0, 10)
+    const r: any = await api.post('/jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter', {
+      startDate: `${ym}-01`,
+      endDate,
+      person: '',
+    })
+    const rows: Array<{ status?: string; count?: number }> = r.data?.data ?? []
+    const label: Record<string, string> = { '1': '正常', '2': '迟到' }
+    const csv =
+      '\uFEFF状态,次数\n' + rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `attendance-stat-${ym}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    toast.success(`已导出 ${rows.length} 条统计`)
+  } catch {
+    toast.error('考勤导出失败，请稍后重试')
+  } finally {
+    exporting.value = false
+  }
 }
 onMounted(loadData)
 
