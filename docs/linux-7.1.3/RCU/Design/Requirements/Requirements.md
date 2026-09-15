@@ -394,7 +394,7 @@ rcu_dereference() Linux 内核中使volatile 类型转换以及（对DEC Alpha�
 | waiting on a given RCU read-side critical section only if it can      |
 | prove that synchronize_rcu() started first.                           |
 | A related question is 鈥淲hen rcu_read_lock() doesn't generate any      |
-| code, why does it matter how it relates to a grace period?鈥?The       |
+| code, why does it matter how it relates to a grace period?The       |
 | answer is that it is not the relationship of rcu_read_lock()          |
 | itself that is important, but rather the relationship of the code     |
 | within the enclosed RCU read-side critical section to the code        |

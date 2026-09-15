@@ -23,7 +23,7 @@ debugfs 来支持错误注入。启用后，默认的 NVME_SC_INVALID_OPCODE（�
 ```
 ```
 
-  cp: cannot stat 鈥?mnt/a.file鈥? Input/output error
+  cp: cannot stat mnt/a.file Input/output error
 
 ```
 ```

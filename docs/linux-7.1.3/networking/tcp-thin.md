@@ -20,4 +20,4 @@ tcp_thin_dupack sysctl 来显式激活。这两项修改默认都是关闭的
 
 有关这些修改以及大量实验数据的更多信息，可在此处找到
 鈥淚mproving latency for interactive, thin-stream applications over
-reliable transport鈥?http://simula.no/research/nd/publications/Simula.nd.477/simula_pdf_file
+reliable transporthttp://simula.no/research/nd/publications/Simula.nd.477/simula_pdf_file

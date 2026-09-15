@@ -89,11 +89,11 @@
      - Key Prefix
    - - 0
      - （无前缀   - - 1
-     - 鈥渦ser.鈥?   - - 2
-     - 鈥渟ystem.posix_acl_access鈥?   - - 3
-     - 鈥渟ystem.posix_acl_default鈥?   - - 4
-     - 鈥渢rusted.鈥?   - - 6
-     - 鈥渟ecurity.鈥?   - - 7
+     - 鈥渦ser.   - - 2
+     - 鈥渟ystem.posix_acl_access   - - 3
+     - 鈥渟ystem.posix_acl_default   - - 4
+     - 鈥渢rusted.   - - 6
+     - 鈥渟ecurity.   - - 7
      - “system.”（inline_data？）
    - - 8
      - “system.richacl”（SuSE 内核？）
