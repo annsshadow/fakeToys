@@ -830,4 +830,42 @@ mod tests {
         let result = crate::testing::test_sea_orm_pool().await;
         let _ = result;
     }
+    #[tokio::test]
+    async fn test_crud_create_placeholder_count_live() {
+        // 回归钉：crud_create 曾少算 1 个占位符（1..values.len()），导致
+        // INSERT 字段数 N+1 多于表达式 N → 42601，所有 ≥1 列家族 create 全 500。
+        // 用临时表实跑，钉死「id + 列数」占位符语义。
+        use crate::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping test_crud_create_placeholder_count_live: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client.execute("DROP TABLE IF EXISTS x_crud_probe", &[]).await.unwrap();
+        client
+            .execute(
+                "CREATE TABLE x_crud_probe (id TEXT PRIMARY KEY, a TEXT, b TEXT, c TEXT)",
+                &[],
+            )
+            .await
+            .unwrap();
+        let spec = crate::CrudSpec {
+            table: "x_crud_probe",
+            columns: &[("a", "a"), ("b", "b"), ("c", "c")],
+            soft_delete: false,
+        };
+        // 3 列：必须生成 $1(id)..$4(c) 共 4 占位符
+        let payload = serde_json::json!({ "a": "1", "b": "2", "c": "3" });
+        let id = crate::crud_create(&pool, &spec, &payload).await.unwrap();
+        let row = client
+            .query_one("SELECT a, b, c FROM x_crud_probe WHERE id = $1", &[&id])
+            .await
+            .unwrap();
+        assert_eq!(row.get::<_, String>("a"), "1");
+        assert_eq!(row.get::<_, String>("b"), "2");
+        assert_eq!(row.get::<_, String>("c"), "3");
+        client.execute("DROP TABLE x_crud_probe", &[]).await.unwrap();
+    }
+
 }
