@@ -24,6 +24,7 @@
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
       <div class="sidebar-header">
         <h3>版块</h3>
+        <button class="add-section-btn" title="新建版块" @click="openNewSection()">+</button>
       </div>
       <div v-if="sectionsLoading" class="loading-skeleton">
         <div v-for="i in 5" :key="i" class="sk-item"></div>
@@ -35,7 +36,10 @@
           @click="selectSection(sec)">
           <span class="sec-icon">{{ sec.icon || '💬' }}</span>
           <span class="sec-name">{{ sec.name }}</span>
-          <span class="sec-count">{{ sec.topicCount ?? '0' }}</span>
+          <span class="sec-actions">
+            <button class="sec-act" title="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
+            <button class="sec-act" title="删除版块" @click.stop="deleteSection(sec)">✕</button>
+          </span>
         </li>
         <li class="section-item all-section" :class="{ active: !selectedSection }" @click="selectedSection = null">
           <span class="sec-icon">📋</span>
@@ -47,6 +51,10 @@
     <!-- 右侧：帖子列表 -->
     <main class="bbs-main glass-card">
       <!-- 帖子列表 -->
+      <div v-if="activeTab==='my'" class="my-subtabs">
+        <button :class="{ on: mySub==='topics' }" @click="switchMySub('topics')">我的主题</button>
+        <button :class="{ on: mySub==='replies' }" @click="switchMySub('replies')">我的回复</button>
+      </div>
       <div v-if="topicsLoading" class="loading-state">
         <div v-for="i in 6" :key="i" class="skeleton-row"></div>
       </div>
@@ -153,16 +161,40 @@
         </div>
       </div>
     </div>
+
+    <!-- 版块新建/重命名弹窗（POST section/create | POST section/save/{id}） -->
+    <div v-if="showSectionModal" class="modal-overlay" @click.self="closeSectionModal">
+      <div class="modal glass-card">
+        <div class="modal-header">
+          <h3>{{ sectionModalMode === 'create' ? '新建版块' : '重命名版块' }}</h3>
+          <button class="close-btn" @click="closeSectionModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>版块名称</label>
+            <input v-model="sectionName" class="form-input" placeholder="版块名称" maxlength="30" @keydown.enter="saveSection" />
+          </div>
+          <div v-if="sectionError" class="error-msg">{{ sectionError }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="closeSectionModal">取消</button>
+          <button class="btn-submit" :disabled="!sectionName.trim() || sectionBusy" @click="saveSection">
+            {{ sectionBusy ? '保存中…' : '保存' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
-import { useMutation, useQuery } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 const session = useSession()
+const qc = useQueryClient()
 
 interface Section {
   id: string
@@ -173,6 +205,8 @@ interface Section {
 
 interface Topic {
   id: string
+  /** 回复行点开的源主题 ID（我的回复卡片）；普通主题行无此键。 */
+  topicRef?: string
   title: string
   content?: string
   excerpt?: string
@@ -229,6 +263,83 @@ watch(sectionsData, (d) => {
 
 const selectedSection = ref<Section | null>(null)
 
+// 「我的」页签子切换：我的主题 / 我的回复（论坛个人主页，x_component_ForumPerson）
+const mySub = ref<'topics' | 'replies'>('topics')
+function switchMySub(sub: 'topics' | 'replies'): void {
+  if (mySub.value === sub) return
+  mySub.value = sub
+  page.value = 1
+}
+
+// 版块新建/重命名/删除（后端 x_bbs_assemble_control_section 实表写路由）
+const showSectionModal = ref(false)
+const sectionModalMode = ref<'create' | 'edit'>('create')
+const sectionModalTarget = ref<Section | null>(null)
+const sectionName = ref('')
+const sectionBusy = ref(false)
+const sectionError = ref('')
+
+function openNewSection(): void {
+  sectionModalMode.value = 'create'
+  sectionModalTarget.value = null
+  sectionName.value = ''
+  sectionError.value = ''
+  showSectionModal.value = true
+}
+function openSectionEdit(sec: Section): void {
+  sectionModalMode.value = 'edit'
+  sectionModalTarget.value = sec
+  sectionName.value = sec.name ?? ''
+  sectionError.value = ''
+  showSectionModal.value = true
+}
+function closeSectionModal(): void {
+  showSectionModal.value = false
+  sectionModalTarget.value = null
+  sectionName.value = ''
+  sectionError.value = ''
+}
+async function saveSection(): Promise<void> {
+  const name = sectionName.value.trim()
+  if (!name || sectionBusy.value) return
+  sectionBusy.value = true
+  sectionError.value = ''
+  try {
+    if (sectionModalMode.value === 'edit' && sectionModalTarget.value?.id) {
+      // POST 别名（后端 put+post 双注册）
+      await api.post(`/jaxrs/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`, { name })
+      toast.success('版块已重命名')
+    } else {
+      await api.post('/jaxrs/bbs/assemble/control/section/create', { name })
+      toast.success('版块已创建')
+    }
+    closeSectionModal()
+    await qc.invalidateQueries({ queryKey: ['bbs', 'sections'] })
+  } catch (e) {
+    sectionError.value = e instanceof Error ? e.message : '保存失败'
+  } finally {
+    sectionBusy.value = false
+  }
+}
+async function deleteSection(sec: Section): Promise<void> {
+  if (!sec.id) return
+  const ok = await confirmMsg(`确定删除版块「${sec.name}」？该版块下的帖子不受影响。`)
+  if (!ok) return
+  sectionBusy.value = true
+  try {
+    await api.post(`/jaxrs/bbs/assemble/control/section/delete/${sec.id}`)
+    if (selectedSection.value?.id === sec.id) {
+      selectedSection.value = null
+    }
+    toast.success('版块已删除')
+    await qc.invalidateQueries({ queryKey: ['bbs', 'sections'] })
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : '删除失败')
+  } finally {
+    sectionBusy.value = false
+  }
+}
+
 // 帖子列表
 //
 // 端点选型（均已注册可实跑；裸静态路由的无参 GET handler 需 Path((page,count))
@@ -242,7 +353,7 @@ const {
   isLoading: topicsLoading,
   refetch,
 } = useQuery({
-  queryKey: ['bbs', 'topics', activeTab, selectedSection, page, searchQuery],
+  queryKey: ['bbs', 'topics', activeTab, mySub, selectedSection, page, searchQuery],
   queryFn: async () => {
     let resp: { data?: unknown }
     if (searchQuery.value) {
@@ -261,6 +372,24 @@ const {
         `/jaxrs/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`,
         {},
       )) as { data?: unknown }
+    } else if (activeTab.value === 'my' && mySub.value === 'replies') {
+      // 我的回复（论坛个人主页）：PUT 参数化路由（x_bbs_reply，creator/author_id = 登录人）
+      resp = (await api.put(
+        `/jaxrs/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+      const replyRows = (Array.isArray(resp.data) ? resp.data : []) as Array<Record<string, unknown>>
+      // 回复行映射为列表卡片字段；topicRef 供详情点开源主题全文
+      const replyTopics: Topic[] = replyRows.map((r) => ({
+        id: String(r.id ?? ''),
+        topicRef: String(r.topic_id ?? ''),
+        title: '回复 · 主题 ' + String(r.topic_id ?? ''),
+        content: String(r.content ?? ''),
+        author: String(r.creator ?? ''),
+        createTime: String(r.create_time ?? r.createTime ?? ''),
+        sectionName: '我的回复',
+      }))
+      return { rows: replyTopics, more: replyTopics.length >= pageSize }
     } else if (activeTab.value === 'my') {
       resp = (await api.post(
         `/jaxrs/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`,
@@ -296,8 +425,10 @@ const { data: repliesData } = useQuery({
   queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
   queryFn: async () => {
     if (!viewingTopic.value) return []
+    // 我的回复卡片打开时按源主题（topicRef）拉回复
+    const subjectId = viewingTopic.value.topicRef || viewingTopic.value.id
     const resp = await api.put('/jaxrs/bbs/assemble/control/reply/filter/list/page/1/count/50', {
-      subjectId: viewingTopic.value.id,
+      subjectId,
     })
     return ((resp as any)?.data ?? []) as Reply[]
   },
@@ -352,7 +483,7 @@ function createTopic(): void {
 const replyMutation = useMutation({
   mutationFn: (content: string) =>
     api.post('/jaxrs/bbs/assemble/control/reply/create', {
-      subjectId: viewingTopic.value?.id,
+      subjectId: viewingTopic.value?.topicRef || viewingTopic.value?.id,
       content,
     }),
   onSuccess: () => {
@@ -385,12 +516,14 @@ function handleSearch(): void {
   page.value = 1
 }
 
-/** 打开详情：列表行只有摘要字段，补拉 /jaxrs/bbs/subject/view/{id} 全量（含正文）。 */
+/** 打开详情：列表行只有摘要字段，补拉 /jaxrs/bbs/subject/view/{id} 全量（含正文）；
+ *  我的回复卡片按 topicRef 点开源主题。 */
 async function openTopic(topic: Topic): Promise<void> {
   viewingTopic.value = topic
   replies.value = []
+  const targetId = topic.topicRef || topic.id
   try {
-    const resp = (await api.get(`/jaxrs/bbs/subject/view/${topic.id}`)) as { data?: unknown }
+    const resp = (await api.get(`/jaxrs/bbs/subject/view/${targetId}`)) as { data?: unknown }
     const full = resp.data as Topic | null
     if (full && full.id) {
       viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
@@ -538,6 +671,25 @@ const api_control_list_top_720_data = ref<any[]>([])
 }
 .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sidebar-header h3 { font-size: 13px; color: var(--color-primary); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+.add-section-btn {
+  background: none; border: 1px solid var(--border-subtle); color: var(--text-muted);
+  width: 24px; height: 24px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px;
+  line-height: 1;
+}
+.add-section-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.sec-actions { display: none; gap: 4px; }
+.section-item:hover .sec-actions { display: inline-flex; }
+.sec-act {
+  border: none; background: var(--bg-elevated); color: var(--text-muted); cursor: pointer;
+  font-size: 11px; padding: 2px 6px; border-radius: var(--radius-sm);
+}
+.sec-act:hover { color: var(--color-primary); border-color: var(--color-primary); }
+.my-subtabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.my-subtabs button {
+  padding: 6px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);
+  background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px;
+}
+.my-subtabs button.on { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
 .section-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
 .section-item {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;

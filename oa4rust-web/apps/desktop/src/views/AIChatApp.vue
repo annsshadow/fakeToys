@@ -147,7 +147,7 @@ async function createNewChat() {
 }
 
 async function deleteChat(chat: ChatItem) {
-  if (!confirmMsg(`删除对话「${chat.title || chat.id}」？`)) return
+  if (!(await confirmMsg(`删除对话「${chat.title || chat.id}」？`))) return
   try {
     await api.delete(`/jaxrs/ai_assemble_control/chat/delete/${chat.id}`)
     if (currentChat.value?.id === chat.id) {

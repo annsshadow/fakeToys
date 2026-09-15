@@ -62,7 +62,7 @@ async function doSearch() {
 }
 
 async function onDelete(item: any) {
-  if (!confirmMsg(`确定删除热帖「${item.title || item.id}」？`)) return
+  if (!(await confirmMsg(`确定删除热帖「${item.title || item.id}」？`))) return
   try {
     await api.delete(`/jaxrs/hotpic/core/entity/delete/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)

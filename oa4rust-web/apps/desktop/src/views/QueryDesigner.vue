@@ -391,7 +391,7 @@ async function runQuery() {
 }
 
 async function deleteQuery(q: QueryDef) {
-  if (!confirmMsg(`删除查询「${q.name || q.id}」？`)) return
+  if (!(await confirmMsg(`删除查询「${q.name || q.id}」？`))) return
   try {
     await api.delete(`/jaxrs/query/assemble/designer/delete/${q.id}`)
     if (selected.value?.id === q.id) selected.value = null

@@ -148,8 +148,8 @@ const delM = useMutation({
     qc.invalidateQueries({ queryKey: qk })
   },
 })
-function deleteItem(item: Item) {
-  if (confirmMsg('确定删除该人脸记录？')) delM.mutate(item.id)
+async function deleteItem(item: Item) {
+  if (await confirmMsg('确定删除该人脸记录？')) delM.mutate(item.id)
 }
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })

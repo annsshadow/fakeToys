@@ -1644,17 +1644,19 @@
       "routes": [
         "/app/bbs"
       ],
-      "status": "out_of_scope",
-      "replacementClaim": false,
-      "decision": "后端 bbs 版块家族只读（仅 section/list 与 501 section/syn，无版块创建/管理写路由），论坛分类管理不纳入本次边界；原死加号按钮（无事件、无后端路由可打）已移除，侧栏保持只读版块列表。",
-      "blockerCodes": [
-        "NO_BACKEND_SECTION_WRITE_ROUTE"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "论坛分类（版块）管理已实装：侧栏加号新建版块（POST section/create，creator 自动取会话登录人）、逐行重命名（PUT/POST section/save/{id}）、删除（DELETE/POST section/delete/{id} 硬删），全部打到 x_bbs_assemble_control_section实表写路由；原「无事件处理的死加号」已接线，manifest 原 out_of_scope 结论（后端无 section 写路由）因本轮实装而失效，改判 implemented。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "class=\"section-list\""
+            "contains": "@click=\"openNewSection()\""
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "api.post('/jaxrs/bbs/assemble/control/section/create', { name })"
           }
         ],
         "routing": [
@@ -1666,16 +1668,15 @@
         "backend": [
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/section/list\""
+            "contains": "\"/jaxrs/bbs/assemble/control/section/create\""
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/lib.rs",
+            "contains": "pub async fn section_create"
           }
         ]
       },
-      "acceptedBoundary": {
-        "scope": "论坛版块（分类）创建/管理功能（oa4rust bbs 家族无 section 写路由）",
-        "impact": "版块列表可浏览、可按版块筛选帖子，但无法新建版块；界面无误导性入口",
-        "owner": "oa4rust bbs 家族（后端）",
-        "replacementClaim": false
-      }
+      "acceptance": "论坛分类（版块）新建/重命名/删除 + 版块列表浏览（x_bbs_assemble_control_section 实表）"
     },
     {
       "id": "w14:x_component_ForumDocument",
@@ -1700,7 +1701,7 @@
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/subject/view/${topic.id}`"
+            "contains": "`/jaxrs/bbs/subject/view/${targetId}`"
           }
         ],
         "routing": [
@@ -1737,25 +1738,39 @@
       "routes": [
         "/app/bbs"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "「我的」页签已覆盖本人主题列表（POST subject/filter/listsubjectinfo，creator=登录人）；论坛个人主页（我的回复/统计展示）与个人管理界面仍未实现，维持 blocked。",
-      "blockerCodes": [
-        "MISSING_PERSON_HOME",
-        "MISSING_PERSON_MANAGEMENT"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "论坛个人主页已实装：「我的」页签双栏——我的主题（POST subject/filter/listsubjectinfo，creator=登录人）+ 我的回复（PUT user/reply/my/list，x_bbs_reply 按 creator/author_id=登录人），回复卡经 topicRef 直点源主题全文并拉其回复；个人管理界面（管理他人内容）不在本次边界。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "{ key: 'my' as TabKey, label: '我的' }"
+            "contains": "user/reply/my/list/page/${page.value}/count/${pageSize}"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`"
+            "contains": "我的回复"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/BBSForum.vue')"
+          }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "user/reply/my/list/page/{page}/count/{count}"
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/u2.rs",
+            "contains": "pub async fn u2_my_reply_list"
           }
         ]
-      }
+      },
+      "acceptance": "论坛个人主页：我的主题列表 + 我的回复列表（可点源主题）"
     },
     {
       "id": "w14:x_component_ForumSearch",
@@ -1809,17 +1824,27 @@
       "routes": [
         "/app/bbs"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "按版块筛选已改走真实路由 GET /jaxrs/bbs/subject/list/{sectionId}（bbs_subject_info 实表，原 POST 无参 GET 路由运行时 500 不再调用）；版块发布/管理（新建/编辑/删除版块）后端无写路由，维持 blocked。",
-      "blockerCodes": [
-        "MISSING_SECTION_MANAGEMENT"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "版块发布/管理已实装：后端新增 x_bbs_assemble_control_section 写路由（POST section/create 会话自动填 creator、PUT/POST section/save/{id} 改名、DELETE/POST section/delete/{id} 硬删，shared::crud 参数化白名单），前端 BBSForum 侧栏加号/重命名/删除全接线并按 POST 别名调用；版块筛选此前已修好（GET /jaxrs/bbs/subject/list/{sectionId}）。写路由由 live 轮测 test_section_crud_roundtrip 实跑验证。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/subject/list/${selectedSection.value.id}`"
+            "contains": "@click=\"openNewSection()\""
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "api.post('/jaxrs/bbs/assemble/control/section/create', { name })"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "`/jaxrs/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "`/jaxrs/bbs/assemble/control/section/delete/${sec.id}`"
           }
         ],
         "routing": [
@@ -1830,11 +1855,20 @@
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/subject/list/{sectionId}\""
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/section/create\""
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/lib.rs",
+            "contains": "pub async fn section_create"
+          },
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/section/delete/{id}\""
           }
         ]
-      }
+      },
+      "acceptance": "版块新建/重命名/删除（x_bbs_assemble_control_section 实表）+ 按版块筛选帖子"
     }
   ],
   "summary": {
@@ -1844,9 +1878,8 @@
       "W14": 15
     },
     "byStatus": {
-      "implemented": 41,
-      "out_of_scope": 4,
-      "still_blocked": 2
+      "implemented": 44,
+      "out_of_scope": 3
     }
   }
 }

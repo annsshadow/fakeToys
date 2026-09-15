@@ -123,7 +123,7 @@ async function onCreate() {
 }
 
 async function onDelete(item: DocItem) {
-  if (!confirmMsg(`确定删除文档「${item.title || item.id}」？`)) return
+  if (!(await confirmMsg(`确定删除文档「${item.title || item.id}」？`))) return
   try {
     await api.delete(`/jaxrs/document/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)

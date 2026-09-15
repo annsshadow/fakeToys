@@ -1002,8 +1002,8 @@ const delM = useMutation({
     if (currentStatement.value?.id) currentStatement.value = null
   },
 })
-function deleteStatement(s: Stmt) {
-  if (!confirmMsg(`删除语句「${s.name || s.id}」？`)) return
+async function deleteStatement(s: Stmt) {
+  if (!(await confirmMsg(`删除语句「${s.name || s.id}」？`))) return
   delM.mutate(s.id)
 }
 
@@ -2025,8 +2025,8 @@ function saveTpl() {
   }
   showTplEditor.value = false
 }
-function deleteTpl(idx: number) {
-  if (!confirmMsg('确定删除此模板？')) return
+async function deleteTpl(idx: number) {
+  if (!(await confirmMsg('确定删除此模板？'))) return
   templates.value.splice(idx, 1)
 }
 

@@ -5700,8 +5700,8 @@ function subOnWheel(e: WheelEvent) {
     subPanY.value += e.deltaY
   }
 }
-function subClearCanvas() {
-  if (!confirmMsg('清空子流程画布？')) return
+async function subClearCanvas() {
+  if (!(await confirmMsg('清空子流程画布？'))) return
   subprocessDef.value = { nodes: [], edges: [] }
   subSelectedNode.value = null
   subSelectedEdge.value = null
