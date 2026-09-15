@@ -232,7 +232,7 @@ function editItem(item: ConfigItem) {
   selectItem(item)
 }
 async function deleteItem(item: ConfigItem) {
-  if (!confirmMsg(`删除配置「${item.name || item.flag}」？`)) return
+  if (!(await confirmMsg(`删除配置「${item.name || item.flag}」？`))) return
   try {
     await api.delete('/jaxrs/config/delete/' + item.id)
   } catch {}
@@ -253,8 +253,8 @@ async function save() {
 async function preview() {
   toast.info('配置预览: ' + config.value)
 }
-function clearConfig() {
-  if (confirmMsg('清空配置？')) config.value = '{}'
+async function clearConfig() {
+  if (await confirmMsg('清空配置？')) config.value = '{}'
 }
 function formatConfig() {
   try {

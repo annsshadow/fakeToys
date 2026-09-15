@@ -68,8 +68,8 @@ function editPage(_page: PortalPage): void {
 
 function publishPage(_page: PortalPage): void {}
 
-function deletePage(id: string): void {
-  if (confirmMsg('确定删除此页面？')) deleteMutation.mutate(id)
+async function deletePage(id: string): void {
+  if (await confirmMsg('确定删除此页面？')) deleteMutation.mutate(id)
 }
 </script>
 

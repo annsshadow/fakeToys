@@ -151,8 +151,8 @@ const delM = useMutation({
     qc.invalidateQueries({ queryKey: qk })
   },
 })
-function deleteItem(item: Item) {
-  if (confirmMsg('确定删除该服务调用？')) delM.mutate(item.id)
+async function deleteItem(item: Item) {
+  if (await confirmMsg('确定删除该服务调用？')) delM.mutate(item.id)
 }
 
 // 执行服务调用（POST /invoke/{flag}/execute；后端按 id/name/alias 三者命中）

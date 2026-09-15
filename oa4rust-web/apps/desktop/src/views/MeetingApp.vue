@@ -148,7 +148,7 @@ async function updateMeeting(m: M) {
   }
 }
 async function cancelMeeting(m: M) {
-  if (!confirmMsg('确定取消该会议？')) return
+  if (!(await confirmMsg('确定取消该会议？'))) return
   try {
     await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
     loadMeetings()

@@ -94,7 +94,7 @@ async function loadTemplates() {
 }
 
 async function delDevice(d: any) {
-  if (!confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`)) return
+  if (!(await confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`))) return
   try {
     await api.delete(`/jaxrs/jpush/core/entity/device/${d.id}`)
     devices.value = devices.value.filter((x) => x.id !== d.id)

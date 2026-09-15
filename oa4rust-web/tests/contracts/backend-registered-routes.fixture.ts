@@ -415,7 +415,11 @@ export const REGISTERED_BACKEND_ROUTES: string[] = [
   // 手工补录：bbs_assemble_control routes.rs 经 fmt() 注册的分页参数化路由
   // （生成器只捕获静态 .route("/jaxrs/...") 字面量，fmt 动态拼接漏采）。
   '/jaxrs/bbs/assemble/control/reply/filter/list/page/{page}/count/{count}',
+  // 版块发布/管理写路由（W14 ForumSection：x_bbs_assemble_control_section 实装，硬删）
+  '/jaxrs/bbs/assemble/control/section/create',
+  '/jaxrs/bbs/assemble/control/section/delete/{id}',
   '/jaxrs/bbs/assemble/control/section/list',
+  '/jaxrs/bbs/assemble/control/section/save/{id}',
   '/jaxrs/bbs/assemble/control/shutup/create',
   '/jaxrs/bbs/assemble/control/shutup/delete',
   '/jaxrs/bbs/assemble/control/subject/creamed/list',

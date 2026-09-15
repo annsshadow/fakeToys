@@ -193,7 +193,7 @@ async function createRule() {
   }
 }
 async function deleteRule(rule: any) {
-  if (!confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？')) return
+  if (!(await confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？'))) return
   try {
     await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
     loadRules()
