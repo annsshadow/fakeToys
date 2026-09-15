@@ -25,6 +25,7 @@
             <td>{{ item.validated?'已校验':'未校验' }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
+              <button class="btn-sm" @click="runInvoke(item)">执行</button>
               <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
@@ -49,7 +50,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -152,6 +153,23 @@ const delM = useMutation({
 })
 function deleteItem(item: Item) {
   if (confirmMsg('确定删除该服务调用？')) delM.mutate(item.id)
+}
+
+// 执行服务调用（POST /invoke/{flag}/execute；后端按 id/name/alias 三者命中）
+const runM = useMutation({
+  mutationFn: async (item: Item) => {
+    const flag = item.alias || item.name || item.id
+    return api.post(`/jaxrs/program_center/invoke/${encodeURIComponent(flag)}/execute`, {})
+  },
+  onSuccess: () => {
+    toast.success('服务调用已执行')
+  },
+  onError: (e: unknown) => {
+    toast.error(`执行失败：${e instanceof Error ? e.message : ''}`)
+  },
+})
+function runInvoke(item: Item) {
+  runM.mutate(item)
 }
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
