@@ -269,6 +269,25 @@ export const orgApi = {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 公告（x_ai_ann，ai crate 已注册实装路由）
+// ─────────────────────────────────────────────────────────────
+export interface AnnRow {
+  id?: string
+  title?: string
+  content?: string
+  category?: string
+  status?: string
+  creator?: string
+  createTime?: string
+  [key: string]: unknown
+}
+
+export const annApi = {
+  /** 公告列表（create_time 倒序，后端实表 x_ai_ann）。 */
+  list: () => list(mapi.get<AnnRow[]>('/jaxrs/ai/assemble/control/ann/list')),
+}
+
+// ─────────────────────────────────────────────────────────────
 // 通用（字典）
 // ─────────────────────────────────────────────────────────────
 export const generalApi = {
@@ -282,6 +301,7 @@ export const apis = {
   file: fileApi,
   attendance: attendanceApi,
   org: orgApi,
+  ann: annApi,
   general: generalApi,
 }
 

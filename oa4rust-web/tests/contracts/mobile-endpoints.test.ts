@@ -54,6 +54,8 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   // 附件存储 FILE_FILE 列表 / 下载（P4：上传落点在此，非 x_file 我的文件）
   '/jaxrs/attachment/list/editor/{owner}',
   '/jaxrs/attachment/{id}/download',
+  // 公告（ai crate 已实装 x_ai_ann 家族，工作台公告区）
+  '/jaxrs/ai/assemble/control/ann/list',
 ]
 
 const mobileSrcRoot = resolve(import.meta.dirname, '../../apps/mobile/src')
