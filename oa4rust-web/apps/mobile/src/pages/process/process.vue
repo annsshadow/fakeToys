@@ -54,8 +54,18 @@ async function load() {
 
 onShow(async () => {
   if (!(await ensureAuthenticated())) return
+  // 「发起流程」提交后 switchTab 回到本页，经存储指定打开"我发起的"。
+  const stored = uni.getStorageSync('oa_process_active_tab')
+  if (stored && tabs.some((t) => t.key === stored)) {
+    active.value = stored as TabKey
+    uni.removeStorageSync('oa_process_active_tab')
+  }
   load()
 })
+
+function goStart() {
+  uni.navigateTo({ url: '/pages/process/start' })
+}
 
 function switchTab(key: TabKey) {
   if (active.value === key) return
@@ -119,6 +129,10 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
       </view>
     </view>
     <view v-if="total > 0" class="footer">共 {{ total }} 条</view>
+    <view class="fab" @tap="goStart">
+      <text class="fab-plus">＋</text>
+      <text class="fab-label">发起流程</text>
+    </view>
   </view>
 </template>
 
@@ -177,5 +191,25 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   text-align: center;
   color: #90979f;
   font-size: 24rpx;
+}
+.fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 64rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background: #2d8cf0;
+  color: #fff;
+  padding: 18rpx 28rpx;
+  border-radius: 44rpx;
+  box-shadow: 0 8rpx 24rpx rgba(45, 140, 240, 0.4);
+}
+.fab-plus {
+  font-size: 36rpx;
+  line-height: 1;
+}
+.fab-label {
+  font-size: 26rpx;
 }
 </style>

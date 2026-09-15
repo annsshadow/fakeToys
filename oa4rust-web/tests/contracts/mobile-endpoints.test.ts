@@ -38,6 +38,22 @@ const REGISTERED_BACKEND_ROUTES: string[] = [
   '/jaxrs/organization/assemble/control/person/{flag}',
   // 通用（general crate）
   '/jaxrs/general/dict/list',
+  // IM 发起单聊（message_assemble_communicate，创建 single 会话）
+  '/jaxrs/message/assemble/communicate/im/conversation',
+  // 流程发起（processplatform designer + service_processing，桌面 ProcessWork 同源端点）
+  '/jaxrs/processplatform/assemble/designer/list/{category}',
+  '/jaxrs/processplatform/assemble/designer/get/{id}',
+  '/jaxrs/form/{id}',
+  '/jaxrs/processplatform/service/processing/work',
+  '/jaxrs/processplatform/service/processing/data/work/{id}',
+  // 考勤本人打卡（attendance_assemble_control v2 mobile）
+  '/jaxrs/attendance/assemble/control/v2/mobile/check/pre',
+  '/jaxrs/attendance/assemble/control/v2/mobile/check',
+  // 附件二进制上传（file_assemble_control attachment folder，落点 FILE_FILE）
+  '/jaxrs/attachment/upload/folder/{folderId}',
+  // 附件存储 FILE_FILE 列表 / 下载（P4：上传落点在此，非 x_file 我的文件）
+  '/jaxrs/attachment/list/editor/{owner}',
+  '/jaxrs/attachment/{id}/download',
 ]
 
 const mobileSrcRoot = resolve(import.meta.dirname, '../../apps/mobile/src')
@@ -109,6 +125,9 @@ describe('mobile endpoints are all registered in the oa4rust backend', () => {
       'file/assemble/control',
       'organization/assemble/control',
       'general/dict',
+      'processplatform/service/processing',
+      'attendance/assemble/control/v2',
+      '/jaxrs/attachment/upload/folder/',
     ]) {
       expect(used.includes(family), `family ${family} missing from mobile sources`).toBe(true)
     }
