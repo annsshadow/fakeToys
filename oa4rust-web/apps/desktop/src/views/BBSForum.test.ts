@@ -55,7 +55,35 @@ describe('BBSForum contracts', () => {
     expect(source).not.toContain("api.get('/jaxrs/bbs/topic/list')")
     expect(source).not.toContain("api.get('/jaxrs/bbs/core/entity/section')")
     expect(source).not.toContain("api.get('/jaxrs/bbs/assemble/control/shutup/list')")
-    expect(source).not.toContain("api.get('/jaxrs/review/v2/search')")
+    expect(source).not.toContain("api.get('/jaxrs/bbs/review/v2/search')")
     expect(source).not.toContain("api.get('/jaxrs/bbs/subject/search')")
+  })
+
+  it('calls only registered parameterized BBS routes (bare no-arg GET handlers 500 at runtime)', () => {
+    // 裸静态路由（如 subject/index/list）的 handler 需 Path((page,count))，
+    // 无参注册时 axum 提取必然失败 → 500。列表/搜索/回复必须走 fmt 参数化路由。
+    // 钉 URL 字面量本身（与调用换行布局无关）。
+    expect(source).toContain('`/jaxrs/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`')
+    expect(source).toContain('`/jaxrs/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`')
+    expect(source).toContain('`/jaxrs/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`')
+    expect(source).toContain(
+      '`/jaxrs/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`',
+    )
+    expect(source).toContain(
+      '`/jaxrs/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}`',
+    )
+    expect(source).toContain("'/jaxrs/bbs/assemble/control/reply/filter/list/page/1/count/50'")
+    // 版块筛选走 bbs crate 已注册 GET 路由（bbs_subject_info 实表）
+    expect(source).toContain('`/jaxrs/bbs/subject/list/${selectedSection.value.id}`')
+    // 不再调用运行时 500 的裸静态路由
+    expect(source).not.toContain("api.get('/jaxrs/bbs/assemble/control/list/subjects/index')")
+    expect(source).not.toContain("api.post('/jaxrs/bbs/assemble/control/subject/search'")
+    expect(source).not.toContain('api.post(`/jaxrs/bbs/assemble/control/list/subjects/filtered`')
+    expect(source).not.toContain('api.post(`/jaxrs/bbs/assemble/control/list/reply/filter`')
+  })
+
+  it('drops the inert add-section control (no backend section-create route exists)', () => {
+    expect(source).not.toContain('add-section-btn')
+    expect(source).not.toContain('新建版块')
   })
 })

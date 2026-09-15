@@ -16,7 +16,7 @@
           <span class="search-icon">⌕</span>
           <input v-model="searchQuery" @keydown.enter="handleSearch" placeholder="搜索帖子..." class="search-input" />
         </div>
-        <button class="new-topic-btn" @click="showNewTopic = true">✏️ 发帖</button>
+        <button class="new-topic-btn" @click="openNewTopic">✏️ 发帖</button>
       </div>
     </div>
 
@@ -24,7 +24,6 @@
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
       <div class="sidebar-header">
         <h3>版块</h3>
-        <button class="add-section-btn" title="新建版块">+</button>
       </div>
       <div v-if="sectionsLoading" class="loading-skeleton">
         <div v-for="i in 5" :key="i" class="sk-item"></div>
@@ -79,11 +78,11 @@
         </div>
       </div>
 
-      <!-- 分页 -->
-      <div v-if="totalPages > 1" class="pagination">
+      <!-- 分页：后端无 total 信封，用「本页满则可能有下一页」驱动 -->
+      <div v-if="hasMore || page > 1" class="pagination">
         <button class="page-btn" :disabled="page <= 1" @click="page--">‹</button>
-        <span class="page-info">第 {{ page }} / {{ totalPages }} 页</span>
-        <button class="page-btn" :disabled="page >= totalPages" @click="page++">›</button>
+        <span class="page-info">第 {{ page }} 页</span>
+        <button class="page-btn" :disabled="!hasMore" @click="page++">›</button>
       </div>
     </main>
 
@@ -158,10 +157,12 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
 import { toast } from '../utils/toast'
+
+const session = useSession()
 
 interface Section {
   id: string
@@ -229,6 +230,13 @@ watch(sectionsData, (d) => {
 const selectedSection = ref<Section | null>(null)
 
 // 帖子列表
+//
+// 端点选型（均已注册可实跑；裸静态路由的无参 GET handler 需 Path((page,count))
+// 运行时会 500，故全部改调 fmt 参数化路由，与后端 routes.rs 注册一致）：
+//  · 全部/推荐/精华 → PUT subject/{index,recommended,creamed}/list/page/{p}/count/{n}
+//  · 我的 → POST subject/filter/listsubjectinfo/page/{p}/count/{n} body.creator=本人
+//  · 关键词 → PUT subject/search/list/page/1/count/{n} body.keyword
+//  · 版块筛选 → GET /jaxrs/bbs/subject/list/{sectionId}（bbs crate 已注册）
 const {
   data: topicsData,
   isLoading: topicsLoading,
@@ -236,42 +244,61 @@ const {
 } = useQuery({
   queryKey: ['bbs', 'topics', activeTab, selectedSection, page, searchQuery],
   queryFn: async () => {
-    let endpoint = '/jaxrs/bbs/assemble/control/list/subjects/index'
-    const params: Record<string, string> = {}
-    if (activeTab.value === 'recommended') endpoint = '/jaxrs/bbs/assemble/control/list/subjects/recommended/index'
-    else if (activeTab.value === 'cream') endpoint = '/jaxrs/bbs/assemble/control/subject/creamed/list'
-    else if (activeTab.value === 'my') endpoint = '/jaxrs/bbs/assemble/control/subject/filter/list'
-
+    let resp: { data?: unknown }
     if (searchQuery.value) {
-      const resp = await api.post('/jaxrs/bbs/assemble/control/subject/search', { keyword: searchQuery.value })
-      return ((resp as any)?.data ?? []) as Topic[]
+      resp = (await api.put(`/jaxrs/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`, {
+        keyword: searchQuery.value,
+      })) as { data?: unknown }
+    } else if (selectedSection.value) {
+      resp = (await api.get(`/jaxrs/bbs/subject/list/${selectedSection.value.id}`)) as { data?: unknown }
+    } else if (activeTab.value === 'recommended') {
+      resp = (await api.put(
+        `/jaxrs/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+    } else if (activeTab.value === 'cream') {
+      resp = (await api.put(
+        `/jaxrs/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
+    } else if (activeTab.value === 'my') {
+      resp = (await api.post(
+        `/jaxrs/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`,
+        { creator: session.user?.unique ?? '' },
+      )) as { data?: unknown }
+    } else {
+      resp = (await api.put(
+        `/jaxrs/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`,
+        {},
+      )) as { data?: unknown }
     }
-    if (selectedSection.value) {
-      const resp = await api.post(`/jaxrs/bbs/assemble/control/list/subjects/filtered`, {
-        sectionId: selectedSection.value.id,
-        page: page.value,
-        size: pageSize,
-      })
-      return ((resp as any)?.data ?? []) as Topic[]
-    }
-    const resp = await api.get(endpoint)
-    return ((resp as any)?.data ?? []) as Topic[]
+    const raw = (Array.isArray(resp.data) ? resp.data : []) as Topic[]
+    // 版块筛选路由只回 authorId，归一到列表卡片读取的 author 键。
+    const rows =
+      selectedSection.value && !searchQuery.value
+        ? raw.map((t) => ({ ...t, author: (t.author as string | undefined) ?? t.authorId }))
+        : raw
+    return { rows, more: rows.length >= pageSize }
   },
   staleTime: 30 * 1000,
 })
 const topics = ref<Topic[]>([])
+const hasMore = ref(false)
 watch(topicsData, (d) => {
-  if (d) topics.value = d
+  if (d) {
+    topics.value = d.rows
+    hasMore.value = d.more
+  }
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil((topicsData.value as any)?.total ?? 100 / pageSize)))
-
-// 回复列表
+// 回复列表（按帖过滤 → PUT 参数化路由 body.subjectId；裸静态 GET 路由无参 handler 运行时 500）
 const { data: repliesData } = useQuery({
   queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
   queryFn: async () => {
     if (!viewingTopic.value) return []
-    const resp = await api.post(`/jaxrs/bbs/assemble/control/list/reply/filter`, { subjectId: viewingTopic.value.id })
+    const resp = await api.put('/jaxrs/bbs/assemble/control/reply/filter/list/page/1/count/50', {
+      subjectId: viewingTopic.value.id,
+    })
     return ((resp as any)?.data ?? []) as Reply[]
   },
   enabled: computed(() => !!viewingTopic.value).value as any,
@@ -296,6 +323,13 @@ const createMutation = useMutation({
 })
 
 const newTopic = ref({ sectionId: '', title: '', content: '' })
+
+/** 打开发帖弹窗时预选版块（当前选中版块优先），避免必填项空缺。 */
+function openNewTopic(): void {
+  newTopic.value = { sectionId: selectedSection.value?.id ?? sections.value[0]?.id ?? '', title: '', content: '' }
+  createError.value = ''
+  showNewTopic.value = true
+}
 
 function createTopic(): void {
   if (!newTopic.value.title.trim() || !newTopic.value.sectionId) return
@@ -351,9 +385,19 @@ function handleSearch(): void {
   page.value = 1
 }
 
-function openTopic(topic: Topic): void {
+/** 打开详情：列表行只有摘要字段，补拉 /jaxrs/bbs/subject/view/{id} 全量（含正文）。 */
+async function openTopic(topic: Topic): Promise<void> {
   viewingTopic.value = topic
   replies.value = []
+  try {
+    const resp = (await api.get(`/jaxrs/bbs/subject/view/${topic.id}`)) as { data?: unknown }
+    const full = resp.data as Topic | null
+    if (full && full.id) {
+      viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }
+    }
+  } catch {
+    /* 详情拉取失败保留列表行数据，不阻塞阅读 */
+  }
 }
 
 function formatContent(content?: string): string {
@@ -494,10 +538,6 @@ const api_control_list_top_720_data = ref<any[]>([])
 }
 .sidebar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sidebar-header h3 { font-size: 13px; color: var(--color-primary); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-.add-section-btn {
-  background: none; border: 1px solid var(--border-subtle); color: var(--text-muted);
-  width: 24px; height: 24px; border-radius: var(--radius-sm); cursor: pointer; font-size: 16px;
-}
 .section-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
 .section-item {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;

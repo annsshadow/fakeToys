@@ -1555,8 +1555,8 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "acceptance": "论坛主页的版块列表与全部/推荐主题列表读取；不包含搜索、发帖、回复、个人页和管理子页，这些由其余 Forum 条目单独裁决。",
-      "decision": "集成式 BBSForum 路由真实消费版块和主题查询，后端有相同 GET 路由；按限定的论坛主页浏览能力判 implemented。",
+      "acceptance": "论坛主页的版块列表、全部/推荐/精华/我的四个页签列表与版块筛选读取；关键词搜索由 ForumSearch、发帖/详情/回复闭环由 ForumDocument、个人主页由 ForumPerson 条目单独裁决。",
+      "decision": "BBSForum 五类列表全部改调已注册可实跑路由：页签走 fmt 分页参数化路由（PUT subject/{index,creamed,recommended}/list/page/{p}/count/{n}、POST subject/filter/listsubjectinfo 本人主题）、版块筛选走 GET /jaxrs/bbs/subject/list/{sectionId}（bbs_subject_info 实表），裸静态无参 GET 路由（运行时 Path 提取 500）不再被前端调用。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
@@ -1566,7 +1566,7 @@
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "let endpoint = '/jaxrs/bbs/assemble/control/list/subjects/index'"
+            "contains": "`/jaxrs/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`"
           }
         ],
         "routing": [
@@ -1581,8 +1581,8 @@
             "contains": "\"/jaxrs/bbs/assemble/control/section/list\""
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/list/subjects/index\""
+            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/subject/list/{sectionId}\""
           }
         ]
       }
@@ -1598,18 +1598,17 @@
       "routes": [
         "/app/bbs"
       ],
-      "status": "still_blocked",
+      "status": "out_of_scope",
       "replacementClaim": false,
-      "decision": "无论坛分类管理界面；当前加号没有事件处理。",
+      "decision": "后端 bbs 版块家族只读（仅 section/list 与 501 section/syn，无版块创建/管理写路由），论坛分类管理不纳入本次边界；原死加号按钮（无事件、无后端路由可打）已移除，侧栏保持只读版块列表。",
       "blockerCodes": [
-        "MISSING_CATEGORY_MANAGEMENT",
-        "INERT_UI_CONTROL"
+        "NO_BACKEND_SECTION_WRITE_ROUTE"
       ],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "<button class=\"add-section-btn\" title=\"新建版块\">+</button>"
+            "contains": "class=\"section-list\""
           }
         ],
         "routing": [
@@ -1617,7 +1616,19 @@
             "file": "oa4rust-web/apps/desktop/src/main.ts",
             "contains": "import('./views/BBSForum.vue')"
           }
+        ],
+        "backend": [
+          {
+            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/assemble/control/section/list\""
+          }
         ]
+      },
+      "acceptedBoundary": {
+        "scope": "论坛版块（分类）创建/管理功能（oa4rust bbs 家族无 section 写路由）",
+        "impact": "版块列表可浏览、可按版块筛选帖子，但无法新建版块；界面无误导性入口",
+        "owner": "oa4rust bbs 家族（后端）",
+        "replacementClaim": false
       }
     },
     {
@@ -1631,31 +1642,43 @@
       "routes": [
         "/app/bbs"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "主题详情仅用列表行数据；发帖调用不存在的 /subject/create，回复虽有真实后端路由但缺完整刷新/详情闭环。",
-      "blockerCodes": [
-        "FRONTEND_BACKEND_ROUTE_MISMATCH",
-        "MISSING_DOCUMENT_DETAIL"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "发帖 POST /jaxrs/bbs/subject/create（bbs crate 实装写 bbs_subject_info）；打开详情补拉 GET /jaxrs/bbs/subject/view/{id} 全量正文（列表行仅摘要）；回复闭环 = GET 参数化 reply/filter/list + POST reply/create 后刷新回复与列表。发帖弹窗预选版块（当前版块优先），避免必填项空缺。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post('/jaxrs/bbs/assemble/control/subject/create', data)"
+            "contains": "api.post('/jaxrs/bbs/subject/create', data)"
+          },
+          {
+            "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
+            "contains": "`/jaxrs/bbs/subject/view/${topic.id}`"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/topic/create\""
+            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/subject/create\""
+          },
+          {
+            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/subject/view/{id}\""
           },
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
             "contains": "\"/jaxrs/bbs/assemble/control/reply/create\""
           }
         ]
-      }
+      },
+      "acceptance": "发帖（POST /subject/create）+ 主题详情（GET /subject/view/{id} 含正文）+ 按帖回复列表与回复提交（reply/create）的完整读写闭环；不含精华/置顶管理（无对应后端管理路由）。"
     },
     {
       "id": "w14:x_component_ForumPerson",
@@ -1670,9 +1693,10 @@
       ],
       "status": "still_blocked",
       "replacementClaim": false,
-      "decision": "无论坛个人主页、我的主题/回复或个人管理界面。",
+      "decision": "「我的」页签已覆盖本人主题列表（POST subject/filter/listsubjectinfo，creator=登录人）；论坛个人主页（我的回复/统计展示）与个人管理界面仍未实现，维持 blocked。",
       "blockerCodes": [
-        "MISSING_PERSON_VIEW"
+        "MISSING_PERSON_HOME",
+        "MISSING_PERSON_MANAGEMENT"
       ],
       "evidence": {
         "frontend": [
@@ -1682,7 +1706,7 @@
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "endpoint = '/jaxrs/bbs/assemble/control/subject/filter/list'"
+            "contains": "`/jaxrs/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`"
           }
         ]
       }
@@ -1698,30 +1722,35 @@
       "routes": [
         "/app/bbs"
       ],
-      "status": "still_blocked",
-      "replacementClaim": false,
-      "decision": "前端 POST /subject/search，而后端该短路径仅注册 GET；实际分页搜索是另一 PUT 路由。",
-      "blockerCodes": [
-        "HTTP_METHOD_MISMATCH"
-      ],
+      "status": "implemented",
+      "replacementClaim": true,
+      "decision": "关键词搜索改调已注册 PUT 参数化路由 subject/search/list/page/1/count/N（body.keyword），后端 u2_subject_search_page 参数化 ILIKE + 通配符转义（无注入通配扫描）；旧 POST 短路径（后端仅注册无参 GET、运行时 500）不再调用。",
+      "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post('/jaxrs/bbs/assemble/control/subject/search'"
+            "contains": "`/jaxrs/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/subject/search\""
+            "contains": "subject/search/list/page/{page}/count/{count}"
           },
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "subject/search/list/page/{page}/count/{count}"
+            "file": "oa4rust/crates/bbs_assemble_control/src/u2.rs",
+            "contains": "fn u2_subject_search_page"
           }
         ]
-      }
+      },
+      "acceptance": "论坛主题关键词搜索（title/content ILIKE，分页参数化，通配符转义防注入）"
     },
     {
       "id": "w14:x_component_ForumSection",
@@ -1736,22 +1765,27 @@
       ],
       "status": "still_blocked",
       "replacementClaim": false,
-      "decision": "版块列表可读，但按版块筛选使用 POST，后端 /list/subjects/filtered 只注册 GET；也无版块发布/管理。",
+      "decision": "按版块筛选已改走真实路由 GET /jaxrs/bbs/subject/list/{sectionId}（bbs_subject_info 实表，原 POST 无参 GET 路由运行时 500 不再调用）；版块发布/管理（新建/编辑/删除版块）后端无写路由，维持 blocked。",
       "blockerCodes": [
-        "HTTP_METHOD_MISMATCH",
         "MISSING_SECTION_MANAGEMENT"
       ],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post(`/jaxrs/bbs/assemble/control/list/subjects/filtered`"
+            "contains": "`/jaxrs/bbs/subject/list/${selectedSection.value.id}`"
+          }
+        ],
+        "routing": [
+          {
+            "file": "oa4rust-web/apps/desktop/src/main.ts",
+            "contains": "import('./views/BBSForum.vue')"
           }
         ],
         "backend": [
           {
-            "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/list/subjects/filtered\""
+            "file": "oa4rust/crates/bbs/src/routes.rs",
+            "contains": "\"/jaxrs/bbs/subject/list/{sectionId}\""
           }
         ]
       }
@@ -1764,9 +1798,9 @@
       "W14": 15
     },
     "byStatus": {
-      "implemented": 33,
-      "out_of_scope": 2,
-      "still_blocked": 12
+      "implemented": 35,
+      "out_of_scope": 3,
+      "still_blocked": 9
     }
   }
 }
