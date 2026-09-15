@@ -70,6 +70,100 @@ pub async fn list_control_rules(
     )))
 }
 
+// ── rule/create + statistics/list（前端 Java 斜杠口径补齐）──────────────────
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn create_control_rule(
+    pool: Extension<Pool>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let rule_name = payload
+        .get("ruleName")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let rule_type = payload
+        .get("ruleType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_attendance_assemble_control_rule (id, rule_name, rule_type, enabled, description, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[
+                &id,
+                &rule_name,
+                &rule_type,
+                &enabled,
+                &description,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("ruleName".to_string(), Value::String(rule_name)),
+            ("ruleType".to_string(), Value::String(rule_type)),
+            ("enabled".to_string(), Value::Bool(enabled)),
+            ("description".to_string(), Value::String(description)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn list_statistics(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT date, COUNT(*)::int AS records, MAX(status) AS status \
+             FROM x_attendance_detail GROUP BY date ORDER BY date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(row.get("date"))),
+                (
+                    "records".to_string(),
+                    Value::Number(serde_json::Number::from(row.get::<_, i32>("records"))),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
 pub async fn toggle_control_rule(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,

@@ -314,6 +314,149 @@ pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
+// ── config/create + server/deploy/list（斜杠路径家族补齐，查/写真实表）────────
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn config_create(
+    pool: Extension<Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let value = payload
+        .get("value")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = payload
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let description = payload
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_system_config (id, name, value, category, description, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &value, &category, &description],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn server_deploy_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, app_id, app_name, application, category, disable, create_time::text AS create_time \
+             FROM x_program_deploy_server ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
+                ("appName".to_string(), Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default())),
+                ("application".to_string(), Value::String(row.get::<_, Option<String>>("application").unwrap_or_default())),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
+                ("disable".to_string(), Value::String(row.get::<_, Option<String>>("disable").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── server_deploy 家族 CRUD（x_program_deploy_server 036/037，通用参数化写）──
+fn server_deploy_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_program_deploy_server",
+        columns: &[
+            ("appId", "app_id"),
+            ("appName", "app_name"),
+            ("application", "application"),
+            ("category", "category"),
+            ("disable", "disable"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn server_deploy_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &server_deploy_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn server_deploy_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &server_deploy_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn server_deploy_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &server_deploy_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     routes::router(pool)
 }

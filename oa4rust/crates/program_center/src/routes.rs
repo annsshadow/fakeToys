@@ -20,6 +20,7 @@ use crate::{
     application_create,
     application_delete,
     application_get_by_id,
+    application_list,
     application_save,
     applications,
     apppack_android_repack,
@@ -71,6 +72,8 @@ use crate::{
     collect_connect,
     collect_controllebbs,
     collect_controllermobile_name_name_mobile_mobile,
+    collect_create,
+    collect_delete,
     collect_disconnect,
     collect_list,
     collect_login,
@@ -80,6 +83,7 @@ use crate::{
     collect_person,
     collect_remove,
     collect_resetpassword,
+    collect_save,
     collect_sync_area,
     collect_updateUnit,
     collect_urlMapping,
@@ -142,13 +146,17 @@ use crate::{
     input_create,
     input_prepare_cover,
     input_prepare_create,
+    invoke_create,
+    invoke_delete,
     invoke_flag,
     invoke_flag_client_client_token_token_execute,
     invoke_flag_execute,
     invoke_flag_execute_get,
     invoke_flag_file,
+    invoke_list,
     invoke_list_category,
     invoke_list_with_category_category,
+    invoke_save,
     invoke_token,
     jest_center_list,
     jest_clear_cache_source,
@@ -328,11 +336,19 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/program_center/application/{id}", get(application_get_by_id))
         .route("/jaxrs/program_center/application/{id}", delete(application_delete))
         .route("/jaxrs/program_center/application/save/{id}", post(application_save))
+        .route("/jaxrs/program_center/application/list", get(application_list))
+        .route("/jaxrs/program_center/application/delete/{id}", delete(application_delete))
+        .route("/jaxrs/program_center/application/delete/{id}", post(application_delete))
         .route("/jaxrs/program_center/agent/create", post(agent_create))
         .route("/jaxrs/program_center/agent/save/{id}", post(agent_save))
                 .route("/jaxrs/program_center/collect/list", get(collect_list))
         .route("/jaxrs/program_center/collect/add", post(collect_add))
         .route("/jaxrs/program_center/collect/remove", get(collect_remove))
+        .route("/jaxrs/program_center/collect/create", post(collect_create))
+        .route("/jaxrs/program_center/collect/save/{id}", put(collect_save))
+        .route("/jaxrs/program_center/collect/save/{id}", post(collect_save))
+        .route("/jaxrs/program_center/collect/delete/{id}", delete(collect_delete))
+        .route("/jaxrs/program_center/collect/delete/{id}", post(collect_delete))
         .route("/jaxrs/program_center/config/get", get(config_get))
         .route("/jaxrs/program_center/agent/flag", get(agent_flag))
         .route("/jaxrs/program_center/agent/flag/disable", get(agent_flag_disable))
@@ -482,6 +498,13 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/program_center/invoke", post(crate::u2_invoke_create))
         .route("/jaxrs/program_center/invoke", get(u3_invoke_list_all))
         .route("/jaxrs/program_center/invoke/{flag}", get(crate::u2_invoke_get).put(crate::u2_invoke_update).delete(crate::u2_invoke_delete))
+        // ── invoke 斜杠路径家族（补齐 KNOWN_BACKEND_GAPS，查 x_program_invoke 074）──
+        .route("/jaxrs/program_center/invoke/list", get(invoke_list))
+        .route("/jaxrs/program_center/invoke/create", post(invoke_create))
+        .route("/jaxrs/program_center/invoke/save/{id}", put(invoke_save))
+        .route("/jaxrs/program_center/invoke/save/{id}", post(invoke_save))
+        .route("/jaxrs/program_center/invoke/delete/{id}", delete(invoke_delete))
+        .route("/jaxrs/program_center/invoke/delete/{id}", post(invoke_delete))
         .route("/jaxrs/program_center/jest/clear/cache/source", get(jest_clear_cache_source))
         .route("/jaxrs/program_center/jest/list", get(jest_list))
         .route("/jaxrs/program_center/jest/version", get(jest_version))

@@ -718,6 +718,41 @@ pub async fn work_manual_after_processing(
 // Task operations
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn task_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, title, work, activity, person, task_status, start_time::text AS start_time, end_time::text AS end_time \
+             FROM x_task ORDER BY start_time DESC NULLS LAST LIMIT 200",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
+                ("work".to_string(), Value::String(row.get::<_, Option<String>>("work").unwrap_or_default())),
+                ("activity".to_string(), Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default())),
+                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
+                ("taskStatus".to_string(), Value::String(row.get::<_, Option<String>>("task_status").unwrap_or_default())),
+                ("startTime".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
+                ("endTime".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
 #[allow(non_snake_case)]
 pub async fn task_id_processing(
     pool: Extension<Pool>,

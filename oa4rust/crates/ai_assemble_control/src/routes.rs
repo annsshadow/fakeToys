@@ -1,4 +1,8 @@
-use axum::{extract::Extension, routing::get, routing::post, Router};
+use axum::{
+    extract::Extension,
+    routing::{delete, get, post, put},
+    Router,
+};
 
 use crate::{
     // chat（Java ChatAction，5 端点 + 流式扩展）
@@ -41,6 +45,10 @@ use crate::{
     index_cms_doc_with_app_appId,
     index_delete_flag,
     index_list_paging_page_size_size,
+    ann_create,
+    ann_delete,
+    ann_list,
+    ann_save,
     index_sync_to_knowledge,
     list_ai_models,
     update_ai_control_config,
@@ -223,5 +231,12 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/jaxrs/ai/assemble/control/config/delete/mcp/{id}",
             post(config_delete_mcp_flag),
         )
+        // ── ann 斜杠路径家族（补齐 KNOWN_BACKEND_GAPS，查 x_ai_ann 096）──
+        .route("/jaxrs/ai/assemble/control/ann/list", get(ann_list))
+        .route("/jaxrs/ai/assemble/control/ann/create", post(ann_create))
+        .route("/jaxrs/ai/assemble/control/ann/save/{id}", put(ann_save))
+        .route("/jaxrs/ai/assemble/control/ann/save/{id}", post(ann_save))
+        .route("/jaxrs/ai/assemble/control/ann/delete/{id}", delete(ann_delete))
+        .route("/jaxrs/ai/assemble/control/ann/delete/{id}", post(ann_delete))
         .layer(Extension(pool))
 }

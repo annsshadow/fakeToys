@@ -765,6 +765,332 @@ pub async fn appinfo_list_all(
     list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
+// ── cms/assemble/control/* 斜杠路径家族（前端按 Java 斜杠口径调用，此处补齐精确路由）──
+// dict → x_cms_surface_appdict（应用数据字典）；form / xform → x_cms_form；view → x_cms_view。
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_control_dict_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_from_table_filtered_java(&pool, "x_cms_surface_appdict", "1=1", &[]).await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_control_form_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_control_view_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_control_xform_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+}
+
+// ── dict/form/view/xform/templateform 家族 CRUD（通用参数化写，照 ann 参考模式）──
+// dict → x_cms_surface_appdict（023）；form / xform → x_cms_form（023）；
+// view → x_cms_view（023）；templateform → x_cms_form_v2（023）。
+// spec.columns 的 json_key 用 list（SELECT * + row_to_json）输出键名（即真实列名），
+// 只映射 TEXT 系列（TIMESTAMP/BIGINT/数组不映射）；四表均有 deleted_at → 软删。
+
+fn dict_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_cms_surface_appdict",
+        columns: &[
+            ("app_info_flag", "app_info_flag"),
+            ("app_dict_flag", "app_dict_flag"),
+            ("data_value", "data_value"),
+        ],
+        soft_delete: true,
+    }
+}
+
+fn form_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_cms_form",
+        columns: &[
+            ("app_id", "app_id"),
+            ("name", "name"),
+            ("definition", "definition"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+// xform 与 form 同表（x_cms_form，见上方 cms_control_xform_list）
+fn xform_spec() -> shared::crud::CrudSpec {
+    form_spec()
+}
+
+fn view_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_cms_view",
+        columns: &[
+            ("app_id", "app_id"),
+            ("category_id", "category_id"),
+            ("name", "name"),
+            ("view_config", "view_config"),
+        ],
+        soft_delete: true,
+    }
+}
+
+fn templateform_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_cms_form_v2",
+        columns: &[
+            ("app_id", "app_id"),
+            ("name", "name"),
+            ("definition", "definition"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &form_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &form_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &form_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &xform_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &xform_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &xform_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn view_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &view_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn view_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &view_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn view_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &view_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn templateform_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &templateform_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn templateform_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &templateform_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn templateform_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &templateform_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn appinfo_list_appType(
@@ -5156,6 +5482,14 @@ pub async fn log_list_level_operationLevel(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn log_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+}
+
+// ── /jaxrs/log/list（桌面 LogViewerApp 直连端点；查真实表 x_cms_log，
+//    运行时由 document 操作日志写入，只读家族，不加写端点）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn log_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
 }
 

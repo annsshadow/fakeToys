@@ -83,6 +83,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/service/processing/snap/suspend/{work}/{workId}/{type}", get(crate::snap_work_workId_type_suspend))
         .route("/jaxrs/processplatform/service/processing/snap/workcompleted/abandonedworkcompleted/{workCompletedId}/{type}", get(crate::snap_workcompleted_workCompletedId_type_abandonedworkcompleted))
         .route("/jaxrs/processplatform/service/processing/snap/workcompleted/snapworkcompleted/{workCompletedId}/{type}", get(crate::snap_workcompleted_workCompletedId_type_snapworkcompleted))
+        .route("/jaxrs/processplatform/service/processing/task/list", get(crate::task_list))
         .route("/jaxrs/processplatform/service/processing/task/{id}", get(crate::task_id))
         .route("/jaxrs/processplatform/service/processing/task/expire/{id}", get(crate::task_id_expire))
         .route("/jaxrs/processplatform/service/processing/task/pass/expired/{id}", get(crate::task_id_pass_expired))

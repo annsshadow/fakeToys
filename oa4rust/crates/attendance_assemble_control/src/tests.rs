@@ -243,4 +243,40 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_post_jaxrs_attendance_assemble_control_rule_create() {
+        let pool = test_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/rule/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_get_jaxrs_attendance_assemble_control_statistics_list() {
+        let pool = test_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/statistics/list")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
 }

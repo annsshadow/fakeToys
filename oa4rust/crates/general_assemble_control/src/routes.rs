@@ -8,6 +8,13 @@ pub fn general_assemble_control_routes(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/general/assemble/control/status", get(crate::get_general_control_status))
         .route("/jaxrs/general/assemble/control/status/update", post(crate::update_general_control_status))
+        // ── 裸 list（补齐 KNOWN_BACKEND_GAPS，桌面 CommonApp 引用）──
+        .route("/jaxrs/general/assemble/control/list", get(crate::general_control_list))
+        .route("/jaxrs/general/assemble/control/create", post(crate::general_control_create))
+        .route("/jaxrs/general/assemble/control/save/{id}", put(crate::general_control_save))
+        .route("/jaxrs/general/assemble/control/save/{id}", post(crate::general_control_save))
+        .route("/jaxrs/general/assemble/control/delete/{id}", delete(crate::general_control_delete))
+        .route("/jaxrs/general/assemble/control/delete/{id}", post(crate::general_control_delete))
         .route("/jaxrs/general/assemble/control/permissions/{module}", get(crate::get_module_permissions))
         .route("/jaxrs/general/assemble/control/attendscope/list", get(crate::attendscope_list))
         .route("/jaxrs/general/assemble/control/attendscope/{id}", get(crate::attendscope_get))

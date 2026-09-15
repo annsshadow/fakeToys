@@ -369,6 +369,7 @@ use crate::{
     attachment_u2b_upload_work, attachment_u2b_upload_work_callback,
     attachment_u2b_upload_workcompleted, attachment_u2b_v2_upload_base64,
     attachment_u2b_v2_upload_wowc,
+    process_manager_list,
 };
 use crate::{task_list_date_hour_exclude_draft_manage, task_list_person_exclude_draft_manage};
 
@@ -379,6 +380,11 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/assemble/surface/list/{category}", get(list_surfaces))
         .route("/jaxrs/processplatform/assemble/surface/save/{id}", post(save_surface))
         .route("/jaxrs/processplatform/assemble/surface/preview/{id}", get(preview_surface))
+        // ── process_manager 斜杠路径家族（补齐 KNOWN_BACKEND_GAPS，查 x_process_definition）──
+        .route(
+            "/jaxrs/processplatform/assemble/surface/process_manager/list",
+            get(process_manager_list),
+        )
         .route("/jaxrs/processplatform/assemble/surface/publish/{id}", post(publish_surface))
         .route("/jaxrs/processplatform/assemble/surface/delete/{id}", post(delete_surface))
                 .route("/jaxrs/processplatform/assemble/surface/anonymous/read/{count}/{credential}", get(anonymous_read_count_credential))

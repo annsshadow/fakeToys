@@ -240,6 +240,65 @@ pub async fn collect_remove(
     ))))
 }
 
+// ── collect 家族 CRUD（x_program_collect 032+037，通用参数化写；order_number BIGINT 不映射）──
+fn collect_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_program_collect",
+        columns: &[
+            ("personId", "person_id"),
+            ("title", "title"),
+            ("url", "url"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn collect_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &collect_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn collect_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &collect_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn collect_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &collect_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn config_get(
     pool: Extension<Pool>,
@@ -6562,6 +6621,52 @@ pub async fn application_save(
     ))))
 }
 
+/// GET /jaxrs/program_center/application/list —— 应用列表（list 风格，查 x_applications 032/037/038）
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn application_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, app_id, description, disable, creator, create_time \
+             FROM x_applications WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "description".to_string(),
+                    Value::String(row.get::<_, Option<String>>("description").unwrap_or_default()),
+                ),
+                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
 #[derive(Debug, Deserialize)]
 pub struct AgentCreateRequest {
     pub name: Option<String>,
@@ -9419,6 +9524,101 @@ pub async fn u3_invoke_list_by_category(
         count,
         0,
     )))
+}
+
+/// GET /jaxrs/program_center/invoke/list —— 服务调用列表（list 风格，查 x_program_invoke 074；与 u3_invoke_list_all 同输出键）
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "alias": opt("alias"),
+                "category": opt("category"),
+                "enable": row.get::<_, bool>("enable"),
+                "enableAnonymous": row.get::<_, bool>("enable_anonymous"),
+                "validated": row.get::<_, bool>("validated"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::java_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── invoke 家族 CRUD（x_program_invoke 074，通用参数化写；无 deleted_at → 硬删，BOOLEAN/JSONB 列不映射）──
+fn invoke_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_program_invoke",
+        columns: &[
+            ("name", "name"),
+            ("alias", "alias"),
+            ("category", "category"),
+        ],
+        soft_delete: false,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &invoke_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &invoke_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &invoke_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }
 
 async fn u3_invoke_execute_inner(
