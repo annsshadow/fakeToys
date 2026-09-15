@@ -4,7 +4,7 @@
       <h1>系统设置</h1>
       <p class="subtitle">系统参数配置与管理</p>
     </div>
-    <div class="backend-off">⚠️ 系统参数后端暂未启用（systemconfig 未实现），设置保存暂不生效，界面为功能预览</div>
+    <div class="backend-off">ℹ️ 系统参数读/写后端暂未启用（返回 501，配置表已具备、读写端点契约预留），保存操作暂不生效，页面为功能预览态</div>
 
     <!-- 侧边导航 -->
     <div class="settings-layout">
@@ -71,6 +71,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const activeSection = ref('basic')
 
@@ -99,11 +100,15 @@ const toggles = ref([
   { key: 'twoFactor', label: '双重认证', on: false },
 ])
 
-// 后端未启用 systemconfig 家族（无对应路由/数据表），跳过死端点请求；
-// 设置项为前端预览态，saveCfg/saveToggles 暂为空操作（与下方 banner 一致）。
-
-function saveCfg(_section: string) {}
-function saveToggles() {}
+// 系统参数读/写在 oa4rust 后端为 fail-loud 的 501 契约（u2_capability_unavailable，
+// 被 file_assemble_control 契约测试钉死），配置写入不可用。保存按钮给出明确提示，
+// 而不是静默空操作；表单项仍可作为前端预览态调整。
+function saveCfg(_section: string) {
+  toast.warning('系统参数保存暂未启用（后端 501），当前修改仅本地预览')
+}
+function saveToggles() {
+  toast.warning('系统参数保存暂未启用（后端 501），当前修改仅本地预览')
+}
 </script>
 
 <style scoped>
