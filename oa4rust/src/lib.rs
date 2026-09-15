@@ -44,6 +44,7 @@ pub use personal;
 pub use portal;
 pub use portal_assemble_designer;
 pub use portal_assemble_surface;
+pub use search;
 pub use processplatform_assemble_bam;
 pub use processplatform_assemble_designer;
 pub use processplatform_assemble_surface;
@@ -58,6 +59,7 @@ pub use query_assemble_surface;
 pub use query_core_entity;
 pub use query_core_express;
 pub use query_service;
+pub use realtime;
 
 pub async fn create_app(
     pool: Pool,
@@ -142,6 +144,7 @@ pub async fn create_app(
         .merge(cms_core_entity::router(pool.clone()))
         .merge(query_assemble_designer::router(pool.clone()))
         .merge(query_assemble_surface::router(pool.clone()))
+        .merge(search::router(pool.clone()))
         .merge(console::router(pool.clone()))
         .merge(processplatform_assemble_surface::router(pool.clone()))
         .merge(bbs_core_entity::router(pool.clone()))
@@ -162,7 +165,9 @@ pub async fn create_app(
         .merge(processplatform_assemble_bam::router(pool.clone()))
         .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
-        .merge(query_service_processing::router(pool.clone()));
+        .merge(query_service_processing::router(pool.clone()))
+        // P5：IM 实时协议 WebSocket（realtime crate，自带 RealtimeManager state）
+        .merge(realtime::ws_route());
 
     let app = app
         .layer(axum::middleware::from_fn_with_state(
