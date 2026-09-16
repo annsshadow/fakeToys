@@ -442,8 +442,7 @@ pub async fn importmodel_execute_record_recordId(
 #[allow(non_snake_case)]
 pub async fn importmodel_flag_flag_query_queryFlag(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -524,14 +523,13 @@ pub async fn importmodel_list_query_queryFlag(
 #[allow(non_snake_case)]
 pub async fn importmodel_list_record_item_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -567,14 +565,13 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn importmodel_list_record_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -796,8 +793,7 @@ pub async fn importmodel_id_execute(
 #[allow(non_snake_case)]
 pub async fn neural_list_calculate_model_modelFlag_work_workId(
     pool: Extension<Pool>,
-    Path(model_flag): Path<String>,
-    Path(work_id): Path<String>,
+    Path((model_flag, work_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -952,14 +948,13 @@ pub async fn query_flag(
 #[allow(non_snake_case)]
 pub async fn table_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -995,15 +990,13 @@ pub async fn table_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn table_list_table_tableFlag_row_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((table_flag, page, size)): Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id DESC LIMIT $3::int OFFSET ($2 - 1) * $3",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id DESC LIMIT $3::bigint OFFSET ($2::bigint - 1) * $3::bigint",
             &[&table_flag, &page, &size],
         )
         .await
@@ -1034,14 +1027,13 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn table_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1072,14 +1064,13 @@ pub async fn table_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn table_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1147,8 +1138,7 @@ pub async fn table_list_tableFlag_row_select(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(_where): Path<String>,
+    Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1185,15 +1175,13 @@ pub async fn table_list_tableFlag_row_select_where_where(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_next_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3",
             &[&table_flag, &id, &count],
         )
         .await
@@ -1224,15 +1212,13 @@ pub async fn table_list_tableFlag_row_id_next_count(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3",
             &[&table_flag, &id, &count],
         )
         .await
@@ -1357,8 +1343,7 @@ pub async fn table_tableFlag_row(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_count_where_where(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(_where): Path<String>,
+    Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1483,8 +1468,7 @@ pub async fn table_tableFlag_row_one(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
+    Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1514,8 +1498,7 @@ pub async fn table_tableFlag_row_id(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_mockdeletetoget(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
+    Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1545,8 +1528,7 @@ pub async fn table_tableFlag_row_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_mockputtopost(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
+    Path((table_flag, id)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1580,8 +1562,7 @@ pub async fn table_tableFlag_row_id_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id_part_update(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
+    Path((table_flag, id)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1660,8 +1641,7 @@ pub async fn view_excel_result_flag(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1699,8 +1679,7 @@ pub async fn view_flag_flag_query_queryFlag(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1727,8 +1706,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1762,8 +1740,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1793,8 +1770,7 @@ pub async fn view_flag_flag_query_queryFlag_excel(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1887,8 +1863,7 @@ pub async fn view_flag_flag_query_queryFlag_execute(
 #[allow(non_snake_case)]
 pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(query_flag): Path<String>,
+    Path((flag, query_flag)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1928,7 +1903,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::int OFFSET ($3 - 1) * $4",
+            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::bigint OFFSET ($3::bigint - 1) * $4::bigint",
             &[&view, &app, &page, &size],
         )
         .await
@@ -2303,15 +2278,13 @@ pub async fn view_id_execute_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((id, page, size)): Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3 OFFSET ($2 - 1) * $3",
+            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3::bigint OFFSET ($2::bigint - 1) * $3::bigint",
             &[&id, &page, &size],
         )
         .await

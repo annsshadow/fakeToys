@@ -229,7 +229,7 @@ pub async fn unit_list_prev(
     let rows = if flag == "0" || flag == "(0)" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $1::int",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $1",
                 &[&limit],
             )
             .await
@@ -237,7 +237,7 @@ pub async fn unit_list_prev(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $2::int",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time::text ASC LIMIT $2",
                 &[&flag, &limit],
             )
             .await
