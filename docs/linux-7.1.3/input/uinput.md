@@ -1,3 +1,5 @@
+# uinput
+
 ﻿## uinput 模块
 
 本文档介uinput 内核模块，它允许从用户空间创建并模拟虚拟输入设备（通过写入 /dev/uinput 发送事件），并给出接口、libevdev 封装与示例代码，供需要在用户态构造输入设备的开发者参考
@@ -106,7 +108,7 @@ https://www.freedesktop.org/software/libevdev/doc/latest/
       return 0;
    }
 
-### 鼠标移动
+## 鼠标移动
 
 
 此示例展示如何创建一个表现得像物理鼠标的虚拟设备
@@ -170,7 +172,7 @@ https://www.freedesktop.org/software/libevdev/doc/latest/
    }
 
 
-### uinput 鏃ф帴鍙。
+## uinput 鏃ф帴鍙。
 
 
 uinput 版本 5 之前，没有专用的 ioctl 来设置虚拟设备。支持旧版本 uinput 接口
