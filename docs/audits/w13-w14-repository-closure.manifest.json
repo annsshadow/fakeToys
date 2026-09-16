@@ -1697,7 +1697,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post('/jaxrs/bbs/subject/create', data)"
+            "contains": "api.post('/jaxrs/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' })"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
