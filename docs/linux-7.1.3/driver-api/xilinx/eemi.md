@@ -1,7 +1,9 @@
+# eemi
+
 ﻿## Xilinx Zynq MPSoC EEMI 文档
 
 
-### Xilinx Zynq MPSoC 固件接口
+## Xilinx Zynq MPSoC 固件接口
 
 zynqmp-firmware 节点描述了与平台固件（platform firmware）的接口。ZynqMP 有一个与安全管理固件通信的接口。固件驱动提供了访问固件 API 的接口。任何驱动都可以使用接口 API PMC（平台管理控制器，Platform Management Controller）通信
 

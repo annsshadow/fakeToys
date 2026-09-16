@@ -1,3 +1,5 @@
+# intel_dptf
+
 ﻿
 ## Intel(R) Dynamic Platform and Thermal Framework Sysfs 接口
 

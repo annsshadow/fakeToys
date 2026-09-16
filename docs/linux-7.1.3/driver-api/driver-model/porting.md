@@ -1,3 +1,5 @@
+# porting
+
 ﻿## 将驱动移植到新的驱动模型
 
 
@@ -42,6 +44,7 @@ Patrick Mochel
 
   The bus type may be unregistered (if the bus driver may be compiled
   as a module) by doing::
+
 
      bus_unregister(&pci_bus_type);
 
@@ -89,6 +92,7 @@ struct device 表示单个设备。它主要包含描述该设备与其它实体
   between the object types. Instead macros, or inline functions,
   should be created to convert from the generic object type::
 
+
     #define to_pci_dev(n) container_of(n, struct pci_dev, dev)
 
     or
@@ -123,6 +127,7 @@ struct device 表示单个设备。它主要包含描述该设备与其它实体
        device_register(&dev->dev);
 
   It can later be unregistered by doing::
+
 
        device_unregister(&dev->dev);
 
@@ -200,6 +205,7 @@ struct device_driver 是一个简单的驱动结构，包含一组驱动模型�
 
   When the driver is unregistered from the bus, unregister it from the
   core by doing::
+
 
         driver_unregister(&drv->driver);
 

@@ -1,3 +1,5 @@
+# xillybus
+
 ﻿## 面向通用 FPGA 接口Xillybus 驱动
 
 
@@ -70,7 +72,7 @@ Xillybus 管道IP 核上被配置为同步或异步。对于同步管道，write
 ## 内部实现
 
 
-### 婧愪唬鐮佺粍缁。
+### 婧愪唬鐮佺粍统。
 
 Xillybus 驱动由一个核心模xillybus_core.c，以及依赖于特定总线接口的模块（xillybus_of.c xillybus_pcie.c）组成
 特定总线模块是在内核发现合适设备时被探测的。由于核心模块会用到本质上依赖总线DMA 映射与同步函数，初始化时会向核心模块传入一xilly_endpoint_hardware 结构。该结构填充了用于在总线上执DMA 相关操作的包装函数指针

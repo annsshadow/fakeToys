@@ -1,3 +1,5 @@
+# pwrseq
+
 ﻿## 电源 Sequencing API
 
 :Author:Bartosz Golaszewski
@@ -46,4 +48,6 @@ pwrseq Linux 内核中其他提供者机制的主要区别在于：它能够在�
 
 :internal:
 
+
 :export:
+

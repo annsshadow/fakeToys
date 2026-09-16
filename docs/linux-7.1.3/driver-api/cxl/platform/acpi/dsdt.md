@@ -1,3 +1,5 @@
+# dsdt
+
 ﻿## DSDT - 差异化系统描述表（Differentiated System Description Table
 
 

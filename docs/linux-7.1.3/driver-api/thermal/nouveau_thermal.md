@@ -1,13 +1,16 @@
+# nouveau_thermal
+
 ﻿## 内核驱动 nouveau
 
 
 Supported chips:
 
+
 - NV43+
 
 Authors: Martin Peres (mupuf) <martin.peres@free.fr>
 
-### 描述
+## 描述
 
 
 本驱动允许读GPU 核心温度、驱GPU 风扇并设置温度报警

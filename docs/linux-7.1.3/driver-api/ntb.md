@@ -1,3 +1,5 @@
+# ntb
+
 ﻿## NTB 驱动
 
 NTB（Non-Transparent Bridge，非透明桥）是一PCI-Express 桥接芯片，它将两台或多台计算各自独立的存储系统连接到同一 PCI-Express 结构（fabric）上。现有的 NTB 硬件支持一组通用
@@ -19,6 +21,7 @@ NTB 的主要目的是在至少两个系统之间共享某块内存。因NTB 设
 ```
  Inbound translation:
 
+
  Memory:              Local NTB Port:      Peer NTB Port:      Peer MMIO:
   ____________
  | dma-mapped |-ntb_mw_set_trans(addr)  |
@@ -33,6 +36,7 @@ NTB 的主要目的是在至少两个系统之间共享某块内存。因NTB 设
 
 ```
  Outbound translation:
+
 
  Memory:        Local NTB Port:    Peer NTB Port:      Peer MMIO:
   ____________                      ______________
@@ -78,7 +82,7 @@ Debugfs 文件
 	写入值，则写入一系列 scratchpad 编号与值的配对（例如：`echo '4 0x123 7 0xabc' > spad`
 	# scratchpad `4` `7` 分别设为 `0x123` `0xabc`）- **hw**/peer\_spad
 	该文件用于读写对scratchpad。详**spad**
-### NTB MSI 测试客户端（ntb\_msi\_test
+## NTB MSI 测试客户端（ntb\_msi\_test
 MSI 测试客户端用于测试和调试 MSI 库，该库允许NTB 内存窗口传MSI 中断。测试客户端通过
 debugfs 文件系统与之交互
 - **debugfs**/ntb\_msi\_test/**hw**/

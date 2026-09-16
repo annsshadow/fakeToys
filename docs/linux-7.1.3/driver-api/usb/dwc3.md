@@ -1,3 +1,5 @@
+# dwc3
+
 ﻿## Synopsys DesignWare Core SuperSpeed USB 3.0 鎺у埗鍣。
 
 本文档介Synopsys DesignWare Core SuperSpeed USB 3.0（DWC3）控制器Linux 中的驱动实现，涵盖其外设/主机/双角色等配置模式、驱动设计与已知限制，供 USB 驱动开发者参考
@@ -684,13 +686,17 @@ Lifetime of an Endpoint
    :doc: main data structures
    :internal:
 
+
    :doc: gadget-only helpers
    :internal:
+
 
    :doc: gadget-side implementation
    :internal:
 
+
    :doc: core driver (probe, PM, etc)
    :internal:
+
 
 	       Request Block.

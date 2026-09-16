@@ -1,3 +1,5 @@
+# nvdimm
+
 ﻿## LIBNVDIMM：非易失性设
 libnvdimm - 内核 / libndctl - 用户空间辅助
 nvdimm@lists.linux.dev
@@ -108,7 +110,7 @@ LIBNDCTL 库中的每API 调用都需要一context（上下文），它保存日
 其他库实例状态。该库基libabc 模板
 	https://git.kernel.org/cgit/linux/kernel/git/kay/libabc.git
 
-##### LIBNDCTL：实例化新的库上下文示例
+#### LIBNDCTL：实例化新的库上下文示例
 
 ```
 	struct ndctl_ctx *ctx;
@@ -158,7 +160,7 @@ LIBNDCTL 库中的每API 调用都需要一context（上下文），它保存日
 	`-- wait_probe
 ```
 
-##### LIBNDCTL：总线枚举示例
+#### LIBNDCTL：总线枚举示例
 
 ```
 	static struct ndctl_bus *get_bus_by_provider(struct ndctl_ctx *ctx,
@@ -181,7 +183,7 @@ DIMM 设备提供了一个字符设备用于向硬件发送命令，并且它是
 注意DIMM"的内核设备名"nmemX"。NFIT 通过"Memory Device to System
 Physical Address Range Mapping Structure"（内存设备到系统物理地址范围映射
 结构）描述这些设备，并且不要求它们实际上必须是物DIMM，因此我们使用了一更通用的名称
-##### LIBNVDIMM：DIMM（NMEM
+#### LIBNVDIMM：DIMM（NMEM
 ```
 	struct nvdimm *nvdimm_create(struct nvdimm_bus *nvdimm_bus, void *provider_data,
 			const struct attribute_group **groups, unsigned long flags,
@@ -244,7 +246,7 @@ Physical Address Range Mapping Structure"（内存设备到系统物理地址范
 	dimm = get_dimm_by_handle(bus, DIMM_HANDLE(0, 0, 0, 0, 0));
 ```
 
-### LIBNVDIMM/LIBNDCTL：Region
+## LIBNVDIMM/LIBNDCTL：Region
 
 为每PMEM 交织范围注册一个通用REGION 设备。按示例，在 "nfit_test.0"
 总线上有 2 PMEM region。region 的主要角色是作为 "mappings"（映射）的容器一mapping 是一个元<DIMM, DPA-start-offset, length>
@@ -283,7 +285,7 @@ DEVTYPE 变量modalias" 复制udev 'add' 事件时存储的 MODALIAS 变量最�
 	[..]
 ```
 
-##### LIBNDCTL：region 枚举示例
+### LIBNDCTL：region 枚举示例
 
 基于 NFIT 唯一数据（如 "spa_index"，即交织id）的示例 region 检索例程
 ```
@@ -306,7 +308,7 @@ DEVTYPE 变量modalias" 复制udev 'add' 事件时存储的 MODALIAS 变量最�
 
 一REGION 在解析完 DPA 别名LABEL 指定的边界后，会呈现出一个或多个
 "namespace" 设备namespace" 设备的出现当前会触发 nd_pmem 驱动加载并注一个磁块设备
-##### LIBNVDIMM：namespace
+#### LIBNVDIMM：namespace
 
 以下是两大类 NAMESPACE 的示例布局，其namespace0.0 代表DIMM 信息支撑PMEM（注意它有一'uuid' 属性），namespace1.0 代表一个匿名的 PMEM
 namespace（注意由于没LABEL 支持，它没有 'uuid' 属性）
@@ -388,7 +390,7 @@ Namespace 是相对于其父 region 建立索引的，示例如下。这些索�
 ### LIBNVDIMM/LIBNDCTL：块转换"btt"
 
 BTT（设计文档：https://pmem.io/2014/09/23/btt.html）是一namespace personality 驱动，它将整namespace 作为"地址抽象"呈现于前端
-##### LIBNVDIMM：btt 布局
+#### LIBNVDIMM：btt 布局
 
 每个 region 一开始至少会有一BTT 设备，即种子（seed）设备。要激活它，需设置
 "namespace"uuid" "sector_size" 属性，然后将设备绑定到 nd_pmem 或：

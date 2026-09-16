@@ -1,3 +1,5 @@
+# ipmb
+
 ﻿## 面向卫星 MC IPMB 驱动
 
 
@@ -7,7 +9,7 @@ IPMB 总线的消息协议相关联
 使用 IPMB 的设备通常是执行管理功能的管理控制器，例如维护前面板接口、监控基板在系统机箱中热插拔磁盘驱动器等
 当系统中实现IPMB 时，BMC 充当控制器，为系统软件提供对 IPMB 的访问。BMC 通过 IPMB 向设（通常是卫星管理控制器，Satellite Management Controller Satellite MC）发IPMI 请求设备则将响应发回BMC
 有关 IPMB IPMB 消息格式的更多信息，请参IPMB IPMI 规范
-### 面向卫星 MC IPMB 驱动
+## 面向卫星 MC IPMB 驱动
 
 
 ipmb-dev-int - 这是卫星 MC 上需要的驱动，用于从 BMC 接收 IPMB 消息并发回响应。该驱动I2C 驱动
