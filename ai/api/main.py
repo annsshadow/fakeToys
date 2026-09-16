@@ -1,9 +1,10 @@
-"""FastAPI 后端入口"""
+"""FastAPI 后端入口 - 优化版"""
 
 import os
 import json
 from typing import List, Optional
 from pathlib import Path
+import asyncio
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,6 +42,30 @@ def get_pipeline() -> AugmentorPipeline:
     return pipeline
 
 
+async def read_json_file(file_path: Path) -> list:
+    """异步读取 JSON 文件"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _sync_read_json, file_path)
+
+
+def _sync_read_json(file_path: Path) -> list:
+    """同步读取 JSON 文件（在线程池中运行）"""
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+async def write_json_file(file_path: Path, data: list):
+    """异步写入 JSON 文件"""
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _sync_write_json, file_path, data)
+
+
+def _sync_write_json(file_path: Path, data: list):
+    """同步写入 JSON 文件（在线程池中运行）"""
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
+
+
 # ============ 数据模型 ============
 
 class AugmentRequest(BaseModel):
@@ -72,15 +97,21 @@ class DiffRequest(BaseModel):
 @app.get("/api/data/list")
 async def list_data_files():
     """列出数据文件"""
-    data_dir = Path(".")
-    files = []
-    for f in data_dir.glob("*.json"):
-        if f.name.startswith("train_data"):
-            files.append({
-                "name": f.name,
-                "path": str(f),
-                "size": f.stat().st_size
-            })
+    loop = asyncio.get_event_loop()
+    
+    def scan_files():
+        data_dir = Path(".")
+        files = []
+        for f in data_dir.glob("*.json"):
+            if f.name.startswith("train_data"):
+                files.append({
+                    "name": f.name,
+                    "path": str(f),
+                    "size": f.stat().st_size
+                })
+        return files
+    
+    files = await loop.run_in_executor(None, scan_files)
     return {"files": files}
 
 
@@ -92,15 +123,15 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
         raise HTTPException(status_code=404, detail="文件不存在")
     
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            items = json.load(f)
+        items = await read_json_file(file_path)
         
         # 搜索过滤
         if search:
+            search_lower = search.lower()
             items = [
                 item for item in items
-                if search.lower() in item.get("instruction", "").lower()
-                or search.lower() in item.get("output", "").lower()
+                if search_lower in item.get("instruction", "").lower()
+                or search_lower in item.get("output", "").lower()
             ]
         
         total = len(items)
@@ -125,16 +156,13 @@ async def update_data_item(filename: str, index: int, item: dict):
         raise HTTPException(status_code=404, detail="文件不存在")
     
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            items = json.load(f)
+        items = await read_json_file(file_path)
         
         if index < 0 or index >= len(items):
             raise HTTPException(status_code=400, detail="索引越界")
         
         items[index] = item
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+        await write_json_file(file_path, items)
         
         return {"success": True}
     except HTTPException:
@@ -151,16 +179,13 @@ async def delete_data_item(filename: str, index: int):
         raise HTTPException(status_code=404, detail="文件不存在")
     
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            items = json.load(f)
+        items = await read_json_file(file_path)
         
         if index < 0 or index >= len(items):
             raise HTTPException(status_code=400, detail="索引越界")
         
         items.pop(index)
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+        await write_json_file(file_path, items)
         
         return {"success": True}
     except HTTPException:
@@ -178,8 +203,7 @@ async def upload_data(file: UploadFile = File(...)):
         
         # 保存到当前目录
         save_path = Path(file.filename)
-        with open(save_path, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+        await write_json_file(save_path, items)
         
         return {"success": True, "path": str(save_path), "count": len(items)}
     except Exception as e:
@@ -191,7 +215,11 @@ async def export_data(request: ExportRequest):
     """导出数据"""
     try:
         p = get_pipeline()
-        results = p.export_dataset(request.input_file, request.output_dir, request.formats)
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(
+            None, 
+            lambda: p.export_dataset(request.input_file, request.output_dir, request.formats)
+        )
         return {"success": True, "files": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -255,7 +283,11 @@ async def analyze_data(filename: str):
     
     try:
         p = get_pipeline()
-        result = p.analyze_dataset(str(file_path))
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: p.analyze_dataset(str(file_path))
+        )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -270,7 +302,11 @@ async def visualize_data(filename: str):
     
     try:
         p = get_pipeline()
-        results = p.visualize_dataset(str(file_path))
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(
+            None,
+            lambda: p.visualize_dataset(str(file_path))
+        )
         return {"charts": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -308,14 +344,17 @@ async def create_version(filename: str, request: VersionCreateRequest):
         raise HTTPException(status_code=404, detail="文件不存在")
     
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            items = json.load(f)
+        items = await read_json_file(file_path)
         
         p = get_pipeline()
-        version = p.version_manager.create_version(
-            items,
-            label=request.label,
-            description=request.description
+        loop = asyncio.get_event_loop()
+        version = await loop.run_in_executor(
+            None,
+            lambda: p.version_manager.create_version(
+                items,
+                label=request.label,
+                description=request.description
+            )
         )
         
         return {
@@ -349,7 +388,11 @@ async def get_version_data(version_id: str):
     """获取版本数据"""
     try:
         p = get_pipeline()
-        items = p.version_manager.load_version(version_id)
+        loop = asyncio.get_event_loop()
+        items = await loop.run_in_executor(
+            None,
+            lambda: p.version_manager.load_version(version_id)
+        )
         return {"items": items}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -360,7 +403,11 @@ async def diff_versions(request: DiffRequest):
     """对比两个版本"""
     try:
         p = get_pipeline()
-        diff = p.version_manager.diff(request.version1, request.version2)
+        loop = asyncio.get_event_loop()
+        diff = await loop.run_in_executor(
+            None,
+            lambda: p.version_manager.diff(request.version1, request.version2)
+        )
         return {
             "version1": diff.version1,
             "version2": diff.version2,
@@ -377,7 +424,11 @@ async def rollback_version(version_id: str):
     """回滚到指定版本"""
     try:
         p = get_pipeline()
-        success = p.version_manager.rollback(version_id)
+        loop = asyncio.get_event_loop()
+        success = await loop.run_in_executor(
+            None,
+            lambda: p.version_manager.rollback(version_id)
+        )
         return {"success": success}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -388,7 +439,11 @@ async def delete_version(version_id: str):
     """删除版本"""
     try:
         p = get_pipeline()
-        p.version_manager.delete_version(version_id)
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,
+            lambda: p.version_manager.delete_version(version_id)
+        )
         return {"success": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
