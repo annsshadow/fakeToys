@@ -1,7 +1,9 @@
+# dmx-set-buffer-size
+
 ﻿## DMX_SET_BUFFER_SIZE
 
 
-### 名称
+## 名称
 
 
 DMX_SET_BUFFER_SIZE

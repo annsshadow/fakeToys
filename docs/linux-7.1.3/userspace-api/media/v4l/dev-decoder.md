@@ -1,3 +1,5 @@
+# dev-decoder
+
 ﻿######## 内存到内存有状态视频解码器接口
 
 
@@ -299,6 +301,7 @@ visible width
 
     .. warning::
 
+
        The actual number of allocated buffers may differ from the ``count``
        given. The client must check the updated value of ``count`` after the
        call returns.
@@ -333,6 +336,7 @@ visible width
 
     .. note::
 
+
        A client capable of acquiring stream parameters from the bytestream on
        its own may attempt to set the width and height of the ``OUTPUT`` format
        to non-zero values matching the coded size of the stream, skip this step
@@ -344,6 +348,7 @@ visible width
        triggered to reconfigure them.
 
     .. note::
+
 
        No decoded frames are produced during this phase.
 
@@ -588,6 +593,7 @@ visible width
 
     .. note::
 
+
        To allocate more than the minimum number of buffers (for pipeline
        depth), the client may query the ``V4L2_CID_MIN_BUFFERS_FOR_CAPTURE``
        control to get the minimum number of buffers required, and pass the
@@ -621,15 +627,18 @@ visible width
 
     .. warning::
 
+
         The actual number of allocated buffers may differ from the ``count``
         given. The client must check the updated value of ``count`` after the
         call returns.
 
     .. note::
 
+
        To allocate buffers for a format different than parsed from the stream
        metadata, the client must proceed as follows, before the metadata
        parsing is initiated:
+
 
        * set width and height of the ``OUTPUT`` format to desired coded resolution to
          let the decoder configure the ``CAPTURE`` format appropriately,
@@ -770,6 +779,7 @@ Seek `OUTPUT` 队列控制，因为它是已编码数据的来源。seek 不需�
 
    .. warning::
 
+
       In case of the H.264/HEVC codec, the client must take care not to seek
       over a change of SPS/PPS. Even though the target frame could be a
       keyframe, the stale SPS/PPS inside decoder state would lead to undefined
@@ -863,6 +873,7 @@ Seek `OUTPUT` 队列控制，因为它是已编码数据的来源。seek 不需�
 
     .. note::
 
+
        Any attempt to dequeue more ``CAPTURE`` buffers beyond the buffer marked
        with ``V4L2_BUF_FLAG_LAST`` will result in a -EPIPE error from
        :c:func:`VIDIOC_DQBUF`.
@@ -943,6 +954,7 @@ Seek `OUTPUT` 队列控制，因为它是已编码数据的来源。seek 不需�
 
      .. note::
 
+
         Any attempt to dequeue more ``CAPTURE`` buffers beyond the buffer
         marked with ``V4L2_BUF_FLAG_LAST`` will result in a -EPIPE error from
         :c:func:`VIDIOC_DQBUF`.
@@ -953,6 +965,7 @@ Seek `OUTPUT` 队列控制，因为它是已编码数据的来源。seek 不需�
    * dequeuing the ``V4L2_EVENT_EOS`` event, if the client subscribed to it.
 
    .. note::
+
 
       For backwards compatibility, the decoder will signal a ``V4L2_EVENT_EOS``
       event when the last frame has been decoded and all frames are ready to be

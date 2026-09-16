@@ -1,3 +1,5 @@
+# landlock
+
 ﻿
 ## Landlock：无特权访问控制
 
@@ -416,7 +418,7 @@ Landlock 首先Linux 5.13 中引入，但必须在构建时用 `CONFIG_SECURITY_
 ```
 
 内核可能在构建时被配置为总是加载 `lockdown` `capability` LSM。在这种情况下，即便它们没有在引导加载程序中配置，这LSM 也会出现`LSM: initializing` 日志行开头
-### 网络支持
+## 网络支持
 
 
 为了能够显式允许 TCP 操作（例如用 `LANDLOCK_ACCESS_NET_BIND_TCP` 添加网络规则），内核必须支持 TCP（`CONFIG_INET=y`）。否则，sys_landlock_add_rule() 会返回一`EAFNOSUPPORT` 错误，可以安全地忽略它，因为这类 TCP 操作本来就不可能

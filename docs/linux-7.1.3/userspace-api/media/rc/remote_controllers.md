@@ -1,3 +1,5 @@
+# remote_controllers
+
 ﻿# 第三部分 - 遥控API
 
 本页汇Linux 遥控器（Remote Controller）子系统相关文档的链接，涵盖 RC 核心、sysfs 节点、协议、键码表及其修改方式，以LIRC 设备接口
@@ -9,7 +11,7 @@
 - [RC 键码表修改](rc-table-change)
 - [LIRC 设备](lirc-dev)
 
-######## 修订与版
+## 修订与版
 
 
 作者：
@@ -20,7 +22,7 @@
 
 **Copyright** |copy| 2009-2016 : Mauro Carvalho Chehab
 
-######## 修订历史
+### 修订历史
 
 
 :revision: 3.15 / 2014-02-06 (**mcc**)

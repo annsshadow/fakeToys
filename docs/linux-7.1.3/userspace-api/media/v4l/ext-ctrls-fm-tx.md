@@ -1,7 +1,9 @@
+# ext-ctrls-fm-tx
+
 ﻿
 
 
-######## FM Transmitter Control Reference
+## FM Transmitter Control Reference
 
 
 FM 发射器（FM_TX）类包含具备 FM 发射能力设备的常见功能控件。目前该类包含音压缩、导频音生成、音频频偏限制器、RDS 发射与调谐功率等功能的参数

@@ -1,7 +1,9 @@
+# pixfmt-srggb14p
+
 ﻿
 
 
-######## V4L2_PIX_FMT_SRGGB14P ('pREE'), V4L2_PIX_FMT_SGRBG14P ('pgEE'), V4L2_PIX_FMT_SGBRG14P ('pGEE'), V4L2_PIX_FMT_SBGGR14P ('pBEE'),
+## V4L2_PIX_FMT_SRGGB14P ('pREE'), V4L2_PIX_FMT_SGRBG14P ('pgEE'), V4L2_PIX_FMT_SGBRG14P ('pGEE'), V4L2_PIX_FMT_SBGGR14P ('pBEE'),
 
 本页描述 V4L2 中四14 位打包的 sRGB/Bayer 原始像素格式（SRGGB14P、SGRBG14P、SGBRG14P、SBGGR14P），说明其字节打包排列方式与内存布局，供摄像头与图像处理应用正确解读原始帧数据
 

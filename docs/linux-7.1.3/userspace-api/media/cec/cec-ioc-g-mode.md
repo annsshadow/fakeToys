@@ -1,6 +1,8 @@
+# cec-ioc-g-mode
+
 ﻿
 
-######## ioctls CEC_G_MODE 涓?CEC_S_MODE
+## ioctls CEC_G_MODE 涓?CEC_S_MODE
 
 CEC_G_MODE, CEC_S_MODE - 获取或设置对 CEC 适配器的独占使用
 
@@ -33,13 +35,16 @@ CEC_G_MODE, CEC_S_MODE - 获取或设置对 CEC 适配器的独占使用
 
     - .. _`CEC-MODE-NO-INITIATOR`:
 
+
       - `CEC_MODE_NO_INITIATOR`
       - 0x0
       - 这不是一initiator，即它不能发CEC 消息，也不能CEC 适配器做任何其他更改    - .. _`CEC-MODE-INITIATOR`:
 
+
       - `CEC_MODE_INITIATOR`
       - 0x1
       - 这是一initiator（设备打开时的默认值），它可以发CEC 消息并对 CEC 适配器进行更改，除非存在一个独占的 initiator    - .. _`CEC-MODE-EXCL-INITIATOR`:
+
 
       - `CEC_MODE_EXCL_INITIATOR`
       - 0x2
@@ -55,29 +60,36 @@ CEC_G_MODE, CEC_S_MODE - 获取或设置对 CEC 适配器的独占使用
 
     - .. _`CEC-MODE-NO-FOLLOWER`:
 
+
       - `CEC_MODE_NO_FOLLOWER`
       - 0x00
       - 这不是一follower（设备打开时的默认值）    - .. _`CEC-MODE-FOLLOWER`:
+
 
       - `CEC_MODE_FOLLOWER`
       - 0x10
       - 这是一follower，它会接CEC 消息，除非存在一个独占的 follower。如果未设置 CEC_CAP_TRANSMIT <CEC-CAP-TRANSMIT>，或者指定了 CEC_MODE_NO_INITIATOR <CEC-MODE-NO-INITIATOR>，则不能成为 follower，这种情况下会返`EINVAL` 错误码    - .. _`CEC-MODE-EXCL-FOLLOWER`:
 
+
       - `CEC_MODE_EXCL_FOLLOWER`
       - 0x20
       - 这是一个独占的 follower，只有该文件描述符会接收 CEC 消息进行处理。如果已经有其他人成为独占的 follower，那么尝试成为独follower 将返`EBUSY` 错误码。如果未设置 CEC_CAP_TRANSMIT <CEC-CAP-TRANSMIT>，或者指定了 CEC_MODE_NO_INITIATOR <CEC-MODE-NO-INITIATOR>，则不能成为 follower，这种情况下会返`EINVAL` 错误码    - .. _`CEC-MODE-EXCL-FOLLOWER-PASSTHRU`:
+
 
       - `CEC_MODE_EXCL_FOLLOWER_PASSTHRU`
       - 0x30
       - 这是一个独占的 follower，只有该文件描述符会接收 CEC 消息进行处理。此外，它会CEC 设备置于 passthrough 模式，从而允许独follower 来处理大多数核心消息，而不必依CEC 框架。如果已经有其他人成为独follower，那么尝试成为独follower 将返`EBUSY` 错误码。如果未设置 CEC_CAP_TRANSMIT <CEC-CAP-TRANSMIT>，或者指定了 CEC_MODE_NO_INITIATOR <CEC-MODE-NO-INITIATOR>，则不能成为 follower，这种情况下会返`EINVAL` 错误码    - .. _`CEC-MODE-MONITOR-PIN`:
 
+
       - `CEC_MODE_MONITOR_PIN`
       - 0xd0
       - 将文件描述符置于引脚监视模式。只能与 CEC_MODE_NO_INITIATOR <CEC-MODE-NO-INITIATOR> 组合使用，否则会返回 `EINVAL` 错误码。该模式要求设置CEC_CAP_MONITOR_PIN <CEC-CAP-MONITOR-PIN> 能力，否则会返回 `EINVAL` 错误码。在引脚监视模式下，该文件描述符可以接收 `CEC_EVENT_PIN_CEC_LOW` `CEC_EVENT_PIN_CEC_HIGH` 事件，以观察底层CEC 引脚状态变化。这对于调试非常有用。该模式仅在进程拥有 `CAP_NET_ADMIN` 能力时才被允许。如果未设置该能力，则返`EPERM` 错误码    - .. _`CEC-MODE-MONITOR`:
 
+
       - `CEC_MODE_MONITOR`
       - 0xe0
       - 将文件描述符置于监视模式。只能与 CEC_MODE_NO_INITIATOR <CEC-MODE-NO-INITIATOR> 组合使用，否则会返回 `EINVAL` 错误码。在监视模式下，CEC 设备发送的所有消息以及它接收的所有消息（包括广播消息以及发往其某个逻辑地址的定向消息）都会被报告。这对于调试非常有用。该模式仅在进程拥有 `CAP_NET_ADMIN` 能力时才被允许。如果未设置该能力，则返`EPERM` 错误码    - .. _`CEC-MODE-MONITOR-ALL`:
+
 
       - `CEC_MODE_MONITOR_ALL`
       - 0xf0
@@ -91,29 +103,38 @@ CEC_G_MODE, CEC_S_MODE - 获取或设置对 CEC 适配器的独占使用
 
     - .. _`CEC-MSG-GET-CEC-VERSION`:
 
+
       - `CEC_MSG_GET_CEC_VERSION`
       - 核心会返回通过 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 设置CEC 版本，透传模式除外。在透传模式下，核心不做任何处理，该消息必须follower 来处理    - .. _`CEC-MSG-GIVE-DEVICE-VENDOR-ID`:
+
 
       - `CEC_MSG_GIVE_DEVICE_VENDOR_ID`
       - 核心会返回通过 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 设置的厂ID，透传模式除外。在透传模式下，核心不做任何处理，该消息必须follower 来处理    - .. _`CEC-MSG-ABORT`:
 
+
       - `CEC_MSG_ABORT`
       - 按照规范，核心会返回一reason 为“Feature Refused”（功能被拒绝）Feature Abort 消息，透传模式除外。在透传模式下，核心不做任何处理，该消息必须follower 来处理    - .. _`CEC-MSG-GIVE-PHYSICAL-ADDR`:
+
 
       - `CEC_MSG_GIVE_PHYSICAL_ADDR`
       - 核心会报告当前的物理地址，透传模式除外。在透传模式下，核心不做任何处理，该消息必须follower 来处理    - .. _`CEC-MSG-GIVE-OSD-NAME`:
 
+
       - `CEC_MSG_GIVE_OSD_NAME`
       - 核心会报告通过 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 设置的当OSD 名称，透传模式除外。在透传模式下，核心不做任何处理，该消息必须follower 来处理    - .. _`CEC-MSG-GIVE-FEATURES`:
+
 
       - `CEC_MSG_GIVE_FEATURES`
       - 如果 CEC 版本低于 2.0，核心不做任何处理；否则它会报告通过 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 设置的当前特性，透传模式除外。在透传模式下，核心不做任何处理（对于任CEC 版本），该消息必须由 follower 来处理    - .. _`CEC-MSG-USER-CONTROL-PRESSED`:
 
+
       - `CEC_MSG_USER_CONTROL_PRESSED`
       - 如果设置CEC_CAP_RC <CEC-CAP-RC>，并且设置了 CEC_LOG_ADDRS_FL_ALLOW_RC_PASSTHRU <CEC-LOG-ADDRS-FL-ALLOW-RC-PASSTHRU>，则生成一个遥控按键按下事件。该消息始终会被传递给 follower(s)    - .. _`CEC-MSG-USER-CONTROL-RELEASED`:
 
+
       - `CEC_MSG_USER_CONTROL_RELEASED`
       - 如果设置CEC_CAP_RC <CEC-CAP-RC>，并且设置了 CEC_LOG_ADDRS_FL_ALLOW_RC_PASSTHRU <CEC-LOG-ADDRS-FL-ALLOW-RC-PASSTHRU>，则生成一个遥控按键释放事件。该消息始终会被传递给 follower(s)    - .. _`CEC-MSG-REPORT-PHYSICAL-ADDR`:
+
 
       - `CEC_MSG_REPORT_PHYSICAL_ADDR`
       - CEC 框架会记录所报告的物理地址，然后直接将消息传递给 follower(s)

@@ -1,7 +1,9 @@
+# vidioc-querycap
+
 ﻿
 
 
-######## ioctl VIDIOC_QUERYCAP
+## ioctl VIDIOC_QUERYCAP
 
 
 ## Name

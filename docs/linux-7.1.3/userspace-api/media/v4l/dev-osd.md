@@ -1,7 +1,9 @@
+# dev-osd
+
 ﻿
 
 
-######## 视频输出叠加接口（Video Output Overlay Interface
+## 视频输出叠加接口（Video Output Overlay Interface
 
 **也称为屏上显示（On-Screen Display，OSD*
 
@@ -15,7 +17,7 @@ OSD 功能通过访问视频输出 <capture> 功能的同一个字符设特殊�
 
 
 支持**视频输出叠加**接口的设备会VIDIOC_QUERYCAP ioctl 返回struct `v4l2_capability` `capabilities` 字段中设`V4L2_CAP_VIDEO_OUTPUT_OVERLAY` 标志
-## 甯х紦鍐。
+## 甯х紦内。
 
 *视频叠加**接口相反，帧缓冲通常实现在电视卡上而非
 显卡上。在 Linux 上，它作为帧缓冲设备（`/dev/fbN`）可访问给定一V4L2 设备，应用程序可以通过调用

@@ -1,6 +1,8 @@
+# buffer
+
 ﻿
 
-######## 缓冲
+## 缓冲
 
 缓冲区包含由应用程序与驱动通过某一种流I/O（Streaming I/O）方法交换的数据。在多平面（multi-planar）API 中，数据保存在平面（planes）中，而缓冲区结构体则充当这些平面的容器。只交换指向缓冲区（平面）的指针，数据本身不会被复制。这些指针连同时间戳或场奇偶性等元信息一起，被存储在结构`v4l2_buffer` 中，该结构体VIDIOC_QUERYBUF、VIDIOC_QBUF <VIDIOC_QBUF> 以及 VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 的参数。在多平API 中，`v4l2_buffer` 结构体里一些特定于平面的成员（如每个平面的指针和大小）改为存储在结构体 `v4l2_plane` 中。在这种情况下，`v4l2_buffer` 结构体包含一个平面结构体数组
 出队的视频缓冲区带有时间戳。由驱动决定在帧的哪一部分、使用哪个时钟来采集时间戳。请参阅 buffer-flags 中掩`V4L2_BUF_FLAG_TIMESTAMP_MASK` `V4L2_BUF_FLAG_TSTAMP_SRC_MASK` 里的标志位。在整个视频流期间，这些标志位对所有缓冲区始终有效且保持不变。不过，作为 VIDIOC_S_INPUT <VIDIOC_G_INPUT> VIDIOC_S_OUTPUT <VIDIOC_G_OUTPUT> 的副作用，这些标志位可能会发生变化。规则的一个例外是 `V4L2_BUF_FLAG_TIMESTAMP_COPY` 时间戳类型（例如用于 mem-to-mem 设备）：时间戳源标志位会OUTPUT 视频缓冲区复制到 CAPTURE 视频缓冲区
@@ -211,6 +213,7 @@ V4L2 暴露了一些会影响缓冲区大小或数据在缓冲区中布局方式
 
 	.. note::
 
+
 	   That data_offset is included  in ``bytesused``. So the
 	   size of the image in the plane is ``bytesused``-``data_offset``
 	   at offset ``data_offset`` from the start of the plane.
@@ -274,44 +277,53 @@ V4L2 暴露了一些会影响缓冲区大小或数据在缓冲区中布局方式
 
     - .. _`V4L2-BUF-FLAG-MAPPED`:
 
+
       - `V4L2_BUF_FLAG_MAPPED`
       - 0x00000001
       - 缓冲区位于设备内存中，并已映射到应用程序的地址空间，详mmap。驱动在调用
 	VIDIOC_QUERYBUF	VIDIOC_QBUF 	VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 时设置或清除此标志。由驱动设置    - .. _`V4L2-BUF-FLAG-QUEUED`:
+
 
       - `V4L2_BUF_FLAG_QUEUED`
       - 0x00000002
       - 驱动内部维护两个缓冲区队列：入队队列和出队队列。当设置此标志时，缓冲区当前位于入队队列中。在缓冲区被填充（采集设备）或显示（输出设备）后，它会自动移动到出队队列。驱动在调用
 	`VIDIOC_QUERYBUF` ioctl 时设置或清除此标志。成功调	`VIDIOC_QBUF`\ ioctl 后它总是被设置，调用 `VIDIOC_DQBUF` 后总是被清除    - .. _`V4L2-BUF-FLAG-DONE`:
 
+
       - `V4L2_BUF_FLAG_DONE`
       - 0x00000004
       - 当设置此标志时，缓冲区当前位于出队队列中，已准备好从驱动中出队。驱动在调用
 	`VIDIOC_QUERYBUF` ioctl 时设置或清除此标志。调`VIDIOC_QBUF` 	`VIDIOC_DQBUF` 后它总是被清除。当然，缓冲区不可能同时位于两个队列中，`V4L2_BUF_FLAG_QUEUED` 	`V4L2_BUF_FLAG_DONE` 标志是互斥的。不过它们也可以都被清除，此时缓冲区处于“已出队（dequeued）”状态，即在应用程序的管辖范围内    - .. _`V4L2-BUF-FLAG-ERROR`:
+
 
       - `V4L2_BUF_FLAG_ERROR`
       - 0x00000040
       - 当设置此标志时，缓冲区已成功出队，尽管数据可能已损坏。这是可恢复的，流传输可以照常继续，缓冲区也可以照常重用。驱动在调用
 	`VIDIOC_DQBUF` ioctl 时设置此标志    - .. _`V4L2-BUF-FLAG-IN-REQUEST`:
 
+
       - `V4L2_BUF_FLAG_IN_REQUEST`
       - 0x00000080
       - 该缓冲区是一个尚未入队的请求的一部分    - .. _`V4L2-BUF-FLAG-KEYFRAME`:
+
 
       - `V4L2_BUF_FLAG_KEYFRAME`
       - 0x00000008
       - 驱动在调`VIDIOC_DQBUF` ioctl 时设置或清除此标志。当缓冲区包含可作为关键帧（或场）独立解压缩的压缩图像时，视频采集设备可能会设置它，也称I 帧（I-frame）。当
 	`type` 指向输出流时，应用程序可以设置此位    - .. _`V4L2-BUF-FLAG-PFRAME`:
 
+
       - `V4L2_BUF_FLAG_PFRAME`
       - 0x00000010
       - `V4L2_BUF_FLAG_KEYFRAME` 类似，此标志标记仅包含与前一关键帧差异的预测帧或场。当
 	`type` 指向输出流时，应用程序可以设置此位    - .. _`V4L2-BUF-FLAG-BFRAME`:
 
+
       - `V4L2_BUF_FLAG_BFRAME`
       - 0x00000020
       - `V4L2_BUF_FLAG_KEYFRAME` 类似，此标志标记双向预测帧或场，其内容仅由当前帧与前一关键帧和后一关键帧之间的差异来指定。当
 	`type` 指向输出流时，应用程序可以设置此位    - .. _`V4L2-BUF-FLAG-TIMECODE`:
+
 
       - `V4L2_BUF_FLAG_TIMECODE`
       - 0x00000100
@@ -319,37 +331,45 @@ V4L2 暴露了一些会影响缓冲区大小或数据在缓冲区中布局方式
 	ioctl 时设置或清除此标志。当 `type` 指向输出流时，应用程序可以设置此位以及相应的
 	`timecode` 结构体    - .. _`V4L2-BUF-FLAG-PREPARED`:
 
+
       - `V4L2_BUF_FLAG_PREPARED`
       - 0x00000400
       - 缓冲区已I/O 做好准备，可由应用程序入队。驱动在调用
 	VIDIOC_QUERYBUF <VIDIOC_QUERYBUF>	VIDIOC_PREPARE_BUF <VIDIOC_QBUF>	VIDIOC_QBUF <VIDIOC_QBUF> 	VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 时设置或清除此标志    - .. _`V4L2-BUF-FLAG-NO-CACHE-INVALIDATE`:
+
 
       - `V4L2_BUF_FLAG_NO_CACHE_INVALIDATE`
       - 0x00000800
       - 不必使该缓冲区的缓存失效。通常，如果缓冲区中捕获的数据不会CPU 触碰，而是很可能被传递给支持 DMA 的硬件单元做进一步处理或输出，应用程序应使用此标志。除非队列用于内存映射（memory mapping <mmap>）流I/O 并且报告 :ref:`V4L2_BUF_CAP_SUPPORTS_MMAP_CACHE_HINTS
 	<V4L2-BUF-CAP-SUPPORTS-MMAP-CACHE-HINTS>` 能力，否则此标志被忽略    - .. _`V4L2-BUF-FLAG-NO-CACHE-CLEAN`:
 
+
       - `V4L2_BUF_FLAG_NO_CACHE_CLEAN`
       - 0x00001000
       - 不必清理该缓冲区的缓存。通常，如果该缓冲区中的数据不是由 CPU 而是由某个支DMA 的单元创建的（这种情况下并未使用缓存），应用程序应对输出缓冲区使用此标志。除非队列用于内存映射（memory mapping <mmap>）流I/O 并且报告 :ref:`V4L2_BUF_CAP_SUPPORTS_MMAP_CACHE_HINTS
 	<V4L2-BUF-CAP-SUPPORTS-MMAP-CACHE-HINTS>` 能力，否则此标志被忽略    - .. _`V4L2-BUF-FLAG-M2M-HOLD-CAPTURE-BUF`:
 
+
       - `V4L2_BUF_FLAG_M2M_HOLD_CAPTURE_BUF`
       - 0x00000200
       - 仅当结构`v4l2_requestbuffers` `V4L2_BUF_CAP_SUPPORTS_M2M_HOLD_CAPTURE_BUF` 标志被设置时才有效。它通常与无状态解码器一起使用，其中多个输出缓冲区各自解码为解码后帧的一个切片。应用程序在入队输出缓冲区时可以设置此标志，以防止驱动在输出缓冲区解码完成后将采集缓冲区出队（即“保持”采集缓冲区）。如果该输出缓冲区的时间戳与前一个输出缓冲区的时间戳不同，则表明一个新帧开始，之前保持的采集缓冲区被出队    - .. _`V4L2-BUF-FLAG-LAST`:
+
 
       - `V4L2_BUF_FLAG_LAST`
       - 0x00100000
       - 硬件产生的最后一个缓冲区。当调用 VIDIOC_QUERYBUF 	VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 时，mem2mem 编解码器驱动会在采集队列的最后一个缓冲区上设置此标志。受硬件限制，最后一个缓冲区可能为空。此时驱动会	`bytesused` 字段设为 0，与格式无关。之后任何对
 	VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 的调用都不再阻塞，而是返回 `EPIPE` 错误码    - .. _`V4L2-BUF-FLAG-REQUEST-FD`:
 
+
       - `V4L2_BUF_FLAG_REQUEST_FD`
       - 0x00800000
       - `request_fd` 字段包含一个有效的文件描述符    - .. _`V4L2-BUF-FLAG-TIMESTAMP-MASK`:
 
+
       - `V4L2_BUF_FLAG_TIMESTAMP_MASK`
       - 0x0000e000
       - 下方时间戳类型的掩码。要测试时间戳类型，可通过对缓冲区标志位和时间戳掩码执行逻辑与操作，将不属于时间戳类型的位屏蔽掉    - .. _`V4L2-BUF-FLAG-TIMESTAMP-UNKNOWN`:
+
 
       - `V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN`
       - 0x00000000
@@ -357,23 +377,28 @@ V4L2 暴露了一些会影响缓冲区大小或数据在缓冲区中布局方式
 	`clock_gettime` 分别使用时钟 ID `CLOCK_MONOTONIC`
 	`CLOCK_REALTIME` 在用户空间获得    - .. _`V4L2-BUF-FLAG-TIMESTAMP-MONOTONIC`:
 
+
       - `V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC`
       - 0x00002000
       - 缓冲区时间戳取自 `CLOCK_MONOTONIC` 时钟。要V4L2 之外访问同一时钟，请使用
 	`clock_gettime`銆?    - .. _`V4L2-BUF-FLAG-TIMESTAMP-COPY`:
 
+
       - `V4L2_BUF_FLAG_TIMESTAMP_COPY`
       - 0x00004000
       - CAPTURE 缓冲区的时间戳取自对应的 OUTPUT 缓冲区。此标志仅适用mem2mem 设备    - .. _`V4L2-BUF-FLAG-TSTAMP-SRC-MASK`:
+
 
       - `V4L2_BUF_FLAG_TSTAMP_SRC_MASK`
       - 0x00070000
       - 下方时间戳源的掩码。时间戳源定义相对于帧而言采集时间戳的时间点。对 `flags` 字段	`V4L2_BUF_FLAG_TSTAMP_SRC_MASK` 执行逻辑与操作可得到时间戳源的值。当
 	`type` 指向输出流且设置`V4L2_BUF_FLAG_TIMESTAMP_COPY` 时，应用程序必须设置时间戳源    - .. _`V4L2-BUF-FLAG-TSTAMP-SRC-EOF`:
 
+
       - `V4L2_BUF_FLAG_TSTAMP_SRC_EOF`
       - 0x00000000
       - 帧结束（End Of Frame）。时间戳在帧的最后一个像素被接收或帧的最后一个像素被发送时采集。实际上，软件生成的时间戳通常会在最后一个像素被接收或发送后的短暂停顿后从时钟读取，具体取决于系统及其中的其他活动    - .. _`V4L2-BUF-FLAG-TSTAMP-SRC-SOE`:
+
 
       - `V4L2_BUF_FLAG_TSTAMP_SRC_SOE`
       - 0x00010000

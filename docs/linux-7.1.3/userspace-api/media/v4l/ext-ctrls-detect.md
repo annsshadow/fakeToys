@@ -1,7 +1,9 @@
+# ext-ctrls-detect
+
 ﻿
 
 
-######## 检测控制参考（Detect Control Reference
+## 检测控制参考（Detect Control Reference
 
 Detect 类包含用于各种具备运动或物体检测能力的设备的通用特性控制
 

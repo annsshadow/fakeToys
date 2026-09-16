@@ -1,7 +1,9 @@
+# ext-ctrls-colorimetry
+
 ﻿
 
 
-######## 色彩管理（Colorimetry）控制参
+## 色彩管理（Colorimetry）控制参
 
 Colorimetry 类包含用于表示数字图像和视频中颜色的高动态范围（HDR）成像控制。这些控制应用于视频和图像编解码，以HDMI 接收器和发送器
 ### Colorimetry 控制 ID

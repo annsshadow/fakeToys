@@ -1,3 +1,5 @@
+# fe-enable-high-lnb-voltage
+
 ﻿######## ioctl FE_ENABLE_HIGH_LNB_VOLTAGE
 
 

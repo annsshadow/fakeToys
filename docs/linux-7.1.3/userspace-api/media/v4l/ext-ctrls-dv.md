@@ -1,6 +1,8 @@
+# ext-ctrls-dv
+
 ﻿
 
-######## 数字视频控制参
+## 数字视频控制参
 
 
 数字视频（Digital Video）控制类旨在控制 `VGA <http://en.wikipedia.org/wiki/Vga>`__

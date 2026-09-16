@@ -1,6 +1,8 @@
+# vidioc-g-ext-ctrls
+
 ﻿
 
-######## ioctl VIDIOC_G_EXT_CTRLS, VIDIOC_S_EXT_CTRLS, VIDIOC_TRY_EXT_CTRLS
+## ioctl VIDIOC_G_EXT_CTRLS, VIDIOC_S_EXT_CTRLS, VIDIOC_TRY_EXT_CTRLS
 
 
 ## 名称

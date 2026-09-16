@@ -1,5 +1,7 @@
+# selection-api-configuration
+
 ﻿
-######## 配置
+## 配置
 
 
 应用程序可以使用选择 API <VIDIOC_G_SELECTION> 在视频信号或缓冲区中选择

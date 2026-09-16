@@ -1,7 +1,9 @@
+# vidioc-queryctrl
+
 ﻿
 
 
-######## ioctls VIDIOC_QUERYCTRL, VIDIOC_QUERY_EXT_CTRL and VIDIOC_QUERYMENU
+## ioctls VIDIOC_QUERYCTRL, VIDIOC_QUERY_EXT_CTRL and VIDIOC_QUERYMENU
 
 
 ## Name
@@ -416,6 +418,7 @@ ioctl，传入指向该结构的指针。驱动填充结构的其余部分，或
 	payload of the control.
     * .. _FLAG_EXECUTE_ON_WRITE:
 
+
       - ``V4L2_CTRL_FLAG_EXECUTE_ON_WRITE``
       - 0x0200
       - The value provided to the control will be propagated to the driver
@@ -424,6 +427,7 @@ ioctl，传入指向该结构的指针。驱动填充结构的其余部分，或
 	error flag or triggering the flash. All the controls of the type
 	``V4L2_CTRL_TYPE_BUTTON`` have this flag set.
     * .. _FLAG_MODIFY_LAYOUT:
+
 
       - ``V4L2_CTRL_FLAG_MODIFY_LAYOUT``
       - 0x0400

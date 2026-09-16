@@ -1,3 +1,5 @@
+# ntsync
+
 ﻿## NT 同步原语驱动
 
 
@@ -63,6 +65,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
   Create a semaphore object. Takes a pointer to struct
   `ntsync_sem_args`, which is used as follows:
 
+
 ```
      * - ``count``
        - Initial count of the semaphore.
@@ -76,6 +79,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
 
   Create a mutex object. Takes a pointer to struct
   `ntsync_mutex_args`, which is used as follows:
+
 
 ```
      * - ``count``
@@ -91,6 +95,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
 
   Create an event object. Takes a pointer to struct
   `ntsync_event_args`, which is used as follows:
+
 
 ```
      * - ``signaled``
@@ -120,6 +125,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
 
   Release a mutex object. Takes a pointer to struct
   `ntsync_mutex_args`, which is used as follows:
+
 
 ```
      * - ``owner``
@@ -165,6 +171,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
   Read the current state of a semaphore object. Takes a pointer to
   struct `ntsync_sem_args`, which is used as follows:
 
+
 ```
      * - ``count``
        - On output, contains the current count of the semaphore.
@@ -175,6 +182,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
 
   Read the current state of a mutex object. Takes a pointer to struct
   `ntsync_mutex_args`, which is used as follows:
+
 
 ```
      * - ``owner``
@@ -191,6 +199,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
 
   Read the current state of an event object. Takes a pointer to struct
   `ntsync_event_args`, which is used as follows:
+
 
 ```
      * - ``signaled``
@@ -213,6 +222,7 @@ ntsync 驱动创建一个单一的字符设/dev/ntsync。在该设备上打开�
   Poll on any of a list of objects, atomically acquiring at most one.
   Takes a pointer to struct `ntsync_wait_args`, which is
   used as follows:
+
 
 ```
      * - ``timeout``

@@ -1,3 +1,5 @@
+# spec_ctrl
+
 ﻿## Speculation Control
 
 
@@ -9,7 +11,7 @@
 
  - PR_SET_SPECULATION_CTRL
 
-### PR_GET_SPECULATION_CTRL
+## PR_GET_SPECULATION_CTRL
 
 
 PR_GET_SPECULATION_CTRL 返回prctl(2) arg2 选择的推测执行缺陷特性的状态。返回值使用位 0-3，含义如下（但要注意，PR_SPEC_L1D_FLUSH 的语义不那么直观，请参阅下面该特定控制的文档）：

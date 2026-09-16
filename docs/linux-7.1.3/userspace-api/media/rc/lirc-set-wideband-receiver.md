@@ -1,5 +1,7 @@
+# lirc-set-wideband-receiver
+
 ﻿
-######## ioctl LIRC_SET_WIDEBAND_RECEIVER
+## ioctl LIRC_SET_WIDEBAND_RECEIVER
 
 
 ## 名称

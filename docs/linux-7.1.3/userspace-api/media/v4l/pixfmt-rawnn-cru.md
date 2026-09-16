@@ -1,7 +1,9 @@
+# pixfmt-rawnn-cru
+
 ﻿
 
 
-######## V4L2_PIX_FMT_RAW_CRU10 ('CR10'), V4L2_PIX_FMT_RAW_CRU12 ('CR12'), V4L2_PIX_FMT_RAW_CRU14 ('CR14'), V4L2_PIX_FMT_RAW_CRU20 ('CR20')
+## V4L2_PIX_FMT_RAW_CRU10 ('CR10'), V4L2_PIX_FMT_RAW_CRU12 ('CR12'), V4L2_PIX_FMT_RAW_CRU14 ('CR14'), V4L2_PIX_FMT_RAW_CRU20 ('CR20')
 
 鏈枃妗ｆ弿杩?V4L2 涓?Renesas RZ/V2H SoC 鎽勫儚澶存帴鏀跺崟鍏冿紙CRU锛夌殑 RAW 鍍忕礌鏍煎紡锛圕R10/CR12/CR14/CR20锛夈€傝繖浜涙牸寮忓皢鍍忕礌杩炵画鎵撳寘杩?64 浣嶅崟鍏冨苟浠ラ珮浣嶄綔濉厖锛涙枃涓粰鍑哄叾浣嶇骇甯冨眬涓庡瓧鑺傚簭锛屼緵瑙嗛閲囬泦椹卞姩寮€鍙戜笌鍍忕礌鏍煎紡閫傞厤鏃跺弬鑰冦€?
 
@@ -20,12 +22,13 @@
 
 杩欎簺鍍忕礌鏍煎紡鏄?Renesas RZ/V2H SoC 涓?Camera Receiver Unit锛堟憚鍍忓ご鎺ユ敹鍗曞厓锛夌殑閮ㄥ垎 RAW 杈撳嚭鏍煎紡銆傚畠浠槸鍘熷鏍煎紡锛屽皢鍍忕礌杩炵画鎵撳寘杩?64 浣嶅崟鍏冿紝骞朵互 4 鎴?8 涓渶楂樻湁鏁堜綅浣滀负濉厖銆?
 
-**瀛楄妭搴?*
+**子楄妭搴?*
 
     :header-rows:  2
     :stub-columns: 0
     :widths: 36 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
     :fill-cells:
+
 
     - - `1` Pixel Format Code
       - `63` Data organization

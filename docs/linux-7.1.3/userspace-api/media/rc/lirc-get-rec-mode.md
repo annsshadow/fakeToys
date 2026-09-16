@@ -1,7 +1,9 @@
+# lirc-get-rec-mode
+
 ﻿
 
 
-######## ioctls LIRC_GET_REC_MODE and LIRC_SET_REC_MODE
+## ioctls LIRC_GET_REC_MODE and LIRC_SET_REC_MODE
 
 
 ## 名称

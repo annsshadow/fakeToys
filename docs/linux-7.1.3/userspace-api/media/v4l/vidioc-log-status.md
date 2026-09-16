@@ -1,3 +1,5 @@
+# vidioc-log-status
+
 ﻿######## ioctl VIDIOC_LOG_STATUS
 
 

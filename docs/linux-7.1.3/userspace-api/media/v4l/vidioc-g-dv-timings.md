@@ -1,6 +1,8 @@
+# vidioc-g-dv-timings
+
 ﻿
 
-######## ioctl VIDIOC_G_DV_TIMINGS, VIDIOC_S_DV_TIMINGS
+## ioctl VIDIOC_G_DV_TIMINGS, VIDIOC_S_DV_TIMINGS
 
 
 ## 名称

@@ -1,7 +1,9 @@
+# userp
+
 ﻿
 
 
-######## Streaming I/O (User Pointers)
+## Streaming I/O (User Pointers)
 
 
 VIDIOC_QUERYCAP ioctl 返回struct `v4l2_capability` `capabilities` 字段中的 `V4L2_CAP_STREAMING` 标志被设置时，输入和输出设备支持这种 I/O 方法。而特定用户指针方法（不仅仅是内存映射）是否受支持，必须通过调用 VIDIOC_REQBUFS ioctl 并将内存类型设置`V4L2_MEMORY_USERPTR` 来确定

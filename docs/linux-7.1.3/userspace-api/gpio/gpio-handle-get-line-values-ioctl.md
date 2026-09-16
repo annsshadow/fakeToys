@@ -1,6 +1,8 @@
+# gpio-handle-get-line-values-ioctl
+
 ﻿
 
-######## GPIOHANDLE_GET_LINE_VALUES_IOCTL
+## GPIOHANDLE_GET_LINE_VALUES_IOCTL
 
     ioctl chardev_v1.rst 的一部分，并已被 gpio-v2-line-get-values-ioctl.rst 取代
 ## 名称

@@ -1,3 +1,5 @@
+# media-types
+
 ﻿
 
 ## 用于表示媒体图元素的类型与标
@@ -189,10 +191,13 @@
 
 	  .. _MEDIA-LNK-FL-DATA-LINK:
 
+
 	  `MEDIA_LNK_FL_DATA_LINK` 表示两个衬垫之间数据连接的连接
 	  .. _MEDIA-LNK-FL-INTERFACE-LINK:
 
+
 	  `MEDIA_LNK_FL_INTERFACE_LINK` 表示将实体与其接口关联起来的连接
 	  .. _MEDIA-LNK-FL-ANCILLARY-LINK:
+
 
 	  `MEDIA_LNK_FL_ANCILLARY_LINK` 表示两个实体之间物理关系的连接。该连接可能是也可能不是不可变的，因此应用程序不得假定其中任意一种情况

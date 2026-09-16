@@ -1,6 +1,8 @@
+# gpio-get-lineinfo-ioctl
+
 ﻿
 
-######## GPIO_GET_LINEINFO_IOCTL
+## GPIO_GET_LINEINFO_IOCTL
 
 
 ioctl chardev_v1.rst 的一部分，并已被废弃

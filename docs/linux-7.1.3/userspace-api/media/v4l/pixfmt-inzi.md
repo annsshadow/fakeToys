@@ -1,5 +1,7 @@
+# pixfmt-inzi
+
 ﻿
-######## V4L2_PIX_FMT_INZI ('INZI')
+## V4L2_PIX_FMT_INZI ('INZI')
 
 
 红外 10 位与深度 16 位图像联合格

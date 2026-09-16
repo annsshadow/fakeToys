@@ -1,7 +1,9 @@
+# fe_property_parameters
+
 ﻿
 
 
-######## Digital TV property parameters
+## Digital TV property parameters
 
 
 有若干不同的数字电视（Digital TV）参数可`FE_SET_PROPERTY` 
@@ -395,7 +397,7 @@ ISDB-Tsb 中仅使用A，根`DTV_ISDBT_PARTIAL_RECEPTION`，它可以1 3
 
 
 
-### DTV_ISDBT_LAYER[A-C]_SEGMENT_COUNT
+## DTV_ISDBT_LAYER[A-C]_SEGMENT_COUNT
 
 
 仅用ISDB

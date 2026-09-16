@@ -1,7 +1,9 @@
+# vidioc-subdev-g-routing
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBDEV_G_ROUTING, VIDIOC_SUBDEV_S_ROUTING
+## ioctl VIDIOC_SUBDEV_G_ROUTING, VIDIOC_SUBDEV_S_ROUTING
 
 
 ## 名称

@@ -1,3 +1,5 @@
+# lirc-set-send-duty-cycle
+
 ﻿######## ioctl LIRC_SET_SEND_DUTY_CYCLE
 
 

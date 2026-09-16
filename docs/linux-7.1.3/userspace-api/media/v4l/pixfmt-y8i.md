@@ -1,7 +1,9 @@
+# pixfmt-y8i
+
 ﻿
 
 
-######## V4L2_PIX_FMT_Y8I ('Y8I ')
+## V4L2_PIX_FMT_Y8I ('Y8I ')
 
 
 交错灰度图像，例如来自立体对

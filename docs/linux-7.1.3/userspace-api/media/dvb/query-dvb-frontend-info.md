@@ -1,5 +1,7 @@
+# query-dvb-frontend-info
+
 ﻿
-######## 查询前端信息
+## 查询前端信息
 
 
 通常，打开前端后要做的第一件事是检查前端能力。这通过 `FE_GET_INFO` 完成。该 ioctl
