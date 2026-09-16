@@ -1,3 +1,5 @@
+# devices
+
 ﻿
 ## Linux allocated 设备 (4.x+ 版本)
 
@@ -56,6 +58,7 @@ permission 鐨?the authors, assuming the authors 鍙，涓?contacted 鏃。
 
    :literal:
 
+
 ### 额外 ``/dev/`` directory 条目
 
 
@@ -69,6 +72,7 @@ Compulsory links
 ++++++++++++++++
 
 这些 links 应当 exist 全部 系统:
+
 
 =============== =============== =============== ===============================
 /dev/fd		/proc/self/fd	symbolic	文件 描述
@@ -85,6 +89,7 @@ Recommended links
 +++++++++++++++++
 
 它是 recommended 这些 links exist 全部 系统:
+
 
 
 =============== =============== =============== ===============================
@@ -139,7 +144,7 @@ Non-transient sockets named pipes exist /dev.  通用 条目
 =============== =============== ===============================================
 /dev/打印套接	lpd 本地 套接
 /dev/log	套接	syslog 本地 套接
-/dev/gpmdata	濂楁帴瀛?	gpm 榧犳爣 multiplexer
+/dev/gpmdata	濂楁帴子?	gpm 榧犳爣 multiplexer
 =============== =============== ===============================================
 
 Mount points
@@ -228,6 +233,7 @@ symlinks 全部 可能 names; additionally, 它是 recommended
 一文件 installed the corresponding alternate
 设备.	 为了 avoid deadlocks, 它是 recommended the 
 acquired the 以下 order, released the reverse:
+
 
  1. The symbolic link name, 任何 (`/var/lock/LCK..modem`)
  2. The "tty" name (`/var/lock/LCK..ttyS2`)

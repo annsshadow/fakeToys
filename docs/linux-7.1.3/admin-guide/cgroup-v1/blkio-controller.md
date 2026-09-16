@@ -1,3 +1,5 @@
+# blkio-controller
+
 ﻿## 鍧?IO 鎺у埗鍣。
 
 
@@ -113,12 +115,14 @@ root 组在指定设备上指定带宽速率。其格式
 
 	  Configure weight=300 on /dev/sdb (8:16) in this cgroup::
 
+
 	    # echo 8:16 300 > blkio.bfq.weight_device
 	    # cat blkio.bfq.weight_device
 	    dev     weight
 	    8:16    300
 
 	  Configure weight=500 on /dev/sda (8:0) in this cgroup::
+
 
 	    # echo 8:0 500 > blkio.bfq.weight_device
 	    # cat blkio.bfq.weight_device
@@ -127,6 +131,7 @@ root 组在指定设备上指定带宽速率。其格式
 	    8:16    300
 
 	  Remove specific weight for /dev/sda in this cgroup::
+
 
 	    # echo 8:0 0 > blkio.bfq.weight_device
 	    # cat blkio.bfq.weight_device
@@ -223,7 +228,7 @@ root 组在指定设备上指定带宽速率。其格式
 	  相同，但包含来自所有后cgroup 的统计
 
 ```
-### 节流/上限策略文件
+## 节流/上限策略文件
 
   blkio.throttle.read_bps_device
 	  指定从设备读取速率的上限。IO 速率以字秒为单位指定。规
@@ -236,17 +241,20 @@ root 组在指定设备上指定带宽速率。其格式
 	  指定向设备写入速率的上限。IO 速率以字秒为单位指定。规
 	  按设备划分。格式如:
 
+
 	    echo "<major>:<minor>  <rate_bytes_per_second>" > /cgrp/blkio.throttle.write_bps_device
 
   blkio.throttle.read_iops_device
 	  指定从设备读取速率的上限。IO 速率IO/秒为单位指定。规
 	  按设备划分。格式如:
 
+
 	   echo "<major>:<minor>  <rate_io_per_second>" > /cgrp/blkio.throttle.read_iops_device
 
   blkio.throttle.write_iops_device
 	  指定向设备写入速率的上限。IO 速率IO/秒为单位指定。规
 	  按设备划分。格式如:
+
 
 	    echo "<major>:<minor>  <rate_io_per_second>" > /cgrp/blkio.throttle.write_iops_device
 

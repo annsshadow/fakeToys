@@ -1,3 +1,5 @@
+# bcache
+
 ﻿## A block layer cache (bcache，块层缓
 
 
@@ -57,7 +59,7 @@ bcache-tools 现在附带 udev 规则，bcache 设备为内核所
 
 Cache 设备以集合（set）形式管理；每个集合目前还不支持多个缓存，但未来将允许元数据和脏数据的镜像。您的新缓存集合显示/sys/fs/bcache/<UUID>
 
-### Attaching（附绑定
+## Attaching（附绑定
 
 
 在您cache 设备backing 设备注册后，必须backing 设备 attach 到缓存集合以启用缓存。将 backing 设备 attach 到缓存集合的操作如下，使用缓存集合的 UUID 写入
@@ -216,6 +218,7 @@ H) 停止/释放已注册的 bcache 以擦除和/或重建它
    In this case, you may have to unregister the dmcrypt block device that
    references this bcache to free it up::
 
+
 	host:~# dmsetup remove oldds1
 	bcache: bcache_device_free() bcache0 stopped
 	bcache: cache_set_free() Cache set 5bc072a8-ab17-446d-9744-e247949913c1 unregistered
@@ -233,6 +236,7 @@ H) 停止/释放已注册的 bcache 以擦除和/或重建它
 
    The device names will show which UUID is relevant, cd in that directory
    and stop the cache::
+
 
 	host:/sys/fs/bcache/5bc072a8-ab17-446d-9744-e247949913c1# echo 1 > stop
 
@@ -258,6 +262,7 @@ Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面�
    That space is wasted, but for only 157.5MB you can grow your RAID 5
    volume to the following data-spindle counts without re-aligning::
 
+
 	3,4,5,6,7,8,9,10,12,14,15,18,20,21 ...
 
  - Bad write performance
@@ -266,6 +271,7 @@ Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面�
    running in writeback mode, which isn't the default (not due to a lack of
    maturity, but simply because in writeback mode you'll lose data if something
    happens to your SSD)::
+
 
 	# echo writeback > /sys/block/bcache0/bcache/cache_mode
 
@@ -279,9 +285,11 @@ Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面�
    But if you want to benchmark reads from cache, and you start out with fio
    writing an 8 gigabyte test file - so you want to disable that::
 
+
 	# echo 0 > /sys/block/bcache0/bcache/sequential_cutoff
 
    To set it back to the default (4 mb), do::
+
 
 	# echo 4M > /sys/block/bcache0/bcache/sequential_cutoff
 
@@ -297,6 +305,7 @@ Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面�
    cranking down the sequential bypass).
 
    You can disable this if you need to by setting the thresholds to 0::
+
 
 	# echo 0 > /sys/fs/bcache/<cache set>/congested_read_threshold_us
 	# echo 0 > /sys/fs/bcache/<cache set>/congested_write_threshold_us
@@ -323,7 +332,7 @@ Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面�
 
 ```
 
-### Sysfs - backing device（Sysfs - backing 设备
+## Sysfs - backing device（Sysfs - backing 设备
 
 
 位于 /sys/block/<bdev>/bcachesys/block/bcache*/bcache 以及（若attachsys/fs/bcache/<cset-uuid>/bdev*
@@ -384,7 +393,7 @@ writeback_rate
 writeback_running
   若关闭，脏数据的 writeback 将完全不进行。脏数据仍会被加入缓存直到它几乎满；仅用于基准测试。默认为开启
 
-#### Sysfs - backing device stats（Sysfs - backing 设备统计
+### Sysfs - backing device stats（Sysfs - backing 设备统计
 
 
 存在带有这些数字的目录用于累计总数，以及过去一天、一小时5 分钟内衰减的版本；它们也在缓存集合目录中被聚合

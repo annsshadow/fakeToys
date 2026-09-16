@@ -1,3 +1,5 @@
+# rapidio
+
 ﻿## RapidIO 子系统指
 
 :Author: Matt Porter
@@ -31,9 +33,12 @@ None. ;)
 
    :internal:
 
-   :export:
 
    :export:
+
+
+   :export:
+
 
 ## 内部机制
 
@@ -43,26 +48,32 @@ None. ;)
 
    :internal:
 
+
 ### 枚举与发
 
    :internal:
+
 
 ### 驱动功能
 
 
    :internal:
 
+
    :internal:
+
 
 ### 设备模型支持
 
 
    :internal:
 
+
 ### PPC32 支持
 
 
    :internal:
+
 
 ## 致谢
 

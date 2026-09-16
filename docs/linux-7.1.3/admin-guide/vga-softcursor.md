@@ -1,3 +1,5 @@
+# vga-softcursor
+
 ﻿## VGA 软光
 by Pavel Machek <pavel@atrey.karlin.mff.cuni.cz>
 and Martin Mares <mj@atrey.karlin.mff.cuni.cz>
@@ -25,7 +27,7 @@ Linux 现在具备一定操纵光标外观的能力。通常，你可以设置�
 	前景色。在两组中，低三位设置颜色（与控制台使用的普	颜色码相同），最高位开启高亮（有时是闪烁——这取决于你	VGA 的配置）
 第三个参	由你想要设置的字符属性位组成
 	位的设置发生在位翻转之前，因此你可以简单地通过将某一位置	设置掩码与翻转掩码二者之中来清除该位
-### 示例
+## 示例
 
 
 ```

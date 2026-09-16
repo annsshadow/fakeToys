@@ -1,3 +1,5 @@
+# dm-crypt
+
 ﻿# dm-crypt
 
 
@@ -21,6 +23,7 @@ https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
 
     Examples::
 
+
        aes-cbc-essiv:sha256
        aes-xts-plain64
        serpent-xts-plain64
@@ -32,14 +35,17 @@ https://gitlab.com/cryptsetup/cryptsetup/wikis/DMCrypt
 
     The crypto API cipher specifications format is::
 
+
         capi:cipher_api_spec-ivmode[:ivopts]
 
     Examples::
+
 
         capi:cbc(aes)-essiv:sha256
         capi:xts(aes)-plain64
 
     Examples of authenticated modes::
+
 
         capi:gcm(aes)-random
         capi:authenc(hmac(sha256),xts(aes))-random

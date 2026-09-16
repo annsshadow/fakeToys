@@ -1,3 +1,5 @@
+# cec
+
 ﻿
 ## HDMI CEC
 
@@ -187,14 +189,17 @@ CEC 应用程序实现者的提示Image View On> 消息必须是你发送的第�
 
    and start monitoring::
 
+
 	sudo cec-ctl -M
 
    On the device you are testing run::
+
 
 	cec-ctl --playback
 
    It should report a physical address of f.f.f.f. Now run this
    command::
+
 
 	cec-ctl -t0 --image-view-on
 

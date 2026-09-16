@@ -1,7 +1,9 @@
+# md
+
 ﻿## RAID 阵列
 
 
-### 启动时组RAID 阵列
+## 启动时组RAID 阵列
 
 
 管理 md 设备的工具可在以下位置找到：
@@ -306,6 +308,7 @@ md 设备作为常规块设备出现在 sysfs（`/sys`）中
   consistency_policy
      This indicates how the array maintains consistency in case of unexpected
      shutdown. It can be:
+
 
      none
        Array has no redundancy information, e.g. raid0, linear.

@@ -1,3 +1,5 @@
+# fan_performance_states
+
 ﻿## ACPI 风扇性能状
 
 当代表风扇的 ACPI 设备（例PNP0C0B INT3404）下存在可选的 _FPS 对象时，

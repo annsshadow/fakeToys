@@ -1,3 +1,5 @@
+# init
+
 ﻿## 解释 “No working init found.启动挂起消息
 
 :Authors: Andreas Mohr <andi at lisas period de>

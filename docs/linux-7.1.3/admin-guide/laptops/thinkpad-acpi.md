@@ -1,3 +1,5 @@
+# thinkpad-acpi
+
 ﻿## ThinkPad ACPI Extras 驱动
 
 版本 0.25
@@ -15,7 +17,7 @@ http://ibm-acpi.sf.net/
 drivers/misc 目录下并更名thinkpad-acpi。在 kernel 2.6.29 及发布版0.22 中，它被移动drivers/platform/x86
 该驱动名"thinkpad-acpi"。在某些地方（如模块名与日志消息）由于用户空的兼容性问题，使用的是 "thinkpad_acpi"
 "tpacpi" "thinkpad-acpi" 的简写，用于某些 Linux 内核版本因长度限制无法容纳完整名称之处
-### 状
+## 状
 当前支持的功能如下（详细说明见下文）
  - Fn 键组 - 蓝牙（Bluetooth）启用与禁用
  - 视频输出切换、扩展控 - ThinkLight 开与关
@@ -55,7 +57,7 @@ procfs 接口会创/proc/acpi/ibm 目录。该目录下为每个所支持的功�
 sysfs 接口尽可能与通用Linux sysfs 子系统与类相融合。由于其中某些子系统
 尚未就绪或尚未稳定，预计该接口会发生变动，所有用户空间程序都必须对此作出
 处理
-##### 关于 sysfs 接口的注意事
+#### 关于 sysfs 接口的注意事
 procfs 接口的做法不同，sysfs 接口交互时的正确性将被强制要求，thinkpad-acpi
 实现 sysfs 接口的正确性同样如此
 此外，thinkpad-acpi sysfs 驱动代码或其sysfs 接口的实现中的任bug 将被修复以获得最大正确性，即便这意味着以不兼容的方式更改某个接口。随着这些接口
@@ -121,7 +123,7 @@ ThinkPad 型号
 该键将不再在固件层面自行启用/禁用蓝牙
 还需注意，并非所Fn 键组合都通过 ACPI 受支持，这取决于 ThinkPad 型号固件版本。在这些 ThinkPad 上，仍有可能通过以每秒至10 次的频率轮询
 "CMOS NVRAM" 来支持一些额外的热键。驱动会在需要时尝试自动启用该功能
-##### procfs 注意事项
+#### procfs 注意事项
 
 ```
 
@@ -305,7 +307,7 @@ SW_RFKILL_ALL	T60 及更晚硬件的 rfkill 摇杆开SW_TABLET_MODE	平板ThinkP
 异常，它们绝不应在正常操作条件下发生
 "极热"警报属于紧急情况。根Lenovo 的建议，操作系统应强制立即挂起或
 休眠，或系统关机。显然，如果发生这种情况，说明出现了非常严重的问题
-##### 亮度热键注意事项
+#### 亮度热键注意事项
 
 不要去动 Thinkpad 上的亮度热键。如果你想要屏幕显示（OSD）通知，请使用
 sysfs 背光类（backlight class）的事件支持
@@ -320,7 +322,7 @@ sysfs rfkill 类：开"tpacpi_bluetooth_sw"
 
 该功能显ThinkPad 内部 ThinkPad CDC 插槽中蓝牙设备的存在与当前状态
 如果 ThinkPad 支持，蓝牙状态会被存储在 NVRAM 中，因此在重启与关机后都保留
-##### Procfs 注意事项
+#### Procfs 注意事项
 
 ```
 
@@ -333,6 +335,7 @@ sysfs rfkill 类：开"tpacpi_bluetooth_sw"
 	如果安装了蓝CDC 卡，可通过 "bluetooth_enable" 这个 thinkpad-acpi
 	设备属性启禁用它，并也可查询其当前状态
 	enable:
+
 
   - 0：禁用蓝/ 蓝牙已禁  - 1：启用蓝/ 蓝牙已启用
 	注意：该接口已被通用rfkill 类取代。它已被废弃，并将于 2010 	被移除
@@ -373,7 +376,7 @@ procfs: /proc/acpi/ibm/light
 **sysfs 属性：遵循 LED 类，针对 "tpacpi**
 : thinklight" 这一 LED
 
-##### procfs 注意事项
+#### procfs 注意事项
 
 ThinkLight 的状态可通过 procfs 接口读取与设置。少数无法提供状态的型号显示 ThinkLight
 ```
@@ -417,7 +420,7 @@ CONFIG_THINKPAD_ACPI_UNSAFE_LEDS 选项。发行版绝不可启用该选项。�
 个人用户可自行启用
 音频静音与麦克风静音 LED 受支持，但目前对用户空间不可见。它们由 snd-hda-intel
 音频驱动使用
-##### procfs 注意事项
+#### procfs 注意事项
 
 ```
 
@@ -516,7 +519,7 @@ A31 的热传感器布局非常不典型（来源：Milos Popovic，https://thin
 - 5 MCH（北桥）
 - 6 PCMCIA/环境
 - 7 主电池：辅助传感- 8 扩展坞电池：辅助传感
-##### Procfs 注意事项
+#### Procfs 注意事项
 
 	不可用的传感器读数返-128	不能向该文件写入任何命令
 ##### Sysfs 注意事项
@@ -558,7 +561,7 @@ Lenovo ThinkPad 仅支brightness_mode=2（UCMS）
 如果你出于某种原因想要使thinkpad-acpi 的背光亮度控制，而非通用 ACPI 视频
 背光亮度控制，应使用 acpi_backlight=vendor 内核参数
 brightness_enable 模块参数可用于控制在可用时是否启LCD 亮度控制功能brightness_enable=0 强制将其禁用。brightness_enable=1 在可用时强制启用，即标准 ACPI 接口也可用
-##### Procfs 注意事项
+#### Procfs 注意事项
 
 ```
 
@@ -599,7 +602,7 @@ ALSAThinkPad Console Audio Control"，默IDThinkPadEC"
 来启用
 注意：敦促发行版不要默认启用 volume_control，这只能由本地管理员完成ThinkPad 的用户界面设计为由音量键单独完成控制台音频控制，桌面环境只需提供
 屏幕显示反馈。软件音量控制应仅在AC97/HDA 混音器中完成
-##### 关于 ThinkPad 控制台音频控
+#### 关于 ThinkPad 控制台音频控
 ThinkPad 有一个内置的放大器与静音电路，驱动控制台耳机与扬声器。该电路位于
 音频路径中主 AC97 HDA 混音器之后，并完全由固件控制
 ThinkPad 有三个特殊热键用于与控制台音频控制交互：音量增、音量减与静音
@@ -650,7 +653,7 @@ sysfs hwmon 驱动属性：fan_watchdog
 该功能试图显示当前风扇转速、控制模式以及其他可能可用的风扇数据。转速直接从
 嵌入式控制器的硬件寄存器读取。已知在较新R、T、X Z 系列 ThinkPad 可用，但在其他型号上可能显示虚假值
 部分 Lenovo ThinkPad 支持辅助风扇。该风扇不能被单独控制，它与主风扇控制共享
-##### 风扇级别
+#### 风扇级别
 
 大多ThinkPad 风扇在固件接口上级别"工作。级0 停止风扇。级别越高，
 风扇转速越高，尽管相邻的级别常常映射到相同的风扇转速 是最高级别，此时
@@ -732,7 +735,7 @@ sysfs rfkill 类：开"tpacpi_wwan_sw"
 如果 ThinkPad 支持，WWAN 状态会被存储在 NVRAM 中，因此在重启与关机后都保留
 它已Lenovo ThinkPad X60 上测试。它应该也能在其它装有该模块的其ThinkPad
 型号上工作
-##### Procfs 注意事项
+#### Procfs 注意事项
 
 ```
 
@@ -756,7 +759,7 @@ procfs: /proc/acpi/ibm/lcdshadow
 部分较新T480s T490s ThinkPad 提供一项称PrivacyGuard 的功能。开启该功能后，
 LCD 可用的垂直与水平可视角度会被限制（就如同在显示屏前手动贴上了某种隐私
 保护膜）
-##### procfs 注意事项
+#### procfs 注意事项
 
 ```
 
@@ -777,7 +780,7 @@ sysfs：dytc_lapmode
 sysfs rfkill 类：开"tpacpi_uwb_sw"
 
 如果存在一UWB 设备且在 BIOS 中已启用，该功能会为其导出一rfkill 控制器
-##### Sysfs 注意事项
+#### Sysfs 注意事项
 
 	rfkill 控制器开"tpacpi_uwb_sw"：详	Documentation/driver-api/rfkill.rst
 ### 设置键盘语言
@@ -918,7 +921,7 @@ Thinkpad 正在增加检测与报告硬件损坏的能力。新sysfs 接口以�
 ### 强制加载模块
 
 如果 thinkpad-acpi 拒绝检测你ThinkPad，你可以尝试指定模块参数 force_load=1无论是否有效，都请向 ibm-acpi-devel@lists.sourceforge.net 提交报告
-##### sysfs 接口变更日志
+#### sysfs 接口变更日志
 
 =========	===============================================================
 0x000100:	初始sysfs 支持，作为单个平台驱动与设备0x000200:	32 个热键的热键支持，以及无线滑块开关支持0x010000:	热键现在默认通过输入层处理，无线开关生成输入事		EV_RADIO，且驱动默认在固件中启用热键处理0x020000:	ABI 修复：新增了独立hwmon 平台设备与驱动，必须按名		（thinkpad）以hwmon 类定位，以兼libsensors4

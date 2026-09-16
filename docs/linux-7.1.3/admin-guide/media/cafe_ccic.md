@@ -1,9 +1,11 @@
+# cafe_ccic
+
 ﻿## cafe_ccic 驱动
 
 
 Author: Jonathan Corbet <corbet@lwn.net>
 
-### 简
+## 简
 
 “cafe_ccic是面Marvell 88ALP01 “cafeCMOS 摄像头控制器的驱动。这是初OLPC 系统所用的控制器，该驱动在 OLPC 项目的支持下编写
 当前状态：核心驱动可以工作。它可以生成 YUV422、RGB565 RGB444 格式的数据。（看到代码的人

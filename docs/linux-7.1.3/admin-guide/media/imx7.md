@@ -1,8 +1,10 @@
+# imx7
+
 ﻿## i.MX7 视频采集驱动
 
 本文档说i.MX7 处理器的视频采集驱动架构与媒体管线，涵盖 MIPI CSI-2 接收器、视频多路复用器CMOS 传感器接口（CSI）等硬件单元，以及它们在 V4L2 框架下暴露的实体与数据路径
 
-### 简介（Introduction
+## 简介（Introduction
 
 
 i.MX5/6 系列不同，i.MX7 不包含图像处理单元（IPU）；因此，执行操作或处理采集帧的能力在功能上较不丰富
@@ -130,7 +132,7 @@ CSI 使芯片能够直接连接到外部 CMOS 图像传感器。CSI 可以直接
 	                [fmt:SBGGR10_1X10/800x600@1/30 field:none colorspace:srgb]
 	                -> "imx7-mipi-csis.0":0 [ENABLED]
 
-### 搭配 OV5640 i.MX6ULL-EVK
+## 搭配 OV5640 i.MX6ULL-EVK
 
 
 在此平台上，一个并行的 OV5640 传感器连接到 CSI 端口
@@ -186,4 +188,4 @@ CSI 使芯片能够直接连接到外部 CMOS 图像传感器。CSI 可以直接
 	                [fmt:UYVY8_2X8/640x480@1/30 field:none colorspace:srgb xfer:srgb ycbcr:601 quantization:full-range]
 	                -> "csi":0 [ENABLED,IMMUTABLE]
 
-### 参考（References
+## 参考（References

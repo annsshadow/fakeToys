@@ -1,3 +1,5 @@
+# zoran-cardlist
+
 ﻿
 ## Zoran 网卡列表
 
@@ -13,7 +15,7 @@
 
    - - 网卡编号
      - 网卡名称
-     - PCI 瀛愮郴缁?ID
+     - PCI 子愮系统?ID
 
    - - 0
      - DC10(old)

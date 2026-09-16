@@ -1,5 +1,5 @@
 
-## 已废弃的 GPIO API
+# 已废弃的 GPIO API
 
 
 - [字符设备用户空间 API（v1）](../../userspace-api/gpio/chardev_v1)

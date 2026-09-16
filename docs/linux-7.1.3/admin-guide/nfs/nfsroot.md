@@ -1,3 +1,5 @@
+# nfsroot
+
 ﻿## 通过 NFS 挂载根文件系统（nfsroot
 :Authors:
 	Written 1996 by Gero Kuhlmann <gero@gkminix.han.de>
@@ -84,6 +86,7 @@ ip=<client-ip>:<server-ip>:<gw-ip>:<netmask>:<hostname>:<device>:<autoconf>:<dns
 
   - /proc/net/pnp:
 
+
 	#PROTO: <DHCP|BOOTP|RARP|MANUAL>	(取决于配置方
 	domain <dns-domain>			(若为自动配置，则DNS 域名)
 	nameserver <dns0-ip>			(主域名服务器 IP)
@@ -92,6 +95,7 @@ ip=<client-ip>:<server-ip>:<gw-ip>:<netmask>:<hostname>:<device>:<autoconf>:<dns
 	bootserver <server-ip>			(NFS 鏈嶅姟鍣?IP)
 
   - /proc/net/ipconfig/ntp_servers:
+
 
 	<ntp0-ip>				(NTP 鏈嶅姟鍣?IP)
 	<ntp1-ip>				(NTP 鏈嶅姟鍣?IP)
@@ -142,6 +146,7 @@ rdinit=<executable file>
      	cdrecord.
 
 	e.g::
+
 
 	  cdrecord dev=ATAPI:1,0,0 arch/x86/boot/image.iso
 

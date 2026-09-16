@@ -1,3 +1,5 @@
+# intel_thermal_throttle
+
 ﻿
 ## Intel 热节流（thermal throttle）事件报
 

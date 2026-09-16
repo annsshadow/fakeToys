@@ -1,6 +1,8 @@
+# authors
+
 ﻿## 作
 
-### 原始作
+## 原始作
 
 Steve French (smfrench@gmail.com, sfrench@samba.org)
 
