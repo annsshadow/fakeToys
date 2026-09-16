@@ -1,7 +1,9 @@
+# hwlat_detector
+
 ﻿## 硬件延迟检测器
 
 
-### 简
+## 简
 
 
 跟踪hwlat_detector 是一个特殊用途的跟踪器，用于检测由某些底层硬件或固件的行为所引起的、与 Linux 本身无关的大型系统延迟。该代码最初开发用于检x86 系统上的 SMI（系统管理中断，System Management Interrupts），但此补丁集并没有任何 x86 特有的内容。它最初是为“RT”补丁编写的，因为实时（Real Time）内核对延迟高度敏感
