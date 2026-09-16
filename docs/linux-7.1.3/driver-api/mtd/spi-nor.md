@@ -1,10 +1,12 @@
+# spi-nor
+
 ﻿## SPI NOR 妗嗘灦
 
 
-### 濡備綍鎻愯鏂板涓€娆?flash
+## 濡備綍鎻愯鏂板涓€娆?flash
 
 
-澶у鏁?SPI NOR flash 閮界鍚?JEDEC JESD216 涓茶闂瓨鍙彂鐜板弬鏁帮紙SFDP锛夋爣鍑嗐€係FDP 閫氳繃涓€缁勬爣鍑嗙殑鍐呴儴鍙鍙傛暟琛ㄦ潵鎻忚堪涓茶闂瓨璁惧鐨勫姛鑳戒笌鐗规€ц兘鍔涖€?
+澶у鏁?SPI NOR flash 閮界鍚?JEDEC JESD216 涓茶闂瓨鍙彂鐜板弬鏁帮紙SFDP锛夋爣鍑嗐€係FDP 閫氳繃涓€统勬爣鍑嗙殑内呴儴鍙鍙傛暟琛ㄦ潵鎻忚堪涓茶闂瓨璁惧鐨勫姛鑳戒笌鐗规€ц兘鍔涖€?
 SPI NOR 椹卞姩浼氭煡璇?SFDP 琛紝浠ョ‘瀹?flash 鐨勫弬鏁颁笌璁剧疆銆傚鏋?flash 瀹氫箟浜?SFDP 琛紝寰堝彲鑳戒綘鏍规湰涓嶉渶瑕佷竴鏉?flash 琛ㄩ」锛岃€屾槸渚濊禆閫氱敤 flash 椹卞姩鈥斺€斿畠浠呮牴鎹?flash 鐨?SFDP 鏁版嵁杩涜鎺㈡祴銆備綘鍙渶鍦ㄨ澶囨爲涓寚瀹?"jedec,spi-nor" 杩欎竴 compatible 鍗冲彲銆?
 涓嶈繃锛屽湪鏌愪簺鎯呭喌涓嬩綘闇€瑕佹樉寮忓畾涔変竴鏉?flash 琛ㄩ」銆傝繖閫氬父鍙戠敓鍦?flash 鎷ユ湁 SFDP 琛ㄦ湭娑电洊鐨勮缃垨鏀寔锛堜緥濡傚潡淇濇姢锛孊lock Protection锛夋椂锛屾垨鑰?flash 鍖呭惈鐨?SFDP 鏁版嵁琚牬鍧忔椂銆傝嫢鏄悗鑰咃紝闇€瑕佸疄鐜?`spi_nor_fixups` 閽╁瓙锛屼互渚跨敤姝ｇ‘鐨勫€间慨姝?SFDP 鍙傛暟銆?
 ### 鏈€浣庢祴璇曡姹?
@@ -165,6 +167,7 @@ SPI NOR 椹卞姩浼氭煡璇?SFDP 琛紝浠ョ‘瀹?flash 鐨勫弬鏁颁�
    If the flash comes erased by default and the previous erase was ignored,
    we won't catch it, thus test the erase again::
 
+
     root@1:~# mtd_debug erase /dev/mtd0 0 2097152
     Erased 2097152 bytes from address 0x00000000 in flash
 
@@ -176,6 +179,7 @@ SPI NOR 椹卞姩浼氭煡璇?SFDP 琛紝浠ョ‘瀹?flash 鐨勫弬鏁颁�
     c444216a6ba2a4a66cccd60a0dd062bce4b865dd52b200ef5e21838c4b899ac8  spi_test
 
    Dump some other relevant data::
+
 
     root@1:~# mtd_debug info /dev/mtd0
     mtd.type = MTD_NORFLASH

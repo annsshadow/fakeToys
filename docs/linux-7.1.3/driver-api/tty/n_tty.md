@@ -1,3 +1,5 @@
+# n_tty
+
 ﻿## N_TTY
 
 
@@ -10,7 +12,9 @@
 
    :export:
 
+
 ## 内部函数
 
 
    :internal:
+

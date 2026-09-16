@@ -1,3 +1,5 @@
+# theory-of-operation
+
 ﻿
 ## Compute Express Link 驱动操作原理
 
@@ -278,11 +280,14 @@ PCIe 拓扑决定了哪些端点可以参与哪些主机桥解码机制。根与
 
    :internal:
 
+
    :doc: cxl mem
 
    :internal:
 
+
    :identifiers:
+
 
 ### CXL 端口
 
@@ -294,33 +299,41 @@ PCIe 拓扑决定了哪些端点可以参与哪些主机桥解码机制。根与
 
    :internal:
 
+
    :identifiers: add_cxl_resources
 
    :doc: cxl core hdm
 
    :identifiers:
 
+
    :identifiers:
+
 
    :doc: cxl core
 
    :identifiers:
 
+
    :doc: cxl core pci
 
    :identifiers:
+
 
    :doc: cxl pmem
 
    :identifiers:
 
+
    :doc: cxl registers
 
    :identifiers:
 
+
    :doc: cxl mbox
 
    :identifiers:
+
 
    :doc: cxl features
 
@@ -331,6 +344,7 @@ API 详情参见 `devm_cxl_setup_features`
 
    :identifiers:
 
+
 ## 外部接口
 
 ### CXL IOCTL 接口
@@ -338,3 +352,4 @@ API 详情参见 `devm_cxl_setup_features`
    :doc: UAPI
 
    :internal:
+

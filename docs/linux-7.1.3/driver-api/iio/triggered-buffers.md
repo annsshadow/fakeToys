@@ -1,3 +1,5 @@
+# triggered-buffers
+
 ﻿## 触发缓冲区（Triggered Buffers
 
 既然我们已经知道缓冲区和触发器是什么，让我们看看它们如何协同工作

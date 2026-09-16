@@ -1,3 +1,5 @@
+# pps
+
 ﻿
 ## PPS - Pulse Per Second
 
@@ -145,7 +147,7 @@ LinuxPPS 中，PPS 源就是普通的字符设备，通常映射/dev/pps0dev/pps
 ```
 请注意，要编译用户空间程序，你需timepps.h 文件。该文件在上pps-tools 仓库中可以找到
 
-### 发生器（Generators
+## 发生器（Generators
 
 有时不仅需要捕PPS 信号，还需要产生它们。例如，运行一个分布式仿真，它要求计算机的时钟
 被非常紧密地同步

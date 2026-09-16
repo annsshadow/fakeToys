@@ -1,3 +1,5 @@
+# generic-counter
+
 ﻿
 ## Generic Counter Interface
 
@@ -102,9 +104,12 @@ Count 具有一个计数函数模式（count function mode），表示计数数�
 驱动开发者可以通过包含 include/linux/counter.h 头文件，在自己的代码中使用通用计数器接口。该头文件提供了若干用于定义计数器设备的核心数据结构、函数原型与宏
    :internal:
 
-   :export:
 
    :export:
+
+
+   :export:
+
 
 ## 驱动实现
 
@@ -155,7 +160,7 @@ struct counter_comp 结构用于Signal、Synapse Count 定义计数器扩展
 - Device 扩展是暴露不特定于某Count Signal 的信控制的属性。你可以在这里放置全局特性或其他杂项功能
   例如，如果你的设备有过温传感器，你可以通过一个名"error_overtemp" Device 扩展报告芯片过热  /sys/bus/counter/devices/counterX/error_overtemp
 
-## 瀛愮郴缁熸灦鏋。
+## 子愮系统熸灦鏋。
 
 Counter 驱动以原生方式传递和获取数据（即 `u8`、`u64` 等），而共享的 counter 模块负责 sysfs 接口之间的转换。这保证了所counter 驱动的标准用户空间接口，并通过通用的设备驱ABI 实现了通用 Counter chrdev 接口
 以下示例说明了计数值如何从 counter 驱动向下传递的高层视图。驱动回调首先注册到 Counter 核心组件，供其使用：
