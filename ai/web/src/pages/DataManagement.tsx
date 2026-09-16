@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Space, Upload, message, Modal, Input, Pagination } from 'antd'
-import { UploadOutlined, DownloadOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
+import { Table, Button, Space, message, Modal, Input, Pagination } from 'antd'
+import { DownloadOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData } from '../services/api'
 
 interface DataItem {
