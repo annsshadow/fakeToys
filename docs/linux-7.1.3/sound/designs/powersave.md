@@ -1,3 +1,5 @@
+# powersave
+
 ﻿## 关于省电模式的说
 
 AC97 HD-audio 驱动具有自动省电模式该特性分别通过 Kconfig 选项 `CONFIG_SND_AC97_POWER_SAVE`
