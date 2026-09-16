@@ -1,3 +1,5 @@
+# leds-lp5523
+
 ﻿## 面向 lp5523 的内核驱
 
 - National Semiconductor LP5523 LED 驱动芯片
@@ -6,7 +8,7 @@
 Authors: Mathias Nyman, Yuri Zaporozhets, Samu Onkalo
 Contact: Samu Onkalo (samu.p.onkalo-at-nokia.com)
 
-### 描述
+## 描述
 
 
 LP5523 可驱动多9 个通道。LED 可通过 LED 类控制接口直接控制。每个通道的名可在平台数据中配置——name label。有三种方式来生成通道名称

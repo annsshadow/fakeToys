@@ -1,7 +1,9 @@
+# leds-sc27xx
+
 ﻿## Spreadtrum SC27XX 内核驱动
 
 
-### /sys/class/leds/<led>/hw_pattern
+## /sys/class/leds/<led>/hw_pattern
 
 
 SC27XX LED 指定硬件模式。对SC27XX LED 控制器，它仅支持 4 个阶段来构成单个硬件模式，用于配置呼吸模式的上升时间、高电平时间、下降时间和低电平时间

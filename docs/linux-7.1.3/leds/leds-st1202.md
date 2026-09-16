@@ -1,7 +1,9 @@
+# leds-st1202
+
 ﻿## STMicroelectronics LED1202 内核驱动
 
 
-### /sys/class/leds/<led>/hw_pattern
+## /sys/class/leds/<led>/hw_pattern
 
 
 ST1202 LED 指定硬件模式。该 LED 控制器实12 个具有独立调光控制的低边电流源。内部易失性存储器允许用户存储最8 种不同的模式。每个模式是一组特定的输出配置，由 PWM 占空比与持续时间（ms）定义
