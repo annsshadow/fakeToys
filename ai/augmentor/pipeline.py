@@ -3,6 +3,7 @@
 import json
 import logging
 import time
+import hashlib
 import threading
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -91,6 +92,23 @@ class AugmentorPipeline:
         
         # 可视化器
         self.visualizer = DataVisualizer()
+    
+    @staticmethod
+    def build_task_id(input_file: str) -> str:
+        """基于输入文件生成稳定的任务 ID
+        
+        任务 ID 必须跨进程稳定，断点续传才能识别出「同一次任务」。
+        使用时间戳会导致每次运行都是新任务，从而永远无法恢复。
+        
+        Args:
+            input_file: 输入文件路径
+        
+        Returns:
+            任务 ID
+        """
+        resolved = str(Path(input_file).resolve())
+        digest = hashlib.md5(resolved.encode('utf-8')).hexdigest()[:12]
+        return f"augment_{digest}"
     
     def _generate_variants(self, item: Dict) -> List[Dict]:
         """为单条数据生成变体
@@ -186,7 +204,9 @@ class AugmentorPipeline:
         Args:
             input_file: 输入文件路径
             output_file: 输出文件路径
-            use_checkpoint: 是否使用断点续传
+            use_checkpoint: 是否使用断点续传；任务 ID 由输入文件路径派生，
+                因此对同一输入文件重复运行会跳过已完成的条目并复用已有输出。
+                如需从头重跑，先调用 checkpoint_manager.delete_checkpoint(task_id)
             use_quality_check: 是否使用质量检查
             use_dedup: 是否使用去重
             use_parallel: 是否使用并行处理
@@ -200,13 +220,18 @@ class AugmentorPipeline:
         
         logger.info(f"加载 {len(items)} 条种子数据")
         
-        # 生成任务 ID
-        task_id = f"augment_{int(time.time())}"
+        # 生成任务 ID（基于输入文件，保证跨进程稳定以便续传）
+        task_id = self.build_task_id(input_file)
         
-        # 创建断点
+        # 创建或恢复断点
         if use_checkpoint:
-            checkpoint = self.checkpoint_manager.create_checkpoint(task_id, len(items))
+            resumed = self.checkpoint_manager.load_checkpoint(task_id)
+            if resumed is None:
+                self.checkpoint_manager.create_checkpoint(task_id, len(items))
             remaining_indices = self.checkpoint_manager.get_remaining_indices()
+            skipped = len(items) - len(remaining_indices)
+            if skipped > 0:
+                logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
         else:
             remaining_indices = list(range(len(items)))
         
@@ -214,6 +239,16 @@ class AugmentorPipeline:
         all_results = []
         existing_generated = []
         max_existing_window = 500  # 滑动窗口大小，限制内存使用
+        
+        # 续传时载入上一轮已生成的输出，否则会把已完成的结果覆盖为空
+        if use_checkpoint and skipped > 0:
+            output_path = Path(output_file)
+            if output_path.exists():
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    all_results = json.load(f)
+                logger.info(f"载入上一轮已生成的 {len(all_results)} 条数据")
+            else:
+                logger.warning(f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
         
         if use_parallel and len(remaining_indices) > 1:
             # 并行处理
@@ -286,6 +321,10 @@ class AugmentorPipeline:
                     logger.error(f"处理失败: {e}")
                     if use_checkpoint:
                         self.checkpoint_manager.update_progress(idx, False)
+        
+        # 合并增量并落盘，确保中断后可恢复
+        if use_checkpoint:
+            self.checkpoint_manager.save_checkpoint()
         
         # 去重
         if use_dedup and all_results:

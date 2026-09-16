@@ -1,5 +1,6 @@
 """模型后端基类 - 优化版"""
 
+import json
 import time
 import logging
 import threading
@@ -8,6 +9,36 @@ from typing import Optional
 from ..config import ModelConfig
 
 logger = logging.getLogger(__name__)
+
+
+def extract_json_array(response: str) -> list:
+    """从模型响应中提取 JSON 数组
+
+    先尝试直接解析，失败后截取首个 '[' 到末个 ']' 之间的内容再解析。
+
+    Args:
+        response: 模型响应文本
+
+    Returns:
+        JSON 数组
+
+    Raises:
+        ValueError: 无法提取出 JSON 数组
+    """
+    try:
+        result = json.loads(response)
+        if isinstance(result, list):
+            return result
+    except json.JSONDecodeError:
+        pass
+
+    start = response.find('[')
+    end = response.rfind(']') + 1
+
+    if start >= 0 and end > start:
+        return json.loads(response[start:end])
+
+    raise ValueError("无法从响应中提取 JSON 数组")
 
 
 class ModelBackend(ABC):

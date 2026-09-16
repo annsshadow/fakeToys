@@ -96,6 +96,74 @@ class VisualizationConfig:
 
 
 @dataclass
+class MultilingualConfig:
+    """多语言配置"""
+    enabled: bool = False
+    default_target_lang: str = "en"
+    supported_langs: list = field(default_factory=lambda: ["zh", "en"])
+    translate_batch_size: int = 10
+
+
+@dataclass
+class RAGConfig:
+    """RAG 训练数据配置"""
+    enabled: bool = False
+    default_format: str = "llamaindex"
+    chunk_size: int = 512
+    chunk_overlap: int = 64
+
+
+@dataclass
+class EvaluationConfig:
+    """模型评估配置"""
+    enabled: bool = False
+    metrics: list = field(default_factory=lambda: ["bleu", "rouge_l", "similarity"])
+    reference_field: str = "output"
+
+
+@dataclass
+class VectorConfig:
+    """向量数据库配置"""
+    enabled: bool = False
+    backend: str = "faiss"
+    dimension: int = 384
+    storage_dir: str = "data/vectors"
+    collection: str = "default"
+
+
+@dataclass
+class MultimodalConfig:
+    """多模态数据配置"""
+    enabled: bool = False
+    image_extensions: list = field(default_factory=lambda: [".jpg", ".jpeg", ".png", ".bmp", ".webp"])
+    audio_extensions: list = field(default_factory=lambda: [".wav", ".mp3", ".flac", ".ogg", ".m4a"])
+
+
+@dataclass
+class BenchmarkConfig:
+    """数据质量基准配置"""
+    enabled: bool = False
+    baseline_file: str = "data/benchmark_baseline.json"
+    metrics: list = field(default_factory=lambda: ["pass_rate", "avg_total_score", "diversity", "duplication_rate"])
+
+
+@dataclass
+class ActiveLearningConfig:
+    """主动学习循环配置"""
+    enabled: bool = False
+    strategy: str = "uncertainty"
+    batch_size: int = 50
+    max_iterations: int = 10
+
+
+@dataclass
+class FrameworkConfig:
+    """LLM 框架集成配置"""
+    enabled: bool = False
+    frameworks: list = field(default_factory=lambda: ["langchain", "llamaindex"])
+
+
+@dataclass
 class WebConfig:
     """Web UI 配置"""
     port: int = 8000
@@ -126,6 +194,14 @@ class AppConfig:
     expander: ExpanderConfig = field(default_factory=ExpanderConfig)
     tracker: TrackerConfig = field(default_factory=TrackerConfig)
     visualization: VisualizationConfig = field(default_factory=VisualizationConfig)
+    multilingual: MultilingualConfig = field(default_factory=MultilingualConfig)
+    rag: RAGConfig = field(default_factory=RAGConfig)
+    evaluation: EvaluationConfig = field(default_factory=EvaluationConfig)
+    vector: VectorConfig = field(default_factory=VectorConfig)
+    multimodal: MultimodalConfig = field(default_factory=MultimodalConfig)
+    benchmark: BenchmarkConfig = field(default_factory=BenchmarkConfig)
+    active_learning: ActiveLearningConfig = field(default_factory=ActiveLearningConfig)
+    frameworks: FrameworkConfig = field(default_factory=FrameworkConfig)
     web: WebConfig = field(default_factory=WebConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
@@ -243,6 +319,74 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
             config.visualization = VisualizationConfig(
                 enabled=conf.get('enabled', True),
                 types=conf.get('types', ['wordcloud', 'length_distribution', 'topic_cluster', 'timeline', 'quality_distribution'])
+            )
+        
+        if 'multilingual' in raw_config:
+            conf = raw_config['multilingual']
+            config.multilingual = MultilingualConfig(
+                enabled=conf.get('enabled', False),
+                default_target_lang=conf.get('default_target_lang', 'en'),
+                supported_langs=conf.get('supported_langs', ['zh', 'en']),
+                translate_batch_size=conf.get('translate_batch_size', 10)
+            )
+        
+        if 'rag' in raw_config:
+            conf = raw_config['rag']
+            config.rag = RAGConfig(
+                enabled=conf.get('enabled', False),
+                default_format=conf.get('default_format', 'llamaindex'),
+                chunk_size=conf.get('chunk_size', 512),
+                chunk_overlap=conf.get('chunk_overlap', 64)
+            )
+        
+        if 'evaluation' in raw_config:
+            conf = raw_config['evaluation']
+            config.evaluation = EvaluationConfig(
+                enabled=conf.get('enabled', False),
+                metrics=conf.get('metrics', ['bleu', 'rouge_l', 'similarity']),
+                reference_field=conf.get('reference_field', 'output')
+            )
+        
+        if 'vector' in raw_config:
+            conf = raw_config['vector']
+            config.vector = VectorConfig(
+                enabled=conf.get('enabled', False),
+                backend=conf.get('backend', 'faiss'),
+                dimension=conf.get('dimension', 384),
+                storage_dir=conf.get('storage_dir', 'data/vectors'),
+                collection=conf.get('collection', 'default')
+            )
+        
+        if 'multimodal' in raw_config:
+            conf = raw_config['multimodal']
+            config.multimodal = MultimodalConfig(
+                enabled=conf.get('enabled', False),
+                image_extensions=conf.get('image_extensions', ['.jpg', '.jpeg', '.png', '.bmp', '.webp']),
+                audio_extensions=conf.get('audio_extensions', ['.wav', '.mp3', '.flac', '.ogg', '.m4a'])
+            )
+        
+        if 'benchmark' in raw_config:
+            conf = raw_config['benchmark']
+            config.benchmark = BenchmarkConfig(
+                enabled=conf.get('enabled', False),
+                baseline_file=conf.get('baseline_file', 'data/benchmark_baseline.json'),
+                metrics=conf.get('metrics', ['pass_rate', 'avg_total_score', 'diversity', 'duplication_rate'])
+            )
+        
+        if 'active_learning' in raw_config:
+            conf = raw_config['active_learning']
+            config.active_learning = ActiveLearningConfig(
+                enabled=conf.get('enabled', False),
+                strategy=conf.get('strategy', 'uncertainty'),
+                batch_size=conf.get('batch_size', 50),
+                max_iterations=conf.get('max_iterations', 10)
+            )
+        
+        if 'frameworks' in raw_config:
+            conf = raw_config['frameworks']
+            config.frameworks = FrameworkConfig(
+                enabled=conf.get('enabled', False),
+                frameworks=conf.get('frameworks', ['langchain', 'llamaindex'])
             )
         
         if 'web' in raw_config:

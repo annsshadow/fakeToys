@@ -5,6 +5,8 @@ from .base import ModelBackend
 from .ernie import ERNIEBackend
 from .openai_model import OpenAIBackend
 from .ollama import OllamaBackend
+from .claude import ClaudeBackend
+from .gemini import GeminiBackend
 from ..config import ModelConfig
 
 
@@ -29,5 +31,12 @@ def create_model_backend(config: ModelConfig, model_type: Optional[str] = None) 
         return OpenAIBackend(config)
     elif model_type == "ollama":
         return OllamaBackend(config)
+    elif model_type == "claude":
+        return ClaudeBackend(config)
+    elif model_type == "gemini":
+        return GeminiBackend(config)
     else:
-        raise ValueError(f"不支持的模型类型: {model_type}。支持的类型: baidu, openai, ollama")
+        raise ValueError(
+            f"不支持的模型类型: {model_type}。"
+            f"支持的类型: baidu, openai, ollama, claude, gemini"
+        )
