@@ -1,3 +1,5 @@
+# standard
+
 ﻿######## 视频标准
 
 视频设备通常支持一个或多个不同的视频标准或标准的变体。每个视频输入和输出可能支持另一组标准。这组标准由 VIDIOC_ENUMINPUT VIDIOC_ENUMOUTPUT ioctl 分别返回struct `v4l2_input` struct `v4l2_output` `std` 字段报告

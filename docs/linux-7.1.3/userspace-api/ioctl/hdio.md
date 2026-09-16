@@ -1,3 +1,5 @@
+# hdio
+
 ﻿## `HDIO_` ioctl 调用汇
 
 - Edward A. Falk <efalk@google.com>
@@ -51,6 +53,7 @@ HDIO_GETGEO
 
 	outputs:
 		hd_geometry structure containing:
+
 
 
 	    =========	==================================
@@ -172,6 +175,7 @@ HDIO_DRIVE_TASKFILE
 
 	inputs:
 
+
 	  (See below for details on memory area passed to ioctl.)
 
 	  ============	===================================================
@@ -187,6 +191,7 @@ HDIO_DRIVE_TASKFILE
 	  ============	===================================================
 
 	outputs:
+
 
 	  ===========	====================================================
 	  io_ports[]	values returned in the taskfile registers
@@ -209,6 +214,7 @@ HDIO_DRIVE_TASKFILE
 	  - EIO		Drive failed the command.
 
 	notes:
+
 
 	  [1] READ THE FOLLOWING NOTES *CAREFULLY*.  THIS IOCTL IS
 	  FULL OF GOTCHAS.  Extreme caution should be used with using
@@ -246,6 +252,7 @@ HDIO_DRIVE_TASKFILE
 
 	  Command is passed to the disk drive via the ide_task_request_t
 	  structure, which contains these fields:
+
 
 	    ============	===============================================
 	    io_ports[8]		values for the taskfile registers
@@ -333,6 +340,7 @@ HDIO_DRIVE_TASKFILE
 	  The data_phase field describes the data transfer to be
 	  performed.  Value is one of:
 
+
 	    ===================        ========================================
 	    TASKFILE_IN
 	    TASKFILE_MULTI_IN
@@ -353,6 +361,7 @@ HDIO_DRIVE_TASKFILE
 
 	  The req_cmd field classifies the command type.  It may be
 	  one of:
+
 
 	    ========================    =======================================
 	    IDE_DRIVE_TASK_NO_DATA
@@ -385,6 +394,7 @@ HDIO_DRIVE_CMD
 	inputs:
 	    Commands other than WIN_SMART:
 
+
 	    =======     =======
 	    args[0]	COMMAND
 	    args[1]	NSECTOR
@@ -393,6 +403,7 @@ HDIO_DRIVE_CMD
 	    =======     =======
 
 	    WIN_SMART:
+
 
 	    =======     =======
 	    args[0]	COMMAND
@@ -421,6 +432,7 @@ HDIO_DRIVE_CMD
 	  - EIO		Drive reports error
 
 	notes:
+
 
 	  [1] For commands other than WIN_SMART, args[1] should equal
 	  args[3].  SECTOR, LCYL and HCYL are undefined.  For
@@ -459,6 +471,7 @@ HDIO_DRIVE_TASK
 	inputs:
 	    Taskfile register values:
 
+
 	    =======	=======
 	    args[0]	COMMAND
 	    args[1]	FEATURE
@@ -471,6 +484,7 @@ HDIO_DRIVE_TASK
 
 	outputs:
 	    Taskfile register values:
+
 
 
 	    =======	=======
@@ -490,6 +504,7 @@ HDIO_DRIVE_TASK
 	  - EIO		Drive failed the command.
 
 	notes:
+
 
 	  [1] DEV bit (0x10) of SELECT register is ignored and the
 	  appropriate value for the drive is used.  All other bits

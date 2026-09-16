@@ -1,8 +1,10 @@
+# cec-ioc-adap-g-conn-info
+
 ﻿..
 ..
 
 
-######## ioctl CEC_ADAP_G_CONNECTOR_INFO
+## ioctl CEC_ADAP_G_CONNECTOR_INFO
 
 
 ## 名称
@@ -52,9 +54,11 @@ CEC_ADAP_G_CONNECTOR_INFO - 查询 HDMI 连接器信
 
     - .. _`CEC-CONNECTOR-TYPE-NO-CONNECTOR`:
 
+
       - `CEC_CONNECTOR_TYPE_NO_CONNECTOR`
       - 0
       - 没有与该适配器关联的连接驱动未提供该信息    - .. _`CEC-CONNECTOR-TYPE-DRM`:
+
 
       - `CEC_CONNECTOR_TYPE_DRM`
       - 1
@@ -68,9 +72,11 @@ CEC_ADAP_G_CONNECTOR_INFO - 查询 HDMI 连接器信
 
     - .. _`CEC-DRM-CONNECTOR-TYPE-CARD-NO`:
 
+
       - __u32
       - `card_no`
       - DRM 卡编号：来自卡路径的编号，例/dev/card0 中的 0    - .. _`CEC-DRM-CONNECTOR-TYPE-CONNECTOR_ID`:
+
 
       - __u32
       - `connector_id`

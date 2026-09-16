@@ -1,3 +1,5 @@
+# streaming-par
+
 ﻿######## 流参数（Streaming Parameters
 
 流参数（Streaming parameters）旨在优化视频采集过程以I/O。目前，应用程序可以通过 VIDIOC_S_PARM <VIDIOC_G_PARM> ioctl 请求高质量采集模式

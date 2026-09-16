@@ -1,6 +1,8 @@
+# diff-v4l
+
 ﻿
 
-######## V4L V4L2 的区
+## V4L V4L2 的区
 
 Video For Linux（V4L）API 最早在 Linux 2.1 中引入，用于统一并取代早些年由驱动开发者各自开发的多种电视和收音机设备相关接口。从 Linux 2.5 开始，改进V4L2 API 取代V4L API。内核中已移除对V4L 调用的支持，libv4l 库支持将 V4L API 系统调用转换V4L2 调用
 ## 设备的打开与关
@@ -195,7 +197,7 @@ V4L2 图像格式定义pixfmt。图像格式可通过 VIDIOC_S_FMT <VIDIOC_G_FMT
 
 为了确定驱动支持其中哪些控件，V4L 提供`flags` `VIDEO_AUDIO_VOLUME`、`VIDEO_AUDIO_BASS`、`VIDEO_AUDIO_TREBLE` `VIDEO_AUDIO_BALANCE`。在 V4L2 API 中，VIDIOC_QUERYCTRL ioctl 会报告相应控件是否被支持。相应地，`VIDEO_AUDIO_MUTABLE` `VIDEO_AUDIO_MUTE` 标志被布尔型 `V4L2_CID_AUDIO_MUTE` 控件取代
 所V4L2 控件都有一`step` 属性，取代struct `video_audio` `step` 字段。V4L 音频控件假定取值范围为 0 65535，没有特定的复位值。V4L2 API 允许任意的限制和默认值，可通过 VIDIOC_QUERYCTRL ioctl 查询。关于控件的一般信息请参见 control
-## 甯х紦鍐插彔鍔。
+## 甯х紦内插彔鍔。
 
 `VIDIOCGFBUF` `VIDIOCSFBUF` 等价V4L2 ioctl VIDIOC_G_FBUF <VIDIOC_G_FBUF> VIDIOC_S_FBUF <VIDIOC_G_FBUF>。struct `video_buffer` `base` 字段保持不变，但 V4L2 定义了一个标志来表示非破坏性的叠加，而非使用 `NULL` 指针。所有其他字段都移入struct `v4l2_framebuffer` struct `v4l2_pix_format` `fmt` 子结构。`depth` 字段`pixelformat` 取代。关RGB 格式及其各自颜色深度的列表，请参pixfmt-rgb
 V4L2 使用通用的数据格式协ioctl VIDIOC_G_FMT <VIDIOC_G_FMT> VIDIOC_S_FMT <VIDIOC_G_FMT>，而非特殊`VIDIOCGWIN` `VIDIOCSWIN` ioctl。它们接受一个指struct `v4l2_format` 的指针作为参数。这里使`fmt` 联合`win` 成员，即 struct `v4l2_window`

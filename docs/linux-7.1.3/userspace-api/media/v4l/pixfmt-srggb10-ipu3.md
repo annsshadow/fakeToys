@@ -1,6 +1,8 @@
+# pixfmt-srggb10-ipu3
+
 ﻿
 
-######## V4L2_PIX_FMT_IPU3_SBGGR10 ('ip3b'), V4L2_PIX_FMT_IPU3_SGBRG10 ('ip3g'), V4L2_PIX_FMT_IPU3_SGRBG10 ('ip3G'), V4L2_PIX_FMT_IPU3_SRGGB10 ('ip3r')
+## V4L2_PIX_FMT_IPU3_SBGGR10 ('ip3b'), V4L2_PIX_FMT_IPU3_SGBRG10 ('ip3g'), V4L2_PIX_FMT_IPU3_SGRBG10 ('ip3G'), V4L2_PIX_FMT_IPU3_SRGGB10 ('ip3r')
 
 本页说明 Intel IPU3 图像处理器使用的四种 10 Bayer 原始像素格式（V4L2_PIX_FMT_IPU3_SBGGR10/SGBRG10/SGRBG10/SRGGB10），25 个像素打包为 32 字节并带 6 位填充，给出其字节序与内存布局示例
 

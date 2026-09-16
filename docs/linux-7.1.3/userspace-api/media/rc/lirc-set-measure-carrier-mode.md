@@ -1,3 +1,5 @@
+# lirc-set-measure-carrier-mode
+
 ﻿######## ioctl LIRC_SET_MEASURE_CARRIER_MODE
 
 

@@ -1,5 +1,7 @@
+# pixfmt-y16i
+
 ﻿
-######## V4L2_PIX_FMT_Y16I ('Y16I')
+## V4L2_PIX_FMT_Y16I ('Y16I')
 
 
 交错灰度图像，例如来自立体相机对

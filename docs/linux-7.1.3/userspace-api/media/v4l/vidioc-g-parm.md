@@ -1,6 +1,8 @@
+# vidioc-g-parm
+
 ﻿
 
-######## ioctl VIDIOC_G_PARM, VIDIOC_S_PARM
+## ioctl VIDIOC_G_PARM, VIDIOC_S_PARM
 
 
 ## 名称

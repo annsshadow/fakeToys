@@ -1,6 +1,8 @@
+# vidioc-enumstd
+
 ﻿
 
-######## ioctl VIDIOC_ENUMSTD, VIDIOC_SUBDEV_ENUMSTD
+## ioctl VIDIOC_ENUMSTD, VIDIOC_SUBDEV_ENUMSTD
 
 
 ## Name

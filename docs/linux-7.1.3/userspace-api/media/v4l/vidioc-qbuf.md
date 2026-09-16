@@ -1,6 +1,8 @@
+# vidioc-qbuf
+
 ﻿
 
-######## ioctl VIDIOC_QBUF, VIDIOC_DQBUF
+## ioctl VIDIOC_QBUF, VIDIOC_DQBUF
 
 
 ## 名称

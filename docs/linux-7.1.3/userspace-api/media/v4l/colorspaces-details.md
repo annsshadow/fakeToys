@@ -1,6 +1,8 @@
+# colorspaces-details
+
 ﻿
 
-######## 色彩空间详细描述（Detailed Colorspace Descriptions
+## 色彩空间详细描述（Detailed Colorspace Descriptions
 
 
 ## 色彩空间 SMPTE 170M (V4L2_COLORSPACE_SMPTE170M)
@@ -287,6 +289,7 @@ Y' 被限制在 [0] 范围内，Cb Cr 被限制在 [-0.5.5] 范围内。Y'CbCr �
 亮度
     :nowrap:
 
+
     \begin{align*}
     Yc' = (0.2627R + 0.6780G + 0.0593B)'& \\
     B' - Yc' \le 0:& \\
@@ -503,7 +506,7 @@ Y' 被限制在 [0] 范围内，Cb Cr 被限制在 [-0.5.5] 范围内。Y'CbCr �
 该色彩空间定义了大多数（动态）JPEG 格式所使用的色彩空间。原色与白色参考的色度坐标sRGB 相同。使用的传递函数为 `V4L2_XFER_FUNC_SRGB`。Y'CbCr 编码`V4L2_YCBCR_ENC_601`，使用全范围量化，其Y' 缩放[055]，Cb/Cr 缩放[-12828]，然后裁剪到 [-12827]
 
     JPEG 标准实际上并不存储色彩空间信息。因此，若使用了 sRGB 之外的其它色彩空间，驱动程序必须显式设置该信息。实际上，`V4L2_COLORSPACE_JPEG` 可视`V4L2_COLORSPACE_SRGB`、`V4L2_XFER_FUNC_SRGB`、`V4L2_YCBCR_ENC_601` `V4L2_QUANTIZATION_FULL_RANGE` 的缩写
-######## 传递函数详细描述（Detailed Transfer Function Descriptions
+### 传递函数详细描述（Detailed Transfer Function Descriptions
 
 
 ## 传递函SMPTE 2084 (V4L2_XFER_FUNC_SMPTE2084)

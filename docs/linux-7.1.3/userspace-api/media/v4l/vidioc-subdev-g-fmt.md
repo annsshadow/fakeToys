@@ -1,7 +1,9 @@
+# vidioc-subdev-g-fmt
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBDEV_G_FMT, VIDIOC_SUBDEV_S_FMT
+## ioctl VIDIOC_SUBDEV_G_FMT, VIDIOC_SUBDEV_S_FMT
 
 
 ## 名称

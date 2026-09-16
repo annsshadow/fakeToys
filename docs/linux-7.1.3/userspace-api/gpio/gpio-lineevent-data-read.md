@@ -1,6 +1,8 @@
+# gpio-lineevent-data-read
+
 ﻿
 
-######## GPIO_LINEEVENT_DATA_READ
+## GPIO_LINEEVENT_DATA_READ
 
 
     ioctl 属于 chardev_v1.rst，已    gpio-v2-line-event-read.rst 废弃

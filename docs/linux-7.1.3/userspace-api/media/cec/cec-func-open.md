@@ -1,5 +1,7 @@
+# cec-func-open
+
 ﻿
-######## cec open()
+## cec open()
 
 
 ## 名称
