@@ -1,4 +1,6 @@
-﻿## sm712fb - Silicon Motion SM712 鍥惧舰甯х紦鍐查┍鍔。
+# sm712fb
+
+﻿## sm712fb - Silicon Motion SM712 鍥惧舰甯х紦内查┍鍔。
 
 
 这是一个面向基Silicon Motion SM712 处理器的图形帧缓冲驱动

@@ -1,7 +1,9 @@
+# viafb
+
 ﻿## VIA 集成图形芯片控制台帧缓冲驱动
 
 
-### 平台
+## 平台
 
 
     控制台帧缓冲驱动适用VIA UniChrome 家族的图形芯    （CLE266、PM800 / CN400 / CN300    P4M800CE / P4M800Pro / CN700 / VN800    CX700 / VX700、K8M890、P4M890    CN896 / P4M900、VX800、VX855
@@ -31,6 +33,7 @@
 	#modprobe viafb
 
     Start viafb with user options::
+
 
 	#modprobe viafb viafb_mode=800x600 viafb_bpp=16 viafb_refresh=60
 		  viafb_active_dev=CRT+DVI viafb_dvi_port=DVP1
@@ -99,26 +102,32 @@
 	例如
 	要启用一个设备，例如DVI，我们可以使:
 
+
 	    modprobe viafb viafb_active_dev=DVI
 
 	要启用两个设备，例如 CRT+DVI::
+
 
 	    modprobe viafb viafb_active_dev=CRT+DVI;
 
 	对于 DuoView 情况，我们可以使:
 
+
 	    modprobe viafb viafb_active_dev=CRT+DVI
 
 	鎴?:
+
 
 	    modprobe viafb viafb_active_dev=DVI+CRT...
 
 	对于 SAMM 情况
 	CRT 为主、DVI 为副，我们应该使:
 
+
 	    modprobe viafb viafb_active_dev=CRT+DVI viafb_SAMM_ON=1...
 
 	DVI 为主、CRT 为副，我们应该使:
+
 
 	    modprobe viafb viafb_active_dev=DVI+CRT viafb_SAMM_ON=1...
 
@@ -149,11 +158,12 @@
 	此选项用于指定 LCD 输出端口	可用值为 "DVP0" "DVP1" "DFP_HIGHLOW" "DFP_HIGH" "DFP_LOW"
 	对于 CX700 上的外部 LCD + 外部 DVI（外LCD DVP0 上）	我们应该使用::
 
+
 	    modprobe viafb viafb_lcd_port=DVP0...
 ```
 
 说明    1. 对于 DuoView CRT DVI 显示，在启用DVI 过扫描的 40x480PAL 模式下，CRT 可能显示不正常    2. SAMM 代表单适配器多显示器（single adapter multi monitors）。它与多显示头（multi-head）不同，因为 SAMM 在驱动层支持多显示器，因fbcon 层甚至不知道它的存在；SAMM 的第二个屏幕没有设备节点文件，因此用户态应用程序无法直接访问它。当 SAMM 启用时，viafb_mode viafb_mode1、viafb_bpp viafb_bpp1、viafb_refresh viafb_refresh1 可以不同    3. 当控制台依赖viafbinfo1 时，动态更改分辨率bpp，需要调VIAFB 指定ioctl 接口 VIAFB_SET_DEVICE，而不是调用通用ioctl 函数 FBIOPUT_VSCREENINFO，因viafb 对多显示头的支持不太好，否则会导致屏幕崩溃
-### “fbset工具配置 viafb
+## “fbset工具配置 viafb
 
 
     “fbsetLinux 的一个内置实用工具
@@ -162,13 +172,16 @@
 
     2. 设置各种分辨率和 viafb_refresh 速率::
 
+
 	   # fbset <resolution-vertical_sync>
 
        example::
 
+
 	   # fbset "1024x768-75"
 
        or::
+
 
 	   # fbset -g 1024 768 1024 768 32
 
@@ -176,14 +189,16 @@
 
     3. Set the color depth::
 
+
 	   # fbset -depth <value>
 
        example::
 
+
 	   # fbset -depth 16
 ```
 
-### 通过 /proc 配置 viafb
+## 通过 /proc 配置 viafb
 
 
     以下文件存在/proc/viafb 
@@ -196,24 +211,28 @@
 	这两个文件可读可写。iga1 iga2 是产生屏幕图像的两个独立单元。这些图像可以被转发到一个或多个输出设备。读取这些文件是查询某个 iga 当前正在使用哪些输出设备的一种方式
 	示例::
 
+
 		# cat /proc/viafb/iga1/output_devices
 
 	如果未打印任何输出设备，则该 iga 的输出丢失。例如，如果只使用了一个（另一个）iga，就可能发生这种情况。写入这些文件允许在运行时调整输出设备。可以添加新设备、移除已有设备，或在 iga 之间切换。本质上，你可以写入一个以 分隔的设备名列表（或单个设备名），格式与这些文件的输出相同。你可以添加 作为前缀，以便简单地添加和移除设备。因此前缀 将你列表中的设备添加到已有设备之上，从已有设备中移除列出的设备，如果没有前缀，则用列出的设备替换所有已有设备。如果你移除设备，它们应当被关闭。如果你添加的设备已经是另一iga 的一部分，则会从那里移除并添加到新的 iga 中
 	示例
 	CRT 添加iga1 的输出设:
 
+
 		# echo +CRT > /proc/viafb/iga1/output_devices
 
 	移除（关闭）DVP1 LVDS1 作为 iga2 的输出设:
+
 
 		# echo -DVP1,LVDS1 > /proc/viafb/iga2/output_devices
 
 	CRT 替换 iga1 的所有输出设:
 
+
 		# echo CRT > /proc/viafb/iga1/output_devices
 ```
 
-### viafb 启动
+## viafb 启动
 
 
 ```
@@ -223,3 +242,4 @@
 ## VIA 帧缓冲模
 
    :literal:
+

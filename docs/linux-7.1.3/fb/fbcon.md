@@ -1,3 +1,5 @@
+# fbcon
+
 ﻿## 帧缓冲控制台（Framebuffer Console
 
 
@@ -202,6 +204,7 @@ fbcon 有哪些特性？帧缓冲控制台支持高分辨率、多种字体类�
 
     c. 附加 fbcon::
 
+
 	vbetool vbestate restore < <vesa state file> && \
 	echo 1 > /sys/class/vtconsole/vtcon1/bind
 
@@ -219,6 +222,7 @@ fbcon 有哪些特性？帧缓冲控制台支持高分辨率、多种字体类�
     b. 按第 5 步分fbcon
 
     c. 附加 fbcon::
+
 
 	vbetool vbemode set <mode number> && \
 	echo 1 > /sys/class/vtconsole/vtcon1/bind
