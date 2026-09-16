@@ -1,3 +1,5 @@
+# transhuge
+
 ﻿## 透明大页（Transparent Hugepage）支
 
 本文档描述了透明大页（Transparent Hugepage，THP）支持的设计原则及其与内存管系统其他部分的交互
