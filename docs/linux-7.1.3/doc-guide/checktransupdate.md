@@ -1,3 +1,5 @@
+# checktransupdate
+
 ﻿
 ## 检查需要的翻译更新
 

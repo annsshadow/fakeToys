@@ -1,3 +1,5 @@
+# kernel-doc
+
 ﻿
 ## 编写 kernel-doc 注释
 
@@ -81,6 +83,7 @@ kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提�
 
    or::
 
+
       * @argument:
       *		some long description
       *		that continues on next lines
@@ -138,7 +141,7 @@ kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提�
 
   #) 如果你提供的描述性文本中有以“短语加冒号”开头的行，每个这样的短语都会被当作新的小节标题，这很可能无法产生期望的效果
 
-### 结构体、联合体与枚举文
+## 结构体、联合体与枚举文
 
 
 `struct`、`union` `enum` kernel-doc 通用格式为：
@@ -159,7 +162,7 @@ kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提�
 
 结构体名之后的简要描述可以跨越多行，并在成员描述、空注释行或注释块结束时终止
 
-#### 成员
+### 成员
 
 
 结构体、联合体与枚举的成员应如同函数参数一样进行文档化；它们紧跟简短描述之后，并且可以跨多行
@@ -238,7 +241,7 @@ kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提�
    #) 在为嵌套结构体或联合体编写文档时，如`struct`/`union` `foo` 具名，则其内部的成员 `bar` 应记`@foo.bar:`
    #) 当嵌套的 `struct`/`union` 为匿名时，其中的成员 `bar` 应记`@bar:`
 
-#### 行内成员文档注释
+## 行内成员文档注释
 
 
 结构体成员也可以在其定义内部以行内方式编写文档。有两种风格：单行注释（开`/**` 与结`*/` 位于同一行），以及多行注释（二者各占一行）
@@ -350,7 +353,7 @@ kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提�
 	.cleanup_fb = drm_gem_vram_plane_helper_cleanup_fb
 ```
 
-### 高亮与交叉引
+## 高亮与交叉引
 
 
 以下特殊模式会在 kernel-doc 注释的描述性文本中被识别，并被转换为正确的 reStructuredText 标记`Sphinx C Domain`_ 引用
@@ -395,7 +398,7 @@ kernel-doc 注释使用开头的注释标记 `/**`。`kernel-doc` 工具会提�
 `&name`
   通用类型引用。建议优先使用上述完整引用形式。这主要用于遗留注释
 
-#### reStructuredText 进行交叉引用
+### reStructuredText 进行交叉引用
 
 
 reStructuredText 文档中交叉引kernel-doc 注释里定义的函数与类型无需额外语法。只需在函数名后加`()`，并在类型前写上 `struct`、`union`、`enum` `typedef` 即可
@@ -462,6 +465,7 @@ export: **[source-pattern ...]**
 ```
     .. kernel-doc:: lib/bitmap.c
        :export:
+
 
     .. kernel-doc:: include/net/mac80211.h
        :export: net/mac80211/*.c

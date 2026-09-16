@@ -1,17 +1,19 @@
+# parse-headers
+
 ﻿## 包含 uAPI 头文
 
 有时，包含头文件C 示例代码是很有用的，以便描述用户空间 API，并在代码与
 文档之间生成交叉引用。为用户空间 API 文件添加交叉引用还有一个额外的好处如果某个符号在文档中找不到，Sphinx 会生成警告。这有助于使 uAPI 文档内核改动保持同步。parse_headers.py <parse_headers> 提供了一种生成此交叉引用的方法。它必须在构建文档时通过 Makefile 调用。关于如何在内核树中
 使用它，请参`Documentation/userspace-api/media/Makefile` 中的示例
 
-##### tools/docs/parse_headers.py
+## tools/docs/parse_headers.py
 
 
-######## 名称
+### 名称
 
 
 parse_headers.py - 解析一C 文件，以识别函数、结构体、枚举和宏定义，创建Sphinx 文档的交叉引用
-######## 用法
+####### 用法
 
 
 parse-headers.py [-h] [-d] [-t] `FILE_IN` `FILE_OUT` `FILE_RULES`
@@ -97,9 +99,11 @@ parse-headers.py [-h] [-d] [-t] `FILE_IN` `FILE_OUT` `FILE_RULES`
 
   It won't generate cross-references for ``PRIVATE``::
 
+
     ignore symbol PRIVATE
 
   对于同一个结构体，与其为每个符号创建一个交叉引用，不如让它们全部指  ``enum foo`` C 类型::
+
 
     replace symbol BAR1 :c:type:`foo`
     replace symbol BAR2 :c:type:`foo`

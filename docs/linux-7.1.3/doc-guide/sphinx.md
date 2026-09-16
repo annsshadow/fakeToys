@@ -1,3 +1,5 @@
+# sphinx
+
 ﻿
 ## 使用 Sphinx 生成内核文档
 
@@ -45,6 +47,7 @@ Documentation/ 文件当前使用ReST 标记旨在使用 `Sphinx` 3.4.3 或更�
 	Checking if the needed tools for Fedora release 26 (Twenty Six) are available
 	Warning: better to also install "texlive-luatex85".
 	You should run:
+
 
 		sudo dnf install -y texlive-luatex85
 		/usr/bin/virtualenv sphinx_2.4.4
@@ -149,15 +152,18 @@ Documentation/ 文件当前使用ReST 标记旨在使用 `Sphinx` 3.4.3 或更�
 
   2. ``=`` for chapters::
 
+
        Chapters
        ========
 
   3. ``-`` for sections::
 
+
        Section
        -------
 
   4. ``~`` for subsections::
+
 
        Subsection
        ~~~~~~~~~~
@@ -232,6 +238,7 @@ roles锛。
 
       - .. _`last row`:
 
+
         - row 3
 
 渲染为：
@@ -253,6 +260,7 @@ roles锛。
         - `1` `1` field 2.2 - 3.3
 
       - .. _`last row`:
+
 
         - row 3
 
