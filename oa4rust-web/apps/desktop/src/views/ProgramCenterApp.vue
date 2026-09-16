@@ -201,7 +201,7 @@ type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market'
 type Agent = { id?: string; name?: string; label?: string; agentName?: string; flag?: string; enabled?: boolean }
 type App = { id?: string; name?: string; appName?: string; desc?: string; description?: string; flag?: string }
 type Script = { id?: string; name?: string; scriptName?: string; flag?: string }
-type Dict = { id?: string; name?: string; dictName?: string; flag?: string }
+type Dict = { id?: string; name?: string; dictName?: string; flag?: string; keyName?: string }
 type Market = { id?: string; name?: string; title?: string; desc?: string }
 
 const tab = ref<Tab>('agent')
@@ -289,7 +289,8 @@ async function loadDict() {
   loadingDict.value = true
   try {
     const r = await api.get('/jaxrs/program_center/dict/list')
-    dicts.value = r.data ?? []
+    // 后端 dict/list 回 keyName（= 创建时的 dictFlag/唯一标识），卡片/按钮读 flag，归一。
+    dicts.value = ((r.data ?? []) as Dict[]).map((d) => ({ ...d, flag: d.flag ?? d.keyName }))
   } catch {
     dicts.value = []
   } finally {

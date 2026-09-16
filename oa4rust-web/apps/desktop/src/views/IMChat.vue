@@ -71,7 +71,7 @@
         <audio ref="remoteAudio" autoplay style="display: none" />
 
         <div ref="messageContainer" class="message-list" @scroll="handleScroll">
-          <div v-if="msgQuery.isLoading" class="loading-state">
+          <div v-if="msgLoading" class="loading-state">
             <div class="skeleton-row" v-for="i in 4" :key="i"></div>
           </div>
           <div v-else-if="messages.length === 0" class="empty-messages">
@@ -270,7 +270,13 @@ const filteredConversations = computed(() => {
 })
 
 // ── 消息列表（真实 API）────────────────────────────────────────
-const msgQuery = useQuery<Message[]>({
+// useQuery 返回普通对象（嵌套 Ref），模板只解包顶层 ref。故解构出 data/isLoading/refetch，
+// 模板用 msgLoading（顶层 ref 自动解包），computed 内用 msgData.value，杜绝「msgQuery.isLoading 恒真值」渲染 bug。
+const {
+  data: msgData,
+  isLoading: msgLoading,
+  refetch: refetchMsgs,
+} = useQuery<Message[]>({
   queryKey: ['im', 'messages', () => selectedChat.value?.id],
   queryFn: async () => {
     if (!selectedChat.value) return []
@@ -279,14 +285,15 @@ const msgQuery = useQuery<Message[]>({
     })
     return ((resp as any)?.data ?? []) as Message[]
   },
-  enabled: computed(() => !!selectedChat.value).value as any,
+  // enabled 须为响应式 Ref（传 Ref 本身而非 .value 快照），会话选中后查询才会自动启用/随 key 变化重取
+  enabled: computed(() => !!selectedChat.value),
   staleTime: 10 * 1000,
 })
 
 // 后端列表端点返回全量消息（parity 桩无按会话过滤参数），前端按当前会话过滤。
 // 会话键按后端带引号字面量 "\"conversationId\"" 兼容读取（O2OA 遗留约定）。
 const messages = computed(() => {
-  const all = (msgQuery.data ?? []) as any[]
+  const all = (msgData.value ?? []) as any[]
   const id = selectedChat.value?.id
   if (!id) return []
   return all.filter((m) => (m?.['"conversationId"'] ?? m?.conversationId) === id)
@@ -298,7 +305,7 @@ watch(
   async (newId, oldId) => {
     if (newId !== oldId && newId) {
       page.value = 1
-      await msgQuery.refetch()
+      await refetchMsgs()
       nextTick(scrollToBottom)
     }
   },
@@ -337,7 +344,7 @@ const sendMutation = useMutation({
     inputText.value = ''
     // 服务端确认后立即移除乐观消息，换真实消息
     setTimeout(() => {
-      msgQuery.refetch()
+      refetchMsgs()
     }, 500)
   },
   onError: (_err, _vars, context) => {
