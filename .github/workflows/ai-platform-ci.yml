@@ -1,0 +1,181 @@
+# 注意：本文件位于仓库根 .github/workflows/，而非计划文档中写的 ai/.github/workflows/。
+# GitHub Actions 只识别仓库根目录下的 .github/workflows/，放在 ai/ 下不会被触发。
+# 命名与结构遵循本仓库既有约定（见 oa4rust-ci.yml / oa4rust-web.yml）：
+#   - 文件名格式 <子项目>-<用途>.yml
+#   - 用 paths 过滤限定到子项目目录
+#   - 用 defaults.run.working-directory 指定子项目
+name: AI platform CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "ai/**"
+      - ".github/workflows/ai-platform-ci.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "ai/**"
+      - ".github/workflows/ai-platform-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-platform-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================
+  # 后端：语法检查 + 单元/集成/E2E 测试 + 覆盖率门禁
+  # ============================================================
+  backend-test:
+    name: Backend tests & coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ai/requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Byte-compile all sources
+        run: |
+          set -euo pipefail
+          python -m compileall -q augmentor api cli.py
+
+      - name: Run tests with coverage gate
+        # pytest.ini 中已配置 --cov-fail-under=80，覆盖率不足会直接失败
+        run: pytest
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          set -euo pipefail
+          python -m coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai-platform-coverage
+          path: |
+            ai/coverage.xml
+            ai/.coverage
+          if-no-files-found: warn
+
+  # ============================================================
+  # 前端：类型检查 + 生产构建
+  # ============================================================
+  frontend-build:
+    name: Frontend build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai/web
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai-platform-web-dist
+          path: ai/web/dist
+          if-no-files-found: error
+
+  # ============================================================
+  # Docker：验证镜像可构建且容器能通过健康检查
+  # ============================================================
+  docker-build:
+    name: Docker image smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349
+
+      - name: Build image
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75
+        with:
+          context: ai
+          file: ai/docker/Dockerfile
+          push: false
+          load: true
+          tags: ai-data-platform:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify container starts and serves health endpoint
+        run: |
+          set -euo pipefail
+          docker run -d --name ai-ci -p 8000:8000 \
+            -e BAIDU_API_KEY=ci-placeholder \
+            -e BAIDU_SECRET_KEY=ci-placeholder \
+            ai-data-platform:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/api/health; then
+              echo "health check passed after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "health check timed out"
+          docker logs ai-ci
+          exit 1
+
+      - name: Verify OpenAPI routes are served
+        run: |
+          set -euo pipefail
+          curl -fsS http://localhost:8000/openapi.json > /tmp/openapi.json
+          python3 - <<'PY'
+          import json
+          spec = json.load(open("/tmp/openapi.json"))
+          paths = spec["paths"]
+          assert "/api/health" in paths
+          assert "/api/augment/start" in paths
+          assert "/api/quality/report" in paths
+          assert "/api/versions/history" in paths
+          print(f"routes served: {len(paths)}")
+          PY
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs ai-ci || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f ai-ci || true
