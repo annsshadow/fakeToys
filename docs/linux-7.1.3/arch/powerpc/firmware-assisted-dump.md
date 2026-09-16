@@ -1,3 +1,5 @@
+# firmware-assisted-dump
+
 ﻿## 固件辅助转储（Firmware-Assisted Dump
 2011 骞?7 鏈。
 固件辅助转储的目标，是在一个完全复位后的系统上实现对崩溃系统的转储并最小化系统恢复生产使用所需的总耗时
@@ -43,7 +45,7 @@ kdump 或其它策略相比，固件辅助转储提供了若干强大且实用�
   # cat /sys/kernel/fadump/bootargs_append
 
 注意：使HASH MMU fadump 附加内核参数仅在 RMA 大小大于 768 MB 时受支持如果 RMA 大小小于 768 MB，内核不会导/sys/kernel/fadump/bootargs_append sysfs 节点
-### 实现细节
+## 实现细节
 在启动期间，会检查固件是否在该特定机器上支持此特性。如果支持，则检查是否有
 等待处理的活跃转储。如果有，则在早期启动期间保留除启动内存大小以外的全RAM
 （参见图 2）。一旦我们完成从用户空间脚本（例kdump 脚本）收集转储，该区域即被释放如果有转储数据，则会创建 /sys/kernel/fadump_release_mem 文件，并持有保留的内存
@@ -186,12 +188,14 @@ kdump 或其它策略相比，固件辅助转储提供了若干强大且实用�
     e.g.
     Contents when FADump is registered during first kernel::
 
+
       # cat /sys/kernel/debug/powerpc/fadump_region
       CPU : [0x0000006ffb0000-0x0000006fff001f] 0x40020 bytes, Dumped: 0x0
       HPTE: [0x0000006fff0020-0x0000006fff101f] 0x1000 bytes, Dumped: 0x0
       DUMP: [0x0000006fff1020-0x0000007fff101f] 0x10000000 bytes, Dumped: 0x0
 
     Contents when FADump is active during second kernel::
+
 
       # cat /sys/kernel/debug/powerpc/fadump_region
       CPU : [0x0000006ffb0000-0x0000006fff001f] 0x40020 bytes, Dumped: 0x40020
@@ -203,7 +207,7 @@ kdump 或其它策略相比，固件辅助转储提供了若干强大且实用�
 ```
 注意      关于如何挂载 debugfs 文件系统，请参阅 Documentation/filesystems/debugfs.rst
 
-### 待办
+## 待办
  - 需要提出更好的方法，以找出在受限内存下成功启动内核所需的更准确的启动内存大小
 作者：Mahesh Salgaonkar <mahesh@linux.vnet.ibm.com>
 

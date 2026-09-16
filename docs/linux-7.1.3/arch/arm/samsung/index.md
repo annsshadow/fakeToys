@@ -1,5 +1,5 @@
 
-## Samsung SoC
+# Samsung SoC
 
 
 - [GPIO](gpio)

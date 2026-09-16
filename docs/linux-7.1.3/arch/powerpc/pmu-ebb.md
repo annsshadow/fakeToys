@@ -1,3 +1,5 @@
+# pmu-ebb
+
 ﻿## PMU Event Based Branches
 
 
@@ -7,7 +9,7 @@ Event Based Branches（基于事件的分支，EBB）是一项特性，它允许
 
 EBB 可以配置的一种事件类型是 PMU 异常。本文档描述了配Power PMU 以生EBB API，使用的Linux perf_events API
 
-### Terminology
+## Terminology
 
 
 在本文档中，我们始终会提EBB event"EBB events"。这仅指在其 attr.config 中设置了 "EBB" 标志struct perf_event。硬PMU 上可以配置的所有事件都可能EBB events"

@@ -1,6 +1,8 @@
+# kernel_mode_neon
+
 ﻿## 内核模式 NEON
 
-### 速览总结（TL;DR
+## 速览总结（TL;DR
 
 - 仅使NEON 指令，或不依赖支持代码的 VFP 指令
 - 把你NEON 代码隔离在一个单独的编译单元中，并用 '-march=armv7-a -mfpu=neon -mfloat-abi=softfp' 编译

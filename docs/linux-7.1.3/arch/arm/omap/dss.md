@@ -1,3 +1,5 @@
+# dss
+
 ﻿# OMAP2/3 显示子系
 
 
@@ -10,10 +12,11 @@ The DSS2 驱动 (omapdss 模块) arch/arm/plat-omap/dss/, the FB,
 面板 控制驱动 驱动/视频/omap2/. DSS1 DSS2 实时
 currently side side, 您可choose one 使用.
 
-### 特
+## 特
 
 
 Working tested 特包含:
+
 
 - MIPI DPI (并行) 输出
 - MIPI DSI 输出 命令 模式
@@ -125,6 +128,7 @@ V4L2 正在 implemented TI.
 
 一clarification 什the 不同 components 执行:
 
+
     - Framebuffer 一内存 area inside OMAP's SRAM/SDRAM 包含 the
       pixel 数据 用于 the image. Framebuffer 具有 width height color
       depth.
@@ -147,6 +151,7 @@ connected 虚拟 overlays.
 
 一overlay manager connected one 显示 存在 某些
 restrictions kinds displays 一overlay manager connected:
+
 
     - DISPC TV overlay manager connected TV 显示
     - 虚拟 overlay managers connected DBI DSI displays.
@@ -190,6 +195,7 @@ trans_key_鍊?		transparency color key (RGB24)
 默认_color			默认 background color (RGB24)
 
 /sys/设备/platform/omapdss/显示 directory:
+
 
 =============== =============================================================
 ctrl_name	鎺у埗鍣?name
@@ -266,7 +272,7 @@ framebuffers, overlays, overlay managers, displays. Framebuffers 鏄。
 	FB2 --- VID2 -/   TV ----- TV
 
 ```
-### 示例: Clone GFX overlay LCD TV
+## 示例: Clone GFX overlay LCD TV
 
 
 ```

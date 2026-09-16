@@ -1,3 +1,5 @@
+# netwinder
+
 ﻿## NetWinder 专用文档
 
 本页ARM NetWinder 平台专用的硬件参考文档，列出I/O 端口与中断资源的分配情况，供该平台的内核移植与驱动开发者查阅
@@ -35,7 +37,7 @@ NetWinder 是一台小型低功耗计算机，主要设计用于运Linux。它�
 0x0400   0x0408	DC21143
 0x0480   0x0487	DMA1
 0x0488   0x048f	DMA2
-0x0a79		RWA010 閰嶇疆鍐?0xe800   0xe80f	ide0/ide1 BM DMA
+0x0a79		RWA010 閰嶇疆内?0xe800   0xe80f	ide0/ide1 BM DMA
 =======  ====== ===============================
 
 

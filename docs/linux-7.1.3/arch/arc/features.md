@@ -1,3 +1,5 @@
+# features
+
 ﻿# arc Architecture Features
 
 This page lists the architecture-specific features for the arc architecture.

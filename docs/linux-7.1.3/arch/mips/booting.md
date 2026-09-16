@@ -1,5 +1,7 @@
+# booting
+
 ﻿
-### BMIPS 设备树启
+## BMIPS 设备树启
 
   某些引导加载程序仅支持内核映像起始处的单个入口点。其他引导加载程序会
   跳转ELF 起始地址。两种方案都受支持；CONFIG_BOOT_RAW=y   CONFIG_NO_EXCEPT_FILL=y，因此第一条指令会立即跳转kernel_entry()

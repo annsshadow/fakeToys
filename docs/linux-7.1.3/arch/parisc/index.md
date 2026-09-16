@@ -1,5 +1,5 @@
 
-## PA-RISC 架构
+# PA-RISC 架构
 
 
 - [调试](debugging)

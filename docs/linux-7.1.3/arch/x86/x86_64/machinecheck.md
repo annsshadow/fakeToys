@@ -1,3 +1,5 @@
+# machinecheck
+
 ﻿## x86-64 机器检查（machine check）代码的可配sysfs 参数
 
 

@@ -1,3 +1,5 @@
+# sunxi
+
 ﻿## ARM Allwinner SoC
 
 本文档列Linux 内核主线支持ARM Allwinner（SunXi）系SoC，并Cortex-A7/A8/A20/A31 等具体型号提供数据手册与用户手册链接，供嵌入式平台移植与硬件选型参考
@@ -7,7 +9,7 @@
 本文档列出当前由 Linux 内核主线支持的所ARM Allwinner SoC。本文档还会提供这些
 SoC 的文档和/或数据手册链接
 
-### SunXi 系列
+## SunXi 系列
 
 Linux 内核 mach 目录：arch/arm/mach-sunxi
 

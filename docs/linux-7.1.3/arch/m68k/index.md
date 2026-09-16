@@ -1,5 +1,5 @@
 
-## m68k 架构
+# m68k 架构
 
 
 - [内核选项](kernel-options)

@@ -1,3 +1,5 @@
+# kernel-options
+
 ﻿## Linux/m68k 的命令行选项
 
 
@@ -223,6 +225,7 @@ eth0, eth3、sl0, sl3、ppp0,  ppp3、dummy 以及 lo
 ### 4.1.5) internal:
 
 
+
 :Syntax: internal:<xres>;<yres>[;<xres_max>;<yres_max>;<offset>]
 
 该选项指定某些扩展内部视频硬件（例OverScan）的能力xres> <yres> 给出（扩展后
@@ -230,6 +233,7 @@ eth0, eth3、sl0, sl3、ppp0,  ppp3、dummy 以及 lo
 如果你的 OverScan 需要黑色边框，你就必须写出 "internal:" 的最后三个参数xres_max> 硬件允许的最大行长度yres_max> 是最大行数offset> 是屏幕可见部分相对于其物理起位置在屏幕内存中的偏移量，以字节为单位
 通常，扩展间隔视频硬件必须以某种方式被激活。为此，请参阅下面的 "sw_*" 选项
 ### 4.1.6) external:
+
 
 
 :Syntax:
@@ -269,8 +273,10 @@ eth0, eth3、sl0, sl3、ppp0,  ppp3、dummy 以及 lo
 ### 4.1.7) eclock:
 
 
+
 外部连接Falcon VIDEL 移位器的像素时钟。目前仅适用ScreenWonder
 ### 4.1.8) monitorcap:
+
 
 
 :Syntax: monitorcap:<vmin>;<vmax>;<hmin>;<hmax>
@@ -403,6 +409,7 @@ VGA 模式 - vga             : 640x480, 31 kHz, 60 Hz
 指定在文本模式下使用的字体。功能上Atari "font" 子选项相同，不同之处在于：如果
 显示的垂直尺寸小400 像素行，则使`PEARL8x8` 而非 `VGA8x8`
 ### 5.1.5) monitorcap:
+
 
 
 :Syntax: monitorcap:<vmin>;<vmax>;<hmin>;<hmax>

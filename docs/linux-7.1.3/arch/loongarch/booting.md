@@ -1,3 +1,5 @@
+# booting
+
 ﻿
 ## 启动 Linux/LoongArch
 

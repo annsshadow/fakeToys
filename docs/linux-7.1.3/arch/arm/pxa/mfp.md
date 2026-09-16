@@ -1,3 +1,5 @@
+# mfp
+
 ﻿## PXA2xx/PXA3xx 处理器的 MFP 配置
 
 
@@ -208,13 +210,14 @@ PXA3xx 上的每个外部 I/O 焊盘（特殊用途的除外）都关联着一MF
 
    Examples of pin configurations are::
 
+
      #define GPIO94_SSP3_RXD		MFP_CFG_X(GPIO94, AF1, DS08X, FLOAT)
 
    其含义是 GPIO94 可以被配置为 SSP3_RXD，复用功能选择1，驱动强度为
    0b101，并且在低功耗模式下处于浮空（float）状态
    注意：这是将该引脚配置为 SSP3_RXD 的默认设置，在板级代码中可以稍作修改   不过并不推荐这样做，原因仅仅是这种默认设置通常经过精心编码，并且在大多   情况下都能正常工作
 ```
-### 寄存器设
+## 寄存器设
 
    PXA3xx 上，针对某个引脚配置的寄存器设置实际上非常直接，大多数位可以
    以一种更简单的方式直接转换MFPR 值。计算出了两MFPR 值：运行时的

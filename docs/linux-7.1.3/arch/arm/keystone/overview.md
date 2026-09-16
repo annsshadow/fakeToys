@@ -1,7 +1,9 @@
+# overview
+
 ﻿## TI Keystone Linux 概述
 
 
-### 简
+## 简
 
 
 Keystone 系列 SoC 基于 ARM Cortex-A15 MPCore 处理
@@ -29,6 +31,7 @@ a.k.a Keystone 2 Edison SoC
 
 K2E  -  66AK2E05:
 
+
 文档参见
 
 	http://www.ti.com/product/66AK2E05/technicaldocuments
@@ -42,6 +45,7 @@ EVM锛。
 a.k.a Keystone 2 Lamarr SoC
 
 K2L  -  TCI6630K2L:
+
 
 文档参见
 	http://www.ti.com/product/TCI6630K2L/technicaldocuments

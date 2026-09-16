@@ -1,3 +1,5 @@
+# booting
+
 ﻿## Booting ARM Linux
 
 
@@ -15,6 +17,7 @@ passing information the 内核.
 Essentially, the boot loader 应当 提供 (作为 一最 the
 以下:
 
+
 1. Setup 鍜?initialise the RAM.
 2. Initialise one 串行 端口.
 3. Detect the machine 类型.
@@ -23,7 +26,7 @@ Essentially, the boot loader 应当 提供 (作为 一最 the
 6. Call the 内核 image.
 
 
-### 1. Setup 鍜?initialise RAM
+## 1. Setup 鍜?initialise RAM
 
 
 Existing boot loaders:
@@ -120,7 +123,7 @@ the 系统 内存, root 文件系统 location.  因此, the
 The tagged 列出 应当 stored 系统 RAM.
 
 The tagged 列出 必须 placed 一region 内存 何处 两者都
-the 鍐呮牳 decompressor nor initrd 'bootp' program 灏?overwrite
+the 内呮核 decompressor nor initrd 'bootp' program 灏?overwrite
   The recommended placement the 第一 16KiB RAM.
 
 ### 4b. Setup the 设备
@@ -182,6 +185,7 @@ case the 内核 必须 loaded 一偏移 进入 系统 equal
 TEXT_偏移 - 页_偏移.
 
 任何 case, the 以下 conditions 必须 met:
+
 
 - Quiesce 全部 DMA capable 设备 因此 内存 执行 get
   corrupted bogus 网络 packets disk 数据. save

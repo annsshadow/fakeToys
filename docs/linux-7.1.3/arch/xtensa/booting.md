@@ -1,3 +1,5 @@
+# booting
+
 ﻿## 向内核传递启动参
 
 启动参数在内存中表示TLV 列表。struct bp_tag 与标签值常量的定义请参arch/xtensa/include/asm/bootparam.h。列表中的第一个条目必须具有类BP_TAG_FIRST，最后一个条目必须具有类BP_TAG_LAST。第一个列表条目的地址

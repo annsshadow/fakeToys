@@ -1,4 +1,4 @@
-## LoongArch 体系结构
+# LoongArch 体系结构
 
 本页面汇总 LoongArch 架构相关文档。
 

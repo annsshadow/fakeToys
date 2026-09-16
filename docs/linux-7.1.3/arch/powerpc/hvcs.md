@@ -1,6 +1,8 @@
+# hvcs
+
 ﻿## HVCS IBM “Hypervisor Virtual Console Server”（管理程序虚拟控制台服务器）安装指
 
-閫傜敤浜?Linux 鍐呮牳 2.6.4+
+閫傜敤浜?Linux 内呮核 2.6.4+
 
 Copyright (C) 2004 IBM Corporation
 

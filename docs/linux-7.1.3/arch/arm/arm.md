@@ -1,7 +1,9 @@
+# arm
+
 ﻿## ARM Linux 2.6 鍙婃洿楂樼増鏈。
 
     请访<ftp://ftp.arm.linux.org.uk/pub/armlinux> 获取更新
-### 内核编译
+## 内核编译
 
 
   为了编译 ARM Linux，你需要一个能够生成带 GNU 扩展ARM ELF 代码  编译器。已GCC 3.3 是一个不错的编译器。幸运的是，你无需猜测。如果你  编译器属于已知有问题的版本，内核会报告错误
@@ -13,17 +15,21 @@
 
   改为::
 
+
     ARCH = arm
 
   以及::
+
 
     CROSS_COMPILE=
 
   改为::
 
+
     CROSS_COMPILE=<your-path-to-your-compiler-without-gcc>
 
   例如::
+
 
     CROSS_COMPILE=arm-linux-
 

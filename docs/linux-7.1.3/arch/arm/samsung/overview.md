@@ -1,7 +1,9 @@
+# overview
+
 ﻿## Samsung ARM Linux 概述
 
 
-### 简
+## 简
 
   Samsung 系列ARM SoC 涵盖了许多相似的设备，从最初的 ARM9 一直到最新的 ARM 核心。本文档给出了当前内核支持的概述、如何使用它，以及在哪里可以找到支持它的代码
   当前受支持的 SoC 有：

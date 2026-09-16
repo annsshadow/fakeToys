@@ -1,3 +1,5 @@
+# cpu-feature-registers
+
 ﻿## ARM64 CPU 特性寄存器
 
 本文件说ARM64 架构下将 CPU 特性寄存器（ID 寄存器）通过 HWCAP_CPUID 导出到用户空间的 ABI，描述其动机、安全约束与可见寄存器列表，供应用程序在运行时探CPU 能力时参考
@@ -8,7 +10,7 @@ Author: Suzuki K Poulose <suzuki.poulose@arm.com>
 
 本文件描述了AArch64 CPU ID/特性寄存器导出到用户空间的 ABI。该 ABI 的可用性通过 HWCAPs 中的 HWCAP_CPUID 对外通告
 
-### 1. 动机
+## 1. 动机
 
 
 ARM 架构定义了一组特性寄存器，用于描CPU/系统的能力。对这些系统寄存器的访问EL0 受限，应用程序没有可靠的方法提取这些信息以在运行时做出更好的决策。虽然应用程序可以通过 HWCAPs 获取有限的信息，但其使用存在一些问题

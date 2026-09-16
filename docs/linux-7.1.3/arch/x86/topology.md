@@ -1,3 +1,5 @@
+# topology
+
 ﻿
 ## x86 拓扑
 
@@ -28,18 +30,23 @@ AMD 对封装的术语“Node”
     一个封装中 die 的最大数量
   - cpuinfo_x86.topo.die_id:
 
+
     die 的物ID
   - cpuinfo_x86.topo.pkg_id:
+
 
     封装的物ID。该信息通过 CPUID 获取，并由封装中各个核的 APIC ID 推导而来
     现代系统将此值用于插槽。一个插槽内可能存在多个封装。该值可能与 topo.die_id 不同
   - cpuinfo_x86.topo.logical_pkg_id:
 
+
     封装的逻辑 ID。由于我们不信任 BIOS 以一致的方式枚举封装，因此引入了逻辑封装 ID 的概念，这样我们就能合理地计算出系统中最大可能的封装数量，并让封装被线性枚举
   - topology_max_packages():
 
+
     系统中可能的封装最大数量。对于按封装的设施而言，可用于预分配每个封装的信息
   - cpuinfo_x86.topo.llc_id:
+
 
       - Intel 上，是共享末级缓存（Last Level Cache）的 CPU 列表中的第一APIC ID
       - AMD 上，是包含末级缓存的 Node ID Core Complex ID。一般来说，它是一个能在系统上唯一标识一LLC 的编号
@@ -55,15 +62,19 @@ AMD CMT 线程的术语是 “Compute Unit Core”。内核始终使“thread”
 
   - topology_core_cpumask():
 
+
     cpumask 包含该线程所属封装中的所有在线线程
     在线线程的数量也会打印在 /proc/cpuinfo “siblings中
   - topology_sibling_cpumask():
 
+
     cpumask 包含该线程所属核中的所有在线线程
   - topology_logical_package_id():
 
+
     该线程所属的逻辑封装 ID
   - topology_physical_package_id():
+
 
     该线程所属的物理封装 ID
   - topology_core_id();
@@ -173,6 +184,7 @@ x86 厂商在解析时优先顺序如下CPUID 叶子
 
    b) 每核两个线程::
 
+
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 				-> [thread 1] -> Linux CPU 1
 		    -> [core 1] -> [thread 0] -> Linux CPU 2
@@ -180,12 +192,14 @@ x86 厂商在解析时优先顺序如下CPUID 叶子
 
       Alternative enumeration::
 
+
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 				-> [thread 1] -> Linux CPU 2
 		    -> [core 1] -> [thread 0] -> Linux CPU 1
 				-> [thread 1] -> Linux CPU 3
 
       AMD nomenclature for CMT systems::
+
 
 	[node 0] -> [Compute Unit 0] -> [Compute Unit Core 0] -> Linux CPU 0
 				     -> [Compute Unit Core 1] -> Linux CPU 1
@@ -205,6 +219,7 @@ x86 厂商在解析时优先顺序如下CPUID 叶子
 
    b) 每核两个线程::
 
+
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 				-> [thread 1] -> Linux CPU 1
 		    -> [core 1] -> [thread 0] -> Linux CPU 2
@@ -217,6 +232,7 @@ x86 厂商在解析时优先顺序如下CPUID 叶子
 
       Alternative enumeration::
 
+
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 				-> [thread 1] -> Linux CPU 4
 		    -> [core 1] -> [thread 0] -> Linux CPU 1
@@ -228,6 +244,7 @@ x86 厂商在解析时优先顺序如下CPUID 叶子
 				-> [thread 1] -> Linux CPU 7
 
       AMD nomenclature for CMT systems::
+
 
 	[node 0] -> [Compute Unit 0] -> [Compute Unit Core 0] -> Linux CPU 0
 				     -> [Compute Unit Core 1] -> Linux CPU 1

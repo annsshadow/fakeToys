@@ -1,3 +1,5 @@
+# features
+
 ﻿# openrisc Architecture Features
 
 This page lists the architecture-specific features for the openrisc architecture.
