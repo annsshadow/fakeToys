@@ -1,3 +1,5 @@
+# acm
+
 ﻿## Linux ACM 驱动 v0.16
 
 
@@ -5,7 +7,7 @@ Copyright (c) 1999 Vojtech Pavlik <vojtech@suse.cz>
 
 SuSE 赞助
 
-#### 0. 免责声明
+## 0. 免责声明
 
 本程序是自由软件；您可以在自由软件基金会发布GNU 通用公共许可证条款下
 重新发布或修改它；许可证版本为第 2 版，或（根据您的选择）任何更高版本
@@ -19,7 +21,7 @@ Prague 8, 182 00 Czech Republic
 
 为方便起见，GNU 通用公共许可证第 2 版的文本已包含在软件包中：请参阅
 COPYING 文件
-#### 1. 用法
+### 1. 用法
 
 drivers/usb/class/cdc-acm.c 驱动适用于符合通用串行总线通信设备类抽象控制模（USB CDC ACM）规范的 USB 调制解调器和 USB ISDN 终端适配器
 许多调制解调器都符合，以下是我所知道的型号列表：

@@ -1,9 +1,11 @@
+# misc_usbsevseg
+
 ﻿## USB 7 段数码管显示
 
 
 Delcom Engineering 制
 
-### 设备信息
+## 设备信息
 
 USB VENDOR_ID	0x0fc5
 USB PRODUCT_ID	0x1227

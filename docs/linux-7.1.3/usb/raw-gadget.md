@@ -1,10 +1,12 @@
+# raw-gadget
+
 ﻿## USB Raw Gadget（原始小工具
 
 USB Raw Gadget 是一个小工具（gadget）驱动，它让用户可以空间gadget 的通信过程进行底层控制
 与任何其gadget 驱动一样，Raw Gadget 通过 USB gadget API 实现 USB 设备。与大多gadget 驱动不同，Raw Gadget 自身不实现任何具体的 USB 功能，而是需要用户空间来完成
 Raw Gadget 目前严格来说是一个调试特性，不应在生产环境中使用。请改用 GadgetFS
 通过 CONFIG_USB_RAW_GADGET 启用
-#### GadgetFS 的对
+## GadgetFS 的对
 
 Raw Gadget GadgetFS 类似，但为用户空间提供了USB gadget 层更直接的访问。关键区别在于：
 
@@ -13,7 +15,7 @@ Raw Gadget GadgetFS 类似，但为用户空间提供了USB gadget 层更直接�
 3. Raw Gadget 提供了一种选择要绑定的 UDC 设备/驱动的方法，GadgetFS 当前绑定到第一个可用的 UDC。这允许多个 Raw Gadget 实例绑定到不同的 UDC
 4. Raw Gadget 显式暴露有关端点地址和能力的信息。这使得用户可以编写UDC 无关gadget
 5. Raw Gadget 具有基于 ioctl 的接口，而不是基于文件系统的接口
-#### 用户空间接口
+### 用户空间接口
 
 
 用户可以通过打开 `/dev/raw-gadget` 并发ioctl 调用来与 Raw Gadget 交互；详include/uapi/linux/usb/raw_gadget.h 中的注释。多Raw Gadget 实例（绑定到不同UDC）可以同时被使用
