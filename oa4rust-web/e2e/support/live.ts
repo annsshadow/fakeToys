@@ -1,4 +1,4 @@
-import { expect, type Page, type Response } from '@playwright/test'
+import { expect, type APIRequestContext, type APIResponse, type Page, type Response } from '@playwright/test'
 
 export type ResponseAudit = {
   failures: string[]
@@ -49,4 +49,15 @@ export async function assertNo404OrServerErrors(audit: ResponseAudit): Promise<v
 
 export function uniqueFlag(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+/**
+ * 带 CSRF Origin 头的 API 写请求（会话 Cookie 认证）。
+ * 后端 csrf_middleware：Cookie 认证的写请求必须携带与 APP_PUBLIC_ORIGIN 一致的
+ * Origin 头，而 page.request（APIRequestContext）不是真实浏览器 fetch、不会自动
+ * 附带 Origin → 403 forbidden。这里按当前 BASE_URL 手动补 Origin。
+ */
+export function apiPost(request: APIRequestContext, path: string, data: unknown): Promise<APIResponse> {
+  const origin = process.env.BASE_URL ?? 'http://127.0.0.1:5173'
+  return request.post(path, { data, headers: { origin } })
 }

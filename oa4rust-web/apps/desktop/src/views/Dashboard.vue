@@ -170,7 +170,7 @@ const pendingItems = ref<
 async function loadPending(): Promise<void> {
   pendingLoading.value = true
   try {
-    const resp = await api.post('/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/5/manage', {})
+    const resp = await api.get('/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/5/manage')
     pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
   } catch {
     pendingItems.value = []

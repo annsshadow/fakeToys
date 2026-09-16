@@ -630,7 +630,7 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 AND creator = $2 ORDER BY create_time ASC LIMIT $3::int",
+            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 AND creator = $2 ORDER BY create_time ASC LIMIT $3",
             &[&id, &"manager", &count],
         )
         .await
@@ -1089,7 +1089,7 @@ pub async fn attendancedetail_filter_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id > $1 ORDER BY date ASC LIMIT $2::int",
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id > $1 ORDER BY date ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1124,7 +1124,7 @@ pub async fn attendancedetail_filter_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id < $1 ORDER BY date DESC LIMIT $2::int",
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id < $1 ORDER BY date DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1229,7 +1229,7 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
     let offset = (page - 1) * count;
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2::int OFFSET $1::int",
+            "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
@@ -1777,7 +1777,7 @@ pub async fn attendanceselfholiday_filter_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id > $1 ORDER BY holiday_date ASC LIMIT $2::int",
+            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id > $1 ORDER BY holiday_date ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1814,7 +1814,7 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id < $1 ORDER BY holiday_date DESC LIMIT $2::int",
+            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id < $1 ORDER BY holiday_date DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2404,7 +2404,7 @@ pub async fn statisticshow_filter_personMonth_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 ORDER BY year DESC, month DESC LIMIT $2::int",
+            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 ORDER BY year DESC, month DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2439,7 +2439,7 @@ pub async fn statisticshow_filter_personMonth_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 ORDER BY year DESC, month DESC LIMIT $2::int",
+            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 ORDER BY year DESC, month DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2474,7 +2474,7 @@ pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY work_date ASC LIMIT $2::int",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY work_date ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2508,7 +2508,7 @@ pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY work_date DESC LIMIT $2::int",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY work_date DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2542,7 +2542,7 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2::int",
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2577,7 +2577,7 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2::int",
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2612,7 +2612,7 @@ pub async fn statisticshow_filter_unitDay_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY work_date ASC LIMIT $2::int",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY work_date ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2647,7 +2647,7 @@ pub async fn statisticshow_filter_unitDay_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY work_date DESC LIMIT $2::int",
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY work_date DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2682,7 +2682,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2::int",
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2718,7 +2718,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2::int",
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2",
             &[&id, &count],
         )
         .await
