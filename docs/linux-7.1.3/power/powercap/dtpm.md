@@ -1,3 +1,5 @@
+# dtpm
+
 ﻿
 ## 动态热功耗管理（Dynamic Thermal Power Management）框
 

@@ -1,3 +1,5 @@
+# suspend-and-cpuhotplug
+
 ﻿锘?# Interaction 鐨?Suspend code (S3) 涓?the CPU hotplug infrastructure
 
 
@@ -94,6 +96,7 @@ depicted 此处.]
 Resuming back likewise, the counterparts 正在 (the order 
 execution 期间 resume):
 
+
 ```
 
    |  Acquire cpu_add_remove_lock
@@ -166,6 +169,7 @@ the 'tasks_frozen' 参数 set 1.
 ### 重要 文件 函数/条目 points:
 
 
+
 - 内核/电源/进程.c : freeze_进程(), thaw_进程()
 - 内核/电源/suspend.c : suspend_prepare(), suspend_enter(), suspend_finish()
 - 内核/CPU.c: CPU_[up|down](), _CPU_[up|down](),
@@ -179,12 +183,14 @@ the 'tasks_frozen' 参数 set 1.
 存在 一interesting situations involving CPU hotplug microcode
 更新 the CPUs, 作为 discussed 下文:
 
+
 [bear mind the 内核 requests the microcode images 来自
 userspace, 使用 the 请求_固件() 函数 定义 
 驱动/base/固件_loader/主要.c]
 
 
 一 全部 the CPUs identical:
+
 
    这是 the 大多通用 situation 它是 quite straightforward: 我们 希望
    apply the 相同 microcode revision 每个 the CPUs.
@@ -197,6 +203,7 @@ userspace, 使用 the 请求_固件() 函数 定义
 
 b. 一the CPUs 不同 the rest:
 
+
    case since 我们 probably 需apply 不同 microcode revisions
    不同 CPUs, the 内核 maintains 一copy the correct microcode
    image 用于 每个 CPU (之后 appropriate CPU 类型/型号 discovery 使用
@@ -205,6 +212,7 @@ b. 一the CPUs 不同 the rest:
 
 c. 一CPU physically hot-unplugged 一(possibly 不同
    类型  CPU hot-plugged 进入 the 系统:
+
 
    the 电流 design the 内核, whenever 一CPU taken offline 期间
    一regular CPU hotplug 操作, upon receiving the CPU_DEAD notification
@@ -227,6 +235,7 @@ c. 一CPU physically hot-unplugged 一(possibly 不同
 
 
 d. Handling microcode 更新 期间 suspend/hibernate:
+
 
    Strictly speaking, 期间 一CPU hotplug 操作 执行 involve
    physically removing 鎴?inserting CPUs, the CPUs 鏄，涓?actually powered
@@ -264,6 +273,7 @@ d. Handling microcode 更新 期间 suspend/hibernate:
 
 Yes, 它们listed 下文:
 
+
 1. invoking regular CPU hotplug, the 'tasks_frozen' 参数 passed 
    the _CPU_down() _CPU_up() 函数 **始终** 0.
    可能 reflect the true 电流 状the 系统, since the
@@ -275,6 +285,7 @@ Yes, 它们listed 下文:
 2. 一regular CPU hotplug stress test happens race the freezer due
    一suspend 操作 progress 同时, 然后 我们 可以 hit the
    situation 描述 下文:
+
 
     - 一regular CPU online 操作 continues journey 来自 userspace
       进入 the 内核, since the freezing 具有 尚未 begun.

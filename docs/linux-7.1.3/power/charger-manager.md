@@ -1,3 +1,5 @@
+# charger-manager
+
 ﻿## Charger Manager（充电管理器
 
 	(C) 2011 MyungJoo Ham <myungjoo.ham@samsung.com>, GPL
