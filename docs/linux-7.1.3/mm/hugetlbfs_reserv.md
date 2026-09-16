@@ -1,3 +1,5 @@
+# hugetlbfs_reserv
+
 ﻿## Hugetlbfs 预留
 
 
@@ -44,6 +46,7 @@ Reserve Map
 	There is one reserve map for each huge page mapping in the system.
 	The regions list within the resv_map describes the regions within
 	the mapping.  A region is described as::
+
 
 		struct file_region {
 			struct list_head link;

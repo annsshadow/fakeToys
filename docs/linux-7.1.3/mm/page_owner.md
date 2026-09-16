@@ -1,3 +1,5 @@
+# page_owner
+
 ﻿## page owner: Tracking about who allocated each page
 
 
@@ -129,6 +131,7 @@ page owner 默认是禁用的。因此，如果你想使用它，需要在启动
 
    The general output of ``page_owner_full.txt`` is as follows::
 
+
 	Page allocated via order XXX, ...
 	PFN XXX ...
 	// Detailed stack
@@ -149,6 +152,7 @@ page owner 默认是禁用的。因此，如果你想使用它，需要在启动
    See the result about who allocated each page
    in the ``sorted_page_owner.txt``. General output::
 
+
 	XXX times, XXX pages:
 	Page allocated via order XXX, ...
 	// Detailed stack
@@ -157,7 +161,9 @@ page owner 默认是禁用的。因此，如果你想使用它，需要在启动
    If you want to sort by the page nums of buf, use the ``-m`` parameter.
    The detailed parameters are:
 
+
    fundamental function::
+
 
 	Sort:
 		-a		Sort by memory allocation time.
@@ -178,6 +184,7 @@ page owner 默认是禁用的。因此，如果你想使用它，需要在启动
 				./page_owner_sort <input> <output> --sort=at
 
    additional function::
+
 
 	Cull:
 		--cull <rules>
@@ -223,6 +230,7 @@ page owner 默认是禁用的。因此，如果你想使用它，需要在启动
 
   For --sort option:
 
+
 	KEY		LONG		DESCRIPTION
 	p		pid		process ID
 	tg		tgid		thread group ID
@@ -234,6 +242,7 @@ page owner 默认是禁用的。因此，如果你想使用它，需要在启动
 	ator		allocator	memory allocator for pages
 
   For --cull option:
+
 
 	KEY		LONG		DESCRIPTION
 	p		pid		process ID
