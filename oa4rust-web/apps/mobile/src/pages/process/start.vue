@@ -5,6 +5,7 @@ import { fileApi, processApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import {
+  computeGroupOrder,
   initialValues,
   type MobileFormField,
   type MobileFormGroup,
@@ -103,13 +104,7 @@ async function loadBoundForm(processId: string): Promise<void> {
 }
 
 /** 按 groupLabel 分组渲染（默认组 groupLabel='' 归到无标题分区）。 */
-const groupOrder = computed(() => {
-  const order: string[] = []
-  for (const g of groups.value) order.push(g.label || g.id)
-  // 默认组（无容器）恒在最前
-  if (fields.value.some((f) => f.groupId === '')) order.unshift('')
-  return order
-})
+const groupOrder = computed(() => computeGroupOrder(fields.value, groups.value))
 function fieldsInGroup(label: string): MobileFormField[] {
   if (label === '') return fields.value.filter((f) => f.groupId === '')
   return fields.value.filter((f) => (f.groupLabel || f.groupId) === label || (label && f.groupId === label))
