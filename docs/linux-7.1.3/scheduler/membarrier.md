@@ -1,3 +1,5 @@
+# membarrier
+
 ﻿
 ## membarrier() 系统调用
 

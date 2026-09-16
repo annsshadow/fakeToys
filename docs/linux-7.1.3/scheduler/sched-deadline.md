@@ -1,3 +1,5 @@
+# sched-deadline
+
 ﻿## 截止期任务调。
 
     0. 警告（WARNING?    1. 概述（Overview?    2. 调度算法（Scheduling algorithm?      2.1 主算法（Main algorithm?      2.2 带宽回收（Bandwidth reclaiming?    3. 调度实时任务（Scheduling Real-Time Tasks?      3.1 定义（Definitions?      3.2 单处理器系统的可调度性分析（Schedulability Analysis for Uniprocessor Systems?      3.3 多处理器系统的可调度性分析（Schedulability Analysis for Multiprocessor Systems?      3.4 ?SCHED_DEADLINE 参数的关系（Relationship with SCHED_DEADLINE Parameters?    4. 带宽管理（Bandwidth management?      4.1 系统级设置（System-wide settings?      4.2 任务接口（Task interface?      4.3 默认行为（Default behavior?      4.4 sched_yield() 的行为（Behavior of sched_yield()?    5. 任务?CPU 亲和性（Tasks CPU affinity?      5.1 使用 cgroup v1 cpuset 控制器（Using cgroup v1 cpuset controller?      5.2 使用 cgroup v2 cpuset 控制器（Using cgroup v2 cpuset controller?    6. 未来计划（Future plans?    A. 测试套件（Test suite?    B. 最?main()（Minimal main()?
@@ -42,6 +44,7 @@
   - When a SCHED_DEADLINE task executes for an amount of time t, its
     remaining runtime is decreased as::
 
+
          remaining runtime = remaining runtime - t
 
     (technically, the runtime is decreased at every tick, or when the
@@ -56,6 +59,7 @@
   - When the current time is equal to the replenishment time of a
     throttled task, the scheduling deadline and the remaining runtime are
     updated as::
+
 
          scheduling deadline = scheduling deadline + period
          remaining runtime = remaining runtime + runtime
@@ -92,6 +96,7 @@
 
  A task can be in one of the following states:
 
+
   - ActiveContending: if it is ready for execution (or executing);
 
   - ActiveNonContending: if it just blocked and has not yet surpassed the 0-lag
@@ -100,6 +105,7 @@
   - Inactive: if it is blocked and has surpassed the 0-lag time.
 
  State transitions:
+
 
   (a) When a task blocks, it does not become immediately inactive since its
       bandwidth cannot be immediately reclaimed without breaking the
@@ -110,6 +116,7 @@
 
       The 0-lag time for a task entering the ActiveNonContending state is
       computed as::
+
 
                         (runtime * dl_period)
              deadline - ---------------------
@@ -138,6 +145,7 @@
 
  For each runqueue, the algorithm GRUB keeps track of two different bandwidths:
 
+
   - Active bandwidth (running_bw): this is the sum of the bandwidths of all
     tasks in active state (i.e., ActiveContending or ActiveNonContending);
 
@@ -156,6 +164,7 @@
 
  where:
 
+
   - Ui is the bandwidth of task Ti;
   - Umax is the maximum reclaimable utilization (subjected to RT throttling
     limits);
@@ -167,6 +176,7 @@
 
  Let's now see a trivial example of two deadline tasks with runtime equal
  to 4 and period equal to 8 (i.e., bandwidth equal to 0.5)::
+
 
          A            Task T1
          |
@@ -200,11 +210,13 @@
 
   - Time t = 0:
 
+
     Both tasks are ready for execution and therefore in ActiveContending state.
     Suppose Task T1 is the first task to start execution.
     Since there are no inactive tasks, its runtime is decreased as dq = -1 dt.
 
   - Time t = 2:
+
 
     Suppose that task T1 blocks
     Task T1 therefore enters the ActiveNonContending state. Since its remaining
@@ -214,6 +226,7 @@
 
   - Time t = 4:
 
+
     This is the 0-lag time for Task T1. Since it didn't woken up in the
     meantime, it enters the Inactive state. Its bandwidth is removed from
     running_bw.
@@ -222,6 +235,7 @@
     Task T2 therefore reclaims the bandwidth unused by Task T1.
 
   - Time t = 8:
+
 
     Task T1 wakes up. It enters the ActiveContending state again, and the
     running_bw is incremented.
@@ -482,6 +496,7 @@
  of 10ms every 100ms (note that parameters are expressed in nanoseconds).
  You can also use chrt to create a reservation for an already running
  application, given that you know its pid::
+
 
   # chrt -d -T 10000000 -D 100000000 -p 0 my_app_pid
 
