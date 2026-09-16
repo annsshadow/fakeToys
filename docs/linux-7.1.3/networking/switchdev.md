@@ -1,3 +1,5 @@
+# switchdev
+
 ﻿
 ## 以太网交换设备驱动模型（switchdev
 
@@ -67,7 +69,7 @@ Copyright |copy| 2014-2015 Scott Feldman <sfeldma@gmail.com>
 
 ```
 
-### 配置
+## 配置
 
 
 在驱动的 Kconfig 中使"depends NET_SWITCHDEV"，以确保为驱动构switchdev 模型支持
@@ -83,7 +85,7 @@ switchdev 驱动初始化时，驱动会为每个枚举到的物理交换端口�
 交换机管理端口不switchdev 驱动模型的范围内。通常，管理端口不参与
 卸载的数据平面，并在管理端口设备上加载一个不同的驱动（例NIC 驱动）
 
-##### 浜ゆ崲鏈?ID
+#### 浜ゆ崲鏈?ID
 
 
 switchdev 驱动必须为每个端netdev 实现 net_device 操作
@@ -133,7 +135,7 @@ switchdev 驱动可以通过监控 NETDEV_CHANGEUPPER 通知来获知特定端�
  - 端口上的 STP 状态变 - 组播/广播和未知单播报文的 VLAN 泛洪
 
 
-##### 静FDB 条目
+#### 静FDB 条目
 
 
 实现`ndo_fdb_add`、`ndo_fdb_del` `ndo_fdb_dump` 操作的驱动能够支以下命令，该命令添加一```
@@ -306,7 +308,7 @@ FIB_EVENT_RULE_DEL   used to propagate FIB rule changes
 XXX：add/mod/del IPv6 FIB API
 
 
-##### 下一跳解
+#### 下一跳解
 
 FIB 条目的下一跳列表包含下一跳元组（gateway、dev），但为了让交换设备以正dst mac 地址转发报文，必须将下一跳网关解析为邻居mac 地址。邻mac
 地址的发现通过 ARP（或 ND）过程完成，并可通过 arp_tbl 邻居表获取。为了解路由的下一跳网关，驱动应触发内核的邻居解析过程。参rocker 驱动rocker_port_ipv4_resolve() 作为示例
@@ -319,7 +321,7 @@ arp_tbl 的更新，可以为路由编程已解析的下一跳到设备中。驱
 
 以下是一switchdev 启用的网络设备必须遵守的已定义行为
 
-##### 无配置状
+#### 无配置状
 
 在驱动启动（bring up）时，网络设备必须完全可运行，并且底层驱动必须配置网络设备，
 使其有可能向该网络设备发送和接收流量，并且它与其他网络设端口适当地隔（例如：在交ASIC 中经常如此）。如何实现这一点在很大程度上取决于硬件，但一简单的解决方案是使用每端口VLAN 标识符，除非有更好的机制可用（例如每个网端口的专有元数据）

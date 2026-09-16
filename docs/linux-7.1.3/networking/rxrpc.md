@@ -1,3 +1,5 @@
+# rxrpc
+
 ﻿
 ## RxRPC 网络协议
 
@@ -299,6 +301,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
 
  (2) A local address can optionally be bound::
 
+
 	struct sockaddr_rxrpc srx = {
 		.srx_family	= AF_RXRPC,
 		.srx_service	= 0,  /* we're a client */
@@ -316,11 +319,13 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
 
  (3) The security is set::
 
+
 	const char *key = "AFS:cambridge.redhat.com";
 	setsockopt(client, SOL_RXRPC, RXRPC_SECURITY_KEY, key, strlen(key));
 
      This issues a request_key() to get the key representing the security
      context. The minimum security level can be set::
+
 
 	unsigned int sec = RXRPC_SECURITY_ENCRYPT;
 	setsockopt(client, SOL_RXRPC, RXRPC_MIN_SECURITY_LEVEL,
@@ -328,6 +333,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
 
  (4) The server to be contacted can then be specified (alternatively this can
      be done through sendmsg)::
+
 
 	struct sockaddr_rxrpc srx = {
 		.srx_family	= AF_RXRPC,
@@ -341,6 +347,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
 
  (5) The request data should then be posted to the server socket using a series
      of sendmsg() calls, each with the following control message attached:
+
 
 	==================	===================================
 	RXRPC_USER_CALL_ID	specifies the user ID for this call
@@ -362,6 +369,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
      read for a call.
 
      All data will be delivered with the following control message attached:
+
 
 	RXRPC_USER_CALL_ID	- specifies the user ID for this call
 
@@ -386,6 +394,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
  (2) Security is set up if desired by giving the socket a keyring with server
      secret keys in it::
 
+
 	keyring = add_key("keyring", "AFSkeys", NULL, 0,
 			  KEY_SPEC_PROCESS_KEYRING);
 
@@ -399,6 +408,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
      permits the server to add more keys, replace keys, etc. while it is live.
 
  (3) A local address must then be bound::
+
 
 	struct sockaddr_rxrpc srx = {
 		.srx_family	= AF_RXRPC,
@@ -417,6 +427,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
  (4) If service upgrading is required, first two service IDs must have been
      bound and then the following option must be set::
 
+
 	unsigned short service_ids[2] = { from_ID, to_ID };
 	setsockopt(server, SOL_RXRPC, RXRPC_UPGRADEABLE_SERVICE,
 		   service_ids, sizeof(service_ids));
@@ -427,12 +438,14 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
 
  (5) The server is then set to listen out for incoming calls::
 
+
 	listen(server, 100);
 
  (6) The kernel notifies the server of pending incoming connections by sending
      it a message for each. This is received with recvmsg() on the server
      socket. It has no data, and has a single dataless control message
      attached::
+
 
 	RXRPC_NEW_CALL
 
@@ -443,6 +456,7 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
 
  (7) The server then accepts the new call by issuing a sendmsg() with two
      pieces of control data and no actual data:
+
 
 	==================	==============================
 	RXRPC_ACCEPT		indicate connection acceptance
@@ -460,12 +474,14 @@ AF_RXRPC 套接字在 SOL_RXRPC 层级支持少数几个套接字选项
      All data will be delivered with the following control message attached:
 
 
+
 	==================	===================================
 	RXRPC_USER_CALL_ID	specifies the user ID for this call
 	==================	===================================
 
  (9) The reply data should then be posted to the server socket using a series
      of sendmsg() calls, each with the following control messages attached:
+
 
 	==================	===================================
 	RXRPC_USER_CALL_ID	specifies the user ID for this call
@@ -561,6 +577,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Shut down a client call::
 
+
 	void rxrpc_kernel_shutdown_call(struct socket *sock,
 					struct rxrpc_call *call);
 
@@ -570,12 +587,14 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Release the ref on a client call::
 
+
 	void rxrpc_kernel_put_call(struct socket *sock,
 				   struct rxrpc_call *call);
 
      This is used to release the caller's ref on an rxrpc call.
 
  (#) Send data through a call::
+
 
 	typedef void (*rxrpc_notify_end_tx_t)(struct sock *sk,
 					      unsigned long user_call_ID,
@@ -602,6 +621,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
      transmitted until the function returns.
 
  (#) Receive data from a call::
+
 
 	int rxrpc_kernel_recv_data(struct socket *sock,
 				   struct rxrpc_call *call,
@@ -640,6 +660,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
      ::
 
+
 	void rxrpc_kernel_abort_call(struct socket *sock,
 				     struct rxrpc_call *call,
 				     u32 abort_code);
@@ -648,6 +669,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
      abort code specified will be placed in the ABORT message sent.
 
  (#) Intercept received RxRPC messages::
+
 
 	typedef void (*rxrpc_interceptor_t)(struct sock *sk,
 					    unsigned long user_call_ID,
@@ -667,6 +689,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
      to the call and the socket buffer containing the message.
 
      The skb->mark field indicates the type of message:
+
 
 	===============================	=======================================
 	Mark				Meaning
@@ -696,6 +719,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Accept an incoming call::
 
+
 	struct rxrpc_call *
 	rxrpc_kernel_accept_call(struct socket *sock,
 				 unsigned long user_call_ID);
@@ -710,6 +734,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Reject an incoming call::
 
+
 	int rxrpc_kernel_reject_call(struct socket *sock);
 
      This is used to reject the first incoming call on the socket's queue with
@@ -719,6 +744,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Allocate a null key for doing anonymous security::
 
+
 	struct key *rxrpc_get_null_key(const char *keyname);
 
      This is used to allocate a null RxRPC key that can be used to indicate
@@ -726,12 +752,14 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Get the peer address of a call::
 
+
 	void rxrpc_kernel_get_peer(struct socket *sock, struct rxrpc_call *call,
 				   struct sockaddr_rxrpc *_srx);
 
      This is used to find the remote peer address of a call.
 
  (#) Set the total transmit data size on a call::
+
 
 	void rxrpc_kernel_set_tx_length(struct socket *sock,
 					struct rxrpc_call *call,
@@ -744,12 +772,14 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Get call RTT::
 
+
 	u64 rxrpc_kernel_get_rtt(struct socket *sock, struct rxrpc_call *call);
 
      Get the RTT time to the peer in use by a call. The value returned is in
      nanoseconds.
 
  (#) Check call still alive::
+
 
 	bool rxrpc_kernel_check_life(struct socket *sock,
 				     struct rxrpc_call *call,
@@ -775,6 +805,7 @@ AF_RXRPC 模块还为内核内实用程序（例如 AFS 文件系统）提供了
 
  (#) Apply the RXRPC_MIN_SECURITY_LEVEL sockopt to a socket from within in the
      kernel::
+
 
        int rxrpc_sock_set_min_security_level(struct sock *sk,
 					     unsigned int val);

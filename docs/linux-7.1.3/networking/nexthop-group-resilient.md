@@ -1,3 +1,5 @@
+# nexthop-group-resilient
+
 ﻿
 ## 弹性下一跳组（Resilient Next-hop Groups
 弹性组是一种下一跳组，旨在最小化因组构成以及组成下一跳的权重发生变化而对流路由造成的干扰
@@ -59,7 +61,7 @@ upkeep 会将桶所引用的下一跳更改为某个 underweight 的下一跳。
 被卸载的桶应被标记为 “offload“trap”。这是通过 `nexthop_bucket_set_hw_flags()` API 完成的
 ### Netlink UAPI
 
-##### 弹性组替换（Resilient Group Replacement
+#### 弹性组替换（Resilient Group Replacement
 弹性组使用 `RTM_NEWNEXTHOP` 消息配置，方式与其他多路径组相同。传netlink 消息的属性适用以下变更
   =================== =========================================================
   `NHA_GROUP_TYPE`  弹性组应为 `NEXTHOP_GRP_TYPE_RES`  `NHA_RES_GROUP`   一个嵌套，包含弹性组特有的属性  =================== =========================================================
@@ -119,7 +121,7 @@ upkeep 会将桶所引用的下一跳更改为某个 underweight 的下一跳。
 
 ```
 注意那两个空闲时间较短的桶。它们是在下一跳替换命令之后被迁移的，以满足下一1 应获6 个桶而非 4 个桶的新需求
-### Netdevsim
+## Netdevsim
 
 netdevsim 驱动实现了一个弹性组的模拟卸载，并暴露一debugfs 接口，允许将单个桶标记为繁忙。例如，以下内容将下一跳组 10 中的23 标记
 ```

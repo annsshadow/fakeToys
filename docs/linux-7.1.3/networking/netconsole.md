@@ -1,3 +1,5 @@
+# netconsole
+
 ﻿
 ## Netconsole
 
@@ -63,6 +65,7 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
 	nc -u -l -p <port>' / 'nc -u -l <port>
 
    or::
+
 
 	netcat -u -l -p <port>' / 'netcat -u -l <port>
 ```
@@ -163,7 +166,7 @@ Sysdata append support by Breno Leitao <leitao@debian.org>, Jan 15 2025
      val2
 
    建议不要写入带有换行符的用户数据值```
-### userdata 中自动填充任务名
+## userdata 中自动填充任务名
 
 
 netconsole configfs 层级中，有一个名`taskname_enabled` 的文件，位于 `userdata` 目录下。该文件用于启用或禁用自动任务名填充特性。该特性会自动填充当前正在负责发送消息的 CPU 上被调度的任务的名称
@@ -210,11 +213,12 @@ netconsole configfs 层级中，有一个名`cpu_nr` 的文件，位于 `userdat
 
    Output might look like::
 
+
      12,607,22085407756,-;This is a message
       cpu=1
       cpu=42    # kernel-populated value
 ```
-### userdata 中自动填充消ID
+## userdata 中自动填充消ID
 
 
 netconsole configfs 层级中，有一个名`msgid_enabled` 的文件，位于 `userdata` 目录下。该文件控制消息 ID 自动填充特性，它会为发送到给定目标的每条消息分配一个数ID，并将该 ID 追加到所发送每条消息的 userdata 字典中

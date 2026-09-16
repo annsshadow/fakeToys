@@ -1,3 +1,5 @@
+# mptcp
+
 ﻿
 ## 多路TCP（MPTCP
 
@@ -44,7 +46,7 @@
 数据包调度器`net.mptcp.scheduler` sysctl 旋钮控制——参mptcp-sysctl.rst
 
 
-## 濂楁帴瀛?API
+## 濂楁帴子?API
 
 
 ### 创建 MPTCP 套接

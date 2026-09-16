@@ -1,3 +1,5 @@
+# seg6-sysctl
+
 ﻿
 ## Seg6 Sysfs 变量
 

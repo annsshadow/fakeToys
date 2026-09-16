@@ -1,3 +1,5 @@
+# rds
+
 ﻿
 ## RDS
 
@@ -23,7 +25,7 @@ TCP 鍜?IB銆。
 	RDS 使用 IPv4 地址16 位端口号来标识连接的端点。所有涉及在内核与用户空间之	传递地址的套接字操作通常使用 struct sockaddr_in
 	使用 IPv4 地址并不意味着底层传输必须基于 IP。实际上，RDS over IB 使用的是可靠	IB 连接；IP 地址仅用于定位远程节点的 GID（通过对给IP 进行 ARP 查询）
 	端口空间完全独立UDP、TCP 或任何其他协议
- - 濂楁帴瀛楁帴鍙。
+ - 濂楁帴子楁帴鍙。
 	RDS 套接*大多数情况下**的工作方式与你从 BSD 套接字所期望的一致。下一节将介绍
 	细节。无论如何，所I/O 都通过标准 BSD 套接API 执行。像零拷贝支持这样的一	附加功能通过控制消息实现，而其他扩展则使用 getsockopt/setsockopt 调用
 	套接字必须先绑定，然后才能发送或接收数据。这是必需的，因为绑定还会选择一个传输并
@@ -32,7 +34,7 @@ TCP 鍜?IB銆。
 
 	RDS /proc/sys/net/rds 中支持若sysctl
 
-## 濂楁帴瀛楁帴鍙。
+## 濂楁帴子楁帴鍙。
 
   AF_RDS, PF_RDS, SOL_RDS
 	AF_RDS PF_RDS 是与 socket(2) 一起使用以创建 RDS 套接字的域类型。SOL_RDS 	setsockopt(2) getsockopt(2) 一起用RDS 特定套接字选项的套接字级别
@@ -88,6 +90,7 @@ TCP 鍜?IB銆。
 
   消息
     The message header is a 'struct rds_header' (see rds.h):
+
 
     字段
       h_sequence:

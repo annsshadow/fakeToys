@@ -1,3 +1,5 @@
+# switch-driver
+
 ﻿
 ## DPAA2 浜ゆ崲鏈洪┍鍔。
 
@@ -33,10 +35,12 @@ dpaa2-switch 驱动fsl-mc 总线上发现的 DPSW 设备上探测。这些设备
 
  * 广播和洪泛（flooding）配置都应是每个 FDB 独立的。这使得驱动能够根据共享FDB 的交换机端口（即处于同一网桥下）来限制每FDB 的广播和洪泛域   ::
 
+
         fsl_dpaa2_switch dpsw.0: Flooding domain is not per FDB, cannot probe
         fsl_dpaa2_switch dpsw.0: Broadcast domain is not per FDB, cannot probe
 
  * 交换机的控制接口不应被禁用（创建时选项不应传入 DPSW_OPT_CTRL_IF_DIS）。没有控制接口，驱动就无法在交换机端netdevices 上提供正确的 Rx/Tx 流量支持   ::
+
 
         fsl_dpaa2_switch dpsw.0: Control Interface is disabled, cannot probe
 
