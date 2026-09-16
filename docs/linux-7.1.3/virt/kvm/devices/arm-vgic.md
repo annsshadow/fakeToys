@@ -1,3 +1,5 @@
+# arm-vgic
+
 ﻿
 ## ARM Virtual Generic Interrupt Controller v2 (VGIC)
 
@@ -65,6 +67,7 @@ GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能
 
   Errors:
 
+
     =======  =====================================================
     -ENXIO   Getting or setting this register is not yet supported
     -EBUSY   One or more VCPUs are running
@@ -74,7 +77,9 @@ GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能
   KVM_DEV_ARM_VGIC_GRP_CPU_REGS
    Attributes:
 
+
     The attr field of kvm_device_attr encodes two values::
+
 
       bits:     | 63   ....  40 | 39 ..  32  |  31   ....    0 |
       values:   |    reserved   | vcpu_index |      offset     |
@@ -95,6 +100,7 @@ GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能
 
     Thus, preemption level X has one or more active interrupts if and only if:
 
+
       APRn[X mod 32] == 0b1,  where n = X / 32
 
     Bits for undefined preemption levels are RAZ/WI.
@@ -112,6 +118,7 @@ GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能
 
   Errors:
 
+
     =======  =====================================================
     -ENXIO   Getting or setting this register is not yet supported
     -EBUSY   One or more VCPUs are running
@@ -121,10 +128,12 @@ GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能
   KVM_DEV_ARM_VGIC_GRP_NR_IRQS
    Attributes:
 
+
     A value describing the number of interrupts (SGI, PPI and SPI) for
     this GIC instance, ranging from 64 to 1024, in increments of 32.
 
   Errors:
+
 
     =======  =============================================================
     -EINVAL  Value set is out of the expected range
@@ -135,11 +144,13 @@ GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能
   KVM_DEV_ARM_VGIC_GRP_CTRL
    Attributes:
 
+
     KVM_DEV_ARM_VGIC_CTRL_INIT
       request the initialization of the VGIC or ITS, no additional parameter
       in kvm_device_attr.addr.
 
   Errors:
+
 
     =======  =========================================================
     -ENXIO   VGIC not properly configured as required prior to calling

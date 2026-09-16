@@ -1,3 +1,5 @@
+# guest-halt-polling
+
 ﻿## 客户机停机轮询（Guest halt polling
 
 cpuidle_haltpoll 驱动配合 haltpoll 调度器（governor），允许客户vcpu 停机（halt）之前轮询一段指定的时间
