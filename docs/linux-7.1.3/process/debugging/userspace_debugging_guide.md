@@ -1,3 +1,5 @@
+# userspace_debugging_guide
+
 ﻿
 ## 用户空间调试建议
 
@@ -97,6 +99,7 @@
 
    Performance counter stats for 'find /usr -name gcc*':
 
+
      1277.81 msec    task-clock             #    0.997 CPUs utilized
      9               context-switches       #    7.043 /sec
      1               cpu-migrations         #    0.783 /sec
@@ -122,7 +125,7 @@
 事件和指标的可用性取决于你运行的系统
 完整文档`<https://perf.wiki.kernel.org/index.php/Main_Page>`__
 
-#### Perfetto
+## Perfetto
 
 
 一套用于测量和分析应用程序与系统表现如何的工具。你可以借助它来

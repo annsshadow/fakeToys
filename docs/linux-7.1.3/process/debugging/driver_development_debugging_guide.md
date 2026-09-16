@@ -1,3 +1,5 @@
+# driver_development_debugging_guide
+
 ﻿
 ## 驱动开发调试建
 
@@ -61,10 +63,10 @@
 
 最好直接使pr_debug()，它之后可以通过动态调试开关闭。此外，许多驱动通过类似
 `core_debug` 这样的变量（由模块参数设置）来激活这些打印。然而，模块参数 `已不被推<https://lore.kernel.org/all/2024032757-surcharge-grime-d3dd@gregkh>`_
-### Ftrace
+## Ftrace
 
 
-#### 创建自定Ftrace 跟踪
+### 创建自定Ftrace 跟踪
 
 跟踪点向你的代码中添加一个钩子，当该跟踪点被启用时会被调用并记录。例如，这可用于
 跟踪命中一个条件分支，或在调试会话期间代码流的特定点转储内部状态
