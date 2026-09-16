@@ -1,3 +1,5 @@
+# hid-transport
+
 ﻿## HID I/O 传输驱动
 
 HID 子系统独立于底层的传输驱动。最初仅支持 USB，但其他规范也采纳了 HID 设计并提供了新的传输驱动。内核至少包含对 USB、Bluetooth、I2C 以及用户空间 I/O 驱动的支持
@@ -111,6 +113,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
 
    ::
 
+
       void (*stop) (struct hid_device *hdev)
 
    Called from HID device drivers once they are done with a device. Transport
@@ -123,6 +126,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
 
    ::
 
+
       int (*open) (struct hid_device *hdev)
 
    Called from HID device drivers once they are interested in data reports.
@@ -132,6 +136,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
    ->open() calls are nested for each client that opens the HID device.
 
    ::
+
 
       void (*close) (struct hid_device *hdev)
 
@@ -145,6 +150,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
 
    ::
 
+
       int (*parse) (struct hid_device *hdev)
 
    Called once during device setup after ->start() has been called. Transport
@@ -153,12 +159,14 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
 
    ::
 
+
       int (*power) (struct hid_device *hdev, int level)
 
    Called by HID core to give PM hints to transport drivers. Usually this is
    analogical to the ->open() and ->close() hints and redundant.
 
    ::
+
 
       void (*request) (struct hid_device *hdev, struct hid_report *report,
 		       int reqtype)
@@ -173,6 +181,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
 
    ::
 
+
       int (*wait) (struct hid_device *hdev)
 
    Used by HID core before calling ->request() again. A transport driver can use
@@ -180,6 +189,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
    allowed at a time.
 
    ::
+
 
       int (*raw_request) (struct hid_device *hdev, unsigned char reportnum,
                           __u8 *buf, size_t count, unsigned char rtype,
@@ -192,6 +202,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
 
    ::
 
+
       int (*output_report) (struct hid_device *hdev, __u8 *buf, size_t len)
 
    Send raw output report via intr channel. Used by some HID device drivers
@@ -200,6 +211,7 @@ INPUT OUTPUT 报告可以作为纯数据报告在 intr 通道上发送。对 INP
    output report on the intr channel!
 
    ::
+
 
       int (*idle) (struct hid_device *hdev, int report, int idle, int reqtype)
 

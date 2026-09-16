@@ -1,3 +1,5 @@
+# intel-thc-hid
+
 ﻿
 ## Intel 触摸主机控制器（THC，Touch Host Controller
 
@@ -149,11 +151,11 @@ THC 被配置为 SPI 模式时，操作码用于确定读/I/O 模式。以下是
 操作    对应SPI 命令
 =======   ==============================
 0x0B      璇，鍗?I/O
-0x02      鍐，鍗?I/O
+0x02      内，鍗?I/O
 0xBB      璇，鍙?I/O
-0xB2      鍐，鍙?I/O
+0xB2      内，鍙?I/O
 0xEB      璇，鍥?I/O
-0xE2      鍐，鍥?I/O
+0xE2      内，鍥?I/O
 =======   ==============================
 
 一般来说，不同的触IC 有不同的操作码定义。根HIDSPI 协议白皮书，这些操作码定义在设备ACPI 表中，驱动需要在驱动初始化期间通过 OS ACPI API 查询这些信息，然后用正确设置配置 THC MMIO 操作码寄存器
@@ -164,7 +166,7 @@ THC 工作I2C 模式时，操作码用于告THC 下一PIO 类型：I2C SubIP APB
 操作    对应I2C 命令                                     地址
 =======   ===================================================   ===========
 0x12      I2C SubIP APB 内部寄存                         0h - FFh
-0x13      鍐?I2C SubIP APB 鍐呴儴瀵勫瓨鍣?                         0h - FFh
+0x13      内?I2C SubIP APB 内呴儴瀵勫瓨鍣?                         0h - FFh
 0x14      通过 I2C 总线读外部触IC                            N/A
 0x18      通过 I2C 总线写外部触IC                            N/A
 0x1C      通过 I2C 总线写后读外部触IC                        N/A
@@ -197,7 +199,7 @@ RxDMA 的典型用例是自动从触IC 接收数据。一RxDMA 被软件启用�
 
 THC 支持一种由软件触发RxDMA 模式来从触摸 IC 读取触摸数据。这SW RxDMA 是第三个 THC RxDMA 引擎，功能与现有的两RxDMA 类似，唯一的区别是这个 SW RxDMA 由软件触发，RxDMA2 由外部触IC 中断触发。它为软件驱动提供了随时使用 RxDMA 读取触摸 IC 数据的灵活性
 在软件启动一SW RxDMA 之前，它应当停止1 和第 2 RxDMA，清PRD 写指针，并使设备中断静止（quiesce，THC_DEVINT_QUIESCE_HW_STS = 1），其他操作RxDMA 相同
-#### 3.3.3 鍐?DMA 閫氶亾
+#### 3.3.3 内?DMA 閫氶亾
 
 
 THC 有一个写 DMA 引擎，可用于自动向触IC 发送数据。根HIDSPI HIDI2C 协议，每次只能向触摸 IC 发送一个命令，并且在最后一个命令被完全处理之前，无法发送下一个命令，因此 THC DMA 引擎只支持单PRD 表

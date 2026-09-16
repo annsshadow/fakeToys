@@ -1,10 +1,12 @@
+# uhid
+
 ﻿## UHID - 面向 HID 子系统的用户空间 I/O 驱动支持
 
 UHID 允许用户在用户空间实HID 传输驱动。关HID 传输驱动的介绍，请参hid-transport.rst。本文档大量依赖其中所定义的术语
 借助 UHID，用户空间的传输驱动可以为每个连接到用户空间所控制总线的设备创内核 hid 设备。UHID API 定义了由内核提供给用户空间、以及反向传递的 I/O 事件
 示例用户空间应用程序位于 ./samples/uhid/uhid-example.c
 
-### UHID API
+## UHID API
 
 UHID 通过一个字符杂项设备（misc-device）进行访问。次设备号是动态分配的，因你需要依udev（或类似机制）来创建设备节点。默认情况下该节点为 /dev/uhid
 如果你的 HID I/O 驱动检测到一个新设备，并希望HID 子系统注册该设备，那么你需为你想注册的每个设备打开一/dev/uhid。之后所有的通信都通过 read() / write()
