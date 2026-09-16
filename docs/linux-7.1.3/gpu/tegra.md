@@ -1,3 +1,5 @@
+# tegra
+
 ﻿## drm/tegra NVIDIA Tegra GPU 与显示驱
 
 NVIDIA Tegra SoC 通过 host1x 控制器支持一组显示、图形和视频功能。host1x 将命令流（收集自 CPU 直接提供push buffer）通过通道提供给它的客户端。软件或各个模块之间可以使用 syncpoint 进行同步
@@ -16,9 +18,11 @@ drm/tegra 驱动支持Tegra20 以来NVIDIA Tegra SoC 系列。它由三部分组
 
    :export:
 
+
 ### Host1x Syncpoint 参
 
    :export:
+
 
 ## KMS 驱动
 

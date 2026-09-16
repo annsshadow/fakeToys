@@ -1,3 +1,5 @@
+# afbc
+
 ﻿## Arm 帧缓冲压缩（AFBC，Arm Framebuffer Compression
 
 AFBC 是一种专有的无损图像压缩协议和格式它提供细粒度的随机访问，并最小化IP 模块之间传输的数据量
