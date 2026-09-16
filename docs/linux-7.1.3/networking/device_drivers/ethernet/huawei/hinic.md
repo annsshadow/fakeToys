@@ -1,3 +1,5 @@
+# hinic
+
 ﻿
 ## 华为智能网卡（HiNIC）系Linux 内核驱动
 

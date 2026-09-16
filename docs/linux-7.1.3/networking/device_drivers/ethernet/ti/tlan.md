@@ -1,3 +1,5 @@
+# tlan
+
 ﻿## Linux TLAN 驱动
 
 
@@ -75,6 +77,7 @@
 	   在使用内核参数强制速率时，你也需要同时设speed duplex	   ether=0,0,0x12,0,eth0 将强制链路为 100Mbps 半双工
 	7. 如果你的系统中有多块 tlan 适配器，你可以基于每块适配器使用上述选项。要强制
 	   你的 eth1 适配器为 100Mbit/HD 链路，使:
+
 
 		insmod tlan speed=0,100 duplex=0,1
 

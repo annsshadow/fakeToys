@@ -1,3 +1,5 @@
+# pktgen
+
 ﻿
 ## Linux 数据包生成器（packet generator）使用指
 启用 CONFIG_NET_PKTGEN 以编译并构建 pktgen，可以内置到内核或作为模块。推荐使用模块；如果需要则 modprobe pktgen。一旦运行，pktgen 会为每个 CPU 创建一个线程，并将亲和性绑定到CPU。监控和控制通过 /proc 完成。最简单的方法是选择一个合适的示例脚本并配置它

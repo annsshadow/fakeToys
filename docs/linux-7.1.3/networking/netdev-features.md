@@ -1,3 +1,5 @@
+# netdev-features
+
 ﻿
 ## Netdev 特性乱象与脱困指南
 
@@ -33,10 +35,12 @@ ndo_*_features 回调在持rtnl_lock 的情况下被调用。缺失的回调被�
 
  - ndo_fix_features:
 
+
 特性之间的所有依赖关系都应在此处解决。结果集合还可能被网络核心施加的限制进一步缩减（netdev_fix_features() 中所编写）。因此，当某特性的依赖未满足时，禁用该特性比强制开启其依赖更安全
 该回调不应修改硬件或驱动状态（应是无状态的）。在连续ndo_set_features 调用之间，它可能被多次调用
 回调不得更改 NETIF_F_SOFT_FEATURES NETIF_F_NEVER_CHANGE 集合中包含的特性。唯一的例外是 NETIF_F_VLAN_CHALLENGED，但需谨慎，因为这种更改不会影响已配置VLAN
  - ndo_set_features:
+
 
 应重新配置硬件以匹配传入的特性集合。除非出现无法在 ndo_fix_features 中可靠检测的错误情况，否则不应更改该集合。在这种情况下，回调应将 netdev->features 更新为与最终硬件状态一致。返回的错误不会（也无法）被传播dmesg 以外的任何地方。（注：成功返回为零0 表示静默错误。）
 

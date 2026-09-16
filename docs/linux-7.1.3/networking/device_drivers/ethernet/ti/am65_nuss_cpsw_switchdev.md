@@ -1,3 +1,5 @@
+# am65_nuss_cpsw_switchdev
+
 ﻿
 ## Texas Instruments K3 AM65 CPSW NUSS 基于 switchdev 的以太网驱动
 
@@ -90,6 +92,7 @@ Switch 模式可通过配置 devlink 驱动参数来启用：
   bridge vlan add dev br0 vid 100 pvid untagged self <---- Add cpu port to VLAN100
 
  2. tagged::
+
 
 	bridge vlan add dev sw0p1 vid 100 master
 	bridge vlan add dev sw0p2 vid 100 master

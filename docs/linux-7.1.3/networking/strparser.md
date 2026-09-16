@@ -1,3 +1,5 @@
+# strparser
+
 ﻿
 ## 流解析器（strparser
 
@@ -26,6 +28,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
      ::
 
+
 	void strp_pause(struct strparser *strp)
 
      Temporarily pause a stream parser. Message parsing is suspended
@@ -33,11 +36,13 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
      ::
 
+
 	void strp_unpause(struct strparser *strp)
 
      Unpause a paused stream parser.
 
      ::
+
 
 	void strp_stop(struct strparser *strp);
 
@@ -48,6 +53,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
      ::
 
+
 	void strp_done(struct strparser *strp);
 
      strp_done is called to release any resources held by the stream
@@ -55,6 +61,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
      has been stopped.
 
      ::
+
 
 	int strp_process(struct strparser *strp, struct sk_buff *orig_skb,
 			 unsigned int orig_offset, size_t orig_len,
@@ -68,6 +75,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
     ::
 
+
 	void strp_data_ready(struct strparser *strp);
 
     The upper layer calls strp_tcp_data_ready when data is ready on
@@ -77,6 +85,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
     buffer and message timeout is the receive timeout for the socket.
 
     ::
+
 
 	void strp_check_rcv(struct strparser *strp);
 
@@ -103,6 +112,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
     The return values of this function are:
 
+
     =========    ===========================================================
     >0           indicates length of successfully parsed message
     0            indicates more data must be received to parse the message
@@ -123,6 +133,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
     ::
 
+
 	void (*lock)(struct strparser *strp)
 
     The lock callback is called to lock the strp structure when
@@ -133,6 +144,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
     ::
 
+
 	void (*unlock)(struct strparser *strp)
 
     The unlock callback is called to release the lock obtained
@@ -141,6 +153,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
     mode the callback must be set appropriately.
 
     ::
+
 
 	void (*rcv_msg)(struct strparser *strp, struct sk_buff *skb);
 
@@ -158,12 +171,14 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
 
     ::
 
+
 	int (*read_sock)(struct strparser *strp, read_descriptor_t *desc,
                      sk_read_actor_t recv_actor);
 
     The read_sock callback is used by strparser instead of
     sock->ops->read_sock, if provided.
     ::
+
 
 	int (*read_sock_done)(struct strparser *strp, int err);
 
@@ -174,6 +189,7 @@ API 包括一个上下文结构体、一组回调、实用函数，以及用于�
      in strp_init) a default function is used.
 
      ::
+
 
 	void (*abort_parser)(struct strparser *strp, int err);
 
