@@ -1,6 +1,8 @@
+# flashing
+
 ﻿## dGPU 固件刷写（firmware flashing
 
-### IFWI
+## IFWI
 
 刷写 dGPU 集成的固件镜像（IFWI）受使用 PSP 来协调更新（Navi3x 或更新的 GPU）的 GPU 支持。对于受支持GPU，`amdgpu` 会导出一系列可用于刷写过程的 sysfs 文件
 IFWI 刷写过程如下

@@ -1,3 +1,5 @@
+# display-manager
+
 ﻿AMDgpu 显示管理
 
 
@@ -6,6 +8,7 @@
    :doc: overview
 
    :internal:
+
 
 生命周期
 
@@ -20,6 +23,7 @@
    :doc: overview
 
    :internal:
+
 
    :functions: register_hpd_handlers dm_crtc_high_irq dm_pflip_high_irq
 
@@ -38,6 +42,7 @@
    :internal:
 
 
+
 DCN 各代之间DC 颜色能力
 
 
@@ -48,6 +53,7 @@ DRM/KMS 框架定义了三CRTC 颜色校正属性：degamma（去伽马）、颜
    :doc: color-management-caps
 
    :internal:
+
 
 颜色流水线在 DCN 硬件各代之间发生了重大变化。混合前和混合后可执行的操作取决于硬件能力，如下所DCN 2.0 DCN 3.0 系列的架构示意
 

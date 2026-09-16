@@ -1,4 +1,4 @@
-## drm/imagination PowerVR 图形驱动
+# drm/imagination PowerVR 图形驱动
 
 
 本文件是 PowerVR（drm/imagination）图形驱动的文档入口。

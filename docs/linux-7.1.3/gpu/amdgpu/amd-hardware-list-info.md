@@ -1,9 +1,11 @@
+# amd-hardware-list-info
+
 ﻿## 各产品的 AMD 硬件组件信息
 
 
 在本页中，你可以找到 AMD 产品名称以及其中包含的组件版本
 
-### 加速处理单元（APU）信
+## 加速处理单元（APU）信
 
 
    :header-rows: 1
