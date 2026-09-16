@@ -213,6 +213,7 @@ class AugmentorPipeline:
         # 处理数据
         all_results = []
         existing_generated = []
+        max_existing_window = 500  # 滑动窗口大小，限制内存使用
         
         if use_parallel and len(remaining_indices) > 1:
             # 并行处理
@@ -243,6 +244,9 @@ class AugmentorPipeline:
                     if success:
                         all_results.extend(variants)
                         existing_generated.extend([v.get("instruction", "") for v in variants])
+                        # 滑动窗口，限制内存使用
+                        if len(existing_generated) > max_existing_window:
+                            existing_generated = existing_generated[-max_existing_window:]
                         
                         if use_checkpoint:
                             self.checkpoint_manager.update_progress(idx, True)
@@ -268,6 +272,9 @@ class AugmentorPipeline:
                     
                     all_results.extend(variants)
                     existing_generated.extend([v.get("instruction", "") for v in variants])
+                    # 滑动窗口，限制内存使用
+                    if len(existing_generated) > max_existing_window:
+                        existing_generated = existing_generated[-max_existing_window:]
                     
                     # 更新断点
                     if use_checkpoint:

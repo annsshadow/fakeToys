@@ -1,13 +1,12 @@
-"""OpenAI 模型后端"""
+"""OpenAI 模型后端 - 优化版"""
 
 import json
-import requests
 from .base import ModelBackend
 from ..config import ModelConfig
 
 
 class OpenAIBackend(ModelBackend):
-    """OpenAI 模型后端"""
+    """OpenAI 模型后端 - 优化版"""
     
     API_URL = "https://api.openai.com/v1/chat/completions"
     
@@ -22,7 +21,7 @@ class OpenAIBackend(ModelBackend):
             raise ValueError("OpenAI 后端需要 api_key")
     
     def _call_api(self, prompt: str) -> str:
-        """调用 OpenAI API
+        """调用 OpenAI API（使用连接池）
         
         Args:
             prompt: 输入提示
@@ -45,7 +44,8 @@ class OpenAIBackend(ModelBackend):
             ]
         }
         
-        response = requests.post(self.API_URL, json=payload, headers=headers)
+        session = self._get_session()
+        response = session.post(self.API_URL, json=payload, headers=headers, timeout=60)
         response.raise_for_status()
         
         data = response.json()
