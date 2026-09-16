@@ -1,0 +1,6 @@
+[report]
+# 覆盖率低于 pytest.ini 的 --cov-fail-under 阈值时 CI 必须失败
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if TYPE_CHECKING:
