@@ -1,3 +1,5 @@
+# entry
+
 ﻿## 异常、中断、系统调用与 KVM 的进退出处
 
 
@@ -15,7 +17,7 @@
 exceptions`_, `NMI and NMI-like exceptions`_銆。
 exceptions`_, `NMI and NMI-like exceptions`_.
 
-### 不可插桩代码 - noinstr
+## 不可插桩代码 - noinstr
 
 
 大多数插桩机制依RCU，因此在 RCU 开始监视之前的进入代码，以RCU 停止监视之后的退出代码中，禁止进行插桩。此外，许多体系结构必须保存和恢复寄存器状态，这意味着（例如）在断点进入代码中放置一个断点会覆盖初始断点的调试寄存器

@@ -1,3 +1,5 @@
+# abi
+
 ﻿## Kexec 交接（Kexec Handover）ABI
 
 本文件描Kexec 交接（KHO）机制相关的 ABI，汇总了核心交接、vmalloc/memblock 保留以及持久内存跟踪器等各子模块的接口说明入口，供需要在内核重启间保持状态的内核开发者参考

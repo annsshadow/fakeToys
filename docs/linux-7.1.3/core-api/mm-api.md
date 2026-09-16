@@ -1,3 +1,5 @@
+# mm-api
+
 ﻿## 内存管理 API
 
 
@@ -6,7 +8,9 @@
 
    :internal:
 
+
    :export:
+
 
    :functions: get_user_pages_fast
 
@@ -27,9 +31,12 @@
 
    :internal:
 
-   :export:
 
    :export:
+
+
+   :export:
+
 
    :functions: kfree_const kvmalloc_node kvfree
 
@@ -37,6 +44,7 @@
 
 
    :export:
+
 
 ## 文件映射与页缓存
 
@@ -46,6 +54,7 @@
 
    :export:
 
+
 ### 预读（Readahead
 
 
@@ -53,27 +62,33 @@
 
    :export:
 
+
 ### 回写（Writeback
 
 
    :export:
+
 
 ### 截断（Truncate
 
 
    :export:
 
+
    :internal:
+
 
 ## 内存池（Memory pools
 
 
    :export:
 
+
 ## 更多内存管理函数
 
 
    :export:
+
 
    :internal:
    :internal:

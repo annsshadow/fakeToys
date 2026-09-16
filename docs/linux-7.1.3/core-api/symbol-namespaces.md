@@ -1,3 +1,5 @@
+# symbol-namespaces
+
 ﻿## 符号命名空间
 
 
@@ -42,7 +44,7 @@ USB_COMMON 命名空间，添```
 
 ```
 通常在第一#include 语句之前放置
-### 使用 EXPORT_SYMBOL_FOR_MODULES() 
+## 使用 EXPORT_SYMBOL_FOR_MODULES()
 
 使用此宏导出的符号被放入模块命名空间。该命名空间无法被导入。这些导出仅GPL，因它们仅面向树内模块
 该宏接受一个以逗号分隔的模块名列表，仅允许这些模块访问此符号。支持简单的尾部通配符
