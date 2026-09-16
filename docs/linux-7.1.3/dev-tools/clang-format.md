@@ -1,3 +1,5 @@
+# clang-format
+
 ﻿
 ## clang-format
 
@@ -58,7 +60,7 @@
 
 
 
-### 重新格式化代码块
+## 重新格式化代码块
 
 
 通过使用与文本编辑器的集成，你可以用一次按键重新格式化任意代码块（选区）。这在移动代码、处理深度缩进的复杂代码、多行宏（以及对齐它们的反斜杠）等情况下特别有用
@@ -90,11 +92,13 @@
 
     vs.::
 
+
         #define TRACING_MAP_BITS_DEFAULT 11
         #define TRACING_MAP_BITS_MAX 17
         #define TRACING_MAP_BITS_MIN 7
 
   - Aligned designated initializers, e.g.::
+
 
         static const struct file_operations uprobe_events_ops = {
                 .owner          = THIS_MODULE,
@@ -106,6 +110,7 @@
         };
 
     vs.::
+
 
         static const struct file_operations uprobe_events_ops = {
                 .owner = THIS_MODULE,
@@ -119,7 +124,7 @@
 
 ```
 
-### 额外的特选项
+## 额外的特选项
 
 
 为了在输出与当前代码之间的差异最小化，配置文件中默认没有启用某些特风格选项。换句话说，为了让差异尽可能小，从而使全文件风格的审查以及 diff 和补丁的审查尽可能容易

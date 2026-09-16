@@ -1,3 +1,5 @@
+# functionredirection
+
 ﻿
 ## 函数重定API
 
@@ -132,6 +134,7 @@
 
    :internal:
 
+
 	send_data_to_hardware("hello");
 	KUNIT_EXPECT_EQ(test, times_called, 1);
 
@@ -147,3 +150,4 @@
 
 
    :internal:
+
