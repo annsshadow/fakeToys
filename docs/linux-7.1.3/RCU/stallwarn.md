@@ -1,3 +1,5 @@
+# stallwarn
+
 ﻿
 ## 使用 RCU CPU 停顿检测器
 
@@ -62,6 +64,7 @@ rcuupdate.rcu_cpu_stall_suppress 模块参数会禁RCU CPU 停顿检测器，该
 	此引sysfs 参数控制 RCU-tasks RCU-tasks-trace 的停顿警告间隔。零或更小的值会抑制 RCU-tasks 停顿警告。正值以秒为单位设置停顿警告间隔。RCU-tasks 停顿警告以如下行开始：
 
 		INFO: rcu_tasks detected stalls on tasks:
+
 
 	然后继续输出每个阻塞当前 RCU-tasks 宽限期的任务sched_show_task()
 	RCU-tasks-trace 停顿警告类似地开始（并继续）

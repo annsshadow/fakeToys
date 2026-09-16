@@ -1,3 +1,5 @@
+# Tree-RCU-Memory-Ordering
+
 ﻿## 一次穿TREE_RCU 宽限期内存排序的旅程
 
 
@@ -168,7 +170,7 @@ Tree RCU 的宽限期内存排序保证最严重地依赖于 `rcu_node` 结构`-
 
 该方框代`rcu_node` 结构`->lock` 临界区，顶部的双线代表额外的
 `smp_mb__after_unlock_lock()`銆。
-#### Tree RCU 宽限期内存排序组
+### Tree RCU 宽限期内存排序组
 
 Tree RCU 的宽限期内存排序保证由若RCU 组件提供
 #. `Callback Registry`_
@@ -181,7 +183,7 @@ Tree RCU 的宽限期内存排序保证由若RCU 组件提供
 #. `Callback Invocation`_
 
 下面各节逐一详细考察相应的组件
-##### Callback Registry（回调注册）
+## Callback Registry（回调注册）
 
 
 如果 RCU 的宽限期保证要有任何意义，那么发生在给定 `call_rcu()` 调用之前任何访问，也必须发生在相应的宽限期之前。RCU 宽限期保证这一部分的实现如
@@ -212,7 +214,7 @@ Tree RCU 的宽限期内存排序保证由若RCU 组件提供
 | 调用它。因此无论哪种方式，最终都会落`call_rcu()` 上             |
 +-----------------------------------------------------------------------+
 
-##### Grace-Period Initialization（宽限期初始化）
+### Grace-Period Initialization（宽限期初始化）
 
 
 宽限期初始化由宽限期内核线程执行，该线程`rcu_gp_init()` 函数内对

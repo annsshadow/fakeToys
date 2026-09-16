@@ -1,3 +1,5 @@
+# whatisRCU
+
 ﻿## What is RCU?  --  "Read, Copy, Update"
 
 
@@ -49,7 +51,7 @@ RCU 是一种在 2.5 开发周期中加入 Linux 内核的同步机制，针对"
 因此，从对你和你的学习习惯最有意义的节开始。如果你想知道关于一切的的一切，尽管通读全文——但如果你真的是这种人，你早已翻阅过源代码，因而根本不需要本文档-)
 
 
-### 1.  RCU 概述
+## 1.  RCU 概述
 
 
 RCU 背后的基本思想是将更新拆分移除"回收"两个阶段。移除阶段移除数据结构中对数据项的引用（可能通过将它们替换为这些数据项的新版本的引用来实现），并且可以与读者并发运行。移除阶段能够与读者并发运行的原因是，现代 CPU 的语义保证读者将看到数据结构的旧版本或新版本，而不会看到部分更新的引用。回收阶段完成回收（例如释放）在移除阶段从数据结构中移除的数据项的工作。由于回收数据项会干扰任何正在并发引用这些数据项的读者，回收阶段必须等到读者不再持有对这些数据项的引用后才能开始
@@ -86,7 +88,7 @@ RCU API 还有许多其他成员，但其余成员都可以用这五个来表示
 
 下面描述这五个核RCU API，另18 个稍后列举。更多信息请参阅内核 docbook 文档，或直接查看函数头注释
 
-##### rcu_read_lock()
+#### rcu_read_lock()
 
 	void rcu_read_lock(void);
 
@@ -180,6 +182,7 @@ RCU API 还有许多其他成员，但其余成员都可以用这五个来表示
 	However, in this case, one could just as easily combine these
 	into one statement::
 
+
 		return rcu_dereference(head.next)->data;
 
 	If you are going to be fetching multiple fields from the
@@ -192,6 +195,7 @@ RCU API 还有许多其他成员，但其余成员都可以用这五个来表示
 	Note that the value returned by rcu_dereference() is valid
 	only within the enclosing RCU read-side critical section [1]_.
 	For example, the following is **not** legal::
+
 
 		rcu_read_lock();
 		p = rcu_dereference(head.next);
@@ -451,7 +455,7 @@ RCU 的好处之一在于，它有极其简单的"玩具"实现，是理解 Linu
 以了解描Linux 内核 RCU 实现的论文。OLS'01 OLS'02 论文是很好的入门，而学位论文提供了截至 2004 年初当前实现的更多细节
 
 
-##### 5A.  "玩具"实现 #1：锁
+#### 5A.  "玩具"实现 #1：锁
 
 
 本节给出一个基于熟悉锁定原语的"玩具"RCU 实现。它的开销使得它无法用于实际场景，缺乏可扩展性也是一样。它也不适合实时使用，因为它允许调度延迟从一个读端临界区"渗到另一个。它还假设了递归的读写锁：如果你在非递归锁上尝试这样做，并且允许嵌套rcu_read_lock() 调用，就可能发生死锁
@@ -508,7 +512,7 @@ rcu_read_lock() rcu_read_unlock() 原语读取-获取并释放一个全局读写
 快速测验答<9_whatisRCU>
 
 
-##### 5B.  "玩具"示例 #2：经RCU
+## 5B.  "玩具"示例 #2：经RCU
 
 
 本节给出一个基经典 RCU"玩具"RCU 实现。它在性能上（但仅针对更新）以及诸如热插拔 CPU 和在 CONFIG_PREEMPTION 内核中运行等特性方面也很欠缺。rcu_dereference() rcu_assign_pointer() 的定义与前一节所示相同，因此此处省略
