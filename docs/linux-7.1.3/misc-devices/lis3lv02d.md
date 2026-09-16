@@ -1,3 +1,5 @@
+# lis3lv02d
+
 ﻿## 内核驱动 lis3lv02d
 
 
@@ -12,7 +14,7 @@
  - Eric Piel <eric.piel@tremplin-utc.net>
 
 
-### 描述
+## 描述
 
 该驱动为多种惠普笔记本中发现的加速度计提供支持，该特性官方称为“HP Mobile Data
 Protection System 3D”或“HP 3D DriveGuard”。它会自动检测带有此传感器的笔记本。已型号（完整列表见 drivers/platform/x86/hp_accel.c）其坐标轴会自动按标准方式定（例如：你可以直接玩 neverball）。加速度计数据可通过 /sys/devices/faux/lis3lv02d
