@@ -1,4 +1,4 @@
-"""多格式导出模块"""
+"""多格式导出模块 - 优化版"""
 
 import json
 import csv
@@ -6,6 +6,7 @@ import logging
 from typing import List, Dict, Optional
 from pathlib import Path
 from enum import Enum
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger(__name__)
 
@@ -15,21 +16,23 @@ class ExportFormat(Enum):
     JSONL = "jsonl"
     LLAMA_FACTORY = "llama_factory"
     ALPACA = "alpaca"
-    SHAREGPT = "sharegpt"
+    SHARE_GPT = "sharegpt"
     CHATML = "chatml"
     CSV = "csv"
 
 
 class Exporter:
-    """数据导出器"""
+    """数据导出器 - 优化版"""
     
-    def __init__(self, default_format: str = "jsonl"):
+    def __init__(self, default_format: str = "jsonl", max_workers: int = 4):
         """初始化导出器
         
         Args:
             default_format: 默认导出格式
+            max_workers: 最大并发数
         """
         self.default_format = ExportFormat(default_format)
+        self.max_workers = max_workers
     
     def _convert_to_jsonl(self, items: List[Dict]) -> List[str]:
         """转换为 JSONL 格式
@@ -247,13 +250,15 @@ class Exporter:
     def export_all_formats(self, 
                           items: List[Dict],
                           output_dir: str,
-                          base_name: str = "train_data") -> Dict[str, str]:
-        """导出所有格式
+                          base_name: str = "train_data",
+                          use_parallel: bool = True) -> Dict[str, str]:
+        """导出所有格式（优化版）
         
         Args:
             items: 数据列表
             output_dir: 输出目录
             base_name: 基础文件名
+            use_parallel: 是否使用并行处理
         
         Returns:
             格式到文件路径的映射
@@ -263,7 +268,7 @@ class Exporter:
         
         results = {}
         
-        for fmt in ExportFormat:
+        def export_single(fmt):
             if fmt == ExportFormat.CSV:
                 ext = ".csv"
             else:
@@ -271,7 +276,25 @@ class Exporter:
             
             output_path = output_dir / f"{base_name}_{fmt.value}{ext}"
             self.export(items, str(output_path), fmt.value)
-            results[fmt.value] = str(output_path)
+            return fmt.value, str(output_path)
+        
+        if not use_parallel:
+            # 串行处理
+            for fmt in ExportFormat:
+                fmt_name, path = export_single(fmt)
+                results[fmt_name] = path
+        else:
+            # 并行处理
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                futures = [executor.submit(export_single, fmt) for fmt in ExportFormat]
+                
+                for future in as_completed(futures):
+                    try:
+                        fmt_name, path = future.result()
+                        results[fmt_name] = path
+                        logger.info(f"导出格式 {fmt_name} 完成")
+                    except Exception as e:
+                        logger.error(f"导出失败: {e}")
         
         return results
     

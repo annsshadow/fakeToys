@@ -1,27 +1,31 @@
-"""对话上下文增强模块"""
+"""对话上下文增强模块 - 优化版"""
 
 import json
 import logging
 from typing import List, Dict, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from .models.base import ModelBackend
 
 logger = logging.getLogger(__name__)
 
 
 class ContextAugmentor:
-    """对话上下文增强器"""
+    """对话上下文增强器 - 优化版"""
     
     def __init__(self, 
                  model_backend: ModelBackend,
-                 num_turns: int = 3):
+                 num_turns: int = 3,
+                 max_workers: int = 5):
         """初始化对话上下文增强器
         
         Args:
             model_backend: 模型后端
             num_turns: 对话轮数
+            max_workers: 最大并发数
         """
         self.model_backend = model_backend
         self.num_turns = num_turns
+        self.max_workers = max_workers
     
     def _generate_follow_up_question(self, 
                                     history: List[Dict],
@@ -129,25 +133,46 @@ class ContextAugmentor:
     
     def batch_generate(self,
                       items: List[Dict],
-                      existing_histories: Optional[List[List[Dict]]] = None) -> List[Dict]:
-        """批量生成多轮对话数据
+                      existing_histories: Optional[List[List[Dict]]] = None,
+                      use_parallel: bool = True) -> List[Dict]:
+        """批量生成多轮对话数据（优化版）
         
         Args:
             items: 种子问答对列表
             existing_histories: 已有的历史对话
+            use_parallel: 是否使用并行处理
         
         Returns:
             多轮对话数据列表
         """
-        results = []
+        if not use_parallel or len(items) <= 1:
+            # 串行处理
+            results = []
+            for i, item in enumerate(items):
+                logger.info(f"生成多轮对话 {i + 1}/{len(items)}")
+                multi_turn = self.generate_multi_turn(item, existing_histories)
+                results.append(multi_turn)
+            return results
         
-        for i, item in enumerate(items):
-            logger.info(f"生成多轮对话 {i + 1}/{len(items)}")
+        # 并行处理
+        results = [None] * len(items)
+        
+        def process_item(idx_item):
+            idx, item = idx_item
+            return idx, self.generate_multi_turn(item, existing_histories)
+        
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = [executor.submit(process_item, (i, item)) for i, item in enumerate(items)]
             
-            multi_turn = self.generate_multi_turn(item, existing_histories)
-            results.append(multi_turn)
+            for future in as_completed(futures):
+                try:
+                    idx, result = future.result()
+                    results[idx] = result
+                    logger.info(f"完成多轮对话 {idx + 1}/{len(items)}")
+                except Exception as e:
+                    logger.error(f"生成多轮对话失败: {e}")
         
-        return results
+        return [r for r in results if r is not None]
     
     def convert_single_to_multi_turn(self,
                                     items: List[Dict],
