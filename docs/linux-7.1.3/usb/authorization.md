@@ -1,3 +1,5 @@
+# authorization
+
 ﻿## 授权（或不授权）你的 USB 设备连接到系
 
 Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporation
@@ -71,7 +73,7 @@ Copyright (C) 2007 Inaky Perez-Gonzalez <inaky@linux.intel.com> Intel Corporatio
 
 ```
 当然，这很简陋，你会想要PKI 做真正的证书验证，这样就不依赖共享密钥等等，但思路就是这样任何能够接触到设备小工具套件的人都可以伪造描述符与设备信息。不要信任这些。不客气
-### 接口授权
+## 接口授权
 
 
 有一种类似的方法可以允许或拒绝特定的 USB 接口。这允许只屏蔽一USB 设备的子集
