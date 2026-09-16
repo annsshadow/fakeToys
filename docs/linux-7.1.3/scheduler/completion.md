@@ -1,6 +1,8 @@
+# completion
+
 ﻿## Completions - “等待完成”屏API
 
-### 简介：
+## 简介：
 
 如果你有一个或多个线程必须等待某些内核活动到达某个点或特定状态，completions（完成量）可以为这一问题提供一个无竞态（race-free）的解决方案。从语义上讲，它们有些类`pthread_barrier()`，并且具有相似的用例
 Completions 是一种代码同步机制，比任何对信号量的误用以及忙循环都要可取。任何时候当你想使用 `yield()` 或某种古怪的 `msleep(1)` 循环来让其他事情继续推进时，你可能应当考虑改用其中一`wait_for_completion*()` 调用`complete()`

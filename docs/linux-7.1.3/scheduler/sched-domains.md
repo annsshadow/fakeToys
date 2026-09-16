@@ -1,3 +1,5 @@
+# sched-domains
+
 ﻿## 调度域（Scheduler Domains
 
 每个 CPU 都有一基础"调度域（struct sched_domain）。域层级通过 ->parent 指针由这些基础域构建而成>parent MUST NULL 结尾，且域结构应为每 CPU 的，因为它们被无锁地更新
