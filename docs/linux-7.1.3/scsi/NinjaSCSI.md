@@ -1,3 +1,5 @@
+# NinjaSCSI
+
 ﻿
 ## WorkBiT NinjaSCSI-3/32Bi Linux 驱动
 
@@ -108,6 +110,7 @@
 	# /etc/rc.d/rc.pcmcia start        (BSD 风格)
 
     鎴?:
+
 
 	# /etc/init.d/pcmcia start         (SYSV 风格)
 

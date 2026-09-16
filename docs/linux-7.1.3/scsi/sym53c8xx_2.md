@@ -1,3 +1,5 @@
+# sym53c8xx_2
+
 ﻿锘?## SYM-2 椹卞姩
 
 Written by Gerard Roudier <groudier@free.fr>
@@ -354,12 +356,12 @@ Documentation/admin-guide/kernel-parameters.rst 中所述
 ### 10.2 可用参数
 
 
-##### 10.2.1  默认标记命令数量
+#### 10.2.1  默认标记命令数量
 
 
         - cmd_per_lun=0（或 cmd_per_lun=1）禁用标记命令队        - cmd_per_lun=#tagstags > 1）启用标记命令队
   #tags 会被截断为“排队命令最大数量”配置参数
-##### 10.2.2 最大突发长
+## 10.2.2 最大突发长
 
 	========== ======================================================
         burst=0    burst disabled
@@ -371,7 +373,7 @@ Documentation/admin-guide/kernel-parameters.rst 中所述
 	========== ======================================================
 
   默认情况下，驱动使用芯片支持的最大值
-##### 10.2.3 LED 支持
+## 10.2.3 LED 支持
 
 
 	=====      ===================
@@ -381,7 +383,7 @@ Documentation/admin-guide/kernel-parameters.rst 中所述
 
   如果你的 SCSI 板没有使SDMS BIOS，请勿启LED 支持  （见“配置参数”）
 
-##### 10.2.4 差分模式
+### 10.2.4 差分模式
 
 
 	======	=================================
@@ -441,6 +443,7 @@ Documentation/admin-guide/kernel-parameters.rst 中所述
 		    #x is an integer value combining the
 		    following power-of-2 values:
 
+
 		    =============  ======
 		    DEBUG_ALLOC       0x1
 		    DEBUG_PHASE       0x2
@@ -459,7 +462,7 @@ Documentation/admin-guide/kernel-parameters.rst 中所述
 	=========   ====================================
 
   你可以放心地摆弄 DEBUG_NEGO。但是，其中一些标志可能会产生大量  syslog 消息
-##### 10.2.10 稳定延迟
+## 10.2.10 稳定延迟
 
 
 	========	===================
@@ -468,7 +471,7 @@ Documentation/admin-guide/kernel-parameters.rst 中所述
 
   总线复位后，驱动会延n 秒再与总线上的任何设备通信。默认是 3 秒，
   安全模式会默认设10 秒
-##### 10.2.11 串行 NVRAM
+### 10.2.11 串行 NVRAM
 
 
 	.. Note:: option not currently implemented.

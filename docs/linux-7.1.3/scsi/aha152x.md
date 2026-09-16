@@ -1,3 +1,5 @@
+# aha152x
+
 ﻿
 ## Linux 下的 Adaptec AHA-1520/1522 SCSI 驱动（aha152x
 
@@ -64,6 +66,7 @@ EXT_TRANS:    启用扩展转换                              (0/1: 默认 0 [�
 
   第一个控制器的配置覆
   ::
+
 
     aha152x1=IOPORT,IRQ,SCSI_ID,RECONNECT,PARITY,SYNCHRONOUS,DELAY,EXT_TRANS
 
