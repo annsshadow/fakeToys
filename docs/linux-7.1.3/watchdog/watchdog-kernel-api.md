@@ -1,3 +1,5 @@
+# watchdog-kernel-api
+
 ﻿## Linux WatchDog Timer 驱动核心内核 API
 
 
@@ -5,7 +7,7 @@
 
 Wim Van Sebroeck <wim@iguana.be>
 
-### 简
+## 简
 
 本文档并不描述什么是看门狗定时器（WDT）驱动或设备，也不描述用户空间可用于看门狗定时器通信API。如果你想知道这些，请阅读以下文件：
 Documentation/watchdog/watchdog-api.rst 銆。
