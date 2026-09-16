@@ -1,3 +1,5 @@
+# tracepoint-analysis
+
 ﻿## Notes Analysing Behaviour 使用 事件 Tracepoints
 
 :Author: Mel Gorman (PCL information heavily 基于 email 来自 Ingo Molnar)
@@ -5,7 +7,7 @@
 ## 1. Introduction
 
 
-Tracepoints (参见 Documentation/trace/tracepoints.rst) 使用 
+Tracepoints (参见 Documentation/trace/tracepoints.md) 使用 
 creating custom 内核 模块 注册 probe 函数 使用 the 事件
 tracing infrastructure.
 
@@ -103,6 +105,7 @@ specifying the -一switch analysing sleep, the system-wide 事件
 	sleep 10
  Performance counter stats for 'sleep 10':
 
+
            9630  kmem:mm_page_alloc
            2143  kmem:mm_page_free
            7424  kmem:mm_page_free_batched
@@ -131,6 +134,7 @@ basis 使用 PCL 例如 follows.
   Time: 0.909
 
     Performance counter stats for './hackbench 10':
+
 
           17803  kmem:mm_page_alloc
           12398  kmem:mm_page_free
@@ -165,6 +169,7 @@ occurrences useful the 性能 analyst, 然后 perf 使用.
 
    Performance counter stats for './hackbench 10' (5 runs):
 
+
           16630  kmem:mm_page_alloc         ( +-   3.542% )
           11486  kmem:mm_page_free	    ( +-   4.771% )
            4730  kmem:mm_page_free_batched  ( +-   2.325% )
@@ -184,6 +189,7 @@ time 一system-wide basis 使用 -一sleep.
 		-a --repeat 10 \
 		sleep 1
   Performance counter stats for 'sleep 1' (10 runs):
+
 
            1066  kmem:mm_page_alloc         ( +-  26.148% )
             182  kmem:mm_page_free          ( +-   5.464% )

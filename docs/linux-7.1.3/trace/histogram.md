@@ -1,3 +1,5 @@
+# histogram
+
 ﻿## 事件直方
 
 
@@ -67,6 +69,7 @@
   modified by appending any of the following modifiers to the field
   name:
 
+
 	=============  =================================================
         .hex           display a number as a hex value
 	.sym           display an address as a symbol
@@ -85,6 +88,7 @@
   interpreted when applying a modifier to it, but there are some
   restrictions to be aware of in this regard:
 
+
     - only the 'hex' modifier can be used for values (because values
       are essentially sums, and the other modifiers don't make sense
       in that context).
@@ -98,6 +102,7 @@
 
   A typical usage scenario would be the following to enable a hist
   trigger, read its current contents, and then turn it off::
+
 
     # echo 'hist:keys=skbaddr.hex:vals=len' > \
       /sys/kernel/tracing/events/net/netif_rx/trigger
@@ -164,6 +169,7 @@
   followed by an enable_hist/disable_hist pair that turns the hist
   aggregation on and off when conditions of interest are hit::
 
+
    # echo 'hist:keys=skbaddr.hex:vals=len:pause' > \
       /sys/kernel/tracing/events/net/netif_receive_skb/trigger
 
@@ -182,7 +188,7 @@
   concepts and typical usage patterns discussed above.
 
 ```
-### 2.1. “特殊”事件字
+## 2.1. “特殊”事件字
 
 
   有一系列“特殊事件字段”可用作 hist 触发器中的键或值。它们看起来和行为都像是
@@ -228,6 +234,7 @@
   that lists the total number of bytes requested for each function in
   the kernel that made one or more calls to kmalloc::
 
+
     # echo 'hist:key=call_site:val=bytes_req.buckets=32' > \
             /sys/kernel/tracing/events/kmem/kmalloc/trigger
 
@@ -242,6 +249,7 @@
   We'll let it run for a while and then dump the contents of the 'hist'
   file in the kmalloc event's subdirectory (for readability, a number
   of entries have been omitted)::
+
 
     # cat /sys/kernel/tracing/events/kmem/kmalloc/hist
     # trigger info: hist:keys=call_site:vals=bytes_req:sort=hitcount:size=2048 [active]
@@ -283,6 +291,7 @@
   the trigger info, which can also be displayed by reading the
   'trigger' file::
 
+
     # cat /sys/kernel/tracing/events/kmem/kmalloc/trigger
     hist:keys=call_site:vals=bytes_req:sort=hitcount:size=2048 [active]
 
@@ -313,6 +322,7 @@
   To turn the hist trigger off, simply call up the trigger in the
   command history and re-execute it with a '!' prepended::
 
+
     # echo '!hist:key=call_site:val=bytes_req' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
 
@@ -320,6 +330,7 @@
   isn't really very useful.  It's an address, but normally addresses
   are displayed in hex.  To have a numeric field displayed as a hex
   value, simply append '.hex' to the field name in the trigger::
+
 
     # echo 'hist:key=call_site.hex:val=bytes_req' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
@@ -365,6 +376,7 @@
   instead.  To have an address displayed as symbolic value instead,
   simply append '.sym' or '.sym-offset' to the field name in the
   trigger::
+
 
     # echo 'hist:key=call_site.sym:val=bytes_req' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
@@ -416,6 +428,7 @@
   calls, and we wanted the top caller to appear at the top, we can use
   the 'sort' parameter, along with the 'descending' modifier::
 
+
     # echo 'hist:key=call_site.sym:val=bytes_req:sort=bytes_req.descending' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
 
@@ -457,6 +470,7 @@
   To display the offset and size information in addition to the symbol
   name, just use 'sym-offset' instead::
 
+
     # echo 'hist:key=call_site.sym-offset:val=bytes_req:sort=bytes_req.descending' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
 
@@ -495,6 +509,7 @@
   example, we might want to see the total number of bytes allocated
   alongside bytes requested, and display the result sorted by bytes
   allocated in a descending order::
+
 
     # echo 'hist:keys=call_site.sym:values=bytes_req,bytes_alloc:sort=bytes_alloc.descending' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
@@ -539,6 +554,7 @@
   that led to each call_site.  To do that, we simply use the special
   value 'common_stacktrace' for the key parameter::
 
+
     # echo 'hist:keys=common_stacktrace:values=bytes_req,bytes_alloc:sort=bytes_alloc' > \
            /sys/kernel/tracing/events/kmem/kmalloc/trigger
 
@@ -549,6 +565,7 @@
   that event.  Here we tally bytes requested and bytes allocated for
   every callpath in the system that led up to a kmalloc (in this case
   every callpath to a kmalloc for a kernel compile)::
+
 
     # cat /sys/kernel/tracing/events/kmem/kmalloc/hist
     # trigger info: hist:keys=common_stacktrace:vals=bytes_req,bytes_alloc:sort=bytes_alloc:size=2048 [active]
@@ -648,6 +665,7 @@
   processes in the table rather than raw pids.  The example below
   keeps a per-process sum of total bytes read::
 
+
     # echo 'hist:key=common_pid.execname:val=count:sort=count.descending' > \
            /sys/kernel/tracing/events/syscalls/sys_enter_read/trigger
 
@@ -688,6 +706,7 @@
   the special .syscall modifier to display the syscall names rather
   than raw ids.  The example below keeps a running total of syscall
   counts for the system during the run::
+
 
     # echo 'hist:key=id.syscall:val=hitcount' > \
            /sys/kernel/tracing/events/raw_syscalls/sys_enter/trigger
@@ -743,6 +762,7 @@
   sorted using the system call id as the primary key, and the
   hitcount sum as the secondary key::
 
+
     # echo 'hist:key=id.syscall,common_pid.execname:val=hitcount:sort=id,hitcount' > \
            /sys/kernel/tracing/events/raw_syscalls/sys_enter/trigger
 
@@ -793,6 +813,7 @@
   id for sys_ioctl (16, displayed next to the sys_ioctl name), we
   can use that to filter out all the other syscalls::
 
+
     # echo 'hist:key=id.syscall,common_pid.execname:val=hitcount:sort=id,hitcount if id == 16' > \
            /sys/kernel/tracing/events/raw_syscalls/sys_enter/trigger
 
@@ -835,6 +856,7 @@
   key and 'size' as the secondary key allows us to display an
   ordered summary of the recvfrom sizes, with counts, received by
   each process::
+
 
     # echo 'hist:key=common_pid.execname,size:val=hitcount:sort=common_pid,size' > \
            /sys/kernel/tracing/events/syscalls/sys_enter_recvfrom/trigger
@@ -889,6 +911,7 @@
   large number of entries in the hash table, so we'll drop it to a
   much smaller number, say 256::
 
+
     # echo 'hist:key=child_comm:val=hitcount:size=256' > \
            /sys/kernel/tracing/events/sched/sched_process_fork/trigger
 
@@ -924,6 +947,7 @@
   If we want to pause the hist trigger, we can simply append :pause to
   the command that started the trigger.  Notice that the trigger info
   displays as [paused]::
+
 
     # echo 'hist:key=child_comm:val=hitcount:size=256:pause' >> \
            /sys/kernel/tracing/events/sched/sched_process_fork/trigger
@@ -961,6 +985,7 @@
   To manually continue having the trigger aggregate events, append
   :cont instead.  Notice that the trigger info displays as [active]
   again, and the data has changed::
+
 
     # echo 'hist:key=child_comm:val=hitcount:size=256:cont' >> \
            /sys/kernel/tracing/events/sched/sched_process_fork/trigger
@@ -1016,6 +1041,7 @@
   First we set up an initially paused stacktrace trigger on the
   netif_receive_skb event::
 
+
     # echo 'hist:key=common_stacktrace:vals=len:pause' > \
            /sys/kernel/tracing/events/net/netif_receive_skb/trigger
 
@@ -1027,6 +1053,7 @@
   that happens, all netif_receive_skb events are aggregated into a
   hash table keyed on stacktrace::
 
+
     # echo 'enable_hist:net:netif_receive_skb if filename==/usr/bin/wget' > \
            /sys/kernel/tracing/events/sched/sched_process_exec/trigger
 
@@ -1034,6 +1061,7 @@
   again, which is what the following disable_hist event does by
   creating a similar setup on the sched_process_exit event, using the
   filter 'comm==wget'::
+
 
     # echo 'disable_hist:net:netif_receive_skb if comm==wget' > \
            /sys/kernel/tracing/events/sched/sched_process_exit/trigger
@@ -1046,6 +1074,7 @@
   into the hash table for only the duration of the wget.  Executing a
   wget command and then listing the 'hist' file will display the
   output generated by the wget command::
+
 
     $ wget https://www.kernel.org/pub/linux/kernel/v3.x/patch-3.19.xz
 
@@ -1132,11 +1161,13 @@
   into the histogram.  In order to avoid having to set everything up
   again, we can just clear the histogram first::
 
+
     # echo 'hist:key=common_stacktrace:vals=len:clear' >> \
            /sys/kernel/tracing/events/net/netif_receive_skb/trigger
 
   Just to verify that it is in fact cleared, here's what we now see in
   the hist file::
+
 
     # cat /sys/kernel/tracing/events/net/netif_receive_skb/hist
     # trigger info: hist:keys=common_stacktrace:vals=len:sort=hitcount:size=2048 [paused]
@@ -1152,6 +1183,7 @@
   'enable_event' events to the triggering sched_process_exec and
   sched_process_exit events as such::
 
+
     # echo 'enable_event:net:netif_receive_skb if filename==/usr/bin/wget' > \
            /sys/kernel/tracing/events/sched/sched_process_exec/trigger
 
@@ -1162,6 +1194,7 @@
   sched_process_exit triggers, you should see two triggers for each:
   one enabling/disabling the hist aggregation and the other
   enabling/disabling the logging of events::
+
 
     # cat /sys/kernel/tracing/events/sched/sched_process_exec/trigger
     enable_event:net:netif_receive_skb:unlimited if filename==/usr/bin/wget
@@ -1177,11 +1210,13 @@
   with is a hash table and set of events just covering the specified
   duration.  Run the wget command again::
 
+
     $ wget https://www.kernel.org/pub/linux/kernel/v3.x/patch-3.19.xz
 
   Displaying the 'hist' file should show something similar to what you
   saw in the last run, but this time you should also see the
   individual events in the trace file::
+
 
     # cat /sys/kernel/tracing/trace
 
@@ -1200,7 +1235,7 @@
                 wget-15108 [000] ..s1 31769.606999: netif_receive_skb: dev=lo skbaddr=ffff88009c353200 len=60
              dnsmasq-1382  [000] ..s1 31769.677652: netif_receive_skb: dev=lo skbaddr=ffff88009c352b00 len=130
              dnsmasq-1382  [000] ..s1 31769.685917: netif_receive_skb: dev=lo skbaddr=ffff88009c352200 len=138
-    ##### CPU 2 buffer started ####
+## CPU 2 buffer started ####
       irq/29-iwlwifi-559   [002] ..s. 31772.031529: netif_receive_skb: dev=wlan0 skbaddr=ffff88009d433d00 len=2948
       irq/29-iwlwifi-559   [002] ..s. 31772.031572: netif_receive_skb: dev=wlan0 skbaddr=ffff88009d432200 len=1500
       irq/29-iwlwifi-559   [002] ..s. 31772.032196: netif_receive_skb: dev=wlan0 skbaddr=ffff88009d433100 len=2948
@@ -1215,6 +1250,7 @@
   creating a set of different summaries derived from the same set of
   events, or for comparing the effects of different filters, among
   other things::
+
 
     # echo 'hist:keys=skbaddr.hex:vals=len if len < 0' >> \
            /sys/kernel/tracing/events/net/netif_receive_skb/trigger
@@ -1236,6 +1272,7 @@
 
   Displaying the contents of the 'hist' file for the event shows the
   contents of all five histograms::
+
 
     # cat /sys/kernel/tracing/events/net/netif_receive_skb/hist
 
@@ -1357,6 +1394,7 @@
   For example, these two triggers when hit will update the same 'len'
   field in the shared 'foo' histogram data::
 
+
     # echo 'hist:name=foo:keys=skbaddr.hex:vals=len' > \
            /sys/kernel/tracing/events/net/netif_receive_skb/trigger
     # echo 'hist:name=foo:keys=skbaddr.hex:vals=len' > \
@@ -1364,6 +1402,7 @@
 
   You can see that they're updating common histogram data by reading
   each event's hist files at the same time::
+
 
     # cat /sys/kernel/tracing/events/net/netif_receive_skb/hist;
       cat /sys/kernel/tracing/events/net/netif_rx/hist
@@ -1478,6 +1517,7 @@
   other than 'hitcount' and 'common_stacktrace'.  These commands create a
   couple of triggers named 'bar' using those fields::
 
+
     # echo 'hist:name=bar:key=common_stacktrace:val=hitcount' > \
            /sys/kernel/tracing/events/sched/sched_process_fork/trigger
     # echo 'hist:name=bar:key=common_stacktrace:val=hitcount' > \
@@ -1485,6 +1525,7 @@
 
   And displaying the output of either shows some interesting if
   somewhat confusing output::
+
 
     # cat /sys/kernel/tracing/events/sched/sched_process_fork/hist
     # cat /sys/kernel/tracing/events/net/netif_rx/hist
@@ -1599,7 +1640,7 @@
         Dropped: 0
 
 ```
-### 2.4. 事件间直方图触发
+## 2.4. 事件间直方图触发
 
 
 事件间直方图触发器是一hist 触发器，它把一个（或多个）其他事件的值组合起来，
@@ -1745,7 +1786,7 @@ ts0 变量可以被任何拥有与 'next_pid' 相同 pid 的后续事件访问
 ```
 变量甚至可以保存栈回溯，这在合成事件中很有用
 
-### 2.6. 合成事件
+## 2.6. 合成事件
 
 
 合成事件是由 hist 触发器变量或与一个（或多个）其他事件关联的字段所生成的
@@ -2054,7 +2095,7 @@ prio。这些字段中的每一个都只是
     Dropped: 0
 
 ```
-### 2.7. 直方图触发器的“处理器”与“动作
+## 2.7. 直方图触发器的“处理器”与“动作
 
 
 直方图触发器的“动作”是一个函数，每当有直方图条目被添加或更新时（大多数情况下
@@ -2141,11 +2182,13 @@ prio。这些字段中的每一个都只是
     occurs, which because of the 'if comm == "cyclictest"' filter only
     happens when the executable is cyclictest::
 
+
       # echo 'hist:keys=$testpid:testpid=pid:onmatch(sched.sched_wakeup_new).\
               wakeup_new_test($testpid) if comm=="cyclictest"' >> \
               /sys/kernel/tracing/events/sched/sched_wakeup_new/trigger
 
     Or, equivalently, using the 'trace' keyword syntax::
+
 
       # echo 'hist:keys=$testpid:testpid=pid:onmatch(sched.sched_wakeup_new).\
               trace(wakeup_new_test,$testpid) if comm=="cyclictest"' >> \
@@ -2155,12 +2198,14 @@ prio。这些字段中的每一个都只是
     just a matter of using the fields and new synthetic event in the
     tracing/events/synthetic directory, as usual::
 
+
       # echo 'hist:keys=pid:sort=pid' >> \
              /sys/kernel/tracing/events/synthetic/wakeup_new_test/trigger
 
     Running 'cyclictest' should cause wakeup_new events to generate
     wakeup_new_test synthetic events which should result in histogram
     output in the wakeup_new_test event's hist file::
+
 
       # cat /sys/kernel/tracing/events/synthetic/wakeup_new_test/hist
 
@@ -2170,11 +2215,13 @@ prio。这些字段中的每一个都只是
 
     First, we define a 'wakeup_latency' synthetic event::
 
+
       # echo 'wakeup_latency u64 lat; pid_t pid; int prio' >> \
               /sys/kernel/tracing/synthetic_events
 
     Next, we specify that whenever we see a sched_waking event for a
     cyclictest thread, save the timestamp in a 'ts0' variable::
+
 
       # echo 'hist:keys=$saved_pid:saved_pid=pid:ts0=common_timestamp.usecs \
               if comm=="cyclictest"' >> \
@@ -2185,6 +2232,7 @@ prio。这些字段中的每一个都只是
     the latency and use that along with another variable and an event field
     to generate a wakeup_latency synthetic event::
 
+
       # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0:\
               onmatch(sched.sched_waking).wakeup_latency($wakeup_lat,\
 	              $saved_pid,next_prio) if next_comm=="cyclictest"' >> \
@@ -2193,12 +2241,14 @@ prio。这些字段中的每一个都只是
     We also need to create a histogram on the wakeup_latency synthetic
     event in order to aggregate the generated synthetic event data::
 
+
       # echo 'hist:keys=pid,prio,lat:sort=pid,lat' >> \
               /sys/kernel/tracing/events/synthetic/wakeup_latency/trigger
 
     Finally, once we've run cyclictest to actually generate some
     events, we can see the output by looking at the wakeup_latency
     synthetic event's hist file::
+
 
       # cat /sys/kernel/tracing/events/synthetic/wakeup_latency/hist
 
@@ -2224,6 +2274,7 @@ prio。这些字段中的每一个都只是
     maximum latency, the values specified in the save() fields are
     recorded::
 
+
       # echo 'hist:keys=pid:ts0=common_timestamp.usecs \
               if comm=="cyclictest"' >> \
               /sys/kernel/tracing/events/sched/sched_waking/trigger
@@ -2237,6 +2288,7 @@ prio。这些字段中的每一个都只是
     When the histogram is displayed, the max value and the saved
     values corresponding to the max are displayed following the rest
     of the fields::
+
 
       # cat /sys/kernel/tracing/events/sched/sched_switch/hist
         { next_pid:       2255 } hitcount:        239
@@ -2284,6 +2336,7 @@ prio。这些字段中的每一个都只是
     the scheduler events are also enabled, which are the events that
     will show up in the snapshot when it is taken at some point::
 
+
       # echo 1 > /sys/kernel/tracing/events/sched/enable
 
       # echo 'hist:keys=pid:ts0=common_timestamp.usecs \
@@ -2302,6 +2355,7 @@ prio。这些字段中的每一个都只是
 
     If a snapshot was taken, there is also a message indicating that,
     along with the value and event that triggered the global maximum::
+
 
       # cat /sys/kernel/tracing/events/sched/sched_switch/hist
         { next_pid:       2101 } hitcount:        200
@@ -2337,6 +2391,7 @@ prio。这些字段中的每一个都只是
     can verify the timestamps between the sched_waking and
     sched_switch events, which should match the time displayed in the
     global maximum)::
+
 
      # cat /sys/kernel/tracing/snapshot
 
@@ -2403,6 +2458,7 @@ prio。这些字段中的每一个都只是
     enabled, which are the events that will show up in the snapshot
     when it is taken at some point::
 
+
       # echo 1 > /sys/kernel/tracing/events/sched/enable
       # echo 1 > /sys/kernel/tracing/events/tcp/enable
 
@@ -2417,6 +2473,7 @@ prio。这些字段中的每一个都只是
 
     If a snapshot was taken, there is also a message indicating that,
     along with the value and event that triggered the snapshot::
+
 
       # cat /sys/kernel/tracing/events/tcp/tcp_probe/hist
 
@@ -2433,6 +2490,7 @@ prio。这些字段中的每一个都只是
 	changed:         10  snd_wnd:      26960  srtt:      17379  rcv_wnd:      28800
 
       Snapshot taken (see tracing/snapshot).  Details:
+
 
           triggering value { onchange($cwnd) }:         10
           triggered by event with key: { dport:         80 }
@@ -2452,6 +2510,7 @@ prio。这些字段中的每一个都只是
     And finally, looking at the snapshot data should show at or near
     the end the event that triggered the snapshot::
 
+
       # cat /sys/kernel/tracing/snapshot
 
          gnome-shell-1261  [006] dN.3    49.823113: sched_stat_runtime: comm=gnome-shell pid=1261 runtime=49347 [ns] vruntime=1835730389 [ns]
@@ -2464,7 +2523,7 @@ prio。这些字段中的每一个都只是
               <idle>-0     [004] ..s7    49.823798: tcp_probe: src=10.0.0.10:54326 dest=23.215.104.193:80 mark=0x0 length=32 snd_nxt=0xe3ae2ff5 snd_una=0xe3ae2ecd snd_cwnd=10 ssthresh=2147483647 snd_wnd=28960 srtt=19604 rcv_wnd=29312
 
 ```
-### 2.8. 用户空间创建触发
+## 2.8. 用户空间创建触发
 
 
 写入 /sys/kernel/tracing/trace_marker 会写ftrace 环形缓冲区。通过写入位于
