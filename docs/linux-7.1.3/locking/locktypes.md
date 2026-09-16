@@ -1,3 +1,5 @@
+# locktypes
+
 ﻿
 ## 锁类型及其规
 
@@ -155,6 +157,7 @@ PREEMPT_RT 内核保留所有其spinlock_t 语义
 
    其它类型的唤醒通常会无条件将任务状态设RUNNING，但这在这里不起作用，因为任务必须保持阻塞直到锁
    可用。因此，当一次非锁唤醒尝试唤醒一个阻塞等待自旋锁的任务时，它改为将保存的状态设RUNNING   然后，当锁获取完成时，锁唤醒将任务状态设为保存的状态，在此例中将其设为 RUNNING::
+
 
     task->state = TASK_INTERRUPTIBLE
      lock()

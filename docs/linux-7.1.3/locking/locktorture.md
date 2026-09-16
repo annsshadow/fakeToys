@@ -1,3 +1,5 @@
+# locktorture
+
 ﻿## 内核torture 测试操作
 
 ## CONFIG_LOCK_TORTURE_TEST
@@ -83,6 +85,7 @@ verbose
 	sleep 3600
 	rmmod locktorture
 	dmesg | grep torture:
+
 
 ```
 输出可以手动检"!!!" 的错误标志。当然，也可以创建一个更精巧的脚本来自动检查此类错误"rmmod" 命令会强printk() 打印一"SUCCESS"FAILURE" "RCU_HOTPLUG" 指示。前两个不言自明，而最后一个表示虽然没有锁定失败，但检测到CPU 热插拔问题
