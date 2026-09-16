@@ -1388,7 +1388,7 @@ pub async fn invoice_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
+            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await

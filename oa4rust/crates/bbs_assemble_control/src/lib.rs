@@ -42,6 +42,10 @@ pub struct LoginRequest {
 #[derive(Debug, Deserialize)]
 pub struct CreateTopicRequest {
     pub forum_id: Option<String>,
+    #[serde(alias = "sectionId")]
+    pub section_id: Option<String>,
+    #[serde(alias = "authorId")]
+    pub author_id: Option<String>,
     pub title: Option<String>,
     pub content: Option<String>,
     pub creator: Option<String>,
@@ -49,7 +53,12 @@ pub struct CreateTopicRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateReplyRequest {
+    #[serde(alias = "subjectId")]
+    pub subject_id: Option<String>,
+    #[serde(alias = "topicId")]
     pub topic_id: Option<String>,
+    #[serde(alias = "authorId")]
+    pub author_id: Option<String>,
     pub content: Option<String>,
     pub creator: Option<String>,
 }
@@ -370,15 +379,24 @@ pub async fn create_topic(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let forum_id = req.forum_id.unwrap_or_default();
+    let forum_id = req.forum_id.clone().unwrap_or_default();
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
-    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+    let creator = req.creator.clone().unwrap_or_default();
+    // x_bbs_topic.author_id/section_id 为 NOT NULL（无默认）：author 缺省回退 creator，
+    // section 缺省回退 forum_id（版块维度），杜绝 500。
+    let author_id = req.author_id.clone().unwrap_or_else(|| creator.clone());
+    let section_id = req
+        .section_id
+        .clone()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| forum_id.clone());
 
     client
         .execute(
-            "INSERT INTO x_bbs_topic (id, forum_id, title, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &forum_id, &title, &content, &creator],
+            "INSERT INTO x_bbs_topic (id, forum_id, title, content, creator, author_id, section_id, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&id, &forum_id, &title, &content, &creator, &author_id, &section_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -425,25 +443,37 @@ pub async fn list_topics_by_forum(
 #[allow(non_snake_case)]
 pub async fn create_reply(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateReplyRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let topic_id = req.topic_id.unwrap_or_default();
-    let content = req.content.unwrap_or_default();
-    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+    // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）。subjectId/topicId 同义，
+    // 归一到 subject 并双写 topic_id（回复列表按 topic_id 过滤）；作者缺省取登录人。
+    let subject_id = req
+        .subject_id
+        .clone()
+        .or_else(|| req.topic_id.clone())
+        .unwrap_or_default();
+    let creator = req
+        .creator
+        .clone()
+        .or_else(|| req.author_id.clone())
+        .filter(|c| !c.is_empty())
+        .unwrap_or_else(|| session.person_unique.clone());
 
     client
         .execute(
-            "INSERT INTO x_bbs_reply (id, topic_id, content, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
-            &[&id, &topic_id, &content, &creator],
+            "INSERT INTO x_bbs_reply (id, subject_id, author_id, topic_id, content, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id, &subject_id, &creator, &subject_id, &req.content.clone().unwrap_or_default(), &creator],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("topicId".to_string(), Value::String(topic_id)),
+        ("topicId".to_string(), Value::String(subject_id)),
     ]));
 
     Ok(Json(ActionResult::success(result)))
