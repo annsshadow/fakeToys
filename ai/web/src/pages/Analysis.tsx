@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Card, Select, Row, Col, Statistic, Table, Tag } from 'antd'
+import { Card, Select, Row, Col, Statistic, Table, Tag, Button, Space, message } from 'antd'
 import ReactECharts from 'echarts-for-react'
-import { getDataFiles, analyzeData } from '../services/api'
+import { getDataFiles, analyzeData, cleanData, runBenchmark } from '../services/api'
 
 export default function Analysis() {
   const [files, setFiles] = useState<string[]>([])
   const [selectedFile, setSelectedFile] = useState('')
   const [analysis, setAnalysis] = useState<any>(null)
+  const [cleaning, setCleaning] = useState<any>(null)
+  const [benchmark, setBenchmark] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     loadFiles()
@@ -33,6 +36,36 @@ export default function Analysis() {
       setAnalysis(result)
     } catch (error) {
       console.error('分析数据失败')
+    }
+  }
+
+  const handleClean = async () => {
+    if (!selectedFile) {
+      message.warning('请先选择文件')
+      return
+    }
+    setLoading(true)
+    try {
+      setCleaning(await cleanData(selectedFile))
+    } catch (error) {
+      message.error('数据清洗失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBenchmark = async () => {
+    if (!selectedFile) {
+      message.warning('请先选择文件')
+      return
+    }
+    setLoading(true)
+    try {
+      setBenchmark(await runBenchmark(selectedFile))
+    } catch (error) {
+      message.error('基准测试失败')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -169,6 +202,45 @@ export default function Analysis() {
               rowKey="word"
               pagination={{ pageSize: 10 }}
             />
+          </Card>
+
+          <Card title="质量速览" style={{ marginTop: 16 }}>
+            <Space style={{ marginBottom: 16 }}>
+              <Button loading={loading} onClick={handleClean}>
+                运行数据清洗
+              </Button>
+              <Button type="primary" loading={loading} onClick={handleBenchmark}>
+                运行质量基准
+              </Button>
+            </Space>
+
+            {cleaning && (
+              <Space wrap style={{ marginBottom: 12 }}>
+                <Tag color="blue">原始 {cleaning.original_count}</Tag>
+                <Tag color="green">清洗后 {cleaning.cleaned_count}</Tag>
+                <Tag color="red">丢弃 {cleaning.dropped_count}</Tag>
+                <Tag color="orange">变更 {cleaning.changed_count}</Tag>
+              </Space>
+            )}
+
+            {benchmark && (
+              <Table
+                size="small"
+                rowKey="metric"
+                pagination={false}
+                columns={[
+                  { title: '基准指标', dataIndex: 'metric' },
+                  { title: '数值', dataIndex: 'value' }
+                ]}
+                dataSource={Object.entries(benchmark.metrics || {}).map(
+                  ([metric, value]) => ({
+                    metric,
+                    value:
+                      typeof value === 'number' ? value.toFixed(4) : String(value)
+                  })
+                )}
+              />
+            )}
           </Card>
         </>
       )}

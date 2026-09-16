@@ -1,22 +1,35 @@
 import { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { Layout, Menu, theme } from 'antd'
 import {
+  DashboardOutlined,
   DatabaseOutlined,
   LineChartOutlined,
   SettingOutlined,
   BranchesOutlined,
-  RocketOutlined
+  RocketOutlined,
+  SafetyCertificateOutlined,
+  ExportOutlined,
+  PictureOutlined
 } from '@ant-design/icons'
 import DataManagement from './pages/DataManagement'
 import Analysis from './pages/Analysis'
 import Versions from './pages/Versions'
 import Settings from './pages/Settings'
 import Augmentation from './pages/Augmentation'
+import Dashboard from './pages/Dashboard'
+import Quality from './pages/Quality'
+import Export from './pages/Export'
+import Multimodal from './pages/Multimodal'
 
 const { Header, Sider, Content } = Layout
 
 const menuItems = [
+  {
+    key: '/dashboard',
+    icon: <DashboardOutlined />,
+    label: '仪表盘'
+  },
   {
     key: '/',
     icon: <DatabaseOutlined />,
@@ -28,9 +41,24 @@ const menuItems = [
     label: '数据增强'
   },
   {
+    key: '/quality',
+    icon: <SafetyCertificateOutlined />,
+    label: '质量中心'
+  },
+  {
+    key: '/export',
+    icon: <ExportOutlined />,
+    label: '导出中心'
+  },
+  {
     key: '/analysis',
     icon: <LineChartOutlined />,
     label: '数据分析'
+  },
+  {
+    key: '/multimodal',
+    icon: <PictureOutlined />,
+    label: '多模态'
   },
   {
     key: '/versions',
@@ -59,7 +87,7 @@ function AppLayout() {
         onCollapse={(value) => setCollapsed(value)}
       >
         <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-          {collapsed ? 'AI' : 'AI 数据增强'}
+          {collapsed ? 'AI' : 'AI 数据平台'}
         </div>
         <Menu
           theme="dark"
@@ -70,7 +98,7 @@ function AppLayout() {
       </Sider>
       <Layout>
         <Header style={{ padding: '0 16px', background: colorBgContainer, display: 'flex', alignItems: 'center' }}>
-          <h2 style={{ margin: 0 }}>AI 训练数据增强工具</h2>
+          <h2 style={{ margin: 0 }}>企业级 AI 训练数据平台</h2>
         </Header>
         <Content style={{ margin: 24 }}>
           <div style={{
@@ -80,9 +108,13 @@ function AppLayout() {
             borderRadius: borderRadiusLG
           }}>
             <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/" element={<DataManagement />} />
               <Route path="/augment" element={<Augmentation />} />
+              <Route path="/quality" element={<Quality />} />
+              <Route path="/export" element={<Export />} />
               <Route path="/analysis" element={<Analysis />} />
+              <Route path="/multimodal" element={<Multimodal />} />
               <Route path="/versions" element={<Versions />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
