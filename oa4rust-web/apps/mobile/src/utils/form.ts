@@ -122,6 +122,7 @@ function uiTypeOf(module: Record<string, unknown>): MobileFieldType | null {
   const raw = typeOf(module)
   switch (raw) {
     case 'textfield':
+    case 'text':
     case 'ooinput':
     case 'org':
     case 'ooorg':
@@ -247,6 +248,17 @@ export function parseMobileForm(raw: unknown): MobileForm {
 /** 向后兼容：返回扁平字段（含 group 信息）。 */
 export function parseSimpleForm(raw: unknown): MobileFormField[] {
   return parseMobileForm(raw).fields
+}
+
+/**
+ * 计算分组渲染顺序：布局容器组按 groups 声明顺序排列，无容器的默认组（groupId=''）恒在最前。
+ * 扁平表单（所有字段 groupId=''）时 groups 已含 ''，需去重，避免默认组重复导致字段渲染两次。
+ */
+export function computeGroupOrder(fields: MobileFormField[], groups: MobileFormGroup[]): string[] {
+  const order: string[] = []
+  for (const g of groups) order.push(g.label || g.id)
+  if (fields.some((f) => f.groupId === '') && !order.includes('')) order.unshift('')
+  return order
 }
 
 export function initialValues(fields: MobileFormField[]): Record<string, string> {
