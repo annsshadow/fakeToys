@@ -1,3 +1,5 @@
+# sak
+
 ﻿## Linux 安全注意键（SAK）处
 
 :Date: 18 March 2001
@@ -31,6 +33,7 @@ PC 键盘上，Linux 提供两种相似但不同的方式来提SAK。其一ALT-S
 
      然后::
 
+
 	# ps aux|grep 579
 	root       579  0.0  0.1  1088  436 ?        S    00:43   0:00 gpm -t ps/2
 
@@ -38,14 +41,17 @@ PC 键盘上，Linux 提供两种相似但不同的方式来提SAK。其一ALT-S
 
      鏃у啓娉?:
 
+
 	daemon gpm
 
      新写:
+
 
 	daemon gpm < /dev/null
 
      Vixie cron 似乎也有这个问题，需要同样的修改
      此外，某主流 Linux 发行版在rc.sysinit rc 脚本中有以下三行::
+
 
 	exec 3<&0
 	exec 4>&1
