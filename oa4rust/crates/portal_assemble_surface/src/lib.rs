@@ -647,8 +647,7 @@ pub async fn dict_list_portal_portalFlag(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((dict_flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -683,8 +682,7 @@ pub async fn dict_dictFlag_portal_portalFlag(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_data(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((dict_flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -714,9 +712,7 @@ pub async fn dict_dictFlag_portal_portalFlag_data(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -749,9 +745,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -790,9 +784,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -945,8 +937,7 @@ pub async fn file_flag_download(
 #[allow(non_snake_case)]
 pub async fn file_flag_portal_portalFlag_content(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -973,8 +964,7 @@ pub async fn file_flag_portal_portalFlag_content(
 #[allow(non_snake_case)]
 pub async fn file_flag_portal_portalFlag_download(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1043,8 +1033,7 @@ pub async fn page_list_portal_portal(
 #[allow(non_snake_case)]
 pub async fn page_v2_flag_portal_portalFlag(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1077,8 +1066,7 @@ pub async fn page_v2_flag_portal_portalFlag(
 #[allow(non_snake_case)]
 pub async fn page_v2_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1183,8 +1171,7 @@ pub async fn page_v2_id_mobile(
 #[allow(non_snake_case)]
 pub async fn page_flag_portal_portalFlag(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1217,8 +1204,7 @@ pub async fn page_flag_portal_portalFlag(
 #[allow(non_snake_case)]
 pub async fn page_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1561,8 +1547,7 @@ pub async fn script_list_portal_portal(
 #[allow(non_snake_case)]
 pub async fn script_portal_portal_name_name(
     pool: Extension<Pool>,
-    Path(portal): Path<String>,
-    Path(name): Path<String>,
+    Path((portal, name)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1596,8 +1581,7 @@ pub async fn script_portal_portal_name_name(
 #[allow(non_snake_case)]
 pub async fn script_portal_portal_name_name_imported(
     pool: Extension<Pool>,
-    Path(portal): Path<String>,
-    Path(name): Path<String>,
+    Path((portal, name)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1709,8 +1693,7 @@ pub async fn widget_list_portal_portal(
 #[allow(non_snake_case)]
 pub async fn widget_flag_portal_portalFlag(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1745,8 +1728,7 @@ pub async fn widget_flag_portal_portalFlag(
 #[allow(non_snake_case)]
 pub async fn widget_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(portal_flag): Path<String>,
+    Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1868,9 +1850,7 @@ pub async fn widget_id_mobile(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1893,9 +1873,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1944,9 +1922,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(portal_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2015,8 +1991,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
 #[allow(non_snake_case)]
 pub async fn script_portal_portal_name_post(
     pool: Extension<Pool>,
-    Path(portal): Path<String>,
-    Path(name): Path<String>,
+    Path((portal, name)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

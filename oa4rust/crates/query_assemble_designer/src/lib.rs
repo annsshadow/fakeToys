@@ -1570,8 +1570,7 @@ pub async fn output_queryFlag_select(
 #[allow(non_snake_case)]
 pub async fn query_entity_entity_category_entityCategory_properties(
     pool: Extension<Pool>,
-    Path(entity): Path<String>,
-    Path(entity_category): Path<String>,
+    Path((entity, entity_category)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1920,14 +1919,13 @@ pub async fn stat_list_query_flag(
 #[allow(non_snake_case)]
 pub async fn stat_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1959,14 +1957,13 @@ pub async fn stat_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn stat_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2093,14 +2090,13 @@ pub async fn stat_id_simulate(
 #[allow(non_snake_case)]
 pub async fn table_export_tableFlag_count_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2",
             &[&table_flag, &count],
         )
         .await
@@ -2243,8 +2239,7 @@ pub async fn table_list_query_flag(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(_where): Path<String>,
+    Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2281,15 +2276,13 @@ pub async fn table_list_tableFlag_row_select_where_where(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_next_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3",
             &[&table_flag, &id, &count],
         )
         .await
@@ -2320,15 +2313,13 @@ pub async fn table_list_tableFlag_row_id_next_count(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3",
             &[&table_flag, &id, &count],
         )
         .await
@@ -2648,8 +2639,7 @@ pub async fn table_tableFlag_row(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_count_where_where(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(_where): Path<String>,
+    Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2738,8 +2728,7 @@ pub async fn table_tableFlag_row_save(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
+    Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2813,14 +2802,13 @@ pub async fn view_list_query_flag(
 #[allow(non_snake_case)]
 pub async fn view_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2853,14 +2841,13 @@ pub async fn view_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn view_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await

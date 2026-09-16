@@ -1392,8 +1392,7 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn captcha_v2_create_width_width_height_height(
     pool: Extension<Pool>,
-    Path(width): Path<i64>,
-    Path(height): Path<i64>,
+    Path((width, height)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1412,8 +1411,7 @@ pub async fn captcha_v2_create_width_width_height_height(
 #[allow(non_snake_case)]
 pub async fn captcha_id_validate_answer_answer(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(answer): Path<String>,
+    Path((id, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1633,8 +1631,7 @@ pub async fn code_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn code_validate_mobile_mobile_answer_answer(
     pool: Extension<Pool>,
-    Path(mobile): Path<String>,
-    Path(answer): Path<String>,
+    Path((mobile, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1656,8 +1653,7 @@ pub async fn code_validate_mobile_mobile_answer_answer(
 #[allow(non_snake_case)]
 pub async fn code_validate_mobile_mobile_answer_answer_cascade(
     pool: Extension<Pool>,
-    Path(mobile): Path<String>,
-    Path(answer): Path<String>,
+    Path((mobile, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -3246,14 +3242,13 @@ pub async fn datastructure_tables_all(
 #[allow(non_snake_case)]
 pub async fn deploy_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2 OFFSET ($1 - 1) * $2",
+            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -3507,7 +3502,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
     let rows = client
         .query(
-            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, key_name, flag, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
         )
         .await
@@ -3522,6 +3517,16 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
+                ),
+                // flag 列 = 创建时 dictFlag 写入的唯一标识；前端字典卡片/「数据」按钮读 flag，
+                // 故一并回传（旧数据以 key_name 兜底），否则按钮恒 disabled。
+                (
+                    "flag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("flag")
+                            .filter(|f| !f.is_empty())
+                            .unwrap_or_else(|| row.get::<_, Option<String>>("key_name").unwrap_or_default()),
+                    ),
                 ),
                 (
                     "appName".to_string(),
@@ -3553,14 +3558,13 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 #[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET ($1 - 1) * $2",
+            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -3632,8 +3636,7 @@ pub async fn dict_dictFlag_data(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, _path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3660,8 +3663,7 @@ pub async fn dict_dictFlag_path_data(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, _path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3700,8 +3702,7 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, _path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -4430,8 +4431,7 @@ pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn invoke_flag_client_client_token_token_execute(
     pool: Extension<Pool>,
-    Path(client): Path<String>,
-    Path(token): Path<String>,
+    Path((client, token)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let db_client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = db_client
@@ -5943,8 +5943,7 @@ pub async fn prompterrorlog_count_loggername(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -5992,9 +5991,7 @@ pub async fn prompterrorlog_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -6042,9 +6039,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(exception_class): Path<String>,
+    Path((id, count, exception_class)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -6092,9 +6087,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(logger_name): Path<String>,
+    Path((id, count, logger_name)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -6142,8 +6135,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -6191,9 +6183,7 @@ pub async fn prompterrorlog_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -6241,9 +6231,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(exception_class): Path<String>,
+    Path((id, count, exception_class)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -6291,9 +6279,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(logger_name): Path<String>,
+    Path((id, count, logger_name)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -7005,14 +6991,13 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET ($1 - 1) * $2",
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -7277,8 +7262,7 @@ pub async fn tokenthreshold_update(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -7326,9 +7310,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -7376,8 +7358,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -7425,9 +7406,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -7788,8 +7767,7 @@ async fn warnlog_list(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(&pool, "WHERE id < $1", &[&id, &count]).await
 }
@@ -7797,9 +7775,7 @@ pub async fn warnlog_list_next_count(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_next_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(
         &pool,
@@ -7812,8 +7788,7 @@ pub async fn warnlog_list_next_count_date_date(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(&pool, "WHERE id > $1", &[&id, &count]).await
 }
@@ -7821,9 +7796,7 @@ pub async fn warnlog_list_prev_count(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_prev_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(
         &pool,
@@ -8914,8 +8887,7 @@ async fn u3_bar_mass_page(
 #[allow(non_snake_case)]
 pub async fn u3_bar_create_mass_from_count(
     pool: Extension<Pool>,
-    Path(from): Path<i64>,
-    Path(count): Path<i64>,
+    Path((from, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_mass_page(&pool, from, count, "bar").await
 }
@@ -8923,8 +8895,7 @@ pub async fn u3_bar_create_mass_from_count(
 #[allow(non_snake_case)]
 pub async fn u3_foo_create_mass_from_count(
     pool: Extension<Pool>,
-    Path(from): Path<i64>,
-    Path(count): Path<i64>,
+    Path((from, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_mass_page(&pool, from, count, "foo").await
 }
@@ -8966,9 +8937,7 @@ async fn u3_bar_select_grouped(
 #[allow(non_snake_case)]
 pub async fn u3_bar_select1_field_value_count(
     pool: Extension<Pool>,
-    Path(field): Path<String>,
-    Path(value): Path<String>,
-    Path(count): Path<i64>,
+    Path((field, value, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_select_grouped(&pool, &field, &value, count, "select1").await
 }
@@ -8984,9 +8953,7 @@ pub async fn u3_bar_select2_count(
 #[allow(non_snake_case)]
 pub async fn u3_bar_select3_field_value_count(
     pool: Extension<Pool>,
-    Path(field): Path<String>,
-    Path(value): Path<String>,
-    Path(count): Path<i64>,
+    Path((field, value, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_select_grouped(&pool, &field, &value, count, "select3").await
 }
@@ -8994,9 +8961,7 @@ pub async fn u3_bar_select3_field_value_count(
 #[allow(non_snake_case)]
 pub async fn u3_bar_select4_field_value_count(
     pool: Extension<Pool>,
-    Path(field): Path<String>,
-    Path(value): Path<String>,
-    Path(count): Path<i64>,
+    Path((field, value, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_select_grouped(&pool, &field, &value, count, "select4").await
 }
@@ -9052,9 +9017,7 @@ pub async fn u3_collect_update(
 pub async fn u3_collect_delete_name_mobile_code(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    Path(name): Path<String>,
-    Path(mobile): Path<String>,
-    Path(code): Path<String>,
+    Path((name, mobile, code)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9078,8 +9041,7 @@ pub async fn u3_collect_delete_name_mobile_code(
 #[allow(non_snake_case)]
 pub async fn u3_collect_controllermobile_get(
     pool: Extension<Pool>,
-    Path(name): Path<String>,
-    Path(mobile): Path<String>,
+    Path((name, mobile)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -9674,9 +9636,7 @@ pub async fn u3_invoke_execute(
 #[allow(non_snake_case)]
 pub async fn u3_invoke_execute_with_token(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(_client): Path<String>,
-    Path(token): Path<String>,
+    Path((flag, _client, token)): Path<(String, String, String)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_invoke_execute_inner(&pool, &flag, Some(&token)).await
@@ -9881,8 +9841,7 @@ async fn u3_market_list_paged(
 #[allow(non_snake_case)]
 pub async fn u3_market_list_paging_post(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_market_list_paged(&pool, page, size, None).await
@@ -9892,9 +9851,7 @@ pub async fn u3_market_list_paging_post(
 #[allow(non_snake_case)]
 pub async fn u3_market_list_paging_category(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
-    Path(category): Path<String>,
+    Path((page, size, category)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_market_list_paged(&pool, page, size, Some(category.trim())).await
 }
@@ -9903,8 +9860,7 @@ pub async fn u3_market_list_paging_category(
 #[allow(non_snake_case)]
 pub async fn u3_market_install_log_paging_post(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -10663,8 +10619,7 @@ async fn dict_data_write(
 #[allow(non_snake_case)]
 pub async fn dict_data_save_put(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(path): Path<String>,
+    Path((dict_flag, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     dict_data_write(pool, dict_flag, path, body).await
@@ -10673,8 +10628,7 @@ pub async fn dict_data_save_put(
 #[allow(non_snake_case)]
 pub async fn dict_data_delete_path(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(path): Path<String>,
+    Path((dict_flag, path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client
