@@ -1,3 +1,5 @@
+# propeller
+
 ﻿
 Propeller 用于 Linux 内核
 
@@ -74,6 +76,7 @@ Propeller 优化过程包含以下步骤
 
    and ::
 
+
       $ make LLVM=1 CLANG_AUTOFDO_PROFILE=<autofdo-profile-name>
 
 ```
@@ -86,6 +89,7 @@ Propeller 优化过程包含以下步骤
       $ perf record -e BR_INST_RETIRED.NEAR_TAKEN:k -a -N -b -c <count> -o <perf_file> -- <loadtest>
 
    - For AMD platforms::
+
 
       $ perf record --pfm-event RETIRED_TAKEN_BRANCH_INSTRUCTIONS:k -a -N -b -c <count> -o <perf_file> -- <loadtest>
 
@@ -112,6 +116,7 @@ Propeller 优化过程包含以下步骤
    you can create a temp list file "<perf_file_list>" with each line
    containing one perf file name and run::
 
+
       $ create_llvm_prof --binary=<vmlinux> --profile=@<perf_file_list>
                          --format=propeller --propeller_output_module_name
                          --out=<propeller_profile_prefix>_cc_profile.txt
@@ -125,6 +130,7 @@ Propeller 优化过程包含以下步骤
       CONFIG_PROPELLER_CLANG=y
 
    and ::
+
 
       $ make LLVM=1 CLANG_AUTOFDO_PROFILE=<profile_file> CLANG_PROPELLER_PROFILE_PREFIX=<propeller_profile_prefix>
 

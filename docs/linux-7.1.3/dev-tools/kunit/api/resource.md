@@ -1,3 +1,5 @@
+# resource
+
 ﻿## 资源 API
 
 
@@ -8,10 +10,12 @@
 
    :internal:
 
-### 受管设备
+
+## 受管设备
 
 
 用于使用 KUnit 托管struct device struct device_driver 的函数。使用这些需包含
 `kunit/device.h`銆。
 
    :internal:
+
