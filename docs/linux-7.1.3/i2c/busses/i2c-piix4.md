@@ -1,3 +1,5 @@
+# i2c-piix4
+
 ﻿## 内核驱动 i2c-piix4
 
 
@@ -25,7 +27,7 @@
  - Philip Edelbrock <phil@netroedge.com>
 
 
-### 模块参数
+## 模块参数
 
 
 - force: int

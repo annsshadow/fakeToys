@@ -1,3 +1,5 @@
+# i2c-nvidia-gpu
+
 ﻿## 内核驱动 i2c-nvidia-gpu
 
 
@@ -6,7 +8,7 @@
 作者：
 	Ajay Gupta <ajayg@nvidia.com>
 
-### 描述
+## 描述
 
 
 i2c-nvidia-gpu 是针NVIDIA Turing 及更GPU 中所包含 I2C 控制器的驱动，用于与 GPU 上的 Type-C 控制器通信
