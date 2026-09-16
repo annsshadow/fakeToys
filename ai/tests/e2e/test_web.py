@@ -68,7 +68,12 @@ class TestWebSources:
         app_source = read_source(WEB_SRC / "App.tsx")
 
         for page in ["Quality", "Export", "Multimodal", "Dashboard"]:
-            assert f"import {page} from" in app_source, f"App.tsx 未导入页面 {page}"
+            # 支持静态导入和动态导入（lazy）
+            assert (
+                f"import {page} from" in app_source
+                or f"{page} = lazy(() => import('./pages/{page}'))" in app_source
+                or f"const {page} = lazy" in app_source
+            ), f"App.tsx 未导入页面 {page}"
             assert f"<{page} />" in app_source, f"App.tsx 未注册路由 {page}"
 
     def test_app_menu_covers_new_pages(self):
