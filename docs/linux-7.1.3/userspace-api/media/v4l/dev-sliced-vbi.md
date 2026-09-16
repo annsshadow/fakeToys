@@ -1,7 +1,9 @@
+# dev-sliced-vbi
+
 ﻿
 
 
-######## 切片 VBI 数据接口
+## 切片 VBI 数据接口
 
 
 VBI Vertical Blanking Interval（场消隐间隔）的缩写，即模拟视频信号各行序列之间的一个间隙VBI 期间不传输图像信息，这为阴极射线管电视的电子束返回屏幕顶部留出了一些时间
@@ -101,7 +103,7 @@ VIDIOC_STREAMON ioctl 以及第一`read()`、`write()` `select()` 调用
     \endgroup
 
 
-### 切片 VBI 服务
+## 切片 VBI 服务
 
 
 
@@ -146,7 +148,7 @@ VIDIOC_STREAMON ioctl 以及第一`read()`、`write()` `select()` 调用
 VBI 参数失效）以及在切换视频输入之后（这可能作为副作用改变视频标准）时，可能返回 `EINVAL` 错误码VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 在应用程序尝试在 I/O 进行期间（在
 VIDIOC_STREAMON VIDIOC_STREAMOFF <VIDIOC_STREAMON> 调用之间，以及第一`read()` `write()` 调用之后）更改格式时，可能返`EBUSY` 错误码
 
-#### V4L2_SLICED_WSS_625 负载
+### V4L2_SLICED_WSS_625 负载
 
 
 `V4L2_SLICED_WSS_625` 的负载为

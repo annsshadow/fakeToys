@@ -1,7 +1,9 @@
+# vidioc-g-frequency
+
 ﻿
 
 
-######## ioctl VIDIOC_G_FREQUENCY, VIDIOC_S_FREQUENCY
+## ioctl VIDIOC_G_FREQUENCY, VIDIOC_S_FREQUENCY
 
 
 ## 名称

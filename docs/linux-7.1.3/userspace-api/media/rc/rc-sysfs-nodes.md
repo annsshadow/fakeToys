@@ -1,5 +1,7 @@
+# rc-sysfs-nodes
+
 ﻿
-######## 遥控器的 sysfs 节点
+## 遥控器的 sysfs 节点
 
 
 Documentation/ABI/testing/sysfs-class-rc 中所定义，以下是控制遥控器的 sysfs 节点

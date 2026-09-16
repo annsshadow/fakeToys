@@ -1,7 +1,9 @@
+# vidioc-encoder-cmd
+
 ﻿
 
 
-######## ioctl VIDIOC_ENCODER_CMD, VIDIOC_TRY_ENCODER_CMD
+## ioctl VIDIOC_ENCODER_CMD, VIDIOC_TRY_ENCODER_CMD
 
 
 ## 名称

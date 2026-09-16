@@ -1,5 +1,7 @@
+# pixfmt-v4l2
+
 ﻿
-######## 单平面（single-planar）格式结
+## 单平面（single-planar）格式结
 
     :header-rows:  0
     :stub-columns: 0
@@ -92,6 +94,7 @@
       - 0x00000001
       - 颜色值已经预先乘以了 alpha 通道的值。例如，如果一50% 透明的浅蓝色
         像素RGBA (128, 192, 255, 128) 描述，那么用预乘颜色描述的同一	像素则为 RGBA (64, 96, 128, 128)    - .. _`v4l2-pix-fmt-flag-set-csc`:
+
 
       - `V4L2_PIX_FMT_FLAG_SET_CSC`
       - 0x00000002

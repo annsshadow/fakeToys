@@ -1,7 +1,9 @@
+# vidioc-g-priority
+
 ﻿
 
 
-######## ioctl VIDIOC_G_PRIORITY, VIDIOC_S_PRIORITY
+## ioctl VIDIOC_G_PRIORITY, VIDIOC_S_PRIORITY
 
 
 ## 名称

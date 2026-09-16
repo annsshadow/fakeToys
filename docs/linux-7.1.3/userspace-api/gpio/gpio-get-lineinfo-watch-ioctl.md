@@ -1,7 +1,9 @@
+# gpio-get-lineinfo-watch-ioctl
+
 ﻿
 
 
-######## GPIO_GET_LINEINFO_WATCH_IOCTL
+## GPIO_GET_LINEINFO_WATCH_IOCTL
 
 
     ioctl chardev_v1.rst 的一部分，已    gpio-v2-get-lineinfo-watch-ioctl.rst 废弃

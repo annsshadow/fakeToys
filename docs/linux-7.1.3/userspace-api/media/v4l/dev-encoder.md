@@ -1,3 +1,5 @@
+# dev-encoder
+
 ﻿######## 内存到内存有状态视频编码器接口
 
 
@@ -209,11 +211,13 @@
 
    .. important::
 
+
       ``timeperframe`` deals with *frames*, not fields. So for interlaced
       formats this is the time per two fields, since a frame consists of
       a top and a bottom field.
 
    .. note::
+
 
       It is due to historical reasons that changing the ``OUTPUT`` frame
       interval also changes the coded frame interval on the ``CAPTURE``
@@ -248,11 +252,13 @@
 
    .. important::
 
+
       ``timeperframe`` deals with *frames*, not fields. So for interlaced
       formats this is the time per two fields, since a frame consists of
       a top and a bottom field.
 
    .. note::
+
 
       Not all drivers support this functionality, in that case just set
       the desired coded frame interval for the ``OUTPUT`` queue.
@@ -301,6 +307,7 @@
 
    .. warning::
 
+
       The encoder may adjust the crop/compose rectangles to the nearest
       supported ones to meet codec and hardware requirements. The client needs
       to check the adjusted rectangle returned by :c:func:`VIDIOC_S_SELECTION`.
@@ -331,6 +338,7 @@
       call returns.
 
    .. note::
+
 
       To allocate more than the minimum number of OUTPUT buffers (for pipeline
       depth), the client may query the ``V4L2_CID_MIN_BUFFERS_FOR_OUTPUT``
@@ -457,6 +465,7 @@
 
      .. note::
 
+
         Any attempt to dequeue more ``CAPTURE`` buffers beyond the buffer
         marked with ``V4L2_BUF_FLAG_LAST`` will result in a -EPIPE error from
         :c:func:`VIDIOC_DQBUF`.
@@ -467,6 +476,7 @@
    * dequeuing the ``V4L2_EVENT_EOS`` event, if the client subscribes to it.
 
    .. note::
+
 
       For backwards compatibility, the encoder will signal a ``V4L2_EVENT_EOS``
       event when the last frame has been encoded and all frames are ready to be

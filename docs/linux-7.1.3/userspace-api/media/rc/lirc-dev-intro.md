@@ -1,7 +1,9 @@
+# lirc-dev-intro
+
 ﻿
 
 
-######## Introduction
+## Introduction
 
 
 LIRC 代表 Linux Infrared Remote Control（Linux 红外遥控）。LIRC 设备接口是一个双向接口，用于在用户空间与内核空间之间传输原始 IR 和解码后的扫描码数据。从根本上说，它只是一个字符设备（/dev/lircX，其X = 0, 1, 2, ...），在其上定义了一些标准的 struct file_operations。就来回传输原始 IR 和解码后的扫描码而言，关键的 fops read、write ioctl
@@ -23,7 +25,7 @@ LIRC 代表 Linux Infrared Remote Control（Linux 红外遥控）。LIRC 设备�
  - ir-ctl: 可以接收原始 IR 并发IR，以及查LIRC 设备特性
  - ir-keytable: 可以加载键映射；允许你设IR 内核协议；加BPF IR 解码器并测试 IR 解码。也提供了一BPF IR 解码器
 
-######## LIRC modes
+### LIRC modes
 
 
 LIRC 支持几种接收和发IR 码的模式，如下表所示

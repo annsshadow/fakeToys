@@ -1,3 +1,5 @@
+# no_new_privs
+
 ﻿## 禁止新权限标志（No New Privileges Flag
 
 execve 系统调用可以授予新启动的程序其父进程所没有的权限。最明显的例子是 setuid/setgid 程序和文件能力（file capabilities）。为了防止父进程也获得这些权限，内核与用户态代码必须小心，避免父进程做出任何可能破坏子进程的事情。例如：

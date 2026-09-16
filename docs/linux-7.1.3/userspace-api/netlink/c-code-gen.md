@@ -1,3 +1,5 @@
+# c-code-gen
+
 ﻿
 ## Netlink 规范 C 代码生成
 
@@ -36,7 +38,7 @@ netlink 头文件中，属性枚举传统上是不具名的。若需要命名，
 
 操作命名`$family-CMD-$operation`。若指定`name-prefix`，则替换名称中的 `$family-CMD` 部分
 与属性枚举类似，操作枚举也以特殊的计数与最大值属性结尾。对于操作，这些属性可通过 `cmd-cnt-name` `cmd-max-name` 重命名。若 `max-by-define` `true`，则最大值将是一define
-## 澶氭挱缁。
+## 澶氭挱统。
 
 每个多播组都会生成一define，写入内uAPI 头文件。该 define 的名称为 `$family-MCGRP-$group`，可通过 `c-define-name` 属性覆盖
 ## 代码生成

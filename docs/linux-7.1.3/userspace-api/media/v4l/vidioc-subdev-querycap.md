@@ -1,7 +1,9 @@
+# vidioc-subdev-querycap
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBDEV_QUERYCAP
+## ioctl VIDIOC_SUBDEV_QUERYCAP
 
 
 ## 名称

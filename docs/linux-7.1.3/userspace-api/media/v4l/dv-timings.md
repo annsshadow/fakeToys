@@ -1,7 +1,9 @@
+# dv-timings
+
 ﻿
 
 
-######## 数字视频（DV）时序（Digital Video Timings
+## 数字视频（DV）时序（Digital Video Timings
 
 到目前为止所讨论的视频标准一直针对模拟电视（Analog TV）及其相应的视频时序如今有众多不同的硬件接口，例如高清电视接口（HDMI）、VGA、DVI 连接器等，它承载视频信号，因此需要扩API 来为这些接口选择视频时序。由于受限于可用的位数，
 无法扩展 v4l2_std_id <v4l2-std-id>，因此新增了一ioctl 用于在输入与输出

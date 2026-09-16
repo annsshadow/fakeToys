@@ -1,7 +1,9 @@
+# vidioc-enum-dv-timings
+
 ﻿
 
 
-######## ioctl VIDIOC_ENUM_DV_TIMINGS, VIDIOC_SUBDEV_ENUM_DV_TIMINGS
+## ioctl VIDIOC_ENUM_DV_TIMINGS, VIDIOC_SUBDEV_ENUM_DV_TIMINGS
 
 
 ## 名称
