@@ -1,9 +1,11 @@
+# fault-injection
+
 ﻿## 故障注入能力基础设施
 
 
 另请参见 scsi_debug "every_nth" 模块选项
 
-### 可用的故障注入能
+## 可用的故障注入能
 
 - failslab
 
@@ -43,11 +45,12 @@
   通过设置 /sys/kernel/config/nullb/<disk>/timeout_inject 下的配置项注IO 超时，通过设置 /sys/kernel/config/nullb/<disk>/requeue_inject 下的配置项注入重新排队请求，以及通过设置 /sys/kernel/config/nullb/<disk>/init_hctx_fault_inject 下的配置项注init_hctx() 错误
 ### 配置故障注入能力的行
 
-##### debugfs 条目
+#### debugfs 条目
 
 
 fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配置故障注入能力
 - /sys/kernel/debug/fail*/probability:
+
 
 	注入失败的可能性，以百分比表示
 	格式percent>
@@ -55,12 +58,15 @@ fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配
 	注意，每百次一次失败对某些测试用例来说是相当高的错误率。对于此类测试用例，考虑设置 probability=100 并配/sys/kernel/debug/fail*/interval
 - /sys/kernel/debug/fail*/interval:
 
+
 	指定失败之间的间隔，针对通过了所有其他测试的 should_fail() 调用
 	注意，如果你通过 interval>1 启用了它，你很可能想要设probability=100
 - /sys/kernel/debug/fail*/times:
 
+
 	指定失败最多可能发生的次数。-1 表示"无限
 - /sys/kernel/debug/fail*/space:
+
 
 	指定一个初始资预算"，每次调should_fail(,size) 时按 "size" 递减。在 "space" 达到零之前，故障注入被抑制
 - /sys/kernel/debug/fail*/verbose
@@ -70,16 +76,20 @@ fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配
 	指定注入失败时消息的详细程度0' 表示无消息；'1' 每次失败只打印一行日志；'2' 还会打印调用栈跟踪——有助于调试故障注入暴露的问题
 - /sys/kernel/debug/fail*/task-filter:
 
+
 	格式：{ 'Y' | 'N' }
 
 	'N' 禁用按进程过滤（默认）。任何正值将失败限制为仅/proc/<pid>/make-it-fail==1 指示的进程
 - /sys/kernel/debug/fail*/require-start銆?  /sys/kernel/debug/fail*/require-end銆?  /sys/kernel/debug/fail*/reject-start銆?  /sys/kernel/debug/fail*/reject-end:
 
+
 	指定在栈跟踪遍历期间测试的虚拟地址范围。仅当被遍历栈跟踪中的某个调用者位于所需范围内，且没有调用者位于拒绝范围内时，才注入失败。默认所需范围[0,ULONG_MAX)（整个虚拟地址空间）。默认拒绝范围为 [0,0)
 - /sys/kernel/debug/fail*/stacktrace-depth:
 
+
 	指定在搜[require-start,require-end) [reject-start,reject-end) 范围内调用者时遍历的最大栈跟踪深度
 - /sys/kernel/debug/fail_page_alloc/ignore-gfp-highmem:
+
 
 	格式：{ 'Y' | 'N' }
 
@@ -92,46 +102,56 @@ fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配
 - /sys/kernel/debug/failslab/ignore-gfp-wait:
 - /sys/kernel/debug/fail_page_alloc/ignore-gfp-wait:
 
+
 	格式：{ 'Y' | 'N' }
 
 	默认'Y'，将其设置为 'N' 也会向可以睡眠的分配（__GFP_DIRECT_RECLAIM 分配）注入失败
 - /sys/kernel/debug/fail_page_alloc/min-order:
 
+
 	指定要注入失败的最小页分配阶
 - /sys/kernel/debug/fail_futex/ignore-private:
+
 
 	格式：{ 'Y' | 'N' }
 
 	默认'N'，将其设置为 'Y' 将在处理私有（地址空间）futex 时禁用失败注入
 - /sys/kernel/debug/fail_sunrpc/ignore-client-disconnect:
 
+
 	格式：{ 'Y' | 'N' }
 
 	默认'N'，将其设置为 'Y' 将禁RPC 客户端上的断开连接注入
 - /sys/kernel/debug/fail_sunrpc/ignore-server-disconnect:
+
 
 	格式：{ 'Y' | 'N' }
 
 	默认'N'，将其设置为 'Y' 将禁RPC 服务器端上的断开连接注入
 - /sys/kernel/debug/fail_sunrpc/ignore-cache-wait:
 
+
 	格式：{ 'Y' | 'N' }
 
 	默认'N'，将其设置为 'Y' 将禁RPC 服务器端上的缓存等待注入
 - /sys/kernel/debug/fail_function/inject:
+
 
 	格式：{ 'function-name' | '!function-name' | '' }
 
 	通过名称指定错误注入的目标函数。如果函数名带有 '!' 前缀，则将从注入列表中移除给定函数。如果未指定任何内容'），则清空注入列表
 - /sys/kernel/debug/fail_function/injectable:
 
+
 	（只读）显示可注入错误的函数以及可以指定的错误值类型。错误类型将是以下之一 - NULL:	retval 必须0 - ERRNO: retval 必须-1 -MAX_ERRNO4096） - ERR_NULL: retval 必须0 -1 -MAX_ERRNO4096）
 - /sys/kernel/debug/fail_function/<function-name>/retval:
+
 
 	指定要注入到给定函数错误"返回值。当用户指定一个新的注入条目时会创建此文件。注意此文件只接受无符号值。因此，如果你想使用负的 errno，你最好使'printf' 而不'echo'，例如：
 	$ printf %#x -12 > retval
 
 - /sys/kernel/debug/fail_skb_realloc/devname:
+
 
         指定要强制进SKB 重新分配的网络接口。如果留空，SKB 重新分配将应用于所有网络接口
 ```
@@ -142,7 +162,7 @@ fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配
           echo "" > /sys/kernel/debug/fail_skb_realloc/devname
 ```
 
-##### 引导选项
+## 引导选项
 
 
 为了debugfs 不可用时（早期启动期间）注入故障
@@ -156,10 +176,11 @@ fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配
 	mmc_core.fail_request=<interval>,<probability>,<space>,<times>
 ```
 
-##### proc 条目
+### proc 条目
 
 
 - /proc/<pid>/fail-nth銆?  /proc/self/task/<tid>/fail-nth:
+
 
 	向此文件写入整数 N 会使该任务中的第 N 次调用失败。从此文件读取会返回一个整数值。'0' 表示用先前对此文件的写入所设置的故障已被注入。正整数 N 表示故障尚未被注入。注意此文件启用所有类型的故障（slab、futex 等）。此设置优先于所有其他通用debugfs 设置（如 probability、interval、times 等）。但每能力设置（例如 fail_futex/ignore-private）优先于它
 	此特性旨在用于单个系统调用的故障系统性测试。参见下面的例子
@@ -169,7 +190,7 @@ fault-inject-debugfs 内核模块提供了一debugfs 条目，用于运行时配
 
 本部分面向考虑ALLOW_ERROR_INJECTION() 宏添加函数的内核开发者
 
-##### 可注入错误函数的要求
+#### 可注入错误函数的要求
 
 
 由于函数级错误注入会强行改变代码路径并返回错误，即使输入和条件都正确，如果允许对不可注入错误的函数进行错误注入，可能导致意外的内核崩溃。因此，你（和审阅者）必须确保
@@ -348,7 +369,7 @@ EI_ETYPE_TRUE
     echo 1 > /sys/kernel/debug/failslab/probability
 ```
 
-### 用于运行failslab fail_page_alloc 命令的工
+## 用于运行failslab fail_page_alloc 命令的工
 为了使上述任务更容易完成，我们可以使tools/testing/fault-injection/failcmd.sh。请运行命令 "./tools/testing/fault-injection/failcmd.sh --help" 获取更多信息并参见以下示例
 示例
 运行命令 "make -C tools/testing/selftests/ run_tests" 并注slab
@@ -372,7 +393,7 @@ EI_ETYPE_TRUE
 		-- make -C tools/testing/selftests/ run_tests
 ```
 
-### 使用 fail-nth 进行系统性故
+## 使用 fail-nth 进行系统性故
 以下代码系统性地对第 0……次故障进行注入
 
 ```
