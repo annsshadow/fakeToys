@@ -1,4 +1,6 @@
-﻿## lxfb - AMD Geode LX 甯х紦鍐查┍鍔。
+# lxfb
+
+﻿## lxfb - AMD Geode LX 甯х紦内查┍鍔。
 
 这是面向基于 AMD Geode LX 的处理器的图形帧缓冲驱动
 优点

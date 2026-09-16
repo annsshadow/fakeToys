@@ -1,4 +1,6 @@
-﻿## tgafb - TGA 鍥惧舰甯х紦鍐查┍鍔。
+# tgafb
+
+﻿## tgafb - TGA 鍥惧舰甯х紦内查┍鍔。
 
 这是面向基于 DECChip 21030 的图形帧缓冲（即 TGA 卡）的驱动，这类卡通常出现在较老的
 Digital Alpha 系统中。支持以下型号：

@@ -1,3 +1,5 @@
+# pxafb
+
 ﻿## PXA25x LCD 鎺у埗鍣ㄩ┍鍔。
 
 该驱动支持以下选项，模块方式下通过 `options=<OPTIONS>`，内建方式下通过 `video=pxafb:<OPTIONS>`
@@ -89,6 +91,7 @@ pixclockpol:POLARITY
 
      NOTE:
 
+
      a. 叠加层不支持 x 方向平移，因	var->xres_virtual 将始终等var->xres
 
      b. 叠加层的行长度必须位32 位字边界上，
@@ -102,9 +105,11 @@ pixclockpol:POLARITY
      Applications should follow the sequence below to operate an overlay
      framebuffer:
 
+
 	 a. open("/dev/fb[1-2]", ...)
 	 b. ioctl(fd, FBIOGET_VSCREENINFO, ...)
 	 c. modify 'var' with desired parameters:
+
 
 	    1) var->xres and var->yres
 	    2) 如果需要更多内存（通常用于双缓冲）	       增大 var->yres_virtual
@@ -117,6 +122,7 @@ pixclockpol:POLARITY
 
   3. 对于 YUV planar 格式，帧缓冲框架实际上并不支持，应用程序必须自行处理各分量在帧缓冲中的偏移与长度
   4. `var->nonstd` 用于传递起(x, y) 位置与颜色格式，详细的位域如下所:
+
 
       31                23  20         10          0
        +-----------------+---+----------+----------+

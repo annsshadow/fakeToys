@@ -1,3 +1,5 @@
+# sstfb
+
 ﻿## sstfb
 
 
@@ -26,7 +28,7 @@ Graphics。编译、安装、开心地使用……并请给我一份报:)
        #. 在发出任何命令之前，你应该完整阅读本节
        #. 如果你只有一台显示器可用，一旦你 insmod 该模块，3dfx 就会接管输出，因	  你必须将显示器插普视频板才能发出命令，或者你可以盲目使用 tools
 	  目录中的 sst_dbg_vgapass（见 Tools）。最新的解决办法是在 insmod 驱动	  传入参数 vgapass=1。（Kernel/Modules Options
-### 模块插入
+## 模块插入
 
 
        #. insmod sstfb.o
@@ -36,7 +38,7 @@ Graphics。编译、安装、开心地使用……并请给我一份报:)
 
 	  将一tty 绑定到新的帧缓冲。如果你已经有一个帧缓冲驱动，voodoo fb 很可	  /dev/fb1。如果没有，该设备将/dev/fb0。你可以通过执行 cat /proc/fb
 	  来检查。你可以tools/ 目录中找con2fb 的副本。如果你没有其他fb 设备	  此步骤是多余的，因为控制台子系统会自动将 tty 绑定fb       #. 切换到你刚刚映射的虚拟控制台tadaaa"…
-### 模块移除
+## 模块移除
 
 
        #. con2fb /dev/fbx /dev/ttyx
@@ -45,7 +47,7 @@ Graphics。编译、安装、开心地使用……并请给我一份报:)
        #. rmmod sstfb
 
 
-### 内核/模块选项
+## 内核/模块选项
 
 
 你可以向 sstfb 模块传递一些选项，当驱动编译进内核时也可以通过内核命令行传递：
