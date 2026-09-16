@@ -1,4 +1,6 @@
-﻿## pvr2fb - PowerVR 2 鍥惧舰甯х紦鍐查┍鍔。
+# pvr2fb
+
+﻿## pvr2fb - PowerVR 2 鍥惧舰甯х紦内查┍鍔。
 
 这是一个面向基PowerVR 2 的图形帧缓冲的驱动，例如 Dreamcast 中所使用那一个
 优点

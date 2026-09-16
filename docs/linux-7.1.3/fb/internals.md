@@ -1,7 +1,10 @@
+# internals
+
 ﻿## 帧缓冲设备内部机
 
 这是关于帧缓冲设备内部机制的部分文档的初步起点
 Authors:
+
 
 - Geert Uytterhoeven <geert@linux-m68k.org>, 1998 骞?7 鏈?21 鏃?- James Simmons <jsimmons@user.sf.net>, 2002 骞?11 鏈?26 鏃。
 --------------------------------------------------------------------------------
