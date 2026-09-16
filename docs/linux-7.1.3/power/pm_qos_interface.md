@@ -1,3 +1,5 @@
+# pm_qos_interface
+
 ﻿## PM 服务质量（QoS）接
 
 该接口提供了一个内核模式和用户模式接口，用于驱动、子系统以及用户空间应用程序某个参数注册性能期望
@@ -84,7 +86,7 @@ int dev_pm_qos_add_notifier(device, notifier, type):
 int dev_pm_qos_remove_notifier(device, notifier, type):
   移除设备的通知回调函数
 
-##### 活动状态延迟容忍度
+### 活动状态延迟容忍度
 
 
 该设PM QoS 类型用于支持那些硬件可以动态切换到节能运行模式的系统。在这类系统中，

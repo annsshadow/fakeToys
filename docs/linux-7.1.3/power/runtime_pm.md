@@ -1,3 +1,5 @@
+# runtime_pm
+
 ﻿## I/O 设备的运行时电源管理框架
 
 
@@ -388,7 +390,7 @@ PM core 通过执行以下操作，尽最大努力降低运行时 PM 与系统�
 
   - 在系统恢复期间，正好在执行其子系统级 .resume_early() 回调之后，对其调pm_runtime_enable()，并正好在执行其子系统级 .complete() 回调之后，对其调pm_runtime_put()
 
-## 7. 閫氱敤瀛愮郴缁熷洖璋。
+## 7. 閫氱敤子愮系统熷洖璋。
 
 
 子系统可能希望通过使用 PM core 提供的一组通用电源管理回调来节省代码空间，这些回调定义driver/base/power/generic_ops.c 中：
