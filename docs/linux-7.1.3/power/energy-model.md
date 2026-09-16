@@ -1,3 +1,5 @@
+# energy-model
+
 ﻿
 ## 设备的能量模
 
@@ -50,7 +52,7 @@ Allocation）部分找到。内核子系统可能实现自动检测，以检查�
 ### 2. 核心 API
 
 
-##### 2.1 配置选项
+#### 2.1 配置选项
 
 
 必须使用 CONFIG_ENERGY_MODEL 才能使用 EM 框架
@@ -159,13 +161,15 @@ em_perf_state : flags銆。
 ##### 2.5 API 的详细描
    :internal:
 
+
    :export:
+
 
 
 ### 3. 示例
 
 
-##### 3.1 注册 EM 的示例驱
+#### 3.1 注册 EM 的示例驱
 
 CPUFreq 框架支持专用回调，用于注*给定 CPU 'policy' 对象EM：cpufreq_driver**
 : register_em()。必须针对特定驱动正确实现该回调，因为框架会在设置期间的适当时机调用它本节提供了一个简单示例，展示一CPUFreq 驱动使用（虚构的foo' 协议在能量模型框架中
