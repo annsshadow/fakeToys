@@ -1,3 +1,5 @@
+# core
+
 ﻿
 ## CPUFreq 核心CPUFreq 通知器的一般性描
 
@@ -50,6 +52,7 @@ dev_pm_opp_init_cpufreq_table -
 
 	Example::
 
+
 	 soc_pm_init()
 	 {
 		/* Do things */
@@ -60,6 +63,7 @@ dev_pm_opp_init_cpufreq_table -
 	 }
 
 	.. note::
+
 
 	   This function is available only if CONFIG_CPU_FREQ is enabled in
 	   addition to CONFIG_PM_OPP.
