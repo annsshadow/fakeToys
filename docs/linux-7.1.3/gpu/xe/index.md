@@ -1,3 +1,5 @@
+# index
+
 ﻿## drm/xe Intel GFX 驱动
 
 本页Intel drm/xe GPU 驱动的文档索引，汇总了内存管理、命令提交、电源管理、固件与工作队列等各内部模块的说明入口，供驱动开发者了xe 驱动的整体结构
@@ -21,5 +23,5 @@ drm/xe 驱动支持一些未来的 GFX 显卡，提供渲染、显示、计算�
 - [xe_debugging](xe_debugging)
 - [xe_devcoredump](xe_devcoredump)
 - [xe_device](xe_device)
-- [xe-drm-usage-stats.rst](xe-drm-usage-stats.rst)
+- [xe-drm-usage-stats.rst](xe-drm-usage-stats.md)
 - [xe_configfs](xe_configfs)

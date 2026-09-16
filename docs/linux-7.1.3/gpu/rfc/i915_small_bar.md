@@ -1,7 +1,9 @@
+# i915_small_bar
+
 ﻿## I915 Small BAR RFC 章节
 
 DG2 开始，我们将为设备本地内存（即 I915_MEMORY_CLASS_DEVICE）提供可调整大小BAR 支持，但在某些情况下，最终的 BAR 大小可能仍然小于总的 probed_size。在这种情况下，只有 I915_MEMORY_CLASS_DEVICE 的一部分可被 CPU 访问（例如前 256M），其余部分只能通过 GPU 访问
-### I915_GEM_CREATE_EXT_FLAG_NEEDS_CPU_ACCESS 标志
+## I915_GEM_CREATE_EXT_FLAG_NEEDS_CPU_ACCESS 标志
 
 新的 gem_create_ext 标志，用于告诉内核某BO 将需CPU 访问。当将对象放置在 I915_MEMORY_CLASS_DEVICE 中时这一点很重要，因为底层设备的 BAR 较小，意味着其中只有一部分可被 CPU 访问。如果没有该标志，内核会假定不需CPU 访问，并优先使用 I915_MEMORY_CLASS_DEVICE 中不可被 CPU 看到的部分
    :functions: __drm_i915_gem_create_ext

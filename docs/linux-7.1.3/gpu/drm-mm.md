@@ -1,3 +1,5 @@
+# drm-mm
+
 ﻿## DRM 内存管理
 
 现代 Linux 系统需要大量图形内存来存储帧缓冲、纹理、顶点以及其它图形相关数据鉴于其中许多数据的高度动态特性，高效地管理图形内存对图形栈而言至关重要并在 DRM 基础设施中扮演核心角色
@@ -12,33 +14,43 @@ GEM 没有为每一个图形内存相关问题提供解决方案，而是识别�
 
    :internal:
 
+
 ### TTM 设备对象引用
 
    :internal:
 
+
    :export:
+
 
 ### TTM 资源放置引用
 
    :internal:
 
+
 ### TTM 资源对象引用
 
    :internal:
 
+
    :export:
+
 
 ### TTM TT 对象引用
 
    :internal:
 
+
    :export:
+
 
 ### TTM 页池引用
 
    :internal:
 
+
    :export:
+
 
 ## 图形执行管理器（GEM
 GEM 的设计方法导致了一个这样的内存管理器：它并未在userspace 或内API 提供对所有（甚至所有常见）用例的完整覆盖。GEM userspace 暴露一组标准的与内存相关的操作，并向驱动提供一组辅助函数，同时让驱动用其自身的私有 API
@@ -150,7 +162,9 @@ Documentation/admin-guide/mm/nommu-mmap.rst 中找
 
    :internal:
 
+
    :export:
+
 
 ### GEM DMA 辅助函数引用
 
@@ -158,7 +172,9 @@ Documentation/admin-guide/mm/nommu-mmap.rst 中找
 
    :internal:
 
+
    :export:
+
 
 ### GEM SHMEM 辅助函数引用
 
@@ -166,7 +182,9 @@ Documentation/admin-guide/mm/nommu-mmap.rst 中找
 
    :internal:
 
+
    :export:
+
 
 ### GEM VRAM 辅助函数引用
 
@@ -174,7 +192,9 @@ Documentation/admin-guide/mm/nommu-mmap.rst 中找
 
    :internal:
 
+
    :export:
+
 
 ### GEM TTM 辅助函数引用
 
@@ -182,12 +202,15 @@ Documentation/admin-guide/mm/nommu-mmap.rst 中找
 
    :export:
 
+
 ## VMA 鍋忕Щ绠＄悊鍣。
    :doc: vma offset manager
 
    :internal:
 
+
    :export:
+
 
 ## PRIME 缓冲共享
 
@@ -203,7 +226,9 @@ PRIME drm 中的跨设备缓冲共享框架，最初为 OPTIMUS 系列GPU 平台
 
    :internal:
 
+
    :export:
+
 
 ## DRM MM 区间分配
 ### 概述
@@ -216,7 +241,9 @@ PRIME drm 中的跨设备缓冲共享框架，最初为 OPTIMUS 系列GPU 平台
 ### DRM MM 区间分配器函数引
    :internal:
 
+
    :export:
+
 
 ## DRM GPUVM
 
@@ -239,19 +266,24 @@ PRIME drm 中的跨设备缓冲共享框架，最初为 OPTIMUS 系列GPU 平台
 
    :internal:
 
+
    :export:
+
 
 ## DRM Buddy 分配
 ### Buddy 分配器函数引用（GPU buddy
    :export:
 
+
 ### DRM Buddy 特定日志函数引用
 
    :export:
 
+
 ## DRM 缓存处理与快WC memcpy()
 
    :export:
+
 
 ## DRM 同步对象
 
@@ -259,14 +291,18 @@ PRIME drm 中的跨设备缓冲共享框架，最初为 OPTIMUS 系列GPU 平台
 
    :internal:
 
+
    :export:
+
 
 ## DRM 执行上下
    :doc: Overview
 
    :internal:
 
+
    :export:
+
 
 ## GPU 璋冨害鍣。
 ### 概述
@@ -280,6 +316,9 @@ PRIME drm 中的跨设备缓冲共享框架，最初为 OPTIMUS 系列GPU 平台
 ### 调度器函数引
    :internal:
 
-   :export:
 
    :export:
+
+
+   :export:
+

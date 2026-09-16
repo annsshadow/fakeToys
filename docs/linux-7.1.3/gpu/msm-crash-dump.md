@@ -1,4 +1,7 @@
+# msm-crash-dump
+
 ﻿:orphan:
+
 
 ## MSM 崩溃转储格式
 

@@ -1,3 +1,5 @@
+# drm-kms-helpers
+
 ﻿## 模式设置辅助函数
 
 
@@ -21,6 +23,7 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
    :internal:
 
 
+
 ## 原子模式设置辅助函数参
 
 
@@ -39,7 +42,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ### 原子状态重置与初始
 
@@ -51,6 +56,7 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ### GEM 原子辅助函数参
 
 
@@ -58,7 +64,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ### VBLANK 辅助函数参
 
@@ -67,7 +75,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## fbdev 辅助函数参
 
@@ -76,12 +86,15 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## 格式辅助函数参
 
 
    :export:
+
 
 ## 帧缓DMA 辅助函数参
 
@@ -90,12 +103,14 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ## 帧缓GEM 辅助函数参
 
 
    :doc: overview
 
    :export:
+
 
 
 ## 桥接（Bridges
@@ -132,7 +147,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ### MIPI-DSI 桥接操作
 
@@ -145,10 +162,12 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ### Panel-Bridge 辅助函数参
 
 
    :export:
+
 
 
 ## 面板辅助函数参
@@ -158,11 +177,15 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
-   :export:
 
    :export:
 
+
    :export:
+
+
+   :export:
+
 
 ## 面板自刷新（Self Refresh）辅助函数参
 
@@ -170,6 +193,7 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
    :doc: overview
 
    :export:
+
 
 ## HDMI 原子状态辅助函
 
@@ -184,10 +208,12 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ## HDCP 辅助函数参
 
 
    :export:
+
 
 ## Display Port 辅助函数参
 
@@ -196,9 +222,12 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :internal:
 
+
    :export:
+
 
 ## Display Port CEC 辅助函数参
 
@@ -207,6 +236,7 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ## Display Port 双模适配器（Dual Mode Adaptor）辅助函数参
 
 
@@ -214,7 +244,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## Display Port MST 辅助函数
 
@@ -231,7 +263,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ### 拓扑生命周期内部机制
 
@@ -251,7 +285,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## MIPI DSI 辅助函数参
 
@@ -260,7 +296,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## 显示流压缩（Display Stream Compression）辅助函数参
 
@@ -269,7 +307,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## 输出探测辅助函数参
 
@@ -278,16 +318,21 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ## EDID 辅助函数参
 
 
    :internal:
 
+
    :export:
+
 
    :internal:
 
+
    :export:
+
 
 ## SCDC 辅助函数参
 
@@ -296,7 +341,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## HDMI Infoframes 辅助函数参
 
@@ -305,7 +352,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## 矩形工具参
 
@@ -314,7 +363,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## Flip-work 辅助函数参
 
@@ -323,7 +374,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :export:
+
 
 ## 辅助模式设置（Auxiliary Modeset）辅助函
 
@@ -332,12 +385,14 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ## OF/DT 辅助函数
 
 
    :doc: overview
 
    :export:
+
 
 ## 传统平面（Legacy Plane）辅助函数参
 
@@ -346,12 +401,14 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :export:
 
+
 ## 传统 CRTC/模式设置辅助函数参
 
 
    :doc: overview
 
    :export:
+
 
 ## 隐私屏幕（Privacy-screen）类
 
@@ -360,6 +417,9 @@ DRM 子系统致力于在核心代码与辅助库之间实现强分离。核心�
 
    :internal:
 
+
    :internal:
 
+
    :export:
+

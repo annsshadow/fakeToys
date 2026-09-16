@@ -1,3 +1,5 @@
+# index
+
 ﻿## GPU RFC 章节
 
 
@@ -15,15 +17,15 @@
 - 代码合入后，请将所有文档移至主核心、辅助或驱动章节的相应位置，位于
   主核心、辅助或驱动章节的相应位置
 
-- [gpusvm.rst](gpusvm.rst)
+- [gpusvm.rst](gpusvm.md)
 
-- [i915_gem_lmem.rst](i915_gem_lmem.rst)
+- [i915_gem_lmem.rst](i915_gem_lmem.md)
 
-- [i915_scheduler.rst](i915_scheduler.rst)
+- [i915_scheduler.rst](i915_scheduler.md)
 
-- [i915_small_bar.rst](i915_small_bar.rst)
+- [i915_small_bar.rst](i915_small_bar.md)
 
-- [i915_vm_bind.rst](i915_vm_bind.rst)
+- [i915_vm_bind.rst](i915_vm_bind.md)
 
-- [color_pipeline.rst](color_pipeline.rst)
+- [color_pipeline.rst](color_pipeline.md)
 

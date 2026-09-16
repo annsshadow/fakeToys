@@ -1,3 +1,3 @@
-## AMDGPU XGMI 支持
+# AMDGPU XGMI 支持
 
 

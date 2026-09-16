@@ -1,8 +1,10 @@
-﻿## Xilinx ZynqMP Ultrascale+ DisplayPort 瀛愮郴缁。
+# zynqmp
+
+﻿## Xilinx ZynqMP Ultrascale+ DisplayPort 子愮系统。
 
 该子系统负责 ZynqMP 上的 DisplayPort 视频与音频输出。它支持使用 DisplayPort DMA
 控制器（xilinx-dpdma）的片内帧缓冲，以及来自可编程逻辑（PL）的“实时”视频与音频该子系统可执行多种变换，包括色彩空间转换、alpha 混合与音频混音，尽管目前并非所特性都受支持
-### debugfs
+## debugfs
 
 
 为支持调试与一致性测试，可通过 debugfs 启用若干测试模式sys/kernel/debug/dri/X/DP-1/test/

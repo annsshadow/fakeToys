@@ -1,5 +1,5 @@
 
-## 运行时电源管理
+# 运行时电源管理
 
 
    :doc: Xe Power Management
@@ -8,3 +8,4 @@
 
 
    :internal:
+

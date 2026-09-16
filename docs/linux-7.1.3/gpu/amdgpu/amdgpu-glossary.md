@@ -1,3 +1,5 @@
+# amdgpu-glossary
+
 ﻿AMDGPU 术语
 
 
