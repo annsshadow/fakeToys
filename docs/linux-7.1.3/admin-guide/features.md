@@ -1,3 +1,5 @@
+# features
+
 ﻿# Kernel Configuration Features
 
 This page lists the configurable features available in the Linux kernel.

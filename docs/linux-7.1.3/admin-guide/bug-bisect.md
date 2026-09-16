@@ -1,3 +1,5 @@
+# bug-bisect
+
 ﻿## 二分定位回归（Bisecting regression
 
 本文档介绍如何使`git bisect` 找出导致某功能失效的源码改动——例如在Linux 6.0 升级6.1 后，某项功能停止工作。下文聚焦于该过程的核心要点。若要从头开始对内核做二分，更建议改Documentation/admin-guide/verify-bugs-bisect-regressions.rst：它对整个过程从头到尾都有描述，并涵盖了多个连内核开发者偶尔也会遗忘的细节。其中还包括尽早识别“二分只会浪费时间、其结果无人关心”的情形——例如问题发生在被内核标记为“受污染（tainted）”的内核中、出现在已废弃的版本里、已经被修复，或是由 Linux 发行方所做的 .config 变更引起的

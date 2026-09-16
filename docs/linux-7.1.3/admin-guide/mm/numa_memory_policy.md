@@ -1,3 +1,5 @@
+# numa_memory_policy
+
 ﻿## NUMA 内存策略
 
 

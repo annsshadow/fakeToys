@@ -1,3 +1,5 @@
+# qcom_l3_pmu
+
 ﻿## Qualcomm Datacenter Technologies L3 缓存性能监控单元（PMU
 
 该驱动支Qualcomm Datacenter Technologies Centriq SoC 中的 L3 缓存 PMU这些 SoC 上的 L3 缓存由多个切片组成，由插槽内的所有核心共享。每个切片作独立的非perf PMU 暴露，设备名l3cache_<socket>_<instance>。用户空负责跨切片聚合

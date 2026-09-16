@@ -1,3 +1,5 @@
+# alibaba_pmu
+
 ﻿## 阿里巴巴 T-Head SoC Uncore 性能监控单元（PMU
 
 
@@ -71,7 +73,7 @@ DDR 控制器（DDRCTL）与 DDR PHY 共同构成SoC 应用总线连接DDR 内�
 平均 DRAM 带宽可按如下方式计算
 
 - 读带= perf_hif_rd ** DDRC_WIDTH ** DDRC_Freq / DDRC_Cycle
-- 鍐欏甫瀹?= (perf_hif_wr + perf_hif_rmw) ** DDRC_WIDTH ** DDRC_Freq / DDRC_Cycle
+- 内欏甫瀹?= (perf_hif_wr + perf_hif_rmw) ** DDRC_WIDTH ** DDRC_Freq / DDRC_Cycle
 
 其中，DDRC_WIDTH = 64 字节
 

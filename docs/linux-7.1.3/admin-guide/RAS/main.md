@@ -1,8 +1,10 @@
+# main
+
 ﻿
 ## 可靠性、可用性与可服务性（RAS
 
 本文档介绍了内核中存在的 RAS 功能的不同方面
-######## RAS 概念
+### RAS 概念
 
 
 可靠性、可用性与可服务性（RAS）是服务器上用于衡量其健壮性的概念
@@ -97,7 +99,7 @@
   一种称"Lock-Step" 的模式，它将两个内存模块组合在一起，进行 128 位读/写。这为纠错提供了 16 位，显著改进了纠错机制，代价是当发生错误时，无法知道是哪个内存模块的过错。因此，它必须归咎于两个内存模块
   在此模式下，相同的数据被写入两个内存模块。在读取时，系统检查两个内存模块，以确认它们是否提供相同的数据。在这种配置下，当发生错误时，无法知道是哪个内存模块的过错。因此，它必须归咎于两个内存模块（如果系统也处于 Lock-step 模式，则4 个内存模块）
   请阅读内核树中的 Documentation/arch/x86/x86_64/machinecheck.rst
-######## EDAC - 错误检测与纠正（Error Detection And Correction
+#### EDAC - 错误检测与纠正（Error Detection And Correction
 
    "bluesmoke" 是该设备驱动子系统在 "out-of-tree" 时以及维护于 http://bluesmoke.sourceforge.net 时的名称。该站点现在基本已过时，仅可用于历史用途
    当该子系统首次被推向上游时（内核 2.6.16），它被重命名为 `EDAC`
@@ -358,6 +360,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
 	禁用::
 
+
 		echo "0" >/sys/devices/system/edac/pci/check_pci_parity
 
 
@@ -376,6 +379,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
 	RUN TIME::
 
+
 		echo "1" > /sys/module/edac_core/parameters/edac_mc_panic_on_ue
 
 
@@ -388,6 +392,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 		module/kernel parameter: edac_mc_log_ue=[0|1]
 
 	RUN TIME::
+
 
 		echo "1" > /sys/module/edac_core/parameters/edac_mc_log_ue
 
@@ -402,6 +407,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
 	RUN TIME::
 
+
 		echo "1" > /sys/module/edac_core/parameters/edac_mc_log_ce
 
 
@@ -415,6 +421,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
 	RUN TIME::
 
+
 		echo "1000" > /sys/module/edac_core/parameters/edac_mc_poll_msec
 
 
@@ -427,9 +434,11 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
 	启用::
 
+
 		echo "1" > /sys/module/edac_core/parameters/edac_panic_on_pci_pe
 
 	禁用::
+
 
 		echo "0" > /sys/module/edac_core/parameters/edac_panic_on_pci_pe
 
@@ -531,6 +540,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
    驱动将其映射:
 
+
 	csrow0: channel 0, dimm0
 	csrow1: channel 0, dimm1
 	csrow2: channel 1, dimm0
@@ -554,14 +564,17 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 
 	要返回匹配任何的默认行为，你可以执行::
 
+
 		echo any >/sys/devices/system/edac/mc/mc0/inject_addrmatch/dimm
 		echo any >/sys/devices/system/edac/mc/mc0/inject_addrmatch/rank
 
    - ``inject_eccmask``          指定哪些位会出现问题
    - ``inject_section``       指定将获得错误的 ECC 缓存:
 
+
 		3 表示两		2 表示最		1 表示最
    - ``inject_type``       指定错误类型，是以下位的组合::
+
 
 		bit 0 - repeat
 		bit 1 - ecc
@@ -583,6 +596,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
    对于 socket 1，需要将上述命令中的 "mc0" 替换"mc1"
    生成的错误消息将类似:
 
+
 	EDAC MC0: UE row 0, channel-a= 0 channel-b= 0 labels "-": NON_FATAL (addr = 0x0075b980, socket=0, Dimm=0, Channel=2, syndrome=0x00000040, count=1, Err=8c0000400001009f:4000080482 (read error: read ECC error))
 
 ```
@@ -599,6 +613,7 @@ EDAC 提供了一`sysfs` 接口用于控制和报告。它位于 /sys/devices/sy
 	0
 
    这里发生的情况是，位于不csrow 但具有相dimm 编号的错误将递增同一个计数器。因此，在这种内存映射中::
+
 
 	csrow0: channel 0, dimm0
 	csrow1: channel 0, dimm1

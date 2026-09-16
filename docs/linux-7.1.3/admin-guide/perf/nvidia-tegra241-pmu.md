@@ -1,3 +1,5 @@
+# nvidia-tegra241-pmu
+
 ﻿## NVIDIA Tegra241 SoC 非核（Uncore）性能监控单元（PMU
 
 NVIDIA Tegra241 SoC 包含多种系统PMU，用于测量诸如内存带宽、延迟和利用率等关键性能指标
@@ -7,7 +9,7 @@ NVIDIA Tegra241 SoC 包含多种系统PMU，用于测量诸如内存带宽、延
 - CNVLink
 - PCIE
 
-### PMU 驱动
+## PMU 驱动
 
 
 本文档中PMU 基于 ARM CoreSight PMU 架构，如文档 ARM IHI 0091 所述。由于这是一种标准架构，这些 PMU 由一个通用驱动 "arm-cs-arch-pmu" 管理。该驱动sysfs 中描述每PMU 可用的事件和配置。请参见下面各节以获取每PMU sysfs 路径。与其他 uncore PMU 驱动一样，该驱动提"cpumask" sysfs 属性来显示用于处理 PMU 事件CPU id。此外还有一"associated_cpus" sysfs 属性，其中包含与该 PMU 实例关联CPU 列表
@@ -190,7 +192,9 @@ PMU 的流量覆盖可能因芯片配置而异
   |
   | Following table contains traffic coverage of Grace SoC PMU in socket-A:
 
+
   ::
+
 
    +--------------+-------+-----------+-----------+-----+----------+----------+
    |              |                        Source                             |
@@ -247,7 +251,9 @@ PMU 的流量覆盖可能因芯片配置而异
   |
   | Following table contains traffic coverage of Grace SoC PMU in socket-A:
 
+
   ::
+
 
    +-----------------+-----------+---------+----------+-------------+
    |                 |                      Source                  |

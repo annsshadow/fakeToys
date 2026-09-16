@@ -1,3 +1,5 @@
+# bttv
+
 ﻿锘。
 ## bttv 驱动
 
@@ -358,10 +360,12 @@ http://www.miro.com/
 
 - PAL:
 
+
   - TDA5737: VHF、超高频带（hyperband）和 UHF 混频振荡器，用于 TV VCR 3 频段调谐
   - TSA5522: 1.4 GHz I2C 总线控制合成器，I2C 0xc2-0xc3
 
 - NTSC:
+
 
   - TDA5731: VHF、超高频带和 UHF 混频振荡器，用于 TV VCR 3 频段调谐
   - TSA5518: Philips 站点上没有数据手册可
@@ -409,6 +413,7 @@ TelSignal 开发，由许多厂OEM（Typhoon、Anubis、Dynalink
 
 识别:
 
+
   #) 878 卡可以通过 PCI 子系ID 识别:
      - 144f:3000 = CPH06x
      - 144F:3002 = CPH05x w/ FM
@@ -422,13 +427,15 @@ TelSignal 开发，由许多厂OEM（Typhoon、Anubis、Dynalink
   Askey 把这些卡作为 "Magic TView series" 出售，品牌为 "MagicXpress"
   其他 OEM 常称这些"Tview"TView99" 等
 
-#### Lifeview Flyvideo 系列:
+## Lifeview Flyvideo 系列:
+
 
 
 这些系列的命名随时间与地域而不同
 
 识别:
   #) 某些型号可以通过 PCI 子系ID 识别:
+
 
      - 1852:1852 = Flyvideo 98 FM
      - 1851:1850 = Flyvideo 98
@@ -458,6 +465,7 @@ TelSignal 开发，由许多厂OEM（Typhoon、Anubis、Dynalink
 
   #) 你有一台笔记本（miniPCI 卡）:
 
+
       - Product    = FlyTV Platinum Mini
       - Model/Chip = LR212/saa7135
 
@@ -475,16 +483,17 @@ FlyVideo A2（Elta 8680 LR90 Rev.F（带 Remote，无 FM，立体声 TV tda9821�
 
 Lifeview 3000（Elta 8681）按 Plus002 4 月，德国）出= LR138 w/ saa7134
 
-##### lifeview gpio 引脚 0-9 上的配置编码
+## lifeview gpio 引脚 0-9 上的配置编码
 
 
 - LR50 rev. QPARTS: 7031505116），调谐器被识别Nr. 5，输
   SVideo、TV、Composite、Audio、Remote:
 
+
  - CP9..1=100001001: 0 欧姆电阻未焊接到 GND: 已焊接）
 
 
-#### Typhoon 电视卡系
+### Typhoon 电视卡系
 
 
 这些可以CPH、Flyvideo、Pixelview KNC1 系列
@@ -494,6 +503,7 @@ Typhoon Anubis 的品牌
 型号 50680 被重新使用，某些型号编号随时间有不同内容
 
 型号:
+
 
   - 50680 "TV Tuner PCI Pal BG"（旧，红色包装）= 可以CPH03x(bt848) CPH06x(bt878)
   - 50680 "TV Tuner Pal BG"（蓝色包装）= Pixelview PV-BT878P+（Rev 9B
@@ -523,6 +533,7 @@ Typhoon Anubis 的品牌
 
 型号:
 
+
 - Maxi-TV PCI（ZR36120
 - Maxi TV Video 2 = LR50 Rev.Q（FI1216MF, PAL BG+SECAM
 - Maxi TV Video 3 = CPH064（PAL BG + SECAM
@@ -544,6 +555,7 @@ Mentor TV card55-878TV-U1" Pixelview 878TV(Rev.3F)（带 FM Remote
   - 878TV - (Model: PV-BT878TV)
 
 - 多媒体电视套装（+ 软件包）:
+
 
   - PixelView Play TV Theater - (Model: PV-M4200) =  PixelView Play TV pro + Software
   - PixelView Play TV PAK -     (Model: PV-BT878P+ REV 4E)
@@ -568,6 +580,7 @@ Mentor TV card55-878TV-U1" Pixelview 878TV(Rev.3F)（带 FM Remote
   - DTV2000 DVB-S = Twinhan VP-1020
 
 - 视频会议:
+
 
   - PixelView Meeting PAK - (Model: PV-BT878P)
   - PixelView Meeting PAK Lite - (Model: PV-BT878P)
@@ -664,6 +677,7 @@ Mentor TV card55-878TV-U1" Pixelview 878TV(Rev.3F)（带 FM Remote
 
 - 监控系列:
 
+
  - PV-141
  - PV-143
  - PV-147
@@ -684,6 +698,7 @@ Mentor TV card55-878TV-U1" Pixelview 878TV(Rev.3F)（带 FM Remote
 
 型号:
 
+
 - TV Karte = LR50 Rev.S
 - TV-Boostar = Terratec Terra TV+ Version 1.0（Bt848, tda9821ceb105.pcb"
 
@@ -691,6 +706,7 @@ Mentor TV card55-878TV-U1" Pixelview 878TV(Rev.3F)（带 FM Remote
 
 
 型号:
+
 
 - Face to Face Capture（Bt848 仅采集）（PCB "VP-2848"
 - Face To Face TV MAX（Bt848）（PCB "VP-8482 Rev1.3"
@@ -726,6 +742,7 @@ M168II-B 1461:0003   Medion MD9592   48:16   FM1216 TDA9873H  D    w/FM
 
 - 美国站点对这些型号有不同的驱动（截至 2002 09 月）:
 
+
   - EZ Capture/InterCam PCI（BT-848 芯片
   - EZ Capture/InterCam PCI（BT-878 芯片
   - TV-Phone（BT-848 芯片
@@ -739,6 +756,7 @@ M168II-B 1461:0003   Medion MD9592   48:16   FM1216 TDA9873H  D    w/FM
   - AVerTV Studio
 
 DE 对这些型号有各种驱动（截2002 09 月）:
+
 
   - TVPhone48）带 Philips 调谐FR12X6（带 FM 收音机）
   - TVPhone48）带 Philips 调谐FM12X6（带 FM 收音机）
@@ -760,6 +778,7 @@ DE 对这些型号有各种驱动（截2002 09 月）:
 
 型号:
 
+
 - Video Highway "Video Highway TR200"（ISA
 - Video Highway Xtreme（aka "VHX"）（Bt848, FM w/ TEA5757
 
@@ -767,6 +786,7 @@ DE 对这些型号有各种驱动（截2002 09 月）:
 
 
 型号:
+
 
 - IXTV BT848锛?TurboTV锛。
 - IXTV BT878
@@ -776,6 +796,7 @@ DE 对这些型号有各种驱动（截2002 09 月）:
 
 
 型号:
+
 
 - LT9306/MD9306 = CPH061
 - LT9415/MD9415 = LR90 Rev.F 鎴?Rev.G
@@ -788,6 +809,7 @@ DE 对这些型号有各种驱动（截2002 09 月）:
 
 型号:
 
+
 - MM100 PCTV（Bt848
 - MM201 PCTV（Bt878, Bt832）带 Quartzsight 摄像
 - MM202 PCTV（Bt878, Bt832, tda9874
@@ -798,6 +820,7 @@ DE 对这些型号有各种驱动（截2002 09 月）:
 
 
 型号:
+
 
 - Terra TV+ Version 1.0（Bt848 PCB 上印"ceb105.PCB", TDA9821
 - Terra TV+ Version 1.1（Bt878 PCB 上印"LR74 Rev.E", TDA9821
@@ -820,6 +843,7 @@ DE 对这些型号有各种驱动（截2002 09 月）:
 
 型号:
 
+
 - Discos ADR PC-Karte ISA（无 TV！）
 - Discos ADR PC-Karte PCI（大概无 TV？）
 - Techni-PC-Sat（Sat. analog
@@ -840,8 +864,10 @@ Multimedia eXtension Board（MXB）（SAA7146, SAA7111
 
 型号:
 
+
 - MTV878
        包装带有不同内容:
+
 
            a) pcb "MTV878"（CARD=75
            b) Pixelview Rev. 4\_
@@ -853,6 +879,7 @@ Multimedia eXtension Board（MXB）（SAA7146, SAA7111
 
 
 PCTV 型号:
+
 
 - Mirovideo PCTV（Bt848
 - Mirovideo PCTV SE（Bt848
@@ -881,6 +908,7 @@ M(J)PEG 采集与回放型
 
 型号:
 
+
 - MXR-9565 (=Technisat Mediafocus锛。
 - MXR-9571（Bt848=CPH031
 - MXR-9575
@@ -901,6 +929,7 @@ Buz（zr36067, zr36060, saa7111, saa7185
 
 型号:
 
+
 - Grand Video Capture（Bt848
 - Multi Capture Card  (Bt878)
 
@@ -908,6 +937,7 @@ Buz（zr36067, zr36060, saa7111, saa7185
 
 
 型号:
+
 
 - KW-606（Bt848
 - KW-607（Bt848 仅采集）
@@ -919,6 +949,7 @@ Buz（zr36067, zr36060, saa7111, saa7185
 
 
 型号:
+
 
 - GV-BCTV/PCI
 - GV-BCTV2/PCI
@@ -957,6 +988,7 @@ Hollywood plus（em8300, em9010, adv7175 (PCB "M340-10") MPEG DVD 解码
 
 型号:
 
+
 - iProTV（用iMac Mezzanine 槽的 Bt848+SCSI
 - ProTV（Bt848
 - ProTV II = ProTV Stereo（Bt878）["stereo" FM 立体 tv 仍是单声道]
@@ -965,6 +997,7 @@ Hollywood plus（em8300, em9010, adv7175 (PCB "M340-10") MPEG DVD 解码
 
 
 型号:
+
 
 - TV-Wonder
 - TV-Wonder VE
@@ -986,6 +1019,7 @@ DTV2000（Bt848, tda9875
 
 型号:
 
+
 - Smart Video Recorder（ISA 全长者）
 - Smart Video Recorder pro（ISA 半长者）
 - Smart Video Recorder III（Bt848
@@ -994,6 +1028,7 @@ DTV2000（Bt848, tda9875
 
 
 型号:
+
 
 - STB Gateway 6000704（bt878
 - STB Gateway 6000699（bt848
@@ -1005,6 +1040,7 @@ DTV2000（Bt848, tda9875
 
 型号:
 
+
 - Captivator Pro/TV（ISA？）
 - Captivator PCI/VC（Bt848 与摄像头捆绑）（仅采集）
 
@@ -1012,6 +1048,7 @@ DTV2000（Bt848, tda9875
 
 
 型号:
+
 
 - TT-SAT PCI（PCB "Sat-PCI Rev.:1.3.1"; zr36125, vpx3225d, stc0056a, Tuner:BSKE6-155A
 - TT-DVB-Sat
@@ -1046,6 +1083,7 @@ MX RV605（Bt848 仅采集）
 
 型号:
 
+
 - PC ChatCam（Model 68252）（Bt848 仅采集）
 - Tv/Fm Capture Card  (Model 68404) = PV951
 
@@ -1053,6 +1091,7 @@ MX RV605（Bt848 仅采集）
 
 
 型号:
+
 
 - Sat-Surfer（ISA
 - Sat-Surfer PCI = Techni-PC-Sat
@@ -1066,6 +1105,7 @@ MX RV605（Bt848 仅采集）
 
 型号:
 
+
 - JW-TV 878M
 - JW-TV 878  = KWorld KW-TV878RF
 
@@ -1073,6 +1113,7 @@ MX RV605（Bt848 仅采集）
 
 
 型号:
+
 
 - Galaxis DVB Card S CI
 - Galaxis DVB Card C CI
@@ -1084,6 +1125,7 @@ MX RV605（Bt848 仅采集）
 
 
 型号:
+
 
 - 许多许多 WinTV 型号…
 - WinTV DVBs = Technotrend Premium 1.3
@@ -1115,6 +1157,7 @@ MX RV605（Bt848 仅采集）
 
 Deutsche Modelle（德国型号）:
 
+
 -603 WinTV GO
 -719 WinTV Primio-FM
 -718 WinTV PCI-FM
@@ -1132,6 +1175,7 @@ Deutsche Modelle（德国型号）:
 -898 WinTV-Nova-USB
 
 UK 型号:
+
 
 -607 WinTV Go
 -693,793 WinTV Primio FM
@@ -1182,6 +1226,7 @@ Spain（西班牙
 
 型号:
 
+
 - MATRIX-Vision MV-Delta
 - MATRIX-Vision MV-Delta 2
 - MVsigma-SLC（Bt848
@@ -1191,6 +1236,7 @@ Spain（西班牙
 
 型号:
 
+
 - TVCON FM,  TV card w/ FM = CPH05x
 - TVCON = CPH06x
 
@@ -1198,6 +1244,7 @@ Spain（西班牙
 
 
 型号:
+
 
 - HCC100 = VCC100rev1 + camera
 - VCC100 rev1（bt848
@@ -1207,6 +1254,7 @@ Spain（西班牙
 
 
 型号:
+
 
 - Intervision IV-510（仅采集 bt8x8
 - Intervision IV-550（bt8x8
@@ -1228,6 +1276,7 @@ SkyEye tv 878
 
 型号:
 
+
 - ITC PCITV（Card Ver 1.0Teppro TV1/TVFM1 Card"
 - ITC PCITV（Card Ver 2.0
 - ITC PCITV（Card Ver 3.0 "PV-BT878P+ (REV.9D)"
@@ -1240,6 +1289,7 @@ SkyEye tv 878
 
 
 PC TV Station:
+
 
 - KWORLD KW-TV878R  TV（无收音机）
 - KWORLD KW-TV878RF TV（带收音机）
@@ -1264,6 +1314,7 @@ JTT-02（JTT TVTV watchmate pro"（bt848
 
 型号:
 
+
 - Channel Surfer TV锛?CHX-950 锛。
 - Channel Surfer TV+FM锛?CHX-960FM 锛。
 
@@ -1287,6 +1338,7 @@ Mach TV 878
 
 型号:
 
+
 - Eline Vision TVMaster / TVMaster FM (ELV-TVM/ ELV-TVM-FM) = LR26  (bt878)
 - Eline Vision TVMaster-2000 (ELV-TVM-2000, ELV-TVM-2000-FM)= LR138 (saa713x)
 
@@ -1300,6 +1352,7 @@ Mach TV 878
 
 型号:
 
+
 - HS-878 Mini PCI Capture Add-on Card
 - HS-879 Mini PCI 3D Audio and Capture Add-on Card (w/ ES1938 Solo-1)
 
@@ -1307,6 +1360,7 @@ Mach TV 878
 
 
 型号:
+
 
 - TV-FM =KNC1 saa7134
 - Standard PCI（DVB-S Technotrend Budget
@@ -1319,6 +1373,7 @@ Mach TV 878
 
 型号:
 
+
 - Sensoray 311（PC/104 总线
 - Sensoray 611（PCI
 
@@ -1326,6 +1381,7 @@ Mach TV 878
 
 
 型号:
+
 
 - TV Tuner  -  HBY-33A-RAFFLES  Brooktree Bt848KPF + Philips
 - TV Tuner MG9910  -  HBY33A-TVO  CEI + Philips SAA7110 + OKI M548262 + ST STV8438CV
@@ -1335,12 +1391,14 @@ Mach TV 878
   - 现在作为 Chartered Semiconductor Manufacturing 运营
   - 显卡制造商列为:
 
+
     - Cogent Electronics Industries [CEI]
 
 #### AITech
 
 
 型号:
+
 
 - Wavewatcher TV（ISA
 - AITech WaveWatcher TV-PCI = 可以LR26（Bt848）或 LR50（BT878
@@ -1355,6 +1413,7 @@ Maxron MaxTV/FM Radio（KW-TV878-FNT Kworld JW-TV878-FBK
 
 
 型号:
+
 
 - Falcon Series（仅采集
 
@@ -1376,6 +1435,7 @@ APAC Viewcomp 878
 
 型号:
 
+
 - CyberMail AV Video Email Kit w/ PCI Capture Card（仅采集
 - CyberMail Xtreme
 
@@ -1391,8 +1451,10 @@ Video Catcher 16
 
 型号:
 
+
 - DST Card/DST-IP（bt878, twinhan asic）VP-1020
   - 作为以下名称出售:
+
 
     - KWorld DVBS Satellite TV-Card
     - Powercolor DSTV Satellite Tuner Card
@@ -1407,6 +1469,7 @@ Video Catcher 16
 
 型号:
 
+
 - MSI TV@nywhere Tuner Card（MS-8876）（CX23881/883）不兼容 Bt878
 - MS-8401 DVB-S
 
@@ -1419,6 +1482,7 @@ InVideo PCI（bt878
 
 
 型号:
+
 
 - SDI Silk 100
 - SDI Silk 200 SDI Input Card
@@ -1437,6 +1501,7 @@ www.pacecom.co.uk 缃戠珯宸插叧闂。
 
 
 型号:
+
 
 - LR50
 - LR138RBG-Rx  == LR138
@@ -1482,6 +1547,7 @@ yuan.com MPG160 PCI TV（Internal PCI MPEG2 encoder card plus TV-tuner
 
 型号:
 
+
 - Asus TV Tuner Card 880 NTSC（薄 cx23880
 - Asus TV（saa7134
 
@@ -1500,17 +1566,20 @@ http://www.hoontech.de/
 
 - 所有板:
 
+
   - Brooktree Bt848/848A/849/878/879: 视频采集芯片
 
 - 鏉跨壒瀹。
 
   - Miro PCTV:
 
+
     - Philips Temic 调谐
 
   - Hauppauge Win/TV pci（version 405
 
     - Microchip 24LC02B 鎴?Philips 8582E2Y:
+
 
        - 256 字节 EEPROM 带配置信
        - I2C 0xa0-0xa1,4LC02B 也响0xa2-0xaf
@@ -1525,15 +1594,18 @@ http://www.hoontech.de/
 
 - PAL:
 
+
   - TDA5737: VHF、超高频带和 UHF 混频振荡器，用于 TV VCR 3 频段调谐
   - TSA5522: 1.4 GHz I2C 总线控制合成 I2C 0xc2-0xc3
 
 - NTSC:
 
+
   - TDA5731: VHF、超高频带和 UHF 混频振荡器，用于 TV VCR 3 频段调谐
   - TSA5518: Philips 站点上没有数据手册可
 
 - STB TV pci:
+
 
   - ???
   - 如果你想要对 STB 卡更好的支持，给我发信息
@@ -1554,6 +1626,7 @@ Micronas	http://www.micronas.com/en/home/index.html
 
 
 非常感谢:
+
 
 - Markus Schroeder <schroedm@uni-duesseldorf.de>，提供了关于 Bt848 和调谐器编程的信息以及他的控制程xtvc
 

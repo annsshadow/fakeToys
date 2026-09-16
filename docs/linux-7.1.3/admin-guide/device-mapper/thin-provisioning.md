@@ -1,3 +1,5 @@
+# thin-provisioning
+
 ﻿## 精简配置（Thin provisioning
 
 
@@ -180,6 +182,7 @@ i) 构造函数（Constructor
 	        <low water mark (blocks)> [<number of feature args> [<arg>]*]
 
     Optional feature arguments:
+
 
       skip_block_zeroing:
 	Skip the zeroing of newly-provisioned blocks.

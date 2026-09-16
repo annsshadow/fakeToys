@@ -1,3 +1,5 @@
+# pnp
+
 ﻿## Linux 即插即用（Plug and Play）文
 
 
@@ -5,7 +7,7 @@
 :Last updated: Oct. 16, 2002
 
 
-### 概述
+## 概述
 
 
 即插即用（Plug and Play）提供了一种检测并为传统设备或其他不可配置设备
@@ -23,7 +25,7 @@ Linux 即插即用的用户界面为那些不支Linux 即插即用的传统驱�
 - options —显示可能的资源配
 - resources —显示当前已分配的资源，并允许更改资源
 
-##### 激活设
+#### 激活设
 
 ```
 
@@ -32,7 +34,7 @@ Linux 即插即用的用户界面为那些不支Linux 即插即用的传统驱�
 ```
 这将调用自动资源配置系统来激活该设备
 
-##### 手动激活设
+## 手动激活设
 
 ```
 
@@ -44,7 +46,7 @@ Linux 即插即用的用户界面为那些不支Linux 即插即用的传统驱�
 		 dynamic = now
 
 ```
-##### 禁用设备
+## 禁用设备
 
 ```
 
@@ -112,7 +114,7 @@ Linux 即插即用的用户界面为那些不支Linux 即插即用的传统驱�
 
 
 ```
-### 统一的即插即用层
+## 统一的即插即用层
 
 
 所有即插即用驱动、协议与服务都在一个称为“即插即用层”的中心位置汇合。该
@@ -192,7 +194,7 @@ pnp_add_id
 
 本节面向 Linux PnP 驱动开发者提供相关信息
 
-##### 新方
+#### 新方
 
 
 1. 首先列出所支持EISA ID
@@ -212,11 +214,13 @@ pnp_add_id
 
    ex::
 
+
 	/* Unknown PnP modems */
 	{	"PNPCXXX",		UNKNOWN_DEV	},
 
    Supported PnP card IDs can optionally be defined.
    ex::
+
 
 	static const struct pnp_id pnp_card_table[] = {
 		{	"ANYDEVS",		0	},
@@ -236,6 +240,7 @@ pnp_add_id
 	. . .
 
    ex::
+
 
 	static void serial_pnp_remove(struct pnp_dev * dev)
 	{

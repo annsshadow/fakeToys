@@ -1,3 +1,5 @@
+# intel_pstate
+
 ﻿
 ## ``intel_pstate`` CPU 性能缩放驱动
 
@@ -414,7 +416,7 @@ P-state，`acpi-cpufreq` 简单地避免使用 `_PSS` 列出的最顶端状态�
 如果 `intel_pstate` 工作于被动模<passive_mode>，则 `cpu_frequency`
 跟踪事件将由 `schedutil` 缩放调控器（针对其挂接的策略）或 `CPUFreq` 核心
 （针对使用其它缩放调控器的策略）触发
-### ``ftrace``
+## ``ftrace``
 
 
 `ftrace` 接口可用`intel_pstate` 的底层诊断。例如，要检查设P-state

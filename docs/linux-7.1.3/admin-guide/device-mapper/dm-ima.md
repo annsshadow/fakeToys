@@ -1,3 +1,5 @@
+# dm-ima
+
 ﻿## dm-ima
 
 
@@ -49,7 +51,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  #. Table clear
  #. Device rename
 
-### 1. 表加载（Table load）：
+## 1. 表加载（Table load）：
 
 当一个新的表被加载到设备的非活跃表槽（inactive table slot）时，设备信息以及表中各目标的目标特定细节会被度量
 对于 'dm_table_load'，IMA 度量日志的格式如下：
@@ -243,7 +245,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  #. striped
  #. verity
 
-### 1. cache
+## 1. cache
 
 作为 EVENT_DATA 一部分在上述“表加载”小节中描述'target_attributes'，对'cache' 目标具有以下数据格式
 ```

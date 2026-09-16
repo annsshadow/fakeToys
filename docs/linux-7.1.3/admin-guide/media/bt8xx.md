@@ -1,3 +1,5 @@
+# bt8xx
+
 ﻿
 ## 如何bt8xx 系列卡工
 
@@ -45,7 +47,7 @@ Authors:
 
 然后，在上述每个菜单中，请选择你板卡特定的前端与调谐器模块
 
-### 加载模块
+## 加载模块
 
 
 常规情况：如bttv 驱动检测到一个基bt8xx DVB 卡，所有前端与后端模块都会自动加载
@@ -54,7 +56,7 @@ Authors:
 - 没有 EEPROM、共享一个通用 PCI 子系ID 的旧电视卡；
 - 带有或不带有 CA 插槽、且不包Eeprom 的旧 TwinHan DST 卡或其克隆
 在以下情况下，可能需要通过传modprobe 参数来覆bttv dvb-bt8xx 驱动PCI 类型检测
-#### 运行 TwinHan 及其克隆
+### 运行 TwinHan 及其克隆
 
 `Documentation/admin-guide/media/bttv-cardlist.rst` 所示，TwinHan 及其克隆卡使`card=113`
 modprobe 参数。因此，为了正确

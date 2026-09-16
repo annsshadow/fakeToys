@@ -1,8 +1,10 @@
+# hisi-pmu
+
 ﻿## 海思（HiSilicon）SoC 非核（uncore）性能监控单元（PMU
 
 海SoC 芯片包含各种独立的系统设PMU，例L3 缓存（L3C）、Hydra Home Agent（HHA）和 DDRC。这PMU 是独立的，并具有收集统计和性能信息的硬件逻辑
 海SoC 封装了多CPU I/O 裸片（die）。每CPU 簇（CCL）由 4 个共享一L3 缓存CPU 核组成；每个 CPU 裸片称为超级 CPU 簇（SCCL），6 CCL 组成。每SCCL 分别有两HHA - 1）和四个 DDRC - 3）
-### 海SoC 非核 PMU 驱动
+## 海SoC 非核 PMU 驱动
 
 
 每个设备 PMU 都有用于事件计数、控制和中断的独立寄存器，PMU 驱动应注册像 L3C、HHA DDRC perf PMU 驱动。可用的事件和配置选项应位```

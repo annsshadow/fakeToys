@@ -1,3 +1,5 @@
+# gpio-sim
+
 ﻿
 ## Configfs GPIO 妯℃嫙鍣。
 
@@ -79,7 +81,7 @@ bank 设备的设备名。`'num_lines'` 属性用于指定该 bank 暴露的线�
         };
     };
 
-### 操作模拟线路
+## 操作模拟线路
 
 
 每个模拟 GPIO 芯片在其设备目录下为每条暴露的线路创建一个独立的 sysfs （例`/sys/devices/platform/gpio-sim.X/gpiochipY/`）。每个组的名称为 `'sim_gpioX'` 形式其中 X 是线路的偏移。每个组内部有两个属性：

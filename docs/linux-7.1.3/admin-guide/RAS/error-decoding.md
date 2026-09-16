@@ -1,7 +1,9 @@
+# error-decoding
+
 ﻿## 错误解码
 
 
-### x86
+## x86
 
 
 AMD 系统上的错误解码应使rasdaemon 工具完成

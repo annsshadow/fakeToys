@@ -1,3 +1,5 @@
+# intel-speed-select
+
 ﻿
 ## Intel(R) Speed Select Technology 用户指南
 
@@ -23,7 +25,7 @@ Intel(R) Speed Select Technology（Intel(R) SST）提供了一组强大的新特
 # make
 # make install
 
-### 获取帮助
+## 获取帮助
 
 
 ```
@@ -39,7 +41,7 @@ top-level 帮助描述了参数与特性。注意还有一```
 ```
 # intel-speed-select perf-profile info --help
 
-### 平台能力摘要
+## 平台能力摘要
 
 ```
 
@@ -62,11 +64,11 @@ top-level 帮助描述了参数与特性。注意还有一```
  Intel(R) SST-CP (feature core-power) is supported
 
 ```
-### Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP
+## Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP
 
 这个特性允许基于工作负载性能需求动态地配置一台服务器。这在部署时帮助用户因为他们不必静态地选择某个特定的服务器配置。这Intel(R) Speed Select Technology -
 Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每个系统有多个优化过的性能profile每个 profile 定义了一组需要在线、其余离线的 CPU，以维持一个有保证的基准频率一旦用户发出命令以使用某个特定的性能profile，并满足 CPU 在线/离线的要求，用户就可以预期基准频率会动态地改变在使Intel Speed Select 工具时，这个特性被称为 "perf-profile"
-#### Number or performance levels
+### Number or performance levels
 
 
 一个系统上可以有多个性能profile。要获取性能
@@ -86,7 +88,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 ```
 在这个被测系统上，除了基础性能profile（即性能级别 0）之外，还有 4 个性能profile
-#### 锁定/解锁状
+## 锁定/解锁状
 
 即便有多个性能profile，它们也有可能是被锁定的。如果它们被锁定，用户就无法发出命令来改变性能状态有可能存在某BIOS 设置可以解锁，或者咨询你的系统供应商
 ```
@@ -105,7 +107,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 ```
 在这种情况下，锁定状态为 0，意味着系统处于解锁状态
-#### 性能级别的属
+## 性能级别的属
 
 ```
 
@@ -152,7 +154,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 ```
 "enable-cpu-mask/enable-cpu-list" 中的 CPU 更少。因此，如果用户只将这些 CPU 保持在线而将其余"offline"，那么基准频率就会从性能级别 0 时的 2.6 GHz 提升2.8 GHz
-#### 获取当前性能级别
+## 获取当前性能级别
 
 
 ```
@@ -198,7 +200,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 
 ```
-#### 改变性能级别
+## 改变性能级别
 
 
 ```
@@ -221,7 +223,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 ```
 这表明基准频率现在从性能级别 0 时的 2600 MHz 提升到了性能级别 4 时的 2800 MHz结果就是，任何能够使用更CPU 的工作负载，相比性能级别 0 都可以看200 MHz 的提升
-#### 通过 BMC 接口改变性能级别
+## 通过 BMC 接口改变性能级别
 
 
 可以使用带外（OOB）代理（通过某些远程管理控制台，经由 BMC "Baseboard Management Controller"
@@ -235,7 +237,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 ```
 在这种模式下，该工具将根据新的性能级别来使 CPU 在线/离线
-### 检查其Intel(R) SST 特性的存在
+## 检查其Intel(R) SST 特性的存在
 
 
 每个性能profile 也指明了是否支持另外两个 Intel(R) SST 特性（Intel(R) Speed Select Technology -
@@ -326,7 +328,7 @@ Ordered 节流（throttling）的优先级是根据所分配CLOS 组的索引定
         priority-type:proportional
 
 ```
-#### 閰嶇疆 CLOS 缁?
+## 閰嶇疆 CLOS 统?
 
 每个 CLOS 组都有自己的属性，包括 min、max、freq_weight desired这些参数可以"core-power config" 命令来配置。如果用户跳过了设置某个参数（除clos id 之外），
 将使用默认值，clos id ```
@@ -365,7 +367,7 @@ Ordered 节流（throttling）的优先级是根据所分配CLOS 组的索引定
 
 ```
 用户可以选择改变默认值。例如，用户可以改变 "min" 并将基准频率设为总能获得有保证的基准频率
-#### 获取当前 CLOS 配置
+## 获取当前 CLOS 配置
 
 
 要检查当前配置，可以使用 "core-power get-config"。对```
@@ -395,7 +397,7 @@ Ordered 节流（throttling）的优先级是根据所分配CLOS 组的索引定
         clos-desired:0 MHz
 
 ```
-#### 将一CPU 与一CLOS 组关
+## 将一CPU 与一CLOS 组关
 
 ```
 
@@ -434,7 +436,7 @@ Ordered 节流（throttling）的优先级是根据所分配CLOS 组的索引定
 ```
 这表CPU 10 CLOS 3 的一部分
 
-#### 禁用基于 CLOS 的优先级排序
+## 禁用基于 CLOS 的优先级排序
 
 
 ```
@@ -443,7 +445,7 @@ Ordered 节流（throttling）的优先级是根据所分配CLOS 组的索引定
 # intel-speed-select core-power disable
 
 Intel(R) SST-TF 这样的一些特性只有在启用了基CLOS 的优先级排序时才能被启用出于这个原因，在 Intel(R) SST-TF 已启用时禁用它可能导Intel(R) SST-TF 失败如果 Intel(R) SST-TF 已经启用，这将导"disable" 命令显示错误相应地，要禁用它，必须先禁用 Intel(R) SST-TF 特性
-### Intel(R) Speed Select Technology - Base Frequency（Intel(R) SST-BF
+## Intel(R) Speed Select Technology - Base Frequency（Intel(R) SST-BF
 
 Intel(R) Speed Select Technology - Base Frequency（Intel(R) SST-BF）特性让用户能够控制基准频率如果某些关键的工作负载线程要求恒定的高保证性能，那么这个特性可以用来在特定CPU 集合（高优先CPU）上以更高的基准频率
 执行该线程，代价是其CPU 上较低的基准频率（低优先CPU）。这个特性不需要低优先CPU 离线
@@ -473,7 +475,7 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
 ```
 基于 "intel-speed-select perf-profile info -l 0" 的输出，有保证频率的基准频率2600 MHz
 
-#### 测量基线性能以进行比
+## 测量基线性能以进行比
 
 为了比较，挑选一个多线程工作负载，其中每个线程可以被调度到不同的 CPU 上"Hackbench pipe" 测试是如何使Intel(R) SST-BF 提升性能的一个好例子
 下面，这个工作负载测量的是平均调度器唤醒延迟，因此一个更```
@@ -508,7 +510,7 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
 
 ```
 从上面的 turbostat 输出可以看出，CPU 3 4 都非常繁忙，并达到了 2600 MHz 的完整有保证频率
-#### Intel(R) SST-BF 能力
+## Intel(R) SST-BF 能力
 
 
 要获取当前性能级别 0 Intel(R) SST-BF 的能力，
@@ -531,7 +533,7 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
 ```
 上述能力表明，这个系统上有一CPU 可以提供 3000 MHz 的基准频率，而在这个性能级别下的标准基准频率（不同）。尽管如此，这些 CPU 是固定的，它们通过 high-priority-cpu-list/high-priority-cpu-mask 呈现但如果选择了这Intel(R) SST-BF 特性，低优先级 CPU（不high-priority-cpu-list 中的）最多只能提2400 MHz因此，如果这种对低优先级 CPU 的截断是可以接受的，那么用户可以针对上面这个 "sched pipe" 工作负载启用 Intel(R)
 SST-BF 特性，因为只使用了两个 CPU，它们可以被调度到高优先CPU 上，并获400 MHz 的提升
-#### 启用 Intel(R) SST-BF
+## 启用 Intel(R) SST-BF
 
 
 ```
@@ -592,7 +594,7 @@ Performance Profile（Intel(R) SST-PP）类的性能设为最大性能，以便�
  0		13	13	2661
 
 ```
-#### 禁用 Intel(R) SST-BF
+## 禁用 Intel(R) SST-BF
 
 
 ```
@@ -601,7 +603,7 @@ Performance Profile（Intel(R) SST-PP）类的性能设为最大性能，以便�
 # intel-speed-select base-freq disable -a
 
 
-### Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF
+## Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF
 
 这个特性使得能够基于优先级为核设置不同"All core turbo ratio limits"（全核睿频比限制）通过使用这个特性，一些核可以被配置为通过指定它们为高优先级来获得更高的睿频频率，
 代价是低优先级核上较低或没有睿频频率
@@ -626,7 +628,7 @@ Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF）的支持
 ```
 要检查使Intel(R) SST-TF 特性能否改善性能，请获取启用 Intel(R) SST-TF 时的睿频频率属性，
 并与这个系统的基准睿频能力进行比较
-#### 获取基准睿频能力
+## 获取基准睿频能力
 
 
 ```
@@ -701,7 +703,7 @@ Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF）的支持
 ```
 基于 turbostat 输出，性能受到3100 MHz 的频率上限的限制。要检查能否为 CPU 12 CPU 13
 改善 hackbench 性能，首先查看这个性能级别Intel(R) SST-TF 特性的能力
-#### 获取 Intel(R) SST-TF 能力
+## 获取 Intel(R) SST-TF 能力
 
 
 ```
@@ -736,7 +738,7 @@ Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF）的支持
 ```
 基于上面的输出，有一Intel(R) SST-TF bucket，其中有 2 个高优先级核如果只设2 个高优先级核，那么这些核上的最大睿频频率可以提升到 3200 MHz这比所有核的基准睿频能力高100 MHz
 相应地，对于 hackbench 工作负载，可以将两个 CPU 设为高优先级，其余为低优先级一个副作用是，一旦启用，低优先级核将被截断到较低2600 MHz 频率
-#### 启用 Intel(R) SST-TF
+## 启用 Intel(R) SST-TF
 
 
 ```
