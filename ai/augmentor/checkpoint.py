@@ -124,25 +124,36 @@ class CheckpointManager:
             with open(checkpoint_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
+            # quality_scores 以整数索引为键，JSON 往返后会变成字符串，这里还原
+            data['quality_scores'] = {
+                int(k): v for k, v in data.get('quality_scores', {}).items()
+            }
+            
             # 尝试加载增量
             delta_path = self._get_delta_path(task_id)
             if delta_path.exists():
-                with open(delta_path, 'r', encoding='utf-8') as f:
-                    delta = json.load(f)
+                delta = self._read_delta(delta_path)
                 
                 # 合并增量
-                data['completed_indices'].extend(delta.get('completed', []))
-                data['failed_indices'].extend(delta.get('failed', []))
-                data['processed_items'] += len(delta.get('completed', []))
-                data['failed_items'] += len(delta.get('failed', []))
+                data['completed_indices'].extend(delta['completed'])
+                data['failed_indices'].extend(delta['failed'])
+                data['processed_items'] += len(delta['completed'])
+                data['failed_items'] += len(delta['failed'])
                 
                 # 合并质量评分
-                data['quality_scores'].update(delta.get('quality_scores', {}))
+                data['quality_scores'].update({
+                    int(k): v for k, v in delta['quality_scores'].items()
+                })
             
             checkpoint = CheckpointData(**data)
             self._current_checkpoint = checkpoint
             self._pending_completed = set()
             self._pending_failed = set()
+            
+            if delta_path.exists():
+                # 合并结果立即落盘并清除增量，避免下次恢复重复累加
+                self._save_checkpoint(checkpoint)
+                self._remove_delta(task_id)
             
             logger.info(f"加载断点: {task_id}, 已处理: {checkpoint.processed_items}/{checkpoint.total_items}")
             return checkpoint
@@ -168,7 +179,11 @@ class CheckpointManager:
             logger.error(f"保存断点失败: {e}")
     
     def _save_delta(self):
-        """保存增量到临时文件"""
+        """保存增量到临时文件
+
+        增量文件是累加写入的：每次自动保存都会把新完成的索引并入已有增量，
+        而不是覆盖，否则进程崩溃后只能恢复最后一批进度。
+        """
         if self._current_checkpoint is None:
             return
         
@@ -178,15 +193,14 @@ class CheckpointManager:
         delta_path = self._get_delta_path(self._current_checkpoint.task_id)
         
         try:
-            delta = {
-                'completed': list(self._pending_completed),
-                'failed': list(self._pending_failed),
-                'quality_scores': {
-                    k: self._current_checkpoint.quality_scores[k]
-                    for k in self._pending_completed
-                    if k in self._current_checkpoint.quality_scores
-                }
-            }
+            delta = self._read_delta(delta_path)
+            delta['completed'].extend(sorted(self._pending_completed))
+            delta['failed'].extend(sorted(self._pending_failed))
+            delta['quality_scores'].update({
+                str(k): self._current_checkpoint.quality_scores[k]
+                for k in self._pending_completed
+                if k in self._current_checkpoint.quality_scores
+            })
             
             with open(delta_path, 'w', encoding='utf-8') as f:
                 json.dump(delta, f, ensure_ascii=False, separators=(',', ':'))
@@ -197,6 +211,41 @@ class CheckpointManager:
             
         except Exception as e:
             logger.error(f"保存增量失败: {e}")
+    
+    def _read_delta(self, delta_path: Path) -> Dict:
+        """读取已有增量文件
+        
+        Args:
+            delta_path: 增量文件路径
+        
+        Returns:
+            增量字典，文件不存在或损坏时返回空增量
+        """
+        if not delta_path.exists():
+            return {'completed': [], 'failed': [], 'quality_scores': {}}
+        
+        try:
+            with open(delta_path, 'r', encoding='utf-8') as f:
+                delta = json.load(f)
+        except Exception as e:
+            logger.warning(f"增量文件损坏，将重建: {delta_path}, {e}")
+            return {'completed': [], 'failed': [], 'quality_scores': {}}
+        
+        return {
+            'completed': list(delta.get('completed', [])),
+            'failed': list(delta.get('failed', [])),
+            'quality_scores': dict(delta.get('quality_scores', {}))
+        }
+    
+    def _remove_delta(self, task_id: str):
+        """删除增量文件（增量已并入主文件时调用）
+        
+        Args:
+            task_id: 任务 ID
+        """
+        delta_path = self._get_delta_path(task_id)
+        if delta_path.exists():
+            delta_path.unlink()
     
     def update_progress(self,
                        index: int,
@@ -238,6 +287,8 @@ class CheckpointManager:
             if self._current_checkpoint:
                 self._save_delta()
                 self._save_checkpoint(self._current_checkpoint)
+                # 增量已并入主文件，删除以免下次恢复时重复累加
+                self._remove_delta(self._current_checkpoint.task_id)
                 logger.info(f"手动保存断点: {self._current_checkpoint.task_id}")
     
     def get_progress(self) -> Dict:
@@ -327,12 +378,10 @@ class CheckpointManager:
             task_id: 任务 ID
         """
         checkpoint_path = self._get_checkpoint_path(task_id)
-        delta_path = self._get_delta_path(task_id)
         
         if checkpoint_path.exists():
             checkpoint_path.unlink()
-        if delta_path.exists():
-            delta_path.unlink()
+        self._remove_delta(task_id)
         
         logger.info(f"删除断点: {task_id}")
     

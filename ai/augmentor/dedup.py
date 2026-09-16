@@ -366,8 +366,8 @@ class Deduplicator:
         # 批量编码
         embeddings = self._batch_encode(texts)
         
-        # 计算相似度矩阵
-        similarity_matrix = self._compute_similarity_matrix(embeddings)
+        # 计算相似度矩阵（分块，避免内存爆炸）
+        similarity_matrix = self._compute_similarity_matrix_chunked(embeddings)
         
         # 提取相似对
         pairs = []

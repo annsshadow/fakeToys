@@ -223,7 +223,7 @@ class Exporter:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
         
-        elif export_format == ExportFormat.SHAREGPT:
+        elif export_format == ExportFormat.SHARE_GPT:
             data = self._convert_to_sharegpt(items)
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
@@ -298,6 +298,61 @@ class Exporter:
         
         return results
     
+    def export_batch(self,
+                     datasets: Dict[str, List[Dict]],
+                     output_dir: str,
+                     formats: Optional[List[str]] = None,
+                     use_parallel: bool = True) -> Dict[str, Dict[str, str]]:
+        """批量导出多个数据集（每个数据集可导出多种格式）
+
+        Args:
+            datasets: 数据集名称到数据列表的映射
+            output_dir: 输出目录
+            formats: 导出格式列表，为 None 时使用默认格式
+            use_parallel: 是否使用并行处理
+
+        Returns:
+            数据集名称到 {格式: 文件路径} 的映射
+        """
+        output_dir_path = Path(output_dir)
+        output_dir_path.mkdir(parents=True, exist_ok=True)
+
+        format_names = formats or [self.default_format.value]
+        # 校验格式合法性，避免部分任务失败后才发现
+        for fmt in format_names:
+            ExportFormat(fmt)
+
+        def export_single(name: str, items: List[Dict], fmt: str):
+            ext = ".csv" if fmt == ExportFormat.CSV.value else ".json"
+            output_path = output_dir_path / f"{name}_{fmt}{ext}"
+            self.export(items, str(output_path), fmt)
+            return name, fmt, str(output_path)
+
+        results: Dict[str, Dict[str, str]] = {name: {} for name in datasets}
+
+        if not use_parallel:
+            for name, items in datasets.items():
+                for fmt in format_names:
+                    name_, fmt_, path = export_single(name, items, fmt)
+                    results[name_][fmt_] = path
+            return results
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = [
+                executor.submit(export_single, name, items, fmt)
+                for name, items in datasets.items()
+                for fmt in format_names
+            ]
+
+            for future in as_completed(futures):
+                try:
+                    name_, fmt_, path = future.result()
+                    results[name_][fmt_] = path
+                except Exception as e:
+                    logger.error(f"批量导出失败: {e}")
+
+        return results
+
     def get_supported_formats(self) -> List[str]:
         """获取支持的导出格式
         
