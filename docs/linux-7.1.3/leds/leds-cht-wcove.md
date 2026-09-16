@@ -1,7 +1,9 @@
+# leds-cht-wcove
+
 ﻿## Intel Cherry Trail Whiskey Cove PMIC LED 内核驱动
 
 
-### /sys/class/leds/<led>/hw_pattern
+## /sys/class/leds/<led>/hw_pattern
 
 
 Whiskey Cove PMIC LED 指定一个硬件模式

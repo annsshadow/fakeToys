@@ -1,3 +1,5 @@
+# leds-lm3556
+
 ﻿
 ## lm3556 内核驱动
 
@@ -13,7 +15,7 @@
 ### 描述
 
 LM3556 3 种功能：闪光（Flash）、手电（Torch）和指示（Indicator）
-##### 闪光模式
+#### 闪光模式
 
 
 在闪光模式下，LED 电流源（LED）提16 个目标电流等级，93.75 mA 1500 mA。闪光电流通过 CURRENT CONTROL REGISTERx09）调节。闪光模式由 ENABLE REGISTERx0A）激活，或通过拉高 STROBE 引脚激活
@@ -38,7 +40,7 @@ LM3556 闪光可通过 /sys/class/leds/flash/brightness 文件控制
 	#echo 16 > /sys/class/leds/flash/brightness
 
 ```
-##### 手电模式
+## 手电模式
 
 
 在手电模式下，电流源（LED）通过 CURRENT CONTROL REGISTERx09）编程。手电模式由 ENABLE REGISTERx0A）或硬件 TORCH 输入激活
@@ -61,7 +63,7 @@ LM3556 手电可通过 /sys/class/leds/torch/brightness 文件控制- TORCH 引�
 	#echo 8 > /sys/class/leds/torch/brightness
 
 ```
-##### 指示模式
+## 指示模式
 
 
 指示模式可通过 /sys/class/leds/indicator/pattern 文件设置，indicator_pattern 数组中预定义4 种模式
@@ -97,7 +99,7 @@ LM3556 手电可通过 /sys/class/leds/torch/brightness 文件控制- TORCH 引�
 	#echo 8 > /sys/class/leds/indicator/brightness
 
 ```
-### 注意事项
+## 注意事项
 
 驱动期望通过 i2c_board_info 机制注册。要在特定适配器上以地址 0x63 注册该芯片，请根include/linux/platform_data/leds-lm3556.h 设置平台数据，设i2c 板信
 ```

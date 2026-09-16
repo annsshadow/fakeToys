@@ -1,3 +1,5 @@
+# leds-lp3944
+
 ﻿## 内核驱动 lp3944
 
 
@@ -9,6 +11,7 @@
 
     Datasheet:
 
+
 	Publicly available at the National Semiconductor website
 	http://www.national.com/pf/LP/LP3944.html
 
@@ -16,7 +19,7 @@ Authors:
 	Antonio Ospite <ospite@studenti.unina.it>
 
 
-### 描述
+## 描述
 
 LP3944 是一个辅助芯片，可驱动多8 LED，具有两种可编程 DIM 模式；它甚至可以用作 gpio 扩展器，但本驱动假定它被用作 LED 控制器
 

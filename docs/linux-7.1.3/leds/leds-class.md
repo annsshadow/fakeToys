@@ -1,3 +1,5 @@
+# leds-class
+
 ﻿## Linux 下的 LED 处理
 
 在其最简单的形式中，LED 类（LED class）只是允许从用户空间控制 LED。LED 出现/sys/class/leds/ 中。LED 的最大亮度在 max_brightness 文件中定义。brightness 文件用于设置 LED 的亮度（取0 max_brightness）。大多数 LED 没有硬件亮度支持，因此只要亮度设置为非零就会被点亮
