@@ -14,7 +14,7 @@ import {
 } from 'antd'
 import DataList from '../components/DataList'
 import ExportDialog from '../components/ExportDialog'
-import { getExportFormats, previewExport } from '../services/api'
+import { getExportFormats, previewExport, batchExport } from '../services/api'
 
 /**
  * 导出中心

@@ -13,6 +13,16 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'dist'
+    outDir: 'dist',
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'antd-vendor': ['antd', '@ant-design/icons'],
+          'echarts-vendor': ['echarts', 'echarts-for-react'],
+          'react-vendor': ['react', 'react-dom', 'react-router-dom']
+        }
+      }
+    }
   }
 })

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Card, Button, Space, Select, Switch, message, Progress, List, Tag } from 'antd'
-import { RocketOutlined, PauseOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
+import { RocketOutlined } from '@ant-design/icons'
 import { startAugmentation, getProgress, getDataFiles } from '../services/api'
 
 export default function Augmentation() {

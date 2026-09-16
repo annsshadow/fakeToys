@@ -110,26 +110,6 @@ export default function Analysis() {
     }
   }
 
-  const getWordCloudOption = () => {
-    if (!analysis?.coverage_analysis?.topic_distribution?.top_words) return {}
-    
-    const words = analysis.coverage_analysis.topic_distribution.top_words
-    return {
-      title: { text: '关键词云', left: 'center' },
-      tooltip: {},
-      series: [{
-        type: 'wordCloud',
-        shape: 'circle',
-        sizeRange: [12, 60],
-        rotationRange: [-90, 90],
-        data: Object.entries(words).map(([name, value]) => ({
-          name,
-          value
-        }))
-      }]
-    }
-  }
-
   const topicColumns = [
     { title: '关键词', dataIndex: 'word', key: 'word' },
     { title: '频次', dataIndex: 'count', key: 'count' }
