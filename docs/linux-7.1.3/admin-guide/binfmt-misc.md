@@ -1,3 +1,5 @@
+# binfmt-misc
+
 ﻿## 内核对杂项二进制格式的支持（binfmt_misc
 
 该内核特性允许你几乎（限制见下文）只需shell 中输入程序名即可调用任意程序。这包括例如编译后的 Java(TM)、Python Emacs 程序
@@ -54,7 +56,7 @@
 你可以通过`/proc/sys/fs/binfmt_misc/status` `/proc/.../the_name` echo 0（禁用）1（启用）来启禁用 binfmt_misc 或某个二进制类型。查看该文件的内容会告诉`binfmt_misc/the_entry` 的当前状态
 你可以通过`/proc/.../the_name` `/proc/sys/fs/binfmt_misc/status` echo -1 来删除一个条目或所有条目
 
-### 提示
+## 提示
 
 
 如果你想向解释器传递特殊参数，可以为它编写一个包装脚本示例请参[Documentation/admin-guide/java.rst <./java>](Documentation/admin-guide/java.rst <./java>)

@@ -1,3 +1,5 @@
+# ksm
+
 ﻿## 内核同页合并（Kernel Samepage Merging，KSM
 
 

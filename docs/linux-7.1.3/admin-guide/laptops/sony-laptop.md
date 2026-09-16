@@ -1,3 +1,5 @@
+# sony-laptop
+
 ﻿## Sony Notebook Control Driver (SNC) Readme
 
 
@@ -5,12 +7,14 @@
  - Copyright (C) 2007 Mattia Dongili <malattia@linux.it>
 
 这个迷你驱动驱动 Sony Vaio 笔记本电ACPI BIOS 中存在的 SNC SPIC 设备。该驱动在（尽量一致的）同一接口下混合了这两种设备的功能。这也意味着 sonypi 驱动现在已被 sony-laptop 取代
-### Fn keys (hotkeys):
+## Fn keys (hotkeys):
+
 
 
 一些型号通过 SNC SPIC 设备报告热键，此类事件既通过 ACPI 子系统作acpi 事件报告，也通过 INPUT 子系统报告。查/proc/bus/input/devices 的日志可以找出这些事件是什么，以及驱动创建了哪些输入设备。此外，使用 debug 选项加载驱动会在内核日志中报告所有事件
 传递给输入系统（可以用 udev 重新映射）的“扫描码”是 sony-laptop.c 模块中表 "sony_laptop_input_keycode_map" 的索引。例“FN/E组合键（在某些型号上EJECTCD）生成扫描码 20x14）
 ### Backlight control:
+
 
 
 如果你的笔记本型号支持，你会/sys/class/backlight/sony/
@@ -25,6 +29,7 @@
 
 
 ### Platform specific:
+
 
 
 鍔犺浇 sony-laptop 妯″潡浼氬垱寤?/sys/devices/platform/sony-laptop/
@@ -76,7 +81,8 @@
 ```
 打开声卡
 
-### RFkill control:
+## RFkill control:
+
 
 
 较新Vaio 型号暴露了一组一致的 ACPI 方法来控制射频发射设备。如果你有幸拥有这样的笔记本，你会在
@@ -88,7 +94,8 @@
 ```
 下找到所需rfkill 设备
 
-### Development:
+## Development:
+
 
 
 如果你想帮助开发这个驱动（并且你不怕对你的 ACPI BIOS 做奇怪的事情可能给你的笔记本带来的任何副作用），加载驱动并传入选项 'debug=1'
@@ -108,6 +115,7 @@ sony-laptop 驱动为其中一些方法（在多Vaio 型号上找到的最新方
 
 另见 http://www.linux.it/~malattia/wiki/index.php/Sony_drivers 获取其他有用信息
 ### Bugs/Limitations:
+
 
 
 - 该驱动并非基Sony 的官方文档（因为根本没有），因此不保证该驱动能工作，或做正确的事。尽管这没有发生在我身上，但该驱动可能对你的笔记本做很糟糕的事，包括永久性损坏

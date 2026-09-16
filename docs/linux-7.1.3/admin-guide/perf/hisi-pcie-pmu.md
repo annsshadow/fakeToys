@@ -1,3 +1,5 @@
+# hisi-pcie-pmu
+
 ﻿## 海PCIe 性能监控单元（PMU
 Hip09 上，海PCIe 性能监控单元（PMU）可以监PCIe 的带宽、延迟、总线利用率以及缓冲区占用数据
 每个 PCIe Core 都有一PMU，用于监控该 PCIe Core 的多Root Port 以及这些 Root Port 下游的所Endpoint

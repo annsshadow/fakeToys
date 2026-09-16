@@ -1,3 +1,5 @@
+# processor_mmio_stale_data
+
 ﻿## 处理MMIO 陈旧数据漏洞（Processor MMIO Stale Data Vulnerabilities
 处理MMIO 陈旧数据漏洞（Processor MMIO Stale Data Vulnerabilities）是一类可能暴露数据的
 内存映射 I/O（MMIO）漏洞。暴露数据的操作序列从简单到非常复杂不等。由于大多数漏洞都要攻击者能够访MMIO，许多环境并不会受到影响。在使用虚拟化、并向不受信任的 guest 提供 MMIO
@@ -80,7 +82,7 @@ MDS 类似，处理器 MMIO 陈旧数据漏洞的所有变体都采用相同的�
 对于不受 MDS TAA 影响的处理器，只有在具有 MMIO 能力的攻击者情况下才需要缓解。因此，
 内核/用户空间不需VERW。对于虚拟化场景，VERW 仅需在进入具MMIO 能力guest 时（VMENTER执行
 ### 缓解点（Mitigation points
-##### 返回用户空间（Return to user space
+#### 返回用户空间（Return to user space
 在受 MDS/TAA 影响时，缓解措施MDS 相同；否则不需要缓解
 ##### C-State 切换（C-State transition
 CPU C-state 切换期间的控制寄存器写操作可能把数据从填充缓冲区传播uncore 缓冲区。在

@@ -1,3 +1,5 @@
+# nommu-mmap
+
 ﻿## MMU 内存映射支持
 
 内核no-MMU 条件下对内存映射的支持有限，例如用于 uClinux 环境。从用户空间的角度看，内存映射与 mmap() 系统调用、shmat() 调用以及 execve() 系统调用结合使用。从内核的角度看，execve() 映射实际上由 binfmt 驱动执行，这些驱动回调到 mmap() 例程以完成实际工作

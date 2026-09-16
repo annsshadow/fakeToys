@@ -1,3 +1,5 @@
+# dm-log
+
 ﻿## Device-Mapper 日志
 
 device-mapper 日志代码被某device-mapper RAID 目标用来跟踪磁盘上不一致的区域磁盘的某个区域（或地址空间的一部分）之所以可能不一致，是因为当前正在操作某RAID 条带，或者在该区域被修改时机器崩溃了。对于镜像而言，当你向某个区域写入时，
@@ -13,7 +15,7 @@ core		drivers/md/dm-log.c
 userspace	drivers/md/dm-log-userspace* include/linux/dm-log-userspace.h
 ==============	==============================================================
 
-### “disk日志类型
+## “disk日志类型
 
 该日志实现将日志状态提交到磁盘。这样，日志状态可在重崩溃后存活
 ### “core日志类型

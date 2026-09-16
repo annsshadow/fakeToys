@@ -1,3 +1,5 @@
+# vivid
+
 ﻿
 ## 虚拟视频测试驱动（vivid
 
@@ -42,9 +44,11 @@
 
 - n_devs:
 
+
 	要创建的驱动实例数量。默认设1。最多可创建 64 个实例
 
 - node_types:
+
 
 	每个驱动实例应创建哪些设备。一个十六进制值数组，每个实例一个。默认值为 0xe1d3d
 	每个值是一个位掩码，含义如下：
@@ -72,6 +76,7 @@
 
 - input_types:
 
+
 	每个实例的输入类型，默认值为 0xe4。它定义了为每个驱动实例创建输入时，每个输入的类型是什么。这是一个十六进制值，最16 对比特，每对给出一种类型，比特 0-1 映射到输0，比2-3 映射到输1，比30-31 映射到输15。每对比特含义如下：
 
   - 00：这是一webcam 输入
@@ -87,9 +92,11 @@
 
 - num_outputs:
 
+
 	输出数量，每个实例一个。默认每个视频输出设备创2 个输出。最多可创建 16 个输出，且至少要1 个
 
 - output_types:
+
 
 	每个实例的输出类型，默认值为 0x02。它定义了为每个驱动实例创建输出时，每个输出的类型是什么。这是一个十六进制值，最16 比特，每个比特给出一种类型，比特 0 映射到输0，比1 映射到输1，比15 映射到输15。每个比特的含义如下
 
@@ -104,6 +111,7 @@
 
 - vid_cap_nr:
 
+
 	给出每个视频采集设备期望videoX 起始编号。默认值为 -1，即直接取第一个空闲编号。这使你可以将采集视频节点映射到特定videoX 设备节点。例如：
 
 	.. code-block:: none
@@ -114,29 +122,36 @@
 
 - vid_out_nr:
 
+
 	给出每个视频输出设备期望videoX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - vbi_cap_nr:
+
 
 	给出每个 VBI 采集设备期望vbiX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - vbi_out_nr:
 
+
 	给出每个 VBI 输出设备期望vbiX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - radio_rx_nr:
+
 
 	给出每个无线电接收设备期望的 radioX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - radio_tx_nr:
 
+
 	给出每个无线电发射设备期望的 radioX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - sdr_cap_nr:
 
+
 	给出每个 SDR 采集设备期望swradioX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - meta_cap_nr:
+
 
         给出每个元数据采集设备期望的 videoX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
@@ -145,9 +160,11 @@
 
 - touch_cap_nr:
 
+
         给出每个触摸采集设备期望v4l-touchX 起始编号。默认值为 -1，即直接取第一个空闲编号
 
 - ccs_cap_mode:
+
 
 	指定每个驱动实例允许的组合：视频采集裁剪/合成/缩放。视频采集设备可以具有裁剪、合成与缩放能力的任意组合，这个选项会告vivid 驱动应当模拟其中的哪些。默认情况下用户可通过控件选择
 
@@ -155,13 +172,16 @@
 
  - bit 0:
 
+
 		启用裁剪支持。裁剪将只取 incoming 画面的一部分
 
  - bit 1:
 
+
 		启用合成支持。合成会incoming 画面拷贝到一个更大的缓冲区中
 
  - bit 2:
+
 
 		启用缩放支持。缩放可以对 incoming 画面进行缩放。vivid 驱动的缩放器可将原始尺寸放大或缩小到最多四倍。该缩放器非常简单且质量较低，设计时优先考虑简单与速度，而非质量
 
@@ -169,23 +189,28 @@
 
 - ccs_out_mode:
 
+
 	指定每个驱动实例允许的组合：视频输出裁剪/合成/缩放。视频输出设备可以具有裁剪、合成与缩放能力的任意组合，这个选项会告vivid 驱动应当模拟其中的哪些。默认情况下用户可通过控件选择
 
 	该值要么是 -1（由用户控制），要么是一组三个比特，每个比特启用）或禁用）其中一个特性：
 
  - bit 0:
 
+
 		启用裁剪支持。裁剪将只取 outgoing 缓冲区的一部分
 
  - bit 1:
+
 
 		启用合成支持。合成会incoming 缓冲区拷贝到一个更大的画面帧中
 
  - bit 2:
 
+
 		启用缩放支持。缩放可以对 incoming 缓冲区进行缩放。vivid 驱动的缩放器可将原始尺寸放大或缩小到最多四倍。该缩放器非常简单且质量较低，设计时优先考虑简单与速度，而非质量
 
 - multiplanar:
+
 
 	选择每个设备实例是否支持多平面格式，从而支V4L2 多平API。默认情况下设备实例为单平面
 
@@ -196,9 +221,11 @@
 
 - vivid_debug:
 
+
 	启用驱动调试信息
 
 - no_error_inj:
+
 
 	若设置则禁用错误注入控件。运v4l2-compliance 之类的工具时需要此选项。这类工具会遍历所有控件，包括像“Disconnect”这样的控件，它会模拟一USB 断开，使设备无法访问，从而导致此v4l2-compliance 执行的所有测试都会失败
 
@@ -206,11 +233,13 @@
 
 - allocators:
 
+
 	内存分配器选择，默认值为 0。它指定缓冲区的分配方式
 
   - 0：vmalloc
   - 1：dma-contig
 - cache_hints:
+
 
 	指定设备是否应设置队列的用户空间缓存与内存一致性提示能力（V4L2_BUF_CAP_SUPPORTS_MMAP_CACHE_HINTS）。这些提示仅在使MMAP 流式 I/O 时有效。默认值为 0
 
@@ -218,6 +247,7 @@
   - 1：允许提
 
 - supports_requests:
+
 
 	指定设备是否支持 Request API。有三种可能取值，默认值为 1
 
@@ -431,33 +461,41 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Test Pattern:
 
+
 	选择要使用的测试图案。可使用 CSC Colorbar 来测试色彩空间转换：该测试图案中使用的颜色可映射到所有色彩空间中的有效颜色。对于其他测试图案，色彩空间转换被禁用
 
 - OSD Text Mode:
+
 
 	选择是否显示叠加在测试图案上的文字；若显示，是只显示计数器还是显示完整文字
 
 - Horizontal Movement:
 
+
 	选择测试图案是否应向左或向右移动，以及以何种速度移动
 
 - Vertical Movement:
+
 
 	对垂直方向执行相同功能
 
 - Show Border:
 
+
 	在真实图像边缘显示两像素宽的边框（不含上左右加边区域）
 
 - Show Square:
+
 
 	在图像中央显示一个正方形。如果图像以正确的像素与图像宽高比校正显示，则显示器上该正方形的宽高应相同
 
 - Insert SAV Code in Image:
 
+
 	向图像添SAV（Start of Active Video，有效视频开始）码。这可用于检查图像中的此类代码是否会被无意地解释而非被忽略
 
 - Insert EAV Code in Image:
+
 
 	EAV（End of Active Video，有效视频结束）码执行相同功能
 
@@ -471,25 +509,31 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Sensor Flipped Horizontally:
 
+
 	图像被水平翻转，并设V4L2_IN_ST_HFLIP 输入状态标志。这模拟了例如传感器倒置安装的情况
 
 - Sensor Flipped Vertically:
+
 
 	图像被垂直翻转，并设V4L2_IN_ST_VFLIP 输入状态标志。这模拟了例如传感器倒置安装的情况
 
 - Standard Aspect Ratio:
 
+
 	选择用于 TV S-Video 输入的画面宽高比应为 4x36x9 还是变形宽屏。这可能会引入上下加边
 
 - DV Timings Aspect Ratio:
+
 
 	选择用于 HDMI 输入的画面宽高比应与其源宽高比相同，还是应为 4x3 16x9。这可能会引入上下或左右加边
 
 - Timestamp Source:
 
+
 	选择每个缓冲区的时间戳取自何时
 
 - Colorspace:
+
 
 	选择生成图像时应使用的色彩空间。这仅在选择 CSC Colorbar 测试图案时生效，否则测试图案会原样通过而不转换。这也是你所期望的行为，因为 75% 的彩条确实应具有 75% 的信号强度，并且不应受色彩空间转换影响
 
@@ -497,17 +541,20 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Transfer Function:
 
+
 	选择生成图像时应使用的色彩空间传递函数。这仅在选择 CSC Colorbar 测试图案时生效，否则测试图案会原样通过而不转换。这也是你所期望的行为，因为 75% 的彩条确实应具有 75% 的信号强度，并且不应受色彩空间转换影响
 
 	改变传递函数会触发 V4L2_EVENT_SOURCE_CHANGE 事件，因为它模拟了检测到的色彩空间变化
 
 - Y'CbCr Encoding:
 
+
 	选择生成 Y'CbCr 图像时应使用Y'CbCr 编码。这仅在选择 Y'CbCr 格式（而非 RGB 格式）时生效
 
 	改变 Y'CbCr 编码会触V4L2_EVENT_SOURCE_CHANGE 事件，因为它模拟了检测到的色彩空间变化
 
 - Quantization:
+
 
 	选择生成测试图案时用RGB Y'CbCr 编码的量化方式
 
@@ -518,25 +565,31 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Apply Alpha To Red Only:
 
+
 	将“Alpha Component”用户控件设置的 alpha 通道仅应用到测试图案的红色上
 
 - Enable Capture Cropping:
+
 
 	启用裁剪支持。该控件仅在 ccs_cap_mode 模块选项设为默认-1，且 no_error_inj 模块选项设为 0（默认）时存在
 
 - Enable Capture Composing:
 
+
 	启用合成支持。该控件仅在 ccs_cap_mode 模块选项设为默认-1，且 no_error_inj 模块选项设为 0（默认）时存在
 
 - Enable Capture Scaler:
+
 
 	启用缩放器支持（最4 倍放大与缩小）。该控件仅在 ccs_cap_mode 模块选项设为默认-1，且 no_error_inj 模块选项设为 0（默认）时存在
 
 - Maximum EDID Blocks:
 
+
 	决定驱动支持EDID 块数量。注vivid 驱动实际上不会解析新EDID 数据，只是存储它。它最多支256 EDID 块，这也是标准所支持的最大值
 
 - Fill Percentage of Frame:
+
 
 	可用于只绘制图像顶部X%。由于每一帧都必须由驱动绘制，这会占用大量 CPU。对于高分辨率，这会成为问题。通过只绘制图像的一部分，可以降低这一 CPU 负载
 
@@ -547,13 +600,16 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Enable Output Cropping:
 
+
 	启用裁剪支持。该控件仅在 ccs_out_mode 模块选项设为默认-1，且 no_error_inj 模块选项设为 0（默认）时存在
 
 - Enable Output Composing:
 
+
 	启用合成支持。该控件仅在 ccs_out_mode 模块选项设为默认-1，且 no_error_inj 模块选项设为 0（默认）时存在
 
 - Enable Output Scaler:
+
 
 	启用缩放器支持（最4 倍放大与缩小）。该控件仅在 ccs_out_mode 模块选项设为默认-1，且 no_error_inj 模块选项设为 0（默认）时存在
 
@@ -564,11 +620,13 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Standard Signal Mode:
 
+
 	选择 VIDIOC_QUERYSTD 的行为：它应返回什么？
 
 	改变此控件会触发 V4L2_EVENT_SOURCE_CHANGE 事件，因为它模拟了输入条件的变化（例如插拔了线缆）
 
 - Standard:
+
 
 	选择当上一控件设为“Selected Standard”时，VIDIOC_QUERYSTD 应返回的标准
 
@@ -577,6 +635,7 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 以下两个控件仅对视频采集有效
 
 - DV Timings Signal Mode:
+
 
 	选择 VIDIOC_QUERY_DV_TIMINGS 的行为：它应返回什么？
 
@@ -591,37 +650,46 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Wrap Sequence Number:
 
+
 	测试struct v4l2_buffer 中的序列号回绕时会发生什么
 
 - Wrap Timestamp:
+
 
 	测试struct v4l2_buffer 中的时间戳回绕时会发生什么
 
 - Percentage of Dropped Buffers:
 
+
 	设置永远不被驱动返回（即被丢弃）的缓冲区百分比
 
 - Disconnect:
+
 
 	模拟一USB 断开。设备将表现得像是已被断开。只有在关闭对该设备节点的所有打开的文件句柄后，设备才会重新“连接”
 
 - Inject V4L2_BUF_FLAG_ERROR:
 
+
 	按下时，驱动返回的下一帧将设置错误标志（即该帧被标记为损坏）
 
 - Inject VIDIOC_REQBUFS Error:
+
 
 	按下时，下一REQBUFS CREATE_BUFS ioctl 调用将以错误失败。准确地说：videobuf2 queue_setup() 操作将返-EINVAL
 
 - Inject VIDIOC_QBUF Error:
 
+
 	按下时，下一VIDIOC_QBUF VIDIOC_PREPARE_BUFFER ioctl 调用将以错误失败。准确地说：videobuf2 buf_prepare() 操作将返-EINVAL
 
 - Inject VIDIOC_STREAMON Error:
 
+
 	按下时，下一VIDIOC_STREAMON ioctl 调用将以错误失败。准确地说：videobuf2 start_streaming() 操作将返-EINVAL
 
 - Inject Fatal Streaming Error:
+
 
 	按下时，流式核心将被标记为发生了致命错误，恢复的唯一方法是停止流式传输。准确地说：会调videobuf2 vb2_queue_error() 函数
 
@@ -630,6 +698,7 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Interlaced VBI Format:
 
+
 	若设置，raw VBI 数据将被隔行化，而不是按场分组提供
 
 #### 数字视频控件
@@ -637,13 +706,16 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - Rx RGB Quantization Range:
 
+
 	设置 HDMI 输入RGB 量化检测结果。它Vivid 的“Limited RGB Range (16-235)”控件组合使用，可用于测试当源提供错误的量化范围信息时会发生的情形。可通过选择 HDMI 输入、将此控件设Full Limited 范围，并在“Limited RGB Range (16-235)”控件中选择相反的值来进行测试。如果选择了“Gray Ramp”测试图案，效果很容易看出
 
 - Tx RGB Quantization Range:
 
+
 	设置 HDMI 输出RGB 量化检测结果。目前在 vivid 中它没有实际用途，但大多数 HDMI 发射器通常都会有此控件
 
 - Transmit Mode:
+
 
 	HDMI 输出的发送模式设HDMI DVI-D。这会影响报告的色彩空间，因DVI_D 输出始终使用 sRGB
 
@@ -652,41 +724,52 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 
 - RDS Reception:
 
+
 	设置是否启用 RDS 接收器
 
 - RDS Program Type:
 
 
+
 - RDS PS Name:
+
 
 
 - RDS Radio Text:
 
 
+
 - RDS Traffic Announcement:
+
 
 
 - RDS Traffic Program:
 
 
+
 - RDS Music:
+
 
 	这些都是只读控件。如RDS Rx I/O Mode 设为“Block I/O”，则它们也处于非活动状态。如RDS Rx I/O Mode 设为“Controls”，则这些控件报告接收到RDS 数据
 	vivid 对此的实现相当基础：它们只在你设置新频率或获取调谐器状态（VIDIOC_G_TUNER）时更新
 
 - Radio HW Seek Mode:
 
+
 	可以是“Bounded”、“Wrap Around”或“Both”。这决定VIDIOC_S_HW_FREQ_SEEK 是受频率范围限制、回绕，还是可由用户选择
 
 - Radio Programmable HW Seek:
+
 
 	若设置，则用户可以提HW Seek 的下界与上界。否则将使用频率范围的边界
 
 - Generate RBDS Instead of RDS:
 
+
 	若设置，则生RBDS（RDS 的美式变体）数据，而非 RDS（欧RDS）。这仅影PICODE PTY 码
 
 - RDS Rx I/O Mode:
+
 
 	可以是“Block I/O”，RDS 块必须由应用程序 read()；也可以是“Controls”，RDS 数据由上RDS 控件提供
 
@@ -696,38 +779,50 @@ Button、Boolean、Integer 32 Bits、Integer 64 Bits、Menu、String、Bitmask I
 - RDS Program ID:
 
 
+
 - RDS Program Type:
+
 
 
 - RDS PS Name:
 
 
+
 - RDS Radio Text:
+
 
 
 - RDS Stereo:
 
 
+
 - RDS Artificial Head:
+
 
 
 - RDS Compressed:
 
 
+
 - RDS Dynamic PTY:
+
 
 
 - RDS Traffic Announcement:
 
 
+
 - RDS Traffic Program:
+
 
 
 - RDS Music:
 
+
 	这些都是用于设置 FM 调制器所发RDS 数据的控件
 
 - RDS Tx I/O Mode:
+
 
 	可以是“Block I/O”，即应用程序必须使write() RDS 块传递给驱动；也可以是“Controls”，RDS 数据由上RDS 控件提供
 

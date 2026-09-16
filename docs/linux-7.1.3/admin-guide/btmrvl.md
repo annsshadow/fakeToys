@@ -1,3 +1,5 @@
+# btmrvl
+
 ﻿## btmrvl 驱动
 
 
@@ -18,6 +20,7 @@ gpiogap=[n], hscfgcmd
 	表示特殊的宿主睡眠（host sleep）设置
 	用法::
 
+
 		# 使用 SDIO 接口唤醒主机并将 GAP 设为 0x80		echo 0xff80 > /debug/btmrvl/config/gpiogap
 		echo 1 > /debug/btmrvl/config/hscfgcmd
 
@@ -34,6 +37,7 @@ psmode=[n], pscmd
 			0 	-- 禁用自动睡眠模式
 
 	用法::
+
 
 		# 启用自动睡眠模式
 		echo 1 > /debug/btmrvl/config/psmode
@@ -53,6 +57,7 @@ hsmode=[n], hscmd
 			0	-- 唤醒固件
 
 	用法::
+
 
 		# 启用宿主睡眠
 		echo 1 > /debug/btmrvl/config/hsmode

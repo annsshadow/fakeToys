@@ -1,10 +1,12 @@
+# ramoops
+
 ﻿## Ramoops oops/panic 记录
 
 Sergiu Iordache <sergiu@chromium.org>
 
 Updated: 10 Feb 2021
 
-### 简
+## 简
 
 Ramoops 是一oops/panic 记录器，在系统崩溃前将其日志写入 RAM。它通过在环缓冲区中记录 oops panic 来工作。Ramoops 需要系统具备持RAM，以便该区域内容在重启后能够保留
 ### Ramoops 概念
@@ -97,7 +99,7 @@ Ramoops 还支持对持久内存区域的软ECC 保护。当使用硬件复位�
 	memblock_reserve(ramoops_data.mem_address, ramoops_data.mem_size);
 
 ```
-### 转储格式
+## 转储格式
 
 
 数据转储以一个头部开始，当前定义`====`，后跟时间戳和换行符。随后是实际数据

@@ -1,3 +1,5 @@
+# cpufreq
+
 ﻿
 ## CPU 性能调节
 
@@ -246,7 +248,7 @@ governor 暴露以下可调参数
 	而获得任何性能提升；而敏感性为 100%（受 CPU 约束）的工作负载预计在提	CPU 频率时会表现得更好
 	如果工作负载敏感性小于由 `powersave_bias` 值表示的阈值，则敏感powersave
 	偏置驱动将导governor 选择低于其原始目标的频率，从而避免为那些不会	更高 CPU 频率中受益的工作负载提供过高配置
-### ``conservative``
+## ``conservative``
 
 
 governor 使用 CPU 负载作为 CPU 频率选择度量

@@ -1,3 +1,5 @@
+# perf-security
+
 ﻿
 ## Perf 事件与工具安
 
@@ -124,7 +126,7 @@ sudo [^15^]_ 实用程序可用来创建专用的特权 Perf 用户组，这些�
 这样一来，perf_users 组成员就能访问该特权环境，在其中使用CAP_PERFMON Linux
 capability 管控的性能监控 API 的工具
 这种特定的访问控制管理仅对以 CAP_SETPCAP、CAP_SETFCAP [^6^]_ capabilities 运行超级用户root 进程可用
-### 非特权用
+## 非特权用
 
 非特权进程的 perf_events **范围（scope* **访问（access* 控制perf_event_paranoid [^2^]_ 设置管控
 -1:

@@ -1,3 +1,5 @@
+# kdump
+
 ﻿## Kdump 文档——基kexec 的崩溃转储解决方
 本文档包含概述、设置、安装和分析相关信息
 ## 概述
@@ -76,6 +78,7 @@ http://horms.net/projects/kexec/
 
    并且它们两者都会选择 KEXEC_CORE::
 
+
 	CONFIG_KEXEC_CORE=y
 ```
 
@@ -88,6 +91,7 @@ http://horms.net/projects/kexec/
    注意，如"General Setup"（通用设置）中没有启用 "Configure standard kernel
    features (expert users)"（配置标准内核特性（专家用户）），那"sysfs file system
    support" 可能不会出现"Pseudo filesystems" 菜单中。在这种情况下，请直接检   .config 文件本身以确sysfs 被打开，如下所:
+
 
 	grep 'CONFIG_SYSFS' .config
 ```
@@ -183,6 +187,7 @@ http://horms.net/projects/kexec/
        range=start-[end]
 
    例如::
+
 
        crashkernel=512M-2G:64M,2G-:128M
 ```
@@ -384,3 +389,4 @@ Crash 文档可在以下位置找到   https://crash-utility.github.io/
 
 ## GDB 瀹。
    :literal:
+

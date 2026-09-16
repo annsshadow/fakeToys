@@ -1,3 +1,5 @@
+# braille-console
+
 ﻿## Linux 鐩叉枃鎺у埗鍙。
 
 要在盲文设备上获取早期启动消息（在用户空间屏幕阅读器启动之前），你首先需编译对常规串行控制台的支持（Documentation/admin-guide/serial-console.rst

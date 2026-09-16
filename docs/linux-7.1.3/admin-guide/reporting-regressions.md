@@ -1,3 +1,5 @@
+# reporting-regressions
+
 ﻿
 报告回归问题
 +++++++++++++++++++++
@@ -69,11 +71,11 @@ Linux v5.13 仍然工作正常，Linux v5.14-rc1 是你遇到该问题的第一�
 <https://linux-regtracking.leemhuis.info/regzbot/>`_ 以及 regzbot 发送的每周
 回归报告之前。这种延迟可能导Linus Torvalds 在决继续开发还是宣告完成并
 发布最终版本？"时对重要的回归问题一无所知
-#### 真的所有回归问题都会被修复吗？
+## 真的所有回归问题都会被修复吗？
 
 
 只要可靠地识别出导致回归的变更（"culprit 提交"），几乎都会被修复。有些回问题无需此信息也能修复，但这通常是必需的
-#### 谁来查找回归问题的根本原因？
+### 谁来查找回归问题的根本原因？
 
 
 受影响代码区域的开发者应当尝试自行定culprit。但对他们来说，这通常很难合理的代价完成，因为相当多的问题只发生在开发者无法触及的特定环境中——例特定的硬件平台、固件、Linux 发行版、系统配置或应用程序。这就是为什么最终往往
@@ -217,9 +219,11 @@ regzbot 通过观察对被跟踪回归报告的回复来工作。此外，它还
 
  * 设置或更新标:
 
+
        #regzbot title: foo
 
  * 监视讨论bugzilla.kernel.org 工单，其中讨论了该问题的其他方面或修:
+
 
        #regzbot monitor: https://lore.kernel.org/r/30th.anniversary.repost@klaava.Helsinki.FI/
        #regzbot monitor: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
@@ -227,9 +231,11 @@ regzbot 通过观察对被跟踪回归报告的回复来工作。此外，它还
  * 指向包含相关进一步细节的位置，例如略微相关但主题不同的邮件列表帖子或缺陷
    跟踪器中的工:
 
+
        #regzbot link: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * 将回归标记为无效::
+
 
        #regzbot invalid: wasn't a regression, problem has always existed
 

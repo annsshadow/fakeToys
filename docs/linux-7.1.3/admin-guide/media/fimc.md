@@ -1,3 +1,5 @@
+# fimc
+
 ﻿
 
 ## Samsung S5P/Exynos4 FIMC 驱动
@@ -99,7 +101,7 @@ sensor subdev -> mipi-csi subdev -> fimc subdev -> video node
 
 这是默认选项
 
-### 5. 设备到视频和子设备节点的映射
+## 5. 设备到视频和子设备节点的映射
 
 
 硬件中每个设备实例关联两个视频设备节点——视频捕获和 mem-to-mem，此外还有一个子设备
@@ -120,7 +122,7 @@ v4l2 子设备节点
 
 	# media-ctl -p
 
-### 7. 构建
+## 7. 构建
 
 
 如果驱动被构建为可加载内核模块（CONFIG_VIDEO_SAMSUNG_S5P_FIMC=m），会创建两个模

@@ -1,3 +1,5 @@
+# dm-integrity
+
 ﻿## dm-integrity
 
 
@@ -48,6 +50,7 @@ metadata area 用于 small reads/writes. The metadata 仍然 读取 even
 
 使用 the target 用于 the 第一 time:
 
+
 1. overwrite the superblock 涓?zeroes
 2. 加载 the dm-integrity target one-sector 大小, the 内核 驱动
    格式 the 设备
@@ -61,6 +64,7 @@ metadata area 用于 small reads/writes. The metadata 仍然 读取 even
 
 Target arguments:
 
+
 1. the underlying 设备
 
 2. the 数字 reserved 扇区 the beginning the 设备 - the
@@ -70,6 +74,7 @@ Target arguments:
    the internal-hash algorithm)
 
 4. 模式:
+
 
 	D - direct writes (鏃?journal)
 		模式, journaling 
@@ -100,6 +105,7 @@ Target arguments:
 5. the 数字 额外 arguments
 
 额外 arguments:
+
 
 journal_sectors:数字
 	The 大小 journal, 参数 使用 formatting the
@@ -197,6 +203,7 @@ fix_padding
 fix_hmac
 	Improve 安全 内部_hash journal_mac:
 
+
  - the section 数字 mixed the mac, 因此 一attacker t
 	  copy sectors 来自 one journal section another journal section
  - the superblock 鏄?protected 鐢?journal_mac
@@ -226,6 +233,7 @@ bytes, take 128 KiB tags track 一full 数据 area, requiring
 
 状line:
 
+
 1. the 数字 integrity mismatches
 2. provided 数据 sectors - the 数字 sectors the 用户
    可以 使用
@@ -233,6 +241,7 @@ bytes, take 128 KiB tags track 一full 数据 area, requiring
 
 
 The layout the formatted 设备:
+
 
 - reserved sectors
     (它们使用 target, 它们 使用 用于
@@ -262,9 +271,11 @@ The layout the formatted 设备:
 - journal
 	The journal divided 进入 sections, 每个 section 包含:
 
+
  - metadata area (4kiB), 包含 journal 条目
 
    - every journal 条目 包含:
+
 
   - logical 扇区 (specifies 何处 the 数据 tag 应当
 		  涓?written)
@@ -285,6 +296,7 @@ The layout the formatted 设备:
 
      - every 扇区 the 数据 area 包含:
 
+
   - 数据 (504 bytes 数据, the 最8 bytes stored 
 		  the journal 条目)
   - commit id
@@ -298,6 +310,7 @@ The layout the formatted 设备:
 
 - one 更多 runs interleaved tags 数据.
     每个 运行 包含:
+
 
  - tag area - 包含 integrity tags. 存在 one tag 用于 每个
 	  扇区 the 数据 area. The 大小 area 始终 4KiB 

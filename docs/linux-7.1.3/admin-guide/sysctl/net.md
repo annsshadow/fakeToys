@@ -1,3 +1,5 @@
+# net
+
 ﻿## /proc/sys/net/ 文档
 
 
@@ -336,11 +338,11 @@ TIPC 协议现在有一个针对接收内存的可调参数，类似于 tcp_rmem
 
 ```
 max 值被设为 CONN_OVERLOAD_LIMIT，default min 值是该同一值的缩放（移位）版本。注min 值目前在有意义的层面并未被使用，但保留这个三元组是为了与 tcp_rmem 等保持一致
-### named_timeout
+## named_timeout
 
 
 TIPC 名称表更新在集群中是异步分发的，没有任何形式的事务处理。这意味着可能出现不同的竞态场景。其中一种情况是，一个节点发出的名称撤销（name withdrawal）被另一个节点接收时，可能晚于已经从一个第三个节点接受的、与之前重叠的名称发布（name publication），尽管这些冲突的更新最初可能是按正确的顺序发出的。如named_timeout 非零，失败拓扑更新会被放入一个延迟队列，直到另一个清除该错误的事件到达，或者直到超时到期。值以毫秒为单位
-### 6. /proc/sys/net/vsock - VSOCK 濂楁帴瀛。
+### 6. /proc/sys/net/vsock - VSOCK 濂楁帴子。
 
 VSOCK 套接字（AF_VSOCK）提供虚拟机与其宿主机之间的通信。VSOCK 套接字在网络命名空间中的行为由该命名空间的模式（`global` `local`）决定，该模式控CID（Context ID）如何分配，以及 socket 如何跨命名空间交互
 ### ns_mode

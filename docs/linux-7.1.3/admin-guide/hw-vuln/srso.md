@@ -1,10 +1,12 @@
+# srso
+
 ﻿## 推测返回栈溢出（Speculative Return Stack Overflow，SRSO
 
 这是针对AMD 处理器上发现的推测返回栈溢出（SRSO）漏洞的缓解措施。其机制如今是众所周知的场景：毒化（poisoning）CPU 功能单元 —在这种情况下是分支目标缓冲区（BTB）和返回地址预测器（RAP—然后诱骗提升的特权域（内核）泄漏敏感数据
 AMD CPU 使用返回地址预测器（又称返回地址返回栈缓冲区，Return Address Stack/Return Stack Buffer）来预测 RET 指令。在某些情况下，一个非架构（non-architectural）的 CALL 指令（即被预测为 CALL 但实际并CALL 的指令）可以RAP 中创建一个条目，该条目可能被用来预测后续 RET 指令的目标
 导致这一点的具体情况因微架构而异，但令人担忧的是，攻击者可以错误地训练（mis-train）CPU BTB 来预测内核空间中的非架构 CALL 指令，并利用它来控制后续内核 RET 的推测目标，从而可能通过推测侧信道（speculative side-channel）导致信息泄露
 该问题在 CVE-2023-20569 下被跟踪
-### 受影响的处理
+## 受影响的处理
 
 AMD Zen，第 1-4 代。即所family 0x17 0x19。较旧的处理器尚未被研究
 ### 系统信息与选项
@@ -92,6 +94,7 @@ AMD Zen，第 1-4 代。即所family 0x17 0x19。较旧的处理器尚未被研�
 
         List of pre-defined events (to be used in -e or -M):
 
+
         core:
           ex_ret_near_ret
                [Retired Near Returns]
@@ -110,6 +113,7 @@ AMD Zen，第 1-4 代。即所family 0x17 0x19。较旧的处理器尚未被研�
 
          Performance counter stats for 'sleep 10s':
 
+
                    137,167      cpu/event=0xc8,umask=0/k
                    137,173      cpu/event=0xc9,umask=0/k
 
@@ -124,6 +128,7 @@ AMD Zen，第 1-4 代。即所family 0x17 0x19。较旧的处理器尚未被研�
        [root@brent: ~/kernel/linux/tools/perf> ./perf stat -e cpu/event=0xc8,umask=0/k -e cpu/event=0xc9,umask=0/k sleep 10s
 
         Performance counter stats for 'sleep 10s':
+
 
                   201,627      cpu/event=0xc8,umask=0/k
                     4,074      cpu/event=0xc9,umask=0/k

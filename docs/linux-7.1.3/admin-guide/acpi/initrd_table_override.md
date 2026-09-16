@@ -1,3 +1,5 @@
+# initrd_table_override
+
 ﻿## 通过 initrd 升级 ACPI 
 
 ## 这是什

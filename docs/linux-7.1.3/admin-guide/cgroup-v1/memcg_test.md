@@ -1,3 +1,5 @@
+# memcg_test
+
 ﻿## 内存资源控制器（Memcg）实现备忘录
 
 
@@ -175,6 +177,7 @@
 	node 0 to node 1 will occur. Following is a script to migrate all
 	under cpuset.::
 
+
 		--
 		move_task()
 		{
@@ -208,7 +211,7 @@
 
 ```
 
-### 9.5 嵌套 cgroup（nested cgroups
+## 9.5 嵌套 cgroup（nested cgroups
 
 
 ```
@@ -221,6 +224,7 @@
 		run jobs under child_a and child_b
 
 	create/delete following groups at random while jobs are running::
+
 
 		/opt/cgroup/01/child_a/child_aa
 		/opt/cgroup/01/child_b/child_bb
@@ -243,7 +247,7 @@
 
 ```
 
-### 9.7 swapoff
+## 9.7 swapoff
 
 
 	除交换区管理本身memcg 中较复杂的部分外，swapoff 时的换入调用路径
@@ -261,6 +265,7 @@
 
 	(Shell-B)::
 
+
 		# move all tasks in /cgroup/test to /cgroup
 		# /sbin/swapoff -a
 		# rmdir /cgroup/test
@@ -270,7 +275,7 @@
 
 ```
 
-### 9.8 OOM-Killer（内存耗尽杀手）
+## 9.8 OOM-Killer（内存耗尽杀手）
 
 
 	memcg 限制引发Out-of-memory 会终止该 memcg 下的任务
@@ -288,6 +293,7 @@
 
 	Case B) when you use mem+swap limitation::
 
+
 		#echo 50M > memory.limit_in_bytes
 		#echo 50M > memory.memsw.limit_in_bytes
 
@@ -295,7 +301,7 @@
 
 ```
 
-### 9.9 任务迁移时移动计费（Move charges
+## 9.9 任务迁移时移动计费（Move charges
 
 
 	与任务关联的计费可随任务迁移一起移动
@@ -307,6 +313,7 @@
 	run some programs which uses some amount of memory in /cgroup/A.
 
 	(Shell-B)::
+
 
 		#mkdir /cgroup/B
 		#echo 1 >/cgroup/B/memory.move_charge_at_immigrate
@@ -320,7 +327,7 @@
 
 ```
 
-### 9.10 内存阈值（Memory thresholds
+## 9.10 内存阈值（Memory thresholds
 
 
 	内存控制器使cgroups 的通知 API 实现内存阈值
@@ -331,6 +338,7 @@
 		# ./cgroup_event_listener /cgroup/A/memory.usage_in_bytes 5M
 
 	(Shell-B) Add task to cgroup and try to allocate and free memory::
+
 
 		# echo $$ >/cgroup/A/tasks
 		# a="$(dd if=/dev/zero bs=1M count=10)"

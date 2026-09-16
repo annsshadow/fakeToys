@@ -1,3 +1,5 @@
+# cache
+
 ﻿## 缓存（Cache
 ## 简
 dm-cache 是一个由 Joe Thornber、Heinz Mauelshagen Mike Snitzer 编写device mapper（设备映射器）目标
@@ -81,7 +83,7 @@ origin cache 设备之间迁移数据会占用带宽。用户可以设置一个�
 
 一个名'default' 的策略总是被注册。它是我们当前认为能带来最佳综合性能的策略的别名
 由于默认策略可能在不同内核之间有所变化，如果你依赖于某个特定策略的特性，请始终按名称请求它
-### 状
+## 状
 ```
   <metadata block size> <#used metadata blocks>/<#total metadata blocks>
   <cache block size> <#used cache blocks>/<#total cache blocks>
@@ -110,7 +112,7 @@ cache metadata mode       ro 表示只读，rw 表示读写
 			  将不再允许任I/O，状态中将只包含字符'Fail'			  此时应使用用户空间的恢复工具needs_check		  'needs_check' 表示已设置，'-' 表示未设			  一次元数据操作失败，导致元数据的超级块中设置了
 			  needs_check 标志。在缓存能够完全恢复运行之前			  必须停用该元数据设备并进行检修复			  '-' 表示未设needs_check========================= =====================================================
 
-### 消息
+## 消息
 
 策略会有各自不同的、特定于该策略的可调参数，因此我们需要一种通用的获取和设置它们的方式。这里使device-mapper 消息。（sysfs 接口也是可行的。）
 

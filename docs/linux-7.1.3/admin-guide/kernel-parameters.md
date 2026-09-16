@@ -1,3 +1,5 @@
+# kernel-parameters
+
 ﻿
 
 
@@ -83,3 +85,4 @@ module_param() 宏实现，并按英文字典顺序排序（定义为忽略所�
 系统启动后运行的程序通过 /proc/cmdline 读取
 内核参数的数量不受限制，但完整命令行（包括空格等的参数）的长度被限制固定数量的字符。该限制取决于架构，介于 256 4096 个字符之间。它在文./include/uapi/asm-generic/setup.h 中定义为 COMMAND_LINE_SIZE
    :literal:
+

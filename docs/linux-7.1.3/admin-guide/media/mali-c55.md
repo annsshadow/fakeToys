@@ -1,3 +1,5 @@
+# mali-c55
+
 ﻿
 ## ARM Mali-C55 Image Signal Processor driver（ARM Mali-C55 图像信号处理器驱动）
 
@@ -179,7 +181,7 @@ ISP 的输入与输出分辨率均限制640x480 8192x8192 之间，这一点体�
     yavta -f RGB565 -s 1920x1080 -c10 /dev/video0
     yavta -f RGB565 -s 1920x1080 -c10 /dev/video1
 
-#### Cropping the image（裁剪图像）
+## Cropping the image（裁剪图像）
 
 
 全分辨率与缩放两条流水线都能裁剪到最小分辨率 640x480。要裁剪图像，只需配置
@@ -188,7 +190,7 @@ resizer sink 衬垫crop compose 矩形，并在视频设备上设置格式
     media-ctl -V "'mali-c55 resizer fr':1[fmt:RGB121212_1X36/640x480]"
     yavta -f RGB565 -s 640x480 -c10 /dev/video0
 
-#### Downscaling the image（缩小图像）
+### Downscaling the image（缩小图像）
 
 
 全分辨率与缩放两条流水线都能将图像缩小至8 倍，前提是遵守最640x480 输出分辨率。为获得最佳图像效果，各方向的缩放比应相同。要配置缩放，我们使resizer sink 衬垫上的 compose 矩形

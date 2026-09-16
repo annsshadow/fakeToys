@@ -1,3 +1,5 @@
+# core-scheduling
+
 ﻿
 ## 核心调度（Core Scheduling
 
@@ -47,14 +49,14 @@ arg5:
 为了使一个进程能够向另一个进程推cookie 或从另一个进程拉cookie
 需要对该进程具ptrace 访问模式：`PTRACE_MODE_READ_REALCREDS`
 
-#### 构建任务层级结构
+## 构建任务层级结构
 
 构建共享同一cookie 因而也共享一个核心的线程/进程层级结构，最简单的方法
 利用核心调度 cookie 会在 fork/clone exec 之间被继承这一事实，因此为
 “初始”脚可执行文守护进程设置一cookie，就会将其派生的每个子进
 放入同一个核心调度组
 
-#### Cookie 传
+### Cookie 传
 
 可以使用 PR_SCHED_CORE_SHARE_FROM PR_SCHED_CORE_SHARE_TO 在当前任务和其他
 任务之间传cookie，从而从指定任务继承 cookie 或与某个任务共享 cookie

@@ -1,3 +1,5 @@
+# hns3-pmu
+
 ﻿## HNS3 性能监控单元（PMU
 HNS3（HiSilicon network system 3）性能监控单元（PMU）是一个端点（End Point）设备，
 用于收集 HiSilicon SoC NIC 的性能统计信息。在 Hip09 上，每个 SICL（Super I/O

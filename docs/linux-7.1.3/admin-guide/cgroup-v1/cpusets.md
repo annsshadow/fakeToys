@@ -1,3 +1,5 @@
+# cpusets
+
 ﻿
 ## CPUSETS（CPU 集合
 
@@ -284,7 +286,7 @@ sched_setaffinity 调用也可以在 shell 提示符下使用 SGI runon Robert L
   echo "/sbin/cpuset_release_agent" > /sys/fs/cgroup/cpuset/release_agent
 
 ```
-### 2.2 添加/移除 cpus
+## 2.2 添加/移除 cpus
 
 
 这是cpus mems 文件中写入时使用的语```
@@ -304,7 +306,7 @@ sched_setaffinity 调用也可以在 shell 提示符下使用 SGI runon Robert L
   # /bin/echo "" > cpuset.cpus		-> 清空 cpus 列表
 
 ```
-### 2.3 设置标志
+## 2.3 设置标志
 
 
 ```
@@ -313,7 +315,7 @@ sched_setaffinity 调用也可以在 shell 提示符下使用 SGI runon Robert L
   # /bin/echo 0 > cpuset.cpu_exclusive 	-> 取消设置标志 'cpuset.cpu_exclusive'
 
 ```
-### 2.4 附加进程
+## 2.4 附加进程
 
 
 ```

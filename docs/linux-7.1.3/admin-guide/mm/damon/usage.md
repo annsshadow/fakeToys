@@ -1,3 +1,5 @@
+# usage
+
 ﻿
 ## 详细用法
 
@@ -21,7 +23,7 @@ DAMON sysfs 接口在定义了 `CONFIG_DAMON_SYSFS` 时构建。它在自己的 
     # echo on > kdamonds/0/state
 
 ```
-### 文件层级
+## 文件层级
 
 
 DAMON sysfs 接口的文件层级如下所示。在下图中，父子关系用缩进表示，每个目录带有 `/` 后缀，每个目录中的文件用逗号,"）分隔
@@ -214,7 +216,7 @@ watermarks 目录下，存在五个文件（`metric`、`interval_us`、`high`、
 ```
 关于更多细节，包括具有不`allow` 的多个过滤器如何工作、各个过滤器何时被支持以及统计上的差异，请参:ref:`DAMOS filters design documentation <damon_design_damos_filters>`
 
-### schemes/<N>/dests/
+## schemes/<N>/dests/
 
 
 用于指定给定基于 DAMON 的操作方案动作目标位置的目录。如果给定方案的动作不支持多个目标，则忽略此目录。只`DAMOS_MIGRATE_{HOT,COLD}` 动作支持多个目标
