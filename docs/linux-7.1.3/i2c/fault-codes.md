@@ -1,9 +1,11 @@
+# fault-codes
+
 ﻿## I2C/SMBUS Fault Codes
 
 
 本文总结了在 I2C/SMBus 协议栈中使用故障码（fault code）的最重要约定
 
-### A "Fault" is not always an "Error"
+## A "Fault" is not always an "Error"
 
 
 并非所有的故障报告都意味着错误页错（page fault）应该是一个熟悉的例子。软件经常在瞬时故障后重试幂等操作。在某些情况下，可能有更花哨的恢复方案是合适的，例如重新初始化（以及可能重置）。在由故障报告触发的此类恢复之后，就没有错误了
