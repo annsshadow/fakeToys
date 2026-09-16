@@ -1,4 +1,6 @@
 
+# gcov
+
 :Original: Documentation/dev-tools/gcov.rst
 :Translator: 趙軍奎 Bernard Zhao <bernard@vivo.com>
 
@@ -20,6 +22,7 @@ gcov分析核心支持在Linux內核中啓用GCC的覆蓋率測試工具 gcov_ �
 
 可能的用途:
 
+
 - 調試（用來判斷每一行的代碼是否已經運行過）
 - 測試改進（如何修改測試代碼，儘可能地覆蓋到沒有運行過的代碼）
 - 內核最小化配置（對於某一個選項配置，如果關聯的代碼從來沒有運行過，
@@ -27,7 +30,7 @@ gcov分析核心支持在Linux內核中啓用GCC的覆蓋率測試工具 gcov_ �
 
 
 
-### 準備
+## 準備
 
 
 ```
@@ -57,6 +60,7 @@ gcov分析核心支持在Linux內核中啓用GCC的覆蓋率測試工具 gcov_ �
 如果要單獨針對某一個路徑或者文件進行代碼覆蓋率統計，可以在內核相應路
 徑的Makefile中增加如下的配置:
 
+
 ```
 
     GCOV_PROFILE_main.o := y
@@ -85,6 +89,7 @@ gcov分析核心支持在Linux內核中啓用GCC的覆蓋率測試工具 gcov_ �
 
 
 gcov功能需要在debugfs中創建如下文件:
+
 
 `/sys/kernel/debug/gcov`
     gcov相關功能的根路徑
@@ -127,10 +132,12 @@ gcov的內核分析插樁支持內核的編譯和運行是在同一臺機器上�
 是在哪裏使用的:
 
 
+
 a) 若gcov運行在測試機上
 
     測試機上面gcov工具的版本必須要跟內核編譯機器使用的gcc版本相兼容，
     同時下面的文件要從編譯機拷貝到測試機上:
+
 
     從源代碼中:
       - 所有的C文件和頭文件
@@ -149,6 +156,7 @@ a) 若gcov運行在測試機上
 b) 若gcov運行在編譯機上
 
     測試用例運行結束後，如下的文件需要從測試機中拷貝到編譯機上:
+
 
     從sysfs中的gcov目錄中:
       - 所有的.gcda文件
@@ -236,7 +244,7 @@ kconfig會根據編譯工具鏈的檢查自動選擇合適的gcov格式。
     fi
 
 
-### 附錄B：collect_on_test.sh
+## 附錄B：collect_on_test.sh
 
 
 用於在測試機上收集覆蓋率數據文件的示例腳本

@@ -1,4 +1,6 @@
 
+# magic-number
+
 :Original: Documentation/staging/magic-number.rst <magicnumbers>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 

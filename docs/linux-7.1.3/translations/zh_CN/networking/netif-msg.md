@@ -1,8 +1,11 @@
 
 
+# netif-msg
+
 :Original: Documentation/networking/netif-msg.rst
 
 :翻译:
+
 
    王亚鑫 Wang Yaxin <wang.yaxin@zte.com.cn>
 
@@ -56,14 +59,17 @@ netif_msg 建议添加了这些功能，仅带来了轻微的复杂性增加和�
 
      或更精确地说::
 
+
 	debug < 0 ? 0 : 1 << min(sizeof(int)-1, debug)
 
     消息应从以下形式更改::
+
 
       if (debug > 1)
 	   printk(MSG_DEBUG "%s: ...
 
     改为::
+
 
       if (np->msg_enable & NETIF_MSG_LINK)
 	   printk(MSG_DEBUG "%s: ...

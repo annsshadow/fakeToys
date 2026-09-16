@@ -1,4 +1,6 @@
 
+# submit-checklist
+
 :Original: Documentation/process/submit-checklist.rst <submitchecklist>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -83,6 +85,7 @@ Documentation/translations/it_IT/process/submitting-patches.rst <it_submittingpa
 
 1) Compilazione pulita:
 
+
   a) con le opzioni `CONFIG` negli stati `=y`, `=m` e `=n`. Nessun
      avviso/errore di `gcc` e nessun avviso/errore dal linker.
 
@@ -109,6 +112,7 @@ Documentation/translations/it_IT/process/submitting-patches.rst <it_submittingpa
    configurazioni dove i simboli sono disabilitati e/o `=m` (se c'è la
    possibilità) [non tutti contemporaneamente, solo diverse combinazioni
    casuali]:
+
 
    `CONFIG_SMP`, `CONFIG_SYSFS`, `CONFIG_PROC_FS`, `CONFIG_INPUT`,
    `CONFIG_PCI`, `CONFIG_BLOCK`, `CONFIG_PM`, `CONFIG_MAGIC_SYSRQ`,

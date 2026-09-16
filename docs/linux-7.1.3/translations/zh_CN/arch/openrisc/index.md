@@ -1,8 +1,11 @@
 
 
+# index
+
 :Original: Documentation/arch/openrisc/index.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 

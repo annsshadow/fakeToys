@@ -1,10 +1,14 @@
+# split_page_table_lock
+
 :Original: Documentation/mm/split_page_table_lock.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## 分页表锁（split page table lock）
@@ -18,6 +22,7 @@
 PMD表使用分页锁。对高层表的访问由mm->page_table_lock保护。
 
 有一些辅助工具来锁定/解锁一个表和其他访问器函数:
+
 
  - pte_offset_map_lock()
 	映射pte并获取PTE表锁，返回所取锁的指针；
@@ -46,6 +51,7 @@ PMD表使用分页锁。对高层表的访问由mm->page_table_lock保护。
 Hugetlb可以支持多种页面大小。我们只对PMD级别使用分页锁，但不对PUD使用。
 
 Hugetlb特定的辅助函数:
+
 
  - huge_pte_lock()
 	对PMD_SIZE页面采取pmd分割锁，否则mm->page_table_lock；
@@ -82,6 +88,7 @@ page->ptl用于访问分割页表锁，其中'page'是包含该表的页面struc
 与page->private（以及union中的其他几个字段）共享存储。
 
 为了避免增加struct page的大小并获得最佳性能，我们使用了一个技巧:
+
 
  - 如果spinlock_t适合于long，我们使用page->ptr作为spinlock，这样我们
    就可以避免间接访问并节省一个缓存行。

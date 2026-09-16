@@ -1,11 +1,15 @@
 
+# genericirq
+
 :Original: Documentation/core-api/genericirq.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -37,6 +41,7 @@ Linux中中断处理的原始实现使用__do_IRQ()超级处理程序，它能�
 最初，Russell King确定了不同类型的处理程序，以便为Linux 2.5/2.6中的ARM中
 断处理程序实现建立一个相当通用的集合。他区分了以下几种类型:
 
+
 - 电平触发型
 
 - 边沿触发型
@@ -44,6 +49,7 @@ Linux中中断处理的原始实现使用__do_IRQ()超级处理程序，它能�
 - 简单型
 
 在实现过程中，我们发现了另一种类型:
+
 
 - 响应EOI（end of interrupt）型
 
@@ -86,6 +92,7 @@ Linux中中断处理的原始实现使用__do_IRQ()超级处理程序，它能�
 
 中断代码中主要有三个抽象层次:
 
+
 1. 高级别的驱动API
 
 2. 高级别的IRQ流处理器
@@ -107,6 +114,7 @@ Linux中中断处理的原始实现使用__do_IRQ()超级处理程序，它能�
 
 
 高层驱动API由以下函数组成:
+
 
 - request_irq()
 
@@ -142,6 +150,7 @@ Linux中中断处理的原始实现使用__do_IRQ()超级处理程序，它能�
 
 
 通用层提供了一套预定义的irq-flow方法:
+
 
 - handle_level_irq()
 
@@ -362,6 +371,7 @@ IRQ_PENDING位被设置。当中断被enable_irq()重新启用时，将检查挂
 
 该API在以下内核代码中:
 
+
 kernel/irq/generic-chip.c
 
 ## 结构体
@@ -370,6 +380,7 @@ kernel/irq/generic-chip.c
 本章包含自动生成的结构体文档，这些结构体在通用IRQ层中使用。
 
 该API在以下内核代码中:
+
 
 include/linux/irq.h
 
@@ -382,6 +393,7 @@ include/linux/interrupt.h
 
 该API在以下内核代码中:
 
+
 kernel/irq/manage.c
 
 kernel/irq/chip.c
@@ -392,6 +404,7 @@ kernel/irq/chip.c
 本章包含自动生成的内部函数的文档。
 
 该API在以下内核代码中:
+
 
 kernel/irq/irqdesc.c
 

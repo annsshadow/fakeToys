@@ -1,4 +1,6 @@
 
+# handling-regressions
+
 :Translator: Sergio González Collado <sergio.collado@gmail.com>
 
 
@@ -18,6 +20,7 @@ al menos una lectura rápida del mismo antes de continuar.
 #.  Asegúrese de que los suscriptores a la lista `regression mailing list
     <https://lore.kernel.org/regressions/>`_ (regressions@lists.linux.dev)
     son conocedores con rapidez de cualquier nuevo informe de regresión:
+
 
     - Cuando se reciba un correo que no incluyó a la lista, inclúyalo en la
       conversación de los correos, mandando un breve "Reply-all" con la
@@ -39,6 +42,7 @@ al menos una lectura rápida del mismo antes de continuar.
 
     * Cuando se mandan informes desde un gestor de incidentes a la lista de
       regresiones(ver más arriba), incluir un párrafo como el siguiente::
+
 
        #regzbot introduced: v5.13..v5.14-rc1
        #regzbot from: Some N. Ice Human <some.human@example.com>
@@ -69,6 +73,7 @@ Asegúrese de que el programa de gestión de regresiones del kernel de Linux
 y los subscritos a la lista de correo `regression mailing list
 <https://lore.kernel.org/regressions/>`_ (regressions@lists.linux.dev) son
 conocedores de cualquier nuevo informe de regresión:
+
 
  - Cuando se recibe un informe por email que no tiene en CC la lista,
    inmediatamente meterla en el la cadena de emails mandado al menos un
@@ -108,6 +113,7 @@ gestor de regresiones del kernel de Linux.
  * Cuando mande informes de regresiones a un gestor de defectos, incluya un
    párrafo con los siguientes comandos a regzbot::
 
+
        #regzbot introduced: 1f2e3d4c5b6a
        #regzbot from: Some N. Ice Human <some.human@example.com>
        #regzbot monitor: http://some.bugtracker.example.com/ticket?id=123456789
@@ -116,7 +122,7 @@ gestor de regresiones del kernel de Linux.
    las etiquetas "Link:" apuntando a su email o el ticket indicado.
 
 ```
-#### Qué es importante cuando se corrigen regresiones
+## Qué es importante cuando se corrigen regresiones
 
 
 No se necesita hacer nada especial cuando se mandan las correcciones para
@@ -149,11 +155,12 @@ para asociar los informes por regresiones con los cambios que las
 resuelven.
 
 
-#### Priorización del trabajo en arreglar regresiones
+### Priorización del trabajo en arreglar regresiones
 
 
 Al final, los desarrolladores deberían hacer lo posible para evitar a los
 usuarios situaciones donde una regresión les deje solo tres opciones:
+
 
  - Ejecutar el kernel con una regresión que afecta seriamente al uso.
 
@@ -166,6 +173,7 @@ usuarios situaciones donde una regresión les deje solo tres opciones:
 
 Cómo se ejecuta esto depende mucho de la situación. A continuación se
 presentan unas reglas generales, en orden de importancia:
+
 
  - Priorice el trabajo en la gestión de los informes de la regresión y
    arreglar la regresión por encima de cualquier otro trabajo en el kernel
@@ -200,6 +208,7 @@ presentan unas reglas generales, en orden de importancia:
  - Intente arreglar regresiones en un intervalo de una semana después de
    que se ha identificado el responsable, si el incidente fue introducido
    en alguno de los siguientes casos:
+
 
     - una versión estable/largo-plazo reciente
 
@@ -269,6 +278,7 @@ mencione el hecho en su línea principal de desarrollo.
 
 Repase la documentación: Documentation/admin-guide/reporting-regressions.rst,
 esta cubre otros aspectos a tener a en cuenta y conocer:
+
 
  - la finalidad de la "regla de no regresión"
 
@@ -394,6 +404,7 @@ Usando el comando 'regzbot' en una respuesta directa o indirecta al correo
 con el informe de regresión. Ese comando necesita estar en su propio
 párrafo (debe estar separado del resto del texto usando líneas en blanco):
 
+
 Por ejemplo `#regzbot introduced <version or commit>`, que hace que regzbot
 considere el correo como un informe de regressión que se ha de añadir al
 seguimiento, como se ha descrito anteriormente; `#regzbot ^introduced <version or commit>`
@@ -405,6 +416,7 @@ comandos regzbot en respuestas directas o indirectas al informe. Puede
 escribirlos debajo de uno de los comandos anteriormente usados o en las
 respuestas al correo en el que se uso como respuesta a ese correo:
 
+
 ```
 
        #regzbot title: foo
@@ -412,6 +424,7 @@ respuestas al correo en el que se uso como respuesta a ese correo:
  * Monitorizar una discusión o un tiquet de bugzilla.kernel.org donde
    aspectos adicionales del incidente o de la corrección se están
    comentando -- por ejemplo presentar un parche que corrige la regresión::
+
 
        #regzbot monitor: https://lore.kernel.org/all/30th.anniversary.repost@klaava.Helsinki.FI/
 
@@ -423,10 +436,12 @@ respuestas al correo en el que se uso como respuesta a ese correo:
    lista de correo o un tiquet en un gestor de incidencias que pueden estar
    levemente relacionados, pero con un tema diferente::
 
+
        #regzbot link: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * Identificar una regresión como corregida por un commit que se ha mandado
    aguas arriba o se ha publicado::
+
 
         #regzbot fixed-by: 1f2e3d4c5d
 
@@ -434,15 +449,17 @@ respuestas al correo en el que se uso como respuesta a ese correo:
  * Identificar una regresión como un duplicado de otra que ya es seguida
    por regzbot::
 
+
         #regzbot dup-of: https://lore.kernel.org/all/30th.anniversary.repost@klaava.Helsinki.FI/
 
  * Identificar una regresión como inválida::
+
 
        #regzbot invalid: wasn't a regression, problem has always existed
 
 
 ```
-#### ¿Algo más que decir sobre regzbot y sus comandos?
+## ¿Algo más que decir sobre regzbot y sus comandos?
 
 
 Hay información más detallada y actualizada sobre el bot de seguimiento de
@@ -459,6 +476,7 @@ A continuación se encuentran unos ejemplos reales (traducidos) de como
 Linus Torvalds espera que se gestionen las regresiones:
 
 
+
  - De 2017-10-26 (1/2)
 ```
 
@@ -473,6 +491,7 @@ Linus Torvalds espera que se gestionen las regresiones:
 
      La primera regla es:
 
+
      - no causamos regresiones
 
      y el corolario es que cuando una regresión pasa, lo admitimos y lo
@@ -486,6 +505,7 @@ Linus Torvalds espera que se gestionen las regresiones:
 
  * De `2017-10-26 (2/2)
    <https://lore.kernel.org/lkml/CA+55aFxW7NMAMvYhkvz1UPbUTUJewRt6Yb51QAx5RtrWOwjebg@mail.gmail.com/>`_::
+
 
        La gente debería sentirse libre de actualizar su kernel y simplemente
        no preocuparse por ello.
@@ -554,6 +574,7 @@ Linus Torvalds espera que se gestionen las regresiones:
  * De `2020-05-21
    <https://lore.kernel.org/all/CAHk-=wiVi7mSrsMP=fLXQrXK_UimybW=ziLOwSzFTtoXUacWVQ@mail.gmail.com/>`_::
 
+
        Las reglas sobre regresiones nunca han sido sobre ningún tipo de
        comportamiento documentado, o dónde está situado el código.
 
@@ -600,6 +621,7 @@ Linus Torvalds espera que se gestionen las regresiones:
  * De `2017-11-05
    <https://lore.kernel.org/all/CA+55aFzUvbGjD8nQ-+3oiMBx14c_6zOj2n7KLN3UsJ-qsd4Dcw@mail.gmail.com/>`_::
 
+
        Y nuestra regla sobre las regresiones nunca ha sido "el comportamiento
        no cambia". Eso podría significar que nunca podríamos hacer ningún
        cambio.
@@ -617,6 +639,7 @@ Linus Torvalds espera que se gestionen las regresiones:
 
  * De `2018-08-03
    <https://lore.kernel.org/all/CA+55aFwWZX=CXmWDTkDGb36kf12XmTehmQjbiMPCqCRG2hi9kw@mail.gmail.com/>`_::
+
 
        ESTÁS OLVIDANDO LA REGLA #1 DEL KERNEL.
 
@@ -692,6 +715,7 @@ Linus Torvalds espera que se gestionen las regresiones:
  * De `2021-06-05
    <https://lore.kernel.org/all/CAHk-=wiUVqHN76YUwhkjZzwTdjMMJf_zN4+u7vEJjmEGh3recw@mail.gmail.com/>`_::
 
+
        NO HAY ARGUMENTOS VÁLIDOS PARA UNA REGRESIÓN.
 
        Honestamente, la gente de seguridad necesita entender que "no funciona"
@@ -702,6 +726,7 @@ Linus Torvalds espera que se gestionen las regresiones:
 
  * De `2011-05-06 (1/3)
    <https://lore.kernel.org/all/BANLkTim9YvResB+PwRp7QTK-a5VNg2PvmQ@mail.gmail.com/>`_::
+
 
        La compatibilidad de los binarios es más importante.
 
@@ -727,16 +752,19 @@ Linus Torvalds espera que se gestionen las regresiones:
    De `2011-05-06 (2/3)
    <https://lore.kernel.org/all/BANLkTi=KVXjKR82sqsz4gwjr+E0vtqCmvA@mail.gmail.com/>`_::
 
+
        Esto claramente NO es un tracepoint interno. Por definición. Y está
        siendo usado por powertop.
 
    De `2011-05-06 (3/3)
    <https://lore.kernel.org/all/BANLkTinazaXRdGovYL7rRVp+j6HbJ7pzhg@mail.gmail.com/>`_::
 
+
        Tenemos programas que usan esa ABI y si eso se rompe eso es una
        regresión.
 
  * De `2012-07-06 <https://lore.kernel.org/all/CA+55aFwnLJ+0sjx92EGREGTWOx84wwKaraSzpTNJwPVV8edw8g@mail.gmail.com/>`_::
+
 
        > Ahora esto me ha dejado preguntandome si Debian _inestable_
        realmente califica
@@ -747,6 +775,7 @@ Linus Torvalds espera que se gestionen las regresiones:
 
  * De `2019-09-15
    <https://lore.kernel.org/lkml/CAHk-=wiP4K8DRJWsCo=20hn_6054xBamGKF2kPgUzpB5aMaofA@mail.gmail.com/>`_::
+
 
        Una reversión _en particular_ en el último minuto en el último commit
        (no teniendo en cuenta el propio cambio de versión) justo antes

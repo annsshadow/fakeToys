@@ -1,11 +1,15 @@
 
+# page_migration
+
 :Original: Documentation/mm/page_migration.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## 页面迁移
 
@@ -67,6 +71,7 @@ migrate_pages()对它的页面列表进行了多次处理。如果当时对一�
 增加，以便在页面迁移发生时不释放该页。
 
 步骤:
+
 
 1. 锁定要迁移的页面。
 
@@ -168,6 +173,7 @@ struct address_space_operations的函数指针。
      它需要address_space的参数来注册将被VM调用的migration family函数。确切地说，
      PG_movable不是struct page的一个真正的标志。相反，VM复用了page->mapping的低
      位来表示它::
+
 
 	#define PAGE_MAPPING_MOVABLE 0x2
 	page->mapping = page->mapping | PAGE_MAPPING_MOVABLE;

@@ -1,6 +1,8 @@
 
 
 
+# magic-number
+
 :Original: Documentation/staging/magic-number.rst <magicnumbers>
 
 如果想評論或更新本文的內容，請直接發信到LKML。如果你使用英文交流有困難的話，也可

@@ -1,7 +1,10 @@
 
+# todo
+
 :Original: Documentation/arch/openrisc/todo.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 

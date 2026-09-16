@@ -1,12 +1,16 @@
 
 
+# gfs2
+
 :Original: Documentation/filesystems/gfs2.rst
 
 :翻译:
 
+
    邵明寅 Shao Mingyin <shao.mingyin@zte.com.cn>
 
 :校译:
+
 
    杨涛 yang tao <yang.tao172@zte.com.cn>
 
@@ -31,6 +35,7 @@ GFS2 使用可互换的节点间锁定机制，当前支持的机制有：
 lock_dlm 依赖于在上述 URL 中找到的用户空间集群管理系统。
 
 若要将 GFS2 用作本地文件系统，则不需要外部集群系统，只需：:
+
 
   $ mkfs -t gfs2 -p lock_nolock -j 1 /dev/block_device
   $ mount -t gfs2 /dev/block_device /dir

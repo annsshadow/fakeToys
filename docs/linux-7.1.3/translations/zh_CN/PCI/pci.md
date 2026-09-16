@@ -1,11 +1,15 @@
 
+# pci
+
 :Original: Documentation/PCI/pci.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -57,6 +61,7 @@ pci_register_driver()将大部分探测设备的工作留给了PCI层，并支�
 
 当使用完设备后，也许需要卸载模块，驱动需要采取以下步骤:
 
+
   - 禁用设备产生的IRQ
   - 释放IRQ（free_irq()）
   - 停止所有DMA活动
@@ -80,6 +85,7 @@ PCI设备驱动程序在初始化过程中调用 `pci_register_driver()` ，并�
 
 该API在以下内核代码中:
 
+
 include/linux/pci.h
 pci_driver
 
@@ -87,6 +93,7 @@ ID表是一个由 `struct pci_device_id` 结构体成员组成的数组，以一
 结束。一般来说，带有静态常数的定义是首选。
 
 该API在以下内核代码中:
+
 
 include/linux/mod_devicetable.h
 pci_device_id
@@ -195,6 +202,7 @@ PCI设备被多个驱动程序控制的主要原因是一个PCI设备实现了�
 
 在接触任何设备寄存器之前，驱动程序需要通过调用 `pci_enable_device()` 启用
 PCI设备。这将:
+
 
   - 唤醒处于暂停状态的设备。
   - 分配设备的I/O和内存区域（如果BIOS没有这样做）。
@@ -324,6 +332,7 @@ MSI-X可以分配几个单独的向量。
 
 
 当一个PCI设备驱动程序被卸载时，需要执行以下大部分步骤:
+
 
   - 禁用设备产生的IRQ
   - 释放IRQ（free_irq()）

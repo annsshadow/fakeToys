@@ -1,4 +1,6 @@
 
+# code-of-conduct
+
 :Original: Documentation/process/code-of-conduct.rst <code_of_conduct>
 :Translator: Contributor Covenant and Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 
@@ -25,6 +27,7 @@ inclusiva y sana.
 Ejemplos de comportamiento que contribuyen a crear un ambiente positivo
 para nuestra comunidad:
 
+
 - Demostrar empatía y amabilidad ante otras personas
 - Respeto a diferentes opiniones, puntos de vista y experiencias
 - Dar y aceptar adecuadamente retroalimentación constructiva
@@ -35,6 +38,7 @@ para nuestra comunidad:
 
 
 Ejemplos de comportamiento inaceptable:
+
 
 - El uso de lenguaje o imágenes sexualizadas, y aproximaciones o
   atenciones sexuales de cualquier tipo

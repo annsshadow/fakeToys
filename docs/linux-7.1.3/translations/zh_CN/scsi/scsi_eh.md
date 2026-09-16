@@ -1,11 +1,15 @@
 
+# scsi_eh
+
 :Original: Documentation/scsi/scsi_eh.rst
 
 :翻译:
 
+
  郝栋栋 doubled <doubled@leap-io-kernel.com>
 
 :校译:
+
 
 
 ## SCSI 中间层错误处理
@@ -57,7 +61,7 @@ scmd->eh_entry实现。
 及时完成时由块层（block layer）触发超时处理机制。
 
 
-##### 1.2.1 通过scsi_done回调完成SCSI命令
+#### 1.2.1 通过scsi_done回调完成SCSI命令
 
 
 对于所有非错误处理（EH）命令，scsi_done()是其完成回调
@@ -206,7 +210,7 @@ scsi_restart_operations()函数恢复正常运行，该函数按顺序执行
 ### 2.1 基于细粒度回调的错误处理机制
 
 
-##### 2.1.1 概述
+#### 2.1.1 概述
 
 
 如果不存在eh_strategy_handler()，SCSI中间层将负责驱动的
@@ -428,7 +432,7 @@ scsi_unjam_host()的被调用，并负责整个错误恢复过程。该处理
 外的所有步骤。
 
 
-##### 2.2.1 transportt->eh_strategy_handler()调用前的SCSI中间层状态
+#### 2.2.1 transportt->eh_strategy_handler()调用前的SCSI中间层状态
 
 
  进入该处理函数时，以下条件成立。

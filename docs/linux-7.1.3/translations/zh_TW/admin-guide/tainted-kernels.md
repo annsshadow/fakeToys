@@ -1,13 +1,16 @@
 
 
+# tainted-kernels
+
 :Original: [../../../admin-guide/tainted-kernels](../../../admin-guide/tainted-kernels)
 
 :譯者:
 
+
  吳想成 Wu XiangCheng <bobwxc@email.cn>
  胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
 
-### 受污染的內核
+## 受污染的內核
 
 
 當發生一些在稍後調查問題時可能相關的事件時，內核會將自己標記爲“受污染
@@ -23,7 +26,7 @@ bug”）、可恢復錯誤（“kernel oops”）或不可恢復錯誤（“ker
 `/proc/` 中的文件在運行時檢查受污染的狀態。
 
 
-#### BUG、Oops或Panics消息中的污染標誌
+### BUG、Oops或Panics消息中的污染標誌
 
 
 在頂部以“CPU:”開頭的一行中可以找到受污染的狀態；內核是否受到污染和原因會顯示

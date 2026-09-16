@@ -1,11 +1,15 @@
 
+# libsas
+
 :Original: Documentation/scsi/libsas.rst
 
 :翻译:
 
+
  张钰杰 Yujie Zhang <yjzhang@leap-io-kernel.com>
 
 :校译:
+
 
 ## SAS 层
 
@@ -152,7 +156,7 @@ lldd_port
 ```
 需要初始化（示例函数如下所示）。
 
-##### pcidev
+#### pcidev
 
 
 sas_addr
@@ -407,6 +411,7 @@ ftp://mama.indstate.edu/linux/tree/
 SMP 请求并接收 SMP 响应。
 
 该功能的实现方式看起来非常简单:
+
 
 1. 构建要发送的 SMP 帧。其格式和布局在 SAS 规范中有说明。保持
    CRC 字段为 0。

@@ -1,8 +1,11 @@
 
 
+# patch-acceptance
+
 :Original: Documentation/arch/riscv/patch-acceptance.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 

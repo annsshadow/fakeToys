@@ -1,3 +1,5 @@
+# sparse
+
 ﻿Chinese translated version of Documentation/dev-tools/sparse.rst
 
 If you have any comment or update to the content, please contact the
@@ -6,7 +8,7 @@ communicating in English you can also ask the Chinese maintainer for
 help.  Contact the Chinese maintainer if this translation is outdated
 or if there is a problem with the translation.
 
-### Traditional Chinese maintainer: Hu Haowen <2023002089@link.tyut.edu.cn>
+## Traditional Chinese maintainer: Hu Haowen <2023002089@link.tyut.edu.cn>
 
 Documentation/dev-tools/sparse.rst 的繁體中文翻譯
 
@@ -63,7 +65,7 @@ __bitwise"類型。
 式類型不會被弄混（小尾模式，大尾模式，cpu尾模式，或者其他），對他們來說
 常數"0"確實是特殊的。
 
-#### 獲取 sparse 工具
+## 獲取 sparse 工具
 
 
 你可以從 Sparse 的主頁獲取最新的發布版本：
@@ -81,7 +83,7 @@ __bitwise"類型。
 
 它將會被自動安裝到你的 ~/bin 目錄下。
 
-#### 使用 sparse 工具
+### 使用 sparse 工具
 
 
 用"make C=1"命令來編譯內核，會對所有重新編譯的 C 文件使用 sparse 工具。

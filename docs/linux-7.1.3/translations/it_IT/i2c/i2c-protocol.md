@@ -1,4 +1,4 @@
-## Il protocollo I2C
+# Il protocollo I2C
 
 
 Questo documento è una panoramica delle transazioni di base I2C e delle API
@@ -58,6 +58,7 @@ viene inviata una condizione di inizio S e la transazione continua.
 Le seguenti modifiche al protocollo I2C possono essere generate
 impostando questi flag per i messaggi I2C. Ad eccezione di I2C_M_NOSTART, sono
 di solito necessari solo per risolvere problemi di un dispositivo:
+
 
 I2C_M_IGNORE_NAK:
     Normalmente il messaggio viene interrotto immediatamente se il dispositivo

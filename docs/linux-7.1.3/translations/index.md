@@ -1,5 +1,5 @@
 
-## Translations
+# Translations
 
 
 - [zh_CN/index](zh_CN/index)
@@ -11,7 +11,7 @@
 - [sp_SP/index](sp_SP/index)
 
 
-### Disclaimer
+## Disclaimer
 
 
 

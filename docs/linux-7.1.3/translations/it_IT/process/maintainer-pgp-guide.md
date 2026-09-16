@@ -1,4 +1,6 @@
 
+# maintainer-pgp-guide
+
 :Original: Documentation/process/maintainer-pgp-guide.rst <pgpguide>
 :Translator: Alessia Mantegazza <amantegazza@vaga.pv.it>
 
@@ -26,6 +28,7 @@ affidabili tra sviluppatori attraverso lo scambio di email firmate con PGP.
 Il codice sorgente del kernel Linux è disponibile principalmente in due
 formati:
 
+
 - repositori distribuiti di sorgenti (git)
 - rilasci periodici di istantanee (archivi tar)
 
@@ -34,6 +37,7 @@ sviluppatori che hanno creato i rilasci ufficiali del kernel. Queste firme
 offrono una garanzia crittografica che le versioni scaricabili rese disponibili
 via kernel.org, o altri portali, siano identiche a quelle che gli sviluppatori
 hanno sul loro posto di lavoro. A tal scopo:
+
 
 - i repositori git forniscono firme PGP per ogni tag
 - gli archivi tar hanno firme separate per ogni archivio
@@ -84,6 +88,7 @@ che userete il comando `gpg` e funzionerà in **background** con l'obiettivo di
 individuare la passphrase. Ci sono due opzioni che dovreste conoscere
 per personalizzare la scadenza della passphrase nella cache:
 
+
 - `default-cache-ttl` (secondi): Se usate ancora la stessa chiave prima
   che il time-to-live termini, il conto alla rovescia si resetterà per un
   altro periodo. Di base è di 600 (10 minuti).
@@ -127,6 +132,7 @@ una collezione di sottochiavi indipendenti usate per diversi scopi in funzione
 delle capacità assegnate al momento della creazione. Una chiave PGP può avere
 quattro capacità:
 
+
 - **[S]** può essere usata per firmare
 - **[E]** può essere usata per criptare
 - **[A]** può essere usata per autenticare
@@ -141,6 +147,7 @@ a questa chiave chiamandola "La chiave di certificazione".
 
 I seguenti punti sono molto importanti:
 
+
 1. Tutte le sottochiavi sono indipendenti. Se perdete una sottochiave privata
    non potrete recuperarla usando le altre.
 2. Ad eccezione della chiave di certificazione, ci possono essere più
@@ -154,12 +161,14 @@ I seguenti punti sono molto importanti:
 La chiave con capacità **[C]** (certificazione) è la sola che può essere usata
 per indicare relazioni fra chiavi. Solo la chiave **[C]** può essere usata per:
 
+
 - aggiungere o revocare altre chiavi (sottochiavi) che hanno capacità S/E/A;
 - aggiungere, modificare o eliminare le identità (unids) associate alla chiave;
 - aggiungere o modificare la propria data di scadenza o delle sottochiavi;
 - firmare le chiavi di altre persone a scopo di creare una rete di fiducia.
 
 Di base, alla creazione di nuove chiavi, GnuPG genera quanto segue:
+
 
 - Una chiave la capacità di certificazione che quella di firma (**[SC]**)
 - Una sottochiave separata con capacità di criptare (**[E]**)
@@ -298,6 +307,7 @@ sottochiavi, o firmare le chiavi di altre persone.
 I file che si trovano nella vostra cartella home non sono poi così ben protetti
 come potreste pensare. Potrebbero essere letti o trafugati in diversi modi:
 
+
 - accidentalmente quando fate una rapida copia della cartella home per
   configurare una nuova postazione
 - da un amministratore di sistema negligente o malintenzionato
@@ -416,6 +426,7 @@ A meno che tutti i vostri computer dispongano di lettori smartcard, il modo
 più semplice è equipaggiarsi di un dispositivo USB specializzato che
 implementi le funzionalità delle smartcard.  Sul mercato ci sono diverse
 soluzioni disponibili:
+
 
 - `Nitrokey Start`_: è Open hardware e Free Software, è basata sul progetto
   `GnuK`_ della FSIJ. Questo è uno dei pochi dispositivi a supportare le chiavi
@@ -666,6 +677,7 @@ Se dovete firmare tag o commit su un sistema remoto, potete ridirezionare il
 vostro gpg-agent attraverso ssh. Consultate le istruzioni disponibili nella wiki
 GnuPG:
 
+
 - `Agent Forwarding over SSH`_
 
 Funziona senza troppi intoppi se avete la possibilità di modificare le
@@ -746,7 +758,7 @@ Se state verificando il tag di qualcun altro, allora dovrete importare
 la loro chiave PGP. Fate riferimento alla sezione "it_verify_identities"
 che troverete più avanti.
 
-#### Configurare git per firmare sempre i tag con annotazione
+## Configurare git per firmare sempre i tag con annotazione
 
 
 Se state creando un tag con annotazione è molto probabile che vogliate
@@ -774,6 +786,7 @@ o altri), allora la raccomandazione è di firmare tutti i vostri commit
 anche se gli sviluppatori non ne beneficeranno direttamente.
 
 Vi raccomandiamo di farlo per i seguenti motivi:
+
 
 1. Se dovesse mai esserci la necessità di fare delle analisi forensi o
    tracciare la provenienza di un codice, anche sorgenti mantenuti
@@ -817,6 +830,7 @@ firma delle email (PGP-Mime o PGP-inline) tendono a causare problemi
 nell'attività di revisione del codice. Si suggerisce, invece, di utilizare lo
 strumento sviluppato da kernel.org che mette nell'intestazione del messaggio
 un'attestazione delle firme crittografiche (tipo DKIM):
+
 
 - `Patatt Patch Attestation`_
 
@@ -940,6 +954,7 @@ di base di GnuPG v2). Per farlo, aggiungete (o modificate) l'impostazione
 
 
 Il progetto kernel.org mantiene un repositorio git con le chiavi pubbliche degli sviluppatori in alternativa alla replica dei server di chiavi che negli ultimi anni sono spariti. La documentazione completa su come impostare il repositorio come vostra sorgente di chiavi pubbliche può essere trovato qui:
+
 
 - `Kernel developer PGP Keyring`_
 

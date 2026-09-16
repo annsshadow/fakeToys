@@ -1,7 +1,10 @@
 
+# refcount-vs-atomic
+
 :Original: Documentation/core-api/refcount-vs-atomic.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -63,10 +66,12 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - atomic_set() --> refcount_set()
  - atomic_read() --> refcount_read()
 
 内存顺序保证变化:
+
 
  - none (两者都是完全无序的)
 
@@ -76,10 +81,12 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - atomic_inc() --> refcount_inc()
  - atomic_add() --> refcount_add()
 
 内存顺序保证变化:
+
 
  - none (两者都是完全无序的)
 
@@ -88,9 +95,11 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - atomic_dec() --> refcount_dec()
 
 内存顺序保证变化:
+
 
  - 完全无序的 --> RELEASE顺序
 
@@ -100,10 +109,12 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - atomic_inc_not_zero() --> refcount_inc_not_zero()
  - 无原子性对应函数 --> refcount_add_not_zero()
 
 内存顺序保证变化:
+
 
  - 完全有序的 --> 控制依赖于存储的成功
 
@@ -114,10 +125,12 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - atomic_dec_and_test() --> refcount_dec_and_test()
  - atomic_sub_and_test() --> refcount_sub_and_test()
 
 内存顺序保证变化:
+
 
  - 完全有序的 --> RELEASE顺序 + 成功后ACQUIRE顺序
 
@@ -127,10 +140,12 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - 无原子性对应函数 --> refcount_dec_if_one()
  - `atomic_add_unless(&var, -1, 1)` --> `refcount_dec_not_one(&var)`
 
 内存顺序保证变化:
+
 
  - 完全有序的 --> RELEASE顺序 + 控制依赖
 
@@ -141,9 +156,11 @@ smp_acquire__after_ctrl_dep()实现的。
 
 函数变化:
 
+
  - atomic_dec_and_lock() --> refcount_dec_and_lock()
  - atomic_dec_and_mutex_lock() --> refcount_dec_and_mutex_lock()
 
 内存顺序保证变化:
+
 
  - 完全有序 --> RELEASE顺序 + 控制依赖 + 持有

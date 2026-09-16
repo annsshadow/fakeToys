@@ -1,4 +1,6 @@
 
+# magic-number
+
 :Original: Documentation/staging/magic-number.rst <magicnumbers>
 :Translator: Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 

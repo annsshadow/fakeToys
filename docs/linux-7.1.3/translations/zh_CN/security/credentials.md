@@ -1,4 +1,6 @@
 
+# credentials
+
 :Original: Documentation/security/credentials.rst
 
 :翻译:
@@ -451,6 +453,7 @@ const指针上操作，因此不需要进行类型转换，但需要临时放弃
 
 有一些函数用来辅助凭据管理:
 
+
  - `void put_cred(const struct cred *cred);`
 
 	 这将释放对给定凭据集的引用。如果引用计数为零，凭据集将由
@@ -485,6 +488,7 @@ const指针上操作，因此不需要进行类型转换，但需要临时放弃
 
 在某些情况下，需要覆盖VFS使用的凭据，可以通过使用不同的凭据集调用
 如 `vfs_mkdir()` 来实现。以下是一些进行此操作的位置:
+
 
  - `sys_faccessat()`.
  - `vfs_coredump()`.

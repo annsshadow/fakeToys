@@ -1,7 +1,10 @@
 
+# sysfs-platform_profile
+
 :Original: Documentation/userspace-api/sysfs-platform_profile.rst
 
 :翻译:
+
 
  李睿 Rui Li <me@lirui.org>
 

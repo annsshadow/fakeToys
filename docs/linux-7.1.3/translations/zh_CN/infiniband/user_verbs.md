@@ -1,11 +1,15 @@
 
+# user_verbs
+
 :Original: Documentation/infiniband/user_verbs.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  王普宇 Puyu Wang <realpuyuwang@gmail.com>
  时奎亮 Alex Shi <alexs@kernel.org>
@@ -62,6 +66,7 @@
     KERNEL=="uverbs*", NAME="infiniband/%k"
 
   可以使用。 这将创建设备节点，名为::
+
 
     /dev/infiniband/uverbs0
 

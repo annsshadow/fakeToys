@@ -1,4 +1,6 @@
 
+# management-style
+
 :Original: [../../../process/management-style](../../../process/management-style)
 :Translator: Alessia Mantegazza <amantegazza@vaga.pv.it>
 
@@ -32,6 +34,7 @@ e di non leggerlo. Bruciatelo, è un grande gesto simbolico.
 	 di come rispondere.
 
 Comunque, partiamo:
+
 
 
 ### 1) Le decisioni
@@ -84,6 +87,7 @@ così grossa, dato che può essere facilmente annullata.
 
 È emerso che alcune persone hanno dei problemi con questo tipo di approccio,
 questo per due ragioni:
+
 
  - ammettere di essere degli idioti è più difficile di quanto sembri.  A tutti
    noi piace mantenere le apparenze, ed uscire allo scoperto in pubblico per
@@ -152,6 +156,7 @@ diviene un no-no secondo la sezione it_decisions.
 
 Esistono alcune semplici regole qui:
 
+
  (1) non chiamate le persone teste di c*** (al meno, non in pubblico)
  (2) imparate a scusarvi quando dimenticate la regola (1)
 
@@ -165,6 +170,7 @@ praticamente **tutti** testa di c**, e spesso **sarete** nel giusto), più
 difficile sarà scusarvi successivamente.
 
 Per risolvere questo problema, avete due possibilità:
+
 
  - diventare davvero bravi nello scusarsi
  - essere amabili così che nessuno finirà col sentirsi preso di mira.  Siate

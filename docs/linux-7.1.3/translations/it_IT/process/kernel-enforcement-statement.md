@@ -1,4 +1,6 @@
 
+# kernel-enforcement-statement
+
 :Original: Documentation/process/kernel-enforcement-statement.rst <process_statement_kernel>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -22,6 +24,7 @@ migliore interesse della nostra comunità di sviluppo di impegnarci nel
 rispettare i seguenti obblighi nei confronti degli utenti del kernel Linux
 per conto nostro e di qualsiasi successore ai nostri interessi sul diritto
 d'autore:
+
 
     Malgrado le clausole di risoluzione della licenza GPL-2.0, abbiamo
     concordato che è nel migliore interesse della nostra comunità di sviluppo

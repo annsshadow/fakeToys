@@ -1,8 +1,11 @@
 
 
+# subsystem-apis
+
 :Original: Documentation/subsystem-apis.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -26,6 +29,7 @@
 
 TODOList:
 
+
 - timers/index
 
 ### 人机接口
@@ -34,6 +38,7 @@ TODOList:
 - [sound/index](sound/index)
 
 TODOList:
+
 
 - input/index
 - hid/index
@@ -47,6 +52,7 @@ TODOList:
 
 TODOList:
 
+
 - networking/index
 - netlabel/index
 - isdn/index
@@ -59,6 +65,7 @@ TODOList:
 - [scsi/index](scsi/index)
 
 TODOList:
+
 
 - cdrom/index
 - target/index
@@ -74,6 +81,7 @@ TODOList:
 - [peci/index](peci/index)
 
 TODOList:
+
 
 - fpga/index
 - i2c/index

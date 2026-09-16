@@ -1,11 +1,15 @@
 
+# link_power_management_policy
+
 :Original: Documentation/scsi/link_power_management_policy.rst
 
 :翻译:
 
+
  郝栋栋 doubled <doubled@leap-io-kernel.com>
 
 :校译:
+
 
 
 

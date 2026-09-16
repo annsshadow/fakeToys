@@ -1,7 +1,10 @@
 
+# index
+
 :Original: Documentation/power/index.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -12,6 +15,7 @@
 - [opp](opp)
 
 TODOList:
+
 
     - apm-acpi
     - basic-pm-debugging

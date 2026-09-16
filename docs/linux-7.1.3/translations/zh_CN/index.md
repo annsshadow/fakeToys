@@ -1,5 +1,7 @@
 
 
+# index
+
 	\renewcommand\thesection*
 	\renewcommand\thesubsection*
 	\kerneldocCJKon
@@ -25,7 +27,7 @@
 
 翻译文档本身是一件很简单的事情，但是提交补丁需要注意一些细节，为了保证内核中文文档的高质量可持续发展，提供了一份翻译指南。
 
-- [how-to.rst](how-to.rst)
+- [how-to.rst](how-to.md)
 
 ### 与Linux 内核社区一起工作
 
@@ -62,6 +64,7 @@
 
 TODOList:
 
+
 - trace/index
 - fault-injection/index
 - livepatch/index
@@ -74,11 +77,12 @@ TODOList:
 和查找内核用户空间API信息的程序开发人员。
 
 - [admin-guide/index](admin-guide/index)
-- [admin-guide/reporting-issues.rst](admin-guide/reporting-issues.rst)
+- [admin-guide/reporting-issues.rst](admin-guide/reporting-issues.md)
 - [userspace-api/index](userspace-api/index)
 - [内核构建系统](kbuild/index)
 
 TODOList:
+
 
 - 用户空间工具 <tools/index>
 
@@ -92,6 +96,7 @@ TODOList:
 - [devicetree/index](devicetree/index)
 
 TODOList:
+
 
 - firmware-guide/index
 

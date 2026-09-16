@@ -1,7 +1,10 @@
 
+# coding-guidelines
+
 :Original: Documentation/rust/coding-guidelines.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -108,11 +111,13 @@
 这两种注释之间更容易地移动内容。比如说:
 
 
+
 	// `object` is ready to be handled now.
 	f(object);
 
 此外，就像文档一样，注释在句子的开头要大写，并以句号结束（即使是单句）。这包括 `// SAFETY:`,
 `// TODO:` 和其他“标记”的注释，例如:
+
 
 
 	// FIXME: The error should be handled properly.
@@ -121,6 +126,7 @@
 的实现者又是用户，这种区分也是有用的。事实上，有时同时使用注释和文档是很有用的。例如，用
 于 `TODO` 列表或对文档本身的注释。对于后一种情况，注释可以插在中间；也就是说，离要注
 释的文档行更近。对于其他情况，注释会写在文档之后，例如:
+
 
 
 	/// Returns a new [`Foo`].
@@ -149,6 +155,7 @@
 解释了为什么该块内的代码是正确/健全的，即为什么它在任何情况下都不会触发未定义行为，例如:
 
 
+
 	// SAFETY: `p` is valid by the safety requirements.
 	unsafe { *p = 0; }
 
@@ -169,6 +176,7 @@ Rust内核代码不像C内核代码那样被记录下来（即通过kernel-doc�
 https://commonmark.org/help/
 
 一个记录良好的Rust函数可能是这样的:
+
 
 
 	/// Returns the contained [`Some`] value, consuming the `self` value,
@@ -197,6 +205,7 @@ https://commonmark.org/help/
 
 这个例子展示了一些 `rustdoc` 的特性和内核中遵循的一些惯例:
 
+
 - 第一段必须是一个简单的句子，简要地描述被记录的项目的作用。进一步的解释必须放在额
   外的段落中。
 
@@ -221,14 +230,17 @@ https://commonmark.org/help/
 
 要了解更多关于如何编写Rust和拓展功能的文档，请看看 `rustdoc` 这本书，网址是:
 
+
 	https://doc.rust-lang.org/rustdoc/how-to-write-documentation.html
 
 此外，内核支持通过在链接目标前添加 `srctree/` 来创建相对于源代码树的链接。例如:
 
 
+
        //! C header: [`include/linux/printk.h`](srctree/include/linux/printk.h)
 
 或者:
+
 
 
        /// [`struct mutex`]: srctree/include/linux/mutex.h
@@ -255,6 +267,7 @@ Rust 内核代码使用类型别名（如 `c_int`）来引用 C 类型（如 `in
 
 Rust内核代码遵循通常的Rust命名空间:
 
+
 	https://rust-lang.github.io/api-guidelines/naming.html
 
 当现有的C语言概念（如宏、函数、对象......）被包装成Rust抽象时，应该使用尽可能接近C语
@@ -265,10 +278,12 @@ Rust内核代码遵循通常的Rust命名空间:
 中重复。例如，在包装常量时，如:
 
 
+
 	#define GPIO_LINE_DIRECTION_IN	0
 	#define GPIO_LINE_DIRECTION_OUT	1
 
 在Rust中的等价物可能是这样的（忽略文档）。:
+
 
 
 	pub mod gpio {
@@ -284,7 +299,7 @@ Rust内核代码遵循通常的Rust命名空间:
 : gpio_line_direction::GPIO_LINE_DIRECTION_IN`` 。
 
 
-### 代码检查提示（Lints）
+## 代码检查提示（Lints）
 
 
 在 Rust 中，可以在局部 `allow` 特定的警告（诊断信息、代码检查提示（lint）），
@@ -410,7 +425,7 @@ Rust内核代码遵循通常的Rust命名空间:
 
 	https://doc.rust-lang.org/stable/reference/attributes/diagnostics.html
 
-### 错误处理
+## 错误处理
 
 
 有关 Rust for Linux 特定错误处理的背景和指南，请参阅：

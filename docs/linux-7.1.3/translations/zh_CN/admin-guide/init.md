@@ -1,7 +1,10 @@
 
+# init
+
 :Original: [../../../admin-guide/init](../../../admin-guide/init)
 
 :译者:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -9,6 +12,7 @@
 
 
 :作者:
+
 
  Andreas Mohr <andi at lisas period de>
 

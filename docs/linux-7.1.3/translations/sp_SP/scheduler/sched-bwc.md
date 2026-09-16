@@ -1,4 +1,6 @@
 
+# sched-bwc
+
 :Original: Documentation/scheduler/sched-design-CFS.rst <sched_design_CFS>
 :Translator: Sergio González Collado <sergio.collado@gmail.com>
 
@@ -38,6 +40,7 @@ devolver, con el coste de una mayor interferencia hacia los otros usuarios
 del sistema. Todo acotado perfectamente.
 
 El tradicional control de ancho de banda (UP-EDF) es algo como:
+
 
   (U = \Sum u_i) <= 1
 
@@ -84,6 +87,7 @@ una CPU está infrautilizada, la interferencia es más limitada. Más detalles
 se aportan en: https://lore.kernel.org/lkml/5371BD36-55AE-4F71-B9D7-B86DC32E3D2B@linux.alibaba.com/
 
 ### Gestión:
+
 
 
 Cuota, periodo y ráfaga se gestionan dentro del subsistema de cpu por medio
@@ -152,6 +156,7 @@ Las estadísticas del ancho de banda de un grupo se exponen en 5 campos en cpu.s
 
 cpu.stat:
 
+
 - nr_periods: Número de intervalos aplicados que han pasado.
 - nr_throttled: Número de veces que el grupo ha sido restringido/limitado.
 - throttled_time: La duración de tiempo total (en nanosegundos) en las
@@ -176,6 +181,7 @@ jerarquia.
 [ Donde C es el ancho de banda de el padre, y c_i el de su hijo ]
 
 Hay dos formas en las que un grupo puede ser limitado:
+
 
         a. este consume totalmente su propia cuota en un periodo.
         b. la cuota del padre es consumida totalmente en su periodo.
@@ -233,7 +239,7 @@ están gestionadas en la misma CPU es teóricamente posible que la aplicación
 no ligada a ninguna CPU use su 1ms adicional de cuota en algunos periodos,
 y por tanto evite que la aplicación ligada a una CPU pueda usar su
 cuota completa por esa misma cantidad. En esos caso el algoritmo CFS (vea
-sched-design-CFS.rst) el que decida qué aplicación es la elegida para
+sched-design-CFS.md) el que decida qué aplicación es la elegida para
 ejecutarse, ya que ambas serán candidatas a ser ejecutadas y tienen
 cuota restante. Esta discrepancia en el tiempo de ejecución se compensará
 en los periodos siguientes cuando el sistema esté inactivo.

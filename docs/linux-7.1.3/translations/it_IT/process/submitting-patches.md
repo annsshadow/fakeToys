@@ -1,4 +1,6 @@
 
+# submitting-patches
+
 :Original: Documentation/process/submitting-patches.rst <submittingpatches>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -330,6 +332,7 @@ guida interattiva sull'uso di `git send-email`.
 Se decidete di non usare `git send-email`:
 
 
+
   Se decidete di copiare ed incollare la patch nel corpo dell'e-mail, state
   attenti che il vostro programma non corrompa il contenuto con andate
   a capo automatiche.
@@ -450,10 +453,12 @@ certifica che l'avete scritta voi o che avete il diritto di pubblicarla
 come patch open-source.  Le regole sono abbastanza semplici: se potete
 certificare quanto segue:
 
-##### Il certificato d'origine dello sviluppatore 1.1
+
+#### Il certificato d'origine dello sviluppatore 1.1
 
 
 Contribuendo a questo progetto, io certifico che:
+
 
         (a) Il contributo è stato creato interamente, o in parte, da me e che
             ho il diritto di inviarlo in accordo con la licenza open-source
@@ -500,6 +505,7 @@ manutentore, per poi giungere a Linus.
 
 
 ### Quando utilizzare Acked-by:, Cc:, e Co-developed-by:
+
 
 
 L'etichetta Signed-off-by: indica che il firmatario è stato coinvolto nello
@@ -574,6 +580,7 @@ dell'email.
 ### Utilizzare Reported-by:, Tested-by:, Reviewed-by:, Suggested-by: e Fixes:
 
 
+
 L'etichetta Reported-by da credito alle persone che trovano e riportano i bachi
 e si spera che questo possa ispirarli ad aiutarci nuovamente in futuro.
 Rammentate che se il baco è stato riportato in privato, dovrete chiedere il
@@ -593,10 +600,12 @@ stesse persone ricevano credito per il loro lavoro.
 Reviewed-by:, invece, indica che la patch è stata revisionata ed è stata
 considerata accettabile in accordo con la dichiarazione dei revisori:
 
-##### Dichiarazione di svista dei revisori
+
+#### Dichiarazione di svista dei revisori
 
 
 Offrendo la mia etichetta Reviewed-by, dichiaro quanto segue:
+
 
 	 (a) Ho effettuato una revisione tecnica di questa patch per valutarne
 	     l'adeguatezza ai fini dell'inclusione nel ramo principale del
@@ -669,6 +678,7 @@ le seguenti istruzioni.
 ```
 Il corpo di una patch canonica contiene i seguenti elementi:
 
+
   - Una riga `from` che specifica l'autore della patch, seguita
     da una riga vuota (necessaria soltanto se la persona che invia la
     patch non ne è l'autore).
@@ -740,6 +750,7 @@ applicato.
 La riga `from` dev'essere la prima nel corpo del messaggio ed è nel
 formato:
 
+
         From: Patch Author <author@example.com>
 
 La riga `from` indica chi verrà accreditato nel changelog permanente come
@@ -802,7 +813,7 @@ rimuoverle; cosa che invece viene fatta automaticamente quando vengono
 Maggiori dettagli sul formato delle patch nei riferimenti qui di seguito.
 
 
-##### Aggiungere i *backtrace* nei messaggi di commit
+#### Aggiungere i *backtrace* nei messaggi di commit
 
 
 I **backtrace** aiutano a documentare la sequenza di chiamate a funzione

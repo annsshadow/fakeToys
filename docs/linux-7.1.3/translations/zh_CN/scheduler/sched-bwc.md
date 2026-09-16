@@ -1,11 +1,15 @@
 
+# sched-bwc
+
 :Original: Documentation/scheduler/sched-bwc.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -32,6 +36,7 @@ CFS带宽控制是一个CONFIG_FAIR_GROUP_SCHED扩展，它允许指定一个组
 有很好的限制。
 
 传统的（UP-EDF）带宽控制是这样的:
+
 
   (U = \Sum u_i) <= 1
 
@@ -109,6 +114,7 @@ cpu.cfs_burst_us的值为0表示该组不能积累任何未使用的带宽。它
 
 cpu.stat:
 
+
 - nr_periods：已经过去的执行间隔的数量。
 - nr_throttled: 该组已被节流/限制的次数。
 - throttled_time: 该组的实体被限流的总时间长度（纳秒）。
@@ -122,6 +128,7 @@ cpu.stat:
 该接口强制要求单个实体的带宽总是可以达到的，即：max(c_i) <= C。然而，在总体情况下，是明确
 允许过度订阅的，以便在一个层次结构中实现工作保护语义:
 
+
   例如，Sum (c_i)可能超过C
 
 [ 其中C是父方的带宽，c_i是其子方的带宽。 ]
@@ -129,6 +136,7 @@ cpu.stat:
    译文中的父亲/孩子指的是cgroup parent, cgroup children。
 
 有两种方式可以使一个组变得限流:
+
 
 	a. 它在一段时期内完全消耗自己的配额
 	b. 父方的配额在其期间内全部用完

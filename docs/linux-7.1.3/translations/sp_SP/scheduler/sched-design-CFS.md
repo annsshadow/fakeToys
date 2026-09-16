@@ -1,4 +1,6 @@
 
+# sched-design-CFS
+
 :Original: Documentation/scheduler/sched-design-CFS.rst <sched_design_CFS>
 :Translator: Sergio González Collado <sergio.collado@gmail.com>
 
@@ -111,6 +113,7 @@ noción de "ventanas de tiempo" de la forma en que tenía el gestor de
 tareas previo, y tampoco tiene heurísticos. Únicamente hay un parámetro
 central ajustable:
 
+
    /sys/kernel/debug/sched/base_slice_ns
 
 El cual puede ser usado para afinar desde el gestor de tareas del "escritorio"
@@ -137,6 +140,7 @@ del código ha sido simplificado como resultado esto.
 
 
 CFS implementa tres políticas de gestión de tareas:
+
 
   - SCHED_NORMAL (tradicionalmente llamada SCHED_OTHER): Gestión de
     tareas que se usan para tareas normales.
@@ -180,6 +184,7 @@ sched_class, la cual tiene llamadas a las funciones que deben de llamarse
 cuando quiera que ocurra un evento interesante.
 
 Esta es la lista parcial de llamadas:
+
 
  - enqueue_task(...)
 

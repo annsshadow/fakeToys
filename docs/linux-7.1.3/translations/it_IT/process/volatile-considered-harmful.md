@@ -1,9 +1,11 @@
 
+# volatile-considered-harmful
+
 :Original: Documentation/process/volatile-considered-harmful.rst <volatile_considered_harmful>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
 
-### Perché la parola chiave "volatile" non dovrebbe essere usata
+## Perché la parola chiave "volatile" non dovrebbe essere usata
 
 
 Spesso i programmatori C considerano volatili quelle variabili che potrebbero
@@ -82,6 +84,7 @@ generalmente un atto antisociale.
 
 Ci sono comunque alcune rare situazioni dove l'uso di **volatile** nel kernel
 ha senso:
+
 
   - Le funzioni d'accesso sopracitate potrebbero usare **volatile** su quelle
     architetture che supportano l'accesso diretto alla memoria di I/O.

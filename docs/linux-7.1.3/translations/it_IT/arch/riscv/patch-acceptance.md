@@ -1,4 +1,6 @@
 
+# patch-acceptance
+
 :Original: [../../../../arch/riscv/patch-acceptance](../../../../arch/riscv/patch-acceptance)
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -25,6 +27,7 @@ nel kernel.
 
 
 RISC-V ha un'istanza di patchwork dov'è possibile controllare lo stato delle patch:
+
 
   https://patchwork.kernel.org/project/linux-riscv/list/
 

@@ -1,11 +1,15 @@
 
+# api
+
 :Original: Documentation/mm/damon/api.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## API参考
@@ -19,6 +23,7 @@
 
 该API在以下内核代码中:
 
+
 include/linux/damon.h
 
 
@@ -26,5 +31,6 @@ include/linux/damon.h
 
 
 该API在以下内核代码中:
+
 
 mm/damon/core.c

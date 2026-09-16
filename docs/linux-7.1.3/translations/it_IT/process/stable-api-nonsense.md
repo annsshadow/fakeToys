@@ -1,4 +1,6 @@
 
+# stable-api-nonsense
+
 :Original: Documentation/process/stable-api-nonsense.rst <stable_api_nonsense>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -63,6 +65,7 @@ conseguenza un'interfaccia binaria dovrebbe essere anche'essa stabile, giusto?
 Sbagliato.  Prendete in considerazione i seguenti fatti che riguardano il
 kernel Linux:
 
+
   - A seconda della versione del compilatore C che state utilizzando, diverse
     strutture dati del kernel avranno un allineamento diverso, e possibilmente
     un modo diverso di includere le funzioni (renderle inline oppure no).
@@ -71,6 +74,7 @@ kernel Linux:
 
   - In base alle opzioni che sono state selezionate per generare il kernel,
     un certo numero di cose potrebbero succedere:
+
 
       - strutture dati differenti potrebbero contenere campi differenti
       - alcune funzioni potrebbero non essere implementate (per esempio,
@@ -117,6 +121,7 @@ a funzionare senza problemi.
 Portiamo ad esempio l'interfaccia interna per il sottosistema USB che ha subito
 tre ristrutturazioni nel corso della sua vita.  Queste ristrutturazioni furono
 fatte per risolvere diversi problemi:
+
 
   - È stato fatto un cambiamento da un flusso di dati sincrono ad uno
     asincrono.  Questo ha ridotto la complessità di molti driver e ha
@@ -181,6 +186,7 @@ con un minimo sforzo da parte vostra.
 
 Avere il proprio driver nei sorgenti principali del kernel ha i seguenti
 vantaggi:
+
 
   - La qualità del driver aumenterà e i costi di manutenzione (per lo
     sviluppatore originale) diminuiranno.

@@ -1,11 +1,15 @@
 
+# page_table_check
+
 :Original: Documentation/mm/page_table_check.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## 页表检查
@@ -44,6 +48,7 @@
 
 
 用以下方法构建内核:
+
 
 - PAGE_TABLE_CHECK=y
   注意，它只能在ARCH_SUPPORTS_PAGE_TABLE_CHECK可用的平台上启用。

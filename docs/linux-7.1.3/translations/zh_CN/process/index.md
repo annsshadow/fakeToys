@@ -1,4 +1,6 @@
 
+# index
+
 	\renewcommand\thesection*
 	\renewcommand\thesubsection*
 
@@ -6,6 +8,7 @@
 :Original: Documentation/process/index.rst
 
 :翻译:
+
 
  Alex Shi <alex.shi@linux.alibaba.com>
 
@@ -33,16 +36,19 @@
 
 TODOLIST:
 
+
 - handling-regressions
 - maintainer-handbooks
 
 安全方面, 请阅读:
+
 
 - [embargoed-hardware-issues](embargoed-hardware-issues)
 - [cve](cve)
 - [security-bugs](security-bugs)
 
 TODOLIST:
+
 
 - handling-regressions
 
@@ -56,6 +62,7 @@ TODOLIST:
 - [researcher-guidelines](researcher-guidelines)
 
 TODOLIST:
+
 
 - changes
 - kernel-docs
@@ -72,6 +79,7 @@ TODOLIST:
 - [../core-api/unaligned-memory-access](../core-api/unaligned-memory-access)
 
 TODOLIST:
+
 
 - applying-patches
 - backporting

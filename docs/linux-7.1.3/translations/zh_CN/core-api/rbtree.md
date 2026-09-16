@@ -1,7 +1,10 @@
 
+# rbtree
+
 :Original: Documentation/core-api/rbtree.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -63,6 +66,7 @@ Linux的红黑树实现对速度进行了优化，因此比传统的实现少一
 宏访问。此外，个体成员可直接用rb_entry(node, type, member)访问。
 
 每颗红黑树的根是一个rb_root数据结构，它由以下方式初始化为空:
+
 
   struct rb_root mytree = RB_ROOT;
 
@@ -252,7 +256,7 @@ rb_erase_augmented()编译后的代码可能会内联传播、复制回调，这
 的代码大小。
 
 
-##### 使用示例
+#### 使用示例
 
 
 区间树是增强型红黑树的一个例子。参考Cormen，Leiserson，Rivest和Stein写的

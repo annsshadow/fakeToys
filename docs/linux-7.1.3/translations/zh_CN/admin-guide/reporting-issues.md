@@ -1,9 +1,12 @@
 
 
 
+# reporting-issues
+
 :Original: Documentation/admin-guide/reporting-issues.rst
 
 :译者:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 

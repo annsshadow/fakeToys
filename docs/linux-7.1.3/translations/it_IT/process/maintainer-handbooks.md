@@ -1,5 +1,7 @@
 
 
+# maintainer-handbooks
+
 :Original: Documentation/process/maintainer-handbooks.rst
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -13,5 +15,6 @@ descritte in :ref:`Documentation/translations/it_IT/process
 <it_development_process_main>`.
 
 Indice:
+
 
 - [maintainer-tip](maintainer-tip)

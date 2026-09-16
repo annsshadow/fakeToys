@@ -1,4 +1,6 @@
 
+# clang-format
+
 :Original: Documentation/dev-tools/clang-format.rst <clangformat>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -10,6 +12,7 @@ un gruppo di regole ed euristiche. Come tutti gli strumenti, non è perfetto
 e non copre tutti i singoli casi, ma è abbastanza buono per essere utile.
 
 `clang-format` può essere usato per diversi fini:
+
 
   - Per riformattare rapidamente un blocco di codice secondo lo stile del
     kernel. Particolarmente utile quando si sposta del codice e lo si
@@ -38,9 +41,11 @@ Linux più popolari. Cercate `clang-format` nel vostro repositorio.
 Altrimenti, potete scaricare una versione pre-generata dei binari di LLVM/clang
 oppure generarlo dai codici sorgenti:
 
+
     https://releases.llvm.org/download.html
 
 Troverete più informazioni ai seguenti indirizzi:
+
 
     https://clang.llvm.org/docs/ClangFormat.html
 
@@ -71,6 +76,7 @@ le nuove funzionalità/versioni di `clang-format`.
 potrete revisionare facilmente delle modifiche e **git diff**.
 La documentazione si trova al seguente indirizzo:
 
+
     https://clang.llvm.org/docs/ClangFormat.html#script-for-patch-reformatting
 
 Per evitare che `clang-format` formatti alcune parti di un file, potete
@@ -93,7 +99,7 @@ utilizzato.
 
 
 
-### Riformattare blocchi di codice
+## Riformattare blocchi di codice
 
 
 Utilizzando dei plugin per il vostro editor, potete riformattare una
@@ -108,6 +114,7 @@ può essere davvero molto utile.
 Questo programma si integra con molti dei più popolari editor. Alcuni di
 essi come vim, emacs, BBEdit, Visaul Studio, lo supportano direttamente.
 Al seguente indirizzo troverete le istruzioni:
+
 
     https://clang.llvm.org/docs/ClangFormat.html
 
@@ -129,6 +136,7 @@ regolarmente, imparerete rapidamente a evitare/ignorare certi problemi.
 
 In particolare, quelli più comuni che noterete sono:
 
+
 ```
 
         #define TRACING_MAP_BITS_DEFAULT       11
@@ -137,11 +145,13 @@ In particolare, quelli più comuni che noterete sono:
 
     contro::
 
+
         #define TRACING_MAP_BITS_DEFAULT 11
         #define TRACING_MAP_BITS_MAX 17
         #define TRACING_MAP_BITS_MIN 7
 
   - Allineamento dei valori iniziali, per esempio::
+
 
         static const struct file_operations uprobe_events_ops = {
                 .owner          = THIS_MODULE,
@@ -153,6 +163,7 @@ In particolare, quelli più comuni che noterete sono:
         };
 
     contro::
+
 
         static const struct file_operations uprobe_events_ops = {
                 .owner = THIS_MODULE,
@@ -166,7 +177,7 @@ In particolare, quelli più comuni che noterete sono:
 
 ```
 
-### Funzionalità e opzioni aggiuntive
+## Funzionalità e opzioni aggiuntive
 
 
 Al fine di minimizzare le differenze fra il codice attuale e l'output
@@ -180,6 +191,7 @@ stile del kernel potrebbe essere diverso e abilitare alcune di queste
 opzioni potrebbe dare risultati migliori.
 
 Per esempio:
+
 
   - Allineare assegnamenti (`AlignConsecutiveAssignments`).
 

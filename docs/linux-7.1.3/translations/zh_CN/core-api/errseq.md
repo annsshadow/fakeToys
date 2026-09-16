@@ -1,12 +1,16 @@
 
 
+# errseq
+
 :Original: Documentation/core-api/errseq.rst
 
 :翻译:
 
+
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
  吴想成 Wu Xiangcheng <bobwxc@email.cn>
 
@@ -145,5 +149,6 @@
 
 
 该API在以下内核代码中:
+
 
 lib/errseq.c

@@ -1,11 +1,15 @@
 
+# user_mad
+
 :Original: Documentation/infiniband/user_mad.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  王普宇 Puyu Wang <realpuyuwang@gmail.com>
  时奎亮 Alex Shi <alexs@kernel.org>
@@ -51,6 +55,7 @@
   使用read()接收MAD。现在接收端支持RMPP。传给read()的缓冲区必须至少是
   一个struct ib_user_mad + 256字节。比如说:
 
+
   如果传递的缓冲区不足以容纳收到的MAD（RMPP），errno被设置为ENOSPC，需
   要的缓冲区长度被设置在mad.length中。
 
@@ -65,6 +70,7 @@
 	}
 
   RMPP读取示例::
+
 
 	struct ib_user_mad *mad;
 	mad = malloc(sizeof *mad + 256);
@@ -150,15 +156,18 @@
 
   的规则可以被使用。它将创建节点的名字::
 
+
     /dev/infiniband/umad0
     /dev/infiniband/issm0
 
   为第一个端口，以此类推。与这些设备相关的infiniband设备和端口可以从以下文件中确定::
 
+
     /sys/class/infiniband_mad/umad0/ibdev
     /sys/class/infiniband_mad/umad0/port
 
   和::
+
 
     /sys/class/infiniband_mad/issm0/ibdev
     /sys/class/infiniband_mad/issm0/port

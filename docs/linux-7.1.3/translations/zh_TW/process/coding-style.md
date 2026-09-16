@@ -1,5 +1,7 @@
 
 
+# coding-style
+
 :Original: Documentation/process/coding-style.rst
 
 
@@ -201,7 +203,7 @@ C 語言風格中另外一個常見問題是大括號的放置。和縮進大小
 		otherwise();
 	}
 
-######## 3.1) 空格
+#### 3.1) 空格
 
 
 Linux 內核的空格使用方式 (主要) 取決於它是用於函數還是關鍵字。(大多數) 關鍵字
@@ -237,6 +239,7 @@ Linux 內核的空格使用方式 (主要) 取決於它是用於函數還是關�
 ```
 
 	=  +  -  <  >  *  /  %  |  &  ^  <=  >=  ==  !=  ?  :
+
 
 ```
 ```
@@ -348,6 +351,7 @@ C 程序員不使用類似 ThisVariableIsATemporaryCounter 這樣華麗的名字
 
      .. note::
 
+
        要這樣做，必須事出有因。如果某個變量是 ``unsigned long`` ，那麼沒有必要
 
 	typedef unsigned long myflags_t;
@@ -413,7 +417,7 @@ C 程序員不使用類似 ThisVariableIsATemporaryCounter 這樣華麗的名字
 	}
 	EXPORT_SYMBOL(system_is_up);
 
-######## 6.1) 函數原型
+#### 6.1) 函數原型
 
 
 在函數原型中包含參數名和它們的數據類型。雖然 C 語言裏沒有這樣的要求，但在
@@ -764,7 +768,7 @@ cpp 手冊對宏的講解很詳細。gcc internals 手冊也詳細講解了 RTL�
 言經常用到它。
 
 
-### 13) 打印內核消息
+## 13) 打印內核消息
 
 
 內核開發者應該看起來有文化。請一定注意內核信息的拼寫，以給人良好的印象。
@@ -915,7 +919,7 @@ Linux內核布爾（bool）類型是C99 _Bool類型的別名。布爾值只能�
 在你的代碼裏自己重新定義。
 
 
-### 19) 編輯器模式行和其他需要羅嗦的事情
+## 19) 編輯器模式行和其他需要羅嗦的事情
 
 
 有一些編輯器可以解釋嵌入在源文件裏的由一些特殊標記標明的配置信息。比如，emacs
@@ -1008,7 +1012,7 @@ Vim 能夠解析這樣的標記：
 	#endif /** CONFIG_SOMETHING **/
 
 
-### 附錄 I) 參考資料
+## 附錄 I) 參考資料
 
 
 The C Programming Language, 2nd Edition

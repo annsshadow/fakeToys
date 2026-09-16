@@ -1,12 +1,16 @@
 
+# cachetlb
+
 :Original: Documentation/core-api/cachetlb.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -113,6 +117,7 @@ HyperSparc cpu就是这样一个具有这种属性的cpu。
 且不依赖于翻译信息。
 
 下面逐个列出这些程序:
+
 
 1) `void flush_cache_mm(struct mm_struct *mm)`
 
@@ -270,6 +275,7 @@ HyperSparc cpu就是这样一个具有这种属性的cpu。
 	中，会对这个标志位进行检查，如果设置了，就进行刷新，并清除标志位。
 
 	.. important::
+
 
 				通常很重要的是，如果你推迟刷新，实际的刷新发生在同一个
 				CPU上，因为它将cpu存储到页面上，使其变脏。同样，请看

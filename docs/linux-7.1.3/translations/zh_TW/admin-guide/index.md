@@ -1,5 +1,7 @@
 
 
+# index
+
 :Original: [../../../admin-guide/index](../../../admin-guide/index)
 :Translator: Alex Shi <alex.shi@linux.alibaba.com>
              胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
@@ -17,6 +19,7 @@
 
 Todolist:
 
+
 - kernel-parameters
 - devices
 - sysctl/index
@@ -24,6 +27,7 @@ Todolist:
 本節介紹CPU漏洞及其緩解措施。
 
 Todolist:
+
 
 - hw-vuln/index
 
@@ -39,6 +43,7 @@ Todolist:
 
 Todolist:
 
+
 - ramoops
 - dynamic-debug-howto
 - kdump/index
@@ -48,6 +53,7 @@ Todolist:
 方面的文檔。
 
 Todolist:
+
 
 - sysfs-rules
 
@@ -64,6 +70,7 @@ Todolist:
 - [mm/index](mm/index)
 
 Todolist:
+
 
 - acpi/index
 - aoe/index

@@ -1,5 +1,7 @@
 
 
+# locking
+
 :Original: Documentation/kernel-hacking/locking.rst <kernel_hacking_lock>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -28,12 +30,14 @@ multi-processore.
 
 In un normale programma, potete incrementare un contatore nel seguente modo:
 
+
 ```
 
           contatore++;
 
 ```
 Questo è quello che vi aspettereste che accada sempre:
+
 
 
 
@@ -54,6 +58,7 @@ Questo è quello che vi aspettereste che accada sempre:
   +------------------------------------+------------------------------------+
 
 Questo è quello che potrebbe succedere in realtà:
+
 
 
   +------------------------------------+------------------------------------+
@@ -303,6 +308,7 @@ quando si eseguono di gestori di interruzioni.
 
 Pete Zaitcev ci offre il seguente riassunto:
 
+
 - Se siete in un contesto utente (una qualsiasi chiamata di sistema)
    e volete sincronizzarvi con altri processi, usate i mutex. Potete trattenere
    il mutex e dormire (`copy_from_user(` o `kmalloc(x,GFP_KERNEL)`).
@@ -503,7 +509,7 @@ impostiamo i campi dell'oggetto prima di acquisire il **lock**. Questo è
 sicuro perché nessun altro potrà accedervi finché non lo inseriremo
 nella memoria.
 
-### Accesso dal contesto utente
+## Accesso dal contesto utente
 
 
 Ora consideriamo il caso in cui cache_find() può essere invocata
@@ -586,7 +592,7 @@ l'opzione `GFP_KERNEL` che è permessa solo in contesto utente. Ho supposto
 che cache_add() venga chiamata dal contesto utente, altrimenti
 questa opzione deve diventare un parametro di cache_add().
 
-### Esporre gli oggetti al di fuori del file
+## Esporre gli oggetti al di fuori del file
 
 
 Se i vostri oggetti contengono più informazioni, potrebbe non essere
@@ -713,7 +719,7 @@ per ogni puntatore ad un oggetto: quindi il contatore di riferimenti è 1
 quando l'oggetto viene inserito nella memoria. In altre versione il framework
 non trattiene un riferimento per se, ma diventa più complicato.
 
-#### Usare operazioni atomiche per il contatore di riferimenti
+## Usare operazioni atomiche per il contatore di riferimenti
 
 
 In sostanza, `atomic_t` viene usato come contatore di riferimenti.
@@ -805,12 +811,13 @@ contatore stesso.
      }
 
 ```
-### Proteggere l'oggetto stesso
+## Proteggere l'oggetto stesso
 
 
 In questo esempio, assumiamo che gli oggetti (ad eccezione del contatore
 di riferimenti) non cambino mai dopo la loro creazione. Se vogliamo permettere
 al nome di cambiare abbiamo tre possibilità:
+
 
 - Si può togliere static da `cache_lock` e dire agli utenti che devono
    trattenere il **lock** prima di modificare il nome di un oggetto.
@@ -825,6 +832,7 @@ al nome di cambiare abbiamo tre possibilità:
 Teoricamente, possiamo avere un **lock** per ogni campo e per ogni oggetto.
 In pratica, le varianti più comuni sono:
 
+
 - un **lock** che protegge l'infrastruttura (la lista `cache` di questo
    esempio) e gli oggetti. Questo è quello che abbiamo fatto finora.
 
@@ -836,6 +844,7 @@ In pratica, le varianti più comuni sono:
    per ogni lista), possibilmente con un **lock** per oggetto.
 
 Qui di seguito un'implementazione con "un lock per oggetto":
+
 
 ```
 
@@ -930,6 +939,7 @@ oggetto all'interno della stessa lista, otterrete uno stallo visto che
 tenterà di trattenere lo stesso **lock** due volte. Secondo, se la stessa
 interruzione software su un altro processore sta tentando di spostare
 un altro oggetto nella direzione opposta, potrebbe accadere quanto segue:
+
 
 +---------------------------------+---------------------------------+
 | CPU 1                           | CPU 2                           |
@@ -1280,7 +1290,7 @@ viene scritto: l'oggetto non viene alterato in alcun modo e quindi diventa
 molto più veloce su sistemi molti-processore grazie alla loro memoria cache.
 
 
-### Dati per processore
+## Dati per processore
 
 
 Un'altra tecnica comunemente usata per evitare la sincronizzazione è quella
@@ -1352,6 +1362,7 @@ dormire.
 
 - Accessi allo spazio utente:
 
+
    - copy_from_user()
 
    - copy_to_user()
@@ -1389,20 +1400,27 @@ contesto, o trattenendo un qualsiasi **lock**.
 
    :internal:
 
+
    :export:
+
 
 ## Riferimento per l'API dei Futex
 
 
    :internal:
 
-   :internal:
 
    :internal:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+
+
+   :internal:
+
 
 ## Approfondimenti
 

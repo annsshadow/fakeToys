@@ -1,8 +1,8 @@
 
-## Plataformas SoC com Requisitos de Conformidade de DTS
+# Plataformas SoC com Requisitos de Conformidade de DTS
 
 
-### Visão Geral
+## Visão Geral
 
 
 As plataformas SoC ou subarquiteturas devem seguir todas as regras de

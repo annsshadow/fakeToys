@@ -1,5 +1,5 @@
 
-## パッチの投稿: カーネルにコードを入れるための必須ガイド
+# パッチの投稿: カーネルにコードを入れるための必須ガイド
 
 
 
@@ -34,7 +34,7 @@ Documentation/devicetree/bindings/submitting-patches.rst を読んでくださ�
 期待事項に関する追加情報があります。次を参照してください:
 Documentation/process/maintainer-handbooks.rst.
 
-### 現在のソースツリーを入手する
+## 現在のソースツリーを入手する
 
 
 もし手元に最新のカーネルソースのリポジトリがなければ、`git` を使って取得して

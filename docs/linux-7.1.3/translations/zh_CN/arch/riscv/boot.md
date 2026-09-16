@@ -1,7 +1,10 @@
 
+# boot
+
 :Original: Documentation/arch/riscv/boot.rst
 
 :翻译:
+
 
  龙进 Jin Long <longjin@dragonos.org>
 
