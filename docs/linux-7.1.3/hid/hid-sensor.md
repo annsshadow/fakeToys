@@ -1,3 +1,5 @@
+# hid-sensor
+
 ﻿## HID Sensors 框架
 
 HID sensor 框架提供了实sensor 驱动所需的接口，这些驱动连接sensor hub。sensor hub 是一HID 设备，它提供一个符HID 1.12 sensor usage 表的报告描述符
@@ -72,6 +74,7 @@ core 驱动提供了一API，供处理驱动用来注册并获取该 usage id �
 			u32 usage_id,
 			struct hid_sensor_hub_callbacks *usage_callback):
 
+
 ```
 为某usage id 注册回调。回调函数不允许
 
@@ -79,6 +82,7 @@ core 驱动提供了一API，供处理驱动用来注册并获取该 usage id �
 
   int sensor_hub_remove_callback(struct hid_sensor_hub_device *hsdev,
 			u32 usage_id):
+
 
 ```
 移除某个 usage id 的回调
@@ -189,7 +193,7 @@ HID Sensor 规范定义了两种特殊的 sensor usage 类型。由于它们不�
   feature-0-200316-value:1
 
 ```
-##### 如何启用此类 sensor
+#### 如何启用此类 sensor
 
 
 默认情况sensor 可以处于电源门控（power gated）状态。要启用可以通过 sysfs 属“enable

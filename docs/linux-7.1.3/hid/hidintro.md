@@ -1,3 +1,5 @@
+# hidintro
+
 ﻿
 ## HID 报告描述符简
 
@@ -193,7 +195,7 @@ HID 报告描述符的基本结构HID 规范中定义，HUT “定义了一组�
 其中使用 `03 00 00 00` 表示两个按钮都被按下，而随后的 `02 00 00 00` 表示按钮 1 被释
 而按2 仍处于激活状态
 
-### Output、Input Feature 报告
+## Output、Input Feature 报告
 
 
 HID 设备可以具有 Input 报告（如鼠标示例）、Output 报告Feature 报告。“Output意味着

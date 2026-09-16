@@ -1,3 +1,5 @@
+# hidraw
+
 ﻿## HIDRAW - USB 和蓝牙人机接口设备（HID）的原始访问
 
 
@@ -12,7 +14,7 @@ hidraw 使用动态主设备号，这意味着应当依赖 udev 来创hidraw 设
 	https://web.archive.org/web/2019*/www.signal11.us
 ```
 
-### HIDRAW API
+## HIDRAW API
 
 
 ### read()
