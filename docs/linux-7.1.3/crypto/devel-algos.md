@@ -1,6 +1,8 @@
+# devel-algos
+
 ﻿## 开发密码算
 
-### 注册与注销变换
+## 注册与注销变换
 
 
 Crypto API 中有三种不同类型的注册函数。一种用于注册通用的密码学变换（cryptographic transformation），另外两种则专门用HASH 变换和压缩（COMPRESSion）变换。我们将在单独的章节讨论后两种，此处仅关注通用那一种
