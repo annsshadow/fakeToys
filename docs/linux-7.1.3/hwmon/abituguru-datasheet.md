@@ -1,3 +1,5 @@
+# abituguru-datasheet
+
 ﻿## uGuru 数据手册
 
 首先，我所知道的关uGuru 的事情并非基于来Abit 的任何帮助、提示或数据手册。我关于 uGuru 的数据是通过我薄弱的“逆向工程”知识拼凑起来的

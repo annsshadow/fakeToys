@@ -1,3 +1,5 @@
+# qnap-mcu-hwmon
+
 ﻿## 内核驱动 qnap-mcu-hwmon
 
 
@@ -6,7 +8,7 @@
 
 Author: Heiko Stuebner <heiko@sntech.de>
 
-### 描述
+## 描述
 
 
 本驱动实现了一个简单接口，通过设定 PWM 输出值来驱动风扇，并通过 hwmon 

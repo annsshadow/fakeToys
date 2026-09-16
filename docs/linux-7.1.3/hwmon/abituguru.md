@@ -1,3 +1,5 @@
+# abituguru
+
 ﻿## 内核驱动 abituguru
 
 
@@ -40,7 +42,7 @@
  - （初始逆向工程Olle Sandberg
 	  <ollebull@gmail.com> 完成
 
-### 模块参数
+## 模块参数
 
 
 - force: bool
@@ -89,4 +91,4 @@ dmesg | grep abituguru
 
 Abit uGuru 的电压和频率控制部分不受支持
 
-- [abituguru-datasheet.rst](abituguru-datasheet.rst)
+- [abituguru-datasheet.rst](abituguru-datasheet.md)

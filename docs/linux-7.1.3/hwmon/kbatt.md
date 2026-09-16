@@ -1,3 +1,5 @@
+# kbatt
+
 ﻿
 ## 内核驱动 kbatt
 
@@ -9,6 +11,7 @@
     Prefix: 'kbatt'
 
 Authors:
+
 
 	Gerhard Engleder <eg@keba.com>
 	Petar Bojanic <boja@keba.com>

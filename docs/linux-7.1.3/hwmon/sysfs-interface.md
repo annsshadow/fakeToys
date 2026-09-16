@@ -1,3 +1,5 @@
+# sysfs-interface
+
 ﻿## sysfs 文件的命名与数据格式标准
 
 
@@ -22,7 +24,7 @@ lm-sensors 3.0.0 之前，libsensors 物理"设备目录中查找硬件监控属
 
 当设hwmon sysfs 属性的值时，必须写入所需值的字符串表示，注意非数字的字符串会被解释为 0！关于写入字符串如何被解释，详见本文档末尾的 "sysfs attribute writes interpretation" 小节
 
-### 属性访问（Attribute access
+## 属性访问（Attribute access
 
 
 硬件监控 sysfs 属性可被不受限制的用户空间应用程序读取。因此，所有标ABI 属性都应对所有人可读。可写的标准 ABI 属性应仅对特权用户可写
@@ -43,7 +45,7 @@ RW	读写
 
 关于属性的完整描述，见 Documentation/ABI/testing/sysfs-class-hwmon
 
-######## 全局属性（Global attributes
+### 全局属性（Global attributes
 
 
 `name`
@@ -56,7 +58,7 @@ RW	读写
 		芯片更新读数的间隔
 
 
-######## 电压（Voltages
+##### 电压（Voltages
 
 
 `in[0-*]_min`
@@ -524,7 +526,7 @@ buf 是内核传入的带有用户输入的缓冲区。注意我们没有使strt
 
 	long v = simple_strtol(buf, NULL, 10) / 1000;
 	v = clamp_val(v, -128, 127);
-	/* 灏?v 鍐欏叆瀵勫瓨鍣?*/
+	/* 灏?v 内欏叆瀵勫瓨鍣?*/
 
 ```
 ```
@@ -538,6 +540,6 @@ buf 是内核传入的带有用户输入的缓冲区。注意我们没有使strt
 	default:
 		return -EINVAL;
 	}
-	/* 灏?v 鍐欏叆瀵勫瓨鍣?*/
+	/* 灏?v 内欏叆瀵勫瓨鍣?*/
 
 ```

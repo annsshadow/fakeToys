@@ -1,3 +1,5 @@
+# smsc47m1
+
 ﻿## 内核驱动 smsc47m1
 
 
@@ -12,6 +14,7 @@
     Prefix: 'smsc47m1'
 
     Datasheets:
+
 
 	http://www.smsc.com/media/Downloads_Public/Data_Sheets/47b272.pdf
 
@@ -39,6 +42,7 @@
 
 Authors:
 
+
      - Mark D. Studebaker <mdsxyz123@yahoo.com>,
      - Bruce Allen <ballen@uwm.edu> 及其 fan.c 程序的协助下
        - http://www.lsc-group.phys.uwm.edu/%7Eballen/driver/
@@ -46,7 +50,7 @@ Authors:
      - Gabriele Gorla <gorlik@yahoo.com>,
      - Jean Delvare <jdelvare@suse.de>
 
-### 描述
+## 描述
 
 
 标准微系统公司（SMSC）的 47M1xx Super I/O 芯片包含用于两个风扇的监控与 PWM 控制

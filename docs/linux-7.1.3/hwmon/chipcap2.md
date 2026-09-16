@@ -1,3 +1,5 @@
+# chipcap2
+
 ﻿
 ## 内核驱动 ChipCap2
 
@@ -13,6 +15,7 @@
     Datasheet: https://www.amphenol-sensors.com/en/telaire/humidity/527-humidity-sensors/3095-chipcap-2
 
 Author:
+
 
   - Javier Carrasco <javier.carrasco.cruz@gmail.com>
 

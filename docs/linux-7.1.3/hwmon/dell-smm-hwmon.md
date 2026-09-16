@@ -1,3 +1,5 @@
+# dell-smm-hwmon
+
 ﻿
 
 
@@ -40,6 +42,7 @@ Temperature sensors and fans can be queried and set via the standard
 `X` such that `/sys/class/hwmon/hwmonX/name` has content
 `dell_smm`). A number of other attributes can be read or written:
 
+
 温度和风扇可以通过 `sysfs` 上标`hwmon` 接口进行查询和设置，位于目录
 `/sys/class/hwmon/hwmonX`（其`X` 为某个值）下（查找使得
 `/sys/class/hwmon/hwmonX/name` 内容`dell_smm` 的那`X`）。还有许多其
@@ -74,6 +77,7 @@ fan number X.
 
 There exist two methods for enabling/disabling automatic BIOS fan control:
 
+
 有两种方法来启用/禁用 BIOS 自动风扇控制
 
 1. Separate SMM commands to enable/disable automatic BIOS fan control for all fans.
@@ -86,6 +90,7 @@ There exist two methods for enabling/disabling automatic BIOS fan control:
 
 The driver cannot reliably detect what method should be used on a given
 device, so instead the following heuristic is used:
+
 
 驱动无法可靠地检测在某个给定设备上应当使用哪种方法，因此改用以下启发式规则：
 
@@ -316,6 +321,7 @@ The SMM handler inside the system BIOS looks at the contents of the
 `eax`, `ebx`, `ecx`, `edx`, `esi` and `edi` registers.
 Each register has a special purpose:
 
+
 系统 BIOS 中的 SMM 处理程序会查`eax`、`ebx`、`ecx`、`edx`、`esi` `edi`
 寄存器的内容。每个寄存器都有特殊用途：
 
@@ -332,6 +338,7 @@ edi             Unknown, set to 0.
 =============== ==================================
 
 The SMM handler can signal a failure by either:
+
 
 SMM 处理程序可以通过以下任一方式发出失败信号
 
@@ -362,6 +369,7 @@ SMM。此接口不在 ACPI 表中描述，因此只能通过发出测试 SMM 调
 
 On modern Dell machines, the SMM calls are done over ACPI WMI:
 
+
 在现Dell 机器上，SMM 调用通过 ACPI WMI 完成
 
 ```
@@ -391,7 +399,7 @@ legacy SMM interface since ACPI methods need to be called in order to trigger a 
 如果旧版 SMM 接口不存在，则使WMI SMM 接口。WMI SMM 接口通常比旧SMM 接口慢，因为
 需要调ACPI 方法来触SMM
 
-### SMM command codes
+## SMM command codes
 
 ### SMM 鍛戒护鐮。
 
@@ -401,21 +409,25 @@ Command Code    Command Name            Description
 =============== ======================= ================================================
 `0x0025`      Get Fn key status       Returns the Fn key pressed after SMM:
 
+
                                         - 9th bit in `eax` indicates Volume up
                                         - 10th bit in `eax` indicates Volume down
                                         - both bits indicate Volume mute
 
 `0xa069`      Get power status        Returns current power status after SMM:
 
+
                                         - 1st bit in `eax` indicates Battery connected
                                         - 3th bit in `eax` indicates AC connected
 
 `0x00a3`      Get fan state           Returns current fan state after SMM:
 
+
                                         - 1st byte in `eax` holds the current
                                           fan state (0 - 2 or 3)
 
 `0x01a3`      Set fan state           Sets the fan speed:
+
 
                                         - 1st byte in `ebx` holds the fan number
                                         - 2nd byte in `ebx` holds the desired
@@ -423,15 +435,18 @@ Command Code    Command Name            Description
 
 `0x02a3`      Get fan speed           Returns the current fan speed in RPM:
 
+
                                         - 1st byte in `ebx` holds the fan number
                                         - 1st word in `eax` holds the current
                                           fan speed in RPM (after SMM)
 
 `0x03a3`      Get fan type            Returns the fan type:
 
+
                                         - 1st byte in `ebx` holds the fan number
                                         - 1st byte in `eax` holds the
                                           fan type (after SMM):
+
 
                                           - 5th bit indicates docking fan
                                           - 1 indicates Processor fan
@@ -443,6 +458,7 @@ Command Code    Command Name            Description
 
 `0x04a3`      Get nominal fan speed   Returns the nominal RPM in each fan state:
 
+
                                         - 1st byte in `ebx` holds the fan number
                                         - 2nd byte in `ebx` holds the fan state
                                           in question (0 - 2 or 3)
@@ -450,6 +466,7 @@ Command Code    Command Name            Description
                                           fan speed in RPM (after SMM)
 
 `0x05a3`      Get fan speed tolerance Returns the speed tolerance for each fan state:
+
 
                                         - 1st byte in `ebx` holds the fan number
                                         - 2nd byte in `ebx` holds the fan state
@@ -459,15 +476,18 @@ Command Code    Command Name            Description
 
 `0x10a3`      Get sensor temperature  Returns the measured temperature:
 
+
                                         - 1st byte in `ebx` holds the sensor number
                                         - 1st byte in `eax` holds the measured
                                           temperature (after SMM)
 
 `0x11a3`      Get sensor type         Returns the sensor type:
 
+
                                         - 1st byte in `ebx` holds the sensor number
                                         - 1st byte in `eax` holds the
                                           temperature type (after SMM):
+
 
                                           - 1 indicates CPU sensor
                                           - 2 indicates GPU sensor
@@ -478,6 +498,7 @@ Command Code    Command Name            Description
 
 `0xfea3`      Get SMM signature       Returns Dell signature if interface
                                         is supported (after SMM):
+
 
                                         - `eax` holds 1145651527
                                           (0x44494147 or "DIAG")
@@ -513,6 +534,7 @@ placeholder value, which however is not always detectable.
 
 
 The SMM calls can behave erratic on some machines:
+
 
 SMM 调用在某些机器上表现可能不稳定：
 

@@ -1,7 +1,10 @@
+# ina2xx
+
 ﻿## Kernel driver ina2xx
 
 
 Supported chips:
+
 
   - Texas Instruments INA219
 
@@ -86,7 +89,7 @@ Supported chips:
 
 Author: Lothar Felten <lothar.felten@gmail.com>
 
-### Description
+## Description
 
 
 INA219 是一款带I2C 接口的高端电流分流与功率监视器。INA219 同时监视分流压降和电源电压，具有可编程的转换时间和滤波功能

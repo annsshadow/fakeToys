@@ -1,3 +1,5 @@
+# thmc50
+
 ﻿## 内核驱动 thmc50
 
 
@@ -25,12 +27,14 @@ Author: Krzysztof Helt <krzysztof.h1@wp.pl>
 本驱动派生自 2.4 内核thmc50.c 源文件
 Credits:
 
+
   thmc50.c (2.4 内核):
+
 
  - Frodo Looijaard <frodol@dds.nl>
  - Philip Edelbrock <phil@netroedge.com>
 
-### 模块参数
+## 模块参数
 
 
 - adm1022_temp3: short 数组

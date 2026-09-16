@@ -1,3 +1,5 @@
+# mc33xs2410_hwmon
+
 ﻿## 内核驱动 mc33xs2410_hwmon
 
 
@@ -9,9 +11,10 @@
 
 Authors:
 
+
 	Dimitri Fedrau <dimitri.fedrau@liebherr.com>
 
-### 说明
+## 说明
 
 
 MC33XS2410 是一款四通道自保护高边开关（high-side switch），具备硬件监控功能，可对四个通道各自的温度、电流和电压进行监控

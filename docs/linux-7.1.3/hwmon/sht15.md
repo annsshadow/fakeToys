@@ -1,7 +1,10 @@
+# sht15
+
 ﻿## 内核驱动 sht15
 
 
 Authors:
+
 
   - Wouter Horre
   - Jonathan Cameron
@@ -34,7 +37,7 @@ Datasheet: 可在 Sensirion 网站公开获取
 
 	http://www.sensirion.ch/en/pdf/product_information/Datasheet-humidity-sensor-SHT1x.pdf
 
-### 描述
+## 描述
 
 
 SHT10、SHT11、SHT15、SHT71 SHT75 是湿度与温度传感器

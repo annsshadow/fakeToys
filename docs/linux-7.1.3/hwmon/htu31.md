@@ -1,3 +1,5 @@
+# htu31
+
 ﻿## 内核驱动 HTU31
 
 
@@ -13,9 +15,10 @@
 
 Author:
 
+
   - Andrei Lalaev <andrey.lalaev@gmail.com>
 
-### 说明
+## 说明
 
 
 HTU31 是一款湿度与温度传感器

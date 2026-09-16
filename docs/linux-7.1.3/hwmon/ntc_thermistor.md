@@ -1,3 +1,5 @@
+# ntc_thermistor
+
 ﻿## 内核驱动 ntc_thermistor
 
 
@@ -20,9 +22,10 @@
 ncpXXwl333 表添加的
 Authors:
 
+
 	MyungJoo Ham <myungjoo.ham@samsung.com>
 
-### 描述
+## 描述
 
 
 NTC（负温度系数）热敏电阻是一种简单的热敏电阻，要求用户提供电阻值并查找相应的补偿表
@@ -35,6 +38,7 @@ NTC 驱动提供带有线性近似函数的查找表，以及四种电路模型�
 
 ```
 The four circuit models provided are:
+
 
 ```
 
