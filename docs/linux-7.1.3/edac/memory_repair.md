@@ -1,3 +1,5 @@
+# memory_repair
+
 ﻿
 ## EDAC 内存修复控制
 
@@ -6,6 +8,7 @@ Copyright (c) 2024-2025 HiSilicon Limited.
 
 :Author:   Shiju Jose <shiju.jose@huawei.com>
 :License:  GNU 自由文档许可证，版本 1.2，无不变章节、封面文本或封底文本           （同时以 GPL v2 双重许可:Original Reviewers:
+
 
 - 编写针对.15
 
