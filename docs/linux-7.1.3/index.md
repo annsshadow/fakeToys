@@ -1,3 +1,5 @@
+# index
+
 ﻿
 
 ## Linux 内核文档
@@ -52,7 +54,7 @@ vger.kernel.org 上的 linux-doc 邮件列表
 
 - [管理](admin-guide/index)
 - [构建系统](kbuild/index)
-- [报告问题](admin-guide/reporting-issues.rst)
+- [报告问题](admin-guide/reporting-issues.md)
 - [用户空间工具](tools/index)
 - [用户空间 API](userspace-api/index)
 

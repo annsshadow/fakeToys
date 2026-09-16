@@ -1,3 +1,5 @@
+# START_HERE
+
 ﻿# Linux Kernel 学习路径
 
 > 3934 篇内核文档中精选出的阅读路线图
