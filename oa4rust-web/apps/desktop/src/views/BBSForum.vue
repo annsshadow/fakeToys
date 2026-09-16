@@ -196,6 +196,17 @@ import { confirmMsg, toast } from '../utils/toast'
 const session = useSession()
 const qc = useQueryClient()
 
+/** 后端分页端点回 {data:{data:rows,total}}（Java ActionResult 信封），
+ *  部分端点直接回数组；统一解包为行数组（与 ProcessWork 的 paged-aware 解包同型）。 */
+function listRows(resp: { data?: unknown }): unknown[] {
+  const p = resp.data
+  if (Array.isArray(p)) return p
+  if (p && typeof p === 'object' && Array.isArray((p as { data?: unknown }).data)) {
+    return (p as { data: unknown[] }).data
+  }
+  return []
+}
+
 interface Section {
   id: string
   name: string
@@ -378,12 +389,12 @@ const {
         `/jaxrs/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}`,
         {},
       )) as { data?: unknown }
-      const replyRows = (Array.isArray(resp.data) ? resp.data : []) as Array<Record<string, unknown>>
+      const replyRows = listRows(resp) as Array<Record<string, unknown>>
       // 回复行映射为列表卡片字段；topicRef 供详情点开源主题全文
       const replyTopics: Topic[] = replyRows.map((r) => ({
         id: String(r.id ?? ''),
-        topicRef: String(r.topic_id ?? ''),
-        title: '回复 · 主题 ' + String(r.topic_id ?? ''),
+        topicRef: String(r.topic_id ?? r.topicId ?? ''),
+        title: '回复 · 主题 ' + String(r.topic_id ?? r.topicId ?? ''),
         content: String(r.content ?? ''),
         author: String(r.creator ?? ''),
         createTime: String(r.create_time ?? r.createTime ?? ''),
@@ -401,7 +412,7 @@ const {
         {},
       )) as { data?: unknown }
     }
-    const raw = (Array.isArray(resp.data) ? resp.data : []) as Topic[]
+    const raw = listRows(resp) as Topic[]
     // 版块筛选路由只回 authorId，归一到列表卡片读取的 author 键。
     const rows =
       selectedSection.value && !searchQuery.value

@@ -170,7 +170,9 @@ const pendingItems = ref<
 async function loadPending(): Promise<void> {
   pendingLoading.value = true
   try {
-    const resp = await api.get('/jaxrs/processplatform/assemble/surface/work/list/filter/manage/1/5/manage')
+    // 待办与 ProcessWork「待我处理」同源：GET task/list/my/paging（200，回带 title/processName/createTime）。
+    // 旧的 work/list/filter/manage 路由为 3 占位符坏桩（handler 仅 2 参），必 500，弃用。
+    const resp = await api.get('/jaxrs/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
   } catch {
     pendingItems.value = []
