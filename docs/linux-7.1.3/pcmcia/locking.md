@@ -1,3 +1,5 @@
+# locking
+
 ﻿## 锁机
 
 本文件解释了 PCCARD PCMCIA 子系统中使用的加锁与互斥方案
