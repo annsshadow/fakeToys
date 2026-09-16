@@ -1,10 +1,12 @@
+# convert_drivers_to_kernel_api
+
 ﻿## 将旧的看门狗（watchdog）驱动转换到看门狗框
 
 作者：Wolfram Sang <wsa@kernel.org>
 
 随着看门狗框架（watchdog framework）进入内核，过去每个驱动都自行实API 的局面已经改变。如今，框架已将公共组件抽取出来，驱动得以精简，用户可以直接使用框架。本文档将指导你完成这一转换工作，描述必要的步骤以及需要留意的地方
 
-### 移除 file_operations 结构
+## 移除 file_operations 结构
 
 旧的驱动会定义自己的 file_operations 操作，例open()、write() 等，而现在这些大多由框架处理，框架只在需要时调用驱动。因此，一般而言file_operations' 结构体及其相关函数可以移除，只有极少数驱动特定的细节需要移到相应函数中。下面概述各函数可能需要进行的操作
 
