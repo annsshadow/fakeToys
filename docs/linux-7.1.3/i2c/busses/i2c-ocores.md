@@ -1,3 +1,5 @@
+# i2c-ocores
+
 ﻿## 内核驱动 i2c-ocores
 
 
@@ -6,7 +8,7 @@
 
 作者：Peter Korsgaard <peter@korsgaard.com>
 
-### 描述
+## 描述
 
 
 i2c-ocores 是针Richard Herveille 设计OpenCores.org I2C 控制IP 核的 i2c 总线驱动

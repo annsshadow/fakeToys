@@ -1,3 +1,5 @@
+# i2c-parport
+
 ﻿## 内核驱动 i2c-parport
 
 
@@ -20,7 +22,7 @@
 直接初始化失败
 在那些将 SMBus alert 中断线正确连接到并行口中端引脚的适配器上，可以使SMBus alert 支持
 
-### 构建你自己的适配
+## 构建你自己的适配
 
 如果你想自己构建 i2c-over-parallel-port 适配器，可参考下面的电路```
    Device                                                      PC

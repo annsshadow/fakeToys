@@ -1,9 +1,11 @@
+# i2c-mux-gpio
+
 ﻿## 内核驱动 i2c-mux-gpio
 
 
 Author: Peter Korsgaard <peter.korsgaard@barco.com>
 
-### 描述
+## 描述
 
 
 i2c-mux-gpio 是一i2c mux 驱动，通过 GPIO 引脚控制的硬MUX，从I2C 总线
@@ -63,7 +65,7 @@ include/linux/platform_data/i2c-mux-gpio.h銆。
 如果你在注册时不知道绝对GPIO 引脚编号，可以改为提供一个芯片名
 chip_name）和相对GPIO 引脚编号，i2c-mux-gpio 驱动会替你完成相关工作，
 包括在该 GPIO 芯片不能立即可用时进行延迟探测（deferred probing）
-### 设备注册
+## 设备注册
 
 
 注册你的 i2c-mux-gpio 设备时，你应当将其使用的任一 GPIO 引脚的编号作为设ID 传入。这保证了每个实例都有不同的 ID

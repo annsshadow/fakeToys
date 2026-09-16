@@ -1,3 +1,5 @@
+# writing-clients
+
 ﻿## 实现 I2C 设备驱动
 
 
@@ -46,7 +48,7 @@ name 字段是驱动名称，且不能包含空格。它应该与模块名称匹
 每个客户端结构体都有一个特殊的 `data` 字段，可以指向任意结构体。你应该用它来保设备特定的数据
 ```
 
-	/* 瀛樺偍鍊?*/
+	/* 子樺偍鍊?*/
 	void i2c_set_clientdata(struct i2c_client *client, void *data);
 
 	/* 鍙栧嚭鍊?*/
@@ -68,7 +70,7 @@ name 字段是驱动名称，且不能包含空格。它应该与模块名称匹
   {
 	if (reg < 0x10)	/* 字节大小的寄存器 */
 		return i2c_smbus_read_byte_data(client, reg);
-	else		/* 瀛楀ぇ灏忕殑瀵勫瓨鍣?*/
+	else		/* 子楀ぇ灏忕殑瀵勫瓨鍣?*/
 		return i2c_smbus_read_word_data(client, reg);
   }
 
@@ -78,7 +80,7 @@ name 字段是驱动名称，且不能包含空格。它应该与模块名称匹
 		return -EINVAL;
 	else if (reg < 0x10)	/* 字节大小的寄存器 */
 		return i2c_smbus_write_byte_data(client, reg, value);
-	else			/* 瀛楀ぇ灏忕殑瀵勫瓨鍣?*/
+	else			/* 子楀ぇ灏忕殑瀵勫瓨鍣?*/
 		return i2c_smbus_write_word_data(client, reg, value);
   }
 

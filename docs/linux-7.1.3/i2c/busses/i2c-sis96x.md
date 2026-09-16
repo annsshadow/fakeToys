@@ -1,3 +1,5 @@
+# i2c-sis96x
+
 ﻿## 内核驱动 i2c-sis96x
 
 
@@ -14,7 +16,7 @@
 
 Author: Mark M. Hoffman <mhoffman@lightlink.com>
 
-### 描述
+## 描述
 
 
 这个SMBus 的驱动已知可在带有上述芯片组组合的的主板上工作。该驱动是在没有 SiS
