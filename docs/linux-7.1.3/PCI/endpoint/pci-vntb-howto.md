@@ -1,3 +1,5 @@
+# pci-vntb-howto
+
 ﻿
 ## PCI 非透明桥（NTB）端点功能（EPF）用户指
 
@@ -23,7 +25,7 @@ Documentation/PCI/endpoint/pci-vntb-function.rst銆。
           5f010000.pcie_ep
 
 ```
-### 端点功能驱动
+## 端点功能驱动
 
 
 ```
@@ -39,7 +41,7 @@ Documentation/PCI/endpoint/pci-vntb-function.rst銆。
 
 
 ```
-### 创建 pci-epf-vntb 设备
+## 创建 pci-epf-vntb 设备
 
 
 PCI 端点功能设备可以使用 configfs 创建。要创建
@@ -71,7 +73,7 @@ PCI 端点功能驱动在设备绑定到驱动时，会用默认值填充这些�
 
 
 ```
-### 配置 pci-epf-vntb 设备
+## 配置 pci-epf-vntb 设备
 
 
 用户可以使用configfs 条目配置 pci-epf-vntb 设备。为了更vendorid deviceid，请执行以下
@@ -105,13 +107,13 @@ PCI 端点框架还会在功能属性目录中自动创建一个子目录。该�
 	# echo 0x10 > functions/pci_epf_vntb/func1/pci_epf_vntb.0/vbus_number
 
 ```
-### pci-epf-vntb 设备绑定EP 控制
+## pci-epf-vntb 设备绑定EP 控制
 
 NTB 功能设备应附着到连接到主机PCI 端点控制器
 	# ln -s controllers/5f010000.pcie_ep functions/pci_epf_vntb/func1/primary
 
 完成上述步骤后，PCI 端点控制器已准备好与主机建立链路
-### 启动链路
+## 启动链路
 
 
 为了让端点设备与主机建立链路，应_start_ 字段填充'1'。对NTB，两PCI 端点控制器都需```
@@ -143,7 +145,7 @@ NTB 功能设备应附着到连接到主机PCI 端点控制器
         10:00.0 Unassigned class [ffff]: Dawicontrol Computersysteme GmbH Device 1234 (rev ff)
 
 ```
-### 使用 ntb_hw_epf 设备
+## 使用 ntb_hw_epf 设备
 
 
 主机侧软件遵Linux 中标准的 NTB 软件架构。所有现有的客户NTB 实用工具NTB Transport Client、NTB Netdev、NTB Ping Pong Test Client NTB Tool

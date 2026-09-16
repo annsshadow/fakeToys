@@ -1,3 +1,5 @@
+# boot-interrupts
+
 ﻿
 ## Boot Interrupts
 
@@ -19,6 +21,7 @@ PCI Express 上，中断MSI 或入站中断消息（Assert_INTx/Deassert_INTx）
   CPU: 0 PID: 2988 Comm: irq/34-nipalk Tainted: 4.14.87-rt49-02410-g4a640ec-dirty #1
   Hardware name: National Instruments NI PXIe-8880/NI PXIe-8880, BIOS 2.1.5f1 01/09/2020
   Call Trace:
+
 
   <IRQ>
    ? dump_stack+0x46/0x5e
