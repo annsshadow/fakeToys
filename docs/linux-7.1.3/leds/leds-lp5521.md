@@ -1,3 +1,5 @@
+# leds-lp5521
+
 ﻿## lp5521 内核驱动
 
 
@@ -8,7 +10,7 @@ Authors: Mathias Nyman, Yuri Zaporozhets, Samu Onkalo
 
 Contact: Samu Onkalo (samu.p.onkalo-at-nokia.com)
 
-### 描述
+## 描述
 
 
 LP5521 最多可驱动 3 个通道。LED 可以通过 LED 类控制接口直接控制。通道具有通用名称：lp5521:channelx，其x 0 .. 2
@@ -32,6 +34,7 @@ LP5521 具有内部程序存储器，用于运行各种 LED 模式。有两种�
 	echo "run" > engine3_mode
 
   瑕佸仠姝㈠紩鎿?:
+
 
 	echo "disabled" > engine3_mode
 
