@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
-import { Layout, Menu, theme } from 'antd'
+import { Layout, Menu, theme, Spin } from 'antd'
 import {
   DashboardOutlined,
   DatabaseOutlined,
@@ -12,15 +12,16 @@ import {
   ExportOutlined,
   PictureOutlined
 } from '@ant-design/icons'
-import DataManagement from './pages/DataManagement'
-import Analysis from './pages/Analysis'
-import Versions from './pages/Versions'
-import Settings from './pages/Settings'
-import Augmentation from './pages/Augmentation'
-import Dashboard from './pages/Dashboard'
-import Quality from './pages/Quality'
-import Export from './pages/Export'
-import Multimodal from './pages/Multimodal'
+
+const DataManagement = lazy(() => import('./pages/DataManagement'))
+const Analysis = lazy(() => import('./pages/Analysis'))
+const Versions = lazy(() => import('./pages/Versions'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Augmentation = lazy(() => import('./pages/Augmentation'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Quality = lazy(() => import('./pages/Quality'))
+const Export = lazy(() => import('./pages/Export'))
+const Multimodal = lazy(() => import('./pages/Multimodal'))
 
 const { Header, Sider, Content } = Layout
 
@@ -107,17 +108,19 @@ function AppLayout() {
             background: colorBgContainer,
             borderRadius: borderRadiusLG
           }}>
-            <Routes>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/" element={<DataManagement />} />
-              <Route path="/augment" element={<Augmentation />} />
-              <Route path="/quality" element={<Quality />} />
-              <Route path="/export" element={<Export />} />
-              <Route path="/analysis" element={<Analysis />} />
-              <Route path="/multimodal" element={<Multimodal />} />
-              <Route path="/versions" element={<Versions />} />
-              <Route path="/settings" element={<Settings />} />
-            </Routes>
+            <Suspense fallback={<Spin style={{ display: 'block', margin: '40px auto' }} />}>
+              <Routes>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/" element={<DataManagement />} />
+                <Route path="/augment" element={<Augmentation />} />
+                <Route path="/quality" element={<Quality />} />
+                <Route path="/export" element={<Export />} />
+                <Route path="/analysis" element={<Analysis />} />
+                <Route path="/multimodal" element={<Multimodal />} />
+                <Route path="/versions" element={<Versions />} />
+                <Route path="/settings" element={<Settings />} />
+              </Routes>
+            </Suspense>
           </div>
         </Content>
       </Layout>

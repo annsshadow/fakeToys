@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, Form, InputNumber, Select, Switch, Button, message, Space, Divider } from 'antd'
+import { Card, Form, InputNumber, Select, Switch, Button, message, Space } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import { getConfig, getModels } from '../services/api'
 
