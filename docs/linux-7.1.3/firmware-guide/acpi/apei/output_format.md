@@ -1,3 +1,5 @@
+# output_format
+
 ﻿
 ## APEI output format
 
@@ -125,7 +127,7 @@ APEI 浣跨敤 printk 浣滀负纭欢閿欒鎶ュ憡鎺ュ彛锛屽叾杈�
         Receiver ID | Requester ID | Completer ID | Transmitter ID
 
 ```
-鍏朵腑锛屾柟鎷彿 [] 琛ㄧず鐩稿簲鍐呭涓哄彲閫夐」銆?
+鍏朵腑锛屾柟鎷彿 [] 琛ㄧず鐩稿簲内呭涓哄彲閫夐」銆?
 ```
 
         field: <integer>, <field string>
@@ -138,5 +140,5 @@ APEI 浣跨敤 printk 浣滀负纭欢閿欒鎶ュ憡鎺ュ彛锛屽叾杈�
         <field strings>
 
 ```
-鍏朵腑 <fields strings> 涓殑姣忎釜瀛楃涓插搴斾簬 <integer> 鐨勪竴涓缃綅鐨勪綅銆備綅鐨勪綅缃嵆涓?"string" 鍦?<field strings> 鎻忚堪涓殑浣嶇疆銆?
-鍏充簬姣忎釜瀛楁鐨勬洿璇︾粏璇存槑锛岃鍙傞槄 UEFI 瑙勮寖 2.3 鎴栨洿楂樼増鏈紝闄勫綍 N锛氶€氱敤骞冲彴閿欒璁板綍锛圕ommon Platform Error Record锛夈€?
+鍏朵腑 <fields strings> 涓殑姣忎釜子楃涓插搴斾簬 <integer> 鐨勪竴涓缃綅鐨勪綅銆備綅鐨勪綅缃嵆涓?"string" 鍦?<field strings> 鎻忚堪涓殑浣嶇疆銆?
+鍏充簬姣忎釜子楁鐨勬洿璇︾粏璇存槑锛岃鍙傞槄 UEFI 瑙勮寖 2.3 鎴栨洿楂樼増鏈紝闄勫綍 N锛氶€氱敤骞冲彴閿欒璁板綍锛圕ommon Platform Error Record锛夈€?

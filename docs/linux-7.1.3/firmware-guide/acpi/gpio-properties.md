@@ -1,3 +1,5 @@
+# gpio-properties
+
 ﻿
 ## GPIO 相关_DSD 设备属
 
