@@ -1,3 +1,5 @@
+# tipc
+
 ﻿
 ## Linux 内核 TIPC
 
@@ -75,67 +77,85 @@ TIPC 实现net/tipc/ 目录下的一个内核模块
 
    :internal:
 
-   :internal:
 
    :internal:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+
+
+   :internal:
+
 
 ### TIPC Bearer 接口
 
 
    :internal:
 
+
    :internal:
+
 
 ### TIPC 加密接口
 
 
    :internal:
 
+
 ### TIPC 发现接口
 
 
    :internal:
+
 
 ### TIPC 链路接口
 
 
    :internal:
 
+
 ### TIPC 消息接口
 
 
    :internal:
+
 
 ### TIPC 名称接口
 
 
    :internal:
 
+
    :internal:
+
 
 ### TIPC 节点管理接口
 
 
    :internal:
 
-### TIPC 濂楁帴瀛楁帴鍙。
+
+### TIPC 濂楁帴子楁帴鍙。
 
    :internal:
+
 
 ### TIPC 网络拓扑接口
 
 
    :internal:
 
+
 ### TIPC 服务器接
 
    :internal:
+
 
 ### TIPC 跟踪接口
 
 
    :internal:
+

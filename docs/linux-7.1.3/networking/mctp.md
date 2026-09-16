@@ -1,3 +1,5 @@
+# mctp
+
 ﻿
 ## 管理组件传输协议（Management Component Transport Protocol，MCTP
 
@@ -19,7 +21,7 @@ net/mctp/ 包含MCTP 的协议支持，其定义见 DMTF 标准 DSP0236。物理
 
 如果存在多个网络，每个网络都可能包含也出现在其他网络上的端点 ID（EID）
 
-## 濂楁帴瀛?API
+## 濂楁帴子?API
 
 
 ### 协议定义
@@ -50,12 +52,12 @@ MCTP 使用 `AF_MCTP` / `PF_MCTP` 作为地址族和协议族。由MCTP 是基�
     #define MCTP_NET_ANY	0x0
     #define MCTP_ADDR_ANY	0xff
 
-### 系统调用行为
+## 系统调用行为
 
 
 以下各节描述了标准套接字系统调用中与 MCTP 相关的行为。这些行为被选择为与现有的套接字 API 紧密对应
 
-##### ``bind()`` ：设置本地套接字地址
+### ``bind()`` ：设置本地套接字地址
 
 
 接收传入请求数据包的套接字将使用 `bind()` 系统调用来绑定到一个本地地址

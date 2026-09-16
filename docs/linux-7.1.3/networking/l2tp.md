@@ -1,3 +1,5 @@
+# l2tp
+
 ﻿
 ## L2TP
 
@@ -20,7 +22,7 @@ L2TP RFC 定义了两种基本类型的 L2TP 数据包：控制数据包（"控�
 
 
 本节记录 L2TP 子系统的每个用户空间 API
-### 闅ч亾濂楁帴瀛。
+### 闅ч亾濂楁帴子。
 
 L2TPv2 始终使用 UDP。L2TPv3 可以使用 UDP IP 封装
 要创建供 L2TP 使用的隧道套接字，使用标POSIX 套接API
@@ -120,6 +122,7 @@ CONN_ID            N        标识要查询的隧道 id                         
 
   - 创建一个隧:
 
+
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
 
@@ -140,6 +143,7 @@ CONN_ID            N        标识要查询的隧道 id                         
         mnl_attr_put_u16(nlh, L2TP_ATTR_ENCAP_TYPE, encap);
 
   - 创建一session::
+
 
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
@@ -165,6 +169,7 @@ CONN_ID            N        标识要查询的隧道 id                         
 
   - 删除一session::
 
+
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
 
@@ -183,6 +188,7 @@ CONN_ID            N        标识要查询的隧道 id                         
 
   - 删除一个隧道及其所session（如果有:
 
+
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
 
@@ -199,7 +205,7 @@ CONN_ID            N        标识要查询的隧道 id                         
         mnl_attr_put_u32(nlh, L2TP_ATTR_CONN_ID, tid);
 
 ```
-### PPPoL2TP Session 濂楁帴瀛?API
+### PPPoL2TP Session 濂楁帴子?API
 
 
 对于 PPP session 类型，必须打开一PPPoL2TP 套接字并连接L2TP session
@@ -390,7 +396,7 @@ L2TP 子系统通过 debugfs 文件系统提供一系列调试接口
 
 
 本节面向内核开发者和维护者
-### 濂楁帴瀛。
+### 濂楁帴子。
 
 UDP 套接字由网络核心实现。当使用 UDP 套接字创L2TP 隧道时，通过UDP 套接字上设置 encap_rcv encap_destroy 回调，将该套接字设置为封装的 UDP 套接字。接收到该套接字上的数据包时调用 l2tp_udp_encap_recv。用户空间关闭套接字时调l2tp_udp_encap_destroy
 L2TPIP 套接字实现于 `net/l2tp/l2tp_ip.c`_ `net/l2tp/l2tp_ip6.c`_

@@ -1,3 +1,5 @@
+# filter
+
 ﻿
 
 ## Linux 套接字过滤即伯克利数据包过滤器（BPF
@@ -26,6 +28,7 @@ SO_ATTACH_FILTER 加载到内核的结构。`tcpdump -i em1 port 22 -ddd` 会显
 [^1^]_），以及许多其他地方，例team 驱动、PTP 代码等都在使BPF
 
 Original BPF paper:
+
 
 Steven McCanne and Van Jacobson. 1993. The BSD packet filter: a new
 architecture for user-level packet capture. In Proceedings of the
@@ -130,7 +133,7 @@ SO_DETACH_FILTER setsockopt(2) 调用不需要任何参数，而用于防止过�
 优化；那么在这样的情形下，手动“手写”这样的过滤器可以作为一种替代方案。例如，
 xt_bpf cls_bpf 用户可能有会产生更复杂过滤器代码的需求，或者产生无法用
 libpcap 表达的代码（例如不同代码路径有不同返回码）。此外，BPF JIT 实现可能希望手动编写测试用例，因此也需要对 BPF 代码的底层访问
-### BPF 引擎与指令集
+## BPF 引擎与指令集
 
 
 tools/bpf/ 下有一个名bpf_asm 的小辅助工具，可用于为上一节提到的示例
@@ -392,7 +395,9 @@ bpf passes:1 fails:9
   break when a breakpoint is being hit (another `run` will continue from
   the currently active breakpoint executing next instructions):
 
+
   * run::
+
 
 	-- register dump --
 	pc:       [0]                       <-- program counter
@@ -410,6 +415,7 @@ bpf passes:1 fails:9
 	>
 
   * breakpoint::
+
 
 	breakpoints: 0 1
 
@@ -429,7 +435,7 @@ bpf passes:1 fails:9
 - quit
 
   退bpf_dbg
-### JIT 编译
+## JIT 编译
 
 Linux 内核内置了一个用x86_64、SPARC、PowerPC、ARM、ARM64、MIPS、RISC-Vs390 ARC BPF JIT 编译器，可通过 CONFIG_BPF_JIT 启用。如果设置了
 ```
@@ -486,6 +492,7 @@ CONFIG_BPF_JIT_ALWAYS_ON 启用时，bpf_jit_enable 被永久设1，设置其任
 	Issuing option `-o` will "annotate" opcodes to resulting assembler
 	.instructions, which can be very useful for JIT developers:
 
+
 	# ./bpf_jit_disasm -o
 	70 bytes emitted from JIT compiler (pass:3, flen:6)
 	ffffffffa0069c8f + <x>:
@@ -533,7 +540,7 @@ CONFIG_BPF_JIT_ALWAYS_ON 启用时，bpf_jit_enable 被永久设1，设置其任
 ```
 对于 BPF JIT 开发者，bpf_jit_disasm、bpf_asm bpf_dbg 提供了一个有用的工具
 链，用于开发和测试内核JIT 编译器
-### BPF 内核内部机制
+## BPF 内核内部机制
 
 
 在内核解释器内部，使用的是一种不同的指令集格式，其底层原理与前面段落描述

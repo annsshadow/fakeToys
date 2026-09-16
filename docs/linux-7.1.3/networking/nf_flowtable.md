@@ -1,3 +1,5 @@
+# nf_flowtable
+
 ﻿
 ## Netfilter flowtable 基础设施
 
@@ -82,7 +84,7 @@ flowtable 添加一条条目。一旦流被卸载，你会观察到上面示例�
 
 
 ```
-### 2 层封
+## 2 层封
 
 Linux 内核 5.13 起，flowtable 基础设施会发VLAN PPPoE 网络设备背后的真网络设备。flowtable 软件数据路径会解VLAN PPPoE 2 层头部，以提取用flowtable
 查找ethertype VLAN ID / PPPoE 会话 ID。flowtable 数据路径也处理第 2 层解封装

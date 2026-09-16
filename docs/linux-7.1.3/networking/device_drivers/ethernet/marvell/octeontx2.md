@@ -1,3 +1,5 @@
+# octeontx2
+
 ﻿
 ## Marvell OcteonTx2 RVU 内核驱动
 
@@ -247,6 +249,7 @@ representor 被创建时安装，并根据 representor/representee 接口状态�
 
  - List of representor devices on the system::
 
+
 	# ip link show
 	Rpf1vf0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state DOWN mode DEFAULT group default qlen 1000 link/ether f6:43:83:ee:26:21 brd ff:ff:ff:ff:ff:ff
 	Rpf1vf1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state DOWN mode DEFAULT group default qlen 1000 link/ether 12:b2:54:0e:24:54 brd ff:ff:ff:ff:ff:ff
@@ -301,6 +304,7 @@ rvu representor 驱动实现了使用端representor 卸载 tc 规则的支持
 	# tc filter add dev Rpf1vf0 protocol 802.1Q parent ffff: flower vlan_id 3 vlan_ethtype ipv4 skip_sw action drop
 
  - Redirect packets with vlan id 5 and IPv4 packets to eth1, after stripping vlan header.::
+
 
 	# tc filter add dev Rpf1vf0 ingress protocol 802.1Q flower vlan_id 5 vlan_ethtype ipv4 skip_sw action vlan pop action mirred ingress redirect dev eth1
 

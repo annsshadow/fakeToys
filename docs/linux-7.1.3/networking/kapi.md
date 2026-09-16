@@ -1,3 +1,5 @@
+# kapi
+
 ﻿## Linux 网络与网络设API
 
 
@@ -8,55 +10,77 @@
 
    :internal:
 
+
 ### 套接字缓冲区（Socket Buffer）函
 
    :internal:
 
+
    :internal:
 
-   :export:
 
    :export:
 
-   :export:
 
    :export:
 
+
    :export:
+
+
+   :export:
+
+
+   :export:
+
 
 ### 套接字过滤器（Socket Filter
 
    :export:
 
+
 ### 通用网络统计（Generic Network Statistics
 
    :internal:
 
-   :export:
 
    :export:
 
-### SUN RPC 瀛愮郴缁。
 
    :export:
 
-   :export:
+
+### SUN RPC 子愮系统。
 
    :export:
 
-   :export:
 
    :export:
 
-   :export:
 
    :export:
 
-   :export:
 
    :export:
 
+
    :export:
+
+
+   :export:
+
+
+   :export:
+
+
+   :export:
+
+
+   :export:
+
+
+   :export:
+
 
 ## 网络设备支持
 
@@ -65,36 +89,51 @@
 
    :export:
 
-   :export:
 
    :export:
 
-   :internal:
+
+   :export:
+
 
    :internal:
 
+
    :internal:
+
+
+   :internal:
+
 
 ### PHY 支持
 
 
    :export:
 
-   :internal:
-
-   :export:
-
-   :export:
 
    :internal:
 
-   :export:
-
-   :internal:
 
    :export:
 
+
+   :export:
+
+
    :internal:
+
+
+   :export:
+
+
+   :internal:
+
+
+   :export:
+
+
+   :internal:
+
 
 ### PHYLINK
 
@@ -103,11 +142,15 @@
    :internal:
 
 
+
 ### SFP 支持
 
 
    :internal:
 
+
    :internal:
 
+
    :export:
+

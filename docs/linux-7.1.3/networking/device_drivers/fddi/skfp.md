@@ -1,3 +1,5 @@
+# skfp
+
 ﻿
 
 
@@ -112,6 +114,7 @@ Reason:
 v2.06 (20000511) (In-Kernel version)
     New features:
 
+
  - 64 bit support
  - new pci dma interface
  - in kernel 2.3.99
@@ -119,20 +122,24 @@ v2.06 (20000511) (In-Kernel version)
 v2.05 (20000217) (In-Kernel version)
     New features:
 
+
  - Changes for 2.3.45 kernel
 
 v2.04 (20000207) (Standalone version)
     New features:
+
 
  - Added rx/tx byte counter
 
 v2.03 (20000111) (Standalone version)
     Problems fixed:
 
+
  - Fixed printk statements from v2.02
 
 v2.02 (991215) (Standalone version)
     Problems fixed:
+
 
  - Removed unnecessary output
  - Fixed path for "printver.sh" in makefile
@@ -140,35 +147,42 @@ v2.02 (991215) (Standalone version)
 v2.01 (991122) (In-Kernel version)
     New features:
 
+
  - Integration in Linux kernel sources
  - Support for memory mapped I/O.
 
 v2.00 (991112)
     New features:
 
+
  - Full source released under GPL
 
 v1.05 (991023)
     Problems fixed:
+
 
  - Compilation with kernel version 2.2.13 failed
 
 v1.04 (990427)
     Changes:
 
+
  - New SMT module included, changing LED functionality
 
     Problems fixed:
+
 
  - Synchronization on SMP machines was buggy
 
 v1.03 (990325)
     Problems fixed:
 
+
  - Interrupt routing on SMP machines could be incorrect
 
 v1.02 (990310)
     New features:
+
 
  - Support for kernel versions 2.2.x added
  - Kernel patch instead of private duplicate of kernel functions
@@ -176,19 +190,23 @@ v1.02 (990310)
 v1.01 (980812)
     Problems fixed:
 
+
 	Connection hangup with telnet
 	Slow telnet connection
 
 v1.00 beta 01 (980507)
     New features:
 
+
 	None.
 
     Problems fixed:
 
+
 	None.
 
     Known limitations:
+
 
  - tar archive instead of standard package format (rpm).
  - FDDI statistic is empty.
