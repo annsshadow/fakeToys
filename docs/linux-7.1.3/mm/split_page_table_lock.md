@@ -1,3 +1,5 @@
+# split_page_table_lock
+
 ﻿## 拆分页表锁（Split page table lock
 最初，`mm->page_table_lock` 自旋锁保`mm_struct` 的所有页表。但这种方法由于锁竞争激烈，导致多线程应用的缺页异常可扩展性较差。为改善可扩展性，引入了拆分页表锁
 采用拆分页表锁后，每个表都拥有独立的 per-table 锁来串行化对该表的访问。目前我们对 PTE PMD 表使用拆分锁。对更高级别表的访问`mm->page_table_lock` 保护

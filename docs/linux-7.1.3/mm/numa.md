@@ -1,3 +1,5 @@
+# numa
+
 ﻿Started Nov 1999 by Kanoj Sarcar <kanoj@sgi.com>
 
 ## 什么是 NUMA
