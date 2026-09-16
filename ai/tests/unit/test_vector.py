@@ -1,0 +1,200 @@
+"""向量数据库单元测试
+
+向量检索是语义去重与相似样本推荐的基础，接口一致性必须被保证。
+"""
+
+import numpy as np
+import pytest
+
+from augmentor.vector import create_vector_db, FAISSDB, VectorDB
+
+
+def unit_vectors(dimension=4):
+    """构造一组互相正交的单位向量
+
+    Args:
+        dimension: 维度
+
+    Returns:
+        向量列表
+    """
+    vectors = []
+    for index in range(dimension):
+        vector = np.zeros(dimension, dtype=np.float32)
+        vector[index] = 1.0
+        vectors.append(vector)
+    return vectors
+
+
+class TestFactory:
+    """工厂方法"""
+
+    def test_creates_faiss_backend(self):
+        """faiss 后端需可创建"""
+        db = create_vector_db("faiss", dimension=4)
+        assert isinstance(db, FAISSDB)
+        assert isinstance(db, VectorDB)
+
+    def test_unknown_backend_raises(self):
+        """未知后端必须报错并列出支持项"""
+        with pytest.raises(ValueError) as excinfo:
+            create_vector_db("pinecone")
+        assert "支持" in str(excinfo.value)
+
+    def test_invalid_dimension_raises(self):
+        """维度必须为正，否则无法建索引"""
+        with pytest.raises(ValueError):
+            create_vector_db("faiss", dimension=0)
+
+    def test_chromadb_requires_dependency(self):
+        """未安装 chromadb 时应抛出清晰的 ImportError，而不是 AttributeError"""
+        try:
+            import chromadb  # noqa: F401
+            pytest.skip("chromadb 已安装，跳过依赖缺失场景")
+        except ImportError:
+            pass
+
+        with pytest.raises(ImportError) as excinfo:
+            create_vector_db("chromadb", dimension=4)
+        assert "chromadb" in str(excinfo.value)
+
+
+class TestAddAndSearch:
+    """写入与检索"""
+
+    def test_add_returns_ids(self):
+        """写入需返回可追踪的 ID"""
+        db = create_vector_db("faiss", dimension=4)
+        ids = db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+
+        assert len(ids) == 4
+        assert len(set(ids)) == 4
+        assert db.count() == 4
+
+    def test_search_returns_nearest_first(self):
+        """检索结果必须按相似度降序，且首位为最相近向量"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=2)
+
+        assert len(results) == 2
+        assert results[0]["score"] == pytest.approx(1.0)
+        assert results[0]["score"] >= results[1]["score"]
+
+    def test_search_empty_db(self):
+        """空库检索应返回空列表而非报错"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.search(np.array([1, 0, 0, 0], dtype=np.float32)) == []
+
+    def test_search_top_k_capped_by_size(self):
+        """top_k 超过库容量时应自动收敛"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+
+        assert len(db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=10)) == 2
+
+    def test_dimension_mismatch_raises(self):
+        """维度不匹配必须报错，避免检索出错误结果"""
+        db = create_vector_db("faiss", dimension=4)
+        with pytest.raises(ValueError):
+            db.add_vectors([np.array([1.0, 0.0], dtype=np.float32)], [{}])
+
+    def test_metadata_length_mismatch_raises(self):
+        """向量与元数据数量不一致必须报错"""
+        db = create_vector_db("faiss", dimension=4)
+        with pytest.raises(ValueError):
+            db.add_vectors(unit_vectors()[:2], [{"i": 0}])
+
+    def test_duplicate_ids_rejected(self):
+        """重复 ID 必须被拒绝，否则删除语义会歧义"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:1], [{"i": 0}], ids=["fixed"])
+
+        with pytest.raises(ValueError):
+            db.add_vectors(unit_vectors()[1:2], [{"i": 1}], ids=["fixed"])
+
+    def test_custom_ids_preserved(self):
+        """自定义 ID 需被原样保留"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}], ids=["a", "b"])
+
+        assert {r["id"] for r in db.search(np.array([1, 0, 0, 0], dtype=np.float32), 2)} == {"a", "b"}
+
+
+class TestDeleteAndClear:
+    """删除与清空"""
+
+    def test_delete_removes_and_reindexes(self):
+        """删除后必须重建索引，否则检索会命中已删除向量"""
+        db = create_vector_db("faiss", dimension=4)
+        ids = db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+
+        removed = db.delete([ids[0]])
+
+        assert removed == 1
+        assert db.count() == 3
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=4)
+        assert all(r["id"] != ids[0] for r in results)
+
+    def test_delete_unknown_id_returns_zero(self):
+        """删除不存在的 ID 应返回 0"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:1], [{"i": 0}])
+
+        assert db.delete(["not-exists"]) == 0
+
+    def test_delete_empty_list(self):
+        """空删除列表应安全返回 0"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.delete([]) == 0
+
+    def test_clear(self):
+        """清空后数量归零且检索返回空"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+
+        db.clear()
+
+        assert db.count() == 0
+        assert db.search(np.array([1, 0, 0, 0], dtype=np.float32)) == []
+
+
+class TestPersistence:
+    """持久化"""
+
+    def test_persist_and_load(self, tmp_path):
+        """持久化后重新加载必须保持向量与元数据一致"""
+        db = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)], ids=[f"id{i}" for i in range(4)])
+        db.persist()
+
+        reloaded = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        assert reloaded.load() is True
+        assert reloaded.count() == 4
+
+        results = reloaded.search(np.array([0, 1, 0, 0], dtype=np.float32), top_k=1)
+        assert results[0]["id"] == "id1"
+
+    def test_load_without_files_returns_false(self, tmp_path):
+        """无持久化文件时 load 返回 False 而不是抛异常"""
+        db = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        assert db.load() is False
+
+    def test_persist_without_storage_dir_raises(self):
+        """未配置目录时持久化必须报错"""
+        db = create_vector_db("faiss", dimension=4)
+        with pytest.raises(ValueError):
+            db.persist()
+
+
+class TestMetadataLookup:
+    """元数据查询"""
+
+    def test_get_metadata_by_id(self):
+        """按 ID 查询元数据"""
+        db = create_vector_db("faiss", dimension=4)
+        ids = db.add_vectors(unit_vectors()[:1], [{"tag": "x"}], ids=["one"])
+
+        assert db.get_metadata(ids[0]) == {"tag": "x"}
+        assert db.get_metadata("missing") is None
