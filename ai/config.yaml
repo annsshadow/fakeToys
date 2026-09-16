@@ -32,6 +32,26 @@ models:
     temperature: 0.99
     top_p: 0.95
     max_output_tokens: 2048
+  
+  # Anthropic Claude 配置
+  claude:
+    type: claude
+    api_key: ${ANTHROPIC_API_KEY}
+    base_url: https://api.anthropic.com
+    model: claude-3-5-sonnet-20241022
+    temperature: 0.99
+    top_p: 0.95
+    max_output_tokens: 2048
+  
+  # Google Gemini 配置
+  gemini:
+    type: gemini
+    api_key: ${GOOGLE_API_KEY}
+    base_url: https://generativelanguage.googleapis.com
+    model: gemini-1.5-flash
+    temperature: 0.99
+    top_p: 0.95
+    max_output_tokens: 2048
 
 # 增强配置
 augmentation:
@@ -147,6 +167,127 @@ visualization:
     - topic_cluster
     - timeline
     - quality_distribution
+
+# 多语言配置
+multilingual:
+  # 启用多语言支持
+  enabled: false
+  
+  # 默认目标语言
+  default_target_lang: en
+  
+  # 支持的语言
+  supported_langs:
+    - zh
+    - en
+  
+  # 批量翻译大小
+  translate_batch_size: 10
+
+# RAG 训练数据配置
+rag:
+  # 启用 RAG 数据格式
+  enabled: false
+  
+  # 默认格式 (llamaindex / langchain / custom)
+  default_format: llamaindex
+  
+  # 分块大小（字符数）
+  chunk_size: 512
+  
+  # 分块重叠
+  chunk_overlap: 64
+
+# 模型评估配置
+evaluation:
+  # 启用模型评估
+  enabled: false
+  
+  # 评估指标
+  metrics:
+    - bleu
+    - rouge_l
+    - similarity
+  
+  # 参考文本字段
+  reference_field: output
+
+# 向量数据库配置
+vector:
+  # 启用向量数据库
+  enabled: false
+  
+  # 后端 (faiss / chromadb)
+  backend: faiss
+  
+  # 向量维度
+  dimension: 384
+  
+  # 存储目录
+  storage_dir: data/vectors
+  
+  # 集合名称
+  collection: default
+
+# 多模态数据配置
+multimodal:
+  # 启用多模态处理
+  enabled: false
+  
+  # 支持的图像扩展名
+  image_extensions:
+    - .jpg
+    - .jpeg
+    - .png
+    - .bmp
+    - .webp
+  
+  # 支持的音频扩展名
+  audio_extensions:
+    - .wav
+    - .mp3
+    - .flac
+    - .ogg
+    - .m4a
+
+# 数据质量基准配置
+benchmark:
+  # 启用质量基准
+  enabled: false
+  
+  # 基准文件路径
+  baseline_file: data/benchmark_baseline.json
+  
+  # 基准指标
+  metrics:
+    - pass_rate
+    - avg_total_score
+    - diversity
+    - duplication_rate
+
+# 主动学习循环配置
+active_learning:
+  # 启用主动学习
+  enabled: false
+  
+  # 采样策略 (uncertainty / diversity / hybrid / random)
+  strategy: uncertainty
+  
+  # 每轮选择的样本数
+  batch_size: 50
+  
+  # 最大迭代轮数
+  max_iterations: 10
+
+# LLM 框架集成配置
+frameworks:
+  # 启用框架集成
+  enabled: false
+  
+  # 集成的框架
+  frameworks:
+    - langchain
+    - llamaindex
 
 # Web UI 配置
 web:
