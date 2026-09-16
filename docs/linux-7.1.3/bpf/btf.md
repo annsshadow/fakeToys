@@ -1,3 +1,5 @@
+# btf
+
 ﻿## BPF Type Format（BTF，BPF 类型格式
 
 
@@ -118,7 +120,7 @@ null 结尾的字符串的拼接
 中的 `name_off` 指定了在字符串表中的偏移量。以下各小节详细说明了每
 kind 的编码
 
-#### 2.2.1 BTF_KIND_INT
+## 2.2.1 BTF_KIND_INT
 
 
 `struct btf_type` 编码要求
@@ -168,7 +170,7 @@ struct 成员具有
 `BTF_INT_OFFSET()` 的原始意图是为了提供位域编码的灵活性。目前，llvm 
 pahole 对所int 类型都生`BTF_INT_OFFSET() = 0`
 
-#### 2.2.2 BTF_KIND_PTR
+## 2.2.2 BTF_KIND_PTR
 
 
 `struct btf_type` 编码要求
@@ -180,7 +182,7 @@ pahole 对所int 类型都生`BTF_INT_OFFSET() = 0`
 
 `btf_type` 之后没有额外的类型数据
 
-#### 2.2.3 BTF_KIND_ARRAY
+### 2.2.3 BTF_KIND_ARRAY
 
 
 `struct btf_type` 编码要求
@@ -268,7 +270,7 @@ enum 类型。如果位域大小不32，基类型必须int，且 int 类型
 
 commit 9d5f9f701b18 引入`kind_flag`，并解释了为何两种模式并存
 
-#### 2.2.6 BTF_KIND_ENUM
+## 2.2.6 BTF_KIND_ENUM
 
 
 `struct btf_type` 编码要求
@@ -293,7 +295,7 @@ commit 9d5f9f701b18 引入`kind_flag`，并解释了为何两种模式并存
 如果原始 enum 值是有符号的且大小小4，该值会被符号扩展为 4 字节。如
 大小8，该值会被截断为 4 字节
 
-#### 2.2.7 BTF_KIND_FWD
+### 2.2.7 BTF_KIND_FWD
 
 
 `struct btf_type` 编码要求
@@ -698,7 +700,7 @@ line_info 记录的大小。将记录大小传给内核，使得将来扩展记�
     #define BPF_LINE_INFO_LINE_COL(line_col)        ((line_col) & 0x3ff)
 
 ```
-### 3.4 BPF_{PROG,MAP}_GET_NEXT_ID
+## 3.4 BPF_{PROG,MAP}_GET_NEXT_ID
 
 
 在内核中，每个被加载的程序、map btf 都有一个唯一 id。该 id 在程序、map
