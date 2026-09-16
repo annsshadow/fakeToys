@@ -1,9 +1,11 @@
+# xstate
+
 ﻿## 在用户空间应用程序中使用 XSTATE 特
 
 x86 架构支持通过 CPUID 枚举的浮点扩展。应用程序通过查询 CPUID 并使XGETBV 来评估内XCR0 已启用哪些特性
 直到 AVX-512 PKRU 状态，如果可用，这些特性会由内核自动启用。像 AMX
 TILE_DATA（XSTATE 组件 18）这样的特性同样由 XCR0 启用，但相关指令的首使用会被内核捕获，因为默认情况下并不会自动分配所需的大XSTATE 缓冲区
-### 引入动态特性的目的
+## 引入动态特性的目的
 
 
 传统的用户空间库通常为备用信号栈（alternate signal stack）硬编码了静大小，常常使MINSIGSTKSZ（通常2KB）。该栈必须至少能够存放内核在跳入
@@ -38,7 +40,7 @@ TILE_DATA（XSTATE 组件 18）这样的特性同样由 XCR0 启用，但相关�
 与动态启用特性相关的指令首次被使用时会被内核捕获。陷阱处理程序会检查该
 进程是否具有使用该特性的权限。如果进程没有权限，内核会向应用程序发SIGILL。如果进程拥有权限，则处理程序会为该任务分配更大xstate 缓冲区，
 以便对大型状态进行上下文切换。在分配失败的罕见情况下，内核会发SIGSEGV
-##### AMX TILE_DATA 启用示例
+#### AMX TILE_DATA 启用示例
 
 
 下面是用户空间应用程序如何动态启TILE_DATA 的示例：
@@ -79,6 +81,7 @@ TILE_DATA（XSTATE 组件 18）这样的特性同样由 XCR0 启用，但相关�
   2. After that, determining support for AMX, an application must
      explicitly ask permission to use it::
 
+
         #ifndef ARCH_REQ_XCOMP_PERM
         #define ARCH_REQ_XCOMP_PERM  0x1023
         #endif
@@ -93,7 +96,7 @@ TILE_DATA（XSTATE 组件 18）这样的特性同样由 XCR0 启用，但相关�
 ```
 Note this example does not include the sigaltstack preparation.
 
-### 信号帧中的动态特
+## 信号帧中的动态特
 
 动态启用的特性如果在初始配置下，则在信号进入时不会被写入信号帧。这非动态特性不同，后者无论其配置如何总会被写入。信号处理程序可以检XSAVE 缓冲区的 XSTATE_BV 字段来判断某个特性是否已被写入
 ### 虚拟机的动态特

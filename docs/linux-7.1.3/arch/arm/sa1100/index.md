@@ -1,4 +1,4 @@
-## Intel StrongARM 1100
+# Intel StrongARM 1100
 
 本页面汇总 Intel StrongARM 1100 平台相关文档。
 

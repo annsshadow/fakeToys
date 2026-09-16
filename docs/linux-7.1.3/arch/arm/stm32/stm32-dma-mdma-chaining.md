@@ -1,3 +1,5 @@
+# stm32-dma-mdma-chaining
+
 ﻿
 ## STM32 DMA-MDMA 链式传输（STM32 DMA-MDMA chaining
 
@@ -107,6 +109,7 @@
   exchange the parameters needed to configure MDMA. These parameters are
   gathered into a u32 array with three values:
 
+
   * the STM32 MDMA request (which is actually the DMAMUX channel ID),
   * the address of the STM32 DMA register to clear the Transfer Complete
     interrupt flag,
@@ -140,6 +143,7 @@
     define a new property.
     ::
 
+
           &my_foo_device {
                   ...
                   my_dma_pool = &my_foo_device_dma_pool;
@@ -156,6 +160,7 @@
     the DMA controller to use is the MDMA controller's one.
     ::
 
+
           &my_foo_device {
                   [...]
                   my_dma_pool = &my_foo_device_dma_pool;
@@ -164,6 +169,7 @@
           };
 
     Concerning STM32 MDMA bindings:
+
 
     1. The request line number : whatever the value here, it will be overwritten
     by MDMA driver with the STM32 DMAMUX channel ID passed through
@@ -286,6 +292,7 @@
     struct dma_slave_config to configure STM32 MDMA channel.
     ::
 
+
       struct dma_slave_config dma_conf;
       struct dma_slave_config mdma_conf;
 
@@ -336,6 +343,7 @@
     Depending on the direction, set the callback on the descriptor that finishes
     the overall transfer:
 
+
     * DMA_DEV_TO_MEM: set the callback on the "MDMA" descriptor
     * DMA_MEM_TO_DEV: set the callback on the "DMA" descriptor
 
@@ -383,5 +391,6 @@
 
 
 :Authors:
+
 
 - Amelie Delaunay <amelie.delaunay@foss.st.com>

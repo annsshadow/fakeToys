@@ -1,4 +1,4 @@
-## 在 sunhv 控制台上发送 'break' 的步骤
+# 在 sunhv 控制台上发送 'break' 的步骤
 
 
 在裸机（Baremetal）上：
