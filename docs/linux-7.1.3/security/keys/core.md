@@ -1,3 +1,5 @@
+# core
+
 ﻿## 内核密钥保留服务
 
 
@@ -299,6 +301,7 @@ SELinux 只是在所有基本权限检查完成后被调用
 
      The flags are::
 
+
 	I	Instantiated
 	R	Revoked
 	D	Dead
@@ -312,6 +315,7 @@ SELinux 只是在所有基本权限检查完成后被调用
      This file lists the tracking data for each user that has at least one key
      on the system.  Such data includes quota information and statistics::
 
+
 	[root@andromeda root]# cat /proc/key-users
 	0:     46 45/45 1/100 13/10000
 	29:     2 2/2 2/100 40/10000
@@ -319,6 +323,7 @@ SELinux 只是在所有基本权限检查完成后被调用
 	38:     2 2/2 2/100 40/10000
 
      The format of each line is::
+
 
 	<UID>:			User ID to which this applies
 	<usage>			Structure refcount
@@ -420,6 +425,7 @@ request_key keyctl。后者提供了一系列用于
   *  Search the process's keyrings for a key, potentially calling out to
      userspace to create it::
 
+
 	key_serial_t request_key(const char *type, const char *description,
 				 const char *callout_info,
 				 key_serial_t dest_keyring);
@@ -458,6 +464,7 @@ keyctl 系统调用的函数如下：
 
   *  Replace the session keyring this process subscribes to with a new one::
 
+
 	key_serial_t keyctl(KEYCTL_JOIN_SESSION_KEYRING, const char *name);
 
      If name is NULL, an anonymous keyring is created attached to the process
@@ -476,6 +483,7 @@ keyctl 系统调用的函数如下：
 
   *  Update the specified key::
 
+
 	long keyctl(KEYCTL_UPDATE, key_serial_t key, const void *payload,
 		    size_t plen);
 
@@ -490,6 +498,7 @@ keyctl 系统调用的函数如下：
 
   *  Revoke a key::
 
+
 	long keyctl(KEYCTL_REVOKE, key_serial_t key);
 
      This makes a key unavailable for further operations. Further attempts to
@@ -498,6 +507,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Change the ownership of a key::
+
 
 	long keyctl(KEYCTL_CHOWN, key_serial_t key, uid_t uid, gid_t gid);
 
@@ -512,6 +522,7 @@ keyctl 系统调用的函数如下：
 
   *  Change the permissions mask on a key::
 
+
 	long keyctl(KEYCTL_SETPERM, key_serial_t key, key_perm_t perm);
 
      This function permits the owner of a key or the superuser to change the
@@ -522,6 +533,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Describe a key::
+
 
 	long keyctl(KEYCTL_DESCRIBE, key_serial_t key, char *buffer,
 		    size_t buflen);
@@ -539,6 +551,7 @@ keyctl 系统调用的函数如下：
 
      If successful, a string is placed in the buffer in the following format::
 
+
 	<type>;<uid>;<gid>;<perm>;<description>
 
      Where type and description are strings, uid and gid are decimal, and perm
@@ -547,10 +560,12 @@ keyctl 系统调用的函数如下：
 
      This can be parsed with::
 
+
 	sscanf(buffer, "%[^;];%d;%d;%o;%s", type, &uid, &gid, &mode, desc);
 
 
   *  Clear out a keyring::
+
 
 	long keyctl(KEYCTL_CLEAR, key_serial_t keyring);
 
@@ -564,6 +579,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Link a key into a keyring::
+
 
 	long keyctl(KEYCTL_LINK, key_serial_t keyring, key_serial_t key);
 
@@ -583,6 +599,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Move a key from one keyring to another::
+
 
 	long keyctl(KEYCTL_MOVE,
 		    key_serial_t id,
@@ -605,6 +622,7 @@ keyctl 系统调用的函数如下：
 
   *  Unlink a key or keyring from another keyring::
 
+
 	long keyctl(KEYCTL_UNLINK, key_serial_t keyring, key_serial_t key);
 
      This function looks through the keyring for the first link to the
@@ -616,6 +634,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Search a keyring tree for a key::
+
 
 	key_serial_t keyctl(KEYCTL_SEARCH, key_serial_t keyring,
 			    const char *type, const char *description,
@@ -641,6 +660,7 @@ keyctl 系统调用的函数如下：
 
   *  Read the payload data from a key::
 
+
 	long keyctl(KEYCTL_READ, key_serial_t keyring, char *buffer,
 		    size_t buflen);
 
@@ -662,6 +682,7 @@ keyctl 系统调用的函数如下：
      into the buffer.
 
   *  Instantiate a partially constructed key::
+
 
 	long keyctl(KEYCTL_INSTANTIATE, key_serial_t key,
 		    const void *payload, size_t plen,
@@ -690,6 +711,7 @@ keyctl 系统调用的函数如下：
 
   *  Negatively instantiate a partially constructed key::
 
+
 	long keyctl(KEYCTL_NEGATE, key_serial_t key,
 		    unsigned timeout, key_serial_t keyring);
 	long keyctl(KEYCTL_REJECT, key_serial_t key,
@@ -713,10 +735,12 @@ keyctl 系统调用的函数如下：
 
   *  Set the default request-key destination keyring::
 
+
 	long keyctl(KEYCTL_SET_REQKEY_KEYRING, int reqkey_defl);
 
      This sets the default keyring to which implicitly requested keys will be
      attached for this thread. reqkey_defl should be one of these constants::
+
 
 	CONSTANT				VALUE	NEW DEFAULT KEYRING
 	======================================	======	=======================
@@ -744,6 +768,7 @@ keyctl 系统调用的函数如下：
 
   *  Set the timeout on a key::
 
+
 	long keyctl(KEYCTL_SET_TIMEOUT, key_serial_t key, unsigned timeout);
 
      This sets or clears the timeout on a key. The timeout can be 0 to clear
@@ -756,6 +781,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Assume the authority granted to instantiate a key::
+
 
 	long keyctl(KEYCTL_ASSUME_AUTHORITY, key_serial_t key);
 
@@ -779,6 +805,7 @@ keyctl 系统调用的函数如下：
 
   *  Get the LSM security context attached to a key::
 
+
 	long keyctl(KEYCTL_GET_SECURITY, key_serial_t key, char *buffer,
 		    size_t buflen)
 
@@ -800,6 +827,7 @@ keyctl 系统调用的函数如下：
 
   *  Install the calling process's session keyring on its parent::
 
+
 	long keyctl(KEYCTL_SESSION_TO_PARENT);
 
      This functions attempts to install the calling process's session keyring
@@ -820,6 +848,7 @@ keyctl 系统调用的函数如下：
 
   *  Invalidate a key::
 
+
 	long keyctl(KEYCTL_INVALIDATE, key_serial_t key);
 
      This function marks a key as being invalidated and then wakes up the
@@ -836,10 +865,12 @@ keyctl 系统调用的函数如下：
 
   *  Compute a Diffie-Hellman shared secret or public key::
 
+
 	long keyctl(KEYCTL_DH_COMPUTE, struct keyctl_dh_params *params,
 		    char *buffer, size_t buflen, struct keyctl_kdf_params *kdf);
 
      The params struct contains serial numbers for three keys::
+
 
 	 - The prime, p, known to both parties
 	 - The local private key
@@ -848,6 +879,7 @@ keyctl 系统调用的函数如下：
 
      The value computed is::
 
+
 	result = base ^ private (mod prime)
 
      If the base is the shared generator, the result is the local
@@ -855,6 +887,7 @@ keyctl 系统调用的函数如下：
      the shared secret.
 
      If the parameter kdf is NULL, the following applies:
+
 
 	 - The buffer length must be at least the length of the prime, or zero.
 
@@ -867,6 +900,7 @@ keyctl 系统调用的函数如下：
      (KDF) on the Diffie-Hellman computation where only the result
      of the KDF is returned to the caller. The KDF is characterized with
      struct keyctl_kdf_params as follows:
+
 
 	 - ``char *hashname`` specifies the NUL terminated string identifying
 	   the hash used from the kernel crypto API and applied for the KDF
@@ -887,6 +921,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Restrict keyring linkage::
+
 
 	long keyctl(KEYCTL_RESTRICT_KEYRING, key_serial_t keyring,
 		    const char *type, const char *restriction);
@@ -919,6 +954,7 @@ keyctl 系统调用的函数如下：
 
   *  Query an asymmetric key::
 
+
 	long keyctl(KEYCTL_PKEY_QUERY,
 		    key_serial_t key_id, unsigned long reserved,
 		    const char *params,
@@ -930,6 +966,7 @@ keyctl 系统调用的函数如下：
      Currently supported keys include ``enc`` and ``hash``.  The information
      is returned in the keyctl_pkey_query struct::
 
+
 	__u32	supported_ops;
 	__u32	key_size;
 	__u16	max_data_size;
@@ -940,6 +977,7 @@ keyctl 系统调用的函数如下：
 
      ``supported_ops`` contains a bit mask of flags indicating which ops are
      supported.  This is constructed from a bitwise-OR of::
+
 
 	KEYCTL_SUPPORTS_{ENCRYPT,DECRYPT,SIGN,VERIFY}
 
@@ -957,6 +995,7 @@ keyctl 系统调用的函数如下：
 
 
   *  Encrypt, decrypt, sign or verify a blob using an asymmetric key::
+
 
 	long keyctl(KEYCTL_PKEY_ENCRYPT,
 		    const struct keyctl_pkey_params *params,
@@ -990,6 +1029,7 @@ keyctl 系统调用的函数如下：
      The parameter block pointed to by params contains a number of integer
      values::
 
+
 	__s32		key_id;
 	__u32		in_len;
 	__u32		out_len;
@@ -1002,6 +1042,7 @@ keyctl 系统调用的函数如下：
 
      For a given operation, the in and out buffers are used as follows::
 
+
 	Operation ID		in,in_len	out,out_len	in2,in2_len
 	=======================	===============	===============	===============
 	KEYCTL_PKEY_ENCRYPT	Raw data	Encrypted data	-
@@ -1011,6 +1052,7 @@ keyctl 系统调用的函数如下：
 
      ``info`` is a string of key=value pairs that supply supplementary
      information.  These include:
+
 
 	``enc=<encoding>`` The encoding of the encrypted/signature blob.  This
 			can be "pkcs1" for RSASSA-PKCS1-v1.5 or
@@ -1033,6 +1075,7 @@ keyctl 系统调用的函数如下：
 
   *  Watch a key or keyring for changes::
 
+
 	long keyctl(KEYCTL_WATCH_KEY, key_serial_t key, int queue_fd,
 		    const struct watch_notification_filter *filter);
 
@@ -1054,6 +1097,7 @@ keyctl 系统调用的函数如下：
 
      Notification records look like::
 
+
 	struct key_notification {
 		struct watch_notification watch;
 		__u32	key_id;
@@ -1062,6 +1106,7 @@ keyctl 系统调用的函数如下：
 
      In this, watch::type will be "WATCH_TYPE_KEY_NOTIFY" and subtype will be
      one of::
+
 
 	NOTIFY_KEY_INSTANTIATED
 	NOTIFY_KEY_UPDATED
@@ -1084,6 +1129,7 @@ keyctl 系统调用的函数如下：
      "info" field.
 
      This needs to be configured by enabling:
+
 
 	"Provide key/keyring change notifications" (KEY_NOTIFICATIONS)
 
@@ -1170,6 +1216,7 @@ keyctl 系统调用的函数如下：
 
  *  To search for a key in a specific domain, call::
 
+
 	struct key *request_key_tag(const struct key_type *type,
 				    const char *description,
 				    struct key_tag *domain_tag,
@@ -1182,6 +1229,7 @@ keyctl 系统调用的函数如下：
 
 
  *  To search for a key, passing auxiliary data to the upcaller, call::
+
 
 	struct key *request_key_with_auxdata(const struct key_type *type,
 					     const char *description,
@@ -1198,6 +1246,7 @@ keyctl 系统调用的函数如下：
 
  *  To search for a key under RCU conditions, call::
 
+
 	struct key *request_key_rcu(const struct key_type *type,
 				    const char *description,
 				    struct key_tag *domain_tag);
@@ -1209,9 +1258,11 @@ keyctl 系统调用的函数如下：
 
  *  When it is no longer required, the key should be released using::
 
+
 	void key_put(struct key *key);
 
     Or::
+
 
 	void key_ref_put(key_ref_t key_ref);
 
@@ -1221,6 +1272,7 @@ keyctl 系统调用的函数如下：
 
  *  Extra references can be made to a key by calling one of the following
     functions::
+
 
 	struct key *__key_get(struct key *key);
 	struct key *key_get(struct key *key);
@@ -1234,6 +1286,7 @@ keyctl 系统调用的函数如下：
 
  *  A key's serial number can be obtained by calling::
 
+
 	key_serial_t key_serial(struct key *key);
 
     If key is NULL or if CONFIG_KEYS is not set then 0 will be returned (in the
@@ -1241,6 +1294,7 @@ keyctl 系统调用的函数如下：
 
 
  *  If a keyring was found in the search, this can be further searched by::
+
 
 	key_ref_t keyring_search(key_ref_t keyring_ref,
 				 const struct key_type *type,
@@ -1258,6 +1312,7 @@ keyctl 系统调用的函数如下：
 
 
  *  A keyring can be created by::
+
 
 	struct key *keyring_alloc(const char *description, uid_t uid, gid_t gid,
 				  const struct cred *cred,
@@ -1298,6 +1353,7 @@ keyctl 系统调用的函数如下：
 
  *  To check the validity of a key, this function can be called::
 
+
 	int validate_key(struct key *key);
 
     This checks that the key in question hasn't expired or and hasn't been
@@ -1308,6 +1364,7 @@ keyctl 系统调用的函数如下：
 
  *  To register a key type, the following function should be called::
 
+
 	int register_key_type(struct key_type *type);
 
     This will return error EEXIST if a type of the same name is already
@@ -1315,6 +1372,7 @@ keyctl 系统调用的函数如下：
 
 
  *  To unregister a key type, call::
+
 
 	void unregister_key_type(struct key_type *type);
 
@@ -1368,6 +1426,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
 
      to read the pointer, and::
 
+
 	rcu_dereference() ... rcu_assign_pointer() ... call_rcu()
 
      to set the pointer and dispose of the old contents after a grace period.
@@ -1382,11 +1441,14 @@ key->payload.data[] 数组中。必须选择以下方式之一
      usage.  This is called key->payload.rcu_data0.  The following accessors
      wrap the RCU calls to this element:
 
+
      a) Set or change the first payload pointer::
+
 
 		rcu_assign_keypointer(struct key *key, void *data);
 
      b) Read the first payload pointer with the key semaphore held::
+
 
 		[const] void *dereference_key_locked([const] struct key *key);
 
@@ -1395,6 +1457,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
 	 isn't held.
 
      c) Read the first payload pointer with the RCU read lock held::
+
 
 		const void *dereference_key_rcu(const struct key *key);
 
@@ -1447,6 +1510,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      This optional method permits the key type to attempt to parse payload
      before a key is created (add key) or the key semaphore is taken (update or
      instantiate key).  The structure pointed to by prep looks like::
+
 
 	struct key_preparsed_payload {
 		char		*description;
@@ -1537,6 +1601,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      This method is optional.  It is called when a key search is about to be
      performed.  It is given the following structure::
 
+
 	struct key_match_data {
 		bool (*cmp)(const struct key *key,
 			    const struct key_match_data *match_data);
@@ -1551,6 +1616,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      against raw_data) and lookup_type will be set to indicate a direct lookup.
 
      The following lookup_type values are available:
+
 
        *  KEYRING_SEARCH_LOOKUP_DIRECT - A direct lookup hashes the type and
       	  description to narrow down the search to a small number of keys.
@@ -1653,6 +1719,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      instantiation process, whether or not it succeeds, whether or not there's
      an error::
 
+
 	void complete_request_key(struct key_construction *cons, int error);
 
      The error parameter should be 0 on success, -ve on error.  The
@@ -1666,6 +1733,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
 
      The key under construction and the authorisation key can be found in the
      key_construction struct pointed to by cons:
+
 
       *  ``struct key *key;``
 
@@ -1687,6 +1755,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
 
   *  ``asym_eds_op`` and ``asym_verify_signature``::
 
+
        int (*asym_eds_op)(struct kernel_pkey_params *params,
 			  const void *in, void *out);
        int (*asym_verify_signature)(struct kernel_pkey_params *params,
@@ -1697,6 +1766,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      key to verify a signature.
 
      In all cases, the following information is provided in the params block::
+
 
 	struct kernel_pkey_params {
 		struct key	*key;
@@ -1720,6 +1790,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
 
      For a given operation ID, the input and output buffers are used as
      follows::
+
 
 	Operation ID		in,in_len	out,out_len	in2,in2_len
 	=======================	===============	===============	===============
@@ -1757,6 +1828,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
 
   *  ``asym_query``::
 
+
        int (*asym_query)(const struct kernel_pkey_params *params,
 			 struct kernel_pkey_query *info);
 
@@ -1768,6 +1840,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      the returned buffer/data sizes as appropriate.
 
      If successful, the following information is filled in::
+
 
 	struct kernel_pkey_query {
 		__u32		supported_ops;
@@ -1782,6 +1855,7 @@ key->payload.data[] 数组中。必须选择以下方式之一
      are supported by the key, including encryption of a blob, decryption of a
      blob, signing a blob and verifying the signature on a blob.  The following
      constants are defined for this::
+
 
 	KEYCTL_SUPPORTS_{ENCRYPT,DECRYPT,SIGN,VERIFY}
 
