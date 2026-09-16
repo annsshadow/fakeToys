@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type APIResponse, type Page, type Response } from '@playwright/test'
+import { type APIRequestContext, type APIResponse, expect, type Page, type Response } from '@playwright/test'
 
 export type ResponseAudit = {
   failures: string[]
