@@ -1,11 +1,15 @@
 
+# gfp_mask-from-fs-io
+
 :Original: Documentation/core-api/gfp_mask-from-fs-io.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  时奎亮 <alexs@kernel.org>
 
@@ -40,6 +44,7 @@
 
 
 该API在以下内核代码中:
+
 
 include/linux/sched/mm.h
 

@@ -1,7 +1,10 @@
 
+# index
+
 :Original: Documentation/core-api/irq/index.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 

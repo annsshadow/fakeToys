@@ -1,7 +1,10 @@
 
+# ep93xx_adc
+
 :Original: Documentation/iio/ep93xx_adc.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -23,6 +26,7 @@ EP9301和EP9302数据表定义了通道0..4的编号方案。虽然EP9307, EP931
 
 如果ep93xx_adc是IIO设备0，您将在以下位置找到条目
 /sys/bus/iio/devices/iio:device0/:
+
 
   +-----------------+---------------+
   | sysfs 入口      | ball/pin 名称 |

@@ -1,4 +1,6 @@
 
+# contribution-maturity-model
+
 :Original: Documentation/process/contribution-maturity-model.rst
 :Translator: Avadhut Naik <avadhut.naik@amd.com>
 
@@ -77,6 +79,7 @@ upstream.
   solo internamente dentro de la organización, o a discreción de la
   organización, algunas o todas pueden publicarse externamente. Las
   métricas que se sugieren encarecidamente incluyen:
+
 
   - El número de contribuciones al kernel upstream por equipo u
     organización (por ejemplo, todas las personas que reportan a un

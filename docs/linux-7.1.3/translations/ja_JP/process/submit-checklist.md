@@ -1,5 +1,7 @@
 
 
+# submit-checklist
+
    Documentation/translations/ja_JP/SubmitChecklist, which can be found
    in the pre-v6.14 tree if you are interested.
    Please note that this translation is independent of the previous one.

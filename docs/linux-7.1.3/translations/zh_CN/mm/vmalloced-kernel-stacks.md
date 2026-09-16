@@ -1,11 +1,15 @@
 
+# vmalloced-kernel-stacks
+
 :Original: Documentation/mm/vmalloced-kernel-stacks.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## 支持虚拟映射的内核栈
 
@@ -39,6 +43,7 @@ HAVE_ARCH_VMAP_STACK和VMAP_STACK配置选项能够支持带有保护页的虚�
 
 能够支持虚拟映射内核栈的架构应该启用这个bool配置选项。要求是:
 
+
 - vmalloc空间必须大到足以容纳许多内核堆栈。这可能排除了许多32位架构。
 - vmalloc空间的堆栈需要可靠地工作。例如，如果vmap页表是按需创建的，当堆栈指向
   具有未填充页表的虚拟地址时，这种机制需要工作，或者架构代码（switch_to()和
@@ -64,6 +69,7 @@ HAVE_ARCH_VMAP_STACK。
         启用VMAP_STACK时，无法在堆栈分配的数据上运行DMA。
 
 内核配置选项和依赖性不断变化。请参考最新的代码库:
+
 
 `Kconfig <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/arch/Kconfig>`
 

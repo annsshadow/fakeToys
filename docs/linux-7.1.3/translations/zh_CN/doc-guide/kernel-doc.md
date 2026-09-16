@@ -1,4 +1,6 @@
 
+# kernel-doc
+
 :Original: Documentation/doc-guide/kernel-doc.rst
 
 :译者: 吴想成 Wu XiangCheng <bobwxc@email.cn>
@@ -91,6 +93,7 @@ kernel-doc注释用 `/**` 作为开始标记。 `kernel-doc` 工具将提取以�
 
    或::
 
+
       * @参数:
       *		较长说明
       *         的续行
@@ -135,9 +138,11 @@ kernel-doc注释用 `/**` 作为开始标记。 `kernel-doc` 工具将提取以�
 
      它们在最终文档中变成一行::
 
+
 	Return: 0 - OK -EINVAL - invalid argument -ENOMEM - out of memory
 
      因此，为了在需要的地方换行，您需要使用ReST列表，例如::
+
 
       * Return:
       * * 0		- OK to runtime suspend the device
@@ -147,7 +152,7 @@ kernel-doc注释用 `/**` 作为开始标记。 `kernel-doc` 工具将提取以�
      都将被视为新的节标题，可能会产生意料不到的效果。
 
 ```
-### 结构体、共用体、枚举类型文档
+## 结构体、共用体、枚举类型文档
 
 
 ```
@@ -168,7 +173,7 @@ kernel-doc注释用 `/**` 作为开始标记。 `kernel-doc` 工具将提取以�
 
 结构体名称后面的简要说明可以跨多行，并以成员说明、空白注释行或注释块结尾结束。
 
-#### 成员
+### 成员
 
 
 结构体、共用体和枚举的成员应以与函数参数相同的方式记录；它们后紧跟简短的描述，
@@ -250,7 +255,7 @@ kernel-doc注释用 `/**` 作为开始标记。 `kernel-doc` 工具将提取以�
 
    #) 当嵌套结构体/共用体是匿名的时，其中的成员 `李四` 应记录为 `@李四:`
 
-#### 行间注释文档
+## 行间注释文档
 
 
 结构成员也可在定义时以行间注释形式记录。有两种样式，一种是单行注释，其中开始
@@ -418,6 +423,7 @@ reStructuredText标记和 `Sphinx C 域`_ 引用。
   .. kernel-doc:: source
      :option:
 
+
 ```
 **source** 是相对于内核源代码树的源文件路径。
 支持以下指令选项：
@@ -434,6 +440,7 @@ export: **[source-pattern ...]**
     .. kernel-doc:: lib/bitmap.c
        :export:
 
+
     .. kernel-doc:: include/net/mac80211.h
        :export: net/mac80211/*.c
 
@@ -447,6 +454,7 @@ internal: **[source-pattern ...]**
     .. kernel-doc:: drivers/gpu/drm/i915/intel_audio.c
        :internal:
 
+
 ```
 identifiers: **[ function/type ...]**
   在 **source** 中包含每个 **function** 和 **type** 的文档。如果没有指定 **function** ，
@@ -459,6 +467,7 @@ identifiers: **[ function/type ...]**
 
     .. kernel-doc:: lib/idr.c
        :identifiers:
+
 
 ```
 no-identifiers: **[ function/type ...]**

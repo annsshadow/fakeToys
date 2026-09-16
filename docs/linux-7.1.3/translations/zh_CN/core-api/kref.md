@@ -1,7 +1,10 @@
 
+# kref
+
 :Original: Documentation/core-api/kref.rst
 
 翻译:
+
 
 司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -18,6 +21,7 @@
 
 其中很多内容都是从Greg Kroah-Hartman2004年关于krefs的OLS论文和演讲中摘
 录的，可以在以下网址找到:
+
 
   - http://www.kroah.com/linux/talks/ols_2004_kref_paper/Reprint-Kroah-Hartman-OLS2004.pdf
   - http://www.kroah.com/linux/talks/ols_2004_kref_talk/
@@ -62,6 +66,7 @@ kref可以出现在数据结构体中的任何地方。
 
 
 一旦你有一个初始化的kref，你必须遵循以下规则:
+
 
 1) 如果你对一个指针做了一个非临时性的拷贝，特别是如果它可以被传递给另一个执
 ```

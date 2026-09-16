@@ -1,5 +1,5 @@
 
-## Linux 内核中文文档翻译规范
+# Linux 内核中文文档翻译规范
 
 
 修订记录：
@@ -71,6 +71,7 @@ Linux 发行版和简单地使用 Linux 命令行，那么可以迅速开始了�
 
 	You should run:
 
+
 		sudo dnf install -y dejavu-sans-fonts dejavu-sans-mono-fonts \
 		     dejavu-serif-fonts google-noto-sans-cjk-fonts graphviz-gd \
 	             latexmk librsvg2-tools texlive-anyfontsize texlive-capt-of \
@@ -83,6 +84,7 @@ Linux 发行版和简单地使用 Linux 命令行，那么可以迅速开始了�
 	Sphinx needs to be installed either:
 	1) via pip/pypi with:
 
+
 		/usr/bin/python3 -m venv sphinx_latest
 		. sphinx_latest/bin/activate
 		pip install -r ./Documentation/sphinx/requirements.txt
@@ -91,6 +93,7 @@ Linux 发行版和简单地使用 Linux 命令行，那么可以迅速开始了�
 		deactivate
 
 	2) As a package with:
+
 
 		sudo dnf install -y python3-sphinx
 
@@ -215,6 +218,7 @@ Linux 发行版和简单地使用 Linux 命令行，那么可以迅速开始了�
 
 	:翻译:
 
+
 	 司延腾 Yanteng Si <si.yanteng@linux.dev> #替换为您自己的联系方式
 
 ```
@@ -282,7 +286,7 @@ Linux 发行版和简单地使用 Linux 命令行，那么可以迅速开始了�
 **请注意** 以上四行，缺少任何一行，您都将会在第一轮审阅后返工，如果您需要一个
 更加明确的示例，请对 zh_CN 目录执行 git log。
 
-### 导出补丁和制作封面
+## 导出补丁和制作封面
 
 
 ```
@@ -298,7 +302,7 @@ Linux 发行版和简单地使用 Linux 命令行，那么可以迅速开始了�
 	……
 
 ```
-### 测试补丁
+## 测试补丁
 
 
 ```
@@ -441,7 +445,7 @@ reviewer 的评论，做到每条都有回复，每个回复都落实到位。
 ```
 这样，新的一版补丁就又发送到邮件列表等待审阅，之后就是重复这个过程。
 
-### 审阅周期
+## 审阅周期
 
 
 因为有时邮件列表比较繁忙，您的邮件可能会被淹没，如果超过两周没有得到任何

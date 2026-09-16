@@ -1,5 +1,7 @@
 
 
+# index
+
 	\renewcommand\thesection*
 	\renewcommand\thesubsection*
 	\kerneldocCJKon
@@ -25,6 +27,7 @@
 
 TODOList:
 
+
 - maintainer/index
 
 ### 內部API文檔
@@ -33,6 +36,7 @@ TODOList:
 開發人員使用的內核內部交互接口手冊。
 
 TODOList:
+
 
 - core-api/index
 - driver-api/index
@@ -48,6 +52,7 @@ TODOList:
 - [dev-tools/index](dev-tools/index)
 
 TODOList:
+
 
 - doc-guide/index
 - dev-tools/testing-overview
@@ -65,9 +70,10 @@ TODOList:
 和查找內核用戶空間API信息的程序開發人員。
 
 - [admin-guide/index](admin-guide/index)
-- [admin-guide/reporting-issues.rst](admin-guide/reporting-issues.rst)
+- [admin-guide/reporting-issues.rst](admin-guide/reporting-issues.md)
 
 TODOList:
+
 
 - userspace-api/index
 - 內核構建系統 <kbuild/index>
@@ -81,6 +87,7 @@ TODOList:
 下列文檔描述了內核需要的平臺固件相關信息。
 
 TODOList:
+
 
 - devicetree/index
 - firmware-guide/index
@@ -98,12 +105,14 @@ TODOList:
 
 TODOList:
 
+
 - staging/index
 
 ### 術語表
 
 
 TODOList:
+
 
 - glossary
 

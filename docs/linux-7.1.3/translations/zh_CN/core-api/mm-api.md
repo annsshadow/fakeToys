@@ -1,12 +1,16 @@
 
+# mm-api
+
 :Original: Documentation/core-api/mm-api.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
  时奎亮<alexs@kernel.org>
 
@@ -21,6 +25,7 @@ API（Application Programming Interface，应用程序接口）
 
 该API在以下内核代码中:
 
+
 arch/x86/include/asm/uaccess.h
 
 arch/x86/lib/usercopy_32.c
@@ -33,6 +38,7 @@ mm/gup.c
 
 该API在以下内核代码中:
 
+
 include/linux/gfp_types.h
 
 ## Slab缓存
@@ -41,6 +47,7 @@ include/linux/gfp_types.h
 此缓存非cpu片上缓存，请读者自行查阅资料。
 
 该API在以下内核代码中:
+
 
 include/linux/slab.h
 
@@ -55,6 +62,7 @@ mm/util.c
 
 该API在以下内核代码中:
 
+
 mm/vmalloc.c
 
 
@@ -62,6 +70,7 @@ mm/vmalloc.c
 
 
 该API在以下内核代码中:
+
 
 ### 文件映射
 
@@ -90,6 +99,7 @@ include/linux/pagemap.h
 
 该API在以下内核代码中:
 
+
 mm/mempool.c
 
 ## DMA池
@@ -99,12 +109,14 @@ DMA(Direct Memory Access，直接存储器访问)
 
 该API在以下内核代码中:
 
+
 mm/dmapool.c
 
 ## 更多的内存管理函数
 
 
 该API在以下内核代码中:
+
 
 mm/memory.c
 

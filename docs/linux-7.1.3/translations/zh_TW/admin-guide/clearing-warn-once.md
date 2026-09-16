@@ -1,8 +1,10 @@
 
 
+# clearing-warn-once
+
 :Translator: 胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
 
-### 清除 WARN_ONCE
+## 清除 WARN_ONCE
 
 
 WARN_ONCE / WARN_ON_ONCE / printk_once 僅僅打印一次消息.

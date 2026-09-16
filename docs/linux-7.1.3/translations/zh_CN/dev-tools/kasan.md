@@ -1,5 +1,7 @@
 
 
+# kasan
+
 :Original: Documentation/dev-tools/kasan.rst
 :Translator: 万家兵 Wan Jiabing <wanjiabing@vivo.com>
 
@@ -13,6 +15,7 @@ Kernel Address SANitizer(KASAN)是一种动态内存安全错误检测工具，�
 检查内存越界访问和使用已释放内存的问题。
 
 KASAN有三种模式:
+
 
 1. 通用KASAN
 2. 基于软件标签的KASAN
@@ -395,6 +398,7 @@ KASAN连接到vmap基础架构以懒清理未使用的影子内存。
 
 对于软件KASAN模式，要禁用特定文件或目录的检测，请将 `KASAN_SANITIZE` 添加
 到相应的内核Makefile中:
+
 
 ```
 

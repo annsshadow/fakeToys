@@ -1,11 +1,15 @@
 
+# sysrq
+
 :Original: Documentation/admin-guide/sysrq.rst
 
 :翻译:
 
+
  黄军华 Junhua Huang <huang.junhua@zte.com.cn>
 
 :校译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -15,7 +19,7 @@
 
 针对 sysrq.c 的文档说明
 
-#### 什么是魔法 SysRq 键？
+### 什么是魔法 SysRq 键？
 
 
 它是一个你可以输入的具有魔法般的组合键。

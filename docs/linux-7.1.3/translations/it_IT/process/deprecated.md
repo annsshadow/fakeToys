@@ -1,5 +1,7 @@
 
 
+# deprecated
+
 :Original: Documentation/process/deprecated.rst <deprecated>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -111,6 +113,7 @@ Per altri calcoli, usate le funzioni size_mul(), size_add(), e size_sub(). Per
 ```
 dovreste scrivere:
 
+
        foo = krealloc(size_add(current_size,
                                size_mul(chunk_size,
                                         size_sub(count, 3))), GFP_KERNEL);
@@ -189,6 +192,7 @@ Parafrasando la `guida
 <https://lore.kernel.org/lkml/CA+55aFwQEd_d40g4mUCSsVRZzrFPUJt74vc6PPpb675hYNXcKw@mail.gmail.com/>`_
 di Linus:
 
+
 - Se il valore hash di "%p" è inutile, chiediti se il puntatore stesso
   è importante. Forse dovrebbe essere rimosso del tutto?
 - Se credi davvero che il vero valore del puntatore sia importante,
@@ -255,6 +259,7 @@ allora potremo usarla anche noi.
 
 Ne consegue che tutti i blocchi switch/case devono finire in uno dei seguenti
 modi:
+
 
 - `break;`
 - `fallthrough;``

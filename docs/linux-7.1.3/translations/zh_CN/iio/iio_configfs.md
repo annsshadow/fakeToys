@@ -1,7 +1,10 @@
 
+# iio_configfs
+
 :Original: Documentation/iio/iio_configfs.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -83,7 +86,7 @@ IIO软件触发器为创建多种触发器类型提供了支持。通常在inclu
 
  - hrtimer,使用高分辨率定时器作为中断源
 
-### 3.1 Hrtimer触发器创建与销毁
+## 3.1 Hrtimer触发器创建与销毁
 
 
 加载iio-trig-hrtimer模块将注册hrtimer触发器类型，从而允许用户在

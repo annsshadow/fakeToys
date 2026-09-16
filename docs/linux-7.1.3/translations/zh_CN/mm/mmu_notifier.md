@@ -1,10 +1,14 @@
+# mmu_notifier
+
 :Original: Documentation/mm/mmu_notifier.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -24,6 +28,7 @@ IOMMU走CPU页表来访问进程的虚拟地址空间）。只有两种情况需
 情况A很明显，你不想冒风险让设备写到一个现在可能被一些完全不同的任务使用的页面。
 
 情况B更加微妙。为了正确起见，它需要按照以下序列发生:
+
 
   - 上页表锁
   - 清除页表项并通知 ([pmd/pte]p_huge_clear_flush_notify())

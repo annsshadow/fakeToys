@@ -1,7 +1,7 @@
 
 
 
-## Aviso sobre traduções para português
+# Aviso sobre traduções para português
 
 
 Esta documentação foi traduzida para português brasileiro por voluntários.

@@ -1,12 +1,16 @@
 
 
+# core_locking
+
 :Original: Documentation/infiniband/core_locking.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  王普宇 Puyu Wang <realpuyuwang@gmail.com>
  时奎亮 Alex Shi <alexs@kernel.org>
@@ -24,6 +28,7 @@
   除了以下异常情况，ib_device结构体中所有方法的低级驱动实现都可以睡眠。
   这些异常情况是列表中的任意的方法:
 
+
     - create_ah
     - modify_ah
     - query_ah
@@ -36,6 +41,7 @@
     他们可能不可以睡眠，而且必须可以从任何上下文中调用。
 
     向上层协议使用者输出的相应函数:
+
 
     - rdma_create_ah
     - rdma_modify_ah

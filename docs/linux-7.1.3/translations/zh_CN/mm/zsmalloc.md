@@ -1,10 +1,14 @@
+# zsmalloc
+
 :Original: Documentation/mm/zsmalloc.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## zsmalloc
 
@@ -72,6 +76,7 @@ pages_per_zspage
 - f = fullness_threshold_frac(即，目前是4个)
 
 同样地，我们将zspage分配给:
+
 
 - ZS_ALMOST_FULL  when n > N / f
 - ZS_EMPTY        when n == 0

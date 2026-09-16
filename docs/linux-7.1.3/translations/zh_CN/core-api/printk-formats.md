@@ -1,7 +1,10 @@
 
+# printk-formats
+
 :Original: Documentation/core-api/printk-formats.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
@@ -258,6 +261,7 @@ Documentation/admin-guide/sysctl/kernel.rst。
 
 ```
 转换规则是根据可选的标志组合来应用的(详见`string_escape_mem` 内核文档):
+
 
  - a - ESCAPE_ANY
  - c - ESCAPE_SPECIAL

@@ -1,11 +1,15 @@
 
+# acpi-info
+
 :Original: Documentation/PCI/acpi-info.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## PCI主桥的ACPI注意事项
@@ -101,6 +105,7 @@ PNP0A03设备中的_CBA方法描述了可热插拔主桥的ECAM空间[^9^]。请
 
     扩展地址空间描述符 (.4)
       常规标志: Bit [^0^] 消费者/生产者:
+
 
         - 1 – 这个设备消费这个资源
         - 0 – 该设备生产和消费该资源

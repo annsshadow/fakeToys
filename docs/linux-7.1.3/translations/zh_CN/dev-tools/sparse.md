@@ -1,3 +1,5 @@
+# sparse
+
 ﻿Copyright 2004 Linus Torvalds
 Copyright 2004 Pavel Machek <pavel@ucw.cz>
 Copyright 2006 Bob Copeland <me@bobcopeland.com>
@@ -7,9 +9,11 @@ Copyright 2006 Bob Copeland <me@bobcopeland.com>
 
 :翻译:
 
+
  Li Yang <leoyang.li@nxp.com>
 
 :校译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -23,7 +27,7 @@ Sparse是一个C程序的语义检查器；它可以用来发现内核代码的�
 关于sparse的更多信息，主要是关于它的内部结构，可以在它的官方网页上找到：
 https://sparse.docs.kernel.org。
 
-#### 使用 sparse 工具做类型检查
+### 使用 sparse 工具做类型检查
 
 
 ```
@@ -62,7 +66,7 @@ __bitwise"类型。
 式类型不会被弄混（小尾模式，大尾模式，cpu尾模式，或者其他），对他们来说
 常数"0"确实 **是** 特殊的。
 
-### 使用sparse进行锁检查
+## 使用sparse进行锁检查
 
 
 下面的宏对于 gcc 来说是未定义的，在 sparse 运行时定义，以使用sparse的“上下文”
@@ -79,7 +83,7 @@ __releases  - 指定的锁在函数进入时被持有，但在退出时不被持
 需要注释。
 上面的三个注释是针对sparse否则会报告上下文不平衡的情况。
 
-#### 获取 sparse 工具
+### 获取 sparse 工具
 
 
 你可以从 Sparse 的主页获取最新的发布版本：

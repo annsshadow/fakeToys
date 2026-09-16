@@ -1,8 +1,11 @@
 
 
+# timestamping
+
 :Original: Documentation/networking/timestamping.rst
 
 :翻译:
+
 
    王亚鑫 Wang Yaxin <wang.yaxin@zte.com.cn>
 
@@ -80,7 +83,7 @@ val 是一个整数，设置了以下任何位。设置其他位将返回 EINVAL
 配置相关选项（1.3.3）；
 也可以通过 cmsg 为单个 sendmsg 调用启用时间戳生成（1.3.4）。
 
-##### 1.3.1 时间戳生成
+#### 1.3.1 时间戳生成
 
 
 某些位是向协议栈请求尝试生成时间戳。它们的任何组合都是有效的。对这些位的更改适
@@ -368,7 +371,7 @@ SO_TIMESTAMPING 使用 SOF_TIMESTAMPING_SOFTWARE，在 recvmsg()
 调用时会生成一个虚假的软件时间戳，并传递给 ts[^0^] 当真实软件时间戳缺
 失时。这也发生在硬件传输时间戳上。
 
-##### 2.1.1 传输时间戳与 MSG_ERRQUEUE
+#### 2.1.1 传输时间戳与 MSG_ERRQUEUE
 
 
 对于传输时间戳，传出数据包回环到套接字的错误队列，并附加发送时间戳（s）。
@@ -558,7 +561,7 @@ ioctl 并更新提供的 struct hwtstamp_config 与实际值，如 SIOCSHWTSTAMP
 户选择用于时间戳以太网帧的 PHC。相反，假设最外层的 PHC 始终是最优的，并且
 内核驱动程序协作以实现这一目标。目前有 3 种堆叠 PHC 的情况，如下所示：
 
-##### 3.2.1 DSA（分布式交换架构）交换机
+#### 3.2.1 DSA（分布式交换架构）交换机
 
 
 这些是具有一个端口连接到（完全不知情的）主机以太网接口的以太网交换机，并且

@@ -1,7 +1,10 @@
 
+# opp
+
 :Original: Documentation/power/opp.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -61,7 +64,7 @@ OPP层期望每个域由一个唯一的设备指针来表示。SoC框架在OPP�
 OPP。这个链表的长度被期望是一个最优化的小数字，通常每个设备大约5个。初始链表包含了
 一个OPP集合，这个集合被期望能在系统中安全使能。
 
-##### 关于OPP可用性的说明
+#### 关于OPP可用性的说明
 
 
 随着系统的运行，SoC框架可能会基于各种外部因素选择让某些OPP在每个设备上可用或不可用，
@@ -161,6 +164,7 @@ dev_pm_opp_find_freq_ceil
 	 dev_pm_opp_put(opp);
 
 	例: 一个SoC的cpufreq_driver->target的简易实现::
+
 
 	 soc_cpufreq_target(..)
 	 {

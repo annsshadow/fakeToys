@@ -1,7 +1,10 @@
 
+# schedutil
+
 :Original: Documentation/scheduler/schedutil.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -81,6 +84,7 @@ r_cpu被定义为当前CPU的最高性能水平与系统中任何其它CPU的最
 我们可以在CPU之间转移和比较它们。
 
 更多细节见:
+
 
  - kernel/sched/pelt.h:update_rq_clock_pelt()
  - arch/x86/kernel/smpboot.c:"APERF/MPERF frequency ratio computation."

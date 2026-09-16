@@ -1,7 +1,10 @@
 
+# sched-energy
+
 :Original: Documentation/scheduler/sched-energy.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -95,6 +98,7 @@ EAS使用的其余平台信息是直接从能量模型（EM）框架中读取的
     每个根域包含6个CPU。这两个根域在上图中被表示为rd1和rd2。由于pd4与rd1和rd2
     都有交集，它将同时出现于附加在这两个根域的“->pd”链表中:
 
+
        * rd1->pd: pd0 -> pd4
        * rd2->pd: pd4 -> pd8
 
@@ -162,6 +166,7 @@ EAS覆盖了CFS的任务唤醒平衡代码。在唤醒平衡时，它使用平�
 
     **情况1. P被迁移到CPU1**::
 
+
       1024                 - - - - - - -
 
                                             Energy calculation:
@@ -180,6 +185,7 @@ EAS覆盖了CFS的任务唤醒平衡代码。在唤醒平衡时，它使用平�
 
     **情况2. P被迁移到CPU3**::
 
+
       1024                 - - - - - - -
 
                                             Energy calculation:
@@ -196,6 +202,7 @@ EAS覆盖了CFS的任务唤醒平衡代码。在唤醒平衡时，它使用平�
             CPU0   CPU1     CPU2   CPU3
 
     **情况3. P依旧留在prev_cpu/CPU0**::
+
 
       1024                 - - - - - - -
 
@@ -267,7 +274,7 @@ EAS很可能将负载放置在系统中能量效率最高的CPU而不是其它CP
 了这些依赖，并对如何满足这些依赖提供了提示。
 
 
-##### 6.1 - 非对称CPU拓扑
+#### 6.1 - 非对称CPU拓扑
 
 
 

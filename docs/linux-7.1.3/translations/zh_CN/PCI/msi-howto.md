@@ -1,11 +1,15 @@
 
+# msi-howto
+
 :Original: Documentation/PCI/msi-howto.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -179,6 +183,7 @@ pci_msix_vec_count()。一般来说，应该避免使用这些方法，而是让
 
 众所周知，一些PCI芯片组或设备不支持MSI。PCI协议栈提供了三种禁用MSI的方法:
 
+
 1. 全局的
 2. 在一个特定的桥后面的所有设备上
 3. 在单一设备上
@@ -244,6 +249,8 @@ PCI_IRQ_MSIX标志的pci_alloc_irq_vectors（）的调用。
 PCI/MSI子系统有一个专门的C文件，用于其导出的设备驱动程序APIs - `drivers/pci/msi/api.c` 。
 以下是导出的函数:
 
+
 该API在以下内核代码中:
+
 
 drivers/pci/msi/api.c

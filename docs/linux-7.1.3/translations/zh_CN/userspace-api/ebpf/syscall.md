@@ -1,11 +1,14 @@
 
+# syscall
+
 :Original: Documentation/userspace-api/ebpf/syscall.rst
 
 :翻译:
 
+
  李睿 Rui Li <me@lirui.org>
 
-### eBPF Syscall
+## eBPF Syscall
 
 
 :作者:
@@ -15,7 +18,7 @@
 
 bpf syscall的主要信息可以在 `man-pages`_ 中的 `bpf(2)`_ 找到。
 
-#### bpf() 子命令参考
+### bpf() 子命令参考
 
 
 子命令在以下内核代码中：

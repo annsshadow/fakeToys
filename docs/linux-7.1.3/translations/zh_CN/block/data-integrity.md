@@ -1,11 +1,15 @@
 
+# data-integrity
+
 :Original: Documentation/block/data-integrity.rst
 
 :翻译:
 
+
  柯子杰 kezijie <kezijie@leap-io-kernel.com>
 
 :校译:
+
 
 ## 数据完整性
 
@@ -132,6 +136,7 @@ RAID0 和 RAID1 已受支持。而RAID4/5/6因涉及应用标签仍需额外的�
       /sys/block/<bdev>/integrity/write_generate
 
     and::
+
 
       /sys/block/<bdev>/integrity/read_verify
 

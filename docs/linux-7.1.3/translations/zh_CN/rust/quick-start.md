@@ -1,7 +1,10 @@
 
+# quick-start
+
 :Original: Documentation/rust/quick-start.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -29,7 +32,7 @@
 ### 发行版
 
 
-######## Arch Linux
+#### Arch Linux
 
 
 ```
@@ -38,7 +41,7 @@
 
 
 ```
-######## Debian
+##### Debian
 
 
 Debian 13（Trixie）以及 Testing 和 Debian Unstable（Sid）提供较新的 Rust 版
@@ -164,7 +167,7 @@ openSUSE Slowroll 和 openSUSE Tumbleweed 提供较新的 Rust 版本，因此�
 果Kconfig认为不该启用，它会列出未满足的条件。
 
 
-######## rustc
+#### rustc
 
 
 需要一个较新版本的Rust编译器。
@@ -181,10 +184,11 @@ openSUSE Slowroll 和 openSUSE Tumbleweed 提供较新的 Rust 版本，因此�
 
 如果你使用 `rustup`， 可以从下面的链接拉取一个单独的安装程序:
 
+
 	https://forge.rust-lang.org/infra/other-installation-methods.html#standalone
 
 
-######## Rust标准库源代码
+##### Rust标准库源代码
 
 
 Rust标准库的源代码是必需的，因为构建系统会交叉编译 `core` 。
@@ -256,7 +260,7 @@ Linux发行版中可能会有合适的包，所以最好先检查一下。
 本节解释了如何获取开发所需的工具。也就是说，在构建内核时不需要这些工具。
 
 
-######## rustfmt
+#### rustfmt
 
 
 `rustfmt` 工具被用来自动格式化所有的Rust内核代码，包括生成的C绑定（详情请见
@@ -271,7 +275,7 @@ coding-guidelines.rst ）。
 独立的安装程序也带有 `rustfmt` 。
 
 
-######## clippy
+##### clippy
 
 
 `clippy` 是一个Rust linter。运行它可以为Rust代码提供额外的警告。它可以通过向 `make`

@@ -1,13 +1,17 @@
 
 
+# io_ordering
+
 :Original: Documentation/driver-api/io_ordering.rst
 
 :翻译:
+
 
  林永听 Lin Yongting <linyongting@gmail.com>
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## 对内存映射地址的I/O写入排序
 

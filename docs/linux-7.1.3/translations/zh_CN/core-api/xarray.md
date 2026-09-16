@@ -1,12 +1,16 @@
 
+# xarray
+
 :Original: Documentation/core-api/xarray.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
 
 
@@ -140,6 +144,7 @@ xa_store(), xa_cmpxchg(), xa_alloc(), xa_reserve()和xa_insert()函数接受一�
 
 
 当使用普通API时，你不必担心锁的问题。XArray使用RCU和一个内部自旋锁来同步访问:
+
 
 不需要锁:
  - xa_empty()
@@ -363,6 +368,7 @@ XArray有能力将多个索引联系在一起，因此对一个索引的操作�
 
 
 该API在以下内核代码中:
+
 
 include/linux/xarray.h
 

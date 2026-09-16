@@ -1,8 +1,11 @@
 
 
+# reporting-regressions
+
 :Original: Documentation/admin-guide/reporting-regressions.rst
 
 :譯者:
+
 
  吳想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -114,13 +117,13 @@ Linux內核迴歸列表 <https://linux-regtracking.leemhuis.info/regzbot/>`_ 和
 regzbot發送的每週迴歸報告，可能會出現延遲。 這樣的延誤會導致Linus Torvalds
 在決定“繼續開發還是發佈新版本？”時忽略嚴重的迴歸。
 
-#### 真的修復了所有的迴歸嗎？
+## 真的修復了所有的迴歸嗎？
 
 
 幾乎所有都是，只要引起問題的變更（肇事提交）被可靠定位。也有些迴歸可以不用這
 樣，但通常是必須的。
 
-#### 誰需要找出迴歸的根本原因？
+### 誰需要找出迴歸的根本原因？
 
 
 受影響代碼區域的開發者應該自行嘗試定位問題所在。但僅靠他們的努力往往是不可
@@ -340,18 +343,22 @@ Regzbot通過監視跟蹤的迴歸報告的回覆來工作。此外，它還查�
 
  * 設置或更新標題::
 
+
        #regzbot title: foo
 
  * 監視討論或bugzilla.kernel.org上有關討論或修復的工單::
+
 
        #regzbot monitor: https://lore.kernel.org/r/30th.anniversary.repost@klaava.Helsinki.FI/
        #regzbot monitor: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * 標記一個有更多相關細節的地方，例如有關但主題不同的郵件列表帖子或缺陷追蹤器中的工單::
 
+
        #regzbot link: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * 標記迴歸已失效::
+
 
        #regzbot invalid: wasn't a regression, problem has always existed
 

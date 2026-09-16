@@ -1,4 +1,6 @@
 
+# embargoed-hardware-issues
+
 :Original: Documentation/process/embargoed-hardware-issues.rst
 :Translator: Avadhut Naik <avadhut.naik@amd.com>
 
@@ -45,6 +47,7 @@ PGP del reportero o el certificado de S/MIME. La llave de PGP y el
 certificado de S/MIME de la lista están disponibles en las siguientes
 URLs:
 
+
   - PGP: https://www.kernel.org/static/files/hardware-security.asc
   - S/MIME: https://www.kernel.org/static/files/hardware-security.crt
 
@@ -53,10 +56,11 @@ el vendedor de hardware afectado, damos la bienvenida al contacto de
 investigadores o individuos que hayan identificado una posible falla de
 hardware.
 
-##### Oficiales de seguridad de hardware
+#### Oficiales de seguridad de hardware
 
 
 El equipo actual de oficiales de seguridad de hardware:
+
 
   - Linus Torvalds (Linux Foundation Fellow)
   - Greg Kroah-Hartman (Linux Foundation Fellow)
@@ -121,7 +125,7 @@ las partes involucradas inmediatamente. Si usted o alguien tiene
 conocimiento de una posible violación, por favor, infórmelo inmediatamente
 a los oficiales de seguridad de hardware.
 
-##### Proceso
+#### Proceso
 
 
 Debido a la naturaleza distribuida globalmente del desarrollo del kernel
@@ -132,7 +136,7 @@ solo deben usarse cuando sea absolutamente necesario. El correo
 electrónico encriptado ha demostrado ser el método de comunicación más
 efectivo y seguro para estos tipos de problemas.
 
-###### Inicio de la divulgación
+##### Inicio de la divulgación
 
 
 La divulgación comienza contactado al equipo de seguridad de hardware del
@@ -165,6 +169,7 @@ documentado y al Memorando de Entendimiento.
 La parte reveladora debe proporcionar una lista de contactos para todas
 las demás entidades ya que han sido, o deberían ser, informadas sobre el
 problema. Esto sirve para varios propósitos:
+
 
  - La lista de entidades divulgadas permite la comunicación en toda la
    industria, por ejemplo, otros vendedores de OS, vendedores de HW, etc.
@@ -263,6 +268,7 @@ embajadores no están involucrados en la divulgación de un problema en
 particular, a menos que lo solicite un equipo de respuesta o una parte
 revelada involucrada. La lista de embajadores actuales:
 
+
   ============= ========================================================
   AMD		Tom Lendacky <thomas.lendacky@amd.com>
   Ampere	Darren Hart <darren@os.amperecomputing.com>
@@ -306,7 +312,7 @@ de la lista de correo y la configuración que se usa para asegurar la
 seguridad de las listas y la protección de los datos se pueden encontrar
 aquí: https://korg.wiki.kernel.org/userdoc/remail.
 
-##### Llaves de lista
+#### Llaves de lista
 
 
 Para el contacto inicial, consulte Contacto. Para las listas de
