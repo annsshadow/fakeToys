@@ -1,3 +1,5 @@
+# peci-cputemp
+
 ﻿## 内核驱动 peci-cputemp
 
 
@@ -26,7 +28,7 @@
 
 Author: Jae Hyun Yoo <jae.hyun.yoo@linux.intel.com>
 
-### 描述
+## 描述
 
 
 该驱动实现了通用PECI hwmon 功能，提供可通过处理PECI 接口访问CPU

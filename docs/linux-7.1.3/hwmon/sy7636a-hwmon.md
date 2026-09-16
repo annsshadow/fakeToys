@@ -1,3 +1,5 @@
+# sy7636a-hwmon
+
 ﻿## 内核驱动 sy7636a-hwmon
 
 
@@ -6,7 +8,7 @@
  - Silergy SY7636A PMIC
 
 
-### 描述
+## 描述
 
 
 该驱动为 Silergy SY7636A PMIC 添加硬件温度读取支持

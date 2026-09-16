@@ -1,3 +1,5 @@
+# k10temp
+
 ﻿## 内核驱动 k10temp
 
 
@@ -74,7 +76,7 @@
 
 作者：Clemens Ladisch <clemens@ladisch.de>
 
-### 描述
+## 描述
 
 
 此驱动允许读AMD Family 10h/11h/12h/14h/15h/16h 处理器的内部温度传感器

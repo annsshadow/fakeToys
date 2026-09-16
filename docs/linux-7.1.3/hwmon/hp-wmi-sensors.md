@@ -1,3 +1,5 @@
+# hp-wmi-sensors
+
 ﻿
 ## Linux HP WMI 浼犳劅鍣ㄩ┍鍔。
 

@@ -1,3 +1,5 @@
+# shtc1
+
 ﻿## 内核驱动 shtc1
 
 
@@ -35,9 +37,10 @@
 
 Author:
 
+
   Johannes Winkelmann <johannes.winkelmann@sensirion.com>
 
-### 描述
+## 描述
 
 
 该驱动实现了Sensirion SHTC1、SHTW1 SHTC3 芯片的支持，这些芯片是温湿度传感器。温度以摄氏度为单位测量，相对湿度以百分比表示
