@@ -1,3 +1,5 @@
+# lenovo-wmi-gamezone
+
 ﻿
 ## Lenovo WMI 接口 Gamezone 驱动（lenovo-wmi-gamezone
 
