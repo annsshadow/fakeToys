@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 import numpy as np
+from .model_manager import model_manager
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +38,9 @@ class Deduplicator:
         self._faiss_index = None
     
     def _load_model(self):
-        """延迟加载模型"""
+        """延迟加载模型（使用共享实例）"""
         if self._model is None:
-            try:
-                from sentence_transformers import SentenceTransformer
-                self._model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-                logger.info("加载 sentence-transformers 模型成功")
-            except ImportError:
-                logger.warning("sentence-transformers 未安装，使用简化去重")
-                self._model = "fallback"
+            self._model = model_manager.get_sentence_model()
     
     def _ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
         """基于 n-gram 的相似度计算（fallback 方法）

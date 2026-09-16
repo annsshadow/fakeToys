@@ -89,10 +89,10 @@ class VersionManager:
         version_dir = self._get_version_dir(version_id)
         version_dir.mkdir(parents=True, exist_ok=True)
         
-        # 保存数据
+        # 保存数据（紧凑格式）
         data_path = version_dir / "data.json"
         with open(data_path, 'w', encoding='utf-8') as f:
-            json.dump(items, f, ensure_ascii=False, indent=2)
+            json.dump(items, f, ensure_ascii=False, separators=(',', ':'))
         
         # 保存元数据
         version_info = VersionInfo(

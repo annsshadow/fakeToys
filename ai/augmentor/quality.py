@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 import numpy as np
+from .model_manager import model_manager
 
 logger = logging.getLogger(__name__)
 
@@ -48,15 +49,9 @@ class QualityScorer:
         self._existing_texts = []  # 缓存已有文本
     
     def _load_models(self):
-        """延迟加载模型"""
+        """延迟加载模型（使用共享实例）"""
         if self._model is None:
-            try:
-                from sentence_transformers import SentenceTransformer
-                self._model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-                logger.info("加载 sentence-transformers 模型成功")
-            except ImportError:
-                logger.warning("sentence-transformers 未安装，使用简化评分")
-                self._model = "fallback"
+            self._model = model_manager.get_sentence_model()
         
         if self._cross_encoder is None:
             try:
