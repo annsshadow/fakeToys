@@ -1,3 +1,5 @@
+# nvme-pci-endpoint-target
+
 ﻿
 ## NVMe PCI 端点功能目标
 
@@ -85,7 +87,7 @@ CONFIG_NVME_TARGET_PCI_EPF。CONFIG_PCI、CONFIG_BLK_DEV_NVME CONFIG_NVME_TARGET
 
 ```
 端点板卡当然也必须通过一RX-TX 信号交叉PCI 线缆连接到主机。如果所的主PCI 插槽不具备即插即用能力，则应在配NVMe PCI 端点设备时关闭主电源
-### NVMe 端点设备
+## NVMe 端点设备
 
 
 创建一NVMe 端点设备是一个两步过程。首先，必须定义一NVMe 目标子系统和
@@ -144,7 +146,7 @@ CONFIG_NVME_TARGET_PCI_EPF。CONFIG_PCI、CONFIG_BLK_DEV_NVME CONFIG_NVME_TARGET
                 /sys/kernel/config/nvmet/ports/1/subsystems/nvmepf.0.nqn
 
 ```
-### 创建 NVMe PCI 端点设备
+## 创建 NVMe PCI 端点设备
 
 
 NVMe 目标子系统和端口准备就绪后，现在即可创建并启NVMe PCI 端点设备NVMe PCI 端点目标驱动```
@@ -200,7 +202,7 @@ NVMe 目标子系统和端口准备就绪后，现在即可创建并启NVMe PCI 
         nvmet: Created nvm controller 1 for subsystem nvmepf.0.nqn for NQN nqn.2014-08.org.nvmexpress:uuid:2ab90791-2246-4fbb-961d-4c3d5a5a0176.
         nvmet_pci_epf nvmet_pci_epf.0: New PCI ctrl "nvmepf.0.nqn", 4 I/O queues, mdts 524288 B
 
-### PCI 根复合体主机
+## PCI 根复合体主机
 
 
 启动 PCI 主机会触PCIe 链路的初始化（PCI 端点驱动可能以内核消息提示）当主NVMe 驱动启用端点时，端点上的内核消息也会给出提示```
