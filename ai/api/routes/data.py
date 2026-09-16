@@ -11,6 +11,16 @@ from ..deps import get_pipeline, read_json_file, run_in_thread, write_json_file
 router = APIRouter(tags=["data"])
 
 
+def _safe_data_path(filename: str) -> Path:
+    """将文件名规范化为安全路径，防止路径遍历"""
+    path = Path(filename)
+    # 禁止包含 .. 组件，防止跳出目录
+    parts = path.parts
+    if ".." in parts:
+        raise HTTPException(status_code=400, detail="路径包含非法组件")
+    return path.resolve()
+
+
 @router.get("/api/data/list")
 async def list_data_files():
     """列出数据文件"""
@@ -35,7 +45,7 @@ async def list_data_files():
 @router.get("/api/data/load/{filename}")
 async def load_data(filename: str, page: int = 1, page_size: int = 20, search: str = ""):
     """加载数据（分页）"""
-    file_path = Path(filename)
+    file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
@@ -67,7 +77,7 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
 @router.put("/api/data/update/{filename}")
 async def update_data_item(filename: str, index: int, item: dict):
     """更新单条数据"""
-    file_path = Path(filename)
+    file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
@@ -90,7 +100,7 @@ async def update_data_item(filename: str, index: int, item: dict):
 @router.delete("/api/data/delete/{filename}")
 async def delete_data_item(filename: str, index: int):
     """删除单条数据"""
-    file_path = Path(filename)
+    file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
@@ -117,10 +127,13 @@ async def upload_data(file: UploadFile = File(...)):
         content = await file.read()
         items = json.loads(content.decode('utf-8'))
 
-        save_path = Path(file.filename)
+        safe_name = Path(file.filename).name
+        save_path = _safe_data_path(safe_name)
         await write_json_file(save_path, items)
 
         return {"success": True, "path": str(save_path), "count": len(items)}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -130,7 +143,7 @@ async def upload_data(file: UploadFile = File(...)):
 @router.get("/api/analyze/{filename}")
 async def analyze_data(filename: str):
     """分析数据集（覆盖度、统计信息、去重报告）"""
-    file_path = Path(filename)
+    file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
@@ -146,7 +159,7 @@ async def analyze_data(filename: str):
 @router.get("/api/visualize/{filename}")
 async def visualize_data(filename: str):
     """生成数据集可视化图表"""
-    file_path = Path(filename)
+    file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 

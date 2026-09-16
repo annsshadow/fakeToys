@@ -169,6 +169,8 @@ class WebConfig:
     port: int = 8000
     host: str = "0.0.0.0"
     static_dir: str = "web/dist"
+    cors_origins: list = field(default_factory=lambda: ["*"])
+    cors_credentials: bool = True
 
 
 @dataclass
