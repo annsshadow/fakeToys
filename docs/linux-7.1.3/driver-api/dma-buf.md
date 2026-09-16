@@ -1,3 +1,5 @@
+# dma-buf
+
 ﻿## 缓冲区共享与同步（dma-buf
 
 dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统共享供硬件（DMA）访问的缓冲区，并对异步硬件访问进行同步
@@ -8,7 +10,7 @@ dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统
  - dma-fence，提供一种机制用于在异步硬件操作完成时发出信号；以及
  - dma-resv，它管理某个特定 dma-buf 的一dma-fence，从而允许对工作任务进行隐式（由内核排序的）同步，以维持一致访问的假象
 
-### 用户空间 API 原则与使
+## 用户空间 API 原则与使
 
 关于如何为你的子系统设计用于 dma-buf API 的更多细节，请参Documentation/userspace-api/dma-buf-alloc-exchange.rst
 
@@ -73,7 +75,9 @@ dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统
 
    :export:
 
+
    :internal:
+
 
 
 ### 预留对象（Reservation Objects
@@ -82,7 +86,9 @@ dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统
 
    :export:
 
+
    :internal:
+
 
 
 ### DMA Fence
@@ -112,7 +118,9 @@ dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统
 
    :export:
 
+
    :internal:
+
 
 
 #### DMA Fence 数组
@@ -120,14 +128,18 @@ dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统
 
    :export:
 
+
    :internal:
+
 
 
 #### DMA Fence 閾。
 
    :export:
 
+
    :internal:
+
 
 
 #### DMA Fence 解包（unwrap
@@ -135,18 +147,22 @@ dma-buf 子系统提供了一个框架，用于跨多个设备驱动和子系统
    :internal:
 
 
+
 #### DMA Fence 同步文件
 
 
    :export:
 
+
    :internal:
+
 
 
 #### DMA Fence 同步文件 uABI
 
 
    :internal:
+
 
 
 #### 鏃犻檺鏈?DMA Fence

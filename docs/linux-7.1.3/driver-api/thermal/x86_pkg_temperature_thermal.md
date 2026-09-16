@@ -1,3 +1,5 @@
+# x86_pkg_temperature_thermal
+
 ﻿## 内核驱动：x86_pkg_temp_thermal
 
 
@@ -9,7 +11,7 @@
 
 Authors: Srinivas Pandruvada <srinivas.pandruvada@linux.intel.com>
 
-### 参
+## 参
 
 
 Intel® 64 IA-32 架构软件开发手册（2013 1 月）

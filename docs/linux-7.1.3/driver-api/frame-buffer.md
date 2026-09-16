@@ -1,3 +1,5 @@
+# frame-buffer
+
 ﻿## 帧缓冲库
 
 
@@ -8,24 +10,29 @@ fb_var_screeninfo 用于描述显卡中用户定义的特征。通过 fb_var_scr
 最后一个结构是 fb_monospecs。在API 中，fb_monospecs 几乎不重要。这允许一被禁止的事情，例如在定频监视器上设置 800x600 模式。在API 中，fb_monospecs
 阻止此类事情，如果使用正确，可以防止监视器被烧毁。fb_monospecs 2.5.x 内核
 之前没有用处
-### 甯х紦鍐插唴瀛。
+## 甯х紦内插唴子。
 
    :export:
+
 
 ### 帧缓冲颜色映
 
    :export:
+
 
 ### 帧缓冲视频模式数据库
 
 
    :internal:
 
+
    :export:
+
 
 ### 帧缓Macintosh 视频模式数据
 
    :export:
+
 
 ### 帧缓冲字
 

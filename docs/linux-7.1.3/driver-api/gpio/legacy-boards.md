@@ -1,3 +1,5 @@
+# legacy-boards
+
 ﻿## Supporting Legacy Boards
 
 
@@ -12,7 +14,7 @@
 本文档提供了如何将传统板文件从使`platform_data` `gpiod_lookup_table` 转换为现代的软件
 节点方法来描GPIO 连接设备的指南
 
-### The Core Idea: Software Nodes
+## The Core Idea: Software Nodes
 
 
 软件节点允许板特定代码使struct software_node struct property_entry 构建内存中的、类
@@ -23,7 +25,7 @@ device_property_read_u32()、device_property_read_string()）查询配置，就�
 gpiolib 代码支持处理软件节点，因此如GPIO 被正确描述（如下节详述），那么常规的 gpiolib API
 gpiod_get()、gpiod_get_optional() 等，都能正常工作
 
-#### Requirements for GPIO Properties
+### Requirements for GPIO Properties
 
 
 使用软件节点描述 GPIO 连接时，必须满足以下要求，GPIO 核心才能正确解析引用
@@ -124,12 +126,12 @@ gpiod_get()、gpiod_get_optional() 等，都能正常工作
   	return 0;
   }
 
-#### After: Using Software Nodes
+## After: Using Software Nodes
 
 
 以下是如何使用软件节点表达相同的配置
 
-######## 步骤 1：定GPIO 控制器节
+### 步骤 1：定GPIO 控制器节
 
 
 首先，定义一个代LED 和按钮所连接 GPIO 控制器的软件节点。该节点`name` 是可选的
@@ -144,7 +146,7 @@ gpiod_get()、gpiod_get_optional() 等，都能正常工作
   	.name = MYBOARD_GPIO_CONTROLLER,
   };
 
-######## 步骤 2：定义消费设备节点与属
+## 步骤 2：定义消费设备节点与属
 
 
 接下来，定义消费设备（LED 和按钮）的软件节点。这涉及为每个设备类型创建一个父节点，并为每
@@ -189,7 +191,7 @@ gpiod_get()、gpiod_get_optional() 等，都能正常工作
 
 
 
-######## 步骤 3：分组并注册节点
+### 步骤 3：分组并注册节点
 
 
 为了可维护性，通常将所有软件节点分组到一个数组中并用一次调用注册它们是有益的

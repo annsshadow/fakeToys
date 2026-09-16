@@ -1,3 +1,5 @@
+# ipmi
+
 ﻿## Linux IPMI 驱动
 
 
@@ -9,7 +11,7 @@ IPMI（Intelligent Platform Management Interface，智能平台管理接口）�
 本文档描述如何在 Linux 下使IPMI 驱动。如果你本身不熟IPMI，请参阅
 网站 https://www.intel.com/design/servers/ipmi/index.htm。IPMI 是个很大主题，我无法在这里全部覆盖！
 
-### 配置
+## 配置
 
 Linux IPMI 驱动是模块化的，这意味着你需要根据你的硬件选取若干项才能让正常工作。其中大多数位于 'Character Devices' 菜单下的 IPMI 菜单中
 无论如何，你必须选取 'IPMI top-level message handler' 才能使用 IPMI。在之外做什么取决于你的需求和硬件
@@ -154,7 +156,7 @@ IPMI 规范中定义的通道
 
 上层接口为用户提供对 IPMI 接口的一致视图。它允许多个 SMI 接口被寻址（因为某板子上实际上有多BMC 在它们之上），而用户无需关心它们下面是什么类型的 SMI
 
-##### 监视接口
+#### 监视接口
 
 当你的代码启动时，IPMI 驱动可能已检测到也可能尚未检测到 IPMI 设备是否存在。因你可能需要推迟你的设置，直到设备被检测到，或者你可能能够立即进行。为了处理这情况，并支持发现，你可以ipmi_smi_watcher_register() 注册一SMI 监视器（watcher），
 以遍历接口并在它们出现和消失时通知你

@@ -1,3 +1,5 @@
+# libata
+
 ﻿## libATA 开发者指
 
 :Author: Jeff Garzik
@@ -176,7 +178,7 @@ HSM 违例或其他某种状况扰乱了端口的正常运行时，会调用 `at
 中的所有端口，确定哪个排队的命令是活跃的（如果有），并调用 ata_sff_host_intr(ap,qc)
 大多数传IDE 驱动使用 `ata_sff_irq_clear` 作为 `irq_clear` 钩子，它只是清除 DMA
 status 寄存器中的中断和错误标志
-#### SATA phy 璇，鍐。
+#### SATA phy 璇，内。
 
 ```
     int (*scr_read) (struct ata_port *ap, unsigned int sc_reg,
@@ -293,10 +295,12 @@ ATAPI PIO
 
    :export:
 
+
 ## libata 核心内部实现
 
 
    :internal:
+
 
 
 ## libata SCSI 转换/模拟
@@ -304,7 +308,9 @@ ATAPI PIO
 
    :export:
 
+
    :internal:
+
 
 ## ATA 错误与异
 
@@ -482,10 +488,12 @@ DEVICE / IDENTIFY PACKET DEVICE，并将结果用于进一步操作。OS 驱动�
 
    :internal:
 
+
 ## sata_sil 内部实现
 
 
    :internal:
+
 
 ## 致谢
 

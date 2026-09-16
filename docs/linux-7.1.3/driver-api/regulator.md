@@ -1,3 +1,5 @@
+# regulator
+
 ﻿
 
 
@@ -72,8 +74,12 @@ Power Management Integrated Circuit (PMIC)（电源管理集成电路）
 由于内核文档框架的局限性以及源码现有的布局，整个调节器 API 都在此处记录
    :internal:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+
 
    :export:
+

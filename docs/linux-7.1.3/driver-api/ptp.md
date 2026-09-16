@@ -1,3 +1,5 @@
+# ptp
+
 ﻿## Linux PTP 硬件时钟基础设施
 
 本补丁集Linux 引入了对 IEEE 1588 PTP 时钟的支持。结SO_TIMESTAMPING 套接字选项，它提供了一种用于开PTP 用户空间程序、将 Linux 与外部时钟同步以及使PTP 硬件时钟辅助功能的标准化方法

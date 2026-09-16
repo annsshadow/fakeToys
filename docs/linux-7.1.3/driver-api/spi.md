@@ -1,3 +1,5 @@
+# spi
+
 ﻿## 串行外设接口（SPI, Serial Peripheral Interface
 
 SPI 是“串行外设接口”，由于它是一个简单而高效的接口——基本上就是一个多路复用的
@@ -19,6 +21,8 @@ I/O 模型是一组排队的消息。协议驱动提交一个或多个 `struct s
 SPI 传输。需要各种协议微调选项，因为不同的芯片对于如何使用通过 SPI 传输的位采用非常不同的策略
    :internal:
 
+
    :functions: spi_register_board_info
 
    :export:
+

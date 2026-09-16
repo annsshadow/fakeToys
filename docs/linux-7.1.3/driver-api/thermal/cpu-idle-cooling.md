@@ -1,3 +1,5 @@
+# cpu-idle-cooling
+
 ﻿
 ## CPU 空闲冷却
 

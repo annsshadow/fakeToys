@@ -1,8 +1,10 @@
+# device
+
 ﻿## 基本设备结构
 
 请参struct device kerneldoc
 
-#### 编程接口
+## 编程接口
 
 发现该设备的总线驱动使用此接口来注册
 
@@ -30,7 +32,7 @@
   void unlock_device(struct device * dev);
 
 ```
-#### 属
+### 属
 
 ```
   struct device_attribute {

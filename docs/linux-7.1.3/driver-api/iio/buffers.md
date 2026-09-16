@@ -1,3 +1,5 @@
+# buffers
+
 ﻿## 缓冲区（Buffers
 
 - struct iio_buffer 通用缓冲区结- `iio_validate_scan_mask_onehot` 校验是否恰好选中了一个通道
@@ -78,3 +80,4 @@ Industrial I/O 核心提供了一种基于触发源（trigger source）进行连
 **scan_index** 设为 -1 可用于表示该特定通道不支持缓冲采集。这种情况下，scan_elements 目录中不会为该通道创建任何条目
 ## 更多细节（More details
    :export:
+

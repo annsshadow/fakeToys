@@ -1,3 +1,5 @@
+# dmatest
+
 ﻿## DMA 测试 Guide
 
 
@@ -26,6 +28,7 @@ dmaengine@vger.内核.org.
 
 
 menuconfig 包含 选项 could found following path:
+
 
 设备 驱动 -> DMA Engine 支持 -> DMA 测试 client
 
@@ -194,6 +197,7 @@ Reading back channel 参数 返回 名称 last channel added successfully.
 ```
 method requesting channels 请求 channel empty string, Doing
 请求 channels 可用 tested:
+
 
 ```
 

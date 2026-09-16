@@ -1,3 +1,5 @@
+# typec
+
 ﻿
 ## USB Type-C connector class
 

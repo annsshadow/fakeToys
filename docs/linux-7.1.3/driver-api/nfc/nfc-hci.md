@@ -1,10 +1,12 @@
+# nfc-hci
+
 ﻿## NFC 核心HCI 后端
 
 
 - Author: Eric Lapuyade, Samuel Ortiz
 - Contact: eric.lapuyade@intel.com, samuel.ortiz@intel.com
 
-### 概述
+## 概述
 
 
 HCI 层实现了 ETSI TS 102 622 V10.2.0 规范的很大部分。它使得编写基于 HCI NFC 驱动变得容易HCI 层作NFC 核心的一个后端运行，实现一个抽象的 nfc 设备，并NFC 核心 API 转换HCI 命令

@@ -1,10 +1,12 @@
+# ccs
+
 ﻿## MIPI CCS 摄像头传感器驱动
 
 
 MIPI CCS 摄像头传感器驱动是一个面`MIPI CCS <https://www.mipi.org/specifications/camera-command-set>`_
 兼容摄像头传感器的通用驱动
 另请参阅 CCS 驱动 UAPI 文档 <media-ccs-uapi>
-### CCS 静态数
+## CCS 静态数
 
 MIPI CCS 驱动支持所有兼容设备的 CCS 静态数据，不仅包括兼容 CCS 1.1 的设备，也包CCS 1.0 SMIA(++)。对CCS，文件名构成
 	ccs/ccs-sensor-vvvv-mmmm-rrrr.fw（传感器）以	ccs/ccs-module-vvvv-mmmm-rrrr.fw（模块）
@@ -13,7 +15,7 @@ MIPI CCS 驱动支持所有兼容设备的 CCS 静态数据，不仅包括兼容
 对于兼容 SMIA（非 ++）的设备，静态数据文件名
 	ccs/smia-sensor-vv-mmmm-rr.fw（传感器）
 vvvv vv 分别表示 MIPI SMIA 厂商 ID，mmmm 为型ID，rrrr rr 为版本号
-#### CCS 工具
+### CCS 工具
 
 
 `CCS tools <https://github.com/MIPI-Alliance/ccs-tools/>`_ 是一组用于处CCS 静态数据文件的

@@ -1,6 +1,8 @@
+# vfio-pci-device-specific-driver-acceptance
+
 ﻿## vfio-pci 设备专用驱动变体的验收标
 
-### 概述
+## 概述
 
 vfio-pci 驱动作为一个与设备无关的驱动存在，它利用系统的 IOMMU并依赖平台故障处理的健壮性，向用户空间提供隔离的设备访问虽然 vfio-pci 驱动确实包含部分设备相关支持，但为更先进的设备相关特提供进一步扩展并不可持续。因此，vfio-pci 驱动已将 vfio-pci-core
 拆分为一个可被复用的库，用于实现需要设备相关知识的功能，例如为支持

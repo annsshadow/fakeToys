@@ -1,3 +1,5 @@
+# gadget
+
 ﻿
 ## Linux USB Gadget API
 
@@ -78,7 +80,7 @@ Linux 中，自底向上，这些层是：
 硬件端点并初始化它们的描述符。一个特别令人关注的潜在例子是实HID、网络、存储或
 音频类标USB-IF 协议的代码。一些开发人员对 KDB KGDB 钩子感兴趣，以便远程调试
 目标硬件。大多数此类 USB 协议代码不需要特定于硬件，就X11、HTTP NFS 等网络协一样。此gadget 侧接口驱动最终应该被组合起来，以实现复合设备
-## 鍐呮牳鎬?Gadget API
+## 内呮核鎬?Gadget API
 
 
 Gadget 驱动通过一struct `usb_gadget_driver` 来声明自己，该结构负struct
@@ -138,12 +140,15 @@ Gadget 驱动依赖linux/usb/ch9.h <usb_chapter9> 头文件中定义的通用 US
 这些声明`<linux/usb/gadget.h>` 中，gadget 驱动用来USB 外设控制器驱动交互
    :internal:
 
+
 ### 可选工
 
 核心 API 足以编写 USB Gadget 驱动，但提供了一些可选工具来简化常见任务。这些工具包端点自动配置
    :export:
 
+
    :export:
+
 
 ### 复合设备框架
 
@@ -154,7 +159,9 @@ Gadget 驱动依赖linux/usb/ch9.h <usb_chapter9> 头文件中定义的通用 US
 usb_configuration 实例。每个此类配置至少包含一struct `usb_function`，它打包了一用户可见的角色，例如“网络链接”或“大容量存储设备”。管理功能也可能存在，例“Device Firmware Upgrade”
    :internal:
 
+
    :export:
+
 
 ### 复合设备功能
 

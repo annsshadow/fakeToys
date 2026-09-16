@@ -1,3 +1,5 @@
+# reset
+
 ﻿
 ## Reset controller API（复位控制器 API
 
@@ -85,6 +87,7 @@ driver API <#reset-controller-driver-api>`__銆。
 reset_control_status() 查询复位线状态
    :internal:
 
+
    :functions: reset_control_reset
                reset_control_assert
                reset_control_deassert
@@ -102,6 +105,7 @@ reset_control_status() 查询复位线状态
 复位控制器驱动应当在 static 常量结构`reset_control_ops` 中实现所需函数，分配并填充一struct `reset_controller_dev`，并通过
 devm_reset_controller_register() 注册它
    :internal:
+
 
    :functions: of_reset_simple_xlate
                reset_controller_register

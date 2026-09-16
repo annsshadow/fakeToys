@@ -1,3 +1,5 @@
+# cx2341x-devel
+
 ﻿锘。
 ## cx2341x 驱动
 
@@ -43,6 +45,7 @@ cx2341x 通过 PCI BAR0（基地址寄存0）把其整64M 内存空间暴露PCI 
 
 
 	DMA Registers 0x000-0xff:
+
 
 	0x00 - Control:
 		0=reset/cancel, 1=read, 2=write, 4=stop
@@ -1117,12 +1120,12 @@ Enum: 149/0x95
 
 
 
-#### CX2341X_ENC_SET_GOP_PROPERTIES
+## CX2341X_ENC_SET_GOP_PROPERTIES
 
 
 Enum: 151/0x97
 
-##### 描述
+### 描述
 
 
 设置 GOP 结构
@@ -1394,6 +1397,7 @@ Enum: 189/0xBD
 	All bitfields are consistent with ISO11172 documentation except
 	bits 2:3 which ISO docs define as:
 
+
  - '11' Layer I
  - '10' Layer II
  - '01' Layer III
@@ -1447,6 +1451,7 @@ Enum: 189/0xBD
 		'11'=Mono
 
 		.. note::
+
 
 			The cx23415 cannot decode Joint Stereo properly.
 
@@ -3454,13 +3459,13 @@ Date: 12 March 2007
 
 	--------------------------------------------------------------------------------
 
-### The cx231xx DMA engine
+## The cx231xx DMA engine
 
 
 
 本页描述 cx2341x DMA 引擎所使用的结构与流程
 
-#### 简
+### 简
 
 
 cx2341x PCI 接口具备总线主控（busmaster）能力。这意味着它有一DMA 引擎，可以在卡与主存之间高效地传输大量数据，而无需 CPU 协助。和大多数硬件一样，它必须在连续的物理内存上操作。在虚拟内存机器上，大块的连续物理内存很难获得

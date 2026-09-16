@@ -1,5 +1,7 @@
+# nvmem
+
 ﻿
-## NVMEM 瀛愮郴缁。
+## NVMEM 子愮系统。
 
  Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
 
@@ -161,3 +163,4 @@ NVMEM 布局是另一种创cell 的机制。借助设备树绑定，可以通过
 
 
    :export:
+

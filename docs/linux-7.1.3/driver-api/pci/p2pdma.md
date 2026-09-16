@@ -1,3 +1,5 @@
+# p2pdma
+
 ﻿
 ## PCI Peer-to-Peer DMA 支持
 
@@ -57,6 +59,7 @@ limitations.
 一given P2P implementation 那里 three 更多 不同
 types 内核 驱动 play:
 
+
 - Provider - 一驱动 提供 publishes P2P resources 类似
   内存 doorbell 寄存其他 驱动.
 - Client - 一驱动 makes 使用 一resource 设置 up 一
@@ -68,6 +71,7 @@ types 内核 驱动 play:
 典型 用于 一驱动 两一provider 一client).
 
 例如, the NVMe Target Copy Offload implementation:
+
 
 - The NVMe PCI 驱动 两一client, provider orchestrator
   exposes 任何 CMB (控制内存 缓冲 作为 一P2P 内存
@@ -177,3 +181,4 @@ exporting 椹卞姩 鍏锋湁 destroyed 鍏?p2p_provider.
 
 
    :export:
+

@@ -1,3 +1,5 @@
+# console
+
 ﻿
 ## 控制台（Console
 
@@ -30,8 +32,10 @@
    :export:
    :export:
 
+
 ### 内部实现
 
 
    :internal:
    :internal:
+

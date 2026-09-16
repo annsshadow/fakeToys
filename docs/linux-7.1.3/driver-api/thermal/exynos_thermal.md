@@ -1,7 +1,10 @@
+# exynos_thermal
+
 ﻿## 内核驱动 exynos_tmu
 
 
 Supported chips:
+
 
 - ARM Samsung Exynos4, Exynos5 series of SoC
 
@@ -10,7 +13,7 @@ Supported chips:
 Authors: Donggeun Kim <dg77.kim@samsung.com>
 Authors: Amit Daniel <amit.daniel@samsung.com>
 
-### TMU 控制器描述：
+## TMU 控制器描述：
 
 
 本驱动允许读Samsung Exynos4/5 系列 SoC 内部的温度
@@ -22,9 +25,11 @@ Authors: Amit Daniel <amit.daniel@samsung.com>
 
   2. 单点修整（One point trimming:
 
+
 	Tc = T + TI1 - 25
 
   3. 无修整（No trimming:
+
 
 	Tc = T + 50
 

@@ -1,3 +1,5 @@
+# cxl-driver
+
 ﻿
 ## CXL 驱动操作
 
@@ -49,10 +51,10 @@ CXL 驱动被拆分为多个驱动
    }
 
 本节我们将探索此配置中存在的设备，但更多配置将在下面的示例配置中深入讨论
-### 基础设备
+## 基础设备
 
 CXL fabric 中的大多数设备都是某种类型的 `port`（因为每个设备主要是将请求从一个设备路由到下一个，而非提供直接服务）
-#### Root
+### Root
 
 `CXL Root` 是一个逻辑对象，由 `cxl_acpi` 驱动`cxl_acpi_probe` 期间创建——前提是找到`ACPI0017` `Compute Express Link
 Root Object`（根对象）设备类
@@ -81,7 +83,7 @@ Root 包含指向以下对象的链接：
 
 ```
 root 是由 Linux CXL 驱动呈现CXL fabric 中第一`logical port`（逻辑端口）。`CXL root` 是一种特殊类型的 `switch port`（交换端口），因为它只有下游端口连接
-#### Port
+## Port
 
 `port` 对象更准确地被描述为一`switch port`（交换端口）。它可以表示一个到 root 的主机桥，或者交换机上的一个实际交换端口。一`switch port` 包含一个或多个解码器，用于将内存请求路由到下游端口，这些下游端口可能连接到另一`switch port` 或一`endpoint port`
 ```
@@ -107,7 +109,7 @@ CXL fabric 中的 `Host Bridges` 在探`CXL Root` 的同时，`cxl_acpi_probe` �
 - 主机桥有一个到 root 的上游端口连接
 - 主机桥有一个或多个到交换机或端点端口的下游端口连接
 `Host Bridge` 是一种特殊类型的 CXL `switch port`。它ACPI 规范中通过 `ACPI0016` ID 显式定义。`Host Bridge` 端口将在 `acpi_probe` 时被探测，而实际交换机上的类似端口将在稍后被探测。除此之外，交换机端口与主机桥端口看起来非常相似——它们都包含用于在上下游端口之间路由访问的交换机解码器
-#### Endpoint
+## Endpoint
 
 `endpoint` fabric 中的一个终端端口。它是一`logical device`（逻辑设备），并且可能是由某个内存设备呈现的众`logical devices` 之一。在 fabric 中它仍被视为一`port`
 一`endpoint` 包含 `endpoint decoders`（端点解码器）以及设备的 Coherent Device
@@ -126,7 +128,7 @@ CXL fabric 中的 `Host Bridges` 在探`CXL Root` 的同时，`cxl_acpi_probe` �
 
 
 ```
-#### Memory Device（memdev
+## Memory Device（memdev
 `memdev` `cxl_pci` 驱动`cxl_pci_probe` 中探测并添加，并`cxl_mem` 驱动管理。它主要通过 `/dev/cxl/memN` 提供到内存设备的 `IOCTL` 接口，并暴露各种
 ```
 
@@ -137,7 +139,7 @@ CXL fabric 中的 `Host Bridges` 在探`CXL Root` 的同时，`cxl_acpi_probe` �
 
 ```
 一Memory Device 是一个不属端口类型的离散基础对象。虽然它所属的物理设备也可能承载一`endpoint`，但 `endpoint` `memdev` 之间的关系并未在 sysfs 中体现
-#### Port Relationships
+## Port Relationships
 
 在上述示例中，有四个主机桥连接到 root，其中两个主机桥各挂载了一个端点
    :alt: 描述主机桥交错的 CXL fabric 有向   :caption: 带有主机桥交错内存区域的 CXL fabric 有向
@@ -209,7 +211,7 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类`
     cxl_decoder_root
 
 ```
-#### Switch Decoder
+## Switch Decoder
 
 任何root 的、进行转换的解码器都被视`Switch Decoder`（交换机解码器），并呈现`cxl_decoder_switch` 类型。`Host Bridge` `CXL
 ```
@@ -230,7 +232,7 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类`
 交换机解码器中的交错设置描述的是如何*直接下游目标**之间交错访问，而非整个交错集合
 交换机解码器`cxl_port` 驱动`cxl_switch_port_probe` 期间创建，并基于 PCI 设备DVSEC 寄存器创建
 交换机解码器编程在探测期间进行验证（如果平台在引导时对其进行了编程，见下`Auto Decoders`），或在提交时进行验证（如果在运行时编程，见下文 `Runtime Programming`）
-#### Endpoint Decoder
+## Endpoint Decoder
 
 任何连接CXL fabric *终端**点（`An Endpoint`）的解码器都被视`Endpoint Decoder`（端点解码器）。端点解码器的类型为
 ```
@@ -254,7 +256,7 @@ root 和交换机解码器不同，端点解码器将 `Host Physical`（主机�
 `Device Physical Address`（设备物理地址）区域必须按顺序提交。例如，起始0x80000000 DPA 区域不能在起始于 0x0 DPA 区域之前提交
 Linux v6.15 起，Linux 不支*不平*的交错配置，交错集合中的所有端点都应具有相同的交错设置（granularity ways 必须相同）
 端点解码器在 `cxl_port` 驱动`cxl_endpoint_port_probe` 期间创建，并基于 PCI 设备DVSEC 寄存器创建
-#### Decoder Relationships
+## Decoder Relationships
 
 在上述示例中，存在一root 解码器，它通过两个主机桥路由内存访问。每个主机桥有一个解码器，将访问路由到其唯一的端点目标。每个端点有一个解码器，将 HPA 转换DPA 并服务于内存请求
 驱动通过解码器编程验证端口之间的关系，因此我们可以将解码器之间的关系视为与端口类似的层级结构
@@ -291,7 +293,7 @@ Linux v6.15 起，Linux 不支*不平*的交错配置，交错集合中的所有
      "region0" -> "decoder6.0";
    }
 
-#### DAX Region
+## DAX Region
 
 `DAX Region` 用于将一CXL `Memory Region` 转换为一DAX 设备。随后可通过文件描述符接口直接访问该 DAX 设备，或通过 DAX kmem 驱动转换System RAM。参DAX 驱动小节
 ```
@@ -301,7 +303,7 @@ Linux v6.15 起，Linux 不支*不平*的交错配置，交错集合中的所有
     dax_region  driver   subsystem
 
 ```
-### Mailbox Interfaces
+## Mailbox Interfaces
 
 ```
 
@@ -397,7 +399,7 @@ Root 解码器交错由 :doc:`CEDT
 
 ```
 这些解码器不可在运行时编程。它们用于生成一`Memory Region`，以便通过 `Switch` `Endpoint` 解码器上运行时编程的设置将此内存上线
-#### At Host Bridge or Switch
+## At Host Bridge or Switch
 
 `Host Bridge` `Switch` 解码器可通过以下字段编程
 - `start` - 与内存区域关联的 HPA 区域
@@ -405,7 +407,7 @@ Root 解码器交错由 :doc:`CEDT
 - `interleave_ways` - 要交错跨越的下游端口数量
 - `interleave_granularity` - 交错粒度
 Linux 期望交换机解码器`interleave_granularity` 由其上游端口连接推导而来。在 `Cross-Link First` 交错配置中，解码器的 `interleave_granularity` 等于 `parent_interleave_granularity * parent_interleave_ways`
-#### At Endpoint
+### At Endpoint
 
 `Endpoint Decoders` 的编程方式与 Host Bridge Switch 解码器类似，不同之处在于 ways granularity 由交错集合定义（例如由相关联`Memory Region` 定义的的交错设置）
 - `start` - 与内存区域关联的 HPA 区域
@@ -415,7 +417,7 @@ Linux 期望交换机解码器`interleave_granularity` 由其上游端口连接�
 Linux 不支持不平衡的交错配置。因此，交错集合中的所有端点必须具有相同的 ways granularity
 ## Example Configurations
 
-- [example-configurations/single-device.rst](example-configurations/single-device.rst)
-- [example-configurations/hb-interleave.rst](example-configurations/hb-interleave.rst)
-- [example-configurations/intra-hb-interleave.rst](example-configurations/intra-hb-interleave.rst)
-- [example-configurations/multi-interleave.rst](example-configurations/multi-interleave.rst)
+- [example-configurations/single-device.rst](example-configurations/single-device.md)
+- [example-configurations/hb-interleave.rst](example-configurations/hb-interleave.md)
+- [example-configurations/intra-hb-interleave.rst](example-configurations/intra-hb-interleave.md)
+- [example-configurations/multi-interleave.rst](example-configurations/multi-interleave.md)

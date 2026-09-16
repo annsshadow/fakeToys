@@ -1,3 +1,5 @@
+# hdcp
+
 ﻿## HDCP锛。
 
 
@@ -10,7 +12,7 @@ ME FW 根据 HDCP 2.2 规范准备 HDCP2.2 协商参数，并对其签名和加�
 一HDCP2.2 协商的所有步骤完成，ME FW 将在收到请求时将该端口配置为已认证状态，并向 Intel 图形硬件提供 HDCP 加密密钥
 
 
-### mei_hdcp 驱动
+## mei_hdcp 驱动
 
 
     :doc: MEI_HDCP 客户端驱
@@ -19,3 +21,4 @@ ME FW 根据 HDCP 2.2 规范准备 HDCP2.2 协商参数，并对其签名和加�
 
 
     :functions:
+

@@ -1,3 +1,5 @@
+# parport-lowlevel
+
 ﻿## PARPORT 接口文档
 
 
@@ -44,6 +46,7 @@
 
   EPP::
 
+
     port->ops->epp_write_data
     port->ops->epp_read_data
     port->ops->epp_write_addr
@@ -51,11 +54,13 @@
 
   ECP::
 
+
     port->ops->ecp_write_data
     port->ops->ecp_read_data
     port->ops->ecp_write_addr
 
   Other::
+
 
     port->ops->nibble_read_data
     port->ops->byte_read_data
@@ -78,7 +83,7 @@ EPP（增强并行端口）函数用于IEEE 1284 EPP 模式进行读写，ECP（
 
 ### parport_register_driver - parport 注册一个设备驱
 
-##### 概要
+#### 概要
 
 
 ```
@@ -92,7 +97,7 @@ EPP（增强并行端口）函数用于IEEE 1284 EPP 模式进行读写，ECP（
 	};
 	int parport_register_driver (struct parport_driver *driver);
 ```
-##### 描述
+## 描述
 
 
 为了能在并行端口被检测到时收到通知，应该调parport_register_driver。你的驱动将
@@ -125,7 +130,7 @@ EPP（增强并行端口）函数用于IEEE 1284 EPP 模式进行读写，ECP（
 `modes` 中可能还有其他标志
 `modes` 的内容仅供参考。例如，如果硬件能够使用 DMA，并PARPORT_MODE_DMA `modes`
 中，这并不必然意味着在可能时会总是使用 DMA。类似地，能够辅ECP 传输的硬件也不必会被使用
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 成功时为零，否则为一个错误码
 ##### 错误
@@ -177,7 +182,7 @@ parport_unregister_driver, parport_register_device, parport_enumerate
 ### parport_unregister_driver - 告诉 parport 忘掉这个驱动
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -191,11 +196,11 @@ parport_unregister_driver, parport_register_device, parport_enumerate
 	};
 	void parport_unregister_driver (struct parport_driver *driver);
 ```
-##### 描述
+## 描述
 
 
 这告parport 不要再向设备驱动通知新端口或端口消失。属于该驱动的已注册设备不会注销：必须对每个设备使用 parport_unregister_device
-##### 示例
+### 示例
 
 
 ```
@@ -220,7 +225,7 @@ parport_register_driver, parport_enumerate
 
 ### parport_enumerate - 获取并行端口列表（已废弃
 
-##### 概要
+#### 概要
 
 
 ```
@@ -228,12 +233,12 @@ parport_register_driver, parport_enumerate
 
 	struct parport *parport_enumerate (void);
 ```
-##### 描述
+## 描述
 
 
 获取本机器有效并行端口列表中的第一个。可以使用返回的 `struct parport **` 中的
 ``struct parport **next` 元素找到后续的并行端口。如`next`` NULL，则列表没有更多并行端口了。列表中的端口数量不会超PARPORT_MAX
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 一个描述本机器有效并行端口`struct parport *`，如果没有则NULL
 ##### 错误
@@ -272,7 +277,7 @@ parport_register_driver, parport_unregister_driver
 
 ### parport_register_device - 注册以使用一个端
 
-##### 概要
+#### 概要
 
 
 ```
@@ -290,7 +295,7 @@ parport_register_driver, parport_unregister_driver
 						  int flags,
 						  void *handle);
 ```
-##### 描述
+## 描述
 
 
 使用这个函数在并行端口（`port`）上注册你的设备驱动。一旦你这样做了，你将能够使parport_claim parport_release 来使用该端口
@@ -318,7 +323,7 @@ parport_register_driver, parport_unregister_driver
 		...
 	};
 ```
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 一`struct pardevice *`：指向已注册并行端口设备的句柄，可用parport_claimparport_release 等
 ##### 错误
@@ -388,13 +393,13 @@ SYNPOPSIS
 
 	void parport_unregister_device (struct pardevice *dev);
 ```
-##### 描述
+## 描述
 
 
 这个函数parport_register_device 相反。使parport_unregister_device 之后，`dev`
 不再是一个有效的设备句柄
 你不应注销一个当前已被声明的设备，尽管如果你这样做了它会被自动释放
-##### 示例
+### 示例
 
 
 ```
@@ -410,7 +415,7 @@ parport_unregister_driver
 
 ### parport_claim, parport_claim_or_block - 为一个设备声明并行端
 
-##### 概要
+#### 概要
 
 
 ```
@@ -419,13 +424,13 @@ parport_unregister_driver
 	int parport_claim (struct pardevice *dev);
 	int parport_claim_or_block (struct pardevice *dev);
 ```
-##### 描述
+## 描述
 
 
 这些函数尝试获取 `dev` 所注册的并行端口的控制权。`parport_claim` 不阻塞，`parport_claim_or_block` 可能会阻塞。（在此写一些关于可中断或不可中断阻塞的内容。）
 
 你不应尝试声明一个你已经声明过的端口
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 返回值为零表示端口被成功声明，调用者现在拥有了该并行端口
 如果 `parport_claim_or_block` 在成功返回之前阻塞了，返回值为正值
@@ -443,7 +448,7 @@ parport_release
 ### parport_release - 释放并行端口
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -451,11 +456,11 @@ parport_release
 
 	void parport_release (struct pardevice *dev);
 ```
-##### 描述
+## 描述
 
 
 一旦一个并行端口设备被声明，就可以使用 `parport_release` 释放它。它不会失败，但不应释放一个你并不拥有的设备
-##### 示例
+### 示例
 
 
 ```
@@ -478,7 +483,7 @@ change_mode, parport_claim, parport_claim_or_block, parport_yield
 
 ### parport_yield, parport_yield_blocking - 临时释放一个并行端
 
-##### 概要
+#### 概要
 
 
 ```
@@ -487,12 +492,12 @@ change_mode, parport_claim, parport_claim_or_block, parport_yield
 	int parport_yield (struct pardevice *dev)
 	int parport_yield_blocking (struct pardevice *dev);
 ```
-##### 描述
+## 描述
 
 
 当一个驱动拥有并行端口的控制权时，它可以允许另一个驱动临`借用` 它。`parport_yield`
 不阻塞；`parport_yield_blocking` 可能会阻塞
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 返回值为零表示调用者仍然拥有该端口，且调用没有阻塞
 来自 `parport_yield_blocking` 的正返回值表示调用者仍然拥有该端口，且调用发生了阻塞
@@ -513,7 +518,7 @@ parport_release
 ### parport_wait_peripheral - 等待状态线，最35ms
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -523,11 +528,11 @@ parport_release
 				     unsigned char mask,
 				     unsigned char val);
 ```
-##### 描述
+## 描述
 
 
 等待 mask 中的状态线匹配 val 中的值
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 ======== ==========================================================
  -EINTR  有信号挂      0  mask 中的状态线的值与 val 中的一      1  等待超时（已35ms======== ==========================================================
@@ -541,7 +546,7 @@ parport_poll_peripheral
 
 ### parport_poll_peripheral - 等待状态线，以微秒
 
-##### 概要
+#### 概要
 
 
 ```
@@ -552,11 +557,11 @@ parport_poll_peripheral
 				     unsigned char val,
 				     int usec);
 ```
-##### 描述
+## 描述
 
 
 等待 mask 中的状态线匹配 val 中的值
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 ======== ==========================================================
  -EINTR  有信号挂      0  mask 中的状态线的值与 val 中的一      1  等待超时（已usec 微秒======== ==========================================================
@@ -571,7 +576,7 @@ parport_wait_peripheral
 ### parport_wait_event - 等待端口上的事件
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -579,11 +584,11 @@ parport_wait_peripheral
 
 	int parport_wait_event (struct parport *port, signed long timeout)
 ```
-##### 描述
+## 描述
 
 
 等待端口上的事件（例如中断）。超时以 jiffies 计
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 ======= ==========================================================
       0  成功
@@ -594,7 +599,7 @@ parport_wait_peripheral
 ### parport_negotiate - 执行 IEEE 1284 协商
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -602,11 +607,11 @@ parport_wait_peripheral
 
 	int parport_negotiate (struct parport *, int mode);
 ```
-##### 描述
+## 描述
 
 
 执行 IEEE 1284 协商
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 ======= ==========================================================
      0  握手成功；IEEE 1284 外设和模式可    -1  握手失败；外设不兼容（或不存在）
@@ -622,7 +627,7 @@ parport_read, parport_write
 
 ### parport_read - 从设备读取数
 
-##### 概要
+#### 概要
 
 
 ```
@@ -630,11 +635,11 @@ parport_read, parport_write
 
 	ssize_t parport_read (struct parport *, void *buf, size_t len);
 ```
-##### 描述
+## 描述
 
 
 以当IEEE 1284 传输模式从设备读取数据。这仅对支持反向数据传输的模式有效
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 如果为负，则为错误码；否则为传输的字节数
 ##### 另请参阅
@@ -646,7 +651,7 @@ parport_write, parport_negotiate
 
 ### parport_write - 向设备写入数
 
-##### 概要
+#### 概要
 
 
 ```
@@ -654,11 +659,11 @@ parport_write, parport_negotiate
 
 	ssize_t parport_write (struct parport *, const void *buf, size_t len);
 ```
-##### 描述
+## 描述
 
 
 以当IEEE 1284 传输模式向设备写入数据。这仅对支持正向数据传输的模式有效
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 如果为负，则为错误码；否则为传输的字节数
 ##### 另请参阅
@@ -671,7 +676,7 @@ parport_read, parport_negotiate
 ### parport_open - 为特定设备号注册设备
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -684,11 +689,11 @@ parport_read, parport_negotiate
 						      struct pt_regs *),
 					int flags, void *handle);
 ```
-##### 描述
+## 描述
 
 
 这类似于 parport_register_device，但接受一个设备号而不是一个指struct parport 指针
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 参见 parport_register_device。如果没有与 devnum 关联的设备，返回 NULL
 ##### 另请参阅
@@ -701,7 +706,7 @@ parport_register_device
 ### parport_close - 为特定设备号注销设备
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -709,11 +714,11 @@ parport_register_device
 
 	void parport_close (struct pardevice *dev);
 ```
-##### 描述
+## 描述
 
 
 这是 parport_open 对应parport_unregister_device
-##### 另请参阅
+### 另请参阅
 
 
 parport_unregister_device, parport_open
@@ -723,7 +728,7 @@ parport_unregister_device, parport_open
 ### parport_device_id - 获取 IEEE 1284 设备 ID
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -731,11 +736,11 @@ parport_unregister_device, parport_open
 
 	ssize_t parport_device_id (int devnum, char *buffer, size_t len);
 ```
-##### 描述
+## 描述
 
 
 获取与给定设备关联的 IEEE 1284 设备 ID
-##### 杩斿洖鍊。
+### 杩斿洖鍊。
 
 如果为负，则为错误码；否则为包含设备 ID buffer 的字节数。设ID 的格式如下：
 ```
@@ -757,7 +762,7 @@ parport_find_class, parport_find_device
 
 ### parport_device_coords - 将设备号转换为设备坐
 
-##### 概要
+#### 概要
 
 
 ```
@@ -766,11 +771,11 @@ parport_find_class, parport_find_device
 	int parport_device_coords (int devnum, int *parport, int *mux,
 				   int *daisy);
 ```
-##### 描述
+## 描述
 
 
 在设备号（从零开始）与设备坐标（端口、多路复用器、菊花链地址）之间转换
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 成功时为零，此时坐标(`**parport`, `**mux`, `*daisy`)
 ##### 另请参阅
@@ -782,7 +787,7 @@ parport_open, parport_device_id
 
 ### parport_find_class - 按类别查找设
 
-##### 概要
+#### 概要
 
 
 ```
@@ -807,11 +812,11 @@ parport_open, parport_device_id
 
 	int parport_find_class (parport_device_class cls, int from);
 ```
-##### 描述
+## 描述
 
 
 按类别查找设备。搜索从设备from+1 开始
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 该类别中下一个设备的设备号，如果不存在这样的设备则为 -1
 ##### 注意
@@ -833,7 +838,7 @@ parport_find_device, parport_open, parport_device_id
 
 ### parport_find_device - 按类别查找设
 
-##### 概要
+#### 概要
 
 
 ```
@@ -841,11 +846,11 @@ parport_find_device, parport_open, parport_device_id
 
 	int parport_find_device (const char *mfg, const char *mdl, int from);
 ```
-##### 描述
+## 描述
 
 
 按厂商和型号查找设备。搜索从设备from+1 开始
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 下一个匹配规格的设备的设备号，如果不存在这样的设备则-1
 ##### 注意
@@ -867,7 +872,7 @@ parport_find_class, parport_open, parport_device_id
 
 ### parport_set_timeout - 设置不活动超
 
-##### 概要
+#### 概要
 
 
 ```
@@ -875,11 +880,11 @@ parport_find_class, parport_open, parport_device_id
 
 	long parport_set_timeout (struct pardevice *dev, long inactivity);
 ```
-##### 描述
+## 描述
 
 
 为已注册的设备设置不活动超时，以 jiffies 计。返回先前的超时值
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 先前的超时值，jiffies 计
 ##### 注意
@@ -903,7 +908,7 @@ port->ops->xxx_read/write_yyy
 port->ops 结构（struct parport_operations）中的函数由负责该端口的底层驱动提供
 ### port->ops->read_data - 读取数据寄存
 
-##### 概要
+#### 概要
 
 
 ```
@@ -915,21 +920,21 @@ port->ops 结构（struct parport_operations）中的函数由负责该端口的
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 如果 port->modes 包含 PARPORT_MODE_TRISTATE 标志，且 control 寄存器中PARPORT_CONTROL_DIRECTION 位被设置，则返回数据引脚上的值。如port->modes 包含
 PARPORT_MODE_TRISTATE 标志，PARPORT_CONTROL_DIRECTION 位未被设置，则返可能*是写入数据寄存器的最后一个值。否则返回值是未定义的
-##### 另请参阅
+### 另请参阅
 
 
 write_data, read_status, write_control
 
 
 
-### port->ops->write_data - 鍐欏叆鏁版嵁瀵勫瓨鍣?
+### port->ops->write_data - 内欏叆鏁版嵁瀵勫瓨鍣?
 
-##### 概要
+#### 概要
 
 
 ```
@@ -941,11 +946,11 @@ write_data, read_status, write_control
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 写入数据寄存器。可能会有副作用（例如一STROBE 脉冲）
-##### 另请参阅
+### 另请参阅
 
 
 read_data, read_status, write_control
@@ -955,7 +960,7 @@ read_data, read_status, write_control
 ### port->ops->read_status - 读取状态寄存器
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -967,7 +972,7 @@ read_data, read_status, write_control
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 从状态寄存器读取。这是一个位掩码
@@ -978,7 +983,7 @@ read_data, read_status, write_control
 - PARPORT_STATUS_BUSY (蹇? "Busy")
 
 可能还有其他位被设置
-##### 另请参阅
+### 另请参阅
 
 
 read_data, write_data, write_control
@@ -987,7 +992,7 @@ read_data, write_data, write_control
 
 ### port->ops->read_control - 读取控制寄存
 
-##### 概要
+#### 概要
 
 
 ```
@@ -999,20 +1004,20 @@ read_data, write_data, write_control
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 返回写入控制寄存器的最后一个值（来自 write_control frob_control）。不执行端口访问
-##### 另请参阅
+### 另请参阅
 
 
 read_data, write_data, read_status, write_control
 
 
 
-### port->ops->write_control - 鍐欏叆鎺у埗瀵勫瓨鍣?
+### port->ops->write_control - 内欏叆鎺у埗瀵勫瓨鍣?
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1024,7 +1029,7 @@ read_data, write_data, read_status, write_control
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 ```
@@ -1037,7 +1042,7 @@ read_data, write_data, read_status, write_control
 				  _________
 	- PARPORT_CONTROL_SELECT (nSelectIn)
 ```
-##### 另请参阅
+### 另请参阅
 
 
 read_data, write_data, read_status, frob_control
@@ -1047,7 +1052,7 @@ read_data, write_data, read_status, frob_control
 ### port->ops->frob_control - 写入控制寄存器位
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1061,13 +1066,13 @@ read_data, write_data, read_status, frob_control
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 这等价于从控制寄存器读取、掩mask 中的位、与 val 中的位做异或，然后将结果写入
 控制寄存器
 由于某些端口不允许从控制端口读取，会维护其内容的软件副本，因frob_control 实际只进行一次端口访问
-##### 另请参阅
+### 另请参阅
 
 
 read_data, write_data, read_status, write_control
@@ -1077,7 +1082,7 @@ read_data, write_data, read_status, write_control
 ### port->ops->enable_irq - 启用中断生成
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1089,11 +1094,11 @@ read_data, write_data, read_status, write_control
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 并行端口硬件被指示在适当时刻生成中断，尽管那些时刻是架构特定的。对PC 架构，中通常nAck 的上升沿生成
-##### 另请参阅
+### 另请参阅
 
 
 disable_irq
@@ -1103,7 +1108,7 @@ disable_irq
 ### port->ops->disable_irq - 禁用中断生成
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1115,11 +1120,11 @@ disable_irq
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 并行端口硬件被指示不要生成中断。中断本身并未被屏蔽
-##### 另请参阅
+### 另请参阅
 
 
 enable_irq
@@ -1128,7 +1133,7 @@ enable_irq
 
 ### port->ops->data_forward - 启用数据驱动
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1140,11 +1145,11 @@ enable_irq
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 启用数据线驱动器，用8 位主机到外设的通信
-##### 另请参阅
+### 另请参阅
 
 
 data_reverse
@@ -1153,7 +1158,7 @@ data_reverse
 
 ### port->ops->data_reverse - 将缓冲器置为三
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1165,11 +1170,11 @@ data_reverse
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 如果 port->modes 设置PARPORT_MODE_TRISTATE 位，将数据总线置于高阻抗状态
-##### 另请参阅
+### 另请参阅
 
 
 data_forward
@@ -1179,7 +1184,7 @@ data_forward
 ### port->ops->epp_write_data - 写入 EPP 数据
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1192,7 +1197,7 @@ data_forward
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 EPP 模式写入数据，并返回写入的字节数
@@ -1201,7 +1206,7 @@ EPP 模式写入数据，并返回写入的字节数
 ======================= =================================================
 PARPORT_EPP_FAST	使用快速传输。某些芯片提16 位和 32 位寄存器			但是，如果一次传输超时，返回值可能不可靠======================= =================================================
 
-##### 另请参阅
+### 另请参阅
 
 
 epp_read_data, epp_write_addr, epp_read_addr
@@ -1211,7 +1216,7 @@ epp_read_data, epp_write_addr, epp_read_addr
 ### port->ops->epp_read_data - 读取 EPP 数据
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1224,7 +1229,7 @@ epp_read_data, epp_write_addr, epp_read_addr
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 EPP 模式读取数据，并返回读取的字节数
@@ -1233,7 +1238,7 @@ EPP 模式读取数据，并返回读取的字节数
 ======================= =================================================
 PARPORT_EPP_FAST	使用快速传输。某些芯片提16 位和 32 位寄存器			但是，如果一次传输超时，返回值可能不可靠======================= =================================================
 
-##### 另请参阅
+### 另请参阅
 
 
 epp_write_data, epp_write_addr, epp_read_addr
@@ -1243,7 +1248,7 @@ epp_write_data, epp_write_addr, epp_read_addr
 ### port->ops->epp_write_addr - 写入 EPP 地址
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1256,7 +1261,7 @@ epp_write_data, epp_write_addr, epp_read_addr
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 写入 EPP 地址（每8 位），并返回写入的数量
@@ -1266,7 +1271,7 @@ epp_write_data, epp_write_addr, epp_read_addr
 PARPORT_EPP_FAST	使用快速传输。某些芯片提16 位和 32 位寄存器			但是，如果一次传输超时，返回值可能不可靠======================= =================================================
 
 （PARPORT_EPP_FAST 对这个函数有意义吗？
-##### 另请参阅
+### 另请参阅
 
 
 epp_write_data, epp_read_data, epp_read_addr
@@ -1276,7 +1281,7 @@ epp_write_data, epp_read_data, epp_read_addr
 ### port->ops->epp_read_addr - 读取 EPP 地址
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1289,7 +1294,7 @@ epp_write_data, epp_read_data, epp_read_addr
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 读取 EPP 地址（每8 位），并返回读取的数量
@@ -1299,7 +1304,7 @@ epp_write_data, epp_read_data, epp_read_addr
 PARPORT_EPP_FAST	使用快速传输。某些芯片提16 位和 32 位寄存器			但是，如果一次传输超时，返回值可能不可靠======================= =================================================
 
 （PARPORT_EPP_FAST 对这个函数有意义吗？
-##### 另请参阅
+### 另请参阅
 
 
 epp_write_data, epp_read_data, epp_write_addr
@@ -1309,7 +1314,7 @@ epp_write_data, epp_read_data, epp_write_addr
 ### port->ops->ecp_write_data - 写入一ECP 数据
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1322,11 +1327,11 @@ epp_write_data, epp_read_data, epp_write_addr
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 写入一ECP 数据。`flags` 参数被忽略
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 写入的字节数
 ##### 另请参阅
@@ -1339,7 +1344,7 @@ ecp_read_data, ecp_write_addr
 ### port->ops->ecp_read_data - 读取一ECP 数据
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1352,11 +1357,11 @@ ecp_read_data, ecp_write_addr
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 读取一ECP 数据。`flags` 参数被忽略
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 读取的字节数。注意：FIFO 中可能还有更多未读数据。有没有办法FIFO 暂停以防止这情况
 ##### 另请参阅
@@ -1369,7 +1374,7 @@ ecp_write_block, ecp_write_addr
 ### port->ops->ecp_write_addr - 写入一ECP 地址
 
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1382,11 +1387,11 @@ ecp_write_block, ecp_write_addr
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 写入一ECP 地址。`flags` 参数被忽略
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 写入的字节数
 ##### 注意
@@ -1402,7 +1407,7 @@ ecp_read_data, ecp_write_data
 
 ### port->ops->nibble_read_data - nibble 模式读取一块数
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1415,11 +1420,11 @@ ecp_read_data, ecp_write_data
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 nibble 模式读取一块数据。`flags` 参数被忽略
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 读取的完整字节数
 ##### 另请参阅
@@ -1431,7 +1436,7 @@ byte_read_data, compat_write_data
 
 ### port->ops->byte_read_data - 以字节模式读取一块数
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1444,11 +1449,11 @@ byte_read_data, compat_write_data
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 以字节模式读取一块数据。`flags` 参数被忽略
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 读取的字节数
 ##### 另请参阅
@@ -1460,7 +1465,7 @@ nibble_read_data, compat_write_data
 
 ### port->ops->compat_write_data - 以兼容模式写入一块数
 
-##### 概要
+#### 概要
 
 
 ```
@@ -1473,11 +1478,11 @@ nibble_read_data, compat_write_data
 		...
 	};
 ```
-##### 描述
+## 描述
 
 
 以兼容模式写入一块数据。`flags` 参数被忽略
-##### 杩斿洖鍊?
+### 杩斿洖鍊?
 
 写入的字节数
 ##### 另请参阅

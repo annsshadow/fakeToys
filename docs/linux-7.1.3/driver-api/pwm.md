@@ -1,10 +1,12 @@
+# pwm
+
 ﻿## 脉冲宽度调制（PWM）接
 
 本文提供关于 Linux PWM 接口的概述
 PWM 通常用于控制手机中的 LED、风扇或振动器。用途固定的 PWM 无需实现 Linux PWM
 API（尽管它们可以）。然而，PWM 经常作为 SoC 上用途不固定的分立器件出现。由板卡
 设计者将它们连接LED 或风扇。为了提供这种灵活性，通用PWM API 应运而生
-### 标识 PWM
+## 标识 PWM
 
 
 传统 PWM API 的用户使用唯一 ID 来引PWM 设备

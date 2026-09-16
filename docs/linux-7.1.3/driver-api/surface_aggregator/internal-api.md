@@ -1,3 +1,5 @@
+# internal-api
+
 ﻿
 ## 内部 API 文档
 
@@ -12,13 +14,18 @@
 
     :internal:
 
-    :internal:
 
     :internal:
 
-    :internal:
 
     :internal:
+
+
+    :internal:
+
+
+    :internal:
+
 
 
 ## 请求传输
@@ -26,7 +33,9 @@
 
     :internal:
 
+
     :internal:
+
 
 
 ## 鎺у埗鍣。
@@ -34,7 +43,9 @@
 
     :internal:
 
+
     :internal:
+
 
 
 ## 客户端设备总线
@@ -43,10 +54,12 @@
     :internal:
 
 
+
 ## 核心
 
 
     :internal:
+
 
 
 ## 跟踪辅助函数

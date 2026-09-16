@@ -1,3 +1,5 @@
+# cpu-cooling-api
+
 ﻿## CPU 散热 API 使用说明
 
 
@@ -24,6 +26,7 @@ Copyright (c)  2012 Samsung Electronics Co., Ltd(http://www.samsung.com)
 	将施加频率约束的 CPU cpumask
     ::
 
+
 	struct thermal_cooling_device
 	*of_cpufreq_cooling_register(struct cpufreq_policy *policy)
 
@@ -33,6 +36,7 @@ Copyright (c)  2012 Samsung Electronics Co., Ltd(http://www.samsung.com)
 	CPUFreq policy銆?
 
     ::
+
 
 	void cpufreq_cooling_unregister(struct thermal_cooling_device *cdev)
 

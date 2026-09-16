@@ -1,3 +1,5 @@
+# dvb-usb
+
 ﻿
 ## dvb-usb 框架背后的理
 
@@ -18,7 +20,7 @@ dvb_usb_device）中赋值
 作为示例，可以查drivers/media/usb/dvb-usb/vp7045*
 目标是把所usb 设备（dibusb、cinergyT2，也许还ttusb；flexcop-usb 已经受益通用flexcop 设备）迁移到使用 dvb-usb-lib
 TODO：根据所请求feed 数量，动态启用和禁用 pid 过滤器
-### 受支持的设备
+## 受支持的设备
 
 
 关于网卡/驱动/固件的完整列表，请参LinuxTV DVB Wiki，位https://linuxtv.orghttps://linuxtv.org/wiki/index.php/DVB_USB
@@ -180,10 +182,10 @@ Hotplug 能够在需要时（因为你插入了设备）加载驱动
 应该就能解决问题
 当驱动加载成功、固件文件位置正确、且设备已连接时，“PowerLED 应当亮起
 到这一步，你就应当能够启动一个支DVB 的应用程序了。我使用 (t|s)zap、mplayer dvbscan 来测试基本功能。VDR-xine 提供了长期测试场景
-### 已知问题与缺
+## 已知问题与缺
 
 - 不要在运DVB 应用程序时拔USB 设备，你的系统很可能会发疯或者死机
-#### 为设备添加支
+### 为设备添加支
 
 TODO
 
