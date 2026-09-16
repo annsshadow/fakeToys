@@ -1,3 +1,5 @@
+# overlay-notes
+
 ﻿
 ## Devicetree Overlay 笔记
 
@@ -98,7 +100,7 @@ overlay bar.dtso锛。
 
 
 ```
-### 鍐呮牳鍐?overlay API
+### 内呮核内?overlay API
 
 
 API 使用起来相当容易
