@@ -1,3 +1,5 @@
+# joystick-api
+
 ﻿
 ## Programming Interface
 
@@ -78,7 +80,7 @@ open 之后它会立即发出一系列合成事件（JS_EVENT_INIT），你可�
 
 
 ```
-### js_event.number
+## js_event.number
 
 
 `number` 的值对应于产生该事件的轴或按键。注意它们使用各自独立的编号（即你同
@@ -222,7 +224,7 @@ JS_EVENT_INIT 事件编写单独的处理函数，这种方式最终反而更简
 
 
 ```
-### JSIOGCVERSION
+## JSIOGCVERSION
 
 
 JSIOGCVERSION 是在运行时检查正在运行的驱动是否1.0+ 并支持事件接口的好方法
@@ -234,7 +236,7 @@ JSIOGCVERSION 是在运行时检查正在运行的驱动是否1.0+ 并支持事�
 
 
 ```
-### JSIOCGNAME
+## JSIOCGNAME
 
 
 JSIOCGNAME(len) 允许你获取摇杆的名称字符串——与启动时打印的相同len' 参数

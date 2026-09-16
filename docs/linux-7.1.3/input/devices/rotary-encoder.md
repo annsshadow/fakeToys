@@ -1,9 +1,11 @@
+# rotary-encoder
+
 ﻿## rotary-encoder - 一个用GPIO 连接设备的通用驱动
 
 
 :Author: Daniel Mack <daniel@caiaq.de>, 2009 骞?2 鏈。
 
-### 功能
+## 功能
 
 
 旋转编码器是通过两根线与 CPU 或其他外设连接的设备。输出相位差90 度，通过在下降沿和上升沿触发，可以确定转动方向
