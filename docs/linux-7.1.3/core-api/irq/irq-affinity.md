@@ -1,3 +1,5 @@
+# irq-affinity
+
 ﻿## SMP IRQ 浜插拰鎬。
 
 ChangeLog:

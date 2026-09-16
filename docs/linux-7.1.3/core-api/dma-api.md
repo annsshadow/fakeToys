@@ -1,3 +1,5 @@
+# dma-api
+
 ﻿## 使用通用设备的动DMA 映射
 
 
@@ -7,7 +9,7 @@
 Documentation/core-api/dma-api-howto.rst銆。
 API 分为两部分。第一部分描述基础 API。第二部分描述用于支持非一致性内机器的扩展。除非你明确知道你的驱动必须支持非一致性平台（通常只有遗留平台），
 否则你只应使用第一部分描述API
-### 第一部分 - DMA API
+## 第一部分 - DMA API
 
 要获DMA API，你必须 #include <linux/dma-mapping.h>。这提供dma_addr_t
 以及下面描述的接口
@@ -51,6 +53,7 @@ dma_alloc_coherent() 以页或更大的单位分配，你可以使用 DMA 池（
 工作方式很像 struct kmem_cache，只是它们使DMA 一致性分配器，而不__get_free_pages()。此外，它们理解常见的硬件对齐约束，比如队列头需要对齐到 N 字节
 边界
    :export:
+
 
 
 
@@ -331,7 +334,7 @@ Documentation/core-api/dma-attributes.rst 中记录
 	}
 
 ```
-### 第一部分 e - 基于 IOVA DMA 映射
+## 第一部分 e - 基于 IOVA DMA 映射
 
 这些 API 在使IOMMU 时允许非常高效的映射。它们是一条可选路径，需要额外的代码，仅
 推荐用于 DMA 映射性能、或用于存储 DMA 地址的空间占用很重要的驱动。上一节的所有注事项同样适用于这里

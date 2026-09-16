@@ -1,3 +1,5 @@
+# cachetlb
+
 ﻿## Linux 下的缓存TLB 刷新
 
 :Author: David S. Miller <davem@redhat.com>
@@ -151,6 +153,7 @@ indexed physically tagged）缓存就无需实现这些接口，因为缓存是�
 	一个映射，并且该映射上mapping_mapped() 返回 %false，就只是标记体系结构
 	私有的页标志位。之后，update_mmu_cache_range() 中，会检查这个标志位	如果已设置就执行刷新并清除该标志位
 	.. important::
+
 
 			如果你推迟了刷新，通常重要的是：实际的刷新发生在与该页
 			进行弄脏存储cpu 相同CPU 上。同样，请参sparc64

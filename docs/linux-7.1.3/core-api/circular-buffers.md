@@ -1,3 +1,5 @@
+# circular-buffers
+
 ﻿## 环形缓冲
 
 :Author: David Howells <dhowells@redhat.com>
@@ -41,6 +43,7 @@ Linux 提供了一组用于处2 的幂环形缓冲区的宏。这```
 
  (#) Measure the maximum consecutive immediate space in a buffer::
 
+
 	CIRC_SPACE_TO_END(head_index, tail_index, buffer_size);
 
      This returns the amount of consecutive space left in the buffer[1] into
@@ -50,12 +53,14 @@ Linux 提供了一组用于处2 的幂环形缓冲区的宏。这```
 
  (#) Measure the occupancy of a buffer::
 
+
 	CIRC_CNT(head_index, tail_index, buffer_size);
 
      This returns the number of items currently occupying a buffer[2].
 
 
  (#) Measure the non-wrapping occupancy of a buffer::
+
 
 	CIRC_CNT_TO_END(head_index, tail_index, buffer_size);
 

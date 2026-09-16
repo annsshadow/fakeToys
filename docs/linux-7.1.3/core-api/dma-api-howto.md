@@ -1,3 +1,5 @@
+# dma-api-howto
+
 ﻿## 动DMA 映射指南
 
 
@@ -136,6 +138,7 @@ GROUP 参数是一个可选的标识符，用于命名 DMA 缓冲区组
 
 	一致性分配的设置通过调用 dma_set_coherent_mask() 来完:
 
+
 		int dma_set_coherent_mask(struct device *dev, u64 mask);
 
 ```
@@ -243,6 +246,7 @@ ISA 16MB DMA 寻址限制
 	     if it is important for the device to see the first word
 	     of a descriptor updated before the second, you must do
 	     something like::
+
 
 		desc->word0 = address;
 		wmb();
@@ -583,6 +587,7 @@ SCSI 子系统会在你的驱动正在处理的 SCSI 命令'sc_data_direction' �
 		dma_unmap_single(dma_handle1);
 	map_error_handling1:
 
+
 ```
 ```
 
@@ -616,6 +621,7 @@ SCSI 子系统会在你的驱动正在处理的 SCSI 命令'sc_data_direction' �
 
 	map_error_handling:
 
+
 	for (i = 0; i < save_index; i++) {
 
 		...
@@ -641,6 +647,7 @@ SCSI 子系统稍后会再次将该命令交给驱动
 
    after::
 
+
 	struct ring_state {
 		struct sk_buff *skb;
 		DEFINE_DMA_UNMAP_ADDR(mapping);
@@ -655,6 +662,7 @@ SCSI 子系统稍后会再次将该命令交给驱动
 
    after::
 
+
 	dma_unmap_addr_set(ringp, mapping, FOO);
 	dma_unmap_len_set(ringp, len, BAR);
 
@@ -665,6 +673,7 @@ SCSI 子系统稍后会再次将该命令交给驱动
 			 DMA_FROM_DEVICE);
 
    after::
+
 
 	dma_unmap_single(dev,
 			 dma_unmap_addr(ringp, mapping),

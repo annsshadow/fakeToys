@@ -1,7 +1,9 @@
+# index
+
 ﻿
 
 
-## Kexec Handover 瀛愮郴缁。
+## Kexec Handover 子愮系统。
 
 
 ## 概述
@@ -23,7 +25,7 @@ KHO 使用扁平设备树（FDTkho_fdt> 将有关保留状态的信息exec 前�
 
 KHO FDT 与子系统定义的结构体构成exec 前内核与 exec 后内核之间的 ABI。此 ABI `include/linux/kho/abi` 目录中的头文件定义
 
-- [abi.rst](abi.rst)
+- [abi.rst](abi.md)
 
 
 ## Scratch 区域
@@ -44,6 +46,7 @@ KHO kexec 之后，我们忽`kho_scratch` 内核命令行选项，而是复用�
 
 
   :export:
+
 
 ## 另见
 
