@@ -1,10 +1,12 @@
+# rt-mutex
+
 ﻿## RT 互斥体（rt-mutex）子系统的优先级继承（PI）支
 
 RT 互斥体通过优先级继承（priority inheritance）来支持 PI-futexes，从而启pthread_mutex_t 的优先级继承属性（PTHREAD_PRIO_INHERIT）。[参见文档/锁机pi-futex.rst 了解更多关于 PI-futexes 的细节。]
 
 该技术源-rt 树，并对 pthread_mutex 的支持进行了精简
 
-### 基本原理
+## 基本原理
 
 RT 互斥体在简单互斥体（mutex）的语义之上扩展出优先级继承协议
 
