@@ -1,4 +1,4 @@
-"""智能去重模块"""
+"""智能去重模块 - 优化版"""
 
 import logging
 from typing import List, Dict, Optional, Tuple
@@ -19,19 +19,22 @@ class DedupResult:
 
 
 class Deduplicator:
-    """智能去重器"""
+    """智能去重器 - 优化版"""
     
-    def __init__(self, threshold: float = 0.9):
+    def __init__(self, threshold: float = 0.9, use_faiss: bool = False):
         """初始化去重器
         
         Args:
             threshold: 相似度阈值，高于此值被视为重复
+            use_faiss: 是否使用 FAISS 加速（需要安装 faiss-cpu）
         """
         if threshold < 0 or threshold > 1:
             raise ValueError("阈值必须在 0-1 之间")
         
         self.threshold = threshold
+        self.use_faiss = use_faiss
         self._model = None
+        self._faiss_index = None
     
     def _load_model(self):
         """延迟加载模型"""
@@ -44,32 +47,98 @@ class Deduplicator:
                 logger.warning("sentence-transformers 未安装，使用简化去重")
                 self._model = "fallback"
     
-    def _calculate_similarity(self, text1: str, text2: str) -> float:
-        """计算文本相似度
+    def _ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
+        """基于 n-gram 的相似度计算（fallback 方法）
         
         Args:
             text1: 文本 1
             text2: 文本 2
+            n: n-gram 大小
         
         Returns:
             相似度分数 (0-1)
         """
-        if self._model == "fallback":
-            # 简化评分：基于字符重叠率
-            set1 = set(text1)
-            set2 = set(text2)
-            intersection = len(set1 & set2)
-            union = len(set1 | set2)
-            return intersection / union if union > 0 else 0.0
+        def get_ngrams(text: str) -> set:
+            return set(text[i:i+n] for i in range(len(text) - n + 1))
         
-        embeddings = self._model.encode([text1, text2])
-        similarity = np.dot(embeddings[0], embeddings[1]) / (
-            np.linalg.norm(embeddings[0]) * np.linalg.norm(embeddings[1])
-        )
-        return float(max(0.0, min(1.0, similarity)))
+        ngrams1 = get_ngrams(text1)
+        ngrams2 = get_ngrams(text2)
+        
+        if not ngrams1 or not ngrams2:
+            return 0.0
+        
+        intersection = len(ngrams1 & ngrams2)
+        union = len(ngrams1 | ngrams2)
+        
+        return intersection / union if union > 0 else 0.0
+    
+    def _batch_encode(self, texts: List[str]) -> np.ndarray:
+        """批量编码文本
+        
+        Args:
+            texts: 文本列表
+        
+        Returns:
+            embeddings 矩阵
+        """
+        if self._model == "fallback":
+            # fallback: 使用 n-gram 向量化
+            return self._fallback_encode(texts)
+        
+        return self._model.encode(texts, show_progress_bar=False, batch_size=64)
+    
+    def _fallback_encode(self, texts: List[str]) -> np.ndarray:
+        """fallback 编码方法
+        
+        Args:
+            texts: 文本列表
+        
+        Returns:
+            向量矩阵
+        """
+        # 使用字符 n-gram 的 TF 向量
+        vocab = {}
+        for text in texts:
+            for i in range(len(text) - 1):
+                ngram = text[i:i+2]
+                if ngram not in vocab:
+                    vocab[ngram] = len(vocab)
+        
+        vectors = np.zeros((len(texts), len(vocab)))
+        for i, text in enumerate(texts):
+            for j in range(len(text) - 1):
+                ngram = text[j:j+2]
+                if ngram in vocab:
+                    vectors[i, vocab[ngram]] += 1
+        
+        # L2 归一化
+        norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+        norms[norms == 0] = 1
+        vectors = vectors / norms
+        
+        return vectors
+    
+    def _compute_similarity_matrix(self, embeddings: np.ndarray) -> np.ndarray:
+        """计算相似度矩阵
+        
+        Args:
+            embeddings: 向量矩阵
+        
+        Returns:
+            相似度矩阵
+        """
+        # 归一化
+        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+        norms[norms == 0] = 1
+        normalized = embeddings / norms
+        
+        # 余弦相似度矩阵
+        similarity_matrix = np.dot(normalized, normalized.T)
+        
+        return similarity_matrix
     
     def _find_duplicate_groups(self, texts: List[str]) -> List[List[int]]:
-        """查找重复组
+        """查找重复组 - 优化版
         
         Args:
             texts: 文本列表
@@ -78,6 +147,24 @@ class Deduplicator:
             重复组列表，每组包含重复文本的索引
         """
         n = len(texts)
+        
+        if n == 0:
+            return []
+        
+        # 批量编码
+        embeddings = self._batch_encode(texts)
+        
+        # 尝试使用 FAISS 加速
+        if self.use_faiss and self._model != "fallback":
+            try:
+                return self._find_duplicates_faiss(texts, embeddings)
+            except ImportError:
+                logger.warning("FAISS 未安装，使用标准方法")
+        
+        # 计算相似度矩阵
+        similarity_matrix = self._compute_similarity_matrix(embeddings)
+        
+        # 查找重复组
         visited = [False] * n
         duplicate_groups = []
         
@@ -92,8 +179,7 @@ class Deduplicator:
                 if visited[j]:
                     continue
                 
-                similarity = self._calculate_similarity(texts[i], texts[j])
-                if similarity >= self.threshold:
+                if similarity_matrix[i, j] >= self.threshold:
                     group.append(j)
                     visited[j] = True
             
@@ -101,6 +187,63 @@ class Deduplicator:
                 duplicate_groups.append(group)
         
         return duplicate_groups
+    
+    def _find_duplicates_faiss(self, texts: List[str], embeddings: np.ndarray) -> List[List[int]]:
+        """使用 FAISS 加速查找重复
+        
+        Args:
+            texts: 文本列表
+            embeddings: 向量矩阵
+        
+        Returns:
+            重复组列表
+        """
+        try:
+            import faiss
+            
+            # 创建 FAISS 索引
+            dimension = embeddings.shape[1]
+            index = faiss.IndexFlatIP(dimension)  # 内积（余弦相似度，假设已归一化）
+            
+            # 归一化
+            norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+            norms[norms == 0] = 1
+            normalized = embeddings / norms
+            
+            index.add(normalized.astype('float32'))
+            
+            # 搜索相似项
+            n = len(texts)
+            visited = [False] * n
+            duplicate_groups = []
+            
+            for i in range(n):
+                if visited[i]:
+                    continue
+                
+                # 搜索最近邻
+                query = normalized[i:i+1].astype('float32')
+                k = min(n, 100)  # 限制搜索数量
+                distances, indices = index.search(query, k)
+                
+                group = [i]
+                visited[i] = True
+                
+                for j, dist in zip(indices[0], distances[0]):
+                    if j == i or visited[j]:
+                        continue
+                    
+                    if dist >= self.threshold:
+                        group.append(j)
+                        visited[j] = True
+                
+                if len(group) > 1:
+                    duplicate_groups.append(group)
+            
+            return duplicate_groups
+            
+        except ImportError:
+            raise ImportError("FAISS 未安装")
     
     def deduplicate(self, 
                    items: List[Dict],
@@ -211,13 +354,19 @@ class Deduplicator:
         if n < 2:
             return []
         
-        # 计算所有对的相似度
+        # 批量编码
+        embeddings = self._batch_encode(texts)
+        
+        # 计算相似度矩阵
+        similarity_matrix = self._compute_similarity_matrix(embeddings)
+        
+        # 提取相似对
         pairs = []
-        for i in range(min(n, 100)):  # 限制数量避免性能问题
-            for j in range(i + 1, min(n, 100)):
-                similarity = self._calculate_similarity(texts[i], texts[j])
-                if similarity >= self.threshold * 0.8:  # 放宽阈值以找到更多潜在重复
-                    pairs.append((i, j, similarity))
+        for i in range(min(n, 200)):  # 增加到 200
+            for j in range(i + 1, min(n, 200)):
+                sim = similarity_matrix[i, j]
+                if sim >= self.threshold * 0.8:
+                    pairs.append((i, j, float(sim)))
         
         # 按相似度排序
         pairs.sort(key=lambda x: x[2], reverse=True)

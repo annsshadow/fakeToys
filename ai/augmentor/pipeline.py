@@ -1,11 +1,13 @@
-"""AI 训练数据增强主流程"""
+"""AI 训练数据增强主流程 - 优化版"""
 
 import json
 import logging
 import time
+import threading
 from typing import List, Dict, Optional
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from queue import Queue
 
 from .config import AppConfig, load_config, get_model_config
 from .models import create_model_backend
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class AugmentorPipeline:
-    """AI 训练数据增强管道"""
+    """AI 训练数据增强管道 - 优化版"""
     
     def __init__(self, config: Optional[AppConfig] = None, config_path: Optional[str] = None):
         """初始化增强管道
@@ -34,6 +36,7 @@ class AugmentorPipeline:
             config_path: 配置文件路径
         """
         self.config = config or load_config(config_path)
+        self._lock = threading.Lock()
         
         # 初始化组件
         self._init_components()
@@ -123,6 +126,193 @@ class AugmentorPipeline:
         
         return []
     
+    def _process_single_item(self, 
+                            idx: int, 
+                            item: Dict, 
+                            use_quality_check: bool,
+                            result_queue: Queue):
+        """处理单条数据（线程安全）
+        
+        Args:
+            idx: 索引
+            item: 数据项
+            use_quality_check: 是否使用质量检查
+            result_queue: 结果队列
+        """
+        try:
+            variants = self._generate_variants(item)
+            
+            # 质量检查
+            if use_quality_check and variants:
+                items_to_score = []
+                for v in variants:
+                    items_to_score.append({
+                        "original": item.get("instruction", ""),
+                        "generated": v.get("instruction", ""),
+                        "output": v.get("output", "")
+                    })
+                
+                # 简化的质量检查（不使用已有生成文本，避免锁竞争）
+                filtered = []
+                for score_item in items_to_score:
+                    score = self.quality_scorer.score(
+                        score_item["original"],
+                        score_item["generated"],
+                        score_item["output"]
+                    )
+                    if score.passed:
+                        filtered.append({
+                            "instruction": score_item["generated"],
+                            "input": "",
+                            "output": score_item["output"]
+                        })
+                variants = filtered
+            
+            result_queue.put((idx, True, variants))
+            
+        except Exception as e:
+            logger.error(f"处理第 {idx} 条数据失败: {e}")
+            result_queue.put((idx, False, []))
+    
+    def augment_dataset(self,
+                       input_file: str,
+                       output_file: str,
+                       use_checkpoint: bool = True,
+                       use_quality_check: bool = True,
+                       use_dedup: bool = True,
+                       use_parallel: bool = True) -> Dict:
+        """增强整个数据集 - 优化版
+        
+        Args:
+            input_file: 输入文件路径
+            output_file: 输出文件路径
+            use_checkpoint: 是否使用断点续传
+            use_quality_check: 是否使用质量检查
+            use_dedup: 是否使用去重
+            use_parallel: 是否使用并行处理
+        
+        Returns:
+            处理报告
+        """
+        # 加载输入数据
+        with open(input_file, 'r', encoding='utf-8') as f:
+            items = json.load(f)
+        
+        logger.info(f"加载 {len(items)} 条种子数据")
+        
+        # 生成任务 ID
+        task_id = f"augment_{int(time.time())}"
+        
+        # 创建断点
+        if use_checkpoint:
+            checkpoint = self.checkpoint_manager.create_checkpoint(task_id, len(items))
+            remaining_indices = self.checkpoint_manager.get_remaining_indices()
+        else:
+            remaining_indices = list(range(len(items)))
+        
+        # 处理数据
+        all_results = []
+        existing_generated = []
+        
+        if use_parallel and len(remaining_indices) > 1:
+            # 并行处理
+            num_threads = min(
+                self.config.augmentation.num_threads,
+                len(remaining_indices)
+            )
+            logger.info(f"使用 {num_threads} 个线程并行处理")
+            
+            result_queue = Queue()
+            
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                # 提交所有任务
+                futures = {}
+                for idx in remaining_indices:
+                    item = items[idx]
+                    future = executor.submit(
+                        self._process_single_item,
+                        idx, item, use_quality_check, result_queue
+                    )
+                    futures[future] = idx
+                
+                # 收集结果
+                processed = 0
+                for future in as_completed(futures):
+                    idx, success, variants = result_queue.get()
+                    
+                    if success:
+                        all_results.extend(variants)
+                        existing_generated.extend([v.get("instruction", "") for v in variants])
+                        
+                        if use_checkpoint:
+                            self.checkpoint_manager.update_progress(idx, True)
+                        
+                        processed += 1
+                        if processed % 10 == 0:
+                            logger.info(f"已处理 {processed}/{len(remaining_indices)}")
+                    else:
+                        if use_checkpoint:
+                            self.checkpoint_manager.update_progress(idx, False)
+        else:
+            # 串行处理
+            for idx in remaining_indices:
+                item = items[idx]
+                logger.info(f"处理 {idx + 1}/{len(items)}: {item.get('instruction', '')[:50]}...")
+                
+                try:
+                    variants = self.augment_seed(
+                        item,
+                        use_quality_check=use_quality_check,
+                        existing_generated=existing_generated
+                    )
+                    
+                    all_results.extend(variants)
+                    existing_generated.extend([v.get("instruction", "") for v in variants])
+                    
+                    # 更新断点
+                    if use_checkpoint:
+                        self.checkpoint_manager.update_progress(idx, True)
+                    
+                    logger.info(f"生成 {len(variants)} 个变体")
+                    
+                except Exception as e:
+                    logger.error(f"处理失败: {e}")
+                    if use_checkpoint:
+                        self.checkpoint_manager.update_progress(idx, False)
+        
+        # 去重
+        if use_dedup and all_results:
+            logger.info(f"去重前: {len(all_results)} 条")
+            all_results = self.deduplicator.deduplicate_and_filter(all_results)
+            logger.info(f"去重后: {len(all_results)} 条")
+        
+        # 保存输出
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(all_results, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"保存 {len(all_results)} 条数据到 {output_file}")
+        
+        # 创建版本快照
+        if self.config.versioning.auto_snapshot:
+            self.version_manager.create_version(
+                all_results,
+                label=f"增强数据_{int(time.time())}",
+                description=f"从 {input_file} 增强生成"
+            )
+        
+        # 返回报告
+        return {
+            "task_id": task_id,
+            "input_file": input_file,
+            "output_file": output_file,
+            "input_count": len(items),
+            "output_count": len(all_results),
+            "quality_check": use_quality_check,
+            "dedup": use_dedup,
+            "parallel": use_parallel,
+            "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None
+        }
+    
     def augment_seed(self, 
                     seed_item: Dict,
                     use_quality_check: bool = True,
@@ -166,101 +356,6 @@ class AugmentorPipeline:
             return result
         
         return variants
-    
-    def augment_dataset(self,
-                       input_file: str,
-                       output_file: str,
-                       use_checkpoint: bool = True,
-                       use_quality_check: bool = True,
-                       use_dedup: bool = True) -> Dict:
-        """增强整个数据集
-        
-        Args:
-            input_file: 输入文件路径
-            output_file: 输出文件路径
-            use_checkpoint: 是否使用断点续传
-            use_quality_check: 是否使用质量检查
-            use_dedup: 是否使用去重
-        
-        Returns:
-            处理报告
-        """
-        # 加载输入数据
-        with open(input_file, 'r', encoding='utf-8') as f:
-            items = json.load(f)
-        
-        logger.info(f"加载 {len(items)} 条种子数据")
-        
-        # 生成任务 ID
-        task_id = f"augment_{int(time.time())}"
-        
-        # 创建断点
-        if use_checkpoint:
-            checkpoint = self.checkpoint_manager.create_checkpoint(task_id, len(items))
-            remaining_indices = self.checkpoint_manager.get_remaining_indices()
-        else:
-            remaining_indices = list(range(len(items)))
-        
-        # 处理数据
-        all_results = []
-        existing_generated = []
-        
-        for idx in remaining_indices:
-            item = items[idx]
-            logger.info(f"处理 {idx + 1}/{len(items)}: {item.get('instruction', '')[:50]}...")
-            
-            try:
-                variants = self.augment_seed(
-                    item,
-                    use_quality_check=use_quality_check,
-                    existing_generated=existing_generated
-                )
-                
-                all_results.extend(variants)
-                existing_generated.extend([v.get("instruction", "") for v in variants])
-                
-                # 更新断点
-                if use_checkpoint:
-                    self.checkpoint_manager.update_progress(idx, True)
-                
-                logger.info(f"生成 {len(variants)} 个变体")
-                
-            except Exception as e:
-                logger.error(f"处理失败: {e}")
-                if use_checkpoint:
-                    self.checkpoint_manager.update_progress(idx, False)
-        
-        # 去重
-        if use_dedup and all_results:
-            logger.info(f"去重前: {len(all_results)} 条")
-            all_results = self.deduplicator.deduplicate_and_filter(all_results)
-            logger.info(f"去重后: {len(all_results)} 条")
-        
-        # 保存输出
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(all_results, f, ensure_ascii=False, indent=2)
-        
-        logger.info(f"保存 {len(all_results)} 条数据到 {output_file}")
-        
-        # 创建版本快照
-        if self.config.versioning.auto_snapshot:
-            self.version_manager.create_version(
-                all_results,
-                label=f"增强数据_{int(time.time())}",
-                description=f"从 {input_file} 增强生成"
-            )
-        
-        # 返回报告
-        return {
-            "task_id": task_id,
-            "input_file": input_file,
-            "output_file": output_file,
-            "input_count": len(items),
-            "output_count": len(all_results),
-            "quality_check": use_quality_check,
-            "dedup": use_dedup,
-            "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None
-        }
     
     def export_dataset(self,
                       input_file: str,

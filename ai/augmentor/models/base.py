@@ -1,7 +1,8 @@
-"""模型后端基类"""
+"""模型后端基类 - 优化版"""
 
 import time
 import logging
+import threading
 from abc import ABC, abstractmethod
 from typing import Optional
 from ..config import ModelConfig
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelBackend(ABC):
-    """模型后端抽象基类"""
+    """模型后端抽象基类 - 优化版"""
     
     def __init__(self, config: ModelConfig):
         """初始化模型后端
@@ -21,6 +22,49 @@ class ModelBackend(ABC):
         self.config = config
         self._request_count = 0
         self._error_count = 0
+        self._lock = threading.Lock()
+        self._session = None  # 连接池会话
+    
+    def _get_session(self):
+        """获取或创建 HTTP 会话（线程安全）
+        
+        Returns:
+            requests.Session 或 httpx.Client
+        """
+        if self._session is None:
+            with self._lock:
+                if self._session is None:
+                    try:
+                        import requests
+                        from requests.adapters import HTTPAdapter
+                        from urllib3.util.retry import Retry
+                        
+                        session = requests.Session()
+                        
+                        # 配置连接池和重试
+                        retry_strategy = Retry(
+                            total=3,
+                            backoff_factor=0.1,
+                            status_forcelist=[429, 500, 502, 503, 504]
+                        )
+                        
+                        adapter = HTTPAdapter(
+                            max_retries=retry_strategy,
+                            pool_connections=10,
+                            pool_maxsize=20
+                        )
+                        
+                        session.mount("http://", adapter)
+                        session.mount("https://", adapter)
+                        
+                        self._session = session
+                        logger.info("创建 HTTP 会话（带连接池）")
+                    except ImportError:
+                        logger.warning("requests 未安装，使用基础连接")
+                        import requests
+                        self._session = requests.Session()
+        
+        return self._session
     
     @abstractmethod
     def _call_api(self, prompt: str) -> str:
@@ -54,11 +98,13 @@ class ModelBackend(ABC):
         last_error = None
         for attempt in range(retries):
             try:
-                self._request_count += 1
+                with self._lock:
+                    self._request_count += 1
                 result = self._call_api(prompt)
                 return result
             except Exception as e:
-                self._error_count += 1
+                with self._lock:
+                    self._error_count += 1
                 last_error = e
                 logger.warning(f"API 调用失败 (尝试 {attempt + 1}/{retries}): {e}")
                 if attempt < retries - 1:
@@ -78,5 +124,16 @@ class ModelBackend(ABC):
     
     def reset_stats(self):
         """重置统计信息"""
-        self._request_count = 0
-        self._error_count = 0
+        with self._lock:
+            self._request_count = 0
+            self._error_count = 0
+    
+    def close(self):
+        """关闭连接"""
+        if self._session:
+            self._session.close()
+            self._session = None
+    
+    def __del__(self):
+        """析构函数"""
+        self.close()

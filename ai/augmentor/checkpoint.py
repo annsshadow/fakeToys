@@ -1,9 +1,10 @@
-"""断点续传模块"""
+"""断点续传模块 - 优化版"""
 
 import json
 import logging
 import time
-from typing import List, Dict, Optional
+import threading
+from typing import List, Dict, Optional, Set
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
@@ -26,7 +27,7 @@ class CheckpointData:
 
 
 class CheckpointManager:
-    """断点管理器"""
+    """断点管理器 - 优化版"""
     
     def __init__(self, 
                  checkpoint_dir: str = "checkpoints",
@@ -43,6 +44,9 @@ class CheckpointManager:
         
         self._current_checkpoint: Optional[CheckpointData] = None
         self._last_save_count = 0
+        self._lock = threading.Lock()
+        self._pending_completed: Set[int] = set()  # 待保存的完成索引
+        self._pending_failed: Set[int] = set()  # 待保存的失败索引
     
     def _get_checkpoint_path(self, task_id: str) -> Path:
         """获取断点文件路径
@@ -54,6 +58,17 @@ class CheckpointManager:
             断点文件路径
         """
         return self.checkpoint_dir / f"{task_id}_checkpoint.json"
+    
+    def _get_delta_path(self, task_id: str) -> Path:
+        """获取增量文件路径
+        
+        Args:
+            task_id: 任务 ID
+        
+        Returns:
+            增量文件路径
+        """
+        return self.checkpoint_dir / f"{task_id}_delta.json"
     
     def create_checkpoint(self, 
                          task_id: str,
@@ -81,6 +96,8 @@ class CheckpointManager:
         
         self._current_checkpoint = checkpoint
         self._last_save_count = 0
+        self._pending_completed = set()
+        self._pending_failed = set()
         
         # 保存初始断点
         self._save_checkpoint(checkpoint)
@@ -107,8 +124,25 @@ class CheckpointManager:
             with open(checkpoint_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
+            # 尝试加载增量
+            delta_path = self._get_delta_path(task_id)
+            if delta_path.exists():
+                with open(delta_path, 'r', encoding='utf-8') as f:
+                    delta = json.load(f)
+                
+                # 合并增量
+                data['completed_indices'].extend(delta.get('completed', []))
+                data['failed_indices'].extend(delta.get('failed', []))
+                data['processed_items'] += len(delta.get('completed', []))
+                data['failed_items'] += len(delta.get('failed', []))
+                
+                # 合并质量评分
+                data['quality_scores'].update(delta.get('quality_scores', {}))
+            
             checkpoint = CheckpointData(**data)
             self._current_checkpoint = checkpoint
+            self._pending_completed = set()
+            self._pending_failed = set()
             
             logger.info(f"加载断点: {task_id}, 已处理: {checkpoint.processed_items}/{checkpoint.total_items}")
             return checkpoint
@@ -117,7 +151,7 @@ class CheckpointManager:
             return None
     
     def _save_checkpoint(self, checkpoint: CheckpointData):
-        """保存断点
+        """保存断点（紧凑格式）
         
         Args:
             checkpoint: 断点数据
@@ -126,10 +160,43 @@ class CheckpointManager:
         checkpoint.last_update_time = time.time()
         
         try:
+            # 使用紧凑 JSON（无缩进）
+            data = asdict(checkpoint)
             with open(checkpoint_path, 'w', encoding='utf-8') as f:
-                json.dump(asdict(checkpoint), f, ensure_ascii=False, indent=2)
+                json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
         except Exception as e:
             logger.error(f"保存断点失败: {e}")
+    
+    def _save_delta(self):
+        """保存增量到临时文件"""
+        if self._current_checkpoint is None:
+            return
+        
+        if not self._pending_completed and not self._pending_failed:
+            return
+        
+        delta_path = self._get_delta_path(self._current_checkpoint.task_id)
+        
+        try:
+            delta = {
+                'completed': list(self._pending_completed),
+                'failed': list(self._pending_failed),
+                'quality_scores': {
+                    k: self._current_checkpoint.quality_scores[k]
+                    for k in self._pending_completed
+                    if k in self._current_checkpoint.quality_scores
+                }
+            }
+            
+            with open(delta_path, 'w', encoding='utf-8') as f:
+                json.dump(delta, f, ensure_ascii=False, separators=(',', ':'))
+            
+            # 清空待保存集合
+            self._pending_completed.clear()
+            self._pending_failed.clear()
+            
+        except Exception as e:
+            logger.error(f"保存增量失败: {e}")
     
     def update_progress(self,
                        index: int,
@@ -145,28 +212,33 @@ class CheckpointManager:
         if self._current_checkpoint is None:
             return
         
-        checkpoint = self._current_checkpoint
-        
-        if success:
-            checkpoint.processed_items += 1
-            checkpoint.completed_indices.append(index)
-            if quality_score is not None:
-                checkpoint.quality_scores[index] = quality_score
-        else:
-            checkpoint.failed_items += 1
-            checkpoint.failed_indices.append(index)
-        
-        # 自动保存
-        if checkpoint.processed_items - self._last_save_count >= self.auto_save_interval:
-            self._save_checkpoint(checkpoint)
-            self._last_save_count = checkpoint.processed_items
-            logger.debug(f"自动保存断点: {checkpoint.processed_items}/{checkpoint.total_items}")
+        with self._lock:
+            checkpoint = self._current_checkpoint
+            
+            if success:
+                checkpoint.processed_items += 1
+                checkpoint.completed_indices.append(index)
+                self._pending_completed.add(index)
+                if quality_score is not None:
+                    checkpoint.quality_scores[index] = quality_score
+            else:
+                checkpoint.failed_items += 1
+                checkpoint.failed_indices.append(index)
+                self._pending_failed.add(index)
+            
+            # 定期保存增量
+            if checkpoint.processed_items - self._last_save_count >= self.auto_save_interval:
+                self._save_delta()
+                self._last_save_count = checkpoint.processed_items
+                logger.debug(f"保存增量: {checkpoint.processed_items}/{checkpoint.total_items}")
     
     def save_checkpoint(self):
-        """手动保存断点"""
-        if self._current_checkpoint:
-            self._save_checkpoint(self._current_checkpoint)
-            logger.info(f"手动保存断点: {self._current_checkpoint.task_id}")
+        """手动保存断点（合并增量）"""
+        with self._lock:
+            if self._current_checkpoint:
+                self._save_delta()
+                self._save_checkpoint(self._current_checkpoint)
+                logger.info(f"手动保存断点: {self._current_checkpoint.task_id}")
     
     def get_progress(self) -> Dict:
         """获取进度信息
@@ -255,10 +327,14 @@ class CheckpointManager:
             task_id: 任务 ID
         """
         checkpoint_path = self._get_checkpoint_path(task_id)
+        delta_path = self._get_delta_path(task_id)
         
         if checkpoint_path.exists():
             checkpoint_path.unlink()
-            logger.info(f"删除断点: {task_id}")
+        if delta_path.exists():
+            delta_path.unlink()
+        
+        logger.info(f"删除断点: {task_id}")
     
     def list_checkpoints(self) -> List[str]:
         """列出所有断点

@@ -1,4 +1,4 @@
-"""数据质量评分模块"""
+"""数据质量评分模块 - 优化版"""
 
 import logging
 from typing import List, Dict, Optional
@@ -19,19 +19,22 @@ class QualityScore:
 
 
 class QualityScorer:
-    """数据质量评分器"""
+    """数据质量评分器 - 优化版"""
     
     def __init__(self, 
                  threshold: float = 0.6,
-                 weights: Optional[List[float]] = None):
+                 weights: Optional[List[float]] = None,
+                 diversity_sample_size: int = 30):
         """初始化质量评分器
         
         Args:
             threshold: 质量阈值，低于此分数的样本被过滤
             weights: 评分权重 [语义相似度, 回答相关性, 多样性]
+            diversity_sample_size: 多样性计算时的采样数量
         """
         self.threshold = threshold
         self.weights = weights or [0.3, 0.4, 0.3]
+        self.diversity_sample_size = diversity_sample_size
         
         if len(self.weights) != 3:
             raise ValueError("权重必须包含 3 个元素")
@@ -41,6 +44,8 @@ class QualityScorer:
         
         self._model = None
         self._cross_encoder = None
+        self._existing_embeddings = []  # 缓存已有文本的 embeddings
+        self._existing_texts = []  # 缓存已有文本
     
     def _load_models(self):
         """延迟加载模型"""
@@ -62,6 +67,31 @@ class QualityScorer:
                 logger.warning("cross-encoder 未安装，使用简化评分")
                 self._cross_encoder = "fallback"
     
+    def _ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
+        """基于 n-gram 的相似度计算（fallback 方法）
+        
+        Args:
+            text1: 文本 1
+            text2: 文本 2
+            n: n-gram 大小
+        
+        Returns:
+            相似度分数 (0-1)
+        """
+        def get_ngrams(text: str) -> set:
+            return set(text[i:i+n] for i in range(len(text) - n + 1))
+        
+        ngrams1 = get_ngrams(text1)
+        ngrams2 = get_ngrams(text2)
+        
+        if not ngrams1 or not ngrams2:
+            return 0.0
+        
+        intersection = len(ngrams1 & ngrams2)
+        union = len(ngrams1 | ngrams2)
+        
+        return intersection / union if union > 0 else 0.0
+    
     def _calculate_semantic_similarity(self, text1: str, text2: str) -> float:
         """计算语义相似度
         
@@ -73,12 +103,7 @@ class QualityScorer:
             相似度分数 (0-1)
         """
         if self._model == "fallback":
-            # 简化评分：基于字符重叠率
-            set1 = set(text1)
-            set2 = set(text2)
-            intersection = len(set1 & set2)
-            union = len(set1 | set2)
-            return intersection / union if union > 0 else 0.0
+            return self._ngram_similarity(text1, text2)
         
         embeddings = self._model.encode([text1, text2])
         similarity = np.dot(embeddings[0], embeddings[1]) / (
@@ -97,18 +122,15 @@ class QualityScorer:
             相关性分数 (0-1)
         """
         if self._cross_encoder == "fallback":
-            # 简化评分：基于关键词匹配
-            question_words = set(question)
-            answer_words = set(answer)
-            overlap = len(question_words & answer_words)
-            return min(1.0, overlap / 10) if overlap > 0 else 0.3
+            # 使用 n-gram 相似度
+            return self._ngram_similarity(question, answer)
         
         score = self._cross_encoder.predict([(question, answer)])
         # 归一化到 0-1
         return float(max(0.0, min(1.0, (score + 1) / 2)))
     
     def _calculate_diversity(self, text: str, existing_texts: List[str]) -> float:
-        """计算多样性
+        """计算多样性 - 优化版
         
         Args:
             text: 当前文本
@@ -121,23 +143,43 @@ class QualityScorer:
             return 1.0
         
         if self._model == "fallback":
-            # 简化评分：基于文本长度和字符多样性
-            unique_chars = len(set(text))
-            return min(1.0, unique_chars / 50)
+            # fallback: 使用 n-gram 相似度
+            max_sim = 0.0
+            for existing in existing_texts[:self.diversity_sample_size]:
+                sim = self._ngram_similarity(text, existing)
+                max_sim = max(max_sim, sim)
+            return float(max(0.0, 1.0 - max_sim))
         
-        # 计算与所有已有文本的最大相似度
-        max_similarity = 0.0
+        # 编码当前文本
         text_embedding = self._model.encode([text])[0]
         
-        for existing in existing_texts[:100]:  # 限制数量避免性能问题
-            existing_embedding = self._model.encode([existing])[0]
-            similarity = np.dot(text_embedding, existing_embedding) / (
-                np.linalg.norm(text_embedding) * np.linalg.norm(existing_embedding)
-            )
-            max_similarity = max(max_similarity, similarity)
+        # 使用缓存的 embeddings
+        if len(self._existing_embeddings) != len(existing_texts):
+            # 需要重新计算
+            if existing_texts:
+                self._existing_embeddings = self._model.encode(
+                    existing_texts[:self.diversity_sample_size],
+                    show_progress_bar=False,
+                    batch_size=32
+                )
+                self._existing_texts = existing_texts[:self.diversity_sample_size]
+        
+        if len(self._existing_embeddings) == 0:
+            return 1.0
+        
+        # 计算与所有已有文本的最大相似度
+        similarities = np.dot(self._existing_embeddings, text_embedding) / (
+            np.linalg.norm(self._existing_embeddings, axis=1) * np.linalg.norm(text_embedding)
+        )
+        max_similarity = float(np.max(similarities))
         
         # 多样性 = 1 - 最大相似度
         return float(max(0.0, 1.0 - max_similarity))
+    
+    def reset_cache(self):
+        """重置缓存"""
+        self._existing_embeddings = []
+        self._existing_texts = []
     
     def score(self, 
               original: str, 
@@ -178,7 +220,7 @@ class QualityScorer:
     def batch_score(self, 
                     items: List[Dict],
                     existing_generated: Optional[List[str]] = None) -> List[QualityScore]:
-        """批量计算质量评分
+        """批量计算质量评分 - 优化版
         
         Args:
             items: 数据列表，每项包含 original, generated, output 字段
@@ -189,19 +231,73 @@ class QualityScorer:
         """
         self._load_models()
         
-        scores = []
-        existing = existing_generated or []
+        if not items:
+            return []
         
-        for item in items:
-            score = self.score(
-                original=item.get("original", ""),
-                generated=item.get("generated", ""),
-                output=item.get("output", ""),
-                existing_generated=existing
-            )
-            scores.append(score)
-            if score.passed:
-                existing.append(item.get("generated", ""))
+        # 提取文本
+        originals = [item.get("original", "") for item in items]
+        generateds = [item.get("generated", "") for item in items]
+        outputs = [item.get("output", "") for item in items]
+        
+        # 批量编码原始文本
+        if self._model != "fallback":
+            original_embeddings = self._model.encode(originals, show_progress_bar=False, batch_size=32)
+            generated_embeddings = self._model.encode(generateds, show_progress_bar=False, batch_size=32)
+            
+            # 计算语义相似度
+            semantic_sims = np.array([
+                np.dot(original_embeddings[i], generated_embeddings[i]) / (
+                    np.linalg.norm(original_embeddings[i]) * np.linalg.norm(generated_embeddings[i])
+                )
+                for i in range(len(items))
+            ])
+            semantic_sims = np.clip(semantic_sims, 0, 1)
+        else:
+            semantic_sims = np.array([
+                self._ngram_similarity(orig, gen)
+                for orig, gen in zip(originals, generateds)
+            ])
+        
+        # 计算回答相关性
+        if self._cross_encoder != "fallback":
+            pairs = [(gen, out) for gen, out in zip(generateds, outputs)]
+            relevance_scores = self._cross_encoder.predict(pairs)
+            relevance_scores = np.clip((relevance_scores + 1) / 2, 0, 1)
+        else:
+            relevance_scores = np.array([
+                self._ngram_similarity(gen, out)
+                for gen, out in zip(generateds, outputs)
+            ])
+        
+        # 计算多样性（逐步更新）
+        existing = list(existing_generated) if existing_generated else []
+        diversity_scores = []
+        
+        for i, gen in enumerate(generateds):
+            diversity = self._calculate_diversity(gen, existing)
+            diversity_scores.append(diversity)
+            if semantic_sims[i] >= self.threshold:  # 只有通过的才加入
+                existing.append(gen)
+        
+        diversity_scores = np.array(diversity_scores)
+        
+        # 计算总分
+        total_scores = (
+            self.weights[0] * semantic_sims +
+            self.weights[1] * relevance_scores +
+            self.weights[2] * diversity_scores
+        )
+        
+        # 构建结果
+        scores = []
+        for i in range(len(items)):
+            scores.append(QualityScore(
+                semantic_similarity=float(semantic_sims[i]),
+                relevance=float(relevance_scores[i]),
+                diversity=float(diversity_scores[i]),
+                total_score=float(total_scores[i]),
+                passed=total_scores[i] >= self.threshold
+            ))
         
         return scores
     
