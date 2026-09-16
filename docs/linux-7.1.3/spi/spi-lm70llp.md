@@ -1,3 +1,5 @@
+# spi-lm70llp
+
 ﻿## spi_lm70llp：LM70-LLP 并口SPI 适配
 
 支持的板芯片
@@ -7,7 +9,7 @@
 作
         Kaiwan N Billimoria <kaiwan@designergraphix.com>
 
-### 描述
+## 描述
 
 该驱动提供粘合代码，National Semiconductor LM70 LLP 温度传感器评估板连接到内核的 SPI 核心子系统
 这是一SPI 主控制器（master controller）驱动。它可以与（作为下层）LM70 逻辑驱动（一个“SPI 协议驱动”）配合使用。实际上，该驱动将评估板上的并行端口接口转换为一条带单个设备SPI 总线，该设备将由通用 LM70 驱动（drivers/hwmon/lm70.c）驱动
