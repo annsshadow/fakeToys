@@ -1,3 +1,5 @@
+# seq-oss
+
 ﻿## ALSA 上的 OSS 音序器模
 
 Copyright (c) 1998,1999 by Takashi Iwai
@@ -141,7 +143,7 @@ OSS 合成器设备具备样本下载和 ioctl（如样本重置）等能力。�
 每当有应用程序通过 OSS 音序器打开该设备时，就会调`open`。它不能NULL。通常，open 回调执行以下过程
 #. 分配私有数据记录#. 创建一ALSA 音序器端口#. `arg->addr` 上设置新端口地址#. `arg->private_data` 上设置私有数据记录指针
 注意，该合成器端口的 port_info 中的类型位标志不得包`TYPE_MIDI_GENERIC` 位。相反，应当使用 `TYPE_SPECIFIC`。同样，也不应包`CAP_SUBSCRIPTION` 位。这是为了把它与其他普MIDI 设备区分开。如open 过程成功，返回零；否则返-errno
-### Ioctl 回调
+## Ioctl 回调
 
 
 当音序器收到设备特定ioctl 时，会调`ioctl` 回调。该回调应当处理以下两个 ioctl

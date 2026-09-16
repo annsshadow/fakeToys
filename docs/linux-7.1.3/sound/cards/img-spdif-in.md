@@ -1,3 +1,5 @@
+# img-spdif-in
+
 ﻿## Imagination Technologies SPDIF 杈撳叆鎺у埗鍣。
 
 Imagination Technologies SPDIF 输入控制器包含以下控件：

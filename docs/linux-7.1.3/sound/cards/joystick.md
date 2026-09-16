@@ -1,3 +1,5 @@
+# joystick
+
 ﻿## ALSA 驱动上的模拟游戏杆支
 
 
@@ -5,7 +7,7 @@
 
 Takashi Iwai <tiwai@suse.de>
 
-### 概述
+## 概述
 
 
 首先，要ALSA 驱动下使用游戏杆，需要在 Linux 内核中启GAMEPORT 支持。有gameport 支持的详细信息，请参Documentation/input/joydev/joystick.rst

@@ -1,3 +1,5 @@
+# machine
+
 ﻿## ASoC 机器（Machine）驱
 
 ASoC 机器（或板级）驱动是将所有组件驱动（如编解码codec、平platform DAI）粘合在一起的代码。它还描述了各组件之间的关系，包括音频路径、GPIO、中断、时钟、插孔（jack）和电压调节器
@@ -28,7 +30,7 @@ ASoC 机器（或板级）驱动是将所有组件驱动（如编解码codec、�
   };
 
 ```
-### probe()/remove()
+## probe()/remove()
 
 probe/remove 是可选的。在此处完成任何机器相关的探测
 ### suspend()/resume()

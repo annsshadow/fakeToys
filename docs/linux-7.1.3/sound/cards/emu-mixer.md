@@ -1,3 +1,5 @@
+# emu-mixer
+
 ﻿## E-MU 数字音频系统 mixer 与默DSP 代码
 
 本文档介E-MU 0404/1010/1212/1616/1820 PCI/PCI-e/CardBus 系列声卡

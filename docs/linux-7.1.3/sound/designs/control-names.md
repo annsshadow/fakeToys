@@ -1,14 +1,16 @@
+# control-names
+
 ﻿# 标准 ALSA 控件名称
 
 
 本文档描述混音器控件的标准名称
-### 标准语法
+## 标准语法
 
 
 语法：[位置 LOCATION] SOURCE [通道 CHANNEL] [方向 DIRECTION] 功能 FUNCTION
 
 
-#### 方向 DIRECTION
+### 方向 DIRECTION
 
 ================	===============
 <			两个方向
