@@ -48,6 +48,54 @@ class VersionManager:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         
         self._current_symlink = self.storage_dir / "current"
+        self._history_path = self.storage_dir / "history.jsonl"
+    
+    def _log_history(self, action: str, version_id: str, detail: Optional[Dict] = None):
+        """追加一条版本操作历史记录
+        
+        Args:
+            action: 操作类型（create / rollback / delete）
+            version_id: 版本 ID
+            detail: 附加信息
+        """
+        entry = {
+            "action": action,
+            "version_id": version_id,
+            "timestamp": datetime.now().isoformat(),
+            "detail": detail or {}
+        }
+        
+        try:
+            with open(self._history_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        except OSError as e:
+            logger.warning(f"写入版本历史失败: {e}")
+    
+    def get_history(self, limit: Optional[int] = None) -> List[Dict]:
+        """获取版本操作历史
+        
+        Args:
+            limit: 最多返回的条数（从最新开始）
+        
+        Returns:
+            历史记录列表（按时间倒序）
+        """
+        if not self._history_path.exists():
+            return []
+        
+        entries = []
+        with open(self._history_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    logger.warning("跳过无法解析的历史记录行")
+        
+        entries.reverse()
+        return entries[:limit] if limit else entries
     
     def _get_version_dir(self, version_id: str) -> Path:
         """获取版本目录路径
@@ -63,11 +111,20 @@ class VersionManager:
     def _generate_version_id(self) -> str:
         """生成版本 ID
         
+        使用微秒级时间戳并做存在性去重，避免同一秒内连续创建导致快照互相覆盖。
+        
         Returns:
             版本 ID
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"v_{timestamp}"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        version_id = f"v_{timestamp}"
+        
+        suffix = 1
+        while self._get_version_dir(version_id).exists():
+            version_id = f"v_{timestamp}_{suffix}"
+            suffix += 1
+        
+        return version_id
     
     def create_version(self,
                       items: List[Dict],
@@ -125,6 +182,10 @@ class VersionManager:
                 f.write(version_id)
         
         logger.info(f"创建版本: {version_id}, 数据条数: {len(items)}")
+        self._log_history("create", version_id, {
+            "label": version_info.label,
+            "item_count": version_info.item_count
+        })
         return version_info
     
     def load_version(self, version_id: str) -> List[Dict]:
@@ -219,6 +280,7 @@ class VersionManager:
         if version_dir.exists():
             shutil.rmtree(version_dir)
             logger.info(f"删除版本: {version_id}")
+            self._log_history("delete", version_id)
     
     def diff(self, version1_id: str, version2_id: str) -> DiffResult:
         """对比两个版本的差异
@@ -295,6 +357,7 @@ class VersionManager:
                 f.write(version_id)
         
         logger.info(f"回滚到版本: {version_id}")
+        self._log_history("rollback", version_id)
         return True
     
     def generate_report(self) -> Dict:
@@ -309,6 +372,7 @@ class VersionManager:
         return {
             "total_versions": len(versions),
             "current_version": current,
+            "recent_history": self.get_history(limit=10),
             "versions": [
                 {
                     "version_id": v.version_id,
