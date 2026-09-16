@@ -691,9 +691,7 @@ mod u3_tests {
         let pool = mock_pool();
         let r = u3_market_list_paging_category(
             Extension(pool),
-            axum::extract::Path(1i64),
-            axum::extract::Path(20i64),
-            axum::extract::Path("cms".to_string()),
+            axum::extract::Path((1i64, 20i64, "cms".to_string())),
         )
         .await;
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
