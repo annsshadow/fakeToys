@@ -1,12 +1,14 @@
+# chipidea
+
 ﻿## ChipIdea 高速双角色控制器驱
 
-### 1. 如何测试 OTG FSM（HNP SRP
+## 1. 如何测试 OTG FSM（HNP SRP
 
 展示如何通过 sys 输入文件，用 2 Freescale i.MX6Q sabre SD 板演OTG HNP SRP 功能
 ### 1.1 如何启用 OTG FSM
 
 
-##### 1.1.1 menuconfig 中选择 CONFIG_USB_OTG_FSM，重新构建内
+#### 1.1.1 menuconfig 中选择 CONFIG_USB_OTG_FSM，重新构建内
 
 映像与模块。如果你想检otg fsm 的一些内部变量，挂载 debugfs，有以下 2 个文```
 
@@ -43,6 +45,7 @@
 
    或者，通过引入 HNP 轮询，B-Host 可以知道 A-peripheral 何时希望处于主机角色，因此此角色切换也可   A-peripheral 端通过应答来自 B-Host 的轮询来触发。这可以A 设备上完:
 
+
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/a_bus_req
 
    A 设备应当切回主机并枚B 设备
@@ -57,6 +60,7 @@
 
    如果 B 设备想要使用总线
    B 设备:
+
 
 	echo 1 > /sys/bus/platform/devices/ci_hdrc.0/inputs/b_bus_req
 

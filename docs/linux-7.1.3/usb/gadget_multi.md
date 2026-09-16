@@ -1,3 +1,5 @@
+# gadget_multi
+
 ﻿## 多功能复Gadget
 
 ## 概述
@@ -24,7 +26,7 @@
 
 要让gadget Windows 下工作，必须满足两个条件
 
-##### 作为复合 gadget 被识
+#### 作为复合 gadget 被识
 
 首先，Windows 需要将gadget 识别USB 复合 gadget，而这一点本身有一些条件[^4^]。如果条件满足，Windows 会让 USB 通用父驱动[^5^]来处理该设备，然后尝试为每个独立的接口匹配驱动（大致如此，这里就不展开太多细节了）
 
