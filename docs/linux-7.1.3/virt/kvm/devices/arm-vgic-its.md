@@ -1,3 +1,5 @@
+# arm-vgic-its
+
 ﻿
 ## ARM 虚拟中断转换服务（ITS
 
@@ -6,7 +8,7 @@
 ITS 允许MSI(-X) 中断注入到客户机中。该扩展是可选的。创建一个虚ITS 控制还需要一个主GICv3（参arm-vgic-v3.txt），但不依赖于是否有物理 ITS 控制器
 每个客户机可以有多个 ITS 控制器，每个都必须有独立、不重叠MMIO 区域
 
-## 缁。
+## 统。
 
 ### KVM_DEV_ARM_VGIC_GRP_ADDR
 
@@ -87,25 +89,30 @@ ABI 的修0 仅支持虚GICv3 的特性，不支持带有嵌套虚拟机监控�
 
  where:
 
+
  - V 指示该表项是否有效。如果无效，其它字段没有意义 - next：如果此表项是最后一个，则等0；否则它对应于到下一DTE DeviceID
    偏移量，上限2^14 -1 - ITT_addr 匹配 ITT 地址[51:8] 位（256 字节对齐） - Size 指定 EventID 支持的位数减一
 
  Collection Table Entry (CTE)::
+
 
    bits:     | 63| 62 ..  52  | 51 ... 16 | 15  ...   0 |
    values:   | V |    RES0    |  RDBase   |    ICID     |
 
  where:
 
+
  - V 指示该表项是否有效。如果无效，其它字段没有意义 - RES0：保留字段，具有 Should-Be-Zero-or-Preserved 行为 - RDBase PE 编号（GICR_TYPER.Processor_Number 语义），
  - ICID 是集ID
 
  Interrupt Translation Entry (ITE)::
 
+
    bits:     | 63 ... 48 | 47 ... 16 | 15 ... 0 |
    values:   |    next   |   pINTID  |  ICID    |
 
  where:
+
 
  - next：如果此表项是最后一个，则等0；否则它对应于到下一ITE EventID
    偏移量，上限2^16 -1 - pINTID 是物LPI ID；如果为零，意味着该表项无效，其它字段没有意义 - ICID 是集ID

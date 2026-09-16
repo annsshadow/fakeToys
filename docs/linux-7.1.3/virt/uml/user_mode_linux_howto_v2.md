@@ -1,8 +1,10 @@
+# user_mode_linux_howto_v2
+
 ﻿
 # UML HowTo
 
 
-######## Introduction
+## Introduction
 
 
 欢迎使用 User Mode Linux（用户Linux
@@ -67,7 +69,7 @@ UML 相比（例如）QEMU 具有一系列优缺点，我们将在本文档后�
   应用程序，它显然是错误的选择
 
 
-######## 构建 UML 实例
+### 构建 UML 实例
 
 
 任何发行版中都没UML 安装程序。虽然你可以使用现成的安装介质通过某个
@@ -161,7 +163,7 @@ Ethernet over GRE Ethernet over L2TPv3。这些被称为 vecX
 至此，映像已准备好被启动
 
 
-######## 设置 UML 网络
+## 设置 UML 网络
 
 
 UML 网络旨在仿真以太网连接。此连接可以是点对点（类似于使用背靠背线
@@ -299,7 +301,7 @@ Linux 不支持在UML 这样的普通用户空间应用程序的 tap 文件描�
 所需权限：hybrid 需UML 用户具有 `CAP_NET_RAW` 能力，以tap 传输
 要求
 
-### raw 濂楁帴瀛椾紶杈。
+### raw 濂楁帴子椾紶杈。
 
 
 ```
@@ -341,7 +343,7 @@ raw 传输还提供将部分过滤卸载到宿主机的支持。控制它的两�
 
 所需权限：raw 套接字传输需`CAP_NET_RAW` 能力
 
-### GRE 濂楁帴瀛椾紶杈。
+### GRE 濂楁帴子椾紶杈。
 
 
 ```
@@ -393,7 +395,7 @@ UML 实例的示例配置：
 
 所需权限：GRE 需`CAP_NET_RAW`
 
-### l2tpv3 濂楁帴瀛椾紶杈。
+### l2tpv3 濂楁帴子椾紶杈。
 
 
 _警告_。L2TPv3 有一bug"。这bug"就是"选项GNU ls 还多"。虽
@@ -461,7 +463,7 @@ L2TPv3 有一些注意事项：
 所需权限：L2TPv3 raw IP 模式下需`CAP_NET_RAW`，UDP 模式不需
 特殊权限
 
-### BESS 濂楁帴瀛椾紶杈。
+### BESS 濂楁帴子椾紶杈。
 
 
 BESS 是一个高性能模块化网络交换机
@@ -519,7 +521,7 @@ https://github.com/virtualsquare/sshlirp
 上的 UML 节点将被自动连接到一起，构成一个虚LAN）
 
 
-######## 运行 UML
+#### 运行 UML
 
 
 本节假设宿主机上已经安装了来自发行版的用户Linux 软件包或自定义构建的
@@ -682,7 +684,7 @@ SysRq 机制，可能具有更大的灵活性
 - proc
 - stack
 
-### version
+## version
 
 
 ```
@@ -770,7 +772,7 @@ systemd 等。通常，它会重启机器
 这接受一个参数——一个进程的 pid 编号。它的栈会被打印到标准输出
 
 
-######## 高级 UML 主题
+#### 高级 UML 主题
 
 
 ## 在虚拟机之间共享文件系统
@@ -882,7 +884,7 @@ UML 映像不带任何参数地使Hostfs 将允许该映像挂载宿主文件系
 
 将把宿主机的 /home 挂载到虚拟机/mnt/home 上
 
-### hostfs 作为根文件系
+## hostfs 作为根文件系
 
 
 可以使用 hostfs 从宿主机上的一个目录层次结构启动，而不是使用文件中的标
@@ -912,7 +914,7 @@ UML 映像不带任何参数地使Hostfs 将允许该映像挂载宿主文件系
 
 之后 UML 应当像平常一样启动
 
-### Hostfs 注意事项
+## Hostfs 注意事项
 
 
 Hostfs 不支持跟踪宿主机（UML 之外）上宿主机文件系统的更改。结果，如果一
@@ -941,7 +943,7 @@ NUMA 节点分配，它将受益。操作系统默*不会**这样做。为了做
    TEMP=/mnt/tmpfs-nodeX taskset -cX linux options options options..
 ```
 
-######## UML 做贡献以及使UML 开
+### UML 做贡献以及使UML 开
 
 
 UML 是开发新 Linux 内核概念——文件系统、设备、虚拟化等的绝佳平台。它提供
