@@ -1,3 +1,5 @@
+# coding-guidelines
+
 ﻿
 ## 编码规范
 
@@ -198,7 +200,7 @@ Rust 中的等价形式可能如下（忽略文档）
 **``gpio``
 : gpio_line_direction::GPIO_LINE_DIRECTION_IN``銆。
 
-### Lint 检
+## Lint 检
 
 Rust 中，可以在局`allow` 特定的警告（诊断信息、lint），使编译器忽略给定函数、模块、块等范围内某个警告的实例
 它类似于 C 中的 `#pragma GCC diagnostic push` + `ignored` + `pop` [#]_
@@ -281,7 +283,7 @@ Rust 中，可以在局`allow` 特定的警告（诊断信息、lint），使编
 有关 Rust 中诊断信息的更多信息，请参阅
 	https://doc.rust-lang.org/stable/reference/attributes/diagnostics.html
 
-### 错误处理
+## 错误处理
 
 
 有关 Linux 专用 Rust 错误处理的一些背景和指南，请参阅
