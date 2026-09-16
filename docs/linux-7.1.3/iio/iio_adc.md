@@ -1,3 +1,5 @@
+# iio_adc
+
 ﻿
 ## IIO ADC 的抽象（IIO Abstractions for ADCs
 ## 1. 概述（Overview
@@ -10,7 +12,7 @@ ADC 输入有三种通用类型（单端、差分、伪差分）和两种可能�
 输入类型的综合性文章（本文很大程度上基于它）可以在以下地址找到https://www.analog.com/en/resources/technical-articles/sar-adc-input-types.html
 ### 1.1 单端通道（Single-ended channels
 单端通道把模拟输入电压相对于地（ground）进行数字化，可以是单极性也可以是双极性
-##### 1.1.1 单端单极性通道（Single-ended Unipolar Channels
+#### 1.1.1 单端单极性通道（Single-ended Unipolar Channels
 ```
 
   ---------- VREF -------------
@@ -46,7 +48,7 @@ ADC 输入有三种通用类型（单端、差分、伪差分）和两种可能�
 数字时，单端通道节点还需要提供一`single-channel` 属性
 请参`Documentation/devicetree/bindings/iio/adc/adc.yaml` 以获ADC 专有设备树属性的完整
 文档
-##### 1.1.2 单端双极性通道（Single-ended Bipolar Channels
+## 1.1.2 单端双极性通道（Single-ended Bipolar Channels
 ```
 
   ---------- +VREF ------------
@@ -76,10 +78,10 @@ ADC 输入有三种通用类型（单端、差分、伪差分）和两种可能�
     };
 
 ```
-### 1.2 差分通道（Differential channels
+## 1.2 差分通道（Differential channels
 差分电压测量把正输入（IN+）相对于负输入（IN-）在 -VREF +VREF 的范围内进行数字化。换句话说，
 差分通道测量 IN+ IN- 之间的电势差，通常IN+ - IN- 公式表示
-##### 1.2.1 差分双极性通道（Differential Bipolar Channels
+### 1.2.1 差分双极性通道（Differential Bipolar Channels
 ```
 
   -------- +VREF ------         +-------------------+
@@ -116,7 +118,7 @@ ADC 输入有三种通用类型（单端、差分、伪差分）和两种可能�
 ```
 ADC 驱动中，会为通道`struct iio_chan_spec` 中的 `differential = 1` 置位。尽管有三类通用
 输入类型，`differential` 仅用于区分差分与非差分（单端或伪差分）输入类型。更多信息参`include/linux/iio/iio.h`
-##### 1.2.2 差分单极性通道（Differential Unipolar Channels
+## 1.2.2 差分单极性通道（Differential Unipolar Channels
 对于**差分单极*通道，正输入的模拟电压也必须高于负输入的电压。因此，差分单极性通道实际允许输入范围IN- +VREF。由IN+ 随被测模拟信号摆动，且输入配置必须保IN+ 不会低于 IN-（也
 不会IN- 升高IN+ 之上），大多数差分单极性通道配置都把 IN- 固定在一个已知的、不落在被测信号
 预期电压范围内的电压上。这就导致一种等效于伪差分通道的配置。因此，差分单极性配置通常可以作为
@@ -124,7 +126,7 @@ ADC 驱动中，会为通道`struct iio_chan_spec` 中的 `differential = 1` 置
 ### 1.3 伪差分通道（Pseudo-differential Channels
 还有第三ADC 输入类型，称为伪差分，或称单端到差分配置。伪差分通道与差分通道类似，也是测IN+ 相对IN-。但与双极性差分通道不同，负输入被限制在很窄的电压范围（视为恒定电压），而只IN+ 允许摆动。伪差分通道可以由一对差分输入构成：把负输入限制在一个已知电压，同时只允许正输入
 摆动。有时，提供IN- 的输入称为共模电压（common-mode voltage）。此外，某些器件有一COM 引脚允许单端输入以共模电压为参考，从而成为伪差分通道。通常，共模输入电压可以在设备树中描述为一电压调节器（例如 `com-supply`），因为它本质上是一个恒定电压源
-##### 1.3.1 伪差分单极性通道（Pseudo-differential Unipolar Channels
+#### 1.3.1 伪差分单极性通道（Pseudo-differential Unipolar Channels
 ```
 
   -------- +VREF ------          +-------------------+
@@ -161,7 +163,7 @@ IN+ 测得的电压是相对IN- 的，但与差分通道不同，伪差分配置
 
 ```
 不要在伪差分通道`iio_chan_spec` 结构体中设置 `differential`
-##### 1.3.2 伪差分双极性通道（Pseudo-differential Bipolar Channels
+## 1.3.2 伪差分双极性通道（Pseudo-differential Bipolar Channels
 ```
 
   -------- +VREF ------          +-------------------+
