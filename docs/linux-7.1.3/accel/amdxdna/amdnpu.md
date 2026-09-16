@@ -1,3 +1,5 @@
+# amdnpu
+
 ﻿
 
 ##  AMD NPU
@@ -17,7 +19,7 @@ AMD NPU 由以下硬件组件构成：
 AMD XDNA 阵列由采`AMD AI Engine Technology`_ 技术构建的计算（compute）与存储（memory）tile 的二维阵列组成。每一列有 4 行计tile 1 行存tile。每个计tile 包含一个带有自身专用程序和数据存储器的 VLIW 处理器。存tile 充当 L2 存储器。该二维阵列可以在列边界处进行划分，从而创建一个空间上相互隔离的分区（partition），并可以将其绑定到一个工作负载上下文
 每一列还拥有专用DMA 引擎，用于在主机 DDR 与存tile 之间搬移数据
 AMD Phoenix AMD Hawk Point 客户NPU 采用 4x5 拓扑，即 4 行计tile 排列5 列。AMD Strix Point 客户APU 采用 4x8 拓扑，即 4 行计tile 排列8 列
-### 鍏变韩 L2 瀛樺偍鍣。
+### 鍏变韩 L2 子樺偍鍣。
 单独一行的存储 tile 构成了一块由软件管理的片L2 存储器池。DMA 引擎用于在主DDR 与存tile 之间搬移数据。AMD Phoenix AMD Hawk Point NPU 共有 2560 KB L2 存储器。AMD Strix Point NPU 共有 4096 KB L2 存储器
 ### 微控制器
 
