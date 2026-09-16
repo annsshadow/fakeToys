@@ -1,3 +1,5 @@
+# asymmetric-keys
+
 ﻿
 ## 非对/ 公钥加密密钥类型
 
@@ -30,10 +32,12 @@ TPM 驱动的一个接口
 
      will match a key with fingerprint::
 
+
 	1A00 2040 7601 7889 DE11  882C 3823 04AD 5ACC 2142
 
   2) 如果判据字符串形subtype>:<hexdigits>”，则匹配方式与 (1) 相同，但附加限制为只匹配
      指定子类型（例如 tpm）的密钥。例:
+
 
 	keyctl search @s asymmetric tpm:5acc2142
 
@@ -79,7 +83,7 @@ PGP 通过对密钥数据加上一PGP 特有的元数据做哈希来生成密钥
   1) 签名验证
 其他操作（例如加密）使用与验证相同的密钥数据也是可能的，但目前不受支持；而另外一些操（例如解密和签名生成）则需要额外的密钥数据
 
-### 签名验证
+## 签名验证
 
 
 提供了一个用于执行加密签名验证的操作，使
@@ -260,6 +264,7 @@ owner name 字段应分别设置为所属模块和解析器的名称
 
      如果最终的终端实体（end-entity）证书被成功添加"chain" 密钥环，我们就可以确定它存在一     回溯到某个根证书的有效签名链
      也可以使用单个密钥环，在链接根证书之后对密钥环进行限制来验证签名:
+
 
 	# 为证书链创建密钥环并添加根证	chain2_id=`keyctl add keyring chain2 "" @s`
 	keyctl padd asymmetric "" $chain2_id < root1.cert

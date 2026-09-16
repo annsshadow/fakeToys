@@ -1,5 +1,7 @@
+# krb5
+
 ﻿
-## Kerberos V 瀵嗙爜瀛?API
+## Kerberos V 瀵嗙爜子?API
 
 
   - 概述（Overview）    - 小型缓冲区（Small Buffer）  - 编码类型（Encoding Type）  - 密钥派生（Key Derivation）    - PRF+ 计算    - Kc、Ke Ki 派生  - 密码函数（Crypto Functions）    - 准备函数（Preparation Functions）    - 加密模式（Encryption Mode）    - 校验和模式（Checksum Mode）  - krb5enc AEAD 算法
@@ -30,7 +32,7 @@ API 提供 Kerberos 5 风格的密码学，用于密钥派生、加密和校验�
 	#include <crypto/krb5.h>
 
 ```
-### 小型缓冲区（Small Buffer
+## 小型缓冲区（Small Buffer
 
 为了传递诸如密钥之类的小块数据，使用如下缓冲区结构
 ```
