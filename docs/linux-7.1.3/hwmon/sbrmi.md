@@ -1,8 +1,11 @@
+# sbrmi
+
 ﻿
 ## 内核驱动 sbrmi
 
 
 Supported hardware:
+
 
   - 通过 APML 连接BMC 的、兼Sideband Remote Management Interface
     （SB-RMI）的 AMD SoC 设备

@@ -1,3 +1,5 @@
+# aspeed-pwm-tacho
+
 ﻿## 内核驱动 aspeed-pwm-tacho
 
 
@@ -7,7 +9,7 @@
 Authors:
 	<jaghu@google.com>
 
-### 说明
+## 说明
 
 该驱动为 ASPEED AST2400/2500 PWM 和风扇测速（Fan Tacho）控制器提供支持。PWM 控制器最多支8 PWM 输出。风扇测速控制器最多支16 个测速输入
 

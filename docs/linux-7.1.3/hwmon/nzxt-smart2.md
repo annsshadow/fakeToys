@@ -1,3 +1,5 @@
+# nzxt-smart2
+
 ﻿
 ## 内核驱动 nzxt-smart2
 

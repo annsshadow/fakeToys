@@ -1,3 +1,5 @@
+# gxp-fan-ctrl
+
 ﻿## 内核驱动 gxp-fan-ctrl
 
 
@@ -8,7 +10,7 @@
 Author: Nick Hawkins <nick.hawkins@hpe.com>
 
 
-### 说明
+## 说明
 
 
 gxp-fan-ctrl 是一个为 HPE GXP SoC 提供风扇控制的驱动。该驱动允许收集风扇状态并使用风扇 PWM 控制
