@@ -1,3 +1,5 @@
+# makefiles
+
 ﻿## Linux 内核 Makefiles
 
 
@@ -93,7 +95,7 @@ $(obj-y) 中的文件顺序是有意义的。列表中允许重复：第一个�
   obj-$(CONFIG_ISDN_PPP_BSDCOMP) += isdn_bsdcomp.o
 
 ```
-### Loadable module goals - obj-m
+## Loadable module goals - obj-m
 
 
 $(obj-m) 指定作为可加载内核模块构建的目标文件
@@ -135,7 +137,7 @@ $(obj-m) 指定作为可加载内核模块构建的目标文件
 
 注意：当然，当你将目标构建进内核时，上述语法同样适用。因此，如果你设置了 CONFIG_EXT2_FS=y，kbuild 会像你预期的那样，从各个部分构建出一ext2.o 文件，然后将其链接进 built-in.a
 
-### Library file goals - lib-y
+## Library file goals - lib-y
 
 
 obj-* 列出的目标用于模块，或被合并进该特定目录built-in.a。还有一种可能，即列出将被包含进lib.a 的目标。所有用 lib-y 列出的目标都会被合并进该目录的单个库中。同时列obj-y lib-y 中的目标不会被包含进库，因为它们无论如何都可被访问到。为保持一致，列在 lib-m 中的目标会被包含lib.a
@@ -154,7 +156,7 @@ obj-* 列出的目标用于模块，或被合并进该特定目录built-in.a。�
 
 lib-y 的使用通常限制`lib/` `arch/*/lib`
 
-### Descending down in directories
+## Descending down in directories
 
 
 Makefile 只负责构建其自身目录中的目标。子目录中的文件应由这些子目录中Makefile 负责。只要你让构建系统知道这些子目录，它会自动在子目录中递归调用 make
@@ -189,7 +191,7 @@ obj-y/m 不同，subdir-y/m 不需要尾部斜杠，因为此语法始终用于�
 
 在赋值时使用 `CONFIG_` 变量是良好实践。这样，如果相应`CONFIG_` 选项既不"y" 也不"m"，kbuild 可以完全跳过该目录
 
-### Non-builtin vmlinux targets - extra-y
+## Non-builtin vmlinux targets - extra-y
 
 
 extra-y 指定构建 vmlinux 所需、但未被合并built-in.a 的目标
@@ -216,7 +218,7 @@ vmlinux 显然不是一个最终目标时，Kbuild 会跳extra-y。（例如 `ma
 
 如果你打算无条件地构建目标，always-y（下一节解释）才是正确的语法
 
-### Always built goals - always-y
+## Always built goals - always-y
 
 
 always-y 指定Kbuild 访问Makefile 时字面上总是被构建的目标
@@ -228,7 +230,7 @@ always-y 指定Kbuild 访问Makefile 时字面上总是被构建的目标
   always-y += $(offsets-file)
 
 ```
-### Compilation flags
+## Compilation flags
 
 
 ccflags-y, asflags-y and ldflags-y
@@ -249,6 +251,7 @@ ccflags-y, asflags-y and ldflags-y
 
   Example::
 
+
 ```
 
     #arch/sparc/kernel/Makefile
@@ -258,6 +261,7 @@ ccflags-y, asflags-y and ldflags-y
   ldflags-y 指定使用 $(LD) 链接时的选项
 
   Example::
+
 
 ```
 
@@ -302,6 +306,7 @@ CFLAGS_$@, AFLAGS_$@
 
   Example::
 
+
 ```
 
     # arch/arm/kernel/Makefile
@@ -310,7 +315,7 @@ CFLAGS_$@, AFLAGS_$@
     AFLAGS_iwmmxt.o      := -Wa,-mcpu=iwmmxt
 
 ```
-### Dependency tracking
+## Dependency tracking
 
 
 Kbuild 跟踪以下方面的依赖：
@@ -375,6 +380,7 @@ $(kecho)
 
   Example::
 
+
 ```
 
     # lib/Makefile
@@ -394,7 +400,7 @@ $(kecho)
 ```
   会随 ``make KBUILD_VERBOSE=`` 一起显示
 
-### Command change detection
+## Command change detection
 
 
 当规则被求值时，会比较目标与其先决条件文件之间的时间戳。GNU Make 会在任一先决条件比目标更新时更新目标
@@ -522,7 +528,7 @@ cc-cross-prefix
     endif
 
 ```
-### $(RUSTC) support functions
+## $(RUSTC) support functions
 
 
 rustc-min-version
@@ -549,7 +555,7 @@ ld-option
     LDFLAGS_vmlinux += $(call ld-option, -X)
 
 ```
-### Script invocation
+## Script invocation
 
 
 Make 规则可以调用脚本来构建内核。规则应始终提供适当的解释器来执行脚本。它们不应依赖执行位被设置，也不应直接调用脚本。为便于手动调用脚本（例如调./scripts/checkpatch.pl），仍建议为脚本设置执行位
@@ -604,7 +610,7 @@ Kbuild 在上面的示例中假bin2hex 由位于与 Makefile 相同目录中的�
 
 最后，这两.o 文件被链接到可执行文lxdialog。注意：语法 <executable>-y 不允许用于主机程序
 
-### Using C++ for host programs
+## Using C++ for host programs
 
 
 kbuild 提供对用 C++ 编写的主机程序的支持。这仅是为支kconfig 而引入的，不建议普遍使用
@@ -628,7 +634,7 @@ kbuild 提供对用 C++ 编写的主机程序的支持。这仅是为支kconfig 
   qconf-objs    := check.o
 
 ```
-### Using Rust for host programs
+## Using Rust for host programs
 
 
 Kbuild 提供对用 Rust 编写的主机程序的支持。然而，由于 Rust 工具链并非内核编译所必需，它只能用于需Rust 可用的场景（例如启用`CONFIG_RUST` 时）
@@ -672,7 +678,7 @@ Kbuild 将使用位于与 `Makefile` 相同目录中的 `target.rs` 作为 crate
 ```
 链接 qconf 时，将传入额外选项 `-L$(QTDIR)/lib`
 
-### When host programs are actually built
+## When host programs are actually built
 
 
 Kbuild 仅在主机程序被引用为先决条件时才会构建它
@@ -743,7 +749,7 @@ Kbuild 在上面的示例中假bpf-direct 由位于与 Makefile 相同目录中�
 
 最后，这两.o 文件被链接到可执行文bpf-fancy。注意：语法 <executable>-y 不允许用于用户空间程序
 
-### Controlling compiler options for userspace programs
+## Controlling compiler options for userspace programs
 
 
 编译用户空间程序时，可以设置特定标志。程序将始终使用 $(CC) 传入 $(KBUILD_USERCFLAGS) 中指定的选项进行编译
@@ -777,7 +783,7 @@ Kbuild 在上面的示例中假bpf-direct 由位于与 Makefile 相同目录中�
 
 从命令行，USERCFLAGS USERLDFLAGS <userkbuildflags> 也会被使用
 
-### When userspace programs are actually built
+## When userspace programs are actually built
 
 
 Kbuild 仅在被告知时才构建用户空间程序。有两种方式可以做到这一点
@@ -1029,7 +1035,7 @@ KBUILD_VMLINUX_OBJS
 KBUILD_VMLINUX_LIBS
   vmlinux 的所.a `lib` 文件。KBUILD_VMLINUX_OBJS KBUILD_VMLINUX_LIBS 共同指定了用于链vmlinux 的所有目标文件
 
-### Add prerequisites to archheaders
+## Add prerequisites to archheaders
 
 
 archheaders: 规则用于生成可能`make headers_install` 安装到用户空间的头文件
@@ -1053,7 +1059,7 @@ archprepare: 规则用于列出在开始下降进入子目录之前需要构建�
 
 另见章节 XXX-TODO，它描述kbuild 如何支持生成偏移头文件
 
-### List directories to visit when descending
+## List directories to visit when descending
 
 
 架构 Makefile 与顶Makefile 协作，定义指定如何构vmlinux 文件的变量。注意，模块没有相应的架构相关章节；模块的构建机制完全与架构无关
@@ -1080,7 +1086,7 @@ core-y, libs-y, drivers-y
     drivers-$(CONFIG_PM) += arch/sparc/power/
 
 ```
-### Architecture-specific boot images
+## Architecture-specific boot images
 
 
 架构 Makefile 指定vmlinux 文件压缩、用引导代码包裹并将结果文件复制到某处的目标。这包括各种安装命令。实际目标在各架构间并不标准化
@@ -1113,6 +1119,7 @@ Kbuild 没有提供任何智能方式来支持构boot/ 中指定的目标。因a
 ```
 make 不带参数执行时，遇到的第一个目标将被构建。在顶层 Makefile 中，存在的第一个目标是 all:
 
+
 架构在默认情况下应始终构建一个可启动映像。在 `make help` 中，默认目标`*` 高亮显示
 
 all: 添加一个新的先决条件以选择不同vmlinux 的默认目标
@@ -1125,7 +1132,7 @@ all: 添加一个新的先决条件以选择不同vmlinux 的默认目标
 ```
 当不带参数执`make` 时，将构bzImage
 
-### Commands useful for building a boot image
+## Commands useful for building a boot image
 
 
 Kbuild 提供了一些在构建启动映像时有用的宏
@@ -1184,7 +1191,7 @@ dtc
     DTC_FLAGS ?= -p 1024
 
 ```
-### Preprocessing linker scripts
+## Preprocessing linker scripts
 
 
 构建 vmlinux 映像时，使用链接脚本 arch/$(SRCARCH)/kernel/vmlinux.lds
@@ -1214,7 +1221,7 @@ $(CPPFLAGS_vmlinux.lds) 的赋值告kbuild 在构建目vmlinux.lds 时使用指�
 ```
 `*lds` 文件kbuild 基础设施在多个架构相关文件中被使用
 
-### Generic header files
+## Generic header files
 
 
 目录 include/asm-generic 包含可在各个架构之间共享的头文件
@@ -1287,7 +1294,7 @@ no-export-headers 本质上由 include/uapi/linux/Kbuild 使用，以避免在�
   #include <asm-generic/termios.h>
 
 ```
-### generated-y
+## generated-y
 
 
 如果某个架构generic-y 包装之外还生成其他头文件，generated-y 指定它们
@@ -1300,7 +1307,7 @@ no-export-headers 本质上由 include/uapi/linux/Kbuild 使用，以避免在�
   generated-y += syscalls_32.h
 
 ```
-### mandatory-y
+## mandatory-y
 
 
 mandatory-y 本质上由 include/(uapi/)asm-generic/Kbuild 使用，用于定义所有架构都必须具备的最ASM 头文件集合

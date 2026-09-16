@@ -1,7 +1,9 @@
+# kconfig-macro-language
+
 ﻿## Kconfig 宏语言
 
 
-### 概念
+## 概念
 
 
 其基本思想Make 的启发。当我们Make 时，会注意到它有点像是把两种语言
