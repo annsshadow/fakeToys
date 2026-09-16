@@ -24,7 +24,7 @@
     <aside class="bbs-sidebar glass-card" :class="{ collapsed: showNewTopic }">
       <div class="sidebar-header">
         <h3>版块</h3>
-        <button class="add-section-btn" title="新建版块" @click="openNewSection()">+</button>
+        <button class="add-section-btn" title="新建版块" aria-label="新建版块" @click="openNewSection()">+</button>
       </div>
       <div v-if="sectionsLoading" class="loading-skeleton">
         <div v-for="i in 5" :key="i" class="sk-item"></div>
@@ -37,8 +37,8 @@
           <span class="sec-icon">{{ sec.icon || '💬' }}</span>
           <span class="sec-name">{{ sec.name }}</span>
           <span class="sec-actions">
-            <button class="sec-act" title="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
-            <button class="sec-act" title="删除版块" @click.stop="deleteSection(sec)">✕</button>
+            <button class="sec-act" title="重命名版块" aria-label="重命名版块" @click.stop="openSectionEdit(sec)">✎</button>
+            <button class="sec-act" title="删除版块" aria-label="删除版块" @click.stop="deleteSection(sec)">✕</button>
           </span>
         </li>
         <li class="section-item all-section" :class="{ active: !selectedSection }" @click="selectedSection = null">
@@ -440,9 +440,10 @@ watch(repliesData, (d) => {
 })
 
 // 创建帖子（后端已注册路由为 /jaxrs/bbs/subject/create，非 assemble/control 旧面）
+// authorId 取登录人 unique：后端 subject/create 不回落会话，缺省则「我的主题」过滤不到本人帖。
 const createMutation = useMutation({
   mutationFn: (data: { sectionId: string; title: string; content: string }) =>
-    api.post('/jaxrs/bbs/subject/create', data),
+    api.post('/jaxrs/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
   onSuccess: () => {
     showNewTopic.value = false
     refetch()

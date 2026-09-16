@@ -1824,7 +1824,7 @@ pub async fn work_list(
 
     let rows = client
         .query(
-            "SELECT id, title, process, COALESCE(application, '') as application, work_status, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') as create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
+            "SELECT id, title, process, COALESCE(application, '') as application, work_status, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') as create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2 OFFSET $3",
             &[&application, &(size as i64), &(offset as i64)],
         )
         .await
