@@ -1,3 +1,5 @@
+# netfs_library
+
 ﻿
 ## 网络文件系统服务库（Network Filesystem Services Library
 
@@ -489,6 +491,7 @@ I/O 请求 API 包含若干结构以及文件系统可能需要使用的若干�
  * ``prepare_write()``
 
    [可选] 调用此方法以允许文件系统限制子请求的大小。它也可以限制迭代器中单独区域的数量，例RDMA 所要求的。此信息应设置在子请求所属流:
+
 
 	rreq->io_streams[subreq->stream_nr].sreq_max_len
 	rreq->io_streams[subreq->stream_nr].sreq_max_segs

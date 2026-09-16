@@ -1,3 +1,5 @@
+# ramfs-rootfs-initramfs
+
 ﻿
 ## Ramfs、rootfs initramfs
 
@@ -95,7 +97,7 @@ rootfs ramfs（若启用tmpfs，则tmpfs）的一个特殊实例，它始终存�
 ```
 
     cpio man 手册页包含一些糟糕的建议，如果你照做会破坏你initramfs 归档。它生成文件名列表的典型方式是使find 命令；你应该find 加上 -depth 选项，以尽量减少对不可写或不可搜索目录的权限问题在创initramfs.cpio.gz 映像时切勿这样做，那样是行不通的。Linux 内核cpio 解压器不会在不存在的目录中创建文件，因此目录条目必须出现在该目录中的文件之前。上面的脚本以正确的顺序生成它们
-### 外部 initramfs 映像
+## 外部 initramfs 映像
 
 如果内核启用initrd 支持，也可以把一个外部的 cpio.gz 归档当作 initrd 传入 2.6 内核。在这种情况下，内核会自动检测其类型（initramfs，而非 initrd），并在尝试运行 /init 之前将该外部 cpio 归档解压rootfs 中
 这具initramfs 的内存效率优势（没有 ramdisk 块设备），同时又initrd 的独立打包特性（如果你想initramfs 运行GPL 的代码，而又不把它与GPL 许可Linux 内核二进制混在一起，这就很方便）
@@ -131,7 +133,7 @@ initramfs 归档是一个完整、自包含Linux 根文件系统。如果你还�
 ```
 
 在调试一个普通根文件系统时，能够"init=/bin/sh" 启动是很方便的。initramfs 的等价做法是 "rdinit=/bin/sh"，它同样有用
-### 为什么用 cpio 而不tar
+## 为什么用 cpio 而不tar
 这一决定是在 2001 12 月做出的。讨论始于此处：
 
 - https://lore.kernel.org/lkml/a03cke$640$1@cesium.transmeta.com/

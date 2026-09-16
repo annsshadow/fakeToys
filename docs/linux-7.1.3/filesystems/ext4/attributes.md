@@ -1,5 +1,7 @@
+# attributes
+
 ﻿
-### Extended Attributes
+## Extended Attributes
 
 
 扩展属性（xattrs）通常存储在磁盘上独立的数据块中，并通过 `inode.i_file_acl*` inode 引用。扩展属性的首次使用似乎是用于存储文ACL 和其他安全数据（selinux）。借助 `user_xattr` 挂载选项，用户可以存储扩展属性，只要所有属性名都以 “user开头；这一限制Linux 3.0 之后似乎已消失
@@ -77,7 +79,7 @@
      - 属性名。不包含结尾NULL
 属性值可以跟在条目表末尾之后。似乎要求它们按 4 字节边界对齐。这些值从块的末尾开始存储，并向 xattr_header/xattr_entry 表方向增长。当两者相撞时，溢出部分被放入一个独立的磁盘块。如果磁盘块填满，文件系统返-ENOSPC
 `ext4_xattr_entry` 的前四个字段被置零以标记键列表的结束
-#### Attribute Name Indices
+### Attribute Name Indices
 
 
 从逻辑上讲，扩展属性是一系列 key=value 对。键被假定为NULL 结尾的字符串。为了减少键在磁盘上占用的空间，键字符串的开头会与属性名索引进行匹配。如果找到匹配，则设置属性名索引字段，并从键名中去掉匹配到的字符串。下面是名称索引值到键前缀的映射：

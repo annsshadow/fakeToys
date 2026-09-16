@@ -1,3 +1,5 @@
+# fscrypt
+
 ﻿## 文件系统级加密（fscrypt
 
 
@@ -723,7 +725,7 @@ FS_IOC_SET_ENCRYPTION_POLICY 可能因以下错误而失败：
   ext4 文件系统的根目录
 - EROFS：文件系统为只读
 
-### 获取加密策略
+## 获取加密策略
 
 
 有两ioctl 可用于获取文件的加密策略
@@ -737,7 +739,7 @@ ioctl 的扩展（_EX）版本更通用，并
 版本，如果它ENOTTY 失败，则回退到原
 版本
 
-#### FS_IOC_GET_ENCRYPTION_POLICY_EX
+### FS_IOC_GET_ENCRYPTION_POLICY_EX
 
 
 FS_IOC_GET_ENCRYPTION_POLICY_EX ioctl 获取目录或普通文件的
@@ -883,7 +885,7 @@ struct fscrypt_add_key_arg，必须先将其置零，然
   哈希值填充它。要添加此类密钥，调用进
   不需要任何特权。然而，可以添加的密钥数
   受用户对密钥环服务的配额限制（见
-  Documentation/security/keys/core.rst).
+  Documentation/security/keys/core.md).
 
 - raw_size 必须是所提供raw 密钥的大小（以字节为单位）
   或者，如果 key_id 非零，则此字段必须为 0，因
@@ -954,7 +956,7 @@ FS_IOC_ADD_ENCRYPTION_KEY 可能因以下错误而失败：
   文件系统不支持内联加密，或者硬
   不支持硬件封装密
 
-#### 传统方法
+## 传统方法
 
 
 对于 v1 加密策略，主加密密钥也可
@@ -1001,11 +1003,12 @@ raw[0..size-1]（含）字节就是实际的密钥
 特定于文件系统的前缀已废弃，不应
 新程序中使用
 
-### 移除密钥
+## 移除密钥
 
 
 有两ioctl 可用于移除由以下方式添加的密钥：
 FS_IOC_ADD_ENCRYPTION_KEY_:
+
 
 - FS_IOC_REMOVE_ENCRYPTION_KEY_
 - FS_IOC_REMOVE_ENCRYPTION_KEY_ALL_USERS_
@@ -1019,7 +1022,7 @@ FS_IOC_ADD_ENCRYPTION_KEY_:
 在使用这ioctl 之前，请阅读 Online attacks_ 一节，以了
 这些 ioctl 的安全目标与局限性
 
-#### FS_IOC_REMOVE_ENCRYPTION_KEY
+### FS_IOC_REMOVE_ENCRYPTION_KEY
 
 
 FS_IOC_REMOVE_ENCRYPTION_KEY ioctl 从文件系统中移除对主加密
@@ -1100,7 +1103,7 @@ FS_IOC_REMOVE_ENCRYPTION_KEY 可能因以下错误而失败：
   此文件系统的加密支持，或者文件系统超级块尚未
   启用加密
 
-#### FS_IOC_REMOVE_ENCRYPTION_KEY_ALL_USERS
+## FS_IOC_REMOVE_ENCRYPTION_KEY_ALL_USERS
 
 
 FS_IOC_REMOVE_ENCRYPTION_KEY_ALL_USERS 涓。
@@ -1475,7 +1478,7 @@ setxattr()）暴露，因为加密 xattr 具有特殊语义
 随机生成，并用作 KDF 输入或作tweak，以
 不同文件被不同地加密；见 Per-file encryption keys_ DIRECT_KEY policies_
 
-### 数据路径改动
+## 数据路径改动
 
 
 当使用内联加密时，文件系统只需

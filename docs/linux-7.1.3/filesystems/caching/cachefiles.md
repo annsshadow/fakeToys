@@ -1,3 +1,5 @@
+# cachefiles
+
 ﻿
 ## 已挂载文件系统上的缓
 
@@ -159,19 +161,23 @@ CacheFiles 的工作方式是临时更改进程所充当的安全上下文（fsu
  (2) Finds the security label of the process which issued the bind request
      (presumed to be the cachefilesd daemon), which by default will be::
 
+
 	cachefilesd_t
 
      and asks LSM to supply a security ID as which it should act given the
      daemon's label.  By default, this will be::
+
 
 	cachefiles_kernel_t
 
      SELinux transitions the daemon's security ID to the module's security ID
      based on a rule of this form in the policy::
 
+
 	type_transition <daemon's-ID> kernel_t : process <module's-ID>;
 
      For instance::
+
 
 	type_transition cachefilesd_t kernel_t : process cachefiles_kernel_t;
 
@@ -237,6 +243,7 @@ CacheFiles 利用task_struct 中的拆分安全（split security）。它分配�
      This shows the breakdown of the number of times each amount of time
      between 0 jiffies and HZ-1 jiffies a variety of tasks took to run.  The
      columns are as follows:
+
 
 	=======		=======================================================
 	COLUMN		TIME MEASUREMENT

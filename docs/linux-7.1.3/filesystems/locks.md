@@ -1,3 +1,5 @@
+# locks
+
 ﻿
 ## 文件锁发布说
 
@@ -16,7 +18,7 @@
 C 库更新到了合适的版本（请参阅 “Documentation/process/changes.rst文件）
 ### 1.2 再次允许混合
 
-##### 1.2.1 典型问题 - Sendmail
+#### 1.2.1 典型问题 - Sendmail
 
 
 由于 sendmail 无法使用旧的 flock() 模拟，许sendmail 安装使用 fcntl()

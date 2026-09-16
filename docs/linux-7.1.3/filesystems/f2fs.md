@@ -1,3 +1,5 @@
+# f2fs
+
 ﻿
 ## 面向闪存的文件系统（Flash-Friendly File System，F2FS
 
@@ -263,7 +265,7 @@ lookup_mode=%s	 控制对大小写折叠（casefolded）目录的目录查找行
 	# mount -t f2fs /dev/block_device /mnt/f2fs
 
 ```
-### mkfs.f2fs
+## mkfs.f2fs
 
 
 mkfs.f2fs 用于将分区格式化f2fs 文件系统，它会构建基本的磁盘布局
@@ -326,7 +328,7 @@ dump.f2fs 用于调试 f2fs 文件系统的磁盘数据结构。它显示由给i
 ```
 注意：请参dump.f2fs(8) 的手册页获取完整选项列表
 
-### sload.f2fs
+## sload.f2fs
 
 
 sload.f2fs 提供了一种在现有磁盘镜像中插入文件与目录的方式。该工具在基于已编译文件构建 f2fs 镜像时很有用
@@ -543,7 +545,7 @@ F2FS 在目录中查找文件名时，首先计算文件名的哈希值。然后
    File size = 7                     File size = 7
 
 ```
-### 默认块分
+## 默认块分
 
 
 在运行时，F2FS 在“Main”区域内管理六个活动日志：热/冷节点（Hot/Warm/Cold node）与冷数据（Hot/Warm/Cold data）
@@ -730,7 +732,7 @@ f2fs 可以利用一个称为“设备别名文件（device aliasing file）”�
 
 因此，其核心思想是：用户可以/dev/vdc 上执行任何文件操作，并在使用完后回收空间，而这些空间被计入 /data。这不需要修改分区大小与文件系统格式
 
-### 每文件只读大 Folio 支持
+## 每文件只读大 Folio 支持
 
 
 F2FS 在读取路径上实现了大 folio（large folio）支持，以利用高阶页分配获得显著的性能提升。为了最小化代码复杂度，该支持目前被排除在写入路径之外，因为写入路径需要处理压缩与块分配模式等复杂优化
