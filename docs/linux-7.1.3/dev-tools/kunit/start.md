@@ -1,3 +1,5 @@
+# start
+
 ﻿
 ## Getting Started
 
@@ -18,6 +20,7 @@ tests, formats the test results. 来自 the 内核 repository,
 运行 kunit_tool:
 
 
+
 	./tools/testing/kunit/kunit.py 运行
 
 	参见 the 以下 错误:
@@ -36,6 +39,7 @@ tests, formats the test results. 来自 the 内核 repository,
 	电流 配置 全部 generated 文件.
 
 everything worked correctly, 应当 参见 the 以下:
+
 
 
 	Configuring KUnit 内核 ...
@@ -78,6 +82,7 @@ set `.kunitconfig` set the 内核 `.config`. warn
 具有 included dependencies 用于 the 选项 使用.
 
 存在 许多 ways customize the configurations:
+
 
 一 Edit `.kunit/.kunitconfig`. The 文件 应当 包含 the 列出 kconfig
    选项 必需 运行 the desired tests, including 它们dependencies.
@@ -122,6 +127,7 @@ select tests execute boot-time passing 一glob filter
 separator 之间 the name the test suite the test case,
 否则, interpreted 作为 the name the test suite.
 例如, let's assume 我们 使用 the 默认 配置:
+
 
 一 inform the name 一test suite, 类似 `"kunit_executor_test"`,
 ```
@@ -179,9 +185,11 @@ built-in. 否则 the 模块 需loaded.
 1. 创建 一文件 `drivers/misc/example.h`, 包含:
 
 
+
 	int misc_示例_add(int left, int right);
 
 2. 创建 一文件 `drivers/misc/example.c`, 包含:
+
 
 
 	#包含 <linux/errno.h>
@@ -196,10 +204,12 @@ built-in. 否则 the 模块 需loaded.
 3. Add the 以下 lines `drivers/misc/Kconfig`:
 
 
+
 	配置 MISC_示例
 		bool "My 示例"
 
 4. Add the 以下 lines `drivers/misc/Makefile`:
+
 
 
 	obj-$(配置_MISC_示例) += 示例.o
@@ -207,6 +217,7 @@ built-in. 否则 the 模块 需loaded.
 现在 我们 ready 写入 the test cases.
 
 1. Add the 下文 test case `drivers/misc/example_test.c`:
+
 
 
 	#包含 <kunit/test.h>
@@ -245,6 +256,7 @@ built-in. 否则 the 模块 需loaded.
 2. Add the 以下 lines `drivers/misc/Kconfig`:
 
 
+
 	配置 MISC_示例_TEST
 		tristate "Test 用于 my 示例" !KUNIT_全部_TESTS
 		depends MISC_示例 && KUNIT
@@ -256,9 +268,11 @@ discouraged), replace tristate bool, depend KUNIT=y 而非 KUNIT.
 3. Add the 以下 lines `drivers/misc/Makefile`:
 
 
+
 	obj-$(配置_MISC_示例_TEST) += 示例_test.o
 
 4. Add the 以下 lines `.kunit/.kunitconfig`:
+
 
 
 	配置_MISC_示例=y
@@ -267,9 +281,11 @@ discouraged), replace tristate bool, depend KUNIT=y 而非 KUNIT.
 5. 运行 the test:
 
 
+
 	./tools/testing/kunit/kunit.py 运行
 
 应当 参见 the 以下 failure:
+
 
 
 	...

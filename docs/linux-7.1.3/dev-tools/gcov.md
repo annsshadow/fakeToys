@@ -1,3 +1,5 @@
+# gcov
+
 ﻿# gcov 用于 Linux 内核
 
 
@@ -122,6 +124,7 @@ gcov 内核性能分析基础设施的设计初衷是让内核在同一台机器
     The gcov tool version on the test machine must be compatible with the
     gcc version used for kernel build. Also the following files need to be
     copied from build to test machine:
+
 
     来自源码树：
       - 所C 源文件与头文

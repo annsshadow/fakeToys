@@ -1,3 +1,5 @@
+# checkuapi
+
 ﻿
 ## UAPI 检查器（UAPI Checker
 
@@ -201,7 +203,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一shell 脚本，用于在 git �
 ```
 另一种做法是，我们也可以`-b HEAD~` 运行。这会把基准引用设为 `HEAD~`，于是脚本会比较它与 `HEAD~^1`
 
-### 架构特定的头文件（Architecture-specific Headers
+## 架构特定的头文件（Architecture-specific Headers
 
 
 ```
@@ -256,7 +258,7 @@ x86 编译器，我们无法检`arch/arm64` 中的头文件，所以脚本根本
 ```
 我们可以看到，在 `ARCH` `CC` 为该文件正确设置后，ABI 变更被正确地报告了。另外注意脚本所检查的 UAPI 头文件总数发生了变化。这是因为为 arm64 平台安装的头部数量与 x86 不同
 
-### 跨依赖破坏（Cross-Dependency Breakages
+## 跨依赖破坏（Cross-Dependency Breakages
 
 
 ```
@@ -301,7 +303,7 @@ x86 编译器，我们无法检`arch/arm64` 中的头文件，所以脚本根本
 ```
 注意脚本注意到失败的头文件并未改变，因此它假定是它所包含的某个头文件导致了破坏。确实，我们看到 `eventpoll.h` 用到`linux/types.h`
 
-### UAPI 头文件移除（UAPI Header Removals
+## UAPI 头文件移除（UAPI Header Removals
 
 
 ```

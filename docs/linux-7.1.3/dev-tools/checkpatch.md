@@ -1,3 +1,5 @@
+# checkpatch
+
 ﻿
 ## Checkpatch
 
@@ -73,11 +75,13 @@ Checkpatch 并非永远正确。你的判断优先于 checkpatch 给出的信息
 
    Single commit with:
 
+
    - <rev>
    - <rev>^
    - <rev>~n
 
    Multiple commits with:
+
 
    - <rev1>..<rev2>
    - <rev1>...<rev2>
@@ -107,6 +111,7 @@ Checkpatch 并非永远正确。你的判断优先于 checkpatch 给出的信息
 
    Example::
 
+
      ./scripts/checkpatch.pl mypatch.patch --types EMAIL_SUBJECT,BRACES
 
  - --ignore TYPE(,TYPE2...)
@@ -114,6 +119,7 @@ Checkpatch 并非永远正确。你的判断优先于 checkpatch 给出的信息
    Checkpatch will not emit messages for the specified types.
 
    Example::
+
 
      ./scripts/checkpatch.pl mypatch.patch --ignore EMAIL_SUBJECT,BRACES
 
@@ -256,6 +262,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
     should be::
 
+
       p = alloc(sizeof(*p), ...)
 
     See: https://www.kernel.org/doc/html/latest/process/coding-style.html#allocating-memory
@@ -314,12 +321,14 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     In big endian systems, the macros like __constant_cpu_to_be32(x) and
     cpu_to_be32(x) expand to the same expression::
 
+
       #define __constant_cpu_to_be32(x) ((__force __be32)(__u32)(x))
       #define __cpu_to_be32(x)          ((__force __be32)(__u32)(x))
 
     In little endian systems, the macros __constant_cpu_to_be32(x) and
     cpu_to_be32(x) expand to __constant_swab32 and __swab32.  __swab32
     has a __builtin_constant_p check::
+
 
       #define __swab32(x)				\
         (__builtin_constant_p((__u32)(x)) ?	\
@@ -347,6 +356,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     <attr>_show, where <attr> is a named attribute variable of the device.
 
     Consider the following examples::
+
 
       static DEVICE_ATTR(type, 0444, type_show, NULL);
       static DEVICE_ATTR(power, 0644, power_show, power_store);
@@ -391,11 +401,13 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     one in include/linux/sysctl.h.  The following conversion scheme may
     be used::
 
+
       &zero     ->  SYSCTL_ZERO
       &one      ->  SYSCTL_ONE
       &int_max  ->  SYSCTL_INT_MAX
 
     See:
+
 
       1. https://lore.kernel.org/lkml/20190430180111.10688-1-mcroce@redhat.com/
       2. https://lore.kernel.org/lkml/20190531131422.14970-1-mcroce@redhat.com/
@@ -453,7 +465,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
 
 ```
-### 注释
+## 注释
 
 
   **BLOCK_COMMENT_STYLE**
@@ -517,6 +529,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
     For adding version info, the following comment style should be used::
 
+
       stable@vger.kernel.org # version info
 
   **COMMIT_COMMENT_SYMBOL**
@@ -543,6 +556,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     email client.
 
     This message is emitted due to any of the following reasons::
+
 
       - The email names do not match.
       - The email addresses do not match.
@@ -577,6 +591,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     To be picked up by gerrit, the footer of the commit message might
     have a Change-Id like::
 
+
       Change-Id: Ic8aaa0728a43936cd4c6e1ed590e01ba8f0fbf5b
       Signed-off-by: A. U. Thor <author@example.com>
 
@@ -587,6 +602,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     commit <12+ chars of sha1> ("<title line>")
 
     An example may be::
+
 
       Commit e21d2170f36602ae2708 ("video: remove unnecessary
       platform_set_drvdata()") removed the unnecessary
@@ -619,6 +635,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
       if ((foo = bar(...)) < BAZ) {
 
     should be written as::
+
 
       foo = bar(...);
       if (foo < BAZ) {
@@ -716,6 +733,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
   **MULTILINE_DEREFERENCE**
     A single dereferencing identifier spanned on multiple lines like::
 
+
       struct_identifier->member[index].
       member = <foo>;
 
@@ -728,6 +746,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     multiple places then store it in a temporary variable, and use that
     temporary variable only at all the places. For example, if there are
     two dereferencing identifiers::
+
 
       member1->member2->member3.foo1;
       member1->member2->member3.foo2;
@@ -745,9 +764,11 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     on the next line.
     Statements, such as::
 
+
       if (x == y) break;
 
     should be::
+
 
       if (x == y)
               break;
@@ -785,6 +806,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
   **BIT_MACRO**
     Defines like: 1 << <digit> could be BIT(digit).
     The BIT() macro is defined via include/linux/bits.h::
+
 
       #define BIT(nr)         (1UL << (nr))
 
@@ -833,12 +855,14 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
     For example, the following segment::
 
+
       inline static int example_function(void)
       {
               ...
       }
 
     should be::
+
 
       static inline int example_function(void)
       {
@@ -849,6 +873,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     It is possible to use section markers on variables in a way
     which gcc doesn't understand (or at least not the way the
     developer intended)::
+
 
       static struct __initdata samsung_pll_clock exynos4_plls[nr_plls] = {
 
@@ -863,6 +888,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     Macros with multiple statements should be enclosed in a
     do - while block.  Same should also be the case for macros
     starting with `if` to avoid logic defects::
+
 
       #define macrofun(a, b, c)                 \
         do {                                    \
@@ -881,9 +907,11 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     invocation style should be consistent with function calls.
     This can prevent any unexpected code paths::
 
+
       #define MAC do_something;
 
     If this macro is used within a if else statement, like::
+
 
       if (some_condition)
               MAC;
@@ -903,9 +931,11 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     to replace such macros.
     For example, for a macro such as the one below::
 
+
       #define test(a) do { } while (0)
 
     there would be a warning like below::
+
 
       WARNING: Argument 'a' is not used in function-like macro.
 
@@ -928,7 +958,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
 
 ```
-### 函数与变
+## 函数与变
 
 
   **CAMELCASE**
@@ -969,10 +999,12 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
          This should be corrected to::
 
+
            void foo(int bar, int baz)
 
       2. Some arguments for the function definition do not
          have an identifier name.  Example::
+
 
            void foo(int)
 
@@ -981,9 +1013,11 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
   **FUNCTION_WITHOUT_ARGS**
     Function declarations without arguments like::
 
+
       int foo()
 
     should be::
+
 
       int foo(void)
 
@@ -1006,9 +1040,11 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
   **RETURN_PARENTHESES**
     return is not a function and as such doesn't need parentheses::
 
+
       return (bar);
 
     can simply be::
+
 
       return bar;
 
@@ -1024,12 +1060,14 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
 
     Example::
 
+
       type var __free(free_func);
       ... // var not used, but, in future someone might add a return here
       var = malloc(var_size);
       ...
 
     should be initialized as::
+
 
       ...
       type var __free(free_func) = malloc(var_size);
@@ -1096,6 +1134,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     However, there is one special case, namely functions: they have the
     opening brace at the beginning of the next line, thus::
 
+
       int function(int x)
       {
               body of function
@@ -1107,15 +1146,19 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     Whitespace before opening bracket '[' is prohibited.
     There are some exceptions:
 
+
     1. With a type on the left::
+
 
         int [] a;
 
     2. At the beginning of a line for slice initialisers::
 
+
         [0...10] = 5,
 
     3. Inside a curly brace::
+
 
         = { [0...10] = 5 }
 
@@ -1123,9 +1166,11 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     Concatenated elements should have a space in between.
     Example::
 
+
       printk(KERN_INFO"bar");
 
     should be::
+
 
       printk(KERN_INFO "bar");
 
@@ -1153,6 +1198,7 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
     and not adjacent to the type name.
     Examples::
 
+
       char *linux_banner;
       unsigned long long memparse(char *ptr, char **retptr);
       char *match_strdup(substring_t *s);
@@ -1174,36 +1220,44 @@ checkpatch 中的信息分为三个级别。信息的级别表示错误的严重
   **UNNECESSARY_PARENTHESES**
     Parentheses are not required in the following cases:
 
+
       1. Function pointer uses::
+
 
           (foo->bar)();
 
         could be::
 
+
           foo->bar();
 
       2. Comparisons in if::
+
 
           if ((foo->bar) && (foo->baz))
           if ((foo == bar))
 
         could be::
 
+
           if (foo->bar && foo->baz)
           if (foo == bar)
 
       3. addressof/dereference single Lvalues::
+
 
           &(foo->bar)
           *(foo->bar)
 
         could be::
 
+
           &foo->bar
           *foo->bar
 
   **WHILE_AFTER_BRACE**
     while should follow the closing bracket on the same line::
+
 
       do {
               ...
