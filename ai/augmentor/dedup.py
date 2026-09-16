@@ -113,33 +113,53 @@ class Deduplicator:
         
         return vectors
     
-    def _compute_similarity_matrix(self, embeddings: np.ndarray) -> np.ndarray:
-        """计算相似度矩阵
+    def _compute_similarity_matrix_chunked(self, embeddings: np.ndarray, chunk_size: int = 1000) -> np.ndarray:
+        """分块计算相似度矩阵（避免内存爆炸）
         
         Args:
             embeddings: 向量矩阵
+            chunk_size: 分块大小
         
         Returns:
             相似度矩阵
         """
+        n = len(embeddings)
+        
         # 归一化
         norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
         norms[norms == 0] = 1
         normalized = embeddings / norms
         
-        # 余弦相似度矩阵
-        similarity_matrix = np.dot(normalized, normalized.T)
+        # 分块计算相似度
+        similarity_matrix = np.zeros((n, n), dtype=np.float32)
+        
+        for i in range(0, n, chunk_size):
+            end_i = min(i + chunk_size, n)
+            chunk_i = normalized[i:end_i]
+            
+            for j in range(i, n, chunk_size):
+                end_j = min(j + chunk_size, n)
+                chunk_j = normalized[j:end_j]
+                
+                # 计算块间相似度
+                block_sim = np.dot(chunk_i, chunk_j.T)
+                
+                # 填充对称矩阵
+                similarity_matrix[i:end_i, j:end_j] = block_sim
+                if i != j:
+                    similarity_matrix[j:end_j, i:end_i] = block_sim.T
         
         return similarity_matrix
     
-    def _find_duplicate_groups(self, texts: List[str]) -> List[List[int]]:
-        """查找重复组 - 优化版
+    def _find_duplicate_groups_chunked(self, texts: List[str], chunk_size: int = 1000) -> List[List[int]]:
+        """分块查找重复组（避免内存爆炸）
         
         Args:
             texts: 文本列表
+            chunk_size: 分块大小
         
         Returns:
-            重复组列表，每组包含重复文本的索引
+            重复组列表
         """
         n = len(texts)
         
@@ -149,15 +169,8 @@ class Deduplicator:
         # 批量编码
         embeddings = self._batch_encode(texts)
         
-        # 尝试使用 FAISS 加速
-        if self.use_faiss and self._model != "fallback":
-            try:
-                return self._find_duplicates_faiss(texts, embeddings)
-            except ImportError:
-                logger.warning("FAISS 未安装，使用标准方法")
-        
-        # 计算相似度矩阵
-        similarity_matrix = self._compute_similarity_matrix(embeddings)
+        # 分块计算相似度矩阵
+        similarity_matrix = self._compute_similarity_matrix_chunked(embeddings, chunk_size)
         
         # 查找重复组
         visited = [False] * n
@@ -268,8 +281,9 @@ class Deduplicator:
         # 提取文本
         texts = [item.get(text_key, "") for item in items]
         
-        # 查找重复组
-        duplicate_groups = self._find_duplicate_groups(texts)
+        # 查找重复组（使用分块计算避免内存爆炸）
+        chunk_size = 1000 if len(texts) > 5000 else len(texts)
+        duplicate_groups = self._find_duplicate_groups_chunked(texts, chunk_size)
         
         # 确定保留的索引
         removed_indices = set()

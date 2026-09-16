@@ -1,5 +1,6 @@
 """数据质量评分模块 - 优化版"""
 
+import hashlib
 import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
@@ -47,6 +48,21 @@ class QualityScorer:
         self._cross_encoder = None
         self._existing_embeddings = []  # 缓存已有文本的 embeddings
         self._existing_texts = []  # 缓存已有文本
+        self._existing_texts_hash = None  # 缓存已有文本的 hash
+    
+    def _compute_texts_hash(self, texts: List[str]) -> str:
+        """计算文本列表的 hash
+        
+        Args:
+            texts: 文本列表
+        
+        Returns:
+            文本列表的 hash 值
+        """
+        # 使用前 100 条文本的拼接结果计算 hash
+        sample = texts[:100]
+        content = "|".join(sample)
+        return hashlib.md5(content.encode()).hexdigest()
     
     def _load_models(self):
         """延迟加载模型（使用共享实例）"""
@@ -149,15 +165,18 @@ class QualityScorer:
         text_embedding = self._model.encode([text])[0]
         
         # 使用缓存的 embeddings
-        if len(self._existing_embeddings) != len(existing_texts):
+        current_hash = self._compute_texts_hash(existing_texts)
+        if self._existing_texts_hash != current_hash:
             # 需要重新计算
             if existing_texts:
+                sample_texts = existing_texts[:self.diversity_sample_size]
                 self._existing_embeddings = self._model.encode(
-                    existing_texts[:self.diversity_sample_size],
+                    sample_texts,
                     show_progress_bar=False,
                     batch_size=32
                 )
-                self._existing_texts = existing_texts[:self.diversity_sample_size]
+                self._existing_texts = sample_texts
+                self._existing_texts_hash = current_hash
         
         if len(self._existing_embeddings) == 0:
             return 1.0
@@ -175,6 +194,7 @@ class QualityScorer:
         """重置缓存"""
         self._existing_embeddings = []
         self._existing_texts = []
+        self._existing_texts_hash = None
     
     def score(self, 
               original: str, 
