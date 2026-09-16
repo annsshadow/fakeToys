@@ -1,3 +1,5 @@
+# submitting-patches
+
 ﻿
 ## 提交 Devicetree（DT）绑定补
 
@@ -11,17 +13,21 @@
 
      少数子系统，ASoC、media、regulators、SCSI、SPI UFS，基于子系统名称期望前缀顺序相反::
 
+
        "<binding dir>: dt-bindings: ..."
 
      主题80 个字符十分宝贵。建议不要使"Documentation"doc" "YAML"，因为这些都是隐含的。所有绑定都是文档，且所有新绑定都应采用 Devicetree schema 格式。也应避免重"binding"，因此对于一个新设备，通常类似下面这样即可::
+
 
        "dt-bindings: iio: adc: Add ROHM BD79100G"
 
      将其他格式转换为 DT schema::
 
+
        "dt-bindings: iio: adc: adi,ad7476: Convert to DT schema"
 
   2) DT 绑定文件采用 DT schema 格式书写，使json-schema 词汇YAML 文件格式。DT 绑定文件必须通过运行以下命令的校:
+
 
        make dt_binding_check
 
@@ -40,7 +46,7 @@
   8) 如果某个已记录的 compatible 字符串尚未被驱动匹配，文档还应包含该驱动所匹配compatible 字符串
   9) 绑定正被 Linux 内核之外的多个项目积极使用，在修改已有绑定时可能需要额外的谨慎与考量
 ```
-## II. 闈㈠悜鍐呮牳缁存姢鑰。
+## II. 闈㈠悜内呮核统存姢鑰。
 
   1) 如果你对审查某个绑定感到不确定，请回复该绑定并请devicetree 维护者给予指导。这将有助于他们确定优先审查哪些、哪些可以放行
   2) 对于驱动（非子系统）绑定：如果你对该绑定感到满意，且几周后仍未收devicetree 维护者的 Acked-by，请直接将其合入
