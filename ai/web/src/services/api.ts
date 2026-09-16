@@ -92,7 +92,6 @@ export const getVersions = async () => {
   const response = await api.get('/versions')
   return response.data
 }
-
 export const createVersion = async (filename: string, label: string, description: string) => {
   const response = await api.post(`/versions/create?filename=${filename}`, {
     label,
@@ -126,6 +125,98 @@ export const rollbackVersion = async (versionId: string) => {
 
 export const deleteVersion = async (versionId: string) => {
   const response = await api.delete(`/versions/${versionId}`)
+  return response.data
+}
+
+export const getVersionHistory = async (limit: number = 20) => {
+  const response = await api.get('/versions/history', { params: { limit } })
+  return response.data
+}
+
+// 质量评估
+export const evaluateQuality = async (inputFile: string, threshold: number = 0.6) => {
+  const response = await api.post('/quality/evaluate', {
+    input_file: inputFile,
+    threshold
+  })
+  return response.data
+}
+
+export const dedupData = async (inputFile: string, threshold: number = 0.9) => {
+  const response = await api.post('/quality/dedup', {
+    input_file: inputFile,
+    threshold
+  })
+  return response.data
+}
+
+export const qualityReport = async (inputFile: string, threshold: number = 0.6) => {
+  const response = await api.post('/quality/report', {
+    input_file: inputFile,
+    threshold
+  })
+  return response.data
+}
+
+export const cleanData = async (inputFile: string) => {
+  const response = await api.post('/quality/clean', { input_file: inputFile })
+  return response.data
+}
+
+export const annotateData = async (inputFile: string) => {
+  const response = await api.post('/quality/annotate', { input_file: inputFile })
+  return response.data
+}
+
+export const runBenchmark = async (inputFile: string, threshold: number = 0.6) => {
+  const response = await api.post('/quality/benchmark', {
+    input_file: inputFile,
+    threshold
+  })
+  return response.data
+}
+
+// 导出
+export const getExportFormats = async () => {
+  const response = await api.get('/export/formats')
+  return response.data
+}
+
+export const previewExport = async (inputFile: string, format: string, size: number = 5) => {
+  const response = await api.post('/export/preview', {
+    input_file: inputFile,
+    format,
+    size
+  })
+  return response.data
+}
+
+export const batchExport = async (
+  datasets: Record<string, string>,
+  outputDir: string,
+  formats: string[]
+) => {
+  const response = await api.post('/export/batch', {
+    datasets,
+    output_dir: outputDir,
+    formats
+  })
+  return response.data
+}
+
+// 多模态
+export const getMultimodalFormats = async () => {
+  const response = await api.get('/multimodal/formats')
+  return response.data
+}
+
+export const processMultimodal = async (text: string, image?: string, audio?: string) => {
+  const response = await api.post('/multimodal/process', { text, image, audio })
+  return response.data
+}
+
+export const scanMultimodal = async (directory: string) => {
+  const response = await api.post('/multimodal/scan', { directory })
   return response.data
 }
 
