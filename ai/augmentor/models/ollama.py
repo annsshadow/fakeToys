@@ -1,13 +1,12 @@
-"""Ollama 本地模型后端"""
+"""Ollama 本地模型后端 - 优化版"""
 
 import json
-import requests
 from .base import ModelBackend
 from ..config import ModelConfig
 
 
 class OllamaBackend(ModelBackend):
-    """Ollama 本地模型后端"""
+    """Ollama 本地模型后端 - 优化版"""
     
     def __init__(self, config: ModelConfig):
         """初始化 Ollama 后端
@@ -22,7 +21,7 @@ class OllamaBackend(ModelBackend):
         self.api_url = f"{config.base_url.rstrip('/')}/api/chat"
     
     def _call_api(self, prompt: str) -> str:
-        """调用 Ollama API
+        """调用 Ollama API（使用连接池）
         
         Args:
             prompt: 输入提示
@@ -45,7 +44,8 @@ class OllamaBackend(ModelBackend):
             }
         }
         
-        response = requests.post(self.api_url, json=payload, headers=headers)
+        session = self._get_session()
+        response = session.post(self.api_url, json=payload, headers=headers, timeout=120)
         response.raise_for_status()
         
         data = response.json()

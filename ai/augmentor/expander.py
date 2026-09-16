@@ -1,9 +1,10 @@
-"""自动领域扩展模块"""
+"""自动领域扩展模块 - 优化版"""
 
 import json
 import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from .models.base import ModelBackend
 
 logger = logging.getLogger(__name__)
@@ -19,15 +20,17 @@ class ExpansionResult:
 
 
 class DomainExpander:
-    """领域扩展器"""
+    """领域扩展器 - 优化版"""
     
-    def __init__(self, model_backend: ModelBackend):
+    def __init__(self, model_backend: ModelBackend, max_workers: int = 3):
         """初始化领域扩展器
         
         Args:
             model_backend: 模型后端
+            max_workers: 最大并发数
         """
         self.model_backend = model_backend
+        self.max_workers = max_workers
     
     def _extract_topics(self, items: List[Dict]) -> List[str]:
         """从数据中提取主题
@@ -226,13 +229,15 @@ class DomainExpander:
     def batch_expand(self,
                     items: List[Dict],
                     strategies: Optional[List[str]] = None,
-                    topics_per_strategy: int = 5) -> List[Dict]:
-        """批量扩展（使用多种策略）
+                    topics_per_strategy: int = 5,
+                    use_parallel: bool = True) -> List[Dict]:
+        """批量扩展（使用多种策略，优化版）
         
         Args:
             items: 数据列表
             strategies: 策略列表
             topics_per_strategy: 每种策略生成的主题数
+            use_parallel: 是否使用并行处理
         
         Returns:
             扩展结果列表
@@ -240,32 +245,88 @@ class DomainExpander:
         if strategies is None:
             strategies = ["similar", "related", "scenario"]
         
+        if not use_parallel or len(strategies) <= 1:
+            # 串行处理
+            all_expanded = []
+            for strategy in strategies:
+                result = self.expand(items, strategy, topics_per_strategy)
+                all_expanded.extend(result.expanded_topics)
+            return all_expanded
+        
+        # 并行处理
         all_expanded = []
         
-        for strategy in strategies:
-            result = self.expand(items, strategy, topics_per_strategy)
-            all_expanded.extend(result.expanded_topics)
+        def expand_with_strategy(strategy):
+            return strategy, self.expand(items, strategy, topics_per_strategy)
+        
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = [executor.submit(expand_with_strategy, s) for s in strategies]
+            
+            for future in as_completed(futures):
+                try:
+                    strategy, result = future.result()
+                    all_expanded.extend(result.expanded_topics)
+                    logger.info(f"完成策略 {strategy} 的扩展")
+                except Exception as e:
+                    logger.error(f"扩展失败: {e}")
         
         return all_expanded
     
     def generate_seeds_from_topics(self,
-                                  topics: List[Dict],
-                                  num_questions_per_topic: int = 3) -> List[Dict]:
-        """从扩展的主题生成种子问答对
+                                   topics: List[Dict],
+                                   num_questions_per_topic: int = 3,
+                                   use_parallel: bool = True) -> List[Dict]:
+        """从扩展的主题生成种子问答对（优化版）
         
         Args:
             topics: 扩展的主题列表
             num_questions_per_topic: 每个主题生成的问题数
+            use_parallel: 是否使用并行处理
         
         Returns:
             种子问答对列表
         """
+        if not use_parallel or len(topics) <= 1:
+            # 串行处理
+            all_seeds = []
+            for topic_info in topics:
+                seeds = self._generate_seeds_for_topic(topic_info, num_questions_per_topic)
+                all_seeds.extend(seeds)
+            return all_seeds
+        
+        # 并行处理
         all_seeds = []
         
-        for topic_info in topics:
-            topic = topic_info.get("topic", "")
+        def generate_for_topic(topic_info):
+            return self._generate_seeds_for_topic(topic_info, num_questions_per_topic)
+        
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = [executor.submit(generate_for_topic, t) for t in topics]
             
-            prompt = f"""基于以下主题，生成 {num_questions_per_topic} 个用户可能会问的问题，以及对应的客服回答。
+            for future in as_completed(futures):
+                try:
+                    seeds = future.result()
+                    all_seeds.extend(seeds)
+                except Exception as e:
+                    logger.error(f"生成种子失败: {e}")
+        
+        return all_seeds
+    
+    def _generate_seeds_for_topic(self,
+                                  topic_info: Dict,
+                                  num_questions: int) -> List[Dict]:
+        """为单个主题生成种子问答对
+        
+        Args:
+            topic_info: 主题信息
+            num_questions: 生成的问题数
+        
+        Returns:
+            种子问答对列表
+        """
+        topic = topic_info.get("topic", "")
+        
+        prompt = f"""基于以下主题，生成 {num_questions} 个用户可能会问的问题，以及对应的客服回答。
 
 主题：{topic}
 
@@ -282,18 +343,18 @@ class DomainExpander:
 ]
 
 生成结果："""
-            
-            try:
-                response = self.model_backend.generate(prompt)
-                # 解析响应
-                if response.strip().startswith('['):
-                    seeds = json.loads(response.strip())
-                    if isinstance(seeds, list):
-                        all_seeds.extend(seeds[:num_questions_per_topic])
-            except Exception as e:
-                logger.warning(f"从主题生成种子失败: {topic}, {e}")
         
-        return all_seeds
+        try:
+            response = self.model_backend.generate(prompt)
+            # 解析响应
+            if response.strip().startswith('['):
+                seeds = json.loads(response.strip())
+                if isinstance(seeds, list):
+                    return seeds[:num_questions]
+        except Exception as e:
+            logger.warning(f"从主题生成种子失败: {topic}, {e}")
+        
+        return []
     
     def generate_report(self, items: List[Dict]) -> Dict:
         """生成扩展报告

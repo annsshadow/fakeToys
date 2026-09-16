@@ -85,19 +85,22 @@ def debug(s: str):
 
 
 def get_last_line():
-    # 逐行读取文件
-    last_line = None
-    with open('./train_data_cached.json', 'r', encoding='utf-8') as file:
-        for line in file:
-            last_line = line.strip()  # 更新最后一行
-
-    if last_line:
-        logging.info("最后一行内容:", last_line)
-        with open('./last_line.json', 'w', encoding='utf-8') as file:
-            file.write(last_line + '\n')
-            file.flush()
-    else:
-        logging.error("文件为空。")
+    """获取文件最后一行（优化版，从末尾读取）"""
+    try:
+        with open('./train_data_cached.json', 'r', encoding='utf-8') as file:
+            # 使用 deque 只保留最后一行
+            from collections import deque
+            last_line = deque(file, 1)
+            if last_line:
+                last_line = last_line[-1].strip()
+                logging.info(f"最后一行内容: {last_line}")
+                with open('./last_line.json', 'w', encoding='utf-8') as file:
+                    file.write(last_line + '\n')
+                    file.flush()
+            else:
+                logging.error("文件为空。")
+    except FileNotFoundError:
+        logging.error("缓存文件不存在。")
 ######################################################################
 class MyA:
     def __init__(self):
@@ -274,9 +277,9 @@ class MyBD:
                         line["input"] = ""
                         line["output"] = item["output"]
                         self.processed_data.append(line)
-                    cpd = self.processed_data.copy()
-                    cache.truncate()
-                    cache.write(json.dumps(cpd, ensure_ascii=False) + '\n')
+                    # 追加写入新数据（不复制整个列表）
+                    new_variants = [json.dumps([item], ensure_ascii=False) for item in self.processed_data[-5:]]
+                    cache.write('\n'.join(new_variants) + '\n')
                     cache.flush()
                     debug(f"cache {i} done")
                     i += 1
@@ -358,8 +361,10 @@ def worker(queue):
                     line["input"] = ""
                     line["output"] = jitem[0]["output"]
                     processed_data.append(line)
-                cpd = processed_data.copy()
-                cache.write(json.dumps(cpd, ensure_ascii=False) + '\n')
+                # 追加写入新数据（不复制整个列表）
+                new_variants = processed_data[-5:]
+                for v in new_variants:
+                    cache.write(json.dumps([v], ensure_ascii=False) + '\n')
                 cache.flush()
                 debug(f"{threading.current_thread().name} cache {idx} done")
             else:
