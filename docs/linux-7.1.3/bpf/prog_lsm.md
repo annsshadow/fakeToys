@@ -1,3 +1,5 @@
+# prog_lsm
+
 ﻿
 ## LSM BPF 程序
 
@@ -55,7 +57,7 @@ eBPF 程序可以使用 `tools/lib/bpf/bpf_tracing.h`_ 中定义的 `BPF_PROG` �
 	}
 
 `__attribute__((preserve_access_index))` clang 的一个特性，允许 BPF 验证器（verifier）在运行时使Documentation/bpf/btf.rst 信息更新访问的偏移量。由BPF 验证器了解这些类型，它还会验eBPF 程序中对各种类型的所有访问
-### 加载
+## 加载
 
 
 eBPF 程序可以通过 `bpf(2)` 系统调用`BPF_PROG_LOAD` 操作加载
@@ -70,7 +72,7 @@ eBPF 程序可以通过 `bpf(2)` 系统调用`BPF_PROG_LOAD` 操作加载
 	# bpftool gen skeleton my_prog.o > my_prog.skel.h
 
 程序可以通过包含 `my_prog.skel.h` 并使用生成的辅助函数 `my_prog__open_and_load` 来加载
-### 附加LSM 钩子
+## 附加LSM 钩子
 
 
 LSM 允许使用 `bpf(2)` 系统调用`BPF_RAW_TRACEPOINT_OPEN` 操作eBPF 程序作为 LSM 钩子附加，或者更简单地使用 libbpf 辅助函数 `bpf_program__attach_lsm`
