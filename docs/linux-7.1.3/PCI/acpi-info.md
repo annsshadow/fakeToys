@@ -1,3 +1,5 @@
+# acpi-info
+
 ﻿
 ## PCI 主机桥的 ACPI 考虑事项
 
@@ -84,6 +86,7 @@ MCFG 表必须描述非热插拔主机桥ECAM 空间 [^8^]。由MCFG 是静态�
 
     Extended Address Space Descriptor (.4)
       General Flags: Bit [^0^] Consumer/Producer:
+
 
         - 1 This device consumes this resource
         - 0 This device produces and consumes this resource
