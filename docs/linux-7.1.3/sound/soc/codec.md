@@ -1,3 +1,5 @@
+# codec
+
 ﻿## ASoC Codec Class Driver
 
 
@@ -100,7 +102,7 @@ codec 通常可以通过 I2C SPI 风格接口控制（AC97 DAI 中将控制与�
 定义一个立体声枚举控制
 
 
-### Codec Audio Operations
+## Codec Audio Operations
 
 
 codec 驱动还支持以ALSA PCM 操作

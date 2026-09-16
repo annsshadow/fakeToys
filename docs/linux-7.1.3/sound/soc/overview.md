@@ -1,3 +1,5 @@
+# overview
+
 ﻿## ALSA SoC 层概
 
 ALSA 片上系统（System on Chip，ASoC）层的整体项目目标是为嵌入式片上系统处理器（pxa2xx、au1x00、iMX 等）和便携式音频编解码器提供更好ALSA 支持。在 ASoC 子系统出现之前，内核中对 SoC 音频有一些支持，但存在一些限制：
