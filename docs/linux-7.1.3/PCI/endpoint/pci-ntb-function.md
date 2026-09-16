@@ -1,3 +1,5 @@
+# pci-ntb-function
+
 ﻿
 ## PCI NTB 功能
 
@@ -76,37 +78,47 @@ PCI NTB 功能通过配置端点（endpoint）实例，使得来自一个系统�
 
   COMMAND:
 
+
 	NTB 功能支持三条命令
 	  CMD_CONFIGURE_DOORBELL (0x1)：配置门铃的命令。在调用此命令之前，主机应分配并初始MSI/MSI-X 向量（即在端点中初始MSI/MSI-X 能力）。端点在接收到此命令后，将配置出ATU，使得发往 Doorbell BAR 的事务被路由到主机编程的 MSI/MSI-X 地址。ARGUMENT 寄存器应使用要配置的 DB 数量（低 16 位）以及应配MSI 还是 MSI-X（BIT 16）来填充
 	  CMD_CONFIGURE_MW (0x2)：配置内存窗口（MW）的命令。主机在分配了一个可供远端主机访问的缓冲区后调用此命令。分配的地址应编程到 ADDRESS 寄存器（64 位）中，大小应编程到 SIZE 寄存器，内存窗口索引应编程到 ARGUMENT 寄存器。端点在接收到此命令后，将配置出ATU，使得发往 MW BAR 的事务被路由到主机提供的地址
 	  CMD_LINK_UP (0x3)：指示主机侧NTB 应用已绑定到 EP 设备的命令。一旦端点从两台主机都收到此命令，端点将向两台主机触发一LINK_UP 事件，以指示主机侧的 NTB 应用可以开始相互通信
   ARGUMENT:
 
+
 	该寄存器的值基于在命令寄存器中发出的命令。更多信息请参阅 COMMAND 一节
   TOPOLOGY:
+
 
 	主接口设置为 NTB_TOPO_B2B_USD
 	次接口设置为 NTB_TOPO_B2B_DSD
 
   ADDRESS/SIZE:
 
+
 	配置内存窗口时要使用的地址和大小。更多信息请参阅 “CMD_CONFIGURE_MW”
   MEMORY WINDOW1 OFFSET:
+
 
 	内存窗口 1 和门铃寄存器打包在同一BAR 中。该区域的初始部分将包含门铃寄存器，而区域的后半部分用于内存窗口 1。该寄存器将指定内存窗口 1 的偏移量
   NO OF MEMORY WINDOW:
 
+
 	指定 NTB 设备支持的内存窗口数量
   SPAD OFFSET:
+
 
 	自身便签区域和配置区域打包在同一BAR 中。该区域的初始部分将包含配置区域，而区域的后半部分用于自身便签。该寄存器将指定自身便签寄存器的偏移量
   SPAD COUNT:
 
+
 	指定 NTB 设备支持的便签寄存器数量
   DB ENTRY SIZE:
 
+
 	用于确定DB BAR 内为触发门铃而应当写入的偏移量。EPF NTB 可以使用 MSI MSI-X 来触发门铃（稍后将添MSI-X 支持）。MSI 对所有中断使用相同的地址，MSI-X 可以为不同的中断提供不同的地址。MSI/MSI-X 地址由主机提供，其给出的地址基于主机所支持MSI/MSI-X 实现。例如，使用 GIC ITS ARM 平台对所有中断将具有相同MSI-X 地址。为了支持所有组合并MSI MSI-X 使用相同的机制，EPF NTB 为每个中断在外出站地址空间中分配一个单独的区域。该区域将被映射到主机提供的 MSI/MSI-X 地址。如果主机为所有中断提供相同的地址，则所有区域都将被转换到相同的地址。如果主机提供不同的地址，则这些区域将被转换到不同的地址。这将确保在触发门铃时没有差异
   DB DATA:
+
 
 	EPF NTB 支持 32 个中断，因此32 DB DATA 寄存器。它保存为了在触发门铃中断时写入 MSI 地址而必须写入的 MSI/MSI-X 数据。这将在调用 CMD_CONFIGURE_DOORBELL 时由 EPF NTB 填充
 ### 便签寄存器（Scratchpad Registers）：
