@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from augmentor.config import load_config
 from api.middleware import RequestLoggingMiddleware
 from api.routes import augment, config, data, export, multimodal, quality, version
 
@@ -20,11 +21,12 @@ logging.basicConfig(
 
 app = FastAPI(title="AI 训练数据增强平台", version="2.0.0")
 
-# CORS 配置
+# CORS 配置（从配置文件读取，生产环境请显式配置 origins）
+_config = load_config("config.yaml")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_config.web.cors_origins,
+    allow_credentials=_config.web.cors_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
