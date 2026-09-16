@@ -1,3 +1,5 @@
+# sched-eevdf
+
 ﻿## EEVDF 璋冨害鍣。
 
 “最早合格虚拟截止时间优先”（Earliest Eligible Virtual Deadline First，EEVDF）最早在 1995 年的一篇科学论文中引入 [^1^]。Linux 内核6.6 版本开始转EEVDF（作2024 年的一个新选项），放弃了早期的完全公平调度器（Completely Fair Scheduler，CFS），转而采Peter Zijlstra 2023 年提出的 EEVDF 版本 [2-4]。关CFS 的更多信息可Documentation/scheduler/sched-design-CFS.rst 中找到

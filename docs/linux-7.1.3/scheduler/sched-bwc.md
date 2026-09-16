@@ -1,10 +1,12 @@
+# sched-bwc
+
 ﻿## CFS 带宽控制
 
    本文档只讨论针对 SCHED_NORMAL CPU 带宽控制   SCHED_RT 的情况在 Documentation/scheduler/sched-rt-group.rst 中介绍
 CFS 带宽控制CONFIG_FAIR_GROUP_SCHED 的一个扩展，它允许指定一个组或层级（hierarchy）所能使用的最CPU 带宽
 一个组所允许的带宽通过 quota（配额）period（周期）来指定。在每个给定的“period”（微秒）内，一个任务组会被分配最多“quota”微秒的 CPU 时间。该 quota 会在线程cgroup 中变为可运行（runnable）时，以片段（slice）的形式分配到各 CPU 的运行队列上。一quota 全部分配完毕，任何额外的 quota 请求都将导致这些线程被节流（throttled）。被节流的线程在下一period quota 得到补充之前将无法再次运行
 一个组未分配出去的 quota 会在全局范围内被跟踪，并在每period 边界处刷新回 cfs_quota 单位。随着线程消费这一带宽，它会按需被转移到 CPU 本地的“silos”中。每次更新中所转移的数量是可调的，被称为“slice”
-### 突发（Burst）特
+## 突发（Burst）特
 这一特性相当于用我们未来的 underrun（未用尽）来透支当前的时间，代价是增加对系统其他用户的干扰。一切都得到了良好的限制
 传统的（UP-EDF）带宽控制大致如下：
 
@@ -48,6 +50,7 @@ cpu.cfs_burst_us 的值为 0 表示组不能累积任何未使用的带宽。它
 
 一个组的带宽统计信息通过 cpu.stat 中的 5 个字段导出
 cpu.stat:
+
 
 - nr_periods: 已经过的强制执行间隔（enforcement interval）数量- nr_throttled: 该组被节限制的次数- throttled_time: 该组的实体被节流的累计时长（以纳秒为单位）- nr_bursts: 发生突发period 数量- burst_time: 任意 CPU 在相period 中超quota 所使用的累计真实时间（以纳秒为单位）
 此接口是只读的
