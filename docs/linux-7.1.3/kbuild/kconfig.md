@@ -1,3 +1,5 @@
+# kconfig
+
 ﻿## Configuration targets and editors
 
 
@@ -81,9 +83,11 @@ gconfiggconf'）程序的帮助文本有限
 
     or::
 
+
         KCONFIG_ALLCONFIG=mini.config make allnoconfig
 
     or::
+
 
         make KCONFIG_ALLCONFIG=mini.config allnoconfig
 
@@ -161,15 +165,18 @@ menuconfig 中搜索：
     regular expressions (regexes) in the search string, so if you
     are not interested in MEMORY_HOTPLUG, you could try::
 
+
         /^hotplug
 
     When searching, symbols are sorted thus:
+
 
     - first, exact matches, sorted alphabetically (an exact match
       is when the search matches the complete symbol name);
     - then, other matches, sorted alphabetically.
 
     For example, ^ATH.K matches:
+
 
         ATH5K ATH9K ATH5K_AHB ATH5K_DEBUG [...] ATH6KL ATH6KL_DEBUG
         [...] ATH9K_AHB ATH9K_BTCOEX_SUPPORT ATH9K_COMMON [...]
@@ -192,6 +199,7 @@ menuconfig 中搜索：
         make MENUCONFIG_COLOR=<theme> menuconfig
 
     Available themes are::
+
 
       - mono       => selects colors suitable for monochrome displays
       - blackbg    => selects a color scheme with black background
@@ -251,6 +259,7 @@ xconfig 中搜索：
         Ctrl-F hotplug
 
     or::
+
 
         Menu: File, Search, hotplug
 
