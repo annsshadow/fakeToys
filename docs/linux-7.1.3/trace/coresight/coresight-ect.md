@@ -1,3 +1,5 @@
+# coresight-ect
+
 ﻿
 ## CoreSight Embedded Cross Trigger (CTI & CTM).
 
@@ -20,10 +22,10 @@ The CoreSight Cross Trigger 接口 (CTI) 一硬件 设备 takes
  0  P  0<-----------:     :             v
  0   U 0  out_trigs :     : Channels  *****      :::::::
  0000000            : CTI :<=========>*CTM*<====>: CTI :---+
- #######  in_trigs  :     : (id 0-3)  *****      :::::::   v
+#### in_trigs  :     : (id 0-3)  *****      :::::::   v
  # ETM #----------->:     :                         ^   #######
  #     #<-----------:     :                         +---# ETR #
- ####### out_trigs  :::::::                             #######
+## out_trigs  :::::::                             #######
 
 ```
 The CTI 驱动 enables the programming the CTI attach triggers 

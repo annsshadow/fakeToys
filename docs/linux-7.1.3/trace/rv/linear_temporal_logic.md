@@ -1,6 +1,8 @@
+# linear_temporal_logic
+
 ﻿## 线性时序逻辑（Linear temporal logic
 
-### 简
+## 简
 
 运行时验证监视器（Runtime verification monitor）是一种验证技术，用于检查内核是否遵循某规格说明（specification）。它通过使用 tracepoint 监视内核的执行轨迹，并验证该执行轨迹满足规格说明来实现
 最初，规格说明只能以确定性自动机（DA）的形式编写。然而，在尝试为一些复杂规格说明实DA 监视器时，人们发现确定性自动机作为规格说明语言并不合适。该自动机复杂、难以理解且容易出错

@@ -1,3 +1,5 @@
+# histogram-design
+
 ﻿## 直方图设计说
 
 
@@ -196,7 +198,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
 一旦所有值都被更新，hist_trigger_elt_update() 就完成并返回。注意，键中的每个子键也有对应的 tracing_map_field，但 hist_trigger_elt_update() 并不会查看或更新它们——它们只用于排序，而这可以稍后进行
 
-### 基础直方图测
+## 基础直方图测
 
 
 
@@ -227,6 +229,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -251,6 +254,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
       is_signed: 0
 
   key fields:
+
 
     hist_data->fields[3]:
       flags:
@@ -292,7 +296,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
 就直方图数据结构而言，变量被实现为另一种类型的 hist_field，对于给定的 hist 触发器，它们被添加到所val 字段之后hist_data.fields[] 数组中。为了把它们与已有的键和值字段区分开，给它们赋予了一种新的标志类HIST_FIELD_FL_VAR（简写为 FL_VAR），并且它们还利用了 struct hist_field 中一个新.var.idx 字段成员，该成员将变量映射到一个专门新增的、用于存储和获取变量值的 map_elt.vars[] 数组的某个索引。下面的图展示了这些新元素，并新增了一个对应于上面 sched_waking 触发器中 ts0 变量的新变量条目 ts0
 
-### sched_waking 鐩存柟鍥。
+## sched_waking 鐩存柟鍥。
 
 
 
@@ -584,7 +588,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
 因此，为了处sched_switch 直方图的一个事件，因为我们引用了另一个直方图上的一个变量，所以需要先解析所有的变量引用。这是通过event_hist_trigger() 发起resolve_var_refs() 调用完成的。它的作用是取出表示 sched_switch 直方图的 hist_data 中的 var_refs[] 数组。对于其中的每一个，都会利用所引用变量var.hist_data 以及当前键，到那个直方图中查找对应的 tracing_map_elt。一旦找到，就用所引用变量var.idx，通过 tracing_map_read_var(elt, var.idx) 查找该变量的值，从而得到该元素对应的变量值，在上面这个例子中就是 ts0。注意，表示变量及其引用的两hist_field 拥有相同var.idx，所以这个过程是直接的
 
-### 变量与变量引用测
+## 变量与变量引用测
 
 
 
@@ -615,6 +619,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -632,6 +637,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
       is_signed: 0
 
   key fields:
+
 
     hist_data->fields[2]:
       flags:
@@ -663,6 +669,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -681,6 +688,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
 
   key fields:
 
+
     hist_data->fields[2]:
       flags:
         HIST_FIELD_FL_KEY
@@ -690,6 +698,7 @@ tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（�
       is_signed: 1
 
   variable reference fields:
+
 
     hist_data->var_refs[0]:
       flags:
@@ -907,7 +916,7 @@ sched_switch 事件的图与前面的例子类似，但它展示了 hist_data �
 
 ```
 
-### trace() 动作的字段变量测
+## trace() 动作的字段变量测
 
 
 
@@ -948,6 +957,7 @@ sched_waking hist_debug 输出显示的数据与
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -965,6 +975,7 @@ sched_waking hist_debug 输出显示的数据与
       is_signed: 0
 
   key fields:
+
 
     hist_data->fields[2]:
       flags:
@@ -996,6 +1007,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1014,6 +1026,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
 
   key fields:
 
+
     hist_data->fields[2]:
       flags:
         HIST_FIELD_FL_KEY
@@ -1023,6 +1036,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
       is_signed: 1
 
   variable reference fields:
+
 
     hist_data->var_refs[0]:
       flags:
@@ -1070,7 +1084,9 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
 
   field variables:
 
+
     hist_data->field_vars[0]:
+
 
       field_vars[0].var:
       flags:
@@ -1086,6 +1102,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
 
     hist_data->field_vars[1]:
 
+
       field_vars[1].var:
       flags:
         HIST_FIELD_FL_VAR
@@ -1099,6 +1116,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
       is_signed: 0
 
   action tracking variables (for onmax()/onchange()/onmatch()):
+
 
     hist_data->actions[0].match_data.event_system: sched
     hist_data->actions[0].match_data.event: sched_waking
@@ -1114,7 +1132,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
 
 ```
 
-### action_data trace() 动作
+## action_data trace() 动作
 
 
 
@@ -1172,7 +1190,7 @@ sched_switch hist_debug 输出显示了与前面测试例子相同的键和值�
 
 ```
 
-### save() 动作的字段变量测
+## save() 动作的字段变量测
 
 
 
@@ -1207,6 +1225,7 @@ sched_waking hist_debug 输出显示的数据与
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1224,6 +1243,7 @@ sched_waking hist_debug 输出显示的数据与
       is_signed: 0
 
   key fields:
+
 
     hist_data->fields[2]:
       flags:
@@ -1257,6 +1277,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1275,6 +1296,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   key fields:
 
+
     hist_data->fields[2]:
       flags:
         HIST_FIELD_FL_KEY
@@ -1284,6 +1306,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
       is_signed: 1
 
   variable reference fields:
+
 
     hist_data->var_refs[0]:
       flags:
@@ -1309,6 +1332,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   action tracking variables (for onmax()/onchange()/onmatch()):
 
+
     hist_data->actions[0].track_data.var_ref:
       flags:
         HIST_FIELD_FL_VAR_REF
@@ -1331,7 +1355,9 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   save action variables (save() params):
 
+
     hist_data->save_vars[0]:
+
 
       save_vars[0].var:
       flags:
@@ -1347,6 +1373,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
     hist_data->save_vars[1]:
 
+
       save_vars[1].var:
       flags:
         HIST_FIELD_FL_VAR
@@ -1361,6 +1388,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
     hist_data->save_vars[2]:
 
+
       save_vars[2].var:
       flags:
         HIST_FIELD_FL_VAR
@@ -1374,6 +1402,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
       is_signed: 1
 
     hist_data->save_vars[3]:
+
 
       save_vars[3].var:
       flags:
@@ -1447,6 +1476,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1464,6 +1494,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
       is_signed: 0
 
   key fields:
+
 
     hist_data->fields[2]:
       flags:
@@ -1487,6 +1518,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1505,6 +1537,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
       is_signed: 1
 
   key fields:
+
 
     hist_data->fields[2]:
       flags:
@@ -1534,6 +1567,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1552,6 +1586,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   key fields:
 
+
     hist_data->fields[2]:
       flags:
         HIST_FIELD_FL_KEY
@@ -1561,6 +1596,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
       is_signed: 1
 
   variable reference fields:
+
 
     hist_data->var_refs[0]:
       flags:
@@ -1608,7 +1644,9 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   field variables:
 
+
     hist_data->field_vars[0]:
+
 
       field_vars[0].var:
       flags:
@@ -1624,6 +1662,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   action tracking variables (for onmax()/onchange()/onmatch()):
 
+
     hist_data->actions[0].match_data.event_system: sched
     hist_data->actions[0].match_data.event: sched_waking
 
@@ -1638,7 +1677,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
 ```
 
-### 别名测试
+## 别名测试
 
 
 
@@ -1681,6 +1720,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1708,6 +1748,7 @@ sched_switch 触发器的输出显示了与之前相同val key 值，但也显�
       is_signed: 0
 
   key fields:
+
 
     hist_data->fields[3]:
       flags:
@@ -1741,6 +1782,7 @@ sched_switch hist_debug 输出显示，一个名woken_pid 的变量已经被创�
 
   val fields:
 
+
     hist_data->fields[0]:
       flags:
         VAL: HIST_FIELD_FL_HITCOUNT
@@ -1770,6 +1812,7 @@ sched_switch hist_debug 输出显示，一个名woken_pid 的变量已经被创�
 
   key fields:
 
+
     hist_data->fields[3]:
       flags:
         HIST_FIELD_FL_KEY
@@ -1779,6 +1822,7 @@ sched_switch hist_debug 输出显示，一个名woken_pid 的变量已经被创�
       is_signed: 1
 
   variable reference fields:
+
 
     hist_data->var_refs[0]:
       flags:
@@ -1837,7 +1881,9 @@ sched_switch hist_debug 输出显示，一个名woken_pid 的变量已经被创�
 
   field variables:
 
+
     hist_data->field_vars[0]:
+
 
       field_vars[0].var:
       flags:
@@ -1852,6 +1898,7 @@ sched_switch hist_debug 输出显示，一个名woken_pid 的变量已经被创�
       is_signed: 0
 
   action tracking variables (for onmax()/onchange()/onmatch()):
+
 
     hist_data->actions[0].match_data.event_system: sched
     hist_data->actions[0].match_data.event: sched_waking

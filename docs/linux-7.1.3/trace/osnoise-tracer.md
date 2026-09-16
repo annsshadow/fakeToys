@@ -1,10 +1,12 @@
+# osnoise-tracer
+
 ﻿## OSNOISE 跟踪
 
 在高性能计算（HPC）的语境中，操作系统噪声*osnoise**）指的是应用程序由于操作系统内部活动而经历的干扰。在 Linux 的语境下，NMI、IRQ、SoftIRQ 以及任何其它系统线程都可能给系统带来噪声。此外，与硬件相关的工作也可能引起噪声，例如通过 SMI
 hwlat_detector 是用来识别最复杂噪声源—*硬件噪声**——的工具之一
 简而言之，hwlat_detector 创建一个线程，该线程以给定周期周期性地运行。在一个周期开始时，该线程禁用中断并开始采样。运行中，hwlatd 线程在一个循环中读取时间。由于中断被禁用，线程、IRQ SoftIRQ 都无法干hwlatd 线程。因此，两次不同时间读取之间出现间隔的原因，要么NMI 中，要么在硬件本身。在周期结束时，hwlatd 重新启用中断，并报告读取之间观测到的最大间隔。它还会打印一NMI 发生计数器。如果输出中没有报告 NMI 执行，用户就可以断定硬件是该延迟的罪魁祸首。hwlat 通过观察 NMI 的进入与退出检NMI 执行
 osnoise 跟踪器利hwlat_detector，运行一个类似的循环，但允许抢占、SoftIRQ IRQ，从而允许在其执行期间出现所有来源的 **osnoise**。采用与 hwlat 相同的方法，osnoise 记录任何干扰源的进入与退出点，并递增一per-cpu 干扰计数器。osnoise 跟踪器还会为每一种干扰源保存一个干扰计数器。每当工具观察到 NMI、IRQ、SoftIRQ 和线程这些干扰的进入事件时，相应的干扰计数器就会递增。当发生噪声而没有来自操作系统层面的任何干扰时，硬件噪声计数器递增，指向一个与硬件相关的噪声。通过这种方式，osnoise 可以统计任何来源的干扰。在周期结束时，osnoise 跟踪器打印所有噪声之和、最大单次噪声、线程可用的 CPU 百分比，以及各噪声源的计数器
-### 用法
+## 用法
 
 
 ASCII 文本 "osnoise" 写入 tracing 系统（通常挂载/sys/kernel/tracing）的 current_tracer 文件
@@ -41,7 +43,7 @@ ASCII 文本 "osnoise" 写入 tracing 系统（通常挂载/sys/kernel/tracing�
 
  - RUNTIME IN US（以微秒计的运行时）报告 osnoise 线程持续循环读取时间所花费的时间量 - NOISE IN US（以微秒计的噪声）报osnoise 跟踪器在相应运行时间内观测到的噪声总和 - % OF CPU AVAILABLE（可CPU 百分比）报告运行时间窗口osnoise 线程可用CPU 百分比 - MAX SINGLE NOISE IN US（最大单次噪声，以微秒计）报告运行时间窗口内观测到的最大单次噪声 - 干扰计数器显示各对应干扰在运行时间窗口内发生的次数
 注意，上面的示例显示了大量的 HW 噪声样本。其原因是该样本取自一台虚拟机，而主机的干扰被当作硬件干扰检测到了
-### 跟踪器配
+## 跟踪器配
 
 跟踪器在 osnoise 目录下有一组选项，它们是
  - osnoise/cpus：将运行 osnoise 线程CPU - osnoise/period_us：osnoise 线程的周期 - osnoise/runtime_us：osnoise 线程寻找噪声的时长 - osnoise/stop_tracing_us：如果发生的单次噪声高于配置值，停止系统 tracing。写0 会禁用该选项 - osnoise/stop_tracing_total_us：如果总噪声高于配置值，停止系统 tracing。写0 会禁用该选项 - tracing_threshold：两time() 读取之间被视为噪声的最小差值（us 计）。设0 时使用默认值，目前1 us - osnoise/options：一组开/关选项，可通过将选项名写入该文件来启用，或通过写入带有 'NO\_' 前缀的选项名来禁用。例如，写入 NO_OSNOISE_WORKLOAD 会禁OSNOISE_WORKLOAD 选项。特殊的 DEFAULTS 选项会将所有选项重置为默认值

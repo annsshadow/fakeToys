@@ -1,8 +1,11 @@
+# events-power
+
 ﻿## 子系Trace Points: 电源
 
 
 电源 tracing 系统 captures 事件 related 电源 transitions
 内核. Broadly speaking three major subheadings:
+
 
 - 电源 状switch 报告 事件 related suspend (S-states),
 cpuidle (C-states) cpufreq (P-states)

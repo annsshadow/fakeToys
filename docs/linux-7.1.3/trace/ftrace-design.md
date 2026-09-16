@@ -1,9 +1,11 @@
+# ftrace-design
+
 ﻿## 函数跟踪器（Function Tracer）设
 
 :Author: Mike Frysinger
 
 	本文档已经过时。下面描述的某些内容已经与当前的实现不符
-### 简
+## 简
 
 这里我们介绍公共函数跟踪代码赖以正常工作的架构相关部分。内容按复杂度递增
 组织，以便你可以从简单入手，至少获得基本功能
@@ -61,6 +63,7 @@ mcount 函数应检查函数指ftrace_trace_function，看它是否被设置ftra
 		return;
 
 	do_trace:
+
 
 		/* save all state needed by the ABI (see paragraph above) */
 
@@ -136,7 +139,7 @@ prepare_ftrace_return 的参数与传给 ftrace_trace_function 的略有不同�
 	#endif
 
 ```
-### HAVE_FUNCTION_GRAPH_FP_TEST
+## HAVE_FUNCTION_GRAPH_FP_TEST
 
 
 一个架构可以向函数的进入与退出传入一个唯一的值（frame pointer）。在退出时该值会被比较，如果不匹配，则会让内panic。这主要是对 gcc 错误代码生成的一
@@ -238,7 +241,7 @@ rec->ip 值是在构建期scripts/recordmcount.pl 收集mcount 调用点地址
 
 
 ```
-### HAVE_DYNAMIC_FTRACE + HAVE_FUNCTION_GRAPH_TRACER
+## HAVE_DYNAMIC_FTRACE + HAVE_FUNCTION_GRAPH_TRACER
 
 
 函数跟踪图器（function grapher）需要一些微调才能与动ftrace 配合工作。基上，你需要：
