@@ -1,3 +1,5 @@
+# backend-api
+
 ﻿
 ## 缓存后端 API
 
@@ -69,7 +71,7 @@ Cookie 用于向缓存提供一些文件系统数据、管理状态并在访问�
 
 这将把缓存操作表指针与缓存私有数据存储进缓存 cookie，并将缓存移active（活动）状态，从允许访问发生
 
-## 灏嗙紦瀛樻挙鍑烘湇鍔。
+## 灏嗙紦子樻挙鍑烘湇鍔。
 
 ```
 	void fscache_withdraw_cache(struct fscache_cache *cache);
@@ -121,7 +123,7 @@ Cookie 用于向缓存提供一些文件系统数据、管理状态并在访问�
 ```
 
 这里有一些对缓存后端而言感兴趣的字段
-   - `cache` - 鐖剁紦瀛?cookie銆。
+   - `cache` - 鐖剁紦子?cookie銆。
    - `cache_priv` - 缓存用来存放私有数据的地方
    - `debug_id` - 用于 tracepoint 日志记录的调ID
    - `key` - 一个可打印字符串，其中不包含任'/' 字符，表示卷的索引键。该键以 NUL 结尾，并

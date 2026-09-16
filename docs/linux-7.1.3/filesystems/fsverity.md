@@ -1,3 +1,5 @@
+# fsverity
+
 ﻿
 
 ## fs-verity：基于文件的只读真实性保
@@ -155,7 +157,7 @@ FS_IOC_READ_VERITY_METADATA 可能因以下错误而失败：
   FS_VERITY_METADATA_TYPE_SIGNATURE 但文件没有内建签- `ENOTTY`：此类文件系统没有实fs-verity，或者尚未在其上实现ioctl
 - `EOPNOTSUPP`：内核未配置 fs-verity 支持，或者文件系统超级块未启  'verity' 特性。（参见 `文件系统支持`_。）
 
-### FS_IOC_GETFLAGS
+## FS_IOC_GETFLAGS
 
 
 已有ioctl FS_IOC_GETFLAGS（它并非 fs-verity 特有）也可以用来检查文是否启用fs-verity。要做到这一点，检查返回的标志中的 FS_VERITY_FL

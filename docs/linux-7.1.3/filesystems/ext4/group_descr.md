@@ -1,5 +1,7 @@
+# group_descr
+
 ﻿
-### Block Group Descriptors
+## Block Group Descriptors
 
 
 文件系统中的每个块组（block group）都关联有一个这样的描述符。正如上布局"一节所述，组描述符（如果存在）是块组中的第二项。标准配置下，每个块组都包含一份完整的块组描述符表副本，除非设置了 sparse_super 特性标志

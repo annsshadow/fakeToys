@@ -1,3 +1,5 @@
+# sysfs
+
 ﻿
 ## sysfs —用于导出内核对象的文件系
 
@@ -9,7 +11,7 @@ Mike Murphy <mamurph@cs.clemson.edu>
 :Original:   10 January 2003
 
 
-#### 它是什
+### 它是什
 
 sysfs 是一个基RAM 的文件系统，最初基ramfs。它提供了一种将内核数据结构、其属性以及它们之间的链接导出到用户空间的方式
 sysfs 本质上与 kobject 基础设施绑定。有kobject 接口的更多信息，请阅Documentation/core-api/kobject.rst
@@ -94,7 +96,7 @@ static struct device_attribute dev_attr_foo = __ATTR_RW(foo);
 可用于定义你包装函数的辅助宏列表如下
 __ATTR_RO(name)		 假设默认 name_show 且模式为 0444
 __ATTR_WO(name)		 假设只有 name_store，并限制为模0200，即root 可写__ATTR_RO_MODE(name, mode)	         用于更严格的只读访问；目前唯一用例EFI 系统资源	         （见 drivers/firmware/efi/esrt.c__ATTR_RW(name)	         假设默认 name_show、name_store，并将模式设0644__ATTR_NULL	         将名称设NULL，用作列表结束指示符（见：kernel/workqueue.c
-#### 子系统特定的回调
+## 子系统特定的回调
 
 
 当子系统定义新的属性类型时，它必须实现一sysfs 操作，用于将写调用转发给
@@ -133,7 +135,7 @@ __ATTR_WO(name)		 假设只有 name_store，并限制为模0200，即root 可写
 
 
 ```
-#### 写属性数
+## 写属性数
 
 要读或写属性，必须在声明属性时指定 show() store() 方法。方法类型应如下
 
@@ -182,7 +184,7 @@ sysfs 分配一个大小为 (PAGE_SIZE) 的缓冲区并传递给方法。sysfs �
 （注意，真实实现不允许用户空间设置设备的名称。）
 
 
-#### 顶层目录布局
+### 顶层目录布局
 
 
 sysfs 的目录排列展现了内核数据结构之间的关系

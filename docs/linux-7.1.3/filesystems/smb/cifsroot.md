@@ -1,3 +1,5 @@
+# cifsroot
+
 ﻿
 ## 通过 SMB 挂载根文件系统（cifs.ko
 

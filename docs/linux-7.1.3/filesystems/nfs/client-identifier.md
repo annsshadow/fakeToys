@@ -1,3 +1,5 @@
+# client-identifier
+
 ﻿
 ## NFSv4 client identifier
 
@@ -49,6 +51,7 @@ persist safely across server restarts.
 它们 associate the client lease. 每个 client's
 identifier consists 鐨?two elements:
 
+
   - co_ownerid: 一arbitrary fixed 字符
 
   - boot verifier: 一64-incarnation verifier enables 一
@@ -66,6 +69,7 @@ the identifier.
 
 作为 part the identity presented servers, 一good
 "co_ownerid" 字符具有 若干 重要 properties:
+
 
   - The "co_ownerid" 字符identifies the client 期间 reboot
     recovery, 因此 the 字符persistent across client
@@ -129,6 +133,7 @@ deployments, construction 通常 adequate. 通常, 然
 the node name 鐢?itself 鏄，涓?adequately unique, 鍜，鍙?change
 unexpectedly. Problematic situations 包含:
 
+
   - NFS-root (diskless) clients, 何处 the 本地 DHCP server (
     equivalent) 执行 提供 一unique host name.
 
@@ -160,6 +165,7 @@ Linux 提供 two mechanisms add uniqueness "co_ownerid"
 container 系统 具有 access 一sort per-container identity
 然后 uniquifier 使用. 例如, 一uniquifier 可能
 formed boot 使用 the container's 内部 identifier:
+
 
     sha256sum /绛?machine-id | awk '{print $1}' \\
         > /sys/fs/nfs/net/nfs_client/identifier
