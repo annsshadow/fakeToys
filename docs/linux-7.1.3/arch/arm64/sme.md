@@ -1,3 +1,5 @@
+# sme
+
 ﻿## Scalable Matrix Extension support for AArch64 Linux
 
 AArch64 Linux 对可伸缩矩阵扩展（SME）的支持
@@ -20,7 +22,7 @@ model features for SME is included in Appendix A.
 
 本文档无意描SME 架构或编程模型。为便于理解，附A 中包含了 SME 相关编程模型特的简要说明
 
-### 1.  General
+## 1.  General
 
 ### 1. 概述
 
@@ -55,6 +57,7 @@ model features for SME is included in Appendix A.
   这并不保证以下小节所描述的系统接口的存在：需要确认这些接口存在的软件必须转  检HWCAP2_SME
 - There are a number of optional SME features, presence of these is reported
   through AT_HWCAP2 through:
+
 
 - 存在若干可选的 SME 特性，它们的存在通过 AT_HWCAP2 报告如下
 	HWCAP2_SME_I16I64
@@ -202,6 +205,7 @@ SME 定义了第二个向量长度，类似于 SVE 向量长度，它控制流�
 
 When returning from a signal handler:
 
+
 从信号处理函数返回时
 - If there is no za_context record in the signal frame, or if the record is
   present but contains no register data as described in the previous section,
@@ -232,6 +236,7 @@ When returning from a signal handler:
 Some new prctl() calls are added to allow programs to manage the SME vector
 length:
 
+
 新增了一prctl() 调用来允许程序管SME 向量长度
 prctl(PR_SME_SET_VL, unsigned long arg)
 
@@ -244,6 +249,7 @@ prctl(PR_SME_SET_VL, unsigned long arg)
 
     vl 是期望的向量长度，其sve_vl_valid(vl) 必须为真
     flags:
+
 
     PR_SME_VL_INHERIT
 
@@ -261,6 +267,7 @@ prctl(PR_SME_SET_VL, unsigned long arg)
         将所请求的向量长度变更推迟到本线程执行的下一execve()
         The effect is equivalent to implicit execution of the following
         call immediately after the next execve() (if any) by the thread:
+
 
         其效果等同于在本次（若有）execve() 之后由该线程隐式执行以下调用
         prctl(PR_SME_SET_VL, arg & ~PR_SME_SET_VL_ONEXEC)
@@ -283,6 +290,7 @@ prctl(PR_SME_SET_VL, unsigned long arg)
         EINVAL：不支持 SME、请求了无效的向量长度，或无效的标志
 
     On success:
+
 
     成功时：
 
@@ -333,6 +341,7 @@ prctl(PR_SME_GET_VL)
     获取调用线程的向量长度
     The following flag may be OR-ed into the result:
 
+
     以下标志可被 OR 进结果中
         PR_SME_VL_INHERIT
 
@@ -375,6 +384,7 @@ prctl(PR_SME_GET_VL)
   定义请参[^2^]
 The regset data starts with struct user_za_header, containing:
 
+
 regset 数据struct user_za_header 开头，其中包含
     size
 
@@ -409,6 +419,7 @@ regset 数据struct user_za_header 开头，其中包含
 
         Zero or more of the following flags, which have the same
         meaning and behaviour as the corresponding PR_SET_VL_* flags:
+
 
         以下一个或多个标志，其含义和行为与对应PR_SET_VL_* 标志相同
             SME_PT_VL_INHERIT
@@ -505,6 +516,7 @@ regset 数据struct user_za_header 开头，其中包含
   mechanism is provided for administrators, distro maintainers and developers
   to set the default vector length for userspace processes:
 
+
 - 为减轻信号帧扩展带来ABI 影响，提供了一种策略机制，供管理员、发行版维护者和
   开发者为用户空间进程设置默认向量长度
 /proc/sys/abi/sme_default_vector_length
@@ -564,6 +576,7 @@ to replace any architectural specification.
 
 In A64 state, SME adds the following:
 
+
 A64 状态下，SME 增加了以下内容：
 
 - A new mode, streaming mode, in which a subset of the normal FPSIMD and SVE
@@ -601,6 +614,7 @@ A64 状态下，SME 增加了以下内容：
 - SME2 存在时引入一个新ZT0 寄存器。这是一512 位寄存器，在 PSTATE.ZA   设置时可访问，正ZA 本身一样
 - Two new 1 bit fields in PSTATE which may be controlled via the SMSTART and
   SMSTOP instructions or by access to the SVCR system register:
+
 
 - PSTATE 中两个新1 比特字段，可通过 SMSTART SMSTOP 指令，或通过SVCR 系统
   寄存器的访问来控制：

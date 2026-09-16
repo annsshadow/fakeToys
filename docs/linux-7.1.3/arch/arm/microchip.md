@@ -1,6 +1,8 @@
+# microchip
+
 ﻿## ARM Microchip SoC（即 AT91
 
-### 简
+## 简
 本文档提供了关于目前 Linux 主线（也就是 kernel.org 上的那个）所支持ARM
 Microchip SoC 的有用信息
 需要注意的是，Microchip（原 Atmel）基ARM MPU 产品线在整个 Linux 内核开过程中历史上一直被称为 "AT91" "at91"，即使这个产品前缀已经Microchip 官方产品名称中完全消失。无论如何，文件、目录、git 树、git 分支/标签以及邮件主题

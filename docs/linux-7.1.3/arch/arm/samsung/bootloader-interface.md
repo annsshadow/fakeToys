@@ -1,3 +1,5 @@
+# bootloader-interface
+
 ﻿## Exynos 板上内核与引导加载程序之间的接口
 
 本文档描Linux 内核与基于三Exynos 的板卡上引导加载程序（U-Boot/SBOOT 等）之间的接口约定，列出非安安全模式下各 SYSRAM PMU 偏移的用途，供平台移植与固件开发者参考

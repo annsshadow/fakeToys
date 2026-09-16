@@ -1,3 +1,5 @@
+# bootwrapper
+
 ﻿## PowerPC 引导包装
 
 Copyright (C) Secret Lab Technologies Ltd.
@@ -38,7 +40,7 @@ PowerPC 镜像目标会使用引导包装器（boot wrapper）压缩并封装内
 还存在两个名'zImage' 'zImage.initrd' 的特殊目标。这些目标会构建由内配置所选的所有默认镜像。默认镜像由引导包装Makefile
 （arch/powerpc/boot/Makefile）通过将目标添加到 $image-y 变量中来选定。请查看
 Makefile 了解有哪些可用的默认镜像目标
-### 它是如何构建
+## 它是如何构建
 
 arch/powerpc 被设计成支持多平台内核，这意味着单个 vmlinux 镜像可以被引导到
 许多不同的目标板卡上。这也意味着引导包装器必须能够针对多种镜像类型在单次

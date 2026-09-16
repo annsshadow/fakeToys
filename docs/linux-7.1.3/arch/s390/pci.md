@@ -1,3 +1,5 @@
+# pci
+
 ﻿
 ## S/390 PCI
 
@@ -37,6 +39,7 @@ S/390 调试功能（s390dbf）会生成视图，以如下形式sysfs 目录保�
 特定zPCI 功能的条目，以及保存 zPCI 信息的条目
 - /sys/bus/pci/slots/XXXXXXXX:
 
+
   槽位条目使用 PCI 功能的函数标识符（FID）作为槽位名来建立。上面以 XXXXXXXX
   表示的格式是 8 位十六进制数字，0 填充并使用小写十六进制数字
   - /sys/bus/pci/slots/XXXXXXXX/power
@@ -48,6 +51,7 @@ S/390 调试功能（s390dbf）会生成视图，以如下形式sysfs 目录保�
   echo 0 > /sys/bus/pci/devices/DDDD:BB:dd.f/sriov_numvf
 
 - /sys/bus/pci/devices/DDDD:BB:dd.f/:
+
 
   - function_id:
     zPCI 函数标识符（FID）是一32 位十六进制值，用于唯一标识PCI 功能    除非 hypervisor 提供了虚FID（例如在 KVM 上），否则该标识符在整个机器
@@ -92,6 +96,7 @@ S/390 调试功能（s390dbf）会生成视图，以如下形式sysfs 目录保�
   - fidparm:
     包含一个由平台提供的、以十六进制表示的每 PCI 功能 8 位参数字段。该字段    含义取决PCI 功能类型。对NETH VF，0x01 表示该功能支持混杂模式
 - /sys/firmware/clp/uid_checking:
+
 
   除了每个设备uid_is_unique 属性外，这还提供一个全局指示，表明是否启用了
   UID 检查。这使得用户即使在未配置任何 PCI 功能时也能检UID 检查状态
