@@ -1,3 +1,5 @@
+# squashfs
+
 ﻿
 ## Squashfs 4.0 文件系统
 
@@ -63,6 +65,7 @@ threads=%s             Select the decompression mode or the number of threads
 
                        If SQUASHFS_CHOICE_DECOMP_BY_MOUNT is set:
 
+
 		       ==========  =============================================
                            single  use single-threaded decompression (default)
 
@@ -93,6 +96,7 @@ threads=%s             Select the decompression mode or the number of threads
                        If SQUASHFS_CHOICE_DECOMP_BY_MOUNT is **not** set and
                        SQUASHFS_DECOMP_MULTI, SQUASHFS_MOUNT_DECOMP_THREADS are
                        both set:
+
 
 		       ==========  =============================================
                           2|3|...  configure the number of threads used for

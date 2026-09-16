@@ -1,6 +1,8 @@
+# dax
+
 ﻿## 文件的直连访问（Direct Access
 
-### 动机
+## 动机
 
 
 页缓存通常用于缓冲对文件的读取和写入。它也用于提供通过调用 mmap 映射到用户空间的页面
@@ -37,6 +39,7 @@
 
     .. note::
 
+
       `FS_XFLAG_DAX` 的修改和继承行为即使在文件系统以 dax 选项挂载时也保持不变。然而，内核态的 inode 状态（`S_DAX`）将被覆盖，直到文件系统dax=inode 重新挂载并且inode 从内核内存中被逐出
  5. `S_DAX` 策略可以通过以下方式更改
     a) 在创建文件之前根据需要设置父目录`FS_XFLAG_DAX`
@@ -56,6 +59,7 @@
 为了说明继承，这里有三个例子
 Example A:
 
+
   mkdir -p a/b/c
   xfs_io -c 'chattr +x' a
   mkdir a/b/c/d
@@ -68,6 +72,7 @@ Example A:
 
 Example B:
 
+
   mkdir a
   xfs_io -c 'chattr +x' a
   mkdir -p a/b/c/d
@@ -77,7 +82,9 @@ Example B:
   dax: a,b,c,d
   no dax:
 
+
 Example C:
+
 
   mkdir -p a/b/c
   xfs_io -c 'chattr +x' c

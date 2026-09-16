@@ -1,3 +1,5 @@
+# proc
+
 ﻿锘。
 ## /proc 文件系统
 
@@ -189,7 +191,7 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
  Umask                       文件模式创建掩码
  State                       状态（R 为运行中，S 为睡眠，D 为处于不可中断等待中的睡眠，
 			     Z 为僵尸进程，T 为被跟踪或停止）
- Tgid                        绾跨▼缁?ID
+ Tgid                        绾跨▼统?ID
  Ngid                        NUMA ID（无则为 0
  Pid                         进程 id
  PPid                        父进程的进程 id
@@ -294,7 +296,7 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
   it_real_value	(已废弃，始终0)
   start_time    进程在系统启动后启动的时
   vsize         虚拟内存大小
-  rss           甯搁┗闆嗗唴瀛樺ぇ灏。
+  rss           甯搁┗闆嗗唴子樺ぇ灏。
   rsslim        当前 rss 的字节数限制
   start_code    程序文本可运行的地址上限
   end_code      程序文本可运行的地址下限
@@ -607,7 +609,7 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
                 当前可运行进程数"系统中进程总数"外，
                 所有字段都用空格分隔，这两者之间用斜杠/'）分隔。示例：
                 0.61 0.61 0.55 3/828 22084
- locks        鍐呮牳閿。
+ locks        内呮核閿。
  meminfo      内存信息
  misc         杂项
  modules      已加载模块列
@@ -1135,8 +1137,8 @@ DirectMap4k, DirectMap2M, DirectMap1G
  snmp          SNMP 数据
  sockstat      套接字统
  softnet_stat  在线 CPU 的每 CPU 入站数据包队列统
- tcp           TCP 濂楁帴瀛。
- udp           UDP 濂楁帴瀛。
+ tcp           TCP 濂楁帴子。
+ udp           UDP 濂楁帴子。
  unix          UNIX 域套接字
  wireless      无线接口数据（Wavelan 等）
  igmp          本机已加入的 IP 组播地址

@@ -1,3 +1,5 @@
+# ext2
+
 ﻿## 第二扩展文件系统（The Second Extended Filesystem
 
 ext2 最初于 1993 1 月发布。由 R\'emy Card、Theodore Ts'o Stephen Tweedie 编写，它是扩展文件系统（Extended Filesystem）的一次重大重写。它目前001 4 月）仍然Linux 中使用最主流的文件系统。也有适用NetBSD、FreeBSD、GNU HURD、Windows 95/98/NT、OS/2 RISC OS 的实现
@@ -117,7 +119,7 @@ Stephen Tweedie 开发了 ext2 代码的日志扩展。它避免了元数据损�
 ## 参考资
 
 =======================	===============================================
-鍐呮牳婧愪唬鐮?	file:/usr/src/linux/fs/ext2/
+内呮核婧愪唬鐮?	file:/usr/src/linux/fs/ext2/
 e2fsprogs (e2fsck)	http://e2fsprogs.sourceforge.net/
 设计与实	http://e2fsprogs.sourceforge.net/ext2intro.html
 日志 (ext3)		ftp://ftp.uk.linux.org/pub/linux/sct/fs/jfs/

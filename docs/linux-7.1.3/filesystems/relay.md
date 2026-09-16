@@ -1,3 +1,5 @@
+# relay
+
 ﻿
 ## relay 接口（原 relayfs
 
@@ -68,15 +70,18 @@ TBD(curr. line MT:/API/)
 
   channel management typically called on instigation of userspace::
 
+
     relay_subbufs_consumed(chan, cpu, subbufs_consumed)
 
   write functions::
+
 
     relay_write(chan, data, length)
     __relay_write(chan, data, length)
     relay_reserve(chan, length)
 
   callbacks::
+
 
     subbuf_start(buf, subbuf, prev_subbuf, prev_padding)
     buf_mapped(buf, filp)
@@ -85,6 +90,7 @@ TBD(curr. line MT:/API/)
     remove_buf_file(dentry)
 
   helper functions::
+
 
     relay_buf_full(buf)
     subbuf_start_reserve(buf, length)
