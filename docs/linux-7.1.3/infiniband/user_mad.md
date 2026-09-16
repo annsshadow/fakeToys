@@ -1,3 +1,5 @@
+# user_mad
+
 ﻿## 用户MAD 访问
 
 
@@ -41,6 +43,7 @@
 
   RMPP 读取的示:
 
+
 	struct ib_user_mad *mad;
 	mad = malloc(sizeof *mad + 256);
 	ret = read(fd, mad, sizeof *mad + 256);
@@ -74,7 +77,7 @@
 	/* 填充 mad->data */
 
 	mad->hdr.id  = my_agent;	/* 来自代理注册req.id */
-	mad->hdr.lid = my_dest;		/* 缃戠粶瀛楄妭搴?.. */
+	mad->hdr.lid = my_dest;		/* 缃戠粶子楄妭搴?.. */
 	/* 等等 */
 
 	ret = write(fd, &mad, sizeof *mad + mad_length);
@@ -107,16 +110,19 @@
 
   这可以用来。这将创建设备节点，命名:
 
+
     /dev/infiniband/umad0
     /dev/infiniband/issm0
 
   对应第一个端口，依此类推。与这些设备关联InfiniBand 设备和端口可以从以下文件
   确定::
 
+
     /sys/class/infiniband_mad/umad0/ibdev
     /sys/class/infiniband_mad/umad0/port
 
   以及::
+
 
     /sys/class/infiniband_mad/issm0/ibdev
     /sys/class/infiniband_mad/issm0/port
