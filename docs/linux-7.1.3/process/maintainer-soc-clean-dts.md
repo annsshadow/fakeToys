@@ -1,7 +1,9 @@
+# maintainer-soc-clean-dts
+
 ﻿## 具有 DTS 合规性要求的 SoC 平台
 
 
-### 概述
+## 概述
 
 
 SoC 平台或子架构应遵Documentation/process/maintainer-soc.rst 中的所有规则。MAINTAINERS 中引用的本文档施加了以下附加要求

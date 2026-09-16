@@ -1,5 +1,7 @@
+# kernel-enforcement-statement
+
 ﻿
-### Linux Kernel Enforcement Statement
+## Linux Kernel Enforcement Statement
 
 
 作为 Linux 内核的开发者，我们深切关注我们的软件如何被使用，以及如何执行我们软件的许可证

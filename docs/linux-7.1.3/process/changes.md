@@ -1,3 +1,5 @@
+# changes
+
 ﻿
 Minimal requirements to compile the Kernel
 ++++++++++++++++++++++++++++++++++++++++++
@@ -6,7 +8,7 @@ Minimal requirements to compile the Kernel
 
 本文档旨在提供运行当前内核版本所需的最低软件级别列表
 本文档最初基于我针对 2.0.x 内核所写的“Changes”文件，因此向与那份文件相同的人致谢（Jared Mauch、Axel Boldt、Alessandro Sigala，以及网络上无数其他用户）
-######## 当前最低要
+### 当前最低要
 
 在认为你遇到了缺陷之前，*至少**升级到以下软件版本！如果你不确定当前运行的是哪个版本，建议的命令会告诉你。要列出系统中包含其版本的所有程序，请执./scripts/ver_linux
 
@@ -52,7 +54,7 @@ xfsprogs               2.6.0            xfs_db -V
 ====================== ===============  ========================================
 
 
-######## 内核编译
+#### 内核编译
 
 
 ### GCC
@@ -139,7 +141,7 @@ Linux 5.2 起，如果选择CONFIG_DEBUG_INFO_BTF，构建系统会vmlinux 中�
 
 
 如果希望内核构建为内置模块生成地址范围数据（CONFIG_BUILTIN_MODULE_RANGES），则需GNU AWK
-######## 系统工具
+#### 系统工具
 
 
 ### 架构相关变更
@@ -203,7 +205,7 @@ PCMCIAutils 取代`pcmcia-cs`。它在系统启动时正确设置 PCMCIA 插槽�
 
 
 需libfuse 2.4.0 或更高版本。绝对最低为 2.3.0，但挂载选项 `direct_io` `kernel_cache` 将不起作用
-######## 网络
+#### 网络
 
 
 ### 总体变更
@@ -241,7 +243,7 @@ PPP 驱动已被重构以支持多链路（multilink），并使其能够在多�
 
 
 x86 内核上，当启`CONFIG_X86_MCE` 时，需mcelog 工具来处理和记录机器检查（machine check）事件。机器检查事件是CPU 报告的错误。强烈建议对其进行处理
-######## 内核文档
+#### 内核文档
 
 
 ### Sphinx
@@ -254,7 +256,7 @@ x86 内核上，当启`CONFIG_X86_MCE` 时，需mcelog 工具来处理和记录�
 `rustdoc` 用于生成 Rust 代码的文档。更多信息请参阅 Documentation/rust/general-information.rst
 ## 获取更新的软
 
-######## 内核编译
+### 内核编译
 
 
 ### gcc
@@ -304,7 +306,7 @@ x86 内核上，当启`CONFIG_X86_MCE` 时，需mcelog 工具来处理和记录�
 
 - <https://www.openssl.org/>
 
-######## 系统工具
+#### 系统工具
 
 
 ### Util-linux
@@ -376,7 +378,7 @@ x86 内核上，当启`CONFIG_X86_MCE` 时，需mcelog 工具来处理和记录�
 
 - <https://www.mcelog.org/>
 
-######## 网络
+#### 网络
 
 
 ### PPP
@@ -407,7 +409,7 @@ x86 内核上，当启`CONFIG_X86_MCE` 时，需mcelog 工具来处理和记录�
 
 - <https://oprofile.sf.net/download/>
 
-######## 内核文档
+#### 内核文档
 
 
 ### Sphinx

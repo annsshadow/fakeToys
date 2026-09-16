@@ -1,3 +1,5 @@
+# email-clients
+
 ﻿
 ## 用于 Linux 的电子邮件客户端信息（Email clients info for Linux
 ### Git
@@ -25,7 +27,7 @@ Linux 内核的补丁通过电子邮件提交，最好是作为邮件正文的�
 图例（Legend）：
 
 - TUI = 基于文本的用户界面（text-based user interface- GUI = 图形用户界面（graphical user interface
-######## Alpine (TUI)
+#### Alpine (TUI)
 
 配置选项
 `Sending Preferences` 部分
@@ -33,7 +35,7 @@ Linux 内核的补丁通过电子邮件提交，最好是作为邮件正文的�
 - `Strip Whitespace Before Sending` 必须 `disabled`（禁用）
 
 在撰写邮件时，光标应放在补丁应出现的位置，然后按 `CTRL-R` 让你指定要插入到邮件中的补丁文件
-######## Claws Mail (GUI)
+##### Claws Mail (GUI)
 
 可以工作。有些人成功地把这个用于补丁
 要插入补丁，使用 `Message-->Insert File`（`CTRL-I`）或外部编辑器
@@ -135,7 +137,7 @@ Mutt 文档中有更多信息
 
     http://www.mutt.org/doc/manual/
 
-######## Pine (TUI)
+## Pine (TUI)
 
 Pine 在过去有一些空白截断问题，但现在这些应该都已被修复
 如果可以，使alpine（pine 的后继者）
@@ -143,7 +145,7 @@ Pine 在过去有一些空白截断问题，但现在这些应该都已被修复
 - 较新版本需`quell-flowed-text`
 - 需`no-strip-whitespace-before-send` 选项
 
-######## Sylpheed (GUI)
+### Sylpheed (GUI)
 
 - 对行内文本（或使用附件）工作良好- 允许使用外部编辑器- 在大文件夹上较慢- 不会在非 SSL 连接上做 TLS SMTP 认证- 在撰写窗口中有一个有帮助的标尺栏- 把地址添加到地址簿时不能正确识别显示名
 ######## Thunderbird (GUI)

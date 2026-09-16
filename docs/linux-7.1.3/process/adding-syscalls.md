@@ -1,3 +1,5 @@
+# adding-syscalls
+
 ﻿
 
 ## 添加新的系统调用
@@ -117,7 +119,7 @@
  - fallback stub in `kernel/sys_ni.c`
 
 
-#### Since 6.11
+## Since 6.11
 
 
 从内核版6.11 开始，针对以下架构的通用系统调用实现不再需要修`include/uapi/asm-generic/unistd.h`
@@ -228,7 +230,7 @@
    `include/uapi/asm-generic/unistd.h`
 
 
-#### Since 6.11
+## Since 6.11
 
 
 这适用于“通用系统调用实现”中列出的、除 arm64 之外的所有架Since 6.11<syscall_generic_6_11>。更多信息参Compatibility System Calls (arm64)<compat_arm64>
@@ -248,7 +250,7 @@
 
 
 
-##### 兼容性系统调用（arm64
+### 兼容性系统调用（arm64
 
 arm64 上，有一个专用于面向 32 位（AArch32）用户空间的兼容性系统调用的系统调用表：`arch/arm64/tools/syscall_32.tbl`。你需要向此表添加一行，指定 compat
 
@@ -308,7 +310,7 @@ arm64 上，有一个专用于面向 32 位（AArch32）用户空间的兼容性
 
 
 ```
-### 其他细节
+## 其他细节
 
 
 内核的大部分以通用方式处理系统调用，但偶尔也有例外，可能需要为你的特定系统调用做更新

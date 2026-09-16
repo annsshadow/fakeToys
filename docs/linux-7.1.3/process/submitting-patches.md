@@ -1,3 +1,5 @@
+# submitting-patches
+
 ﻿
 ## 提交补丁：让你的代码进入内核的必备指
 
@@ -318,7 +320,7 @@ https://en.wikipedia.org/wiki/Posting_style#Interleaved_style
 签署是补丁说明末尾的一行简单文字，它证明你编写了它，或者你有权以开源补丁的形式
 将其传递下去。规则相当简单：如果你能够证明以下几点：
 
-##### 开发者原产地证书 1.1
+#### 开发者原产地证书 1.1
 
 
 通过向本项目作出贡献，我证明
@@ -352,6 +354,7 @@ https://en.wikipedia.org/wiki/Posting_style#Interleaved_style
 路径，第一SoB 条目表示单一作者的首要作者身份
 
 ### 何时使用 Acked-by:、Cc: Co-developed-by:
+
 
 
 Signed-off-by: 标签表示签署者参与了补丁的开发，或者他/她处于补丁的传递路径中
@@ -426,6 +429,7 @@ From: 标签是可选的
 ### 使用 Reported-by:、Tested-by:、Reviewed-by:、Suggested-by: Fixes:
 
 
+
 Reported-by 标签向发现并报告缺陷的人致谢，并有望激励他们在未来再次帮助我们。该标签
 用于缺陷；请不要用它来为功能请求致谢。该标签后面应跟随一个指向报告的 Closes: 标签
 除非该报告在网上不可用。如果补丁修复的只是所报告问题的一部分，可以使Link: 标签
@@ -437,7 +441,7 @@ Tested-by: 标签表示该补丁已被点名的人（在某个环境中）成功
 
 Reviewed-by: 则相反，表示补丁已经过审查，并根据审查者声明被认为是可接受的：
 
-##### 审查者监督声
+#### 审查者监督声
 
 
 通过提供我的 Reviewed-by: 标签，我声明
@@ -494,6 +498,7 @@ Suggested-by:，则必须是在公开场合进行了报告或建议。注意，b
 ### 使用 Assisted-by:
 
 
+
 如果你在创建补丁时使用了任何类型的高级编码工具，你需要通过添加一Assisted-by 标签
 来承认这一使用。不这样做可能会妨碍你的工作被接受。有关编码助手致谢的详细信息，请
 参阅 Documentation/process/coding-assistants.rst
@@ -505,7 +510,7 @@ Suggested-by:，则必须是在公开场合进行了报告或建议。注意，b
 `git format-patch` 获得正确的补丁格式。不过，工具不能创建必要的文本，所以还是请阅读
 下面的说明
 
-##### 主题
+#### 主题
 
 
 ```

@@ -1,3 +1,5 @@
+# kgdb
+
 ﻿## 使用 kgdb、kdb 以及内核调试器内部机
 
 :Author: Jason Wessel
@@ -29,7 +31,7 @@ Kgdb 旨在用作 Linux 内核的源码级调试器。它gdb 配合使用来调L
   CONFIG_KGDB_SERIAL_CONSOLE=y
 
 ```
-### kdb 的内核配置选项
+## kdb 的内核配置选项
 
 
 Kdb 比位于内核调试核心之上的简gdbstub 要复杂得多。Kdb 必须实现一shell，并且还在内核的其他部分添加一些辅助函数，负责打印出有趣的数据，例如你运行 `lsmod` `ps` 时会看到的内容。要kdb 构建进内核，你遵循与 kgdb 相同的步骤
@@ -45,7 +47,7 @@ kdb 的主要配置选项`CONFIG_KGDB_KDB`，它在配置菜单中称为 `KGDB_K
   CONFIG_KDB_KEYBOARD=y
 
 ```
-## 鍐呮牳璋冭瘯鍣ㄥ紩瀵煎弬鏁。
+## 内呮核璋冭瘯鍣ㄥ紩瀵煎弬鏁。
 
 本节描述影响内核调试器配置的各种运行时内核参数。下一章涵kdb kgdb 的使用，并提供一些配置参数的示例
 ### 内核参数：kgdboc
@@ -117,6 +119,7 @@ kgdboc 驱动最初是一个缩写，意为“kgdb over console（通过控制�
 
    Example::
 
+
 	kgdboc=ttyS0,115200
 
 ```
@@ -125,6 +128,7 @@ kgdboc 驱动最初是一个缩写，意为“kgdb over console（通过控制�
 	kgdboc=kbd,<serial_device>[,baud]
 
    Example::
+
 
 	kgdboc=kbd,ttyS0,115200
 
@@ -232,6 +236,7 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
    Configure kgdboc after the kernel has booted; assuming you are using
    a serial port console::
 
+
 	echo ttyS0 > /sys/module/kgdboc/parameters/kgdboc
 
 ```
@@ -272,6 +277,7 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
 
    Configure kgdboc after the kernel has booted::
 
+
 	echo kbd > /sys/module/kgdboc/parameters/kgdboc
 
 ```
@@ -281,6 +287,7 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
 	echo g > /proc/sysrq-trigger
 
    -  Example using a laptop keyboard:
+
 
       Press and hold down: `Alt`
 
@@ -324,6 +331,7 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
 
    Configure kgdboc after the kernel has booted::
 
+
 	echo ttyS0 > /sys/module/kgdboc/parameters/kgdboc
 
 ```
@@ -358,6 +366,7 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
 
    Example (kgdb to a terminal server on TCP port 2012)::
 
+
            % gdb ./vmlinux
            (gdb) target remote 192.168.2.2:2012
 
@@ -369,6 +378,7 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
    wrong while debugging, it will most often be the case that you want
    to enable gdb to be verbose about its target communications. You do
    this prior to issuing the ``target remote`` command by typing in::
+
 
 	set debug remote 1
 
@@ -395,8 +405,10 @@ kgdbreboot 特性允许你更改调试器处理重启通知的方式。行为有
 
    .. note::
 
+
      Now you must kill gdb. Typically you press `CTRL-Z` and issue
      the command::
+
 
 	kill -9 %
 
@@ -508,6 +520,7 @@ kgdb 测试套件也可以在编译时配置为运行核心测试集，方法是
 `kernel/kgdb.c` 中还有些用于公共后端的以下函数，必须由架构特定的后端提供，除非标记为（可选），在这种情况下，如果架构不需要提供特定实现，可以使用默认函数
    :internal:
 
+
 ### kgdboc 内部机制
 
 
@@ -526,11 +539,11 @@ kgdboc 驱动实际上是一个非常薄的驱动，它依赖于底层到硬件�
 
 ```
 围绕创建轮询驱动的任何实现细节都使用 `#ifdef CONFIG_CONSOLE_POLL`，如上所示。请记住，轮询钩子必须以可以从原子上下文调用，并在返回时恢复 UART 芯片状态的方式实现，以便系统能在调试器分离时恢复正常。对任何你考虑的锁都要非常小心，因为这里的失败很可能意味着要按下复位按钮
-#### kgdboc 与键
+## kgdboc 与键
 
 kgdboc 驱动包含配置与已连接键盘通信的逻辑。键盘基础设施只有在内核配置中设置`CONFIG_KDB_KEYBOARD=y` 时才会编译进内核
 PS/2 类型键盘的核心轮询键盘驱动位`drivers/char/kdb_keyboard.c`。当 kgdboc 在名:c`kdb_poll_funcs[]` 的数组中填充回调时，该驱动会被挂接到调试核心。kdb_get_kbd_char() 是轮询硬件以获取单个字符输入的顶层函数
-#### kgdboc 涓?kms
+### kgdboc 涓?kms
 
 
 kgdboc 驱动包含逻辑，在你使`kgdboc=kms,kbd` 时请求图形显示切换到文本上下文，前提是你有一个带有帧缓冲控制台和原子内核模式设置支持的视频驱动
