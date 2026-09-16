@@ -1,4 +1,4 @@
-### 清除 WARN_ONCE
+# 清除 WARN_ONCE
 
 
 WARN_ONCE / WARN_ON_ONCE / printk_once 仅仅打印一次消息.

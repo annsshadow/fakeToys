@@ -1,5 +1,7 @@
 
 
+# cpu-load
+
 :Translator: 胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
 
 ## CPU 負載
@@ -97,7 +99,7 @@ Linux通過`/proc/stat`和`/proc/uptime`導出各種信息，用戶空間工具
 
 
 ```
-### 參考
+## 參考
 
 
 - https://lore.kernel.org/r/loom.20070212T063225-663@post.gmane.org

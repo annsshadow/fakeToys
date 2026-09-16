@@ -1,7 +1,10 @@
 
+# ocxl
+
 :Original: Documentation/userspace-api/accelerators/ocxl.rst
 
 :翻译:
+
 
  李睿 Rui Li <me@lirui.org>
 
@@ -130,32 +133,39 @@ Documentation/ABI/testing/sysfs-class-ocxl 中描述。
 
 OCXL_IOCTL_ATTACH:
 
+
   附加调用进程的内存上下文到AFU，以允许AFU访问其内存。
 
 OCXL_IOCTL_IRQ_ALLOC:
+
 
   分配AFU中断，返回标识符。
 
 OCXL_IOCTL_IRQ_FREE:
 
+
   释放之前分配的AFU中断。
 
 OCXL_IOCTL_IRQ_SET_FD:
+
 
   将一个事件文件描述符和AFU中断关联，因此用户进程可以在AFU发送中断时收到通
   知。
 
 OCXL_IOCTL_GET_METADATA:
 
+
   从卡中获取配置信息，比如内存映射IO区域的大小、AFU版本和当前上下文的进程
   地址空间ID（PASID）。
 
 OCXL_IOCTL_ENABLE_P9_WAIT:
 
+
   允许AFU唤醒执行“等待”的用户空间进程。返回信息给用户空间，允许其配置AFU。
   注意这只在POWER9上可用。
 
 OCXL_IOCTL_GET_FEATURES:
+
 
   报告用户空间可用的影响OpenCAPI的CPU特性。
 

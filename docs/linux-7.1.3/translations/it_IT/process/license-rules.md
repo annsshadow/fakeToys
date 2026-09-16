@@ -1,5 +1,7 @@
 
 
+# license-rules
+
 :Original: Documentation/process/license-rules.rst <kernel_licensing>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -69,6 +71,7 @@ https://spdx.org/licenses/.
 
 1. Posizionamento:
 
+
    L'identificativo di licenza SPDX dev'essere posizionato come prima riga
    possibile di un file che possa contenere commenti.  Per la maggior parte
    dei file questa è la prima riga, fanno eccezione gli script che richiedono
@@ -78,6 +81,7 @@ https://spdx.org/licenses/.
 |
 
 2. Stile:
+
 
    L'identificativo di licenza SPDX viene aggiunto sotto forma di commento.
 ```
@@ -102,6 +106,7 @@ https://spdx.org/licenses/.
 
 3. Sintassi:
 
+
    Una <espressione di licenza SPDX> può essere scritta usando l'identificatore
    SPDX della licenza come indicato nella lista di licenze SPDX, oppure la
    combinazione di due identificatori SPDX separati da "WITH" per i casi
@@ -119,10 +124,12 @@ https://spdx.org/licenses/.
    WITH dovrebbe essere usato quando sono necessarie delle modifiche alla
    licenza.  Per esempio, la UAPI del kernel linux usa l'espressione::
 
+
       // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
       // SPDX-License-Identifier: GPL-2.0+ WITH Linux-syscall-note
 
    Altri esempi di usi di WITH all'interno del kernel sono::
+
 
       // SPDX-License-Identifier: GPL-2.0 WITH mif-exception
       // SPDX-License-Identifier: GPL-2.0+ WITH GCC-exception-2.0
@@ -136,10 +143,12 @@ https://spdx.org/licenses/.
    licenza e solo una dev'essere scelta.  Per esempio, alcuni file dtsi sono
    disponibili con doppia licenza::
 
+
       // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 
    Esempi dal kernel di espressioni per file licenziati con doppia licenza
    sono::
+
 
       // SPDX-License-Identifier: GPL-2.0 OR MIT
       // SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
@@ -153,10 +162,12 @@ https://spdx.org/licenses/.
    un altro progetto il quale da i permessi per aggiungerlo nel kernel ma
    richiede che i termini originali della licenza rimangano intatti::
 
+
       // SPDX-License-Identifier: (GPL-2.0 WITH Linux-syscall-note) AND MIT
 
    Di seguito, un altro esempio dove entrambe i termini di licenza devono
    essere rispettati::
+
 
       // SPDX-License-Identifier: GPL-1.0+ AND LGPL-2.1+
 
@@ -167,7 +178,9 @@ https://spdx.org/licenses/.
 Le licenze attualmente in uso, così come le licenze aggiunte al kernel, possono
 essere categorizzate in:
 
+
 1. _`Licenze raccomandate`:
+
 
    Ovunque possibile le licenze qui indicate dovrebbero essere usate perché
    pienamente compatibili e molto usate.  Queste licenze sono disponibile nei
@@ -181,10 +194,12 @@ essere categorizzate in:
 
    Esempi::
 
+
      LICENSES/preferred/GPL-2.0
 
    Contiene il testo della seconda versione della licenza GPL e i metatag
    necessari::
+
 
      LICENSES/preferred/MIT
 
@@ -192,9 +207,12 @@ essere categorizzate in:
 
    _`Metatag`:
 
+
    I seguenti metatag devono essere presenti in un file di licenza:
 
+
    - Valid-License-Identifier:
+
 
      Una o più righe che dichiarano quali identificatori di licenza sono validi
      all'interno del progetto per far riferimento alla licenza in questione.
@@ -204,10 +222,12 @@ essere categorizzate in:
 
    - SPDX-URL:
 
+
      L'URL della pagina SPDX che contiene informazioni aggiuntive riguardanti
      la licenza.
 
    - Usage-Guidance:
+
 
      Testo in formato libero per dare suggerimenti agli utenti. Il testo deve
      includere degli esempi su come usare gli identificatori di licenza SPDX
@@ -216,10 +236,12 @@ essere categorizzate in:
 
    - License-Text:
 
+
      Tutto il testo che compare dopo questa etichetta viene trattato
      come se fosse parte del testo originale della licenza.
 
    Esempi::
+
 
       Valid-License-Identifier: GPL-2.0
       Valid-License-Identifier: GPL-2.0+
@@ -237,6 +259,7 @@ essere categorizzate in:
 
    ::
 
+
       SPDX-License-Identifier: MIT
       SPDX-URL: https://spdx.org/licenses/MIT.html
       Usage-Guide:
@@ -252,6 +275,7 @@ essere categorizzate in:
 
 2. Licenze deprecate:
 
+
    Questo tipo di licenze dovrebbero essere usate solo per codice già esistente
    o quando si prende codice da altri progetti.  Le licenze sono disponibili
 ```
@@ -264,10 +288,12 @@ essere categorizzate in:
 
    Esempi::
 
+
      LICENSES/deprecated/ISC
 
    Contiene il testo della licenza Internet System Consortium e i suoi
    metatag::
+
 
      LICENSES/deprecated/GPL-1.0
 
@@ -275,10 +301,12 @@ essere categorizzate in:
 
    Metatag:
 
+
    I metatag necessari per le 'altre' ('other') licenze sono gli stessi
    di usati per le `Licenze raccomandate`_.
 
    Esempio del formato del file::
+
 
       Valid-License-Identifier: ISC
       SPDX-URL: https://spdx.org/licenses/ISC.html
@@ -311,10 +339,12 @@ essere categorizzate in:
 
    Esempi::
 
+
      LICENSES/dual/MPL-1.1
 
    Questo file contiene il testo della versione 1.1 della licenza *Mozilla
    Pulic License* e i metatag necessari::
+
 
      LICENSES/dual/Apache-2.0
 
@@ -323,10 +353,12 @@ essere categorizzate in:
 
    Metatag:
 
+
    I requisiti per le 'altre' ('*other*') licenze sono identici a quelli per le
    `Licenze raccomandate`_.
 
    Esempio del formato del file::
+
 
     Valid-License-Identifier: MPL-1.1
     SPDX-URL: https://spdx.org/licenses/MPL-1.1.html
@@ -347,6 +379,7 @@ essere categorizzate in:
 
 4. _`Eccezioni`:
 
+
    Alcune licenze possono essere corrette con delle eccezioni che forniscono
    diritti aggiuntivi.  Queste eccezioni sono disponibili nei sorgenti del
 ```
@@ -358,12 +391,14 @@ essere categorizzate in:
 
    Esempi::
 
+
       LICENSES/exceptions/Linux-syscall-note
 
    Contiene la descrizione dell'eccezione per le chiamate di sistema Linux
    così come documentato nel file COPYING del kernel Linux; questo viene usato
    per i file d'intestazione per la UAPI.  Per esempio
    /\* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note \*/::
+
 
       LICENSES/exceptions/GCC-exception-2.0
 
@@ -374,24 +409,30 @@ essere categorizzate in:
 
    _`Metatag per le eccezioni`:
 
+
    Un file contenente un'eccezione deve avere i seguenti metatag:
 
+
    - SPDX-Exception-Identifier:
+
 
      Un identificatore d'eccezione che possa essere usato in combinazione con
      un identificatore di licenza SPDX.
 
    - SPDX-URL:
 
+
      L'URL della pagina SPDX che contiene informazioni aggiuntive riguardanti
      l'eccezione.
 
    - SPDX-Licenses:
 
+
      Una lista di licenze SPDX separate da virgola, che possono essere usate
      con l'eccezione.
 
    - Usage-Guidance:
+
 
      Testo in formato libero per dare suggerimenti agli utenti. Il testo deve
      includere degli esempi su come usare gli identificatori di licenza SPDX
@@ -400,10 +441,12 @@ essere categorizzate in:
 
    - Exception-Text:
 
+
      Tutto il testo che compare dopo questa etichetta viene trattato
      come se fosse parte del testo originale della licenza.
 
    Esempi::
+
 
       SPDX-Exception-Identifier: Linux-syscall-note
       SPDX-URL: https://spdx.org/licenses/Linux-syscall-note.html
@@ -419,6 +462,7 @@ essere categorizzate in:
         Full exception text
 
    ::
+
 
       SPDX-Exception-Identifier: GCC-exception-2.0
       SPDX-URL: https://spdx.org/licenses/GCC-exception-2.0.html
@@ -454,6 +498,7 @@ REUSE <https://reuse.software/>`_.
    utente, per capire se il modulo è libero o proprietario.
 
    Le stringe di licenza valide per MODULE_LICENSE() sono:
+
 
     ============================= =============================================
     "GPL"			  Il modulo è licenziato con la GPL versione 2.

@@ -1,4 +1,6 @@
 
+# applying-patches
+
 :Original: Documentation/process/applying-patches.rst <applying_patches>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 

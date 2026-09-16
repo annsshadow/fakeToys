@@ -1,4 +1,6 @@
 
+# deprecated
+
 :Original: Documentation/process/deprecated.rst <deprecated>
 :Translator: Sergio Gonzalez <sergio.collado@gmail.com>
 
@@ -193,6 +195,7 @@ resto de casos, mejor no usar "%p" en absoluto.
 
 Parafraseando las actuales `direcciones de Linus <https://lore.kernel.org/lkml/CA+55aFwQEd_d40g4mUCSsVRZzrFPUJt74vc6PPpb675hYNXcKw@mail.gmail.com/>`_:
 
+
 - Si el valor "hasheado" "%p" no tienen ninguna finalidad, preguntarse si el
   puntero es realmente importante. ¿Quizás se podría quitar totalmente?
 - Si realmente se piensa que el valor del puntero es importante, ¿porqué
@@ -251,6 +254,7 @@ soportadas por los compiladores de C, analizadores estáticos, e IDEs,
 se puede cambiar a usar esa sintaxis para esa pseudo-palabra-clave.
 
 Todos los bloques switch/case deben acabar en uno de:
+
 
 - break;
 - fallthrough;

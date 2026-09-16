@@ -1,11 +1,15 @@
 
+# dynamic-resolution-notes
+
 :Original: Documentation/devicetree/dynamic-resolution-notes.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## Devicetree动态解析器说明
 
@@ -19,6 +23,7 @@
 生了适当的__fixups__和__local_fixups__节点。
 
 解析器依次通过以下步骤工作:
+
 
 1. 从实时树中获取最大的设备树phandle值 + 1.
 2. 调整树的所有本地 phandles，以解决这个量。

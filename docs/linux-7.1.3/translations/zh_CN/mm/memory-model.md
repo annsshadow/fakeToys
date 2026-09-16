@@ -1,11 +1,15 @@
 
+# memory-model
+
 :Original: Documentation/mm/memory-model.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## 物理内存模型
@@ -74,6 +78,7 @@ SPARSEMEM模型将物理内存显示为一个部分的集合。一个区段用me
 `mem_section` 对象被安排在一个叫做 `mem_sections` 的二维数组中。这个数组的
 大小和位置取决于 `CONFIG_SPARSEM_EXTREME` 和可能的最大段数:
 
+
 - 当 `CONFIG_SPARSEMEM_EXTREME` 被禁用时， `mem_sections` 数组是静态的，有
   `NR_MEM_SECTIONS` 行。每一行持有一个 `mem_section` 对象。
 - 当 `CONFIG_SPARSEMEM_EXTREME` 被启用时， `mem_sections` 数组被动态分配。
@@ -120,6 +125,7 @@ vmemmap_populate()。vmemmap_populate()实现可以使用 `vmem_altmap` 和
 `devm_memremap_pages` 的跨架构通用对齐颗粒度。
 
 `ZONE_DEVICE` 的用户是:
+
 
 - pmem: 通过DAX映射将平台持久性内存作为直接I/O目标使用。
 

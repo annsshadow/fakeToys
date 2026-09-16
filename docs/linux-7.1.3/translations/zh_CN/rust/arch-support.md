@@ -1,7 +1,10 @@
 
+# arch-support
+
 :Original: Documentation/rust/arch-support.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -13,6 +16,7 @@
 种支持对于使用 `libclang` 的 `bindgen` 来说是必需的。
 
 下面是目前可以工作的架构的一般总结。支持程度与 `MAINTAINERS` 文件中的`S` 值相对应:
+
 
 =============  ================  ==============================================
 架构           支持水平           限制因素

@@ -1,11 +1,15 @@
 
+# pciebus-howto
+
 :Original: Documentation/PCI/pciebus-howto.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -51,6 +55,7 @@ PCI-PCI桥设备上。
 为了使多个服务驱动程序同时运行，需要有一个PCI Express端口总线驱动程序，它管
 理所有填充的PCI Express端口，并根据需要将所有提供的服务请求分配给相应的服务
 驱动程序。下面列出了使用PCI Express端口总线驱动程序的一些关键优势:
+
 
   - 允许在一个PCI-PCI桥接端口设备上同时运行多个服务驱动。
 

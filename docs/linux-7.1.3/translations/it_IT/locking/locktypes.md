@@ -1,7 +1,7 @@
 
 
 
-## Tipologie di blocco e le loro istruzioni
+# Tipologie di blocco e le loro istruzioni
 
 
 ## Introduzione
@@ -9,6 +9,7 @@
 
 Il kernel fornisce un certo numero di primitive di blocco che possiamo dividere
 in tre categorie:
+
 
   - blocchi ad attesa con sospensione
   - blocchi locali per CPU
@@ -34,6 +35,7 @@ altri contesti a meno che proprio non vi siano alternative.
 
 In questa categoria troviamo:
 
+
  - mutex
  - rt_mutex
  - semaphore
@@ -43,6 +45,7 @@ In questa categoria troviamo:
 
 Nei kernel con PREEMPT_RT, i seguenti blocchi sono convertiti in blocchi ad
 attesa con sospensione:
+
 
  - local_lock
  - spinlock_t
@@ -67,12 +70,14 @@ gestione della concorrenza inter-CPU.
 
  Nei kernel non-PREEMPT_RT, i seguenti blocchi sono ad attesa attiva:
 
+
  - spinlock_t
  - rwlock_t
 
 Implicitamente, i blocchi ad attesa attiva disabilitano la prelazione e le
 funzioni lock/unlock hanno anche dei suffissi per gestire il livello di
 protezione:
+
 
  ===================  =========================================================================
  _bh()                disabilita / abilita  **bottom halves** (interruzioni software)
@@ -85,6 +90,7 @@ protezione:
 
 Eccetto i semafori, i sopracitati tipi di blocchi hanno tutti una semantica
 molto stringente riguardo al proprietario di un blocco:
+
 
   Il contesto (attività) che ha acquisito il blocco deve rilasciarlo
 
@@ -145,6 +151,7 @@ dalla configurazione del kernel.
 I kernel PREEMPT_RT sostituiscono i rw_semaphore con un'implementazione basata
 su rt_mutex, e questo ne modifica l'imparzialità:
 
+
  Dato che uno scrittore rw_semaphore non può assicurare la propria priorità ai
  suoi lettori, un lettore con priorità più bassa che ha subito la prelazione
  continuerà a trattenere il blocco, quindi porta all'inedia anche gli scrittori
@@ -175,6 +182,7 @@ nell'abilitazione o disabilitazione della prelazione o le interruzioni.
 Gli ambiti di visibilità con nome hanno due vantaggi rispetto alle primitive di
 base:
 
+
   - Il nome del blocco permette di fare un'analisi statica, ed è anche chiaro su
     cosa si applichi la protezione cosa che invece non si può fare con le
     classiche primitive in quanto sono opache e senza alcun ambito di
@@ -192,6 +200,7 @@ base:
 
 I kernel PREEMPT_RT sostituiscono local_lock con uno spinlock_t per CPU, quindi
 ne cambia la semantica:
+
 
   - Tutte le modifiche a spinlock_t si applicano anche a local_lock
 
@@ -234,6 +243,7 @@ esattamente lo stesso significato.
 Sui kernel PREEMPT_RT, spinlock_t ha un'implementazione dedicata che si basa
 sull'uso di rt_mutex. Questo ne modifica il significato:
 
+
  - La prelazione non viene disabilitata.
 
  - I suffissi relativi alla interruzioni (_irq, _irqsave / _irqrestore) per le
@@ -251,6 +261,7 @@ sull'uso di rt_mutex. Questo ne modifica il significato:
 
 A parte quanto appena discusso, i kernel PREEMPT_RT preservano il significato
 di tutti gli altri aspetti di spinlock_t:
+
 
  - Le attività che trattengono un blocco spinlock_t non migrano su altri
    processori. Disabilitando la prelazione, i kernel non-PREEMPT_RT evitano la
@@ -283,6 +294,7 @@ di tutti gli altri aspetti di spinlock_t:
    quando viene completata l'acquisizione del blocco, il suo risveglio
    ripristinerà lo stato salvato, in questo caso a RUNNING::
 
+
     task->state = TASK_INTERRUPTIBLE
      lock()
        block()
@@ -312,6 +324,7 @@ quindi previene l'inedia dei processi scrittori.
 
 Sui kernel PREEMPT_RT rwlock_t ha un'implementazione dedicata che si basa
 sull'uso di rt_mutex. Questo ne modifica il significato:
+
 
  - Tutte le modifiche fatte a spinlock_t si applicano anche a rwlock_t.
 
@@ -530,6 +543,7 @@ permettono al compilatore di effettuare la sostituzione in modo trasparente.
 
 Le regole principali sono:
 
+
   - I tipi di blocco appartenenti alla stessa categoria possono essere annidati
     liberamente a patto che si rispetti l'ordine di blocco al fine di evitare
     stalli.
@@ -548,6 +562,7 @@ Il fatto che un kernel PREEMPT_RT cambi i blocchi spinlock_t e rwlock_t dal tipo
 ad attesa attiva a quello con sospensione, e che sostituisca local_lock con uno
 spinlock_t per CPU, significa che non possono essere acquisiti quando si è in un
 blocco raw_spinlock. Ne consegue il seguente ordine d'annidamento:
+
 
   1) blocchi ad attesa con sospensione
   2) spinlock_t, rwlock_t, local_lock

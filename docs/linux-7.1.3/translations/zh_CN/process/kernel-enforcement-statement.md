@@ -1,10 +1,13 @@
+# kernel-enforcement-statement
+
 ﻿.. _cn_process_statement_kernel:
+
 
 
 :Original: Documentation/process/kernel-enforcement-statement.rst <process_statement_kernel>
 :Translator: Alex Shi <alex.shi@linux.alibaba.com>
 
-### Linux 内核执行声明
+## Linux 内核执行声明
 
 
 作为Linux内核的开发人员，我们对如何使用我们的软件以及如何实施软件许可证有着
@@ -14,6 +17,7 @@
 个人强制执行行动的方式有利于我们的社区，不会对我们软件生态系统的健康和增长
 产生意外的负面影响。为了阻止无益的执法行动，我们同意代表我们自己和我们版权
 利益的任何继承人对Linux内核用户作出以下符合我们开发社区最大利益的承诺:
+
 
     尽管有GPL-2.0的终止条款，我们同意，采用以下GPL-3.0条款作为我们许可证下的
     附加许可，作为任何对许可证下权利的非防御性主张，这符合我们开发社区的最佳

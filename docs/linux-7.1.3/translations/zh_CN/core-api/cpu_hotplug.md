@@ -1,11 +1,15 @@
 
+# cpu_hotplug
+
 :Original: Documentation/core-api/cpu_hotplug.rst
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -124,6 +128,7 @@ CPU又可以使用了。这应该对所有的CPU都有效。CPU0通常比较特�
 在X86上，内核选项 **CONFIG_BOOTPARAM_HOTPLUG_CPU0** 必须被启用，以便能够关闭CPU0。
 或者，可以使用内核命令选项 **cpu0_hotplug** 。CPU0的一些已知的依赖性:
 
+
 - 从休眠/暂停中恢复。如果CPU0处于离线状态，休眠/暂停将失败。
 - PIC中断。如果检测到PIC中断，CPU0就不能被移除。
 
@@ -137,6 +142,7 @@ CPU又可以使用了。这应该对所有的CPU都有效。CPU0通常比较特�
 
 一旦CPU被逻辑关闭，注册的热插拔状态的清除回调将被调用，从 `CPUHP_ONLINE` 开始，到
 `CPUHP_OFFLINE` 状态结束。这包括:
+
 
 - 如果任务因暂停操作而被冻结，那么 **cpuhp_tasks_frozen** 将被设置为true。
 
@@ -169,6 +175,7 @@ CPU热插拔使用一个从CPUHP_OFFLINE到CPUHP_ONLINE的线性状态空间的�
 可以将另一个不需要的回调设置为NULL。
 
 状态空间被划分成三个阶段:
+
 
 - PREPARE阶段
 
@@ -330,6 +337,7 @@ CPU热插拔使用一个从CPUHP_OFFLINE到CPUHP_ONLINE的线性状态空间的�
 
 有两种方式分配一个CPU热插拔状态:
 
+
 - 静态分配
 
   当子系统或驱动程序有相对于其他CPU热插拔状态的排序要求时，必须使用静态分配。例如，
@@ -401,6 +409,7 @@ offline  对应ONLINE阶段中不提供startup回调的状态
 
 这些函数在处理已注册回调的方式上有所不同:
 
+
   - cpuhp_setup_state_nocalls(), cpuhp_setup_state_nocalls_cpuslocked()和
     cpuhp_setup_state_multi()只注册回调。
 
@@ -443,6 +452,7 @@ offline  对应ONLINE阶段中不提供startup回调的状态
 
 这些函数在处理已注册回调的方式上有所不同:
 
+
   - cpuhp_remove_state_nocalls(), cpuhp_remove_state_nocalls_cpuslocked()
     和 cpuhp_remove_multi_state()只删除回调。
 
@@ -473,6 +483,7 @@ offline  对应ONLINE阶段中不提供startup回调的状态
 
 这些函数在处理已注册回调的方式上有所不同:
 
+
   - cpuhp_state_add_instance_nocalls()只将实例添加到多实例状态的节点列表中。
 
   - cpuhp_state_add_instance()为所有当前状态大于@state的在线CPU添加实例并调用与
@@ -485,12 +496,14 @@ offline  对应ONLINE阶段中不提供startup回调的状态
 
 要从状态的节点列表中删除一个实例，可以使用这些函数:
 
+
   - cpuhp_state_remove_instance(state, node)
   - cpuhp_state_remove_instance_nocalls(state, node)
 
 参数与上述cpuhp_state_add_instance*()变体相同。
 
 这些函数在处理已注册回调的方式上有所不同:
+
 
   - cpuhp_state_remove_instance_nocalls()只从状态的节点列表中删除实例。
 
@@ -674,5 +687,6 @@ CPU hotplug回调和CPU hotplug读取锁定区域内使用。
 
 
 该API在以下内核代码中:
+
 
 include/linux/cpuhotplug.h

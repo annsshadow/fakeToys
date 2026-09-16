@@ -1,6 +1,6 @@
 
 
-## Le operazioni RCU per le verifiche *torture*
+# Le operazioni RCU per le verifiche *torture*
 
 
 ## CONFIG_RCU_TORTURE_TEST
@@ -38,6 +38,7 @@ sull'ultima riga abbiamo il risultato finale delle verifiche effettuate che può
 essere "SUCCESS" (successo) or "FAILURE" (insuccesso).
 
 Le voci sono le seguenti:
+
 
 - "rtc": L'indirizzo in esadecimale della struttura attualmente visibile dai
    lettori.
@@ -139,6 +140,7 @@ essere avviate usano modprobe e terminate con rmmod.
 	sleep 3600
 	rmmod rcutorture
 	dmesg | grep torture:
+
 
 ```
 Potete controllare il rapporto verificando manualmente la presenza del marcatore
@@ -261,6 +263,7 @@ verifica viene eseguita in un repositorio git, allora questo file conterrà il
 registrare verranno mostrate in formato diff.
 
 I file solitamente più usati nelle cartelle di scenario sono:
+
 
 .config
   Questo file contiene le opzioni di Kconfig

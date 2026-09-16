@@ -1,6 +1,8 @@
 
 
 
+# researcher-guidelines
+
 :Original: Documentation/process/researcher-guidelines.rst
 
 :译者:
@@ -97,6 +99,7 @@ Linux 内核社区期望与项目互动的每个人都是真诚地为了使 Linu
   This flaw was found using an experimental static analysis tool we are
   developing, LeakMagic[1], which reported the following warning when
   analyzing the v5.15 kernel release:
+
 
    path/to/foo_bar.c:187: missing kfree() call?
 

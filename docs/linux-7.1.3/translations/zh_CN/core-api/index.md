@@ -1,7 +1,10 @@
 
+# index
+
 :Original: Documentation/core-api/index.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -46,6 +49,7 @@
 
 Todolist:
 
+
    timekeeping
    errseq
 
@@ -62,6 +66,7 @@ Linux如何让一切同时发生。 详情请参阅
 
 Todolist:
 
+
    ../RCU/index
 
 ## 低级硬件管理
@@ -76,6 +81,7 @@ Todolist:
 - [protection-keys](protection-keys)
 
 Todolist:
+
 
 
    memory-hotplug
@@ -98,6 +104,7 @@ Todolist:
 
 Todolist:
 
+
    dma-api
    dma-api-howto
    dma-attributes
@@ -109,6 +116,7 @@ Todolist:
 
 Todolist:
 
+
    debug-objects
    tracepoint
    debugging-via-ohci1394
@@ -119,6 +127,7 @@ Todolist:
 不适合放在其它地方或尚未归类的文件；
 
 Todolist:
+
 
    librs
 

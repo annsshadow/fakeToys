@@ -1,11 +1,15 @@
 
+# sched-arch
+
 :Original: Documentation/scheduler/sched-arch.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -41,6 +45,7 @@ switch_to可能需要获取运行队列锁。这通常是由于上下文切换�
 4. 在检查need_resched时，唯一需要禁用中断的情况是，我们要让处理器休眠到下一个中
    断（这并不对need_resched提供任何保护，它可以防止丢失一个中断）:
 
+
 ```
 
 	        local_irq_disable();
@@ -65,6 +70,7 @@ arch/x86/kernel/process.c有轮询和睡眠空闲函数的例子。
 
 
 我发现的可能的arch问题（并试图解决或没有解决）。:
+
 
 sparc - 在这一点上，IRQ是开着的（？），把local_irq_save改为_disable。
       - 待办事项: 需要第二个CPU来禁用抢占 (参考 #1)

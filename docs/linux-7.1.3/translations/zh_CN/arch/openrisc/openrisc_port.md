@@ -1,7 +1,10 @@
 
+# openrisc_port
+
 :Original: Documentation/arch/openrisc/openrisc_port.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -13,6 +16,7 @@
 OpenRISC 1000系列（或1k）。
 
 关于OpenRISC处理器和正在进行中的开发的信息:
+
 
 	=======		==============================
 	网站		https://openrisc.io

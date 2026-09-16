@@ -1,8 +1,11 @@
 
 
+# ingenic-tcu
+
 :Original: Documentation/arch/mips/ingenic-tcu.rst
 
 :翻譯:
+
 
  司延騰 Yanteng Si <siyanteng@loongson.cn>
 

@@ -1,4 +1,6 @@
 
+# howto
+
 	\kerneldocCJKoff
 
 NOTE:
@@ -337,6 +339,7 @@ Andrew Morton의 글이 있다.
 거쳐야 한다. 이런 목적으로, 모든 서브시스템 트리의 변경사항을 거의 매일
 받아가는 특수한 테스트 저장소가 존재한다:
 
+
        https://git.kernel.org/?p=linux/kernel/git/next/linux-next.git
 
 이런 식으로, linux-next 커널을 통해 다음 머지 기간에 메인라인 커널에 어떤
@@ -385,6 +388,7 @@ https://bugzilla.kernel.org 를 체크하고자 할 수도 있다; 소수의 커
 
 웹상의 많은 다른 곳에도 메일링 리스트의 아카이브들이 있다.
 이러한 아카이브들을 찾으려면 검색 엔진을 사용하라. 예를 들어:
+
 
       https://lore.kernel.org/lkml/
 
@@ -477,6 +481,7 @@ Documentation/process/submitting-patches.rst <submittingpatches> 에
 
   여러분들이 제안한 변경들에 관하여 말할 때 좋은 것들 :
 
+
     - "이것은 여러 문제들을 해결합니다."
     - "이것은 2000 라인의 코드를 줄입니다."
     - "이것은 내가 말하려는 것에 관해 설명하는 패치입니다."
@@ -485,6 +490,7 @@ Documentation/process/submitting-patches.rst <submittingpatches> 에
     - "이것은 일반적인 머신에서 성능을 향상함으로..."
 
   여러분들이 말할 때 피해야 할 좋지 않은 것들 :
+
 
     - "우리는 그것을 AIX/ptx/Solaris에서 이러한 방법으로 했다. 그러므로 그것은 좋은 것임에 틀림없다..."
     - "나는 20년동안 이것을 해왔다. 그러므로..."

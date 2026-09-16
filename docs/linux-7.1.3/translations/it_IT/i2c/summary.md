@@ -1,4 +1,4 @@
-## Introduzione a I2C e SMBus
+# Introduzione a I2C e SMBus
 
 
 I²C (letteralmente "I al quadrato C" e scritto I2C nella documentazione del

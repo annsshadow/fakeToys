@@ -1,7 +1,10 @@
 
+# local_ops
+
 :Original: Documentation/core-api/local_ops.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 

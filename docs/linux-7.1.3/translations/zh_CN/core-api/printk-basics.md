@@ -1,7 +1,10 @@
 
+# printk-basics
+
 :Original: Documentation/core-api/printk-basics.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
@@ -13,6 +16,7 @@
 printk()是Linux内核中最广为人知的函数之一。它是我们打印消息的标准工具，通常也是追踪和调试
 的最基本方法。如果你熟悉printf(3)，你就能够知道printk()是基于它的，尽管它在功能上有一些不
 同之处:
+
 
   - printk() 消息可以指定日志级别。
 
@@ -109,5 +113,6 @@ pr_debug()和pr_devel()，除非定义了 `DEBUG` (或者在pr_debug()的情况�
 
 
 该API在以下内核代码中:
+
 
 include/linux/printk.h

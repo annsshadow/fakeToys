@@ -1,4 +1,6 @@
 
+# kernel-doc
+
 	  Documentation/doc-guide/index.rst <doc_guide>
 
 
@@ -135,6 +137,7 @@ Ogni `@argument:` può estendersi su più righe.
 
    or::
 
+
       * @argument:
       *		some long description
       *		that continues on next lines
@@ -183,10 +186,12 @@ Il valore di ritorno, se c'è, viene descritto in una sezione dedicata di nome
 
      le righe verranno unite e il risultato sarà::
 
+
 	Return: 0 - OK -EINVAL - invalid argument -ENOMEM - out of memory
 
      Quindi, se volete che le righe vengano effettivamente generate, dovete
      utilizzare una lista ReST, ad esempio::
+
 
       * Return:
       * * %0		- OK to runtime suspend the device
@@ -197,7 +202,7 @@ Il valore di ritorno, se c'è, viene descritto in una sezione dedicata di nome
      di una nuova sezione, e probabilmente non produrrà gli effetti desiderati.
 
 ```
-### Documentare strutture, unioni ed enumerazioni
+## Documentare strutture, unioni ed enumerazioni
 
 
 ```
@@ -221,7 +226,7 @@ La descrizione introduttiva (**brief description**) che segue il nome della
 funzione può continuare su righe successive e termina con la descrizione di
 un argomento, una linea di commento vuota, oppure la fine del commento.
 
-#### Membri
+### Membri
 
 
 I membri di strutture, unioni ed enumerati devo essere documentati come i
@@ -307,7 +312,7 @@ fra `:` e il marcatore di fine commento `*/`.
    #) Quando la struttura od unione annidata è anonima, il suo campo
       `bar` dev'essere documentato usando `@bar:`
 
-#### Commenti in linea per la documentazione dei membri
+## Commenti in linea per la documentazione dei membri
 
 
 I membri d'una struttura possono essere documentati in linea all'interno
@@ -420,7 +425,7 @@ elenco di parametri.
 	.cleanup_fb = drm_gem_vram_plane_helper_cleanup_fb
 
 ```
-### Marcatori e riferimenti
+## Marcatori e riferimenti
 
 
 All'interno dei commenti di tipo kernel-doc vengono riconosciuti i seguenti
@@ -468,7 +473,7 @@ del `dominio Sphinx per il C`_.
   Un generico riferimento ad un tipo. Usate, preferibilmente, il riferimento
   completo come descritto sopra. Questo è dedicato ai commenti obsoleti.
 
-#### Riferimenti usando reStructuredText
+### Riferimenti usando reStructuredText
 
 
 Nei documenti reStructuredText non serve alcuna sintassi speciale per
@@ -536,9 +541,11 @@ kernel-doc per Sphinx.
   .. kernel-doc:: source
      :option:
 
+
 ```
 Il campo **source** è il percorso ad un file sorgente, relativo alla cartella
 principale dei sorgenti del kernel. La direttiva supporta le seguenti opzioni:
+
 
 export: **[source-pattern ...]**
   Include la documentazione per tutte le funzioni presenti nel file sorgente
@@ -555,6 +562,7 @@ export: **[source-pattern ...]**
     .. kernel-doc:: lib/bitmap.c
        :export:
 
+
     .. kernel-doc:: include/net/mac80211.h
        :export: net/mac80211/*.c
 
@@ -570,6 +578,7 @@ internal: **[source-pattern ...]**
     .. kernel-doc:: drivers/gpu/drm/i915/intel_audio.c
        :internal:
 
+
 ```
 identifiers: **[ function/type ...]**
   Include la documentazione per ogni **function** e **type**  in **source**.
@@ -583,6 +592,7 @@ identifiers: **[ function/type ...]**
 
     .. kernel-doc:: lib/idr.c
        :identifiers:
+
 
 ```
 functions: **[ function ...]**

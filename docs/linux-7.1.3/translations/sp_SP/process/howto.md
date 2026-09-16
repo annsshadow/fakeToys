@@ -1,4 +1,6 @@
 
+# howto
+
 :Original: Documentation/process/howto.rst <process_howto>
 :Translator: Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 
@@ -32,6 +34,7 @@ cualquier arquitectura) no es necesario excepto que planee realizar
 desarrollo de bajo nivel para dicha arquitectura. Aunque no es un perfecto
 sustituto para una educación sólida en C y/o años de experiencia, los
 siguientes libros sirven, como mínimo, como referencia:
+
 
 - "The C Programming Language" de Kernighan e Ritchie [Prentice Hall]
 - "Practical C Programming" de Steve Oualline [O'Reilly]
@@ -68,6 +71,7 @@ confiar en sus opiniones en materia legal.
 
 Para preguntas y respuestas más frecuentes sobre la licencia GPL, consulte:
 
+
 	https://www.gnu.org/licenses/gpl-faq.html
 
 ### Documentación
@@ -83,6 +87,7 @@ a mtk.manpages@gmail.com, y CC la lista linux-api@vger.kernel.org.
 
 Esta es la lista de archivos que están en el código fuente del kernel y son
 de obligada lectura:
+
 
   Documentation/admin-guide/README.rst <readme>
     Este archivo ofrece una breve descripción del kernel de Linux y
@@ -105,6 +110,7 @@ de obligada lectura:
     Este archivo describe en gran detalle cómo crear con éxito y enviar un
     parche, que incluye (pero no se limita a):
 
+
        - Contenidos del correo electrónico (email)
        - Formato del email
        - A quien se debe enviar
@@ -113,6 +119,7 @@ de obligada lectura:
     sujetos a escrutinio de contenido y estilo), pero en caso de no seguir
     dichas reglas, el fracaso es prácticamente garantizado.
     Otras excelentes descripciones de cómo crear parches correctamente son:
+
 
 	"The Perfect Patch"
 		https://www.ozlabs.org/~akpm/stuff/tpp.txt
@@ -123,6 +130,7 @@ de obligada lectura:
   Documentation/process/stable-api-nonsense.rst <stable_api_nonsense>
     Este archivo describe la lógica detrás de la decisión consciente de
     no tener una API estable dentro del kernel, incluidas cosas como:
+
 
       - Capas intermedias del subsistema (por compatibilidad?)
       - Portabilidad de drivers entre sistemas operativos
@@ -188,6 +196,7 @@ Documentation/output. También se pueden generar en formatos LaTeX y ePub
 Si no sabe nada sobre el desarrollo del kernel de Linux, debería consultar
 el proyecto Linux KernelNewbies:
 
+
 	https://kernelnewbies.org
 
 Consiste en una útil lista de correo donde puede preguntar casi cualquier
@@ -205,6 +214,7 @@ un kernel y aplicar un parche.
 Si no sabe por dónde quiere empezar, pero quieres buscar alguna tarea que
 comenzar a hacer para unirse a la comunidad de desarrollo del kernel,
 acuda al proyecto Linux Kernel Janitor:
+
 
 	https://kernelnewbies.org/KernelJanitors
 
@@ -226,6 +236,7 @@ fuente en un formato de página web indexada y autorreferencial. Una
 excelente puesta al día del repositorio del código del kernel se puede
 encontrar en:
 
+
 	https://elixir.bootlin.com/
 
 ### El proceso de desarrollo
@@ -234,6 +245,7 @@ encontrar en:
 El proceso de desarrollo del kernel de Linux consiste actualmente de
 diferentes "branches" (ramas) con muchos distintos subsistemas específicos
 a cada una de ellas. Las diferentes ramas son:
+
 
   - El código principal de Linus (mainline tree)
   - Varios árboles estables con múltiples major numbers
@@ -245,6 +257,7 @@ a cada una de ellas. Las diferentes ramas son:
 
 El mainline tree es mantenido por Linus Torvalds, y puede encontrarse en
 https://kernel.org o en su repo.  El proceso de desarrollo es el siguiente:
+
 
   - Tan pronto como se lanza un nuevo kernel, se abre una ventana de dos
     semanas, durante este período de tiempo, los maintainers pueden enviar
@@ -272,6 +285,7 @@ https://kernel.org o en su repo.  El proceso de desarrollo es el siguiente:
 
 Vale la pena mencionar lo que Andrew Morton escribió en las listas de
 correo del kernel de Linux, sobre lanzamientos del kernel (traducido):
+
 
 	*"Nadie sabe cuándo se publicara un nuevo kernel, pues esto sucede
 	según el estado de los bugs, no de una cronología preconcebida."*
@@ -334,6 +348,7 @@ con el árbol principal, necesitan probar su integración. Para ello, existe
 un repositorio especial de pruebas en el que se encuentran casi todos los
 árboles de subsistema, actualizado casi a diario:
 
+
 	https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
 
 De esta manera, linux-next ofrece una perspectiva resumida de lo que se
@@ -378,11 +393,13 @@ desarrolladores del kernel participan en la lista de correo del kernel de
 Linux. Detalles sobre cómo para suscribirse y darse de baja de la lista se
 pueden encontrar en:
 
+
 	https://subspace.kernel.org/subscribing.html
 
 Existen archivos de la lista de correo en la web en muchos lugares
 distintos. Utilice un motor de búsqueda para encontrar estos archivos. Por
 ejemplo:
+
 
 	https://lore.kernel.org/linux-kernel/
 
@@ -398,11 +415,13 @@ los diferentes grupos.
 Muchas de las listas están alojadas en kernel.org. La información sobre
 estas puede ser encontrada en:
 
+
 	https://subspace.kernel.org
 
 Recuerde mantener buenos hábitos de comportamiento al usar las listas.
 Aunque un poco cursi, la siguiente URL tiene algunas pautas simples para
 interactuar con la lista (o cualquier lista):
+
 
 	https://subspace.kernel.org/etiquette.html
 
@@ -477,7 +496,9 @@ La comunidad del kernel funciona de manera diferente a la mayoría de los
 entornos de desarrollo tradicionales en empresas. Aquí hay una lista de
 cosas que puede intentar hacer para evitar problemas:
 
+
   Cosas buenas que decir respecto a los cambios propuestos:
+
 
     - "Esto arregla múltiples problemas."
     - "Esto elimina 2000 lineas de código."
@@ -487,6 +508,7 @@ cosas que puede intentar hacer para evitar problemas:
     - "Esto mejora el rendimiento en maquinas típicas..."
 
   Cosas negativas que debe evitar decir:
+
 
     - "Lo hicimos así en AIX/ptx/Solaris, de modo que debe ser bueno..."
     - "Llevo haciendo esto 20 años, de modo que..."
@@ -532,6 +554,7 @@ su serie de parches debe casi siempre ser más pequeña que eso.
 
 Las razones para dividir las cosas son las siguientes:
 
+
 1) Los cambios pequeños aumentan la probabilidad de que sus parches sean
    aplicados, ya que no requieren mucho tiempo o esfuerzo para verificar su
    exactitud. Un parche de 5 líneas puede ser aplicado por un maintainer
@@ -548,6 +571,7 @@ Las razones para dividir las cosas son las siguientes:
    y simplificar (o simplemente reordenar) los parches antes de enviarlos.
 
 Esta es una analogía del desarrollador del kernel Al Viro (traducida):
+
 
 	*"Piense en un maestro que califica la tarea de un estudiante de
 	matemáticas. El maestro no quiere ver los intentos y errores del
@@ -585,6 +609,7 @@ texto de su correo electrónico. Esta información se convertirá en el
 ChangeLog del parche, y se conservará para que todos la vean, todo el
 tiempo. Debe describir el parche por completo y contener:
 
+
   - por qué los cambios son necesarios
   - el diseño general de su propuesta
   - detalles de implementación
@@ -592,6 +617,7 @@ tiempo. Debe describir el parche por completo y contener:
 
 Para obtener más detalles sobre cómo debería quedar todo esto, consulte la
 sección ChangeLog del documento:
+
 
   "The Perfect Patch"
       https://www.ozlabs.org/~akpm/stuff/tpp.txt

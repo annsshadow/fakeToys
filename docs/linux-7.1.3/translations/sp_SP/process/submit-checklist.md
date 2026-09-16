@@ -1,9 +1,11 @@
 
+# submit-checklist
+
 :Original: Documentation/process/submit-checklist.rst
 :Translator: Avadhut Naik <avadhut.naik@amd.com>
 
 
-#### Lista de comprobación para enviar parches del kernel de Linux
+## Lista de comprobación para enviar parches del kernel de Linux
 
 
 Aquí hay algunas cosas básicas que los desarrolladores deben hacer si
@@ -19,6 +21,7 @@ y en otros lugares con respecto al envío de parches del kernel de Linux.
    extraigan los que utiliza.
 
 2) Compile limpiamente:
+
 
   a) Con las opciones `CONFIG` aplicables o modificadas `=y`, `=m`,
      y `=n`. Sin advertencias/errores del compilador `gcc`, ni
@@ -128,6 +131,7 @@ y en otros lugares con respecto al envío de parches del kernel de Linux.
     con los símbolos `Kconfig` relacionados deshabilitados y/o `=m`
     (si esa opción esta disponible) [no todos estos al mismo tiempo, solo
     varias/aleatorias combinaciones de ellos]:
+
 
     `CONFIG_SMP`, `CONFIG_SYSFS`, `CONFIG_PROC_FS`, `CONFIG_INPUT`, `CONFIG_PCI`, `CONFIG_BLOCK`, `CONFIG_PM`, `CONFIG_MAGIC_SYSRQ`
     `CONFIG_NET`, `CONFIG_INET=n` (pero luego con `CONFIG_NET=y`).

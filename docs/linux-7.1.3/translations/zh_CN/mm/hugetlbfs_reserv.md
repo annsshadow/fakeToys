@@ -1,11 +1,15 @@
 
+# hugetlbfs_reserv
+
 :Original: Documentation/mm/hugetlbfs_reserv.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## Hugetlbfs 预留
 
@@ -50,6 +54,7 @@ Reserve Map
 
 	系统中每个巨页映射都有一个预留映射。resv_map中的regions列表描述了映射中的
 	区域。一个区域被描述为::
+
 
 		struct file_region {
 			struct list_head link;
@@ -295,6 +300,7 @@ hugepage_subpool_get/put_pages被传递给巨页数量，以此来调整子池�
 ```
 在预留映射上的操作通常涉及两个操作:
 
+
 1) region_chg()被调用来检查预留映射，并确定在指定的范围[f, t]内有多少页目前没有被代表。
 
    调用代码执行全局检查和分配，以确定是否有足够的巨页使操作成功。
@@ -316,6 +322,7 @@ hugepage_subpool_get/put_pages被传递给巨页数量，以此来调整子池�
 
 函数region_del()被调用以从预留映射中移除区域。
 它通常在以下情况下被调用:
+
 
 - 当hugetlbfs文件系统中的一个文件被删除时，该节点将被释放，预留映射也被释放。在释放预留映射
   之前，所有单独的file_region结构体必须被释放。在这种情况下，region_del的范围是[0, LONG_MAX]。

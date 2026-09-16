@@ -1,11 +1,15 @@
 
+# core
+
 :Original: Documentation/cpu-freq/core.rst
 
 :翻譯:
 
+
  司延騰 Yanteng Si <siyanteng@loongson.cn>
 
 :校譯:
+
 
  唐藝舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -88,6 +92,7 @@ dev_pm_opp_init_cpufreq_table -
 
 	例如::
 
+
 	 soc_pm_init()
 	 {
 		/* Do things */
@@ -98,6 +103,7 @@ dev_pm_opp_init_cpufreq_table -
 	 }
 
 	.. note::
+
 
 		該函數只有在CONFIG_PM_OPP之外還啓用了CONFIG_CPU_FREQ時纔可用。
 

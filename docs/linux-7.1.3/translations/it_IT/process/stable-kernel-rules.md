@@ -1,4 +1,6 @@
 
+# stable-kernel-rules
+
 :Original: Documentation/process/stable-kernel-rules.rst <stable_kernel_rules>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -9,6 +11,7 @@
 Regole sul tipo di patch che vengono o non vengono accettate nei sorgenti
 "-stable":
 
+
 - Questa patch o una equivalente deve esistere già nei sorgenti principali di
   Linux (upstream)
 - Ovviamente dev'essere corretta e verificata.
@@ -17,6 +20,7 @@ Regole sul tipo di patch che vengono o non vengono accettate nei sorgenti
   Documentation/translations/it_IT/process/submitting-patches.rst <it_submittingpatches>
 - Deve correggere un vero baco che causi problemi agli utenti oppure aggiunge
   un nuovo identificatore di dispositivo. Maggiori dettagli per il primo caso:
+
 
   - Corregge un problema come un oops, un blocco, una corruzione di dati, un
     vero problema di sicurezza, una stranezza hardware, un problema di
@@ -44,6 +48,7 @@ Regole sul tipo di patch che vengono o non vengono accettate nei sorgenti
 
 Ci sono tre opzioni per inviare una modifica per i sorgenti -stable:
 
+
 1. Aggiungi un'etichetta 'stable' alla descrizione della patch al momento della
    sottomissione per l'inclusione nei sorgenti principali.
 2. Chiedere alla squadra "stable" di prendere una patch già applicata sui
@@ -69,7 +74,7 @@ l'aggiornamento, se ad esempio una correzione per 5.19-rc1 venisse
 riportata a 5.10.y, ma non a 5.15.y.
 
 
-######## Opzione 1
+#### Opzione 1
 
 
 Aggiungete la seguente etichetta nell'area delle firme per far sì che una patch
@@ -102,6 +107,7 @@ shell (leggere oltre per maggiori dettagli).
 
   La sequenza di etichette ha il seguente significato::
 
+
      git cherry-pick a1f84a3
      git cherry-pick 1b9508f
      git cherry-pick fd21073
@@ -109,6 +115,7 @@ shell (leggere oltre per maggiori dettagli).
 
   Notate che per una serie di patch non dovere elencare come necessarie tutte
   le patch della serie stessa. Per esempio se avete la seguente serie::
+
 
      patch1
      patch2
@@ -123,12 +130,14 @@ shell (leggere oltre per maggiori dettagli).
 
   L'etichetta ha il seguente significato::
 
+
      git cherry-pick <this commit>
 
   per ogni sorgente "-stable" che inizia con la versione indicata.
 
   Notate che queste etichette non sono necessarie se la squadre "stable" può
   dedurre la versione dalle etichette Fixes:
+
 
 ```
 ```
@@ -148,7 +157,7 @@ Esiste un'ulteriore variante per l'etichetta "stable" che permette di comunicare
 
 ```
 
-######## Opzione 2
+##### Opzione 2
 
 
 Se la patch è già stata inclusa nei sorgenti Linux, inviate una mail a
@@ -225,15 +234,18 @@ dal altri sviluppatori e dal principale manutentore del sottosistema.
 - La coda delle patch, sia quelle già applicate che in fase di revisione,
   possono essere trovate al seguente indirizzo:
 
+
     https://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git
 
 - Il rilascio definitivo, e marchiato, di tutti i kernel stabili può essere
   trovato in rami distinti per versione al seguente indirizzo:
 
+
     https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
 - I rilasci candidati di tutti i kernel stabili possono essere trovati al
   seguente indirizzo:
+
 
     https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable-rc.git/
 

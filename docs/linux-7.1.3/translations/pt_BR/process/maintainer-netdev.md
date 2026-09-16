@@ -1,8 +1,8 @@
 
-## Subsistema de Rede do Linux (netdev)
+# Subsistema de Rede do Linux (netdev)
 
 
-### tl;dr
+## tl;dr
 
 
 - **Direcione seu patch para uma árvore** – use `[PATCH net]`para correções
@@ -56,6 +56,7 @@ ser  concluída, a versão oficial vX.Y é lançada.
 Para descobrir em que ponto do ciclo estamos agora - carregue a página da
 mainline (Linus) aqui:
 
+
   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 
 e observe o topo da seção de "tags". Se for rc1, estamos no início do ciclo
@@ -73,6 +74,7 @@ por David Miller, o mantenedor principal de rede. Há a árvore `net`e a árvore
 `net` é para correções de código existente já na árvore mainline de Linus, e a
 `net-next` é para onde o novo código vai para o lançamento futuro.
 Você pode encontrar as árvores aqui:
+
 
 - https://git.kernel.org/pub/scm/linux/kernel/git/netdev/net.git
 - https://git.kernel.org/pub/scm/linux/kernel/git/netdev/net-next.git
@@ -104,6 +106,7 @@ Se você não estiver inscrito na netdev e/ou simplesmente não tiver certeza se
 `net-next` acima para quaisquer novos **commits** relacionados à rede. Você
 também pode verificar o seguinte site para o status atual:
 
+
   https://netdev.bots.linux.dev/net-next.html
 
 A árvore `net` continua a coletar correções para o conteúdo da vX.Y e é
@@ -121,9 +124,11 @@ Finalmente, a vX.Y é lançada e todo o ciclo recomeça.
 O status de um patch pode ser verificado olhando a fila principal do patchwork
 para a netdev:
 
+
   https://patchwork.kernel.org/project/netdevbpf/list/
 
 O campo "State" informará exatamente onde as coisas estão com o seu patch:
+
 
 =================  ============================================================
 Estado do patch    Descrição
@@ -197,6 +202,7 @@ acordo com o arquivo MAINTAINERS (novamente, o `From:` deve coincidir
 com a entrada no MAINTAINERS) e alguns revisores seniores.
 
 O bot registra sua atividade aqui:
+
 
   https://netdev.bots.linux.dev/pw-bot.html
 
@@ -445,6 +451,7 @@ no meio da função.
 A netdev desencoraja patches que realizam limpezas simples que não estejam no
 contexto de outro trabalho. Por exemplo:
 
+
 - Tratar avisos do `checkpatch.pl` e outros avisos triviais de estilo de
   codificação
 - Tratar problemas de Ordenação de variáveis locais
@@ -495,6 +502,7 @@ Espera-se que você teste suas alterações no topo da árvore de rede relevante
 As verificações (**checks**) no patchwork são, em sua maioria, wrappers simples
 em torno de scripts existentes do kernel; as fontes estão disponíveis em:
 
+
 https://github.com/linux-netdev/nipa/tree/master/tests
 
 **Não** envie seus patches apenas para executá-los nas verificações. Você deve
@@ -531,6 +539,7 @@ por dia. Drivers que não cumprirem este requisito devem usar o status
 `Supported` e `Maintained` são tratados no upstream.
 
 As regras exatas que um driver deve seguir para adquirir o status `Supported`:
+
 
 1. Deve executar todos os testes sob os alvos `drivers/net` e
    `drivers/net/hw` dos selftests do Linux. A execução e o relato

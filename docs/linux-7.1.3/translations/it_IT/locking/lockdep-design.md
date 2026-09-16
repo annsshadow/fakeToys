@@ -1,9 +1,9 @@
 
 
-## Validatore di sincronizzazione durante l'esecuzione
+# Validatore di sincronizzazione durante l'esecuzione
 
 
-### Classi di blocchi
+## Classi di blocchi
 
 
 L'oggetto su cui il validatore lavora è una "classe" di blocchi.
@@ -39,6 +39,7 @@ l'uso in categorie (4 USI * n STATI + 1).
 
 I quattro USI possono essere:
 
+
 - 'sempre trattenuto nel contesto <STATO>'
 - 'sempre trattenuto come blocco di lettura nel contesto <STATO>'
 - 'sempre trattenuto con <STATO> abilitato'
@@ -47,10 +48,12 @@ I quattro USI possono essere:
 gli `n` STATI sono codificati in kernel/locking/lockdep_states.h, ad oggi
 includono:
 
+
 - hardirq
 - softirq
 
 infine l'ultima categoria è:
+
 
 - 'sempre trattenuto'                                  [ == !unused        ]
 
@@ -68,6 +71,7 @@ vengono presentati nei messaggi di errore di sincronizzazione, fra parentesi
 Per un dato blocco, da sinistra verso destra, la posizione del bit indica l'uso
 del blocco e di un eventuale blocco di lettura, per ognuno degli `n` STATI elencati
 precedentemente. Il carattere mostrato per ogni bit indica:
+
 
    ===  ===========================================================================
    '.'  acquisito con interruzioni disabilitate fuori da un contesto d'interruzione
@@ -172,6 +176,7 @@ si acquisiscono nuovi blocchi, il validatore verifica se vi è una violazione
 delle regole fra il nuovo blocco e quelli già trattenuti.
 
 Quando una classe di blocco cambia stato, applicheremo le seguenti regole:
+
 
 - se viene trovato un nuovo blocco sicuro in interruzioni, verificheremo se
   abbia mai trattenuto dei blocchi insicuri in interruzioni.
@@ -354,6 +359,7 @@ classi, dunque questo avviso è solitamente la conseguenza di un problema di
 perdita delle classi di blocco o d'inizializzazione dei blocchi. Di seguito una
 descrizione dei due problemi:
 
+
 1. caricare e rimuovere continuamente i moduli mentre il validatore è in
    esecuzione porterà ad una perdita di classi di blocco. Il problema è che ogni
    caricamento crea un nuovo insieme di classi di blocco per tutti i blocchi di
@@ -416,6 +422,7 @@ down_read()), e lettori ricorsivi (bloccatori condivisi ricorsivi, come
 rcu_read_lock()). D'ora in poi, per questi tipi di bloccatori, useremo la
 seguente notazione:
 
+
     W o E: per gli scrittori (bloccatori esclusivi) (W dall'inglese per
            **Writer**, ed E per **Exclusive**).
 
@@ -446,6 +453,7 @@ non ricorsivi possono essere bloccati dall'attesa di un blocco di scrittura.
 
     TASK A:            TASK B:
 
+
     read_lock(X);
                        write_lock(X);
     read_lock_2(X);
@@ -462,6 +470,7 @@ dall'attività B e si causerà uno stallo.
 ### Condizioni bloccanti per lettori/scrittori su uno stesso blocco
 
 Essenzialmente ci sono quattro condizioni bloccanti:
+
 
 1. Uno scrittore blocca un altro scrittore.
 2. Un lettore blocca uno scrittore.
@@ -490,6 +499,7 @@ trattenuti da chi trattiene il blocco di scrittura piuttosto che da chi ne
 ```
 
 	TASK A:			TASK B:
+
 
 	read_lock(X);
 
@@ -521,6 +531,7 @@ ricorsivo, e viceversa.
 ```
 
 	TASK A:			TASK B:
+
 
 	read_lock(X);
 				read_lock(Y);
@@ -556,6 +567,7 @@ dagli stessi tipi).
 Con questa semplificazione, possiamo dedurre che ci sono 4 tipi di rami nel
 grafo delle dipendenze di lockdep:
 
+
 1) -(ER)->:
             dipendenza da scrittore esclusivo a lettore ricorsivo. "X -(ER)-> Y"
             significa X -> Y, dove X è uno scrittore e Y un lettore ricorsivo.
@@ -580,11 +592,13 @@ Da notare che presi due blocchi, questi potrebbero avere più dipendenza fra di
 
 	TASK A:
 
+
 	read_lock(X);
 	write_lock(Y);
 	...
 
 	TASK B:
+
 
 	write_lock(X);
 	write_lock(Y);
@@ -608,13 +622,16 @@ Nella prossima sezione vedremo perché definiamo questo percorso "forte".
 
 Ora vogliamo dimostrare altre due cose:
 
+
 Lemma 1:
+
 
 Se esiste un percorso chiuso forte (ciclo forte), allora esiste anche una
 combinazione di sequenze di blocchi che causa uno stallo. In altre parole,
 l'esistenza di un ciclo forte è sufficiente alla scoperta di uno stallo.
 
 Lemma 2:
+
 
 Se non esiste un percorso chiuso forte (ciclo forte), allora non esiste una
 combinazione di sequenze di blocchi che causino uno stallo. In altre parole, i
@@ -627,6 +644,7 @@ forte significa che può causare stalli, per questo lo definiamo "forte", ma ci
 sono anche cicli di dipendenze che non causeranno stalli.
 
 Dimostrazione di sufficienza (lemma 1):
+
 
 ```
 
@@ -663,6 +681,7 @@ L1, dunque si è creato un ciclo dal quale non possiamo uscire, quindi si ha uno
 stallo.
 
 Dimostrazione della necessità (lemma 2):
+
 
 Questo lemma equivale a dire che: se siamo in uno scenario di stallo, allora
 deve esiste un ciclo forte nel grafo delle dipendenze.

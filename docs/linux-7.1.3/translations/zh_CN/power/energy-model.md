@@ -1,7 +1,10 @@
 
+# energy-model
+
 :Original: Documentation/power/energy-model.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -68,7 +71,7 @@ Documentation/driver-api/thermal/power_allocator.rst文档中找到。
 ### 2. 核心API
 
 
-##### 2.1 配置选项
+#### 2.1 配置选项
 
 
 必须使能CONFIG_ENERGY_MODEL才能使用EM框架。
@@ -123,7 +126,7 @@ EM也可以使用OPP框架和DT "操作点-v2 "中的信息注册。DT中的每�
 框架会在注册过程中正确处理这样的平台。这种平台会被设置EM_PERF_DOMAIN_ARTIFICIAL
 标志。其他使用EM的框架应该特别注意测试和正确对待这个标志。
 
-#### “简单”EM的注册
+### “简单”EM的注册
 
 
 “简单”EM是用框架的辅助函数cpufreq_register_em_with_opp()注册的。它实现了
@@ -136,7 +139,7 @@ EM也可以使用OPP框架和DT "操作点-v2 "中的信息注册。DT中的每�
 （漏电流功率）很重要时。
 
 
-##### 2.3 访问性能域
+#### 2.3 访问性能域
 
 
 有两个API函数提供对能量模型的访问。em_cpu_get()以CPU id为参数，em_pd_get()

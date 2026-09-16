@@ -1,11 +1,15 @@
 
+# free_page_reporting
+
 :Original: Documentation/mm/free_page_reporting.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## 空闲页报告
 

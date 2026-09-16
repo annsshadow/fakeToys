@@ -1,4 +1,4 @@
-## CPU 负载
+# CPU 负载
 
 
 Linux通过`/proc/stat`和`/proc/uptime`导出各种信息，用户空间工具
@@ -24,7 +24,7 @@ Linux通过`/proc/stat`和`/proc/uptime`导出各种信息，用户空间工具
 在两次时间中断之间系统（进程）能够在多种状态之间切换多次，而计数器只
 增加最后一种状态下的计数。
 
-### 举例
+## 举例
 
 
 ```
@@ -93,7 +93,7 @@ Linux通过`/proc/stat`和`/proc/uptime`导出各种信息，用户空间工具
 
 
 ```
-### 参考
+## 参考
 
 
 - https://lore.kernel.org/r/loom.20070212T063225-663@post.gmane.org

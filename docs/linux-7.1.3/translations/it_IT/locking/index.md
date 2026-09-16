@@ -1,5 +1,5 @@
 
-## Sincronizzazione
+# Sincronizzazione
 
 
 - [locktypes](locktypes)

@@ -1,4 +1,6 @@
 
+# adding-syscalls
+
 :Original: Documentation/process/adding-syscalls.rst <addsyscalls>
 :Translator: Mauricio Fuentes <mauriciofb@gmail.com>
 
@@ -106,6 +108,7 @@ Siempre que cualquier campo añadido subsecuente, digamos `param_4`, sea
 diseñado de forma tal que un valor cero, devuelva el comportamiento previo,
 entonces permite versiones no coincidentes en ambos sentidos:
 
+
  - Para hacer frente a programas del userspace más modernos, haciendo
    llamadas a un kernel más antiguo, el código del kernel debe revisar que
    cualquier memoria más allá del tamaño de la estructura sea cero (revisar
@@ -206,6 +209,7 @@ el patchset (conjunto de parches) en trozos separados. Estos deberían
 incluir al menos los siguientes items como commits distintos (cada uno de
 los cuales se describirá más abajo):
 
+
  - La implementación central de la llamada al sistema, junto con
    prototipos, numeración genérica, cambios Kconfig e implementaciones de
    rutinas de respaldo (fallback stub)
@@ -266,6 +270,7 @@ debería normalmente ser opcional, así que incluya una opción `CONFIG`
 (tipicamente en `init/Kconfig`) para ella. Como es usual para opciones
 `CONFIG` nuevas:
 
+
  - Incluya una descripción para la nueva funcionalidad y llamada al sistema
    controlada por la opción.
  - Haga la opción dependiendo de EXPERT si esta debe estar escondida de los
@@ -278,6 +283,7 @@ debería normalmente ser opcional, así que incluya una opción `CONFIG`
 
 Para resumir, necesita un commit que incluya:
 
+
  - una opción `CONFIG` para la nueva función, normalmente en `init/Kconfig`
  - `SYSCALL_DEFINEn(xyzzy, ...)` para el punto de entrada
  - El correspondiente prototipo en `include/linux/syscalls.h`
@@ -285,7 +291,7 @@ Para resumir, necesita un commit que incluya:
  - fallback stub en `kernel/sys_ni.c`
 
 
-### Implementación de Llamada de Sistema x86
+## Implementación de Llamada de Sistema x86
 
 
 Para conectar su nueva llamada de sistema a plataformas x86, necesita
@@ -322,6 +328,7 @@ La primera es si el kernel 64-bit también soporta programas del userspace
 32-bit, y por lo tanto necesita analizar areas de memoria del (`__user`)
 que podrían tener valores tanto 32-bit como 64-bit. En particular esto se
 necesita siempre que un argumento de la llamada a sistema es:
+
 
  - un puntero a un puntero
  - un puntero a un struc conteniendo un puntero (por ejemplo
@@ -400,12 +407,13 @@ permitir la versión compat; la entrada en
 ```
 Para resumir, necesita:
 
+
   - una `COMPAT_SYSCALL_DEFINEn(xyzzy, ...)` para el punto de entrada de compat.
   - el prototipo correspondiente en `include/linux/compat.h`
   - (en caso de ser necesario) un struct de mapeo de 32-bit en `include/linux/compat.h`
   - una instancia de `__SC_COMP` no `__SYSCALL` en `include/uapi/asm-generic/unistd.h`
 
-### Compatibilidad de Llamadas de Sistema (x86)
+## Compatibilidad de Llamadas de Sistema (x86)
 
 
 Para conectar la arquitectura x86 de una llamada al sistema con una versión
@@ -498,7 +506,7 @@ stub_xyzzy, pero el UML construido no incluye una implementación
 
 
 ```
-### Otros detalles
+## Otros detalles
 
 
 La mayoría del kernel trata las llamadas a sistema de manera genérica, pero
@@ -606,6 +614,7 @@ arquitectura, u otro código en arch/.
  - Par de artículos LWN de David Drysdale que describen la ruta de implementación
    de llamadas al sistema en detalle para v3.14:
 
+
     - https://lwn.net/Articles/604287/
     - https://lwn.net/Articles/604515/
 
@@ -633,6 +642,7 @@ arquitectura, u otro código en arch/.
    argumentos deben encapsular estos argumentos en una estructura, la cual incluye
    un campo de tamaño para futura extensibilidad: https://lore.kernel.org/r/20150730083831.GA22182@gmail.com
  - Enumerando rarezas por la (re-)utilización de O_* numbering space flags:
+
 
     - commit 75069f2b5bfb ("vfs: renumber FMODE_NONOTIFY and add to uniqueness
       check")
