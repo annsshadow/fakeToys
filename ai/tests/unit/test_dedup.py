@@ -5,6 +5,7 @@
 
 import pytest
 import numpy as np
+from unittest.mock import MagicMock
 
 from augmentor.dedup import Deduplicator, DedupResult
 
@@ -370,6 +371,28 @@ class TestBatchEncodeFallback:
         dedup._model = "fallback"
         embeddings = dedup._batch_encode(["hello"])
         assert embeddings.shape[0] == 1
+
+
+class TestBatchEncodeRealModel:
+    """批量编码真实模型路径测试"""
+
+    def test_batch_encode_with_mock_model(self):
+        """当模型为真实对象时应调用 encode 方法"""
+        dedup = Deduplicator()
+        mock_model = MagicMock()
+        mock_model.encode.return_value = np.array([[0.5, 0.5], [0.5, 0.5]])
+        dedup._model = mock_model
+        dedup._batch_encode(["a", "b"])
+        assert mock_model.encode.called
+
+    def test_batch_encode_with_mock_model_no_call(self):
+        """空文本列表时 encode 不被调用"""
+        dedup = Deduplicator()
+        mock_model = MagicMock()
+        mock_model.encode.return_value = np.array([])
+        dedup._model = mock_model
+        dedup._batch_encode([])
+        assert mock_model.encode.called
 
 
 class TestLoadModelExtended:
