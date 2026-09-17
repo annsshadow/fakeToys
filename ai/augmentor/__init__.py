@@ -47,6 +47,7 @@ from .migration import DatasetMigrator, MigrationRule, MigrationResult, migrate_
 from .outlier import OutlierDetector, OutlierReport, detect_outliers
 from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
+from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -210,6 +211,9 @@ __all__ = [
     "FeatureDetector",
     "FeatureInfo",
     "detect_features",
+    "AutoConfig",
+    "AutoConfigRecommendation",
+    "auto_recommend",
     "AugmentorError",
     "ConfigError",
     "ModelError",
