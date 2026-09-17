@@ -40,6 +40,10 @@ from .search_enhanced import EnhancedSearcher, SearchResult, SearchFilter, searc
 from .statistics import DatasetStatisticsCalculator, DatasetStatistics, FieldStatistics, calculate_statistics, get_field_summary
 from .compare_enhanced import EnhancedComparator, EnhancedComparisonResult, ComparisonMetrics, FieldComparison, compare_datasets_enhanced, diff_datasets
 from .version_control import DatasetVersionManager, DatasetVersion, create_version, load_version, list_versions
+from .auto_test import DatasetTestRunner, TestSuite, TestCase, TestResult, run_dataset_tests, create_test_suite
+from .quality_monitor import QualityMonitor, QualityThreshold, QualityAlert, QualitySnapshot, monitor_quality, create_monitor
+from .dependency import DependencyManager, Dependency, DatasetInfo, register_dataset, add_dependency, get_dependency_graph
+from .migration import DatasetMigrator, MigrationRule, MigrationResult, migrate_dataset, migrate_file
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -171,6 +175,29 @@ __all__ = [
     "create_version",
     "load_version",
     "list_versions",
+    "DatasetTestRunner",
+    "TestSuite",
+    "TestCase",
+    "TestResult",
+    "run_dataset_tests",
+    "create_test_suite",
+    "QualityMonitor",
+    "QualityThreshold",
+    "QualityAlert",
+    "QualitySnapshot",
+    "monitor_quality",
+    "create_monitor",
+    "DependencyManager",
+    "Dependency",
+    "DatasetInfo",
+    "register_dataset",
+    "add_dependency",
+    "get_dependency_graph",
+    "DatasetMigrator",
+    "MigrationRule",
+    "MigrationResult",
+    "migrate_dataset",
+    "migrate_file",
     "AugmentorError",
     "ConfigError",
     "ModelError",
