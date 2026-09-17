@@ -583,6 +583,62 @@ class TestPipelineExtended2:
             use_dedup=True, use_parallel=False
         )
         assert report.get("dedup") is True
+
+    def test_process_single_item_model_failure(self, pipeline, monkeypatch):
+        """_generate_variants 失败时应向队列推送失败结果而不是崩溃"""
+        from queue import Queue
+
+        def boom(item):
+            raise RuntimeError("model down")
+
+        monkeypatch.setattr(pipeline, "_generate_variants", boom)
+        queue = Queue()
+        pipeline._process_single_item(0, {"instruction": "q", "output": "a"},
+                                      use_quality_check=False, result_queue=queue)
+        idx, success, variants = queue.get()
+        assert idx == 0
+        assert success is False
+        assert variants == []
+
+    def test_process_single_item_quality_filters(self, pipeline, monkeypatch):
+        """质量检查应过滤掉 passed=False 的变体"""
+        from queue import Queue
+        pipeline.model_backend.raw_response = json.dumps(
+            [{"instruction": "变体", "output": "回答"}], ensure_ascii=False
+        )
+
+        class FailScorer:
+            def score(self, original, generated, output):
+                return type("S", (), {
+                    "passed": False,
+                    "total_score": 0.1,
+                    "to_dict": lambda self: {}
+                })()
+
+        pipeline.quality_scorer = FailScorer()
+        queue = Queue()
+        pipeline._process_single_item(0, {"instruction": "q", "output": "a"},
+                                      use_quality_check=True, result_queue=queue)
+        idx, success, variants = queue.get()
+        assert success is True
+        assert variants == []
+
+    def test_augment_seed_quality_filter_rebuilds_items(self, pipeline):
+        """augment_seed 质量过滤后应重建 instruction/input/output 结构"""
+        pipeline.model_backend.raw_response = json.dumps(
+            [{"instruction": "保留的变体", "output": "回答"}], ensure_ascii=False
+        )
+        variants = pipeline.augment_seed(
+            {"instruction": "保留的变体", "output": "回答"},
+            use_quality_check=True
+        )
+        for v in variants:
+            assert set(v.keys()) == {"instruction", "input", "output"}
+
+    def test_generate_variants_exception_returns_empty(self, pipeline, tmp_path):
+        """_generate_variants 异常时应返回空列表"""
+        pipeline.model_backend.raw_response = "invalid-json"
+        assert pipeline._generate_variants({"instruction": "q", "output": "a"}) == []
         """串行模式增强"""
         output = tmp_path / "out_serial.json"
         report = pipeline.augment_dataset(
