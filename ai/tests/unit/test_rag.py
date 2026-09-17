@@ -160,6 +160,33 @@ class TestRoundTrip:
 class TestRAGExtended:
     """RAGFormatter 扩展测试"""
 
+    def test_custom_format_skips_empty_text(self):
+        """空文本项应被跳过而不是产生空记录"""
+        formatter = RAGFormatter()
+        data = [
+            {"instruction": "", "output": "a1"},
+            {"instruction": "问题", "output": "回答"},
+        ]
+        records = formatter.to_custom(data)
+        assert len(records) == 1
+        assert records[0]["query"] == "问题"
+
+    def test_custom_format_full_fields(self):
+        """custom 格式应包含 id/query/answer/context/metadata"""
+        formatter = RAGFormatter()
+        data = [{"instruction": "问题", "output": "回答", "input": "上下文"}]
+        record = formatter.to_custom(data)[0]
+        assert record["id"].startswith("rag-")
+        assert record["query"] == "问题"
+        assert record["answer"] == "回答"
+        assert record["context"] == "上下文"
+        assert "metadata" in record
+
+    def test_custom_format_all_empty_returns_empty(self):
+        """全部为空文本时 custom 应返回空列表"""
+        formatter = RAGFormatter()
+        assert formatter.to_custom([{"instruction": ""}]) == []
+
     def test_chunk_text_empty(self):
         """空文本分块"""
         formatter = RAGFormatter()
