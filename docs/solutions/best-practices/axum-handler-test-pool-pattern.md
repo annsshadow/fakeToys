@@ -127,7 +127,7 @@ async fn test_get_user() {
     let app = crate::router(pool);
     let response = app
         .oneshot(Request::builder()
-            .uri("/jaxrs/user/get/123")
+            .uri("/api/user/get/123")
             .method("GET")
             .body(Body::empty()).unwrap())
         .await.unwrap();

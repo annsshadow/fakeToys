@@ -19,7 +19,7 @@ oa4rust 已完成 83 个 crate 的真实化（2593 handlers），但四个 Defer
 
 ## Actors
 
-- A1. **o2web 前端**: 调用 `/jaxrs/unit/list/{id}/sub/nested` 等端点渲染组织树；调用 AI 对话接口展示多轮聊天；预览 Office 文档
+- A1. **o2web 前端**: 调用 `/api/unit/list/{id}/sub/nested` 等端点渲染组织树；调用 AI 对话接口展示多轮聊天；预览 Office 文档
 - A2. **oa4rust 后端**: 提供与 o2server 兼容的 API 端点
 - A3. **集成测试**: 验证新增端点的请求/响应契约
 
@@ -53,9 +53,9 @@ oa4rust 已完成 83 个 crate 的真实化（2593 handlers），但四个 Defer
 ## Requirements
 
 **多级递归组织导航**
-- R1. 实现 `GET /jaxrs/unit/list/{id}/sub/nested` 端点，使用 `WITH RECURSIVE` CTE 查询 x_org_unit 表的完整子树（含所有层级），返回全部子孙单位列表
-- R2. 实现 `GET /jaxrs/unit/list/{id}/sup/nested` 端点，使用递归 CTE 向上遍历 parent_id 链，返回全部祖先单位列表
-- R3. 实现 `GET /jaxrs/unit/list/{flag}/sup/nested/type/{type}` 端点，在 sup_nested 基础上增加 type 过滤（只返回指定类型的祖先单位）
+- R1. 实现 `GET /api/unit/list/{id}/sub/nested` 端点，使用 `WITH RECURSIVE` CTE 查询 x_org_unit 表的完整子树（含所有层级），返回全部子孙单位列表
+- R2. 实现 `GET /api/unit/list/{id}/sup/nested` 端点，使用递归 CTE 向上遍历 parent_id 链，返回全部祖先单位列表
+- R3. 实现 `GET /api/unit/list/{flag}/sup/nested/type/{type}` 端点，在 sup_nested 基础上增加 type 过滤（只返回指定类型的祖先单位）
 - R4. 所有递归端点返回 `{count, data: [{id, name, parentId, level, ...}]}` 格式，与现有 unit 列表端点保持一致
 - R5. 递归查询需处理 deleted_at IS NULL 软删除过滤，避免返回已删除的单位
 

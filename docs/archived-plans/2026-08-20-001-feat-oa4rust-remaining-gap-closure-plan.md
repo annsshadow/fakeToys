@@ -167,7 +167,7 @@ oa4rust 已完成 95 个 crate 的真实化和 7624+ 条路由注册，`cargo te
 
 **Test scenarios:**
 - Compile: `cargo check --workspace` 通过，无新增错误
-- Mount: 向 `empower` 的 `/jaxrs/person/empower` 发送请求，返回非 404
+- Mount: 向 `empower` 的 `/api/person/empower` 发送请求，返回非 404
 - Mount: 向 `realtime` 的 `/ws/stats` 发送请求（如果 ws_stats 存在），返回非 404
 
 **Verification:**

@@ -109,7 +109,7 @@ oa4rust 项目在 2026-08-10 已完成全部 83 个 crate 的真实化和 SeaORM
 
 ## Acceptance Examples
 
-- AE1. **Covers R1, R2, R3, R4, R5.** 向 `/jaxrs/authentication/two/factory/login` 发送有效双因素登录请求，返回成功会话 token；向 `/jaxrs/authentication/sso/client/{client}/token/{token}` 发送有效 SSO token，返回成功会话；向 `/jaxrs/authentication/safe/logout` 发送安全注销请求后，该用户所有 session 均失效。
+- AE1. **Covers R1, R2, R3, R4, R5.** 向 `/api/authentication/two/factory/login` 发送有效双因素登录请求，返回成功会话 token；向 `/api/authentication/sso/client/{client}/token/{token}` 发送有效 SSO token，返回成功会话；向 `/api/authentication/safe/logout` 发送安全注销请求后，该用户所有 session 均失效。
 - AE2. **Covers R6, R7, R8.** 启动 oa4rust 并调用 MCP `tools/list`，返回工具数量从 ~100 扩展至覆盖全部已实现端点；每个工具元数据包含 `name`、`description`、`inputSchema`（含 `pathParams` 和 `bodyParams`）、`requiresAuth` 字段。
 - AE3. **Covers R9, R10, R11.** 访问 `/openapi.json` 端点，返回的 OpenAPI 规范包含 ~2458 个 path item，每个 path item 有 tag、summary、parameters 和 responses；`cargo build` 无编译错误。
 - AE4. **Covers R12, R13, R14.** 运行 `cargo test --test behavior_compare`，7624 个端点全部出现在测试清单中；Java 服务不可用时全部标记为 SKIP，测试套件通过。

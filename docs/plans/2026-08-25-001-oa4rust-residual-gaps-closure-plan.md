@@ -81,7 +81,7 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
 
 ### Relevant Code and Patterns
 
-- **端点补齐模式**：`crates/processplatform_assemble_surface/src/lib.rs:17447` 的 `macro_rules! u2_att_ext_download_handler` 与 `routes.rs:1212` 的 `/jaxrs/processplatform/assemble/surface/attachment/download/{id}/work/{workId}/{fileName}` —— 整段 `Path<(String,String,String)>` 捕获含点文件名、名取元数据。R3/R5 直接复用。
+- **端点补齐模式**：`crates/processplatform_assemble_surface/src/lib.rs:17447` 的 `macro_rules! u2_att_ext_download_handler` 与 `routes.rs:1212` 的 `/api/processplatform/assemble/surface/attachment/download/{id}/work/{workId}/{fileName}` —— 整段 `Path<(String,String,String)>` 捕获含点文件名、名取元数据。R3/R5 直接复用。
 - **BAM crate**：`crates/processplatform_assemble_bam/`（lib.rs / routes.rs / tests.rs / tests_generated.rs），`processplatform_assemble_bam_router()` 已注册 80+ 路由，Java 参考面在 `oa/o2server/x_processplatform_assemble_bam/`（约 90 个 .java）。R4 在此 crate 上核验闭合。
 - **行为对比框架**：`tests/behavior_compare.rs` 驱动 `tests/behavior_comparison/`（`endpoints.rs` 的 `ENDPOINTS: &[EndpointDef]` 数组、`comparator.rs`、`allowlist.yaml`）。新端点通过向 `ENDPOINTS` 追加 `EndpointDef` 纳入比对；CI job 在 `oa4rust/.github/workflows/ci.yml:86`，`BEHAVIOR_COMPARE=1` 控制、Java 不可达时 SKIP。
 - **生成器与 gitignore**：根 `.gitignore` 规则 `oa4rust/scripts/**` 整体忽略，但 `!oa4rust/scripts/gen_openapi_paths.py` 强制纳入；该生成器产出 `tests/behavior_comparison/endpoints.rs`（约 1012 端点）与 OpenAPI `securitySchemes` 注入。R8 核验其余生成器并加 CI 守卫。

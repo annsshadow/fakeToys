@@ -19,9 +19,9 @@ CMS 管控模块，处理 CMS 栏目、文章、字典等内容的配置和管�
 
 ## Key Flows
 
-- 全文检索：`GET /jaxrs/cms_assemble_control/document/search?q=` → `search::search_documents_smart`（Tantivy 本地索引优先、PG to_tsvector 静默回退）→ 返回带 rank 的文档列表
-- 应用与栏目列表：`GET /jaxrs/appinfo/list/*`、`/jaxrs/categoryinfo/list/*` 族 → `list_from_table_filtered` 条件查询 `x_cms_appinfo`/`x_cms_categoryinfo`（deleted_at IS NULL）→ 返回 count+data JSON
-- 文档数据与附件：`POST /jaxrs/fileinfo/upload/document/{docId}` → INSERT INTO `x_cms_fileinfo` RETURNING *；文档数据读写查询 `x_cms_data_document` 与 `x_cms_data_document_field`，下载走 `/jaxrs/fileinfo/download/document/stream/{id}`
+- 全文检索：`GET /api/cms_assemble_control/document/search?q=` → `search::search_documents_smart`（Tantivy 本地索引优先、PG to_tsvector 静默回退）→ 返回带 rank 的文档列表
+- 应用与栏目列表：`GET /api/appinfo/list/*`、`/api/categoryinfo/list/*` 族 → `list_from_table_filtered` 条件查询 `x_cms_appinfo`/`x_cms_categoryinfo`（deleted_at IS NULL）→ 返回 count+data JSON
+- 文档数据与附件：`POST /api/fileinfo/upload/document/{docId}` → INSERT INTO `x_cms_fileinfo` RETURNING *；文档数据读写查询 `x_cms_data_document` 与 `x_cms_data_document_field`，下载走 `/api/fileinfo/download/document/stream/{id}`
 
 ## Dependencies
 
@@ -50,10 +50,10 @@ CMS 管控模块，处理 CMS 栏目、文章、字典等内容的配置和管�
 
 
 
-- `GET /jaxrs/application/{id}`
-- `GET /jaxrs/cms_assemble_control/get/control/config`
-- `GET /jaxrs/cms_assemble_control/list/control/sections`
-- `GET /jaxrs/cms_assemble_control/update/control/config`
-- `GET /jaxrs/commend/list/paging/{docId}`
-- `POST /jaxrs/document/{id}/view/count`
-- `GET /jaxrs/queryview/flag/{view}/definition/{queryFlag}`
+- `GET /api/application/{id}`
+- `GET /api/cms_assemble_control/get/control/config`
+- `GET /api/cms_assemble_control/list/control/sections`
+- `GET /api/cms_assemble_control/update/control/config`
+- `GET /api/commend/list/paging/{docId}`
+- `POST /api/document/{id}/view/count`
+- `GET /api/queryview/flag/{view}/definition/{queryFlag}`

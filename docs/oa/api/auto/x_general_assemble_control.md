@@ -2,9 +2,9 @@
 
 ## Endpoints
 
-- `GET /jaxrs/area/list/province/{province}` — listCity
-- `GET /jaxrs/area/list/province/{province}/city/{city}` — listDistrict
-- `GET /jaxrs/area/list` — listProvince
-- `GET /jaxrs/area/list/province/{province}/city/{city}/district/{district}` — listStreet
-- `POST /jaxrs/office` — convertHtml
-- `POST /jaxrs/ecnet/check` — ecnetCheck
+- `GET /api/area/list/province/{province}` — listCity
+- `GET /api/area/list/province/{province}/city/{city}` — listDistrict
+- `GET /api/area/list` — listProvince
+- `GET /api/area/list/province/{province}/city/{city}/district/{district}` — listStreet
+- `POST /api/office` — convertHtml
+- `POST /api/ecnet/check` — ecnetCheck

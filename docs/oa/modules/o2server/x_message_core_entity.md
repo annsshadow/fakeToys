@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 消息列表：`GET /jaxrs/message/core/entity/list` → `list` 查 message 实体，CreateTime 倒序 limit 20，输出 id/title/type/consumer/isRead，body 为 Some 时才附加
+- 消息列表：`GET /api/message/core/entity/list` → `list` 查 message 实体，CreateTime 倒序 limit 20，输出 id/title/type/consumer/isRead，body 为 Some 时才附加
 - 按消费者查询：`GET .../list/by/{consume}` → 过滤 Consumer 等于路径参数，CreateTime 倒序 limit 20
 - 未读计数：`GET .../unread/count/{consume}` → `unread_count` 过滤 Consumer + IsRead=false 后 PaginatorTrait count，输出 count 与 consumer
 - 路由注册：`message_core_entity_router(_pool)` 挂 list/by-consume/unread-count 共 3 条只读路由（无写操作）

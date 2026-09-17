@@ -21,7 +21,7 @@ oa4rust 已完成核心模块（流程引擎、文件管理、BBS、组织控制
 
 ## Actors
 
-- A1. **o2web 前端页面**: 通过 `/jaxrs/` 前缀的 REST API 发起所有数据请求
+- A1. **o2web 前端页面**: 通过 `/api/` 前缀的 REST API 发起所有数据请求
 - A2. **oa4rust 后端服务**: 提供与 o2server 兼容的 API 端点，承载全部业务逻辑
 - A3. **oa4rust 集成测试**: 验证每个新接口的请求/响应契约
 
@@ -60,9 +60,9 @@ oa4rust 已完成核心模块（流程引擎、文件管理、BBS、组织控制
 - R3. 实现 `importmodel_id_execute` 接口，支持导入模型执行操作
 
 **附件与文件下载流**
-- R4. 实现 `/jaxrs/file/{id}/download/stream` 接口，返回文件二进制流，Content-Type 正确设置
+- R4. 实现 `/api/file/{id}/download/stream` 接口，返回文件二进制流，Content-Type 正确设置
 - R5. 确保 `attachment_id_download_stream`、`file_id_download_stream` 等下载流接口已注册到路由且能正确返回二进制数据
-- R6. 实现批量附件下载接口 `/jaxrs/attachment/batch/download/work/{workId}/site/{site}/stream`
+- R6. 实现批量附件下载接口 `/api/attachment/batch/download/work/{workId}/site/{site}/stream`
 
 **工作流核心操作**
 - R7. 实现工作流列表分页接口，支持按应用标记过滤、分页、排序
@@ -91,7 +91,7 @@ oa4rust 已完成核心模块（流程引擎、文件管理、BBS、组织控制
 ## Acceptance Examples
 
 - AE1. **Covers R1, R2.** Given 一个已注册的查询视图和有效应用标记，when 前端调用查询视图执行接口，then 返回包含分页数据和总条数的 JSON 响应，数据行与数据库记录一致。
-- AE2. **Covers R4, R5.** Given 一个已上传的文件记录，when 前端调用 `/jaxrs/file/{id}/download/stream`，then 响应 Content-Type 与文件类型匹配，响应体为文件原始二进制数据。
+- AE2. **Covers R4, R5.** Given 一个已上传的文件记录，when 前端调用 `/api/file/{id}/download/stream`，then 响应 Content-Type 与文件类型匹配，响应体为文件原始二进制数据。
 - AE3. **Covers R7, R8.** Given 一个状态为 pending 的工作，when 前端调用工作处理接口，then 工作状态更新为 processing，响应中包含更新后的工作状态。
 - AE4. **Covers R10, R11.** Given 一篇已发布的 CMS 文档，when 前端打开文档详情，then 文档信息完整返回，阅读计数随每次请求递增。
 - AE5. **Covers R13, R14.** Given 一个已登录用户，when 前端请求人员头像和身份信息，then 响应返回正确的头像 URL 和身份详情。

@@ -27,9 +27,9 @@ oa4rust 核心模块（流程引擎、文件管理、BBS、组织控制、CMS、
 - R1. 实现 `view_flag_flag_query_queryFlag_execute` 路由注册，支持按视图标记和执行参数返回分页数据
 - R2. 实现 `view_flag_flag_query_queryFlag_execute_v2_page_page_size_size` 路由注册，支持带分页参数的查询执行
 - R3. 实现 `importmodel_id_execute` 路由注册，支持导入模型执行
-- R4. 注册 `/jaxrs/file/{id}/download/stream` 路由，返回文件二进制流，Content-Type 正确
+- R4. 注册 `/api/file/{id}/download/stream` 路由，返回文件二进制流，Content-Type 正确
 - R5. 注册 `attachment_id_download_stream`、`file_id_download_stream` 等下载流接口到路由
-- R6. 实现批量附件下载接口 `/jaxrs/attachment/batch/download/work/{workId}/site/{site}/stream`
+- R6. 实现批量附件下载接口 `/api/attachment/batch/download/work/{workId}/site/{site}/stream`
 - R7. 实现工作流列表分页接口，支持按应用标记过滤、分页、排序
 - R8. 注册工作处理状态设置接口（`work_id_processing`）到路由
 - R9. 实现工作复杂信息接口（`process_id_complex`），返回关联的任务、审批、快照聚合数据
@@ -158,26 +158,26 @@ oa4rust/
 
 **Approach:**
 1. 分析 query_assemble_surface 中所有已实现的函数签名，对照 o2web 调用的路径，在 routes.rs 中注册：
-   - `view_flag_flag_query_queryFlag_execute` → `/jaxrs/queryview/flag/{view}/application/flag/{app}/execute`
-   - `view_flag_flag_query_queryFlag_execute_v2_page_page_size_size` → `/jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}`
-   - `importmodel_id_execute` → `/jaxrs/importmodel/id/{id}/execute`
+   - `view_flag_flag_query_queryFlag_execute` → `/api/queryview/flag/{view}/application/flag/{app}/execute`
+   - `view_flag_flag_query_queryFlag_execute_v2_page_page_size_size` → `/api/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}`
+   - `importmodel_id_execute` → `/api/importmodel/id/{id}/execute`
 2. 分析 file_assemble_control 中的下载流函数，注册：
-   - `file_id_download_stream` → `/jaxrs/file/{id}/download/stream`
-   - `attachment_id_download_stream` → `/jaxrs/attachment/download/{attid}/stream`
-   - `anonymous_file_id_download_stream` → `/jaxrs/anonymous/file/{id}/download/stream`
+   - `file_id_download_stream` → `/api/file/{id}/download/stream`
+   - `attachment_id_download_stream` → `/api/attachment/download/{attid}/stream`
+   - `anonymous_file_id_download_stream` → `/api/anonymous/file/{id}/download/stream`
 3. 分析 processplatform_service_processing 中的工作流处理函数，注册：
-   - `work_id_processing` → `/jaxrs/work/{id}/processing`
-   - `work_v2_id_terminate` → `/jaxrs/work/{id}/terminate`
-   - `work_v2_id_retract` → `/jaxrs/work/{id}/retract`
+   - `work_id_processing` → `/api/work/{id}/processing`
+   - `work_v2_id_terminate` → `/api/work/{id}/terminate`
+   - `work_v2_id_retract` → `/api/work/{id}/retract`
 
 **Patterns to follow:**
 - `crates/query_assemble_surface/src/routes.rs` 现有路由注册模式
 - `crates/processplatform_service_processing/src/routes.rs` 现有模式
 
 **Test scenarios:**
-- Happy path: 调用 `/jaxrs/queryview/flag/{view}/application/flag/{app}/execute` → 返回 ActionResult 含执行结果
-- Happy path: 调用 `/jaxrs/file/{id}/download/stream` → 返回 200 + 二进制内容 + 正确 Content-Type
-- Happy path: 调用 `/jaxrs/work/{id}/processing` → 工作状态从 pending 变为 processing
+- Happy path: 调用 `/api/queryview/flag/{view}/application/flag/{app}/execute` → 返回 ActionResult 含执行结果
+- Happy path: 调用 `/api/file/{id}/download/stream` → 返回 200 + 二进制内容 + 正确 Content-Type
+- Happy path: 调用 `/api/work/{id}/processing` → 工作状态从 pending 变为 processing
 - Error path: 调用不存在的 work ID → 返回 404 或 error 响应
 - Edge case: 下载不存在 ID 的文件 → 返回 404
 
@@ -308,7 +308,7 @@ WHERE work_id/work = $1
 3. 实现 `identity_id` 函数：
    - 查询 x_org_identity 表获取身份信息
    - 返回 {id, name, unit, ...}
-4. 路由前缀: `/jaxrs/organization/assemble/authentication/*`
+4. 路由前缀: `/api/organization/assemble/authentication/*`
 
 **Patterns to follow:**
 - `crates/organization_assemble_express/src/lib.rs`（结构模板）
@@ -350,7 +350,7 @@ WHERE work_id/work = $1
 3. 实现 `user_role_list` 函数：
    - 查询 x_org_group_member 和 x_org_role 表获取用户角色
    - 返回 {roles: [...]}
-4. 路由前缀: `/jaxrs/organization/assemble/personal/*`
+4. 路由前缀: `/api/organization/assemble/personal/*`
 
 **Patterns to follow:**
 - `crates/organization_assemble_express/src/lib.rs`（结构模板）
@@ -386,7 +386,7 @@ WHERE work_id/work = $1
    - 提取最后一条用户消息
    - 返回模拟的 AI 回复（先返回固定模板，后续接入 LLM API）
    - 记录对话到 x_ai_chat 表
-2. 路由: `/jaxrs/ai_assemble_control/chat/completion`（POST）
+2. 路由: `/api/ai_assemble_control/chat/completion`（POST）
 
 **Patterns to follow:**
 - `crates/ai_assemble_control/src/lib.rs` 中已有的 chat/list 等函数

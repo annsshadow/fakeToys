@@ -40,6 +40,6 @@
 
 
 
-- `GET /jaxrs/secret/check`
-- `POST /jaxrs/secret/set`
-- `GET /jaxrs/secret/set/cancel`
+- `GET /api/secret/check`
+- `POST /api/secret/set`
+- `GET /api/secret/set/cancel`

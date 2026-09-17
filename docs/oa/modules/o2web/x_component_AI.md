@@ -20,9 +20,9 @@ AI 助手组件，负责与 AI 模型对话交互，支持知识库检索和 MCP
 
 ## Key Flows
 
-- 后端请求：向 `x_ai_assemble_control/jaxrs/chat/completion` 发起 POST 流式请求，处理返回数据并渲染。
-- 后端请求：向 `x_ai_assemble_control/jaxrs/file/${file.id}/download/scale` 发起 GET 请求，处理返回数据并渲染。
-- 后端请求：向 `x_organization_assemble_personal/jaxrs/icon/${layout.user.id}` 发起 GET 请求，处理返回数据并渲染。
+- 后端请求：向 `x_ai_assemble_control/api/chat/completion` 发起 POST 流式请求，处理返回数据并渲染。
+- 后端请求：向 `x_ai_assemble_control/api/file/${file.id}/download/scale` 发起 GET 请求，处理返回数据并渲染。
+- 后端请求：向 `x_organization_assemble_personal/api/icon/${layout.user.id}` 发起 GET 请求，处理返回数据并渲染。
 - 与后端 `ConfigAction` 交互：在组件中调用 `ConfigAction.createMcpConfig`、`createModel`、`deleteMcpConfig`、`deleteModel`、`getBaseConfig`、`getConfig`、`getMcpConfig`、`getMcpExt` 等方法完成 创建/创建/删除/删除/读取/读取 等操作。
 - 与后端 `ChatAction` 交互：在组件中调用 `ChatAction.delete`、`listCompletionPaging`、`listPaging` 等方法完成 删除/列出/列出 等操作。
 - 与后端 `FileAction` 交互：在组件中调用 `FileAction.copyFile`、`get`、`upload` 等方法完成 复制/读取/上传 等操作。

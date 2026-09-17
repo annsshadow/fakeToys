@@ -39,7 +39,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - R9. 认证流程完整可用（登录 → 会话 → 登出 → 刷新令牌）
 
 **安全需求**
-- R12. 所有端点强制认证（登录用户方可访问），健康检查端点及认证前置端点除外：`/jaxrs/authentication`（POST 登录 / DELETE 登出 / GET 当前用户）、`/jaxrs/authentication/captcha`、`/jaxrs/authentication/captcha/width/{width}/height/{height}`（验证码）、`/jaxrs/authentication/code`、`/jaxrs/authentication/code/credential/{credential}`（短信验证码发送与登录）、`/jaxrs/authentication/bind`、`/jaxrs/authentication/bind/meta/{meta}`（扫码登录）、`/jaxrs/authentication/oauth/list`、`/jaxrs/authentication/oauth/qywx/config`、`/jaxrs/authentication/oauth/dingding/config`、`/jaxrs/authentication/oauth/name/{name}`、`/jaxrs/authentication/oauth/login/qywx/code/{code}`、`/jaxrs/authentication/oauth/login/dingding/code/{code}`、`/jaxrs/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}`、`/jaxrs/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}`（OAuth 授权与回调）、`/jaxrs/secret/captcha/verify`（验证码校验）、`/jaxrs/reset/check/credential/{credential}`、`/jaxrs/reset/check/password/{password}`、`/jaxrs/reset/code/credential/{credential}`、`/jaxrs/reset`、`/jaxrs/reset/password/anonymous`（密码重置流程）、`/jaxrs/secret/set`（仅系统未初始化时）；豁免按精确路径匹配，不使用 `*` 前缀通配（OAuth 与重置端点逐条精确列举）
+- R12. 所有端点强制认证（登录用户方可访问），健康检查端点及认证前置端点除外：`/api/authentication`（POST 登录 / DELETE 登出 / GET 当前用户）、`/api/authentication/captcha`、`/api/authentication/captcha/width/{width}/height/{height}`（验证码）、`/api/authentication/code`、`/api/authentication/code/credential/{credential}`（短信验证码发送与登录）、`/api/authentication/bind`、`/api/authentication/bind/meta/{meta}`（扫码登录）、`/api/authentication/oauth/list`、`/api/authentication/oauth/qywx/config`、`/api/authentication/oauth/dingding/config`、`/api/authentication/oauth/name/{name}`、`/api/authentication/oauth/login/qywx/code/{code}`、`/api/authentication/oauth/login/dingding/code/{code}`、`/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}`、`/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}`（OAuth 授权与回调）、`/api/secret/captcha/verify`（验证码校验）、`/api/reset/check/credential/{credential}`、`/api/reset/check/password/{password}`、`/api/reset/code/credential/{credential}`、`/api/reset`、`/api/reset/password/anonymous`（密码重置流程）、`/api/secret/set`（仅系统未初始化时）；豁免按精确路径匹配，不使用 `*` 前缀通配（OAuth 与重置端点逐条精确列举）
 - R13. 所有输入端点进行参数验证（类型、长度、格式），拒绝无效输入
 - R14. 认证接口速率限制（10次/分钟/IP），普通接口速率限制（100次/分钟/IP）
 - R15. 所有响应强制 HTTPS（TLS 1.2+），生产环境返回安全的响应头（HSTS, X-Content-Type-Options）
@@ -100,13 +100,13 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 
 ## Key Technical Decisions
 
-- **执行顺序（价值优先）**：U1 → U3 → U2 → U4/U5 → U6 → U7；单人开发下按依赖图串行推进。U2 提前至 U4 之前（U4 依赖 U2 完成 `program_init` 接入 `main.rs`，否则 U4 的 `GET /jaxrs/secret/check`/`POST /jaxrs/secret/set` 无法端到端验证；U4 不再依赖 U3 的查询模式，改为独立实现 personal 查询）
+- **执行顺序（价值优先）**：U1 → U3 → U2 → U4/U5 → U6 → U7；单人开发下按依赖图串行推进。U2 提前至 U4 之前（U4 依赖 U2 完成 `program_init` 接入 `main.rs`，否则 U4 的 `GET /api/secret/check`/`POST /api/secret/set` 无法端到端验证；U4 不再依赖 U3 的查询模式，改为独立实现 personal 查询）
 - **桩代码标记 TODO 而非删除**：保留桩代码作为后续实现的明确占位，避免遗漏端点（see origin）
 - **已实现模块优先接入**：control、personal_extend 等已有真实实现的 crate 优先接入 main.rs，让团队尽快看到可用 API（see origin）
 - **Rust 为唯一技术选项**：无替代方案（Go 等），迁移必须使用 Rust（see origin）
 - **沿用 Strangler Fig 迁移策略**：双轨运行、按模块切换、灰度验证，已在前期计划中验证（see origin）
 - **响应格式兼容**：Rust 侧必须输出与 Java `ActionResult<T>` 完全一致的 JSON 结构（9 个字段），因为前端 `action.js` 直接提取 `json.data` 字段。这是前端零改动的硬性前提
-- **认证端点路径保持 `/jaxrs/` 前缀**：与 Java 侧完全一致，确保前端无需改动。认证端点以 Java `x_organization_assemble_authentication` 的 `AuthenticationAction`/`OauthAction` 及前端 `xAction` 服务契约为准（登录/登出/当前用户均为 `POST`/`DELETE`/`GET /jaxrs/authentication`，验证码为 `captcha/width/{width}/height/{height}`，OAuth 为 `/jaxrs/authentication/oauth/...`），Rust 侧现有 `login`/`logout`/`who`/`refresh` 等自造路径需在 U1/U5 中对齐为上述契约路径
+- **认证端点路径保持 `/api/` 前缀**：与 Java 侧完全一致，确保前端无需改动。认证端点以 Java `x_organization_assemble_authentication` 的 `AuthenticationAction`/`OauthAction` 及前端 `xAction` 服务契约为准（登录/登出/当前用户均为 `POST`/`DELETE`/`GET /api/authentication`，验证码为 `captcha/width/{width}/height/{height}`，OAuth 为 `/api/authentication/oauth/...`），Rust 侧现有 `login`/`logout`/`who`/`refresh` 等自造路径需在 U1/U5 中对齐为上述契约路径
 - **会话互认**：双轨共存期间 Rust 与 Java 的会话 token 需可互认（共享 JWT 密钥或共享会话存储），避免用户经 Rust 登录后访问未迁移模块时收到 401；或在认证模块完全切换前将登录保留在 Java 侧。决策截止点：U5（认证模块真实化完成）前必须确定（三选一：共享 JWT 密钥 / 共享会话存储 / 登录保留在 Java 侧），并在 U6 验证；在确定前，Rust 侧 `validate_session` 仅信任 Rust 自身签发的会话，Java 登录用户访问 Rust 前缀模块的互通价值取决于该决策，U1-U5 期间不得宣称该互通可用
 - **认证与限流中间件在 U1 挂载**：认证与速率限制中间件随 U1 的路由结构一并实现并挂载，R12 从首个端点暴露起生效，U6 仅做加固与专项验证（避免端点先于认证暴露）
 - **axum 升级至 0.8**：Cargo.lock 当前锁定 axum 0.7.9（仅支持 `:param`，`{param}` 路由不匹配返回 404）；存量约 19 个 crate 的路由仍使用 `:param` 语法。U1 前统一升级 workspace 至 axum 0.8 并 `cargo update`，同时将全部存量路由的 `:param` 转换为 `{param}` 语法，U1 冒烟测试覆盖参数化端点，避免路由静默 404
@@ -182,8 +182,8 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - 将 `control`、`personal_extend`、`personal`、`auth` 四个已实现真实逻辑的 crate 全部接入 `main.rs`
 - 保持现有 `shared`、`auth`、`personal`、`cms_control` 的接线不变
 - 新增 `control` 和 `personal_extend` 的路由挂载
-- 所有路由保持 `/jaxrs/` 前缀，与 Java 侧一致
-- 路由去重：`control` 与 `auth` 重复注册的 `/jaxrs/person/list`、`/jaxrs/unit/list`、`/jaxrs/role/list`、`/jaxrs/group/list` 统一由 `control` 提供（移除 `auth` 侧重复）；`GET /jaxrs/person/{flag}`（`auth` 注册）与 `GET /jaxrs/person/{id}`（`control` 注册）规范化路径相同（axum 0.8 `{param}` 仅按位置匹配，参数名不影响匹配，合并时同 path+method 冲突 panic），统一由 `control` 提供并移除 `auth` 侧重复；`control` 自身重复注册的 `/health` 仅保留 `shared::router()` 一处；`/jaxrs/secret/check` 与 `/jaxrs/secret/set` 唯一归属 `program_init`（真实化在 U4），U2 接入 `express`、`program_init` 时不再在 `auth` 侧注册重复路由
+- 所有路由保持 `/api/` 前缀，与 Java 侧一致
+- 路由去重：`control` 与 `auth` 重复注册的 `/api/person/list`、`/api/unit/list`、`/api/role/list`、`/api/group/list` 统一由 `control` 提供（移除 `auth` 侧重复）；`GET /api/person/{flag}`（`auth` 注册）与 `GET /api/person/{id}`（`control` 注册）规范化路径相同（axum 0.8 `{param}` 仅按位置匹配，参数名不影响匹配，合并时同 path+method 冲突 panic），统一由 `control` 提供并移除 `auth` 侧重复；`control` 自身重复注册的 `/health` 仅保留 `shared::router()` 一处；`/api/secret/check` 与 `/api/secret/set` 唯一归属 `program_init`（真实化在 U4），U2 接入 `express`、`program_init` 时不再在 `auth` 侧注册重复路由
 - 认证与速率限制中间件随 U1 实现并挂载到全部路由（R12 从首个端点暴露起生效），`main.rs` 构造单一 `SessionManager`/`RateLimiter` 实例注入各 router，避免认证与限流状态分裂
 - 声明 schema 迁移执行步骤：U1 完成后执行 `sqlx migrate run`，按序应用 migration 001-005
 - 核对所有已接入端点的路径参数语法：axum 0.8 使用 `{param}`（升级前为 `:param`），参数化端点纳入冒烟测试，避免路由静默 404
@@ -195,17 +195,17 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 
 **Test scenarios:**
 - Happy path: `cargo build` 成功编译，`cargo run` 启动服务，所有已接入端点返回 200
-- Happy path: GET `/jaxrs/unit/list` 返回 `ActionResult` 结构（200 + 9 字段），真实数据断言在 U3 验证
-- Happy path: GET `/jaxrs/person/{flag}` 参数化路由可匹配并返回 `ActionResult` 而非 404（验证 axum 路径参数语法）
-- Happy path: PUT `/jaxrs/person/password` 请求可到达处理器并返回 `ActionResult`
+- Happy path: GET `/api/unit/list` 返回 `ActionResult` 结构（200 + 9 字段），真实数据断言在 U3 验证
+- Happy path: GET `/api/person/{flag}` 参数化路由可匹配并返回 `ActionResult` 而非 404（验证 axum 路径参数语法）
+- Happy path: PUT `/api/person/password` 请求可到达处理器并返回 `ActionResult`
 - Integration: 所有已接入端点的响应 JSON 结构与 Java 侧 `ActionResult<T>` 一致
-- Integration: 启动冒烟覆盖认证中间件豁免端点（`POST /jaxrs/authentication`、`GET /jaxrs/authentication/captcha/width/{width}/height/{height}`、`GET /jaxrs/reset/code/credential/{credential}` 等）可绕过认证正常访问
+- Integration: 启动冒烟覆盖认证中间件豁免端点（`POST /api/authentication`、`GET /api/authentication/captcha/width/{width}/height/{height}`、`GET /api/reset/code/credential/{credential}` 等）可绕过认证正常访问
 
 **Verification:**
 - `cargo build` 无错误
 - `cargo test` 所有测试通过
 - `sqlx migrate run` 成功应用 migration 001-005
-- 启动服务后 curl 调用已接入端点返回 `ActionResult` 响应，参数化端点（`/jaxrs/person/{flag}`）非 404
+- 启动服务后 curl 调用已接入端点返回 `ActionResult` 响应，参数化端点（`/api/person/{flag}`）非 404
 - 响应 JSON 结构与 Java 侧一致（9 个字段的 ActionResult）
 
 ---
@@ -221,7 +221,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 **Files:**
 - Modify: `oa4rust/src/main.rs`
 - Modify: 74 个桩代码 crate 的 `lib.rs` 或 `routes.rs`（添加 TODO 标记）
-- Modify: `oa4rust/crates/cms_express/src/routes.rs`（移除与 `cms_control` 重复的 `GET /jaxrs/cms/view/list/all` 注册）
+- Modify: `oa4rust/crates/cms_express/src/routes.rs`（移除与 `cms_control` 重复的 `GET /api/cms/view/list/all` 注册）
 - Modify: 使用 `:param` 旧语法的约 19 个 crate 的路由文件（统一转换为 axum 0.8 `{param}` 语法）
 
 **Approach:**
@@ -254,7 +254,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - 每个桩代码端点添加 `TODO: [module] - real implementation needed` 注释
 - 桩代码端点返回空的 `ActionResult::success(Value::Null)` 或空列表
 - 路径参数语法核对与转换：全仓搜索 `:param` 旧语法（grep 验证约 19 个 crate 的存量路由仍使用 `:param`，见 Context & Research 技术栈条目），统一转换为 `{param}` 或纳入升级步骤，避免 axum 0.8 下 `:param` 路由静默 404
-- 全量路由冲突扫描：U2 完成后执行启动冒烟与路由扫描，确认无同 path+method 的重复注册；当前代码中 `GET /jaxrs/cms/view/list/all` 由 `cms_control` 与 `cms_express` 重复注册（axum 合并 panic），须在接入时移除 `cms_express` 侧注册（cms_express 路由文件列入本单元 Files 修改清单），其余冲突以 U1 去重规则为准
+- 全量路由冲突扫描：U2 完成后执行启动冒烟与路由扫描，确认无同 path+method 的重复注册；当前代码中 `GET /api/cms/view/list/all` 由 `cms_control` 与 `cms_express` 重复注册（axum 合并 panic），须在接入时移除 `cms_express` 侧注册（cms_express 路由文件列入本单元 Files 修改清单），其余冲突以 U1 去重规则为准
 
 **Patterns to follow:**
 - 现有桩代码 crate 的模式（如 `cms_control`、`message`、`portal`）
@@ -290,32 +290,32 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - Test: `oa4rust/crates/control/src/tests.rs`
 
 **Approach:**
-- `person.rs`：实现完整的人员 CRUD（create/get/update/delete）与游标分页列表，路径与 Java `PersonAction` 契约一致：`POST /jaxrs/person`（create）、`GET /jaxrs/person/{flag}`、`PUT /jaxrs/person/{flag}`、`DELETE /jaxrs/person/{flag}`、`GET /jaxrs/person/list/{flag}/next/{count}`、`GET /jaxrs/person/list/{flag}/prev/{count}`；当前 Rust 自造的 `/jaxrs/person/create`、`/jaxrs/person/{id}/update`、`/jaxrs/person/{id}/delete`、`/jaxrs/person/list` 路径需移除，由契约路径取代（前端 `xAction` 按契约调用，自造路径不可达）；所有查询操作针对 `auth_person` 表
-- `group.rs`：实现用户组 CRUD（create/get/update/delete）与游标分页列表，路径对齐 Java `GroupAction`：`POST /jaxrs/group`、`GET/PUT/DELETE /jaxrs/group/{flag}`、`GET /jaxrs/group/list/{flag}/next/{count}`，针对 `auth_group` 表
-- `role.rs`：实现角色 CRUD（create/get/update/delete）与游标分页列表，路径对齐 Java `RoleAction`：`POST /jaxrs/role`、`GET/PUT/DELETE /jaxrs/role/{flag}`、`GET /jaxrs/role/list/{flag}/next/{count}`，针对 `auth_role` 表
-- `unit.rs`：实现单位 CRUD（create/get/update/delete）与游标分页列表，路径对齐 Java `UnitAction`：`POST /jaxrs/unit`、`GET/PUT/DELETE /jaxrs/unit/{flag}`、`GET /jaxrs/unit/list/{flag}/next/{count}`，针对 `auth_unit` 表；`POST /jaxrs/unit` 的路径模式与 `GET /jaxrs/unit/list` 不冲突（方法不同）；person 侧 `GET /jaxrs/person/list` 与 `GET /jaxrs/person` 需与 personal 模块注册协调，避免路由冲突
+- `person.rs`：实现完整的人员 CRUD（create/get/update/delete）与游标分页列表，路径与 Java `PersonAction` 契约一致：`POST /api/person`（create）、`GET /api/person/{flag}`、`PUT /api/person/{flag}`、`DELETE /api/person/{flag}`、`GET /api/person/list/{flag}/next/{count}`、`GET /api/person/list/{flag}/prev/{count}`；当前 Rust 自造的 `/api/person/create`、`/api/person/{id}/update`、`/api/person/{id}/delete`、`/api/person/list` 路径需移除，由契约路径取代（前端 `xAction` 按契约调用，自造路径不可达）；所有查询操作针对 `auth_person` 表
+- `group.rs`：实现用户组 CRUD（create/get/update/delete）与游标分页列表，路径对齐 Java `GroupAction`：`POST /api/group`、`GET/PUT/DELETE /api/group/{flag}`、`GET /api/group/list/{flag}/next/{count}`，针对 `auth_group` 表
+- `role.rs`：实现角色 CRUD（create/get/update/delete）与游标分页列表，路径对齐 Java `RoleAction`：`POST /api/role`、`GET/PUT/DELETE /api/role/{flag}`、`GET /api/role/list/{flag}/next/{count}`，针对 `auth_role` 表
+- `unit.rs`：实现单位 CRUD（create/get/update/delete）与游标分页列表，路径对齐 Java `UnitAction`：`POST /api/unit`、`GET/PUT/DELETE /api/unit/{flag}`、`GET /api/unit/list/{flag}/next/{count}`，针对 `auth_unit` 表；`POST /api/unit` 的路径模式与 `GET /api/unit/list` 不冲突（方法不同）；person 侧 `GET /api/person/list` 与 `GET /api/person` 需与 personal 模块注册协调，避免路由冲突
 - 所有端点使用 `ActionResult<T>` 格式返回，与 Java 侧一致
 - 错误契约与 Java 侧对齐：业务错误返回 HTTP 200 + `type=error` + 非空 `message`（前端 `action.js` 依赖），HTTP 状态码仅用于传输层错误（认证 401、限流 429 等）；实现时以实际 Java Action 行为为准
 - 所有写操作（create/update/delete）包含参数验证（类型、长度、格式）
 - 分页采用 Java 契约的游标分页（`{flag}/next/{count}`、`{flag}/prev/{count}`），参数 `flag` 为上一页末条标识、`count` 为返回条数
-- 人员创建（`POST /jaxrs/person`）写入的密码哈希统一使用 U4 的双算法兼容方案（新写入 bcrypt 带方案前缀，兼容既有 MD5/DES 校验），禁止在 U3 单独引入 MD5 新写入（保持全仓密码哈希策略一致）
+- 人员创建（`POST /api/person`）写入的密码哈希统一使用 U4 的双算法兼容方案（新写入 bcrypt 带方案前缀，兼容既有 MD5/DES 校验），禁止在 U3 单独引入 MD5 新写入（保持全仓密码哈希策略一致）
 
 **Patterns to follow:**
 - 现有 `control/src/person.rs` 的数据库查询模式（使用 `deadpool_postgres::Pool` 和 SQLx）
 - `shared::response::ActionResult` 的成功/错误响应格式
 
 **Test scenarios:**
-- Happy path: GET `/jaxrs/person/list/{flag}/next/{count}` 返回数据库中对应位置的人员列表（游标分页）
-- Happy path: POST `/jaxrs/person` 创建新人员后返回包含 id 的成功响应
-- Happy path: GET `/jaxrs/person/{flag}` 返回指定人员的完整信息
-- Happy path: PUT `/jaxrs/person/{flag}` 更新人员信息后返回成功
-- Happy path: DELETE `/jaxrs/person/{flag}` 软删除人员后返回成功
-- Edge case: GET `/jaxrs/person/{flag}` 对不存在的 flag 返回 HTTP 200 + `type=error`（与 Java `ActionResult` 错误响应一致）
-- Edge case: POST `/jaxrs/person` 缺少必填字段返回 `type=error` 响应（含缺参提示）
-- Edge case: POST `/jaxrs/person` 重复 unique_id 返回 `type=error` 响应（含重复提示）
-- Happy path: GET `/jaxrs/group/list/{flag}/next/{count}` 返回用户组列表
-- Happy path: GET `/jaxrs/role/list/{flag}/next/{count}` 返回所有角色列表
-- Happy path: GET `/jaxrs/unit/list/{flag}/next/{count}` 返回所有单位列表
+- Happy path: GET `/api/person/list/{flag}/next/{count}` 返回数据库中对应位置的人员列表（游标分页）
+- Happy path: POST `/api/person` 创建新人员后返回包含 id 的成功响应
+- Happy path: GET `/api/person/{flag}` 返回指定人员的完整信息
+- Happy path: PUT `/api/person/{flag}` 更新人员信息后返回成功
+- Happy path: DELETE `/api/person/{flag}` 软删除人员后返回成功
+- Edge case: GET `/api/person/{flag}` 对不存在的 flag 返回 HTTP 200 + `type=error`（与 Java `ActionResult` 错误响应一致）
+- Edge case: POST `/api/person` 缺少必填字段返回 `type=error` 响应（含缺参提示）
+- Edge case: POST `/api/person` 重复 unique_id 返回 `type=error` 响应（含重复提示）
+- Happy path: GET `/api/group/list/{flag}/next/{count}` 返回用户组列表
+- Happy path: GET `/api/role/list/{flag}/next/{count}` 返回所有角色列表
+- Happy path: GET `/api/unit/list/{flag}/next/{count}` 返回所有单位列表
 - Integration: 响应 JSON 的 `data` 字段被前端 `action.js` 正确提取
 
 **Verification:**
@@ -345,9 +345,9 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - Test: `oa4rust/crates/personal_extend/src/tests.rs`
 
 **Approach:**
-- `personal` 模块：实现个人信息查询/更新（`GET`/`PUT /jaxrs/person`，当前登录用户）、密码修改（`PUT /jaxrs/person/password`，Java `PasswordAction` 契约；当前自造的 `/jaxrs/password/change`、`/jaxrs/reset/code|check|set` POST 路径需移除）、密码重置（`GET /jaxrs/reset/check/credential/{credential}`、`GET /jaxrs/reset/check/password/{password}`、`GET /jaxrs/reset/code/credential/{credential}`、`PUT /jaxrs/reset`、`POST /jaxrs/reset/password/anonymous`）的真实数据库操作；密码修改必须基于认证中间件注入的当前会话身份解析用户名/凭据（按登录态唯一标识查询），禁止按 `WHERE locked = false LIMIT 1` 操作首行（避免任意登录用户篡改他人/管理员密码）；重置验证码增加速率限制与尝试次数上限，校验通过后立即失效（一次性），过期与重发策略统一
-- `personal_extend` 模块：实现个人信息详情查询/更新、头像上传/获取的真实数据库操作；头像路径对齐 Java 契约（`PUT /jaxrs/person/icon` 上传 formData、`GET /jaxrs/person/icon` 获取当前用户头像、`GET /jaxrs/icon/{person}` 获取指定用户头像；当前自造的 `/jaxrs/personal/avatar/{id}` 路径需移除或映射）；头像文件存储采用本地目录（如 `data/avatar/`），限制 5MB 大小上限与 MIME 白名单（jpeg/png/webp），文件名使用 UUID 且存储目录不映射为 web 可访问路径，不接入 file 模块，不承担文件存储迁移方案范围
-- `program_init` 模块：实现密码设置（`POST /jaxrs/secret/set`）和初始化检查（`GET /jaxrs/secret/check`）的真实数据库操作，替换内存状态为数据库持久化；secret/check+set 的唯一实现归属为 `program_init`（U1 去重已确保 auth 侧不注册同名路由）；持久化的 secret 采用应用级加密（如 AES-GCM，密钥来自环境变量）存储，并定义轮换机制
+- `personal` 模块：实现个人信息查询/更新（`GET`/`PUT /api/person`，当前登录用户）、密码修改（`PUT /api/person/password`，Java `PasswordAction` 契约；当前自造的 `/api/password/change`、`/api/reset/code|check|set` POST 路径需移除）、密码重置（`GET /api/reset/check/credential/{credential}`、`GET /api/reset/check/password/{password}`、`GET /api/reset/code/credential/{credential}`、`PUT /api/reset`、`POST /api/reset/password/anonymous`）的真实数据库操作；密码修改必须基于认证中间件注入的当前会话身份解析用户名/凭据（按登录态唯一标识查询），禁止按 `WHERE locked = false LIMIT 1` 操作首行（避免任意登录用户篡改他人/管理员密码）；重置验证码增加速率限制与尝试次数上限，校验通过后立即失效（一次性），过期与重发策略统一
+- `personal_extend` 模块：实现个人信息详情查询/更新、头像上传/获取的真实数据库操作；头像路径对齐 Java 契约（`PUT /api/person/icon` 上传 formData、`GET /api/person/icon` 获取当前用户头像、`GET /api/icon/{person}` 获取指定用户头像；当前自造的 `/api/personal/avatar/{id}` 路径需移除或映射）；头像文件存储采用本地目录（如 `data/avatar/`），限制 5MB 大小上限与 MIME 白名单（jpeg/png/webp），文件名使用 UUID 且存储目录不映射为 web 可访问路径，不接入 file 模块，不承担文件存储迁移方案范围
+- `program_init` 模块：实现密码设置（`POST /api/secret/set`）和初始化检查（`GET /api/secret/check`）的真实数据库操作，替换内存状态为数据库持久化；secret/check+set 的唯一实现归属为 `program_init`（U1 去重已确保 auth 侧不注册同名路由）；持久化的 secret 采用应用级加密（如 AES-GCM，密钥来自环境变量）存储，并定义轮换机制
 - 所有端点使用 `ActionResult<T>` 格式返回，与 Java 侧一致
 - 密码哈希采用双算法兼容方案：新写入使用 `bcrypt`（带方案前缀），校验路径同时支持 `bcrypt` 与既有 MD5/DES 哈希（Java 迁移兼容），确保修改密码后现有登录流程可验证新哈希、并可读取迁移的旧哈希；登录成功后对旧算法（MD5/DES）哈希自动 rehash 为 bcrypt，旧哈希淘汰截止点设为 R10 全量切换完成后
 
@@ -356,19 +356,19 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - `shared::response::ActionResult` 的成功/错误响应格式
 
 **Test scenarios:**
-- Happy path: GET `/jaxrs/person` 返回当前登录用户的信息
-- Happy path: PUT `/jaxrs/person` 更新当前用户信息后返回更新后的数据
-- Happy path: PUT `/jaxrs/person/password` 修改密码后返回成功
-- Happy path: PUT `/jaxrs/reset` 重置密码后返回成功
-- Happy path: GET `/jaxrs/reset/code/credential/{credential}` 发送重置验证码后返回成功
-- Happy path: GET `/jaxrs/reset/check/credential/{credential}` 校验凭据后返回成功
-- Happy path: POST `/jaxrs/reset/password/anonymous` 设置新密码后返回成功
-- Happy path: PUT `/jaxrs/person/icon` 上传头像后返回成功
-- Happy path: GET `/jaxrs/person/icon` 获取头像
-- Happy path: GET `/jaxrs/secret/check` 返回初始化状态（从数据库读取而非内存）
-- Happy path: POST `/jaxrs/secret/set` 设置密钥（持久化到数据库）
-- Edge case: PUT `/jaxrs/person/icon` 超过 5MB 或非白名单 MIME 类型返回 `type=error` 响应
-- Edge case: PUT `/jaxrs/person/password` 旧密码错误返回 `type=error` 响应（未认证 401 用例由 U6 覆盖）
+- Happy path: GET `/api/person` 返回当前登录用户的信息
+- Happy path: PUT `/api/person` 更新当前用户信息后返回更新后的数据
+- Happy path: PUT `/api/person/password` 修改密码后返回成功
+- Happy path: PUT `/api/reset` 重置密码后返回成功
+- Happy path: GET `/api/reset/code/credential/{credential}` 发送重置验证码后返回成功
+- Happy path: GET `/api/reset/check/credential/{credential}` 校验凭据后返回成功
+- Happy path: POST `/api/reset/password/anonymous` 设置新密码后返回成功
+- Happy path: PUT `/api/person/icon` 上传头像后返回成功
+- Happy path: GET `/api/person/icon` 获取头像
+- Happy path: GET `/api/secret/check` 返回初始化状态（从数据库读取而非内存）
+- Happy path: POST `/api/secret/set` 设置密钥（持久化到数据库）
+- Edge case: PUT `/api/person/icon` 超过 5MB 或非白名单 MIME 类型返回 `type=error` 响应
+- Edge case: PUT `/api/person/password` 旧密码错误返回 `type=error` 响应（未认证 401 用例由 U6 覆盖）
 - Integration: 密码修改后使用新密码可成功登录
 
 **Verification:**
@@ -394,13 +394,13 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - Test: `oa4rust/crates/auth/src/tests.rs`
 
 **Approach:**
-- 验证码：在 workspace 根 `Cargo.toml` 添加 `captcha` 依赖，实现本地验证码图片生成；真实实现替换现有 `/jaxrs/authentication/captcha` 占位处理器（返回 base64 占位图）为 PNG 图片，并实现 Java 契约的参数化变体 `GET /jaxrs/authentication/captcha/width/{width}/height/{height}`（前端 `getLoginCaptcha` 实际调用此路径，无参数的自造路径前端不可达）；验证码校验独立为 `/jaxrs/secret/captcha/verify`（与初始化检查 `GET /jaxrs/secret/check` 区分）；验证码一次性使用、5 分钟内有效，校验失败可重试至尝试上限（与 U4 重置流程语义一致）
-- OAuth 企业微信：实现企业微信 OAuth2.0 授权流程，`GET /jaxrs/authentication/oauth/qywx/config` 返回企业微信授权配置与 URL（Java `AuthenticationAction.oauth/qywx/config` 契约；当前自造的 `/jaxrs/oauth/wechat` 路径需移除）
-- OAuth 钉钉：实现钉钉 OAuth2.0 授权流程，`GET /jaxrs/authentication/oauth/dingding/config` 返回钉钉授权配置与 URL（当前自造的 `/jaxrs/oauth/dingtalk` 路径需移除）
-- 认证流程完整可用：登录（`POST /jaxrs/authentication`）→ 会话 → 登出（`DELETE /jaxrs/authentication`）→ 刷新令牌；当前自造的 `/jaxrs/authentication/login`、`/logout`、`/who`、`/refresh` 路径需在 U1/U5 中对齐为 Java 契约路径（`GET /jaxrs/authentication` 返回当前用户）
+- 验证码：在 workspace 根 `Cargo.toml` 添加 `captcha` 依赖，实现本地验证码图片生成；真实实现替换现有 `/api/authentication/captcha` 占位处理器（返回 base64 占位图）为 PNG 图片，并实现 Java 契约的参数化变体 `GET /api/authentication/captcha/width/{width}/height/{height}`（前端 `getLoginCaptcha` 实际调用此路径，无参数的自造路径前端不可达）；验证码校验独立为 `/api/secret/captcha/verify`（与初始化检查 `GET /api/secret/check` 区分）；验证码一次性使用、5 分钟内有效，校验失败可重试至尝试上限（与 U4 重置流程语义一致）
+- OAuth 企业微信：实现企业微信 OAuth2.0 授权流程，`GET /api/authentication/oauth/qywx/config` 返回企业微信授权配置与 URL（Java `AuthenticationAction.oauth/qywx/config` 契约；当前自造的 `/api/oauth/wechat` 路径需移除）
+- OAuth 钉钉：实现钉钉 OAuth2.0 授权流程，`GET /api/authentication/oauth/dingding/config` 返回钉钉授权配置与 URL（当前自造的 `/api/oauth/dingtalk` 路径需移除）
+- 认证流程完整可用：登录（`POST /api/authentication`）→ 会话 → 登出（`DELETE /api/authentication`）→ 刷新令牌；当前自造的 `/api/authentication/login`、`/logout`、`/who`、`/refresh` 路径需在 U1/U5 中对齐为 Java 契约路径（`GET /api/authentication` 返回当前用户）
 - 会话存储方案（进程内 `SessionManager` 重启失效 vs JWT 无状态）在 U5 实施时确定并记录；若采用进程内会话，须在 U5 测试覆盖服务重启后旧 token 失效场景
-- OAuth 回调：实现 `GET /jaxrs/authentication/oauth/login/qywx/code/{code}`、`GET /jaxrs/authentication/oauth/login/dingding/code/{code}` 端点接收授权码，完成 code→token 交换、校验 state 参数与 redirect_uri 白名单，绑定或创建本地用户并签发会话 token；回调端点按具体路径列入 R12 认证豁免清单（不使用 `{provider}` 动态段）
-- 扫码绑定登录端点处置（importante）：现有 `POST /jaxrs/authentication/bind` 直接按 `unique_id` 查询并签发会话，无任何密码/授权校验（可见 `SELECT id FROM auth_person WHERE unique_id = $1` 后 `create_session`），若保留将构成认证绕过；处置决策：对齐 Java 契约实现扫码登录完整流程（`GET /jaxrs/authentication/bind` 返回绑定二维码、`GET/POST /jaxrs/authentication/bind/meta/{meta}` 轮询确认），仅在被绑定用户已确认扫码授权后签发会话；在完整流程未实现前，从路由中移除自造的 `POST /jaxrs/authentication/bind`（拒绝静默 401 或绕过二选一，暴露前必须有明确授权语义）
+- OAuth 回调：实现 `GET /api/authentication/oauth/login/qywx/code/{code}`、`GET /api/authentication/oauth/login/dingding/code/{code}` 端点接收授权码，完成 code→token 交换、校验 state 参数与 redirect_uri 白名单，绑定或创建本地用户并签发会话 token；回调端点按具体路径列入 R12 认证豁免清单（不使用 `{provider}` 动态段）
+- 扫码绑定登录端点处置（importante）：现有 `POST /api/authentication/bind` 直接按 `unique_id` 查询并签发会话，无任何密码/授权校验（可见 `SELECT id FROM auth_person WHERE unique_id = $1` 后 `create_session`），若保留将构成认证绕过；处置决策：对齐 Java 契约实现扫码登录完整流程（`GET /api/authentication/bind` 返回绑定二维码、`GET/POST /api/authentication/bind/meta/{meta}` 轮询确认），仅在被绑定用户已确认扫码授权后签发会话；在完整流程未实现前，从路由中移除自造的 `POST /api/authentication/bind`（拒绝静默 401 或绕过二选一，暴露前必须有明确授权语义）
 - 所有 OAuth 端点使用环境变量存储第三方应用的 AppKey 和 AppSecret
 
 **Patterns to follow:**
@@ -408,19 +408,19 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - `shared::response::ActionResult` 的成功/错误响应格式
 
 **Test scenarios:**
-- Happy path: GET `/jaxrs/authentication/captcha/width/{width}/height/{height}` 返回 PNG 格式的验证码图片
-- Happy path: GET `/jaxrs/authentication/oauth/qywx/config` 返回有效的企业微信授权 URL（包含正确的 redirect_uri 和 scope）
-- Happy path: GET `/jaxrs/authentication/oauth/dingding/config` 返回有效的钉钉授权 URL（包含正确的 redirect_uri 和 scope）
-- Happy path: GET `/jaxrs/authentication/oauth/login/qywx/code/{code}` 携带有效授权码完成登录并返回会话 token
-- Happy path: POST `/jaxrs/secret/captcha/verify` 验证验证码后返回成功
-- Happy path: POST `/jaxrs/authentication` 登录成功后返回包含 token 的 `LoginResponse`
-- Happy path: GET `/jaxrs/authentication` 携带 token 返回当前用户（验证 token 有效性）
-- Happy path: DELETE `/jaxrs/authentication` 登出后 token 失效
-- Happy path: POST `/jaxrs/authentication/refresh` 刷新令牌后返回新的 token
-- Edge case: GET `/jaxrs/authentication/captcha/width/{width}/height/{height}` 参数非法返回 400
-- Edge case: POST `/jaxrs/authentication` 密码错误返回 401
-- Edge case: GET `/jaxrs/authentication/oauth/qywx/config` 缺少企业微信配置返回 500
-- Edge case: 扫码登录端点（`/jaxrs/authentication/bind`、`/jaxrs/authentication/bind/meta/{meta}`）在被绑定用户确认扫码授权前不得签发会话（验证无认证绕过）
+- Happy path: GET `/api/authentication/captcha/width/{width}/height/{height}` 返回 PNG 格式的验证码图片
+- Happy path: GET `/api/authentication/oauth/qywx/config` 返回有效的企业微信授权 URL（包含正确的 redirect_uri 和 scope）
+- Happy path: GET `/api/authentication/oauth/dingding/config` 返回有效的钉钉授权 URL（包含正确的 redirect_uri 和 scope）
+- Happy path: GET `/api/authentication/oauth/login/qywx/code/{code}` 携带有效授权码完成登录并返回会话 token
+- Happy path: POST `/api/secret/captcha/verify` 验证验证码后返回成功
+- Happy path: POST `/api/authentication` 登录成功后返回包含 token 的 `LoginResponse`
+- Happy path: GET `/api/authentication` 携带 token 返回当前用户（验证 token 有效性）
+- Happy path: DELETE `/api/authentication` 登出后 token 失效
+- Happy path: POST `/api/authentication/refresh` 刷新令牌后返回新的 token
+- Edge case: GET `/api/authentication/captcha/width/{width}/height/{height}` 参数非法返回 400
+- Edge case: POST `/api/authentication` 密码错误返回 401
+- Edge case: GET `/api/authentication/oauth/qywx/config` 缺少企业微信配置返回 500
+- Edge case: 扫码登录端点（`/api/authentication/bind`、`/api/authentication/bind/meta/{meta}`）在被绑定用户确认扫码授权前不得签发会话（验证无认证绕过）
 - Integration: 登录后使用返回的 token 可访问受保护的端点
 
 **Verification:**
@@ -450,7 +450,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - 认证中间件：为所有非健康检查端点添加认证中间件，验证请求中的会话令牌（从 `Authorization` 头或 cookie 中提取）；中间件实现与挂载在 U1 完成，本单元对其进行加固与专项验证（401/429/豁免边界）；豁免端点与 R12 一致（健康检查、登录、验证码、验证码校验、刷新令牌、密码重置、OAuth 授权与回调、初始化设置且系统未初始化时），按精确路径匹配
 - 授权检查：在认证中间件之上增加基于角色的授权检查，person/role/unit/group 的写操作（create/update/delete）仅允许管理员角色，与 Java 侧权限模型对齐
 - 输入验证：为所有输入端点添加参数验证（类型、长度、格式），使用 `axum::extract` 的 `Json` 和 `Query` 进行验证
-- 速率限制：为认证接口添加每 IP 每分钟 10 次限制的速率限制中间件，为普通接口添加每 IP 每分钟 100 次限制的速率限制中间件；密码重置端点（`/jaxrs/reset/check/credential/{credential}`、`/jaxrs/reset/check/password/{password}`、`/jaxrs/reset/code/credential/{credential}`、`/jaxrs/reset`、`/jaxrs/reset/password/anonymous`）计入认证限流（10 次/分钟/IP）；客户端 IP 提取仅信任来自 nginx 的 `X-Forwarded-For`（可信代理白名单），否则回退 socket 地址；替换 auth 现有 handler 级 RateLimiter（当前为 5 次/分钟且硬编码 `127.0.0.1`），统一由中间件限流
+- 速率限制：为认证接口添加每 IP 每分钟 10 次限制的速率限制中间件，为普通接口添加每 IP 每分钟 100 次限制的速率限制中间件；密码重置端点（`/api/reset/check/credential/{credential}`、`/api/reset/check/password/{password}`、`/api/reset/code/credential/{credential}`、`/api/reset`、`/api/reset/password/anonymous`）计入认证限流（10 次/分钟/IP）；客户端 IP 提取仅信任来自 nginx 的 `X-Forwarded-For`（可信代理白名单），否则回退 socket 地址；替换 auth 现有 handler 级 RateLimiter（当前为 5 次/分钟且硬编码 `127.0.0.1`），统一由中间件限流
 - HTTPS：在生产环境中强制 HTTPS，使用 TLS 1.2+，返回安全响应头（HSTS, X-Content-Type-Options）；TLS 由 nginx 终止（部署拓扑为反向代理），Rust 服务仅监听回环地址，HSTS 与安全头在 nginx 配置，Rust 侧设置应用层安全响应头并执行 HTTP→HTTPS 跳转
 - 健康检查端点（`/health`）无需认证
 
@@ -460,14 +460,14 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 
 **Test scenarios:**
 - Happy path: GET `/health` 无需认证返回 200
-- Happy path: GET `/jaxrs/unit/list` 携带有效 token 返回 200 和数据
-- Error path: GET `/jaxrs/unit/list` 缺少 token 返回 401
-- Error path: POST `/jaxrs/person` 缺少必填字段返回 400
-- Error path: POST `/jaxrs/person` 字段格式无效返回 400
+- Happy path: GET `/api/unit/list` 携带有效 token 返回 200 和数据
+- Error path: GET `/api/unit/list` 缺少 token 返回 401
+- Error path: POST `/api/person` 缺少必填字段返回 400
+- Error path: POST `/api/person` 字段格式无效返回 400
 - Rate limit: 同一 IP 1 分钟内超过 10 次认证请求返回 429
 - Rate limit: 同一 IP 1 分钟内超过 100 次普通请求返回 429
 - Rate limit: 两个不同的 X-Forwarded-For 客户端 IP 独立计数
-- Error path: 非管理员调用 POST `/jaxrs/person` 返回 403
+- Error path: 非管理员调用 POST `/api/person` 返回 403
 - Integration: 经 Rust 登录的 token 可访问 Java 侧未迁移模块（认证切换前登录保留在 Java 侧）
 - Happy path: 生产环境 HTTPS 响应包含 HSTS 和 X-Content-Type-Options 头
 - Edge case: 速率限制窗口重置后请求恢复正常
@@ -514,7 +514,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），长期技术栈锁定
 - **Interaction graph:** Rust 服务接收前端直接发起的所有 API 请求；Java 服务继续处理未迁移模块的请求。两个服务在迁移期间通过 nginx 前缀路由共存；nginx 前缀切换仅允许对已通过真实化验证的模块执行，且须在认证与限流中间件挂载（U1）并经 U6 专项验证之后，避免端点未受认证保护就暴露到前端；桩代码端点不进入前端可见的切换路径
 - **Error propagation:** Rust 服务中间件层统一处理 panic 和错误，输出与 Java 侧一致的 `ActionResult` 格式，前端无需区分后端来源。
 - **State lifecycle risks:** 认证模块数据在切换窗口期从 MySQL 迁移到 PostgreSQL，迁移完成后 Java 侧停止写入。回滚时通过 nginx 路由切回 Java，Java 侧数据保持原样。迁移窗口后仍由 Java 处理且会写 org/auth 表的模块须限定为只读或实施单向同步，避免双库数据分叉（Rust 侧新建人员在 Java 侧模块不可见）
-- **API surface parity:** 所有已迁移模块的 API 路径（`/jaxrs/*`）必须与 Java 侧的请求方法、响应结构和错误码完全一致（以 Java Action 注解及前端 `xAction` 服务契约为准，非 Rust 自造路径）。
+- **API surface parity:** 所有已迁移模块的 API 路径（`/api/*`）必须与 Java 侧的请求方法、响应结构和错误码完全一致（以 Java Action 注解及前端 `xAction` 服务契约为准，非 Rust 自造路径）。
 - **Unchanged invariants:** 未迁移模块的所有 API 路径和行为不受影响，继续由 Java 服务处理。
 - **Switch acceptance criteria:** 终端用户侧验收须覆盖两个方向——Rust 登录用户访问 Java 侧未迁移模块、以及 Java 登录用户访问 Rust 侧已切换前缀的模块；后者仅在 U6 会话互认方案落地并验证后视为通过，在此之前该方向不列入发布门禁。
 

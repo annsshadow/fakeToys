@@ -117,7 +117,7 @@ OA4Rust 项目在 2026-08-08 已完成全部 81 个 crate 的真实化，但存�
 
 - **AE1. Covers R1, R2, R7.** 给定 organization_core_entity crate 中的人员列表端点，使用 SeaORM 实体替代 SQLx 原生查询后，`cargo test` 全部通过，响应格式与迁移前完全一致。
 - **AE2. Covers R4, R5.** 给定 FILE_FOLDER 表，规范化为 file_folder 小写命名后，所有引用该表的查询和 ORM 实体同步更新，迁移文件幂等执行成功，无孤立记录。
-- **AE3. Covers R12, R13.** 给定 organization_core_entity crate，补充 POST /jaxrs/organization/person 端点后，传入有效请求体成功创建人员并返回 200 + type=success；传入缺少必填字段的请求体返回 400 + type=error；未认证用户调用返回 401。
+- **AE3. Covers R12, R13.** 给定 organization_core_entity crate，补充 POST /api/organization/person 端点后，传入有效请求体成功创建人员并返回 200 + type=success；传入缺少必填字段的请求体返回 400 + type=error；未认证用户调用返回 401。
 - **AE4. Covers R16, R18.** 给定 Java 服务不可用，运行行为对比测试时所有端点标记为 SKIP 并在报告中注明降级原因，测试通过而非失败；allowlist 覆盖全部已知的字段命名差异。
 - **AE5. Covers R22, R23.** 给定任意已完成 ORM 迁移的端点，前端 o2web 的 action.js 能正常解析响应 JSON，无需任何前端代码修改。
 - **AE6. Covers R15.** 给定全部 7,624 个端点，行为对比测试框架能枚举并对比每一个端点（Java 可用时为 Pass/Fail，Java 不可用时为 SKIP），报告无遗漏。

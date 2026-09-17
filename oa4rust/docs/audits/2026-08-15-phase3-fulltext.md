@@ -2,7 +2,7 @@
 
 - 日期：2026-08-15
 - 范围：`crates/cms_assemble_control`、`crates/query_assemble_designer`、`crates/query_assemble_surface`
-- 结论：**全文检索可行**，已在 `cms_assemble_control` 中实现只读 `GET /jaxrs/cms_assemble_control/search?q=` 端点（含优雅降级 + 单测）。`cargo check -p cms_assemble_control` 通过。
+- 结论：**全文检索可行**，已在 `cms_assemble_control` 中实现只读 `GET /api/cms_assemble_control/search?q=` 端点（含优雅降级 + 单测）。`cargo check -p cms_assemble_control` 通过。
 
 ---
 
@@ -12,7 +12,7 @@
 
 | 位置 | 用法 | 说明 |
 | --- | --- | --- |
-| `crates/bbs/src/subject.rs:264` | `WHERE title ILIKE $1` | 真实搜索端点 `GET /jaxrs/bbs/subject/search?keyword=`，仅按 `title` 前缀/子串匹配 |
+| `crates/bbs/src/subject.rs:264` | `WHERE title ILIKE $1` | 真实搜索端点 `GET /api/bbs/subject/search?keyword=`，仅按 `title` 前缀/子串匹配 |
 | `crates/file_assemble_control/src/lib.rs:967` | `FROM FILE_FILE WHERE name ILIKE $1` | 按文件名子串 |
 | `crates/query_assemble_surface/src/lib.rs:631` | `x_query_design WHERE name ILIKE $1` | 按设计名子串 |
 | `crates/query_assemble_surface/src/lib.rs:857,1036` | `x_query_table_data WHERE table_flag=$1 AND data ILIKE $2` | 在 JSON 文本列上做子串匹配 |
@@ -87,7 +87,7 @@ LIMIT 50;
 
 **文件**：`crates/cms_assemble_control/src/lib.rs`、`crates/cms_assemble_control/src/routes.rs`
 
-- `GET /jaxrs/cms_assemble_control/search?q=<term>`
+- `GET /api/cms_assemble_control/search?q=<term>`
   - 处理器 `search()`（lib.rs 内 `DocumentSearchQuery { q: Option<String> }`）。
   - 使用 `build_document_search_sql()` 构造只读查询：`to_tsvector('simple', ...)` 组合 `title`+`content`，`@@ plainto_tsquery('simple', $1)` 匹配，`LIMIT 50`，按 `publish_time/create_time` 倒序。
   - **优雅降级**：`q` 为空立即返回 `{"count":0,"data":[]}`；DB 不可达/查询失败时同样返回 `200 {"count":0,"data":[]}`（遵循本 crate LIST 处理器约定）。

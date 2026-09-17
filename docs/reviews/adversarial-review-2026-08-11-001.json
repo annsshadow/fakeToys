@@ -12,7 +12,7 @@
       "confidence": 75,
       "evidence": [
         "R24. 以上批量查询端点无需认证（express 模块特性，与 Java 一致）",
-        "R17. 批量查询人员（POST /jaxrs/express/person/list）：接受 {\"ids\":[\"id1\",\"id2\"]} 或 {\"identities\":[\"id1\",\"id2\"]}，返回完整 Person 对象列表",
+        "R17. 批量查询人员（POST /api/express/person/list）：接受 {\"ids\":[\"id1\",\"id2\"]} 或 {\"identities\":[\"id1\",\"id2\"]}，返回完整 Person 对象列表",
         "Key Technical Decisions: 批量查询无认证：express 模块批量查询与 Java 一致，不需要认证（前端内部调用场景）",
         "Risk table: 批量查询端点无认证时并发安全 | Low | Medium | 数据库 UNIQUE 约束 + 应用层预检查，并发时由 DB 约束兜底"
       ]
@@ -37,14 +37,14 @@
       "title": "U1与U2双因素登录模式矛盾",
       "severity": "P1",
       "section": "Implementation Unit 1 / Implementation Unit 2",
-      "why_it_matters": "U1的Approach描述单请求模式：'handler 接收 credential、password、code 三个字段，先验证第一因子（复用现有 login 逻辑），再验证验证码'。U2的Approach描述两阶段模式：'第一阶段 POST /jaxrs/authentication/two/factory/login 发送 credential+password → 发送短信验证码 → 返回 {value: true}；第二阶段 POST /jaxrs/authentication/code 发送 credential+codeAnswer → 签发 token'。两者都是'双因素登录'但实现模式完全不同。Key Technical Decisions明确选择'两阶段拆分'，但U1仍保留旧模式描述。实施者无法确定应构建哪个版本，或两者都构建（冗余）。",
+      "why_it_matters": "U1的Approach描述单请求模式：'handler 接收 credential、password、code 三个字段，先验证第一因子（复用现有 login 逻辑），再验证验证码'。U2的Approach描述两阶段模式：'第一阶段 POST /api/authentication/two/factory/login 发送 credential+password → 发送短信验证码 → 返回 {value: true}；第二阶段 POST /api/authentication/code 发送 credential+codeAnswer → 签发 token'。两者都是'双因素登录'但实现模式完全不同。Key Technical Decisions明确选择'两阶段拆分'，但U1仍保留旧模式描述。实施者无法确定应构建哪个版本，或两者都构建（冗余）。",
       "autofix_class": "gated_auto",
       "finding_type": "error",
       "suggested_fix": "合并U1和U2中双因素登录的描述，统一为两阶段模式。U1的Approach中删除'handler 接收 credential、password、code 三个字段'的单请求描述，仅保留U2的两阶段流程作为唯一实现路径。",
       "confidence": 75,
       "evidence": [
         "U1 Approach: 双因素登录：在已有短信验证码流程基础上，第一因子为 credential+password，第二因子为短信验证码。handler 接收 credential、password、code 三个字段，先验证第一因子（复用现有 login 逻辑），再验证验证码（复用 CodeStore）",
-        "U2 Approach: 第一阶段：POST /jaxrs/authentication/two/factory/login 发送 credential+password → 验证通过 → 发送短信验证码 → 返回 {value: true, passwordExpired: false}。第二阶段：POST /jaxrs/authentication/code 发送 credential+codeAnswer → 验证验证码 → 签发 token",
+        "U2 Approach: 第一阶段：POST /api/authentication/two/factory/login 发送 credential+password → 验证通过 → 发送短信验证码 → 返回 {value: true, passwordExpired: false}。第二阶段：POST /api/authentication/code 发送 credential+codeAnswer → 验证验证码 → 签发 token",
         "Key Technical Decisions: 双因素登录两阶段拆分：Java 先发码（value=true）再验码（codeLogin），Rust 当前单请求模式不符合前端契约，必须拆分为两个独立端点"
       ]
     },
@@ -52,7 +52,7 @@
       "title": "Empower CRUD缺少授权内容校验",
       "severity": "P1",
       "section": "Requirements R25-R28 / Implementation Unit 9",
-      "why_it_matters": "R28声明'管理员可管理他人授权，普通用户只能管理自身授权'，但仅约束了'谁能管理谁的授权'，未约束'授权内容本身的合法性'。如果普通用户通过POST /jaxrs/person/empower创建授权时，请求体包含超出自身权限范围的目标角色或资源，系统是否校验？计划未定义empower实体的schema约束、未描述授权内容验证规则、未说明是否存在权限提升（privilege escalation）防护。仅依赖auth_role的is_admin二元判断，无法防止授权内容层面的越权。",
+      "why_it_matters": "R28声明'管理员可管理他人授权，普通用户只能管理自身授权'，但仅约束了'谁能管理谁的授权'，未约束'授权内容本身的合法性'。如果普通用户通过POST /api/person/empower创建授权时，请求体包含超出自身权限范围的目标角色或资源，系统是否校验？计划未定义empower实体的schema约束、未描述授权内容验证规则、未说明是否存在权限提升（privilege escalation）防护。仅依赖auth_role的is_admin二元判断，无法防止授权内容层面的越权。",
       "autofix_class": "manual",
       "finding_type": "omission",
       "suggested_fix": null,
@@ -60,7 +60,7 @@
       "evidence": [
         "R28. 权限控制：管理员可管理他人授权，普通用户只能管理自身授权",
         "U9 Approach: 管理员可管理他人授权，普通用户只能管理自身授权。复用 existing auth_role 角色体系",
-        "R25. 补全授权管理 CRUD：POST /jaxrs/person/empower（创建授权）"
+        "R25. 补全授权管理 CRUD：POST /api/person/empower（创建授权）"
       ]
     },
     {

@@ -39,23 +39,23 @@ console.log('Without request fallback: ' + withoutReq.length);
 
 // Get the prefix for each module
 function getPrefix(modName, startLine) {
-  // Search backward for comment with jaxrs path
+  // Search backward for comment with api path
   for (let j = startLine - 1; j >= Math.max(0, startLine - 20); j--) {
     const line = lines[j];
-    if (line.includes('/jaxrs/')) {
-      const pathMatch = line.match(/\/jaxrs\/[^"'\`]+/);
+    if (line.includes('/api/')) {
+      const pathMatch = line.match(/\/api\/[^"'\`]+/);
       if (pathMatch) return pathMatch[0];
     }
   }
   // Search forward for first route
   for (let j = startLine + 1; j <= startLine + 30 && j < lines.length; j++) {
-    const pathMatch = lines[j].match(/['"`](\/jaxrs\/[^'"`]+)['"`]/);
+    const pathMatch = lines[j].match(/['"`](\/api\/[^'"`]+)['"`]/);
     if (pathMatch) {
       const parts = pathMatch[1].split('/').filter(Boolean);
       return '/' + parts.slice(0, 4).join('/');
     }
   }
-  return '/jaxrs';
+  return '/api';
 }
 
 // Add request fallback to modules without it
@@ -64,7 +64,7 @@ for (const mod of withoutReq) {
   const prefix = getPrefix(mod.name, mod.start);
   // Determine the base URL from prefix
   const parts = prefix.split('/').filter(Boolean);
-  const baseUrl = '/' + parts.slice(0, 3).join('/'); // /jaxrs/{module}/{submodule}
+  const baseUrl = '/' + parts.slice(0, 3).join('/'); // /api/{module}/{submodule}
 
   const fallback = [
     '  request: (method: string, path: string, body?: unknown) => {',

@@ -38,5 +38,5 @@ organization assemble personal 模块。
 
 
 
-- `GET /jaxrs/organization/assemble/personal/{id}/role/list`
-- `GET /jaxrs/organization/assemble/personal/{id}/setting`
+- `GET /api/organization/assemble/personal/{id}/role/list`
+- `GET /api/organization/assemble/personal/{id}/setting`

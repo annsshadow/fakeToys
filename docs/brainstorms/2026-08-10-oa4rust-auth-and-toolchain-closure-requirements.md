@@ -53,7 +53,7 @@ topic: oa4rust-auth-and-toolchain-closure
   - **Trigger：** 外部系统通过浏览器 URL 重定向触发 SSO 登录
   - **Actors：** A1
   - **Steps：**
-    1. 外部系统构造 GET URL：`/jaxrs/authentication/sso/client/{client}/token/{token}`
+    1. 外部系统构造 GET URL：`/api/authentication/sso/client/{client}/token/{token}`
     2. oa4rust 解密 token（3DES EDE2），提取 credential
     3. 验证时效性（5 分钟内），查询用户，签发会话
   - **Outcome：** 浏览器重定向后用户自动登录，token 写入 cookie
@@ -74,11 +74,11 @@ topic: oa4rust-auth-and-toolchain-closure
 ## Requirements
 
 **第三方 OAuth 提供方实现**
-- R1. 实现微信小程序登录模块（`auth/src/mpweixin.rs`），包含 4 个端点：`GET /jaxrs/mpweixin/login/code/{code}`（code→openid→登录或返回 unbind）、`GET /jaxrs/mpweixin/bind/code/{code}`（code→openid→绑定到当前登录用户）、`GET /jaxrs/mpweixin/bind/openid/{openid}`（直接绑定 openid）、`POST /jaxrs/mpweixin/menu/test/send/to/{person}`（管理员发送模板消息，admin only）
-- R2. 实现 WeLink 登录模块（`auth/src/welink.rs`），包含 1 个端点：`GET /jaxrs/welink/code/{code}`（code→华为云 userId→登录，unique_id 前缀 `welink_`）
-- R3. 实现政务钉钉登录模块（`auth/src/zhengwudingding.rs`），包含 2 个端点：`GET /jaxrs/zhengwudingding/code/{code}`（code→dingUserId→userId 两步映射→登录，unique_id 前缀 `zwding_`）、`GET /jaxrs/zhengwudingding/info`（获取政务钉钉配置状态）
-- R4. 实现移动办公 SSO 模块（`auth/src/andfx.rs`），包含 1 个端点：`GET /jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}`（token 解析→enterId 校验→登录，unique_id 前缀 `andfx_`）
-- R5. 实现企业微信点单登录模块（`auth/src/qiyeweixin.rs`），包含 3 个端点：`GET /jaxrs/qiyeweixin/code/{code}`（code 登录）、`GET /jaxrs/qiyeweixin/update/person/detail/{code}`（登录并同步用户详细信息）、`POST /jaxrs/qiyeweixin/jssdk/sign/info`（JSSDK 签名，SHA1(jsapi_ticket+noncestr+timestamp+url)）
+- R1. 实现微信小程序登录模块（`auth/src/mpweixin.rs`），包含 4 个端点：`GET /api/mpweixin/login/code/{code}`（code→openid→登录或返回 unbind）、`GET /api/mpweixin/bind/code/{code}`（code→openid→绑定到当前登录用户）、`GET /api/mpweixin/bind/openid/{openid}`（直接绑定 openid）、`POST /api/mpweixin/menu/test/send/to/{person}`（管理员发送模板消息，admin only）
+- R2. 实现 WeLink 登录模块（`auth/src/welink.rs`），包含 1 个端点：`GET /api/welink/code/{code}`（code→华为云 userId→登录，unique_id 前缀 `welink_`）
+- R3. 实现政务钉钉登录模块（`auth/src/zhengwudingding.rs`），包含 2 个端点：`GET /api/zhengwudingding/code/{code}`（code→dingUserId→userId 两步映射→登录，unique_id 前缀 `zwding_`）、`GET /api/zhengwudingding/info`（获取政务钉钉配置状态）
+- R4. 实现移动办公 SSO 模块（`auth/src/andfx.rs`），包含 1 个端点：`GET /api/andfx/moa/sso/token/{token}/enter/{enterId}`（token 解析→enterId 校验→登录，unique_id 前缀 `andfx_`）
+- R5. 实现企业微信点单登录模块（`auth/src/qiyeweixin.rs`），包含 3 个端点：`GET /api/qiyeweixin/code/{code}`（code 登录）、`GET /api/qiyeweixin/update/person/detail/{code}`（登录并同步用户详细信息）、`POST /api/qiyeweixin/jssdk/sign/info`（JSSDK 签名，SHA1(jsapi_ticket+noncestr+timestamp+url)）
 - R6. 所有 OAuth 提供方遵循现有 `auth/oauth.rs` 的模式：环境变量配置 AppKey/AppSecret，`unique_id` 约定前缀绑定第三方账号，未绑定用户返回 `unbind=true` 引导前端绑定
 - R7. 为每个新提供方模块添加单元测试，覆盖：code 换取用户标识、用户不存在返回 unbind、用户已存在返回 token、无效 code 返回错误
 
@@ -86,7 +86,7 @@ topic: oa4rust-auth-and-toolchain-closure
 - R8. 创建 migration 脚本（`migrations/013_add_oauth_fields.sql`），为 `auth_person` 表新增 `mpwxopenId VARCHAR(255)` 字段，用于存储微信小程序 openid，与 Java 实体 `Person.mpweixinOpenId_FIELDNAME` 对齐
 
 **SSO GET 端点**
-- R9. 在 `auth/src/sso.rs` 新增 `GET /jaxrs/authentication/sso/client/{client}/token/{token}` 端点，与现有 POST 端点共享 3DES 解密逻辑，支持浏览器 URL 重定向场景，解密后流程与 POST 完全一致
+- R9. 在 `auth/src/sso.rs` 新增 `GET /api/authentication/sso/client/{client}/token/{token}` 端点，与现有 POST 端点共享 3DES 解密逻辑，支持浏览器 URL 重定向场景，解密后流程与 POST 完全一致
 
 **MCP 工具桥接扩展**
 - R10. 扩展 `scripts/gen_mcp_tools.py`，基于 `crates/*/src/lib.rs` 的路由注册自动生成 `mcp_server/src/generated_routes.rs`，覆盖全部 7624 个端点，每个工具包含：工具名称（`jaxrs_{crate}_{action}` 命名）、HTTP 方法、路径、描述、pathParams、bodyParams、requiresAuth
@@ -102,8 +102,8 @@ topic: oa4rust-auth-and-toolchain-closure
 
 ## Acceptance Examples
 
-- AE1. **Covers R1, R2, R3, R4, R5.** 向 `/jaxrs/mpweixin/login/code/{code}` 发送有效微信小程序 code，返回包含 `token` 和 `person` 的 ActionResult；未绑定的 openid 返回 `unbind=true` 和 `mpwxopenId`；向 `/jaxrs/welink/code/{code}` 发送有效 WeLink code，返回成功会话 token；向 `/jaxrs/zhengwudingding/code/{code}` 发送有效政务钉钉 code，返回成功会话 token；向 `/jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}` 发送有效 token，返回成功会话；向 `/jaxrs/qiyeweixin/code/{code}` 发送有效企业微信扫码 code，返回成功会话；向 `/jaxrs/qiyeweixin/jssdk/sign/info` 发送 URL 和 nonceStr，返回有效的 SHA1 签名。
-- AE2. **Covers R9.** 向 `GET /jaxrs/authentication/sso/client/{client}/token/{token}` 发送有效的 3DES 加密 token，返回成功会话 token 和用户信息；token 过期（超过 5 分钟）返回 400 错误。
+- AE1. **Covers R1, R2, R3, R4, R5.** 向 `/api/mpweixin/login/code/{code}` 发送有效微信小程序 code，返回包含 `token` 和 `person` 的 ActionResult；未绑定的 openid 返回 `unbind=true` 和 `mpwxopenId`；向 `/api/welink/code/{code}` 发送有效 WeLink code，返回成功会话 token；向 `/api/zhengwudingding/code/{code}` 发送有效政务钉钉 code，返回成功会话 token；向 `/api/andfx/moa/sso/token/{token}/enter/{enterId}` 发送有效 token，返回成功会话；向 `/api/qiyeweixin/code/{code}` 发送有效企业微信扫码 code，返回成功会话；向 `/api/qiyeweixin/jssdk/sign/info` 发送 URL 和 nonceStr，返回有效的 SHA1 签名。
+- AE2. **Covers R9.** 向 `GET /api/authentication/sso/client/{client}/token/{token}` 发送有效的 3DES 加密 token，返回成功会话 token 和用户信息；token 过期（超过 5 分钟）返回 400 错误。
 - AE3. **Covers R8.** 运行 `psql` 后执行 `\d auth_person`，确认存在 `mpwxopenId` 列；运行 `cargo test --workspace --lib` 全部通过。
 - AE4. **Covers R10, R11.** 启动 oa4rust 并调用 MCP `tools/list`，返回工具数量覆盖全部已实现端点（~2458+）；每个工具元数据包含 `name`、`description`、`inputSchema`（含 `pathParams` 和 `bodyParams`）、`requiresAuth` 字段。
 - AE5. **Covers R12.** 访问 `/openapi.json` 端点，返回的 OpenAPI 规范包含全部已实现端点的 path item，每个 path item 有 `tag`、`summary`、`parameters`（path/body）、`responses`；`cargo check --workspace` 无编译错误。

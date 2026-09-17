@@ -1,0 +1,14 @@
+[
+  {
+    "instruction": "如何申请租房？",
+    "output": "请登录官网申请"
+  },
+  {
+    "instruction": "租房需要什么材料？",
+    "output": "身份证、工作证明"
+  },
+  {
+    "instruction": "租房流程是什么？",
+    "output": "选房、签约、付款"
+  }
+]

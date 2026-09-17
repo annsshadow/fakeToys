@@ -40,7 +40,7 @@ Notes surfaced by the drill:
 | `deploy/nginx-auth-routes-rust-drill.conf` | `syntax is ok` / `test is successful` |
 | `deploy/nginx-auth-routes-java-drill.conf` | `syntax is ok` / `test is successful` |
 
-Both proxy only `/jaxrs/(authentication|person|password|reset|secret)` to their
+Both proxy only `/api/(authentication|person|password|reset|secret)` to their
 upstream; the Rust config points at `127.0.0.1:3000`, the Java config at the
 o2server host. The switch is "replace the active auth-route config and
 `nginx -t` then `nginx -s reload`".

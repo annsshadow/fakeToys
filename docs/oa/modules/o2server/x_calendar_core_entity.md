@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 公开日历：`GET /jaxrs/calendar/core/entity/calendar/list/public` → `calendar_list_public` 查 `x_cal_calendar` 过滤 IsPublic=true 且 Status="OPEN"，CreateTime 倒序 limit 50
+- 公开日历：`GET /api/calendar/core/entity/calendar/list/public` → `calendar_list_public` 查 `x_cal_calendar` 过滤 IsPublic=true 且 Status="OPEN"，CreateTime 倒序 limit 50
 - 我的日历：`GET .../calendar/list/my` → `calendar_list_my` 仅过滤 Status="OPEN"，按 type_（UNIT 不区分大小写）拆分为 myCalendars/unitCalendars，followCalendars 固定空数组
 - 日历 CRUD：`calendar_get`（find_by_id + Status="OPEN"，无则 error("calendar not found")）；`calendar_create` 强制 name/type，target 默认 "person"、color 默认 "#1462be"、createor 默认 "anonymous"、status 初始 OPEN；`calendar_update` 缺省字段沿用旧值；`calendar_remove` 软删——status 置 CLOSED
 - 事件 CRUD：`event_create` 校验 calendarId/title/startTime/endTime 必填并 parse 为 NaiveDateTime，visibility 默认 PUBLIC；`event_update` 同样过滤 Status="OPEN"；`event_remove` 软删置 CLOSED

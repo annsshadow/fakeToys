@@ -68,54 +68,54 @@ status: in_progress
 
 | # | o2web 组件 | 对应功能 | 优先级 | 后端API路径模式 | 估计复杂度 |
 |---|-----------|---------|--------|---------------|-----------|
-| 1 | ANN | 神经网络AI配置 | P3 | /jaxrs/ai_assemble_control/* | 低 |
-| 2 | BAM | 业务活动监控(图表+时间线) | P2 | /jaxrs/processplatform_assemble_bam/* | 中 |
-| 3 | Collect | 收集管理(表单收集+数据汇总) | P2 | /jaxrs/program_center/* | 中 |
-| 4 | Common | 公共组件库 | P3 | /jaxrs/general_assemble_control/* | 低 |
-| 5 | ConfigDesigner | 配置设计器 | P2 | /jaxrs/config/* | 中 |
-| 6 | ControlPanel | 控制面板(统计+快捷操作) | P2 | /jaxrs/sysresource/* | 中 |
-| 7 | Deployment | 部署管理 | P2 | /jaxrs/server/* | 高 |
+| 1 | ANN | 神经网络AI配置 | P3 | /api/ai_assemble_control/* | 低 |
+| 2 | BAM | 业务活动监控(图表+时间线) | P2 | /api/processplatform_assemble_bam/* | 中 |
+| 3 | Collect | 收集管理(表单收集+数据汇总) | P2 | /api/program_center/* | 中 |
+| 4 | Common | 公共组件库 | P3 | /api/general_assemble_control/* | 低 |
+| 5 | ConfigDesigner | 配置设计器 | P2 | /api/config/* | 中 |
+| 6 | ControlPanel | 控制面板(统计+快捷操作) | P2 | /api/sysresource/* | 中 |
+| 7 | Deployment | 部署管理 | P2 | /api/server/* | 高 |
 | 8 | DesignCenter | 设计中心入口(聚合导航) | P2 | 多模块 | 低 |
 | 9 | Empty | 空页面占位 | P3 | — | 极低 |
-| 10 | FaceSet | 人脸设置 | P3 | /jaxrs/personal/* | 中 |
-| 11 | FindDesigner | 查找设计器(搜索配置) | P2 | /jaxrs/query_assemble_designer/* | 中 |
-| 12 | Homepage | 首页配置(门户首页布局) | P2 | /jaxrs/portal_assemble_surface/* | 中 |
-| 13 | LogViewer | 日志查看器 | P1 | /jaxrs/log/* | 低 |
-| 14 | Note | 笔记管理(列表+富文本) | P2 | /jaxrs/cms_core_entity/* | 低 |
-| 15 | PdfViewer | PDF在线查看 | P2 | /jaxrs/preview/* | 低 |
-| 16 | Search | 全局搜索 | P2 | /jaxrs/search/* | 中 |
-| 17 | Selector | 通用选择器(选人/选组织) | P1 | /jaxrs/organization_assemble_control/* | 低 |
-| 18 | Template | 模板管理(列表+预览) | P2 | /jaxrs/templateform/* | 低 |
-| 19 | ThreeMember | 三方成员管理 | P2 | /jaxrs/organization_assemble_control/* | 低 |
-| 20 | ftsearch | 全文搜索 | P3 | /jaxrs/ftsearch/* | 中 |
-| 21 | cms_Column (独立) | CMS列管理(详细字段编辑) | P1 | /jaxrs/cms_core_entity/column/* | 低 |
-| 22 | cms_ColumnManager | CMS列管理器(批量管理) | P1 | /jaxrs/cms_core_entity/column_manager/* | 低 |
-| 23 | cms_DictionaryDesigner | CMS字典设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/dict/* | 低 |
-| 24 | cms_FormDesigner (独立) | CMS表单设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/form/* | 低 |
-| 25 | cms_Index | CMS索引设计 | P1 | /jaxrs/cms_core_entity/index/* | 低 |
-| 26 | cms_Module (独立) | CMS模块管理(独立入口) | P1 | /jaxrs/cms_core_entity/module/* | 低 |
-| 27 | cms_ScriptDesigner | CMS脚本设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/script/* | 低 |
-| 28 | cms_ViewDesigner | CMS视图设计器(独立入口) | P1 | /jaxrs/cms_assemble_control/view/* | 低 |
-| 29 | cms_Xform (独立) | CMS XForm表单(独立入口) | P1 | /jaxrs/cms_assemble_control/xform/* | 低 |
-| 30 | portal_DictionaryDesigner | 门户字典设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/dict/* | 低 |
-| 31 | portal_PageDesigner | 门户页面设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/page/* | 低 |
-| 32 | portal_ScriptDesigner | 门户脚本设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/script/* | 低 |
-| 33 | portal_WidgetDesigner | 门户组件设计器(独立入口) | P1 | /jaxrs/portal_assemble_designer/widget/* | 低 |
-| 34 | process_Application (独立) | 流程应用管理(独立入口) | P1 | /jaxrs/program_center/application/* | 低 |
-| 35 | process_DictionaryDesigner | 流程字典设计器(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/dict/* | 低 |
-| 36 | process_FormDesigner (独立) | 流程表单设计器(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/form/* | 低 |
-| 37 | process_ProcessManager (独立) | 流程实例管理(独立入口) | P1 | /jaxrs/processplatform_assemble_surface/process_manager/* | 低 |
-| 38 | process_ScriptDesigner | 流程脚本设计器(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/script/* | 低 |
-| 39 | process_TaskCenter (独立) | 流程任务中心(独立入口) | P1 | /jaxrs/processplatform_service_processing/task/* | 低 |
-| 40 | process_Xform (独立) | 流程XForm(独立入口) | P1 | /jaxrs/processplatform_assemble_designer/xform/* | 低 |
-| 41 | query_ImporterDesigner (独立) | 查询导入设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/importer/* | 低 |
-| 42 | query_Query (独立) | 查询定义管理(独立入口) | P1 | /jaxrs/query_assemble_designer/query/* | 低 |
-| 43 | query_QueryExplorer (独立) | 查询浏览器(独立入口) | P1 | /jaxrs/query_assemble_surface/explorer/* | 低 |
-| 44 | query_StatDesigner (独立) | 统计设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/stat/* | 低 |
-| 45 | query_StatementDesigner (独立) | SQL语句设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/statement/* | 低 |
-| 46 | query_TableDesigner (独立) | 表格设计器(独立入口) | P1 | /jaxrs/query_assemble_surface/table/* | 低 |
-| 47 | query_ViewDesigner (独立) | 视图设计器(独立入口) | P1 | /jaxrs/query_assemble_designer/view/* | 低 |
-| 48 | service_InvokeDesigner (独立) | 服务调用设计器(独立入口) | P1 | /jaxrs/program_center/invoke/* | 低 |
+| 10 | FaceSet | 人脸设置 | P3 | /api/personal/* | 中 |
+| 11 | FindDesigner | 查找设计器(搜索配置) | P2 | /api/query_assemble_designer/* | 中 |
+| 12 | Homepage | 首页配置(门户首页布局) | P2 | /api/portal_assemble_surface/* | 中 |
+| 13 | LogViewer | 日志查看器 | P1 | /api/log/* | 低 |
+| 14 | Note | 笔记管理(列表+富文本) | P2 | /api/cms_core_entity/* | 低 |
+| 15 | PdfViewer | PDF在线查看 | P2 | /api/preview/* | 低 |
+| 16 | Search | 全局搜索 | P2 | /api/search/* | 中 |
+| 17 | Selector | 通用选择器(选人/选组织) | P1 | /api/organization_assemble_control/* | 低 |
+| 18 | Template | 模板管理(列表+预览) | P2 | /api/templateform/* | 低 |
+| 19 | ThreeMember | 三方成员管理 | P2 | /api/organization_assemble_control/* | 低 |
+| 20 | ftsearch | 全文搜索 | P3 | /api/ftsearch/* | 中 |
+| 21 | cms_Column (独立) | CMS列管理(详细字段编辑) | P1 | /api/cms_core_entity/column/* | 低 |
+| 22 | cms_ColumnManager | CMS列管理器(批量管理) | P1 | /api/cms_core_entity/column_manager/* | 低 |
+| 23 | cms_DictionaryDesigner | CMS字典设计器(独立入口) | P1 | /api/cms_assemble_control/dict/* | 低 |
+| 24 | cms_FormDesigner (独立) | CMS表单设计器(独立入口) | P1 | /api/cms_assemble_control/form/* | 低 |
+| 25 | cms_Index | CMS索引设计 | P1 | /api/cms_core_entity/index/* | 低 |
+| 26 | cms_Module (独立) | CMS模块管理(独立入口) | P1 | /api/cms_core_entity/module/* | 低 |
+| 27 | cms_ScriptDesigner | CMS脚本设计器(独立入口) | P1 | /api/cms_assemble_control/script/* | 低 |
+| 28 | cms_ViewDesigner | CMS视图设计器(独立入口) | P1 | /api/cms_assemble_control/view/* | 低 |
+| 29 | cms_Xform (独立) | CMS XForm表单(独立入口) | P1 | /api/cms_assemble_control/xform/* | 低 |
+| 30 | portal_DictionaryDesigner | 门户字典设计器(独立入口) | P1 | /api/portal_assemble_designer/dict/* | 低 |
+| 31 | portal_PageDesigner | 门户页面设计器(独立入口) | P1 | /api/portal_assemble_designer/page/* | 低 |
+| 32 | portal_ScriptDesigner | 门户脚本设计器(独立入口) | P1 | /api/portal_assemble_designer/script/* | 低 |
+| 33 | portal_WidgetDesigner | 门户组件设计器(独立入口) | P1 | /api/portal_assemble_designer/widget/* | 低 |
+| 34 | process_Application (独立) | 流程应用管理(独立入口) | P1 | /api/program_center/application/* | 低 |
+| 35 | process_DictionaryDesigner | 流程字典设计器(独立入口) | P1 | /api/processplatform_assemble_designer/dict/* | 低 |
+| 36 | process_FormDesigner (独立) | 流程表单设计器(独立入口) | P1 | /api/processplatform_assemble_designer/form/* | 低 |
+| 37 | process_ProcessManager (独立) | 流程实例管理(独立入口) | P1 | /api/processplatform_assemble_surface/process_manager/* | 低 |
+| 38 | process_ScriptDesigner | 流程脚本设计器(独立入口) | P1 | /api/processplatform_assemble_designer/script/* | 低 |
+| 39 | process_TaskCenter (独立) | 流程任务中心(独立入口) | P1 | /api/processplatform_service_processing/task/* | 低 |
+| 40 | process_Xform (独立) | 流程XForm(独立入口) | P1 | /api/processplatform_assemble_designer/xform/* | 低 |
+| 41 | query_ImporterDesigner (独立) | 查询导入设计器(独立入口) | P1 | /api/query_assemble_designer/importer/* | 低 |
+| 42 | query_Query (独立) | 查询定义管理(独立入口) | P1 | /api/query_assemble_designer/query/* | 低 |
+| 43 | query_QueryExplorer (独立) | 查询浏览器(独立入口) | P1 | /api/query_assemble_surface/explorer/* | 低 |
+| 44 | query_StatDesigner (独立) | 统计设计器(独立入口) | P1 | /api/query_assemble_designer/stat/* | 低 |
+| 45 | query_StatementDesigner (独立) | SQL语句设计器(独立入口) | P1 | /api/query_assemble_designer/statement/* | 低 |
+| 46 | query_TableDesigner (独立) | 表格设计器(独立入口) | P1 | /api/query_assemble_surface/table/* | 低 |
+| 47 | query_ViewDesigner (独立) | 视图设计器(独立入口) | P1 | /api/query_assemble_designer/view/* | 低 |
+| 48 | service_InvokeDesigner (独立) | 服务调用设计器(独立入口) | P1 | /api/program_center/invoke/* | 低 |
 
 ### 1.4 覆盖统计
 
@@ -198,20 +198,20 @@ status: in_progress
 
 | # | o2web组件 | oa4rust路由 | 实现方式 | 视图名 |
 |---|-----------|------------|---------|--------|
-| 1 | LogViewer | /app/log-viewer | /jaxrs/log/* | LogViewerApp.vue |
-| 2 | Selector | /app/selector | /jaxrs/organization_assemble_control/* | SelectorApp.vue |
-| 3 | query_Query (独立) | /app/query-query | /jaxrs/query_assemble_designer/query/* | QueryQueryApp.vue |
-| 4 | query_QueryExplorer (独立) | /app/query-explorer | /jaxrs/query_assemble_surface/explorer/* | QueryExplorerApp.vue |
-| 5 | query_TableDesigner (独立) | /app/query-table-designer | /jaxrs/query_assemble_surface/table/* | QueryTableDesignerApp.vue |
-| 6 | query_ViewDesigner (独立) | /app/query-view-designer | /jaxrs/query_assemble_designer/view/* | QueryViewDesignerApp.vue |
-| 7 | query_StatementDesigner (独立) | /app/query-statement-designer | /jaxrs/query_assemble_designer/statement/* | QueryStatementDesignerApp.vue |
-| 8 | query_StatDesigner (独立) | /app/query-stat-designer | /jaxrs/query_assemble_designer/stat/* | QueryStatDesignerApp.vue |
-| 9 | query_ImporterDesigner (独立) | /app/query-importer-designer | /jaxrs/query_assemble_designer/importer/* | QueryImporterDesignerApp.vue |
-| 10 | cms_Column (独立) | /app/cms-column | /jaxrs/cms_core_entity/column/* | CmsColumnApp.vue |
-| 11 | cms_ColumnManager | /app/cms-column-manager | /jaxrs/cms_core_entity/column_manager/* | CmsColumnManagerApp.vue |
-| 12 | cms_Index | /app/cms-index | /jaxrs/cms_core_entity/index/* | CmsIndexApp.vue |
-| 13 | process_TaskCenter (独立) | /app/process-task-center | /jaxrs/processplatform_service_processing/task/* | ProcessTaskCenterApp.vue |
-| 14 | process_ProcessManager (独立) | /app/process-manager | /jaxrs/processplatform_assemble_surface/process_manager/* | ProcessManagerApp.vue |
+| 1 | LogViewer | /app/log-viewer | /api/log/* | LogViewerApp.vue |
+| 2 | Selector | /app/selector | /api/organization_assemble_control/* | SelectorApp.vue |
+| 3 | query_Query (独立) | /app/query-query | /api/query_assemble_designer/query/* | QueryQueryApp.vue |
+| 4 | query_QueryExplorer (独立) | /app/query-explorer | /api/query_assemble_surface/explorer/* | QueryExplorerApp.vue |
+| 5 | query_TableDesigner (独立) | /app/query-table-designer | /api/query_assemble_surface/table/* | QueryTableDesignerApp.vue |
+| 6 | query_ViewDesigner (独立) | /app/query-view-designer | /api/query_assemble_designer/view/* | QueryViewDesignerApp.vue |
+| 7 | query_StatementDesigner (独立) | /app/query-statement-designer | /api/query_assemble_designer/statement/* | QueryStatementDesignerApp.vue |
+| 8 | query_StatDesigner (独立) | /app/query-stat-designer | /api/query_assemble_designer/stat/* | QueryStatDesignerApp.vue |
+| 9 | query_ImporterDesigner (独立) | /app/query-importer-designer | /api/query_assemble_designer/importer/* | QueryImporterDesignerApp.vue |
+| 10 | cms_Column (独立) | /app/cms-column | /api/cms_core_entity/column/* | CmsColumnApp.vue |
+| 11 | cms_ColumnManager | /app/cms-column-manager | /api/cms_core_entity/column_manager/* | CmsColumnManagerApp.vue |
+| 12 | cms_Index | /app/cms-index | /api/cms_core_entity/index/* | CmsIndexApp.vue |
+| 13 | process_TaskCenter (独立) | /app/process-task-center | /api/processplatform_service_processing/task/* | ProcessTaskCenterApp.vue |
+| 14 | process_ProcessManager (独立) | /app/process-manager | /api/processplatform_assemble_surface/process_manager/* | ProcessManagerApp.vue |
 
 **策略**：全部采用模式A（列表CRUD）或模式B（编辑器），代码模式统一，快速批量生成
 
