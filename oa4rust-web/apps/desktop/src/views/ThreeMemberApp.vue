@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>三方成员管理</h1>
-        <p class="subtitle">/jaxrs/organization/assemble/control/threemember/*（x_org_person）</p>
+        <p class="subtitle">/api/organization/assemble/control/threemember/*（x_org_person）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -71,8 +71,8 @@ interface MemberForm {
   status?: string
 }
 
-const listEp = '/jaxrs/organization/assemble/control/threemember/list'
-const createEp = '/jaxrs/organization/assemble/control/threemember/create'
+const listEp = '/api/organization/assemble/control/threemember/list'
+const createEp = '/api/organization/assemble/control/threemember/create'
 const qk = ['ThreeMember', 'list']
 
 const search = ref(''),
@@ -143,7 +143,7 @@ const saveM = useMutation({
         status: form.value.status ?? '',
       }
       if (editingId.value)
-        return api.post(`/jaxrs/organization/assemble/control/threemember/save/${editingId.value}`, payload)
+        return api.post(`/api/organization/assemble/control/threemember/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -158,7 +158,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/organization/assemble/control/threemember/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/organization/assemble/control/threemember/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

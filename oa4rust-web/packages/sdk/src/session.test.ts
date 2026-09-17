@@ -25,7 +25,7 @@ describe('session store (cookie-only)', () => {
     const { store, getSpy } = await freshStore()
     getSpy.mockResolvedValue({ data: { unique: 'u1', name: 'Alice' } } as never)
     await store.init()
-    expect(getSpy).toHaveBeenCalledWith('/jaxrs/authentication/who', { requireAuth: false })
+    expect(getSpy).toHaveBeenCalledWith('/api/authentication/who', { requireAuth: false })
     expect(store.isAuthenticated).toBe(true)
     expect(store.state.user?.unique).toBe('u1')
   })

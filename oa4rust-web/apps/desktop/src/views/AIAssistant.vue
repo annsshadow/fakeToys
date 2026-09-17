@@ -2,7 +2,7 @@
   <div class="ai-view">
     <div class="view-header glass-card">
       <h1>AI 助手</h1>
-      <p class="subtitle">/jaxrs/ai/* — 模型对话 + MCP 配置</p>
+      <p class="subtitle">/api/ai/* — 模型对话 + MCP 配置</p>
     </div>
     <div class="ai-layout">
       <aside class="ai-sidebar glass-card">
@@ -76,7 +76,7 @@ const mcps = ref<Array<{ id: string; name: string; endpoint: string; enabled: bo
 
 const { data } = useQuery({
   queryKey: ['ai', 'convs'],
-  queryFn: () => api.get('/jaxrs/ai/conversation/list').then((r: any) => (r.data ?? []) as Conv[]),
+  queryFn: () => api.get('/api/ai/conversation/list').then((r: any) => (r.data ?? []) as Conv[]),
 })
 convs.value = data.value ?? []
 
@@ -92,7 +92,7 @@ function scrollB() {
 }
 
 async function createConv() {
-  const r = await api.post('/jaxrs/ai_assemble_control/chat/write/completion/extra', {})
+  const r = await api.post('/api/ai_assemble_control/chat/write/completion/extra', {})
   const nc = ((r as any)?.data ?? {}) as Conv
   convs.value.unshift(nc)
   active.value = nc
@@ -107,7 +107,7 @@ async function sendMsg() {
   streaming.value = true
   scrollB()
   try {
-    const r = await api.post('/jaxrs/ai_assemble_control/chat/completion/stream', {
+    const r = await api.post('/api/ai_assemble_control/chat/completion/stream', {
       conversationId: active.value!.id,
       message: txt,
     })
@@ -123,10 +123,10 @@ async function sendMsg() {
 
 async function toggleMcp(m: any) {
   m.enabled = !m.enabled
-  await api.post(`/jaxrs/ai_assemble_control/config/${m.enabled ? 'create' : 'delete'}/mcp`, { id: m.id })
+  await api.post(`/api/ai_assemble_control/config/${m.enabled ? 'create' : 'delete'}/mcp`, { id: m.id })
 }
 async function delMcp(id: string) {
-  await api.delete(`/jaxrs/ai_assemble_control/config/delete/mcp/${id}`)
+  await api.delete(`/api/ai_assemble_control/config/delete/mcp/${id}`)
   mcps.value = mcps.value.filter((x) => x.id !== id)
 }
 function addMcp() {
@@ -134,7 +134,7 @@ function addMcp() {
 }
 
 onMounted(() => {
-  api.get('/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20').then((r: any) => {
+  api.get('/api/ai_assemble_control/config/list/mcp/paging/1/size/20').then((r: any) => {
     mcps.value = (r.data ?? []) as typeof mcps.value
   })
 })

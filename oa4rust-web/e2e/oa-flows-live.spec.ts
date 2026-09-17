@@ -54,7 +54,7 @@ test('BBS post shows in my topics; my replies tab lists my reply', async ({ page
   // 注：内置 request fixture 是独立 APIRequestContext、不与 page 共享 cookie，未登录会 401。
   const topicTitle = uniqueFlag('bbs-topic')
   const replyText = uniqueFlag('bbs-reply')
-  const topicRes = await apiPost(page.request, '/jaxrs/bbs/assemble/control/topic/create', {
+  const topicRes = await apiPost(page.request, '/api/bbs/assemble/control/topic/create', {
     title: topicTitle,
     content: 'e2e topic',
     forumId: '',
@@ -64,7 +64,7 @@ test('BBS post shows in my topics; my replies tab lists my reply', async ({ page
   expect(topicRes.status(), 'topic/create must succeed').toBeLessThan(300)
   const topicId = (await topicRes.json())?.data?.id as string
   expect(topicId).toBeTruthy()
-  const replyRes = await apiPost(page.request, '/jaxrs/bbs/assemble/control/reply/create', {
+  const replyRes = await apiPost(page.request, '/api/bbs/assemble/control/reply/create', {
     topicId,
     content: replyText,
     creator: 'e2e-live',
@@ -120,7 +120,7 @@ test('ProgramCenter: dict create + data editor, script create + code editor + ve
 
   // ── 脚本：API 创建 → 编辑代码 → 保存 → 版本历史弹窗 ──
   const scriptFlag = uniqueFlag('script')
-  const scriptRes = await apiPost(page.request, '/jaxrs/program_center/script', {
+  const scriptRes = await apiPost(page.request, '/api/program_center/script', {
     name: scriptFlag,
     flag: scriptFlag,
     content: '// v1',
@@ -150,7 +150,7 @@ test('IM: seed conversation via API, open in GUI and send a message', async ({ p
   await login(page)
 
   const convName = uniqueFlag('im-conv')
-  const convRes = await apiPost(page.request, '/jaxrs/message/assemble/communicate/im/conversation', {
+  const convRes = await apiPost(page.request, '/api/message/assemble/communicate/im/conversation', {
     name: convName,
     type: 'single',
   })
@@ -194,7 +194,7 @@ test('workflow reject: start a process, then reject the pending task from my-sta
   await expect(page.getByRole('button', { name: '我发起的' })).toHaveClass(/active/)
   await page.getByText(title, { exact: true }).click()
 
-  const rejectResp = audit.waitForWrite((r) => /\/jaxrs\/task\/[^/]+\/reject$/.test(new URL(r.url()).pathname))
+  const rejectResp = audit.waitForWrite((r) => /\/api\/task\/[^/]+\/reject$/.test(new URL(r.url()).pathname))
   await page.getByLabel(/处理意见/).fill('E2E rejected')
   await page.getByRole('button', { name: '驳回' }).click()
   const rejectBody = await (await rejectResp).json()

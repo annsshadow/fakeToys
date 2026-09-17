@@ -122,13 +122,13 @@ const { data: procCounts } = useQuery({
   queryKey: ['dash', 'proc'],
   queryFn: () =>
     Promise.all([
-      api.get('/jaxrs/processplatform/assemble/surface/work/count/currentperson'),
-      api.get('/jaxrs/processplatform/assemble/surface/work/count/completedperson'),
+      api.get('/api/processplatform/assemble/surface/work/count/currentperson'),
+      api.get('/api/processplatform/assemble/surface/work/count/completedperson'),
     ]),
 })
 const { data: msgCount } = useQuery({
   queryKey: ['dash', 'msg'],
-  queryFn: () => api.get('/jaxrs/message/unread/count/im'),
+  queryFn: () => api.get('/api/message/unread/count/im'),
   staleTime: 15000,
   refetchInterval: 30000,
 })
@@ -172,7 +172,7 @@ async function loadPending(): Promise<void> {
   try {
     // 待办与 ProcessWork「待我处理」同源：GET task/list/my/paging（200，回带 title/processName/createTime）。
     // 旧的 work/list/filter/manage 路由为 3 占位符坏桩（handler 仅 2 参），必 500，弃用。
-    const resp = await api.get('/jaxrs/processplatform/assemble/surface/task/list/my/paging/1/size/20')
+    const resp = await api.get('/api/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
   } catch {
     pendingItems.value = []
@@ -185,7 +185,7 @@ async function loadPending(): Promise<void> {
 const recentItems = ref<Array<{ icon: string; text: string; time: string }>>([])
 async function loadRecent(): Promise<void> {
   await loadPending()
-  // Simulate dynamic events (in production would come from /jaxrs/message/unread/count or similar)
+  // Simulate dynamic events (in production would come from /api/message/unread/count or similar)
   recentItems.value = [
     { icon: '📋', text: '您的报销申请已通过审批', time: '10 分钟前' },
     { icon: '💬', text: '张三 给您发了一条消息', time: '30 分钟前' },

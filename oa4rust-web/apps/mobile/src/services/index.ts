@@ -3,7 +3,7 @@
  *
  * 所有端点均对齐 oa4rust 后端已注册的 axum 路由（各 crate 的 routes.rs /
  * u2_router.rs / lib.rs 中的 .route 注册），与桌面端 E2E 实跑通过的流程端点一致
- * （/jaxrs/task/{id}/complete|reject、processplatform service/processing、
+ * （/api/task/{id}/complete|reject、processplatform service/processing、
  * message im 族），确保移动端每个按钮打到真实存在的后端能力，而不是 404 的
  * "约定式"路径。类型（O2User）复用 @oa4rust/sdk 的既有契约。
  */
@@ -12,8 +12,8 @@ import type { ApiResponse, O2User } from '@oa4rust/sdk'
 import { getApiBase, mapi } from './http'
 
 /**
- * 后端 Java 兼容信封在分页列表端点附带顶层 count（本页条数；
- * 见 shared::response::ActionResult::java_success）。sdk 的 ApiResponse
+ * 后端 o2server 兼容信封在分页列表端点附带顶层 count（本页条数；
+ * 见 shared::response::ActionResult::legacy_success）。sdk 的 ApiResponse
  * 未声明该字段，这里做最小扩展供列表页读取。
  */
 export type EnvelopeList<T> = ApiResponse<T[]> & { count?: number; size?: number }
@@ -27,18 +27,18 @@ function list<T>(p: Promise<ApiResponse<T[]>>): Promise<EnvelopeList<T>> {
 // ─────────────────────────────────────────────────────────────
 export const authApi = {
   login: (data: { credential: string; password: string; captchaId?: string; captchaAnswer?: string }) =>
-    mapi.post<never>('/jaxrs/authentication/login', data, { requireAuth: false, discardResponse: true }),
-  logout: () => mapi.post<never>('/jaxrs/authentication/logout', null, { requireAuth: false, discardResponse: true }),
-  who: () => mapi.get<O2User>('/jaxrs/authentication/who', { requireAuth: false }),
-  refresh: () => mapi.post<never>('/jaxrs/authentication/refresh', null, { requireAuth: false, discardResponse: true }),
-  captcha: () => mapi.get<{ image: string; id: string }>('/jaxrs/authentication/captcha', { requireAuth: false }),
+    mapi.post<never>('/api/authentication/login', data, { requireAuth: false, discardResponse: true }),
+  logout: () => mapi.post<never>('/api/authentication/logout', null, { requireAuth: false, discardResponse: true }),
+  who: () => mapi.get<O2User>('/api/authentication/who', { requireAuth: false }),
+  refresh: () => mapi.post<never>('/api/authentication/refresh', null, { requireAuth: false, discardResponse: true }),
+  captcha: () => mapi.get<{ image: string; id: string }>('/api/authentication/captcha', { requireAuth: false }),
 }
 
 // ─────────────────────────────────────────────────────────────
 // 流程（待办 / 已办 / 我发起的 + 审批）
 //
 // 列表读 surface 新栈 x_task / x_taskcompleted / x_work（与桌面 ProcessWork.vue 一致）；
-// 审批走 service/processing 引擎的 /jaxrs/task/{id}/complete|reject
+// 审批走 service/processing 引擎的 /api/task/{id}/complete|reject
 // （桌面 E2E workflow-runtime 实跑通过的真实流程端点）。
 // ─────────────────────────────────────────────────────────────
 export interface ProcessTaskRow {
@@ -69,28 +69,23 @@ export interface TaskActionPayload {
 export const processApi = {
   /** 待我处理（x_task，task_status active/pending/processing）。 */
   pendingList: (page: number, size: number) =>
-    list(
-      mapi.get<ProcessTaskRow[]>(`/jaxrs/processplatform/assemble/surface/task/list/my/paging/${page}/size/${size}`),
-    ),
+    list(mapi.get<ProcessTaskRow[]>(`/api/processplatform/assemble/surface/task/list/my/paging/${page}/size/${size}`)),
   /** 我已办（x_taskcompleted）。 */
   completedList: (page: number, size: number) =>
     list(
       mapi.get<ProcessTaskRow[]>(
-        `/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/size/${size}`,
+        `/api/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/size/${size}`,
       ),
     ),
   /** 我发起的（x_work）。注意后端此路由仅注册 POST。 */
   startedList: (page: number, size: number) =>
     list(
-      mapi.post<ProcessWorkRow[]>(
-        `/jaxrs/processplatform/assemble/surface/work/list/my/paging/${page}/size/${size}`,
-        {},
-      ),
+      mapi.post<ProcessWorkRow[]>(`/api/processplatform/assemble/surface/work/list/my/paging/${page}/size/${size}`, {}),
     ),
   /** 审批通过：任务置 completed，自动认领下一活动或收尾工作。 */
   completeTask: (taskId: string, payload?: Omit<TaskActionPayload, 'action'>) =>
     mapi.post<never>(
-      `/jaxrs/task/${taskId}/complete`,
+      `/api/task/${taskId}/complete`,
       { data: {}, opinion: '', action: 'approve', ...payload },
       {
         discardResponse: true,
@@ -99,7 +94,7 @@ export const processApi = {
   /** 驳回：任务回退并记录处理意见。 */
   rejectTask: (taskId: string, payload?: Omit<TaskActionPayload, 'action'>) =>
     mapi.post<never>(
-      `/jaxrs/task/${taskId}/reject`,
+      `/api/task/${taskId}/reject`,
       { data: {}, opinion: '', action: 'reject', ...payload },
       {
         discardResponse: true,
@@ -107,18 +102,18 @@ export const processApi = {
     ),
   /** 可发起的流程清单（桌面 ProcessWork「发起流程」同源端点）。 */
   startableProcesses: () =>
-    list(mapi.get<Record<string, unknown>[]>('/jaxrs/processplatform/assemble/designer/list/all')),
+    list(mapi.get<Record<string, unknown>[]>('/api/processplatform/assemble/designer/list/all')),
   /** 流程定义（用于取绑定表单 flag）。 */
   getProcess: (processId: string) =>
-    mapi.get<Record<string, unknown>>(`/jaxrs/processplatform/assemble/designer/get/${processId}`),
+    mapi.get<Record<string, unknown>>(`/api/processplatform/assemble/designer/get/${processId}`),
   /** 表单定义（O2OA moduleList JSON；移动端做简版渲染）。 */
-  getForm: (formFlag: string) => mapi.get<Record<string, unknown>>(`/jaxrs/form/${formFlag}`),
+  getForm: (formFlag: string) => mapi.get<Record<string, unknown>>(`/api/form/${formFlag}`),
   /** 发起：创建工作实例，返回 work id（与桌面 submitStart 一致）。 */
   startWork: (processId: string, title: string) =>
-    mapi.post<{ id?: string }>('/jaxrs/processplatform/service/processing/work', { process: processId, title }),
+    mapi.post<{ id?: string }>('/api/processplatform/service/processing/work', { process: processId, title }),
   /** 填报：把表单数据写回工作实例（仅当流程绑定了表单时调用）。 */
   saveWorkData: (workId: string, values: Record<string, unknown>) =>
-    mapi.put<never>(`/jaxrs/processplatform/service/processing/data/work/${workId}`, values, { discardResponse: true }),
+    mapi.put<never>(`/api/processplatform/service/processing/data/work/${workId}`, values, { discardResponse: true }),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -155,15 +150,15 @@ export function messageConversationId(row: Record<string, unknown>): string {
 
 export const messageApi = {
   conversationList: () =>
-    list(mapi.get<ConversationRow[]>('/jaxrs/message/assemble/communicate/im/conversation/list/my')),
+    list(mapi.get<ConversationRow[]>('/api/message/assemble/communicate/im/conversation/list/my')),
   msgHistory: (page: number, size: number) =>
-    list(mapi.get<MessageRow[]>(`/jaxrs/message/assemble/communicate/im/msg/list/${page}/size/${size}`)),
+    list(mapi.get<MessageRow[]>(`/api/message/assemble/communicate/im/msg/list/${page}/size/${size}`)),
   /**
    * 真实写入 x_message（sent=true 表示落库成功）。后端按带引号键
    * `"conversationId"` 读取会话归属，这里同时下发两种键保证可读。
    */
   send: (conversationId: string, content: string, sender: string) =>
-    mapi.post<{ sent?: boolean }>('/jaxrs/message/assemble/communicate/im/msg', {
+    mapi.post<{ sent?: boolean }>('/api/message/assemble/communicate/im/msg', {
       ['"conversationId"']: conversationId,
       conversationId,
       content,
@@ -171,14 +166,14 @@ export const messageApi = {
       type: 'text',
     }),
   markRead: (conversationId: string) =>
-    mapi.post(`/jaxrs/message/assemble/communicate/im/conversation/${conversationId}/read`, undefined),
+    mapi.post(`/api/message/assemble/communicate/im/conversation/${conversationId}/read`, undefined),
   /**
    * 发起单聊：后端 im_conversation 创建一条 type=single 会话并返回新会话 id。
    * 传对方姓名作为会话名；随后用 send() 在该会话内发消息即可。
    */
   startConversation: (name: string) =>
     mapi.post<{ id?: string; name?: string; type?: string; created?: boolean }>(
-      '/jaxrs/message/assemble/communicate/im/conversation',
+      '/api/message/assemble/communicate/im/conversation',
       {
         name,
         type: 'single',
@@ -201,23 +196,23 @@ export interface FileRow {
 
 export const fileApi = {
   /** folderId 对应 x_file.folder_id（移动端以当前用户 unique 作为"我的文件"目录）。 */
-  fileList: (folderId: string) => list(mapi.get<FileRow[]>(`/jaxrs/file/assemble/control/file/list/${folderId}`)),
+  fileList: (folderId: string) => list(mapi.get<FileRow[]>(`/api/file/assemble/control/file/list/${folderId}`)),
   /** 真实下载路由；拼 apiBase 以支持原生 App / 小程序绝对地址场景。 */
-  fileDownloadUrl: (fileId: string) => `${getApiBase()}/jaxrs/file/assemble/control/file/${fileId}/download`,
+  fileDownloadUrl: (fileId: string) => `${getApiBase()}/api/file/assemble/control/file/${fileId}/download`,
   /**
    * 二进制上传：multipart（file 字段 + 可选 name）写入附件存储 FILE_FILE。
    * filePath 为本端临时文件路径（uni.chooseImage/chooseMessageFile 返回值）。
    * 落点是附件存储（FILE_FILE），而非「我的文件」x_file 列表。
    */
   upload: (folderId: string, filePath: string, fileName: string) =>
-    mapi.upload<Record<string, unknown>>(`/jaxrs/attachment/upload/folder/${folderId}`, filePath, {
+    mapi.upload<Record<string, unknown>>(`/api/attachment/upload/folder/${folderId}`, filePath, {
       name: 'file',
       formData: { name: fileName },
     }),
   /** 附件存储 FILE_FILE：当前用户的附件清单（上传落点即在此列出，而非 x_file）。 */
-  attachmentList: (owner: string) => list(mapi.get<FileRow[]>(`/jaxrs/attachment/list/editor/${owner}`)),
+  attachmentList: (owner: string) => list(mapi.get<FileRow[]>(`/api/attachment/list/editor/${owner}`)),
   /** 附件存储 FILE_FILE 下载（拼 apiBase 支持原生 App / 小程序绝对地址）。 */
-  attachmentDownloadUrl: (attId: string) => `${getApiBase()}/jaxrs/attachment/${attId}/download`,
+  attachmentDownloadUrl: (attId: string) => `${getApiBase()}/api/attachment/${attId}/download`,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -238,10 +233,10 @@ export interface AttendancePreCheck {
 
 export const attendanceApi = {
   /** 今日状态：命中考勤组 + 今日已有打卡记录。 */
-  preCheck: () => mapi.get<AttendancePreCheck>('/jaxrs/attendance/assemble/control/v2/mobile/check/pre'),
+  preCheck: () => mapi.get<AttendancePreCheck>('/api/attendance/assemble/control/v2/mobile/check/pre'),
   /** 打卡：checkInType 取 'checkIn'（上班）/ 'checkOut'（下班）；重复打卡返回 duplicated=true。 */
   check: (checkInType: 'checkIn' | 'checkOut') =>
-    mapi.post<{ id?: string; duplicated?: boolean }>('/jaxrs/attendance/assemble/control/v2/mobile/check', {
+    mapi.post<{ id?: string; duplicated?: boolean }>('/api/attendance/assemble/control/v2/mobile/check', {
       checkInType,
       sourceType: '移动端',
     }),
@@ -263,9 +258,9 @@ export interface PersonRow {
 export const orgApi = {
   /** 全员 / 按姓名模糊搜索（POST mockputtopost 别名，body.key 为空返回全员）。 */
   personSearch: (key?: string) =>
-    list(mapi.post<PersonRow[]>('/jaxrs/organization/assemble/control/person/list/like/mockputtopost', { key })),
+    list(mapi.post<PersonRow[]>('/api/organization/assemble/control/person/list/like/mockputtopost', { key })),
   /** 人员详情。 */
-  personDetail: (flag: string) => mapi.get<PersonRow>(`/jaxrs/organization/assemble/control/person/${flag}`),
+  personDetail: (flag: string) => mapi.get<PersonRow>(`/api/organization/assemble/control/person/${flag}`),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -284,14 +279,14 @@ export interface AnnRow {
 
 export const annApi = {
   /** 公告列表（create_time 倒序，后端实表 x_ai_ann）。 */
-  list: () => list(mapi.get<AnnRow[]>('/jaxrs/ai/assemble/control/ann/list')),
+  list: () => list(mapi.get<AnnRow[]>('/api/ai/assemble/control/ann/list')),
 }
 
 // ─────────────────────────────────────────────────────────────
 // 通用（字典）
 // ─────────────────────────────────────────────────────────────
 export const generalApi = {
-  dictList: () => mapi.get('/jaxrs/general/dict/list'),
+  dictList: () => mapi.get('/api/general/dict/list'),
 }
 
 export const apis = {

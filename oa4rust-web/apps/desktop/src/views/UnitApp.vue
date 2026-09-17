@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>单元管理</h1>
-      <p class="subtitle">/jaxrs/unit/* — 组织单元与身份映射</p>
+      <p class="subtitle">/api/unit/* — 组织单元与身份映射</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -51,7 +51,7 @@ async function doSearch() {
   loading.value = true
   try {
     // Try search by keyword
-    const r = await api.get('/jaxrs/unit/list')
+    const r = await api.get('/api/unit/list')
     units.value = r.data ?? []
   } catch {
     units.value = []
@@ -62,7 +62,7 @@ async function doSearch() {
 
 async function checkUnit(u: UnitItem) {
   try {
-    await api.get(`/jaxrs/unit/check/${u.flag || u.id}`)
+    await api.get(`/api/unit/check/${u.flag || u.id}`)
   } catch (e: any) {
     toast.error('验证失败: : ' + (e?.message ?? ''))
   }
@@ -95,21 +95,21 @@ const unit_identity_ref = ref<any[]>([])
 const list_unit_sub_direct_ref = ref<any[]>([])
 const unit_list_person_object_ref = ref<any[]>([])
 const unit_list_all_object_ref = ref<any[]>([])
-const api_jaxrs_or_150_data = ref<any[]>([])
-const api_jaxrs_or_60_data = ref<any[]>([])
-const jaxrs_organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba_ref = ref<any[]>([])
-const api_jaxrs_or_174_data = ref<any[]>([])
-const api_jaxrs_organizati_494_data = ref<any[]>([])
-const api_jaxrs_organizati_346_data = ref<any[]>([])
-const api_jaxrs_organizati_256_data = ref<any[]>([])
-const api_jaxrs_organizati_285_data = ref<any[]>([])
-const api_jaxrs_organizati_824_data = ref<any[]>([])
-const api_jaxrs_organizati_923_data = ref<any[]>([])
-const api_jaxrs_organizati_439_data = ref<any[]>([])
-const jaxrs_organization_assemble_control_unit_list_test_unit_sub_nested_ref = ref<any[]>([])
-const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_ref = ref<any[]>([])
-const jaxrs_organization_assemble_control_unit_list_test_unit_sup_nested_type_company_ref = ref<any[]>([])
-const api_jaxrs_organizati_842_data = ref<any[]>([])
+const api_or_150_data = ref<any[]>([])
+const api_or_60_data = ref<any[]>([])
+const organization_assemble_authentication_sso_encrypt_client_u2c_key_u2key_1234_95d5ba_ref = ref<any[]>([])
+const api_or_174_data = ref<any[]>([])
+const api_organizati_494_data = ref<any[]>([])
+const api_organizati_346_data = ref<any[]>([])
+const api_organizati_256_data = ref<any[]>([])
+const api_organizati_285_data = ref<any[]>([])
+const api_organizati_824_data = ref<any[]>([])
+const api_organizati_923_data = ref<any[]>([])
+const api_organizati_439_data = ref<any[]>([])
+const organization_assemble_control_unit_list_test_unit_sub_nested_ref = ref<any[]>([])
+const organization_assemble_control_unit_list_test_unit_sup_nested_ref = ref<any[]>([])
+const organization_assemble_control_unit_list_test_unit_sup_nested_type_company_ref = ref<any[]>([])
+const api_organizati_842_data = ref<any[]>([])
 </script>
 
 <style scoped>

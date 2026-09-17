@@ -91,7 +91,7 @@ const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 const { data: events } = useQuery({
   queryKey: ['calendar', currentYear, currentMonth],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/calendar_assemble_control/event/list/filter')
+    const resp = await api.get('/api/calendar_assemble_control/event/list/filter')
     return ((resp as any)?.data ?? []) as CalendarEvent[]
   },
   staleTime: 60 * 1000,
@@ -252,7 +252,7 @@ const api_calendar_assembl_554_data = ref<any[]>([])
 const api_calendar_assembl_74_data = ref<any[]>([])
 const api_calendar_assembl_101_data = ref<any[]>([])
 const calendar_assemble_control_test_1_ref = ref<any[]>([])
-const api_jaxrs_calendar_a_291_data = ref<any[]>([])
+const api_calendar_a_291_data = ref<any[]>([])
 </script>
 
 <style scoped>

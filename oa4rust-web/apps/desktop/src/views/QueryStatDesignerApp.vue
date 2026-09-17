@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>统计设计器</h1>
-        <p class="subtitle">/jaxrs/query/assemble/designer/stat/*（x_query_stat）</p>
+        <p class="subtitle">/api/query/assemble/designer/stat/*（x_query_stat）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -59,8 +59,8 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/query/assemble/designer/stat/list'
-const createEp = '/jaxrs/query/assemble/designer/stat/create'
+const listEp = '/api/query/assemble/designer/stat/list'
+const createEp = '/api/query/assemble/designer/stat/create'
 const qk = ['QueryStatDesigner', 'list']
 
 const search = ref(''),
@@ -117,7 +117,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.post(`/jaxrs/query/assemble/designer/stat/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/query/assemble/designer/stat/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -133,7 +133,7 @@ function saveItem() {
 }
 const delM = useMutation({
   // stat delete/{id} 仅注册 POST（DELETE 方法被 U2 同名 handler 承担）
-  mutationFn: async (id: string) => api.post(`/jaxrs/query/assemble/designer/stat/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/query/assemble/designer/stat/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

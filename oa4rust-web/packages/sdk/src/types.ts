@@ -3,7 +3,7 @@
  * 对应 oa4rust Session + 用户信息 + 布局系统
  */
 
-/** 当前登录用户信息（来自 /jaxrs/authentication/who） */
+/** 当前登录用户信息（来自 /api/authentication/who） */
 export interface O2User {
   /** person_unique，等价于 o2web 的 distinguishedName */
   unique: string
@@ -60,7 +60,7 @@ export interface O2WebSocket {
 
 /** 应用初始化选项 */
 export interface O2AppOptions {
-  /** API 基础 URL，默认 /jaxrs */
+  /** API 基础 URL，默认 /api */
   apiBase?: string
   /** WebSocket 基础 URL，默认 ws:// 同域 /ws */
   wsBase?: string

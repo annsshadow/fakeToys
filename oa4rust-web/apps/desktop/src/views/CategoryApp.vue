@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>分类管理</h1>
-      <p class="subtitle">/jaxrs/categoryinfo/*</p>
+      <p class="subtitle">/api/categoryinfo/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="stats-row">
@@ -46,7 +46,7 @@ const stats = computed(() => [
 async function load() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/categoryinfo/list')
+    const r = await api.get('/api/categoryinfo/list')
     items.value = r.data ?? []
   } catch {
     items.value = []

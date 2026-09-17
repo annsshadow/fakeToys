@@ -107,7 +107,7 @@ const queryClient = useQueryClient()
 async function loadFiles(folderId?: string): Promise<void> {
   loading.value = true
   try {
-    const resp = await api.get(`/jaxrs/file/assemble/control/file/list/${folderId || ''}`)
+    const resp = await api.get(`/api/file/assemble/control/file/list/${folderId || ''}`)
     files.value = ((resp as any)?.data ?? []) as FileItem[]
   } catch {
     files.value = []
@@ -195,7 +195,7 @@ function fmtTime(ts?: string): string {
 
 // 删除文件
 const deleteMutation = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/file/assemble/control/file/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/file/assemble/control/file/${id}`),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['file', currentFolder.value] })
     loadFiles(currentFolder.value)
@@ -212,7 +212,7 @@ async function deleteFile(f: FileItem): void {
 }
 
 function downloadFile(f: FileItem): void {
-  window.open(`/jaxrs/file/core/entity/file/${f.id}/download`)
+  window.open(`/api/file/core/entity/file/${f.id}/download`)
 }
 
 function shareFile(_f: FileItem): void {
@@ -243,7 +243,7 @@ function uploadFile(file: File): void {
     uploadProgress.value = Math.min(99, uploadProgress.value + 10)
   }, 200)
   api
-    .upload('/jaxrs/file/assemble/control/file/upload', formData)
+    .upload('/api/file/assemble/control/file/upload', formData)
     .then(() => {
       clearInterval(interval)
       uploadProgress.value = 100

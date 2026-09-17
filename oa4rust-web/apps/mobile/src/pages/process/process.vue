@@ -73,7 +73,7 @@ function switchTab(key: TabKey) {
   load()
 }
 
-/** 审批动作：先收集处理意见（可留空），再走 /jaxrs/task/{id}/complete|reject。 */
+/** 审批动作：先收集处理意见（可留空），再走 /api/task/{id}/complete|reject。 */
 function act(row: Record<string, unknown>, action: 'approve' | 'reject') {
   const taskId = typeof row.id === 'string' ? row.id : ''
   if (!taskId || busy.value) return

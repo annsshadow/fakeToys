@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>神经网络AI配置</h1>
-        <p class="subtitle">/jaxrs/ai/assemble/control/ann/*</p>
+        <p class="subtitle">/api/ai/assemble/control/ann/*</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -61,8 +61,8 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/ai/assemble/control/ann/list'
-const createEp = '/jaxrs/ai/assemble/control/ann/create'
+const listEp = '/api/ai/assemble/control/ann/list'
+const createEp = '/api/ai/assemble/control/ann/create'
 const qk = ['ANN', 'list']
 
 const search = ref(''),
@@ -118,7 +118,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.put(`/jaxrs/ai/assemble/control/ann/save/${editingId.value}`, payload)
+      if (editingId.value) return api.put(`/api/ai/assemble/control/ann/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -133,7 +133,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/ai/assemble/control/ann/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/ai/assemble/control/ann/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },
