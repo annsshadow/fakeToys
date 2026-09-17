@@ -49,7 +49,7 @@ pub async fn cms_extended_crud_flow() {
     // ── appinfo lifecycle ────────────────────────────────────────────────────
     let app_id = uid("app-ext");
     let create_app = client
-        .post(format!("{}/jaxrs/cms_assemble_control/appinfo/create", base))
+        .post(format!("{}/api/cms_assemble_control/appinfo/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": app_id,
@@ -70,7 +70,7 @@ pub async fn cms_extended_crud_flow() {
     info!(id = %app_id, "appinfo created");
 
     let list_app = client
-        .get(format!("{}/jaxrs/cms_assemble_control/appinfo", base))
+        .get(format!("{}/api/cms_assemble_control/appinfo", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -81,7 +81,7 @@ pub async fn cms_extended_crud_flow() {
     assert!(apps.iter().any(|a| a["id"].as_str() == Some(app_id.as_str())));
 
     let get_app = client
-        .get(format!("{}/jaxrs/cms_assemble_control/appinfo/{}", base, app_id))
+        .get(format!("{}/api/cms_assemble_control/appinfo/{}", base, app_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -94,7 +94,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_app_body["data"]["manager"].as_str(), Some("it-admin"));
 
     let upd_app = client
-        .post(format!("{}/jaxrs/cms_assemble_control/appinfo/{}/update", base, app_id))
+        .post(format!("{}/api/cms_assemble_control/appinfo/{}/update", base, app_id))
         .header("Authorization", &auth_header)
         .json(&json!({ "alias": "ext-app-renamed", "enabled": false }))
         .send()
@@ -105,7 +105,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(upd_app_body["data"]["updated"].as_bool(), Some(true));
 
     let get_app2 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/appinfo/{}", base, app_id))
+        .get(format!("{}/api/cms_assemble_control/appinfo/{}", base, app_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -115,7 +115,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_app2_body["data"]["enabled"].as_bool(), Some(false));
 
     let del_app = client
-        .post(format!("{}/jaxrs/cms_assemble_control/appinfo/{}/delete", base, app_id))
+        .post(format!("{}/api/cms_assemble_control/appinfo/{}/delete", base, app_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -125,7 +125,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(del_app_body["data"]["deleted"].as_bool(), Some(true));
 
     let get_app3 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/appinfo/{}", base, app_id))
+        .get(format!("{}/api/cms_assemble_control/appinfo/{}", base, app_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -136,7 +136,7 @@ pub async fn cms_extended_crud_flow() {
     // ── categoryinfo lifecycle ───────────────────────────────────────────────
     let cat_id = uid("cat-ext");
     let create_cat = client
-        .post(format!("{}/jaxrs/cms_assemble_control/categoryinfo/create", base))
+        .post(format!("{}/api/cms_assemble_control/categoryinfo/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": cat_id,
@@ -156,7 +156,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(create_cat_body["data"]["id"].as_str(), Some(cat_id.as_str()));
 
     let get_cat = client
-        .get(format!("{}/jaxrs/cms_assemble_control/categoryinfo/{}", base, cat_id))
+        .get(format!("{}/api/cms_assemble_control/categoryinfo/{}", base, cat_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -169,7 +169,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_cat_body["data"]["ext_content"].as_str(), Some("some content"));
 
     let upd_cat = client
-        .post(format!("{}/jaxrs/cms_assemble_control/categoryinfo/{}/update", base, cat_id))
+        .post(format!("{}/api/cms_assemble_control/categoryinfo/{}/update", base, cat_id))
         .header("Authorization", &auth_header)
         .json(&json!({ "name": "Extended Category (Renamed)", "sortOrder": 7 }))
         .send()
@@ -178,7 +178,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(upd_cat.status(), reqwest::StatusCode::OK);
 
     let get_cat2 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/categoryinfo/{}", base, cat_id))
+        .get(format!("{}/api/cms_assemble_control/categoryinfo/{}", base, cat_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -188,7 +188,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_cat2_body["data"]["sort_order"].as_i64(), Some(7));
 
     let del_cat = client
-        .post(format!("{}/jaxrs/cms_assemble_control/categoryinfo/{}/delete", base, cat_id))
+        .post(format!("{}/api/cms_assemble_control/categoryinfo/{}/delete", base, cat_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -198,7 +198,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(del_cat_body["data"]["deleted"].as_bool(), Some(true));
 
     let get_cat3 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/categoryinfo/{}", base, cat_id))
+        .get(format!("{}/api/cms_assemble_control/categoryinfo/{}", base, cat_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -209,7 +209,7 @@ pub async fn cms_extended_crud_flow() {
     // ── comment lifecycle ────────────────────────────────────────────────────
     let comment_id = uid("comment-ext");
     let create_cmt = client
-        .post(format!("{}/jaxrs/cms_assemble_control/comment/create", base))
+        .post(format!("{}/api/cms_assemble_control/comment/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": comment_id,
@@ -226,7 +226,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(create_cmt_body["data"]["id"].as_str(), Some(comment_id.as_str()));
 
     let get_cmt = client
-        .get(format!("{}/jaxrs/cms_assemble_control/comment/{}", base, comment_id))
+        .get(format!("{}/api/cms_assemble_control/comment/{}", base, comment_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -238,7 +238,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_cmt_body["data"]["content"].as_str(), Some("Nice article"));
 
     let upd_cmt = client
-        .post(format!("{}/jaxrs/cms_assemble_control/comment/{}/update", base, comment_id))
+        .post(format!("{}/api/cms_assemble_control/comment/{}/update", base, comment_id))
         .header("Authorization", &auth_header)
         .json(&json!({ "content": "Nice article (edited)" }))
         .send()
@@ -247,7 +247,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(upd_cmt.status(), reqwest::StatusCode::OK);
 
     let get_cmt2 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/comment/{}", base, comment_id))
+        .get(format!("{}/api/cms_assemble_control/comment/{}", base, comment_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -256,7 +256,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_cmt2_body["data"]["content"].as_str(), Some("Nice article (edited)"));
 
     let del_cmt = client
-        .post(format!("{}/jaxrs/cms_assemble_control/comment/{}/delete", base, comment_id))
+        .post(format!("{}/api/cms_assemble_control/comment/{}/delete", base, comment_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -266,7 +266,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(del_cmt_body["data"]["deleted"].as_bool(), Some(true));
 
     let get_cmt3 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/comment/{}", base, comment_id))
+        .get(format!("{}/api/cms_assemble_control/comment/{}", base, comment_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -277,7 +277,7 @@ pub async fn cms_extended_crud_flow() {
     // ── file lifecycle ───────────────────────────────────────────────────────
     let file_id = uid("file-ext");
     let create_file = client
-        .post(format!("{}/jaxrs/cms_assemble_control/file/create", base))
+        .post(format!("{}/api/cms_assemble_control/file/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": file_id,
@@ -296,7 +296,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(create_file_body["data"]["id"].as_str(), Some(file_id.as_str()));
 
     let get_file = client
-        .get(format!("{}/jaxrs/cms_assemble_control/file/{}", base, file_id))
+        .get(format!("{}/api/cms_assemble_control/file/{}", base, file_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -311,7 +311,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_file_body["data"]["content_base64"].as_str(), Some("JVBERi0xLjQK"));
 
     let upd_file = client
-        .post(format!("{}/jaxrs/cms_assemble_control/file/{}/update", base, file_id))
+        .post(format!("{}/api/cms_assemble_control/file/{}/update", base, file_id))
         .header("Authorization", &auth_header)
         .json(&json!({ "name": "report-v2.pdf", "size": 4096 }))
         .send()
@@ -320,7 +320,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(upd_file.status(), reqwest::StatusCode::OK);
 
     let get_file2 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/file/{}", base, file_id))
+        .get(format!("{}/api/cms_assemble_control/file/{}", base, file_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -330,7 +330,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_file2_body["data"]["size"].as_i64(), Some(4096));
 
     let del_file = client
-        .post(format!("{}/jaxrs/cms_assemble_control/file/{}/delete", base, file_id))
+        .post(format!("{}/api/cms_assemble_control/file/{}/delete", base, file_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -340,7 +340,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(del_file_body["data"]["deleted"].as_bool(), Some(true));
 
     let get_file3 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/file/{}", base, file_id))
+        .get(format!("{}/api/cms_assemble_control/file/{}", base, file_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -351,7 +351,7 @@ pub async fn cms_extended_crud_flow() {
     // ── form lifecycle ───────────────────────────────────────────────────────
     let form_id = uid("form-ext");
     let create_form = client
-        .post(format!("{}/jaxrs/cms_assemble_control/form/create", base))
+        .post(format!("{}/api/cms_assemble_control/form/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": form_id,
@@ -369,7 +369,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(create_form_body["data"]["id"].as_str(), Some(form_id.as_str()));
 
     let get_form = client
-        .get(format!("{}/jaxrs/cms_assemble_control/form/{}", base, form_id))
+        .get(format!("{}/api/cms_assemble_control/form/{}", base, form_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -383,7 +383,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_form_body["data"]["status"].as_str(), Some("published"));
 
     let upd_form = client
-        .post(format!("{}/jaxrs/cms_assemble_control/form/{}/update", base, form_id))
+        .post(format!("{}/api/cms_assemble_control/form/{}/update", base, form_id))
         .header("Authorization", &auth_header)
         .json(&json!({ "name": "Feedback Form v2", "status": "draft" }))
         .send()
@@ -392,7 +392,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(upd_form.status(), reqwest::StatusCode::OK);
 
     let get_form2 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/form/{}", base, form_id))
+        .get(format!("{}/api/cms_assemble_control/form/{}", base, form_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -402,7 +402,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_form2_body["data"]["status"].as_str(), Some("draft"));
 
     let del_form = client
-        .post(format!("{}/jaxrs/cms_assemble_control/form/{}/delete", base, form_id))
+        .post(format!("{}/api/cms_assemble_control/form/{}/delete", base, form_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -412,7 +412,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(del_form_body["data"]["deleted"].as_bool(), Some(true));
 
     let get_form3 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/form/{}", base, form_id))
+        .get(format!("{}/api/cms_assemble_control/form/{}", base, form_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -423,7 +423,7 @@ pub async fn cms_extended_crud_flow() {
     // ── view lifecycle ───────────────────────────────────────────────────────
     let view_id = uid("view-ext");
     let create_view = client
-        .post(format!("{}/jaxrs/cms_assemble_control/view/create", base))
+        .post(format!("{}/api/cms_assemble_control/view/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": view_id,
@@ -441,7 +441,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(create_view_body["data"]["id"].as_str(), Some(view_id.as_str()));
 
     let get_view = client
-        .get(format!("{}/jaxrs/cms_assemble_control/view/{}", base, view_id))
+        .get(format!("{}/api/cms_assemble_control/view/{}", base, view_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -455,7 +455,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_view_body["data"]["view_config"].as_str(), Some("{\"layout\":\"grid\"}"));
 
     let upd_view = client
-        .post(format!("{}/jaxrs/cms_assemble_control/view/{}/update", base, view_id))
+        .post(format!("{}/api/cms_assemble_control/view/{}/update", base, view_id))
         .header("Authorization", &auth_header)
         .json(&json!({ "name": "Main View v2", "viewConfig": "{\"layout\":\"list\"}" }))
         .send()
@@ -464,7 +464,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(upd_view.status(), reqwest::StatusCode::OK);
 
     let get_view2 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/view/{}", base, view_id))
+        .get(format!("{}/api/cms_assemble_control/view/{}", base, view_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -474,7 +474,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(get_view2_body["data"]["view_config"].as_str(), Some("{\"layout\":\"list\"}"));
 
     let del_view = client
-        .post(format!("{}/jaxrs/cms_assemble_control/view/{}/delete", base, view_id))
+        .post(format!("{}/api/cms_assemble_control/view/{}/delete", base, view_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -484,7 +484,7 @@ pub async fn cms_extended_crud_flow() {
     assert_eq!(del_view_body["data"]["deleted"].as_bool(), Some(true));
 
     let get_view3 = client
-        .get(format!("{}/jaxrs/cms_assemble_control/view/{}", base, view_id))
+        .get(format!("{}/api/cms_assemble_control/view/{}", base, view_id))
         .header("Authorization", &auth_header)
         .send()
         .await

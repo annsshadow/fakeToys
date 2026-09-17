@@ -15,7 +15,7 @@ Java BAM 模块有 73 个 Java 文件、131 个 @Path 注解。通过类级+方�
 ### period/ 子路径 (30 条)
 | Java @Path (相对) | Rust 路由 | 状态 |
 |---|---|---|
-| `period` | `/jaxrs/processplatform/assemble/bam/period` | ✅ 已有 |
+| `period` | `/api/processplatform/assemble/bam/period` | ✅ 已有 |
 | `list/completed/task/applicationstubs` | `.../period/list/completed/task/applicationstubs` | ✅ 已有 |
 | `list/completed/task/unitstubs` | `.../period/list/completed/task/unitstubs` | ✅ 已有 |
 | `list/completed/work/applicationstubs` | `.../period/list/completed/work/applicationstubs` | ✅ 已有 |
@@ -54,10 +54,10 @@ Java BAM 模块有 73 个 Java 文件、131 个 @Path 注解。通过类级+方�
 ### BAM 配置 CRUD (4 条)
 | Rust 路由 | 功能 |
 |---|---|
-| `/jaxrs/processplatform/assemble/bam/get/{id}` | 获取 BAM 配置 |
-| `/jaxrs/processplatform/assemble/bam/create` | 创建 BAM 配置 |
-| `/jaxrs/processplatform/assemble/bam/delete/{id}` | 删除 BAM 配置 |
-| `/jaxrs/processplatform/assemble/bam/list/{category}` | 列出 BAM 配置 |
+| `/api/processplatform/assemble/bam/get/{id}` | 获取 BAM 配置 |
+| `/api/processplatform/assemble/bam/create` | 创建 BAM 配置 |
+| `/api/processplatform/assemble/bam/delete/{id}` | 删除 BAM 配置 |
+| `/api/processplatform/assemble/bam/list/{category}` | 列出 BAM 配置 |
 
 ### period/list/{start}/{work}/{unit} (POST 时间段查询) (1 条)
 | Rust 路由 | 功能 |

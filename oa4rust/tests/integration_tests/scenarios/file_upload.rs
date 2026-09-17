@@ -36,7 +36,7 @@ pub async fn file_upload_flow() {
 
     // Step 1: Create a file folder
     let folder_resp = client
-        .post(format!("{}/jaxrs/file/folder/create", base))
+        .post(format!("{}/api/file/folder/create", base))
         .header("Authorization", &auth_header)
         .header("Content-Type", "application/json")
         .json(&json!({
@@ -64,7 +64,7 @@ pub async fn file_upload_flow() {
 
     // Step 2: Verify folder was created by listing top-level folders
     let list_resp = client
-        .get(format!("{}/jaxrs/file/folder/list/top", base))
+        .get(format!("{}/api/file/folder/list/top", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -95,7 +95,7 @@ pub async fn file_upload_flow() {
         .text("referenceType", "folder");
 
     let upload_resp = client
-        .post(format!("{}/jaxrs/file/upload", base))
+        .post(format!("{}/api/file/upload", base))
         .header("Authorization", &auth_header)
         .multipart(form)
         .send()
@@ -124,7 +124,7 @@ pub async fn file_upload_flow() {
 
     // Step 4: Verify - retrieve the file by ID
     let download_resp = client
-        .get(format!("{}/jaxrs/file/download/{}", base, file_id))
+        .get(format!("{}/api/file/download/{}", base, file_id))
         .header("Authorization", &auth_header)
         .send()
         .await

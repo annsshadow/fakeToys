@@ -45,7 +45,7 @@ pub async fn program_center_app_crud_lifecycle() {
 
     // ── Step 1: CREATE ───────────────────────────────────────────────────────
     let create_resp = client
-        .post(format!("{}/jaxrs/program_center/application/create", base))
+        .post(format!("{}/api/program_center/application/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": "CRUD Test Application",
@@ -72,7 +72,7 @@ pub async fn program_center_app_crud_lifecycle() {
     // ── Step 2: LIST — must include our created app ──────────────────────────
     let empty_apps: Vec<serde_json::Value> = Vec::new();
     let list_resp = client
-        .get(format!("{}/jaxrs/program_center/applications", base))
+        .get(format!("{}/api/program_center/applications", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -96,7 +96,7 @@ pub async fn program_center_app_crud_lifecycle() {
     // ── Step 3: GET by ID ────────────────────────────────────────────────────
     let get_resp = client
         .get(format!(
-            "{}/jaxrs/program_center/application/{}",
+            "{}/api/program_center/application/{}",
             base, created_id
         ))
         .header("Authorization", &auth_header)
@@ -112,7 +112,7 @@ pub async fn program_center_app_crud_lifecycle() {
     // ── Step 4: DELETE ───────────────────────────────────────────────────────
     let del_resp = client
         .delete(format!(
-            "{}/jaxrs/program_center/application/{}",
+            "{}/api/program_center/application/{}",
             base, created_id
         ))
         .header("Authorization", &auth_header)
@@ -130,7 +130,7 @@ pub async fn program_center_app_crud_lifecycle() {
 
     // ── Step 5: LIST — must NOT include deleted app ──────────────────────────
     let list_after_del = client
-        .get(format!("{}/jaxrs/program_center/applications", base))
+        .get(format!("{}/api/program_center/applications", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -145,7 +145,7 @@ pub async fn program_center_app_crud_lifecycle() {
     // ── Step 6: GET by ID — must return 404 ──────────────────────────────────
     let get_after_del = client
         .get(format!(
-            "{}/jaxrs/program_center/application/{}",
+            "{}/api/program_center/application/{}",
             base, created_id
         ))
         .header("Authorization", &auth_header)
@@ -167,7 +167,7 @@ pub async fn program_center_app_crud_lifecycle() {
 /// Work approval flow: create work → list tasks → approve → verify completion.
 ///
 /// Mirrors the ProcessWork.vue front-end workflow: approve mutation triggers
-/// the `/jaxrs/processplatform/assemble/surface/work/{id}/approve` endpoint.
+/// the `/api/processplatform/assemble/surface/work/{id}/approve` endpoint.
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn process_work_approve_flow() {
@@ -193,7 +193,7 @@ pub async fn process_work_approve_flow() {
     // ── Step 1: Create a work item (simplified, uses work/create endpoint) ──
     let create_resp = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/work/create",
+            "{}/api/processplatform/service/processing/work/create",
             base
         ))
         .header("Authorization", &auth_header)
@@ -214,7 +214,7 @@ pub async fn process_work_approve_flow() {
     // ── Step 2: List pending tasks for the current person ───────────────────
     let list_resp = client
         .post(format!(
-            "{}/jaxrs/processplatform/assemble/surface/work/list/pending",
+            "{}/api/processplatform/assemble/surface/work/list/pending",
             base
         ))
         .header("Authorization", &auth_header)
@@ -244,7 +244,7 @@ pub async fn process_work_approve_flow() {
             // ── Step 3: Approve the task ────────────────────────────────────
             let approve_resp = client
                 .post(format!(
-                    "{}/jaxrs/processplatform/assemble/surface/work/{}/approve",
+                    "{}/api/processplatform/assemble/surface/work/{}/approve",
                     base, task_id
                 ))
                 .header("Authorization", &auth_header)
@@ -264,7 +264,7 @@ pub async fn process_work_approve_flow() {
             // ── Step 4: Verify task no longer appears in pending list ───────
             let list_after = client
                 .post(format!(
-                    "{}/jaxrs/processplatform/assemble/surface/work/list/pending",
+                    "{}/api/processplatform/assemble/surface/work/list/pending",
                     base
                 ))
                 .header("Authorization", &auth_header)
@@ -316,7 +316,7 @@ pub async fn document_crud_lifecycle() {
 
     // ── Step 1: CREATE document ─────────────────────────────────────────────
     let create_resp = client
-        .post(format!("{}/jaxrs/document", base))
+        .post(format!("{}/api/document", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": &doc_id,
@@ -344,7 +344,7 @@ pub async fn document_crud_lifecycle() {
 
     // ── Step 2: LIST — verify document appears ──────────────────────────────
     let list_resp = client
-        .post(format!("{}/jaxrs/document/list/document", base))
+        .post(format!("{}/api/document/list/document", base))
         .header("Authorization", &auth_header)
         .json(&json!({"ids": vec![actual_doc_id.clone()]}))
         .send()
@@ -371,7 +371,7 @@ pub async fn document_crud_lifecycle() {
 
     // ── Step 3: Verify document still exists (no DELETE endpoint available) ──
     let list_after = client
-        .post(format!("{}/jaxrs/document/list/document", base))
+        .post(format!("{}/api/document/list/document", base))
         .header("Authorization", &auth_header)
         .json(&json!({"ids": vec![actual_doc_id.clone()]}))
         .send()
@@ -417,7 +417,7 @@ pub async fn file_crud_lifecycle() {
     // ── Step 1: List files (skip - endpoint returns non-JSON) ──────────────
     // The file list endpoint returns HTML/plain text; just verify auth works
     let list_resp = client
-        .get(format!("{}/jaxrs/file/folder/list/top", base))
+        .get(format!("{}/api/file/folder/list/top", base))
         .header("Authorization", &auth_header)
         .send()
         .await

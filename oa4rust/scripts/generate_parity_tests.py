@@ -120,7 +120,7 @@ def rust_safe_name(s: str) -> str:
 
 
 def generate_route_test(
-    java_mod: str,
+    legacy_mod: str,
     rust_crate: str,
     handler: str,
     method: str,
@@ -189,7 +189,7 @@ def generate_route_test(
 
 
 def generate_crate_block(
-    java_mod: str,
+    legacy_mod: str,
     rust_crate: str,
     routes: List[Tuple[str, str, str]],
     router_fn: Optional[str],
@@ -202,7 +202,7 @@ def generate_crate_block(
 
     lines: List[str] = []
     async_tag = " async" if is_async_router else ""
-    lines.append(f"    // ── {java_mod} → {rust_crate} ({len(routes)} routes{async_tag}) ──")
+    lines.append(f"    // ── {legacy_mod} → {rust_crate} ({len(routes)} routes{async_tag}) ──")
 
     # Deduplicate test names: same handler can serve multiple routes.
     # Track {base_name: count} and append _<n> for duplicates.
@@ -255,7 +255,7 @@ def generate_route_test_single(
     if INVALID_URI_CHARS_RE.search(request_path):
         return (
             f"    // skipped: request path not representable as a URI "
-            f"(Java-parity quirk): {rust_path_fmt} ({method.upper()})\n"
+            f"(o2server parity quirk): {rust_path_fmt} ({method.upper()})\n"
         )
 
     if router_fn:
@@ -343,7 +343,7 @@ def build_header(total_crates: int, total_routes: int, total_tests: int) -> str:
 //
 // Parity regression suite (Phase 4 U4.1).
 //
-// For each o2server @Path mapped in docs/audits/o2server-parity-report.json,
+// For each o2server 路径注解 mapped in docs/audits/o2server-parity-report.json,
 // this file contains a test that verifies the the corresponding Rust axum route
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
@@ -372,7 +372,7 @@ def main() -> None:
     missing_crates: List[str] = []
 
     for entry in module_comparison:
-        java_mod = entry.get("java_mod", "")
+        legacy_mod = entry.get("legacy_mod", "")
         rust_crate = entry.get("rust_crate", "")
         if not rust_crate:
             continue
@@ -391,7 +391,7 @@ def main() -> None:
             router_fn, router_params, is_async = None, "", False
 
         if routes:
-            block, count = generate_crate_block(java_mod, rust_crate, routes, router_fn, router_params, is_async)
+            block, count = generate_crate_block(legacy_mod, rust_crate, routes, router_fn, router_params, is_async)
             module_blocks.append(block)
             total_routes += count
             total_tests += count
