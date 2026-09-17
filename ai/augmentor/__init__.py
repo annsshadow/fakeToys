@@ -27,6 +27,9 @@ from .comparison import DatasetComparator, ComparisonResult, compare_datasets
 from .dataset_ops import DatasetOperations, MergeConfig, SampleConfig, SplitConfig
 from .validation import DatasetValidator, DataSanitizer, ValidationResult, ValidationSeverity
 from .converter import DatasetConverter, DataFormat, convert_dataset, convert_file, get_supported_formats
+from .indexer import DatasetIndexer, DatasetView, QueryResult, create_indexer, create_view
+from .cache import MemoryCache, DiskCache, CachedProcessor, cached, create_memory_cache, create_disk_cache
+from .config_validator import ConfigValidator, ValidationResult, validate_config_file, validate_config
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -92,6 +95,21 @@ __all__ = [
     "convert_dataset",
     "convert_file",
     "get_supported_formats",
+    "DatasetIndexer",
+    "DatasetView",
+    "QueryResult",
+    "create_indexer",
+    "create_view",
+    "MemoryCache",
+    "DiskCache",
+    "CachedProcessor",
+    "cached",
+    "create_memory_cache",
+    "create_disk_cache",
+    "ConfigValidator",
+    "ValidationResult",
+    "validate_config_file",
+    "validate_config",
     "AugmentorError",
     "ConfigError",
     "ModelError",
