@@ -36,6 +36,10 @@ from .export_enhanced import EnhancedExporter, ExportOptions, ExportFormat, expo
 from .quality_report import QualityReporter, QualityReport, QualityMetric, generate_quality_report, save_quality_report
 from .visualize_enhanced import EnhancedVisualizer, VisualizationConfig, visualize_dataset
 from .backup import DatasetBackup, BackupInfo, create_backup, restore_backup, list_backups, delete_backup
+from .search_enhanced import EnhancedSearcher, SearchResult, SearchFilter, search_dataset, create_searcher
+from .statistics import DatasetStatisticsCalculator, DatasetStatistics, FieldStatistics, calculate_statistics, get_field_summary
+from .compare_enhanced import EnhancedComparator, EnhancedComparisonResult, ComparisonMetrics, FieldComparison, compare_datasets_enhanced, diff_datasets
+from .version_control import DatasetVersionManager, DatasetVersion, create_version, load_version, list_versions
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -146,6 +150,27 @@ __all__ = [
     "restore_backup",
     "list_backups",
     "delete_backup",
+    "EnhancedSearcher",
+    "SearchResult",
+    "SearchFilter",
+    "search_dataset",
+    "create_searcher",
+    "DatasetStatisticsCalculator",
+    "DatasetStatistics",
+    "FieldStatistics",
+    "calculate_statistics",
+    "get_field_summary",
+    "EnhancedComparator",
+    "EnhancedComparisonResult",
+    "ComparisonMetrics",
+    "FieldComparison",
+    "compare_datasets_enhanced",
+    "diff_datasets",
+    "DatasetVersionManager",
+    "DatasetVersion",
+    "create_version",
+    "load_version",
+    "list_versions",
     "AugmentorError",
     "ConfigError",
     "ModelError",

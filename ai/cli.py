@@ -246,6 +246,37 @@ def build_parser() -> argparse.ArgumentParser:
     backup_parser.add_argument("--name", type=str, help="备份名称")
     backup_parser.add_argument("--backup-dir", type=str, default=".backups", help="备份目录")
 
+    # 增强搜索命令
+    search_enhanced_parser = subparsers.add_parser("search-enhanced", help="增强搜索")
+    search_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    search_enhanced_parser.add_argument("--query", type=str, required=True, help="搜索查询")
+    search_enhanced_parser.add_argument("--field", type=str, nargs="+", default=["instruction", "output"], help="搜索字段")
+    search_enhanced_parser.add_argument("--method", type=str, default="contains", choices=["exact", "contains", "fuzzy", "regex"], help="搜索方法")
+    search_enhanced_parser.add_argument("--limit", type=int, default=100, help="返回数量")
+    search_enhanced_parser.add_argument("--offset", type=int, default=0, help="偏移量")
+
+    # 统计命令
+    stats_enhanced_parser = subparsers.add_parser("stats-enhanced", help="增强统计")
+    stats_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    stats_enhanced_parser.add_argument("--output", type=str, help="输出报告路径")
+    stats_enhanced_parser.add_argument("--fields", type=str, nargs="+", help="统计字段")
+
+    # 增强比较命令
+    compare_enhanced_parser = subparsers.add_parser("compare-enhanced", help="增强比较")
+    compare_enhanced_parser.add_argument("--dataset-a", type=str, required=True, help="数据集A路径")
+    compare_enhanced_parser.add_argument("--dataset-b", type=str, required=True, help="数据集B路径")
+    compare_enhanced_parser.add_argument("--output", type=str, help="输出报告路径")
+    compare_enhanced_parser.add_argument("--key-fields", type=str, nargs="+", default=["instruction"], help="关键字段")
+
+    # 版本控制命令
+    version_parser = subparsers.add_parser("version-control", help="版本控制")
+    version_parser.add_argument("--action", type=str, required=True, choices=["create", "list", "load", "compare"], help="操作类型")
+    version_parser.add_argument("--input", type=str, help="输入文件路径")
+    version_parser.add_argument("--output", type=str, help="输出文件路径")
+    version_parser.add_argument("--version", type=str, help="版本ID")
+    version_parser.add_argument("--description", type=str, default="", help="版本描述")
+    version_parser.add_argument("--versions-dir", type=str, default=".versions", help="版本目录")
+
     return parser
 
 
@@ -755,6 +786,155 @@ def main():
                     print(f"删除成功: {args.name}")
                 else:
                     print(f"删除失败: 备份不存在 {args.name}")
+
+        # ============ 增强搜索 ============
+        elif args.command == "search-enhanced":
+            from augmentor.search_enhanced import search_dataset
+
+            items = _load_items(args.input)
+            result = search_dataset(
+                items, 
+                args.query, 
+                args.field, 
+                args.method, 
+                args.limit
+            )
+            
+            print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
+            print(f"搜索方法: {result.method}")
+            
+            if result.items:
+                print("\n搜索结果:")
+                for i, item in enumerate(result.items[:10], 1):
+                    print(f"  {i}. {item.get('instruction', '')[:50]}...")
+            
+            if args.output:
+                import json
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"\n结果已保存到 {args.output}")
+
+        # ============ 增强统计 ============
+        elif args.command == "stats-enhanced":
+            from augmentor.statistics import calculate_statistics
+
+            items = _load_items(args.input)
+            dataset_name = Path(args.input).stem
+            stats = calculate_statistics(items, dataset_name, args.fields)
+            
+            print(f"数据集: {stats.dataset_name}")
+            print(f"数据总量: {stats.total_items}")
+            print(f"字段数量: {len(stats.field_statistics)}")
+            
+            print("\n字段统计:")
+            for field_name, field_stats in stats.field_statistics.items():
+                fill_rate = field_stats.filled_count / field_stats.total_count if field_stats.total_count > 0 else 0
+                print(f"  {field_name}:")
+                print(f"    填充率: {fill_rate:.1%}")
+                print(f"    平均长度: {field_stats.avg_length:.1f}")
+                print(f"    唯一值: {field_stats.unique_count}")
+            
+            if stats.quality_metrics:
+                print("\n质量指标:")
+                for metric_name, metric_value in stats.quality_metrics.items():
+                    print(f"  {metric_name}: {metric_value:.2f}")
+            
+            if args.output:
+                import json
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(stats.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"\n统计报告已保存到 {args.output}")
+
+        # ============ 增强比较 ============
+        elif args.command == "compare-enhanced":
+            from augmentor.compare_enhanced import compare_datasets_enhanced
+
+            items_a = _load_items(args.dataset_a)
+            items_b = _load_items(args.dataset_b)
+            
+            name_a = Path(args.dataset_a).stem
+            name_b = Path(args.dataset_b).stem
+            
+            result = compare_datasets_enhanced(items_a, items_b, name_a, name_b, args.key_fields)
+            
+            print(f"数据集比较结果:")
+            print(f"  数据集A ({name_a}): {result.metrics.size_a} 条")
+            print(f"  数据集B ({name_b}): {result.metrics.size_b} 条")
+            print(f"  相似度: {result.metrics.similarity_score:.2%}")
+            print(f"  共同数据: {result.metrics.common_items} 条")
+            print(f"  仅在A中: {result.metrics.unique_a} 条")
+            print(f"  仅在B中: {result.metrics.unique_b} 条")
+            
+            if result.recommendations:
+                print("\n建议:")
+                for rec in result.recommendations:
+                    print(f"  - {rec}")
+            
+            if args.output:
+                import json
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"\n比较报告已保存到 {args.output}")
+
+        # ============ 版本控制 ============
+        elif args.command == "version-control":
+            from augmentor.version_control import create_version, load_version, list_versions
+            from augmentor.version_control import DatasetVersionManager
+
+            manager = DatasetVersionManager(args.versions_dir)
+            
+            if args.action == "create":
+                if not args.input:
+                    print("错误: --input 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                items = _load_items(args.input)
+                version = manager.create_version(items, args.description)
+                print(f"版本创建成功")
+                print(f"版本ID: {version.version_id}")
+                print(f"版本号: {version.version_number}")
+                print(f"数据量: {version.item_count} 条")
+            
+            elif args.action == "list":
+                versions = manager.list_versions()
+                if not versions:
+                    print("没有找到版本")
+                else:
+                    print(f"找到 {len(versions)} 个版本:")
+                    for v in versions:
+                        print(f"  - {v['version_id']}: {v['item_count']} 条 ({v['timestamp']})")
+            
+            elif args.action == "load":
+                if not args.version or not args.output:
+                    print("错误: --version 和 --output 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                items = manager.load_version(args.version)
+                _save_items(items, args.output)
+                print(f"版本加载成功")
+                print(f"数据量: {len(items)} 条")
+                print(f"保存到: {args.output}")
+            
+            elif args.action == "compare":
+                if not args.version or not args.output:
+                    print("错误: --version 和 --output 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                # 比较当前版本和指定版本
+                current_version = manager.get_current_version()
+                if not current_version:
+                    print("错误: 没有当前版本", file=sys.stderr)
+                    sys.exit(1)
+                result = manager.compare_versions(current_version, args.version)
+                print(f"版本比较结果:")
+                print(f"  版本A: {result['version_a']}")
+                print(f"  版本B: {result['version_b']}")
+                print(f"  仅在A中: {result['stats']['only_in_a_count']} 条")
+                print(f"  仅在B中: {result['stats']['only_in_b_count']} 条")
+                print(f"  共同数据: {result['stats']['in_both_count']} 条")
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
