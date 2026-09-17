@@ -424,3 +424,30 @@ def get_model_config(config: AppConfig, model_name: Optional[str] = None) -> Mod
     if name not in config.models:
         raise ValueError(f"模型 '{name}' 未配置。可用模型: {list(config.models.keys())}")
     return config.models[name]
+
+
+def save_config(config: AppConfig, config_path: str = "config.yaml") -> None:
+    """将配置保存回 YAML 文件（仅持久化非敏感运行时字段；密钥保留占位符）
+
+    Args:
+        config: 应用配置
+        config_path: 配置文件路径
+    """
+    import dataclasses
+
+    def _to_dict(obj):
+        if dataclasses.is_dataclass(obj):
+            return {k: _to_dict(v) for k, v in dataclasses.asdict(obj).items()}
+        return obj
+
+    data = _to_dict(config)
+
+    # 保留 models 下的 api_key/secret_key 为环境变量占位符，避免密钥落盘
+    for name, model_conf in data.get("models", {}).items():
+        if name == "default":
+            continue
+        model_conf.pop("api_key", None)
+        model_conf.pop("secret_key", None)
+
+    with open(config_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)

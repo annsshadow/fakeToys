@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Card, Form, InputNumber, Select, Switch, Button, message, Space } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
-import { getConfig, getModels } from '../services/api'
+import { getConfig, updateConfig, getModels } from '../services/api'
 
 export default function Settings() {
   const [config, setConfig] = useState<any>(null)
   const [models, setModels] = useState<string[]>([])
   const [defaultModel, setDefaultModel] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     loadConfig()
@@ -32,8 +33,25 @@ export default function Settings() {
     }
   }
 
-  const handleSave = () => {
-    message.success('配置已保存（注意：需要重启服务才能生效）')
+  const handleSave = async () => {
+    setLoading(true)
+    try {
+      await updateConfig({
+        default_model: defaultModel,
+        augmentation: config?.augmentation,
+        quality: config?.quality,
+        dedup: config?.dedup,
+        export: config?.export,
+        vector: config?.vector,
+        rag: config?.rag,
+        multimodal: config?.multimodal
+      })
+      message.success('配置已保存到 config.yaml，部分配置需要重启服务生效')
+    } catch (error) {
+      message.error('保存配置失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -62,7 +80,10 @@ export default function Settings() {
                 value={config?.augmentation?.variants_per_seed}
                 min={1}
                 max={20}
-                disabled
+                onChange={(value) => setConfig({
+                  ...config,
+                  augmentation: { ...config.augmentation, variants_per_seed: value }
+                })}
               />
             </Form.Item>
             <Form.Item label="并发线程数">
@@ -70,7 +91,10 @@ export default function Settings() {
                 value={config?.augmentation?.num_threads}
                 min={1}
                 max={100}
-                disabled
+                onChange={(value) => setConfig({
+                  ...config,
+                  augmentation: { ...config.augmentation, num_threads: value }
+                })}
               />
             </Form.Item>
           </Space>
@@ -81,7 +105,13 @@ export default function Settings() {
         <Form layout="vertical">
           <Space size="large">
             <Form.Item label="启用质量检查">
-              <Switch checked={config?.quality?.enabled} disabled />
+              <Switch
+                checked={config?.quality?.enabled}
+                onChange={(checked) => setConfig({
+                  ...config,
+                  quality: { ...config.quality, enabled: checked }
+                })}
+              />
             </Form.Item>
             <Form.Item label="质量阈值">
               <InputNumber
@@ -89,7 +119,10 @@ export default function Settings() {
                 min={0}
                 max={1}
                 step={0.1}
-                disabled
+                onChange={(value) => setConfig({
+                  ...config,
+                  quality: { ...config.quality, threshold: value }
+                })}
               />
             </Form.Item>
           </Space>
@@ -100,7 +133,13 @@ export default function Settings() {
         <Form layout="vertical">
           <Space size="large">
             <Form.Item label="启用水重">
-              <Switch checked={config?.dedup?.enabled} disabled />
+              <Switch
+                checked={config?.dedup?.enabled}
+                onChange={(checked) => setConfig({
+                  ...config,
+                  dedup: { ...config.dedup, enabled: checked }
+                })}
+              />
             </Form.Item>
             <Form.Item label="相似度阈值">
               <InputNumber
@@ -108,7 +147,10 @@ export default function Settings() {
                 min={0}
                 max={1}
                 step={0.1}
-                disabled
+                onChange={(value) => setConfig({
+                  ...config,
+                  dedup: { ...config.dedup, threshold: value }
+                })}
               />
             </Form.Item>
           </Space>
@@ -127,7 +169,7 @@ export default function Settings() {
       </Card>
 
       <div style={{ marginTop: 16, textAlign: 'right' }}>
-        <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>
+        <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={loading}>
           保存配置
         </Button>
       </div>
