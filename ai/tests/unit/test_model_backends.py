@@ -382,3 +382,25 @@ class TestModelManager:
         manager.clear()
 
         assert manager._sentence_model is None
+
+    def test_double_init(self):
+        """重复初始化"""
+        manager = ModelManager()
+        manager.__init__()
+        assert manager._initialized is True
+
+    def test_get_sentence_model_caching(self):
+        """模型缓存机制"""
+        manager = ModelManager()
+        manager.clear()
+        model1 = manager.get_sentence_model()
+        model2 = manager.get_sentence_model()
+        assert model1 is model2
+
+    def test_clear_and_reload(self):
+        """清空后重新加载"""
+        manager = ModelManager()
+        manager.clear()
+        model = manager.get_sentence_model()
+        assert model is not None
+        assert manager._sentence_model is not None
