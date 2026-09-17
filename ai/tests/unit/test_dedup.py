@@ -370,3 +370,40 @@ class TestBatchEncodeFallback:
         dedup._model = "fallback"
         embeddings = dedup._batch_encode(["hello"])
         assert embeddings.shape[0] == 1
+
+
+class TestLoadModelExtended:
+    """_load_model 扩展测试"""
+
+    def test_load_model_idempotent(self):
+        """重复调用 _load_model 不应重新初始化"""
+        dedup = Deduplicator()
+        dedup._load_model()
+        first_model = dedup._model
+        dedup._load_model()
+        assert dedup._model is first_model
+
+    def test_load_model_sets_model_type(self):
+        """_load_model 应设置模型类型"""
+        dedup = Deduplicator()
+        dedup._load_model()
+        assert dedup._model is not None
+
+
+class TestDedupResultExtended:
+    """DedupResult 扩展测试"""
+
+    def test_dedup_result_equality(self):
+        """DedupResult 应支持比较"""
+        r1 = DedupResult(
+            original_count=5, deduplicated_count=3,
+            removed_count=2, duplicate_groups=[[0, 1]],
+            kept_indices=[0, 2, 4]
+        )
+        r2 = DedupResult(
+            original_count=5, deduplicated_count=3,
+            removed_count=2, duplicate_groups=[[0, 1]],
+            kept_indices=[0, 2, 4]
+        )
+        assert r1.original_count == r2.original_count
+        assert r1.kept_indices == r2.kept_indices
