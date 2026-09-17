@@ -531,7 +531,58 @@ class TestPipelineExtended:
 class TestPipelineExtended2:
     """AugmentorPipeline 扩展测试 - 第二轮"""
 
-    def test_augment_dataset_serial_mode(self, pipeline, seed_file, tmp_path):
+    def test_augment_dataset_full_pipeline(self, pipeline, seed_file, tmp_path):
+        """完整流水线测试"""
+        output = tmp_path / "full.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=True,
+            use_dedup=True, use_parallel=True
+        )
+        assert "input_count" in report
+        assert "output_count" in report
+        assert "dedup" in report
+        assert "parallel" in report
+        assert report.get("dedup") is True
+        assert report.get("parallel") is True
+
+    def test_augment_seed_quality_check_disabled(self, pipeline):
+        """禁用质量检查"""
+        variants = pipeline.augment_seed(
+            {"instruction": "测试问题", "output": "测试回答"},
+            use_quality_check=False
+        )
+        assert isinstance(variants, list)
+
+    def test_augment_dataset_parallel_only(self, pipeline, seed_file, tmp_path):
+        """仅并行模式"""
+        output = tmp_path / "parallel_only.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=False, use_parallel=True
+        )
+        assert report.get("parallel") is True
+
+    def test_augment_dataset_serial_only(self, pipeline, seed_file, tmp_path):
+        """仅串行模式"""
+        output = tmp_path / "serial_only.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        assert report.get("parallel") is False
+
+    def test_augment_dataset_dedup_only(self, pipeline, seed_file, tmp_path):
+        """仅去重模式"""
+        output = tmp_path / "dedup_only.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=True, use_parallel=False
+        )
+        assert report.get("dedup") is True
         """串行模式增强"""
         output = tmp_path / "out_serial.json"
         report = pipeline.augment_dataset(
