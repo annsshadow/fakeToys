@@ -169,3 +169,115 @@ class TestBackupInfo:
         assert d["backup_id"] == "test"
         assert d["item_count"] == 100
         assert d["file_size"] == 1024
+
+
+class TestBackupEdgeCases:
+    """备份模块边界测试"""
+
+    def test_calculate_checksum(self, tmp_path, sample_file):
+        """校验和应一致"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        checksum1 = manager._calculate_checksum(sample_file)
+        checksum2 = manager._calculate_checksum(sample_file)
+        
+        assert checksum1 == checksum2
+        assert len(checksum1) == 64  # SHA256 hex length
+
+    def test_backup_nonexistent_file(self, tmp_path):
+        """备份不存在的文件应抛出异常"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        with pytest.raises(FileNotFoundError):
+            manager.backup(str(tmp_path / "nonexistent.json"))
+
+    def test_restore_nonexistent_backup(self, tmp_path):
+        """恢复不存在的备份应抛出异常"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        with pytest.raises(ValueError):
+            manager.restore("nonexistent", str(tmp_path / "output.json"))
+
+    def test_restore_checksum_mismatch(self, tmp_path, sample_file):
+        """校验和不匹配时应发出警告但仍恢复"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        info = manager.backup(sample_file, "test_backup")
+        
+        # 篡改校验和记录
+        for b in manager._index["backups"]:
+            if b["backup_id"] == "test_backup":
+                b["checksum"] = "tampered"
+        
+        output_path = tmp_path / "restored.json"
+        result = manager.restore("test_backup", str(output_path))
+        
+        assert output_path.exists()
+
+    def test_delete_nonexistent_backup(self, tmp_path):
+        """删除不存在的备份应返回 False"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        assert manager.delete_backup("nonexistent") is False
+
+    def test_get_backup_info_nonexistent(self, tmp_path):
+        """获取不存在的备份信息应返回 None"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        assert manager.get_backup_info("nonexistent") is None
+
+    def test_backup_with_custom_name(self, tmp_path, sample_file):
+        """使用自定义名称备份"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        info = manager.backup(sample_file, "custom_name")
+        assert info.backup_id == "custom_name"
+
+    def test_backup_auto_name(self, tmp_path, sample_file):
+        """自动生成备份名称"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        info = manager.backup(sample_file)
+        assert info.backup_id.startswith("backup_")
+
+    def test_restore_creates_output_dir(self, tmp_path, sample_file):
+        """恢复时应自动创建输出目录"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        manager.backup(sample_file, "test_backup")
+        
+        output_path = tmp_path / "subdir" / "nested" / "restored.json"
+        result = manager.restore("test_backup", str(output_path))
+        
+        assert output_path.exists()
+
+    def test_list_backups_empty(self, tmp_path):
+        """空备份目录应返回空列表"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        assert manager.list_backups() == []
+
+    def test_multiple_backups(self, tmp_path, sample_file):
+        """多个备份应正确管理"""
+        backup_dir = tmp_path / "backups"
+        manager = DatasetBackup(str(backup_dir))
+        
+        manager.backup(sample_file, "backup1")
+        manager.backup(sample_file, "backup2")
+        manager.backup(sample_file, "backup3")
+        
+        assert len(manager.list_backups()) == 3
+        
+        manager.delete_backup("backup2")
+        assert len(manager.list_backups()) == 2
+        assert manager.get_backup_info("backup2") is None
