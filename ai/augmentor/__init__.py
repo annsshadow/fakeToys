@@ -32,6 +32,10 @@ from .cache import MemoryCache, DiskCache, CachedProcessor, cached, create_memor
 from .config_validator import ConfigValidator, ValidationResult, validate_config_file, validate_config
 from .analytics import DatasetAnalyzer, AnalysisReport, DataInsight, analyze_dataset, get_dataset_insights
 from .cleaner import DatasetCleaner, TextNormalizer, CleaningResult, clean_dataset, normalize_text, extract_keywords
+from .export_enhanced import EnhancedExporter, ExportOptions, ExportFormat, export_dataset, get_supported_formats as get_supported_export_formats
+from .quality_report import QualityReporter, QualityReport, QualityMetric, generate_quality_report, save_quality_report
+from .visualize_enhanced import EnhancedVisualizer, VisualizationConfig, visualize_dataset
+from .backup import DatasetBackup, BackupInfo, create_backup, restore_backup, list_backups, delete_backup
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -123,6 +127,25 @@ __all__ = [
     "clean_dataset",
     "normalize_text",
     "extract_keywords",
+    "EnhancedExporter",
+    "ExportOptions",
+    "ExportFormat",
+    "export_dataset",
+    "get_supported_export_formats",
+    "QualityReporter",
+    "QualityReport",
+    "QualityMetric",
+    "generate_quality_report",
+    "save_quality_report",
+    "EnhancedVisualizer",
+    "VisualizationConfig",
+    "visualize_dataset",
+    "DatasetBackup",
+    "BackupInfo",
+    "create_backup",
+    "restore_backup",
+    "list_backups",
+    "delete_backup",
     "AugmentorError",
     "ConfigError",
     "ModelError",
