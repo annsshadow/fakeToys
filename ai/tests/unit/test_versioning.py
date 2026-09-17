@@ -413,3 +413,52 @@ class TestVersioningExtended2:
         v2 = manager.create_version([{"instruction": "q2"}])
         manager.rollback(v1.version_id)
         assert manager.get_current_version() == v1.version_id
+
+
+class TestVersioningExtended3:
+    """VersionManager 扩展测试 - 第三轮"""
+
+    def test_rollback_nonexistent_version(self, tmp_path):
+        """回滚不存在的版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        result = manager.rollback("nonexistent")
+        assert result is False
+
+    def test_list_versions_empty(self, tmp_path):
+        """空版本列表"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        assert manager.list_versions() == []
+
+    def test_create_version_with_description(self, tmp_path):
+        """创建带描述的版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        info = manager.create_version(
+            [{"instruction": "q1"}],
+            label="test",
+            description="这是一个测试版本"
+        )
+        assert info.description == "这是一个测试版本"
+
+    def test_diff_added_items(self, tmp_path):
+        """版本差异包含新增项"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}])
+        v2 = manager.create_version([{"instruction": "q1"}, {"instruction": "q2"}])
+        diff = manager.diff(v1.version_id, v2.version_id)
+        assert diff.added_count == 1
+
+    def test_diff_modified_items(self, tmp_path):
+        """版本差异包含修改项"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1", "output": "a1"}])
+        v2 = manager.create_version([{"instruction": "q1", "output": "a2"}])
+        diff = manager.diff(v1.version_id, v2.version_id)
+        assert diff.modified_count >= 0
+
+    def test_report_with_versions(self, tmp_path):
+        """有版本时的报告"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        manager.create_version([{"instruction": "q1"}], label="test")
+        report = manager.generate_report()
+        assert report["total_versions"] == 1
+        assert len(report["versions"]) == 1
