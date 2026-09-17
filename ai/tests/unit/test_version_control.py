@@ -1,0 +1,198 @@
+"""数据集版本控制模块测试"""
+
+import pytest
+from augmentor.version_control import (
+    DatasetVersionManager, DatasetVersion,
+    create_version, load_version, list_versions
+)
+
+
+@pytest.fixture
+def sample_dataset():
+    """创建测试数据集"""
+    return [
+        {"instruction": "如何申请租房？", "input": "", "output": "请登录官网申请"},
+        {"instruction": "租房需要什么材料？", "input": "", "output": "身份证、工作证明"},
+        {"instruction": "租房流程是什么？", "input": "", "output": "选房、签约、付款"},
+    ]
+
+
+@pytest.fixture
+def sample_dataset_v2():
+    """创建测试数据集v2"""
+    return [
+        {"instruction": "如何申请租房？", "input": "", "output": "请登录官网申请"},
+        {"instruction": "租房需要什么材料？", "input": "", "output": "身份证、工作证明"},
+        {"instruction": "租房流程是什么？", "input": "", "output": "选房、签约、付款"},
+        {"instruction": "如何申请买房？", "input": "", "output": "请咨询销售顾问"},
+    ]
+
+
+class TestDatasetVersionManager:
+    """DatasetVersionManager 测试"""
+    
+    def test_init(self, tmp_path):
+        """测试初始化"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        assert versions_dir.exists()
+        assert manager._index_file.exists()
+    
+    def test_create_version(self, tmp_path, sample_dataset):
+        """测试创建版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(sample_dataset, "初始版本")
+        
+        assert isinstance(version, DatasetVersion)
+        assert version.version_number == "1.0.0"
+        assert version.item_count == 3
+        assert version.description == "初始版本"
+    
+    def test_create_multiple_versions(self, tmp_path, sample_dataset, sample_dataset_v2):
+        """测试创建多个版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        v1 = manager.create_version(sample_dataset, "v1")
+        v2 = manager.create_version(sample_dataset_v2, "v2")
+        
+        assert v1.version_number == "1.0.0"
+        assert v2.version_number == "1.0.1"
+    
+    def test_get_version(self, tmp_path, sample_dataset):
+        """测试获取版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(sample_dataset, "test")
+        retrieved = manager.get_version(version.version_id)
+        
+        assert retrieved is not None
+        assert retrieved.version_id == version.version_id
+    
+    def test_load_version(self, tmp_path, sample_dataset):
+        """测试加载版本数据"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(sample_dataset, "test")
+        loaded = manager.load_version(version.version_id)
+        
+        assert len(loaded) == len(sample_dataset)
+        assert loaded[0]["instruction"] == sample_dataset[0]["instruction"]
+    
+    def test_list_versions(self, tmp_path, sample_dataset):
+        """测试列出版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        manager.create_version(sample_dataset, "v1")
+        manager.create_version(sample_dataset, "v2")
+        
+        versions = manager.list_versions()
+        
+        assert len(versions) == 2
+    
+    def test_get_current_version(self, tmp_path, sample_dataset):
+        """测试获取当前版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(sample_dataset, "test")
+        current = manager.get_current_version()
+        
+        assert current == version.version_id
+    
+    def test_set_current_version(self, tmp_path, sample_dataset):
+        """测试设置当前版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        v1 = manager.create_version(sample_dataset, "v1")
+        v2 = manager.create_version(sample_dataset, "v2")
+        
+        manager.set_current_version(v1.version_id)
+        current = manager.get_current_version()
+        
+        assert current == v1.version_id
+    
+    def test_delete_version(self, tmp_path, sample_dataset):
+        """测试删除版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(sample_dataset, "test")
+        
+        assert manager.delete_version(version.version_id) is True
+        assert manager.get_version(version.version_id) is None
+    
+    def test_compare_versions(self, tmp_path, sample_dataset, sample_dataset_v2):
+        """测试比较版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        v1 = manager.create_version(sample_dataset, "v1")
+        v2 = manager.create_version(sample_dataset_v2, "v2")
+        
+        result = manager.compare_versions(v1.version_id, v2.version_id)
+        
+        assert result["size_a"] == 3
+        assert result["size_b"] == 4
+        assert result["stats"]["only_in_b_count"] == 1
+
+
+class TestDatasetVersion:
+    """DatasetVersion 测试"""
+    
+    def test_to_dict(self):
+        """测试转换为字典"""
+        version = DatasetVersion(
+            version_id="v1.0.0",
+            version_number="1.0.0",
+            timestamp="2024-01-01T00:00:00",
+            description="test version",
+            item_count=100,
+            checksum="abc123",
+            tags=["test"],
+            metadata={"author": "test"}
+        )
+        
+        d = version.to_dict()
+        
+        assert d["version_id"] == "v1.0.0"
+        assert d["version_number"] == "1.0.0"
+        assert d["item_count"] == 100
+        assert d["tags"] == ["test"]
+
+
+class TestConvenienceFunctions:
+    """便捷函数测试"""
+    
+    def test_create_version(self, tmp_path, sample_dataset):
+        """测试创建版本"""
+        versions_dir = tmp_path / "versions"
+        version = create_version(sample_dataset, str(versions_dir), "test")
+        
+        assert isinstance(version, DatasetVersion)
+        assert version.item_count == 3
+    
+    def test_load_version(self, tmp_path, sample_dataset):
+        """测试加载版本"""
+        versions_dir = tmp_path / "versions"
+        version = create_version(sample_dataset, str(versions_dir), "test")
+        loaded = load_version(version.version_id, str(versions_dir))
+        
+        assert len(loaded) == 3
+    
+    def test_list_versions(self, tmp_path, sample_dataset):
+        """测试列出版本"""
+        versions_dir = tmp_path / "versions"
+        create_version(sample_dataset, str(versions_dir), "v1")
+        create_version(sample_dataset, str(versions_dir), "v2")
+        
+        versions = list_versions(str(versions_dir))
+        
+        assert len(versions) == 2
