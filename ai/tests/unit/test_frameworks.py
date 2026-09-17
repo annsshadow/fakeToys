@@ -133,3 +133,54 @@ class TestCustomKeys:
 
         content_key = "page_content" if cls is LangChainIntegration else "text"
         assert dataset[0][content_key] == "q"
+
+
+class TestFrameworksExtended:
+    """框架扩展测试"""
+
+    def test_langchain_to_dicts_empty(self):
+        """LangChain 空数据转换"""
+        integration = LangChainIntegration()
+        assert integration.to_dicts([]) == []
+
+    def test_langchain_to_dicts_dict_input(self):
+        """LangChain 字典输入转换"""
+        integration = LangChainIntegration()
+        data = [{"page_content": "q", "metadata": {"answer": "a"}}]
+        result = integration.to_dicts(data)
+        assert result == data
+
+    def test_langchain_from_dict_with_none_metadata(self):
+        """LangChain 从字典还原，metadata 为 None"""
+        integration = LangChainIntegration()
+        data = [{"page_content": "q", "metadata": None}]
+        result = integration.from_langchain_dataset(data)
+        assert result[0]["instruction"] == "q"
+
+    def test_llamaindex_to_dicts_empty(self):
+        """LlamaIndex 空数据转换"""
+        integration = LlamaIndexIntegration()
+        assert integration.to_dicts([]) == []
+
+    def test_llamaindex_to_dicts_dict_input(self):
+        """LlamaIndex 字典输入转换"""
+        integration = LlamaIndexIntegration()
+        data = [{"text": "q", "metadata": {"answer": "a"}}]
+        result = integration.to_dicts(data)
+        assert result == data
+
+    def test_llamaindex_from_dict_with_none_metadata(self):
+        """LlamaIndex 从字典还原，metadata 为 None"""
+        integration = LlamaIndexIntegration()
+        data = [{"text": "q", "metadata": None}]
+        result = integration.from_llamaindex_dataset(data)
+        assert result[0]["instruction"] == "q"
+
+    def test_langchain_metadata_source_language(self):
+        """LangChain metadata 包含 source, language"""
+        integration = LangChainIntegration()
+        data = [{"instruction": "q", "output": "a", "source": "src", "language": "zh"}]
+        docs = integration.to_langchain_dataset(data)
+        result = integration.from_langchain_dataset(docs)
+        assert result[0]["source"] == "src"
+        assert result[0]["language"] == "zh"
