@@ -1,5 +1,6 @@
 """数据集格式转换模块测试"""
 
+import csv
 import json
 import pytest
 from pathlib import Path
@@ -339,3 +340,116 @@ class TestConverterFileOperations:
         result = convert_file(str(input_file), str(output_file))
         
         assert output_file.exists()
+
+    def test_read_file_jsonl(self, tmp_path, sample_dataset):
+        """测试读取 JSONL 文件"""
+        input_file = tmp_path / "input.jsonl"
+        with open(input_file, 'w', encoding='utf-8') as f:
+            for item in sample_dataset:
+                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+        
+        converter = DatasetConverter()
+        data = converter._read_file(input_file, "jsonl")
+        
+        assert len(data) == 3
+        assert data[0]["instruction"] == sample_dataset[0]["instruction"]
+
+    def test_read_file_csv(self, tmp_path, sample_dataset):
+        """测试读取 CSV 文件"""
+        input_file = tmp_path / "input.csv"
+        with open(input_file, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=sample_dataset[0].keys())
+            writer.writeheader()
+            writer.writerows(sample_dataset)
+        
+        converter = DatasetConverter()
+        data = converter._read_file(input_file, "csv")
+        
+        assert len(data) == 3
+
+    def test_read_file_json(self, tmp_path, sample_dataset):
+        """测试读取 JSON 文件"""
+        input_file = tmp_path / "input.json"
+        with open(input_file, 'w', encoding='utf-8') as f:
+            json.dump(sample_dataset, f, ensure_ascii=False)
+        
+        converter = DatasetConverter()
+        data = converter._read_file(input_file, "json")
+        
+        assert len(data) == 3
+
+    def test_write_file_jsonl(self, tmp_path, sample_dataset):
+        """测试写入 JSONL 文件"""
+        output_file = tmp_path / "output.jsonl"
+        converter = DatasetConverter()
+        converter._write_file(output_file, sample_dataset, "jsonl")
+        
+        assert output_file.exists()
+        with open(output_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        assert len(lines) == 3
+
+    def test_write_file_csv(self, tmp_path, sample_dataset):
+        """测试写入 CSV 文件"""
+        output_file = tmp_path / "output.csv"
+        converter = DatasetConverter()
+        converter._write_file(output_file, sample_dataset, "csv")
+        
+        assert output_file.exists()
+
+    def test_write_file_json(self, tmp_path, sample_dataset):
+        """测试写入 JSON 文件"""
+        output_file = tmp_path / "output.json"
+        converter = DatasetConverter()
+        converter._write_file(output_file, sample_dataset, "json")
+        
+        assert output_file.exists()
+
+    def test_convert_file_json_to_csv(self, tmp_path, sample_dataset):
+        """测试文件转换 JSON 到 CSV"""
+        input_file = tmp_path / "input.json"
+        output_file = tmp_path / "output.csv"
+        
+        with open(input_file, 'w', encoding='utf-8') as f:
+            json.dump(sample_dataset, f, ensure_ascii=False)
+        
+        result = convert_file(str(input_file), str(output_file))
+        
+        assert output_file.exists()
+        assert result["source_format"] == "json"
+        assert result["target_format"] == "csv"
+
+    def test_convert_file_csv_to_json(self, tmp_path, sample_dataset):
+        """测试文件转换 CSV 到 JSON"""
+        input_file = tmp_path / "input.csv"
+        output_file = tmp_path / "output.json"
+        
+        with open(input_file, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=sample_dataset[0].keys())
+            writer.writeheader()
+            writer.writerows(sample_dataset)
+        
+        result = convert_file(str(input_file), str(output_file))
+        
+        assert output_file.exists()
+
+    def test_convert_file_with_explicit_format(self, tmp_path, sample_dataset):
+        """测试显式指定格式的文件转换"""
+        input_file = tmp_path / "input.dat"
+        output_file = tmp_path / "output.dat"
+        
+        with open(input_file, 'w', encoding='utf-8') as f:
+            json.dump(sample_dataset, f, ensure_ascii=False)
+        
+        result = convert_file(str(input_file), str(output_file), 
+                             source_format="json", target_format="jsonl")
+        
+        assert result["source_format"] == "json"
+        assert result["target_format"] == "jsonl"
+
+    def test_to_json_unsupported_format(self):
+        """测试不支持的中间格式"""
+        converter = DatasetConverter()
+        
+        with pytest.raises(ValueError, match="无法从"):
+            converter._to_json([], "unsupported")
