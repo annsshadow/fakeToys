@@ -498,6 +498,8 @@ dependencies = [
  "deadpool-postgres",
  "serde_json",
  "shared",
+ "tokio",
+ "tower",
 ]
 
 [[package]]
