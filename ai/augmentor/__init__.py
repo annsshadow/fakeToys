@@ -30,6 +30,8 @@ from .converter import DatasetConverter, DataFormat, convert_dataset, convert_fi
 from .indexer import DatasetIndexer, DatasetView, QueryResult, create_indexer, create_view
 from .cache import MemoryCache, DiskCache, CachedProcessor, cached, create_memory_cache, create_disk_cache
 from .config_validator import ConfigValidator, ValidationResult, validate_config_file, validate_config
+from .analytics import DatasetAnalyzer, AnalysisReport, DataInsight, analyze_dataset, get_dataset_insights
+from .cleaner import DatasetCleaner, TextNormalizer, CleaningResult, clean_dataset, normalize_text, extract_keywords
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -110,6 +112,17 @@ __all__ = [
     "ValidationResult",
     "validate_config_file",
     "validate_config",
+    "DatasetAnalyzer",
+    "AnalysisReport",
+    "DataInsight",
+    "analyze_dataset",
+    "get_dataset_insights",
+    "DatasetCleaner",
+    "TextNormalizer",
+    "CleaningResult",
+    "clean_dataset",
+    "normalize_text",
+    "extract_keywords",
     "AugmentorError",
     "ConfigError",
     "ModelError",
