@@ -301,3 +301,69 @@ class TestExportAndAnalyze:
         assert "statistics" in result
         assert "dedup_report" in result
         assert result["coverage_analysis"]["total_items"] == 5
+
+
+class TestVisualizeDataset:
+    """可视化测试"""
+
+    def test_visualize_returns_dict(self, pipeline, seed_file, tmp_path):
+        """可视化应返回路径字典"""
+        output_dir = tmp_path / "viz"
+        result = pipeline.visualize_dataset(seed_file, str(output_dir))
+        assert isinstance(result, dict)
+
+    def test_visualize_creates_output_dir(self, pipeline, seed_file, tmp_path):
+        """可视化应创建输出目录"""
+        output_dir = tmp_path / "viz_new"
+        output_dir.mkdir()
+        pipeline.visualize_dataset(seed_file, str(output_dir))
+        assert output_dir.exists()
+
+    def test_visualize_with_empty_dataset(self, pipeline, tmp_path):
+        """空数据集可视化不应报错"""
+        empty_file = tmp_path / "empty.json"
+        empty_file.write_text("[]", encoding="utf-8")
+        result = pipeline.visualize_dataset(str(empty_file), str(tmp_path / "viz"))
+        assert isinstance(result, dict)
+
+
+class TestModelBackendNone:
+    """模型后端不可用降级测试"""
+
+    def test_augment_seed_without_backend(self, pipeline):
+        """无模型后端时增强应返回空列表"""
+        pipeline.model_backend = None
+        variants = pipeline.augment_seed(
+            {"instruction": "问题", "output": "回答"},
+            use_quality_check=False
+        )
+        assert variants == []
+
+    def test_augment_dataset_without_backend(self, pipeline, seed_file, tmp_path):
+        """无模型后端时数据集增强应正常完成"""
+        pipeline.model_backend = None
+        output = tmp_path / "out_no_backend.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        assert report["output_count"] == 0
+
+
+class TestExportAndAnalyzeExtended:
+    """导出与分析扩展测试"""
+
+    def test_export_to_custom_dir(self, pipeline, seed_file, tmp_path):
+        """导出到自定义目录"""
+        custom_dir = tmp_path / "custom_exports"
+        results = pipeline.export_dataset(seed_file, str(custom_dir), ["jsonl"])
+        assert Path(results["jsonl"]).parent == custom_dir
+
+    def test_analyze_returns_complete_stats(self, pipeline, seed_file):
+        """分析应返回完整的统计信息"""
+        result = pipeline.analyze_dataset(seed_file)
+        stats = result["statistics"]
+        assert "total_items" in stats
+        assert "avg_length" in stats
+        assert stats["total_items"] == 5
