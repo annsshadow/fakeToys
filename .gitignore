@@ -81,3 +81,9 @@ scripts/cleanup_*.js
 oa4rust/.env
 oa4rust/scripts/.token
 scripts/.java-seed-ids.json
+
+# Python coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
