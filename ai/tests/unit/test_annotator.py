@@ -148,3 +148,78 @@ class TestAnnotateBatch:
 
         assert report["total_items"] == 2
         assert report["avg_entities_per_item"] == pytest.approx(0.5)
+
+
+class TestAnnotatorExtended:
+    """AutoAnnotator 扩展测试（覆盖实体类型与情感边界）"""
+
+    def test_extract_phone(self):
+        """电话号码应被识别"""
+        entities = AutoAnnotator().extract_entities("联系我 13812345678")
+        assert any(e["type"] == "phone" for e in entities)
+
+    def test_extract_email(self):
+        """邮箱地址应被识别"""
+        entities = AutoAnnotator().extract_entities("a@b.com")
+        assert any(e["type"] == "email" for e in entities)
+
+    def test_extract_money(self):
+        """金额应被识别"""
+        entities = AutoAnnotator().extract_entities("租金 2000元")
+        assert any(e["type"] == "money" for e in entities)
+
+    def test_extract_entities_sorted_by_position(self):
+        """实体应按出现位置排序"""
+        entities = AutoAnnotator().extract_entities("a@b.com 13812345678")
+        starts = [e["start"] for e in entities]
+        assert starts == sorted(starts)
+
+    def test_extract_non_string_returns_empty(self):
+        """非字符串输入应返回空列表"""
+        assert AutoAnnotator().extract_entities(123) == []
+        assert AutoAnnotator().extract_entities(None) == []
+        assert AutoAnnotator().extract_entities("") == []
+
+    def test_sentiment_positive(self):
+        """正面词应判为 positive"""
+        assert AutoAnnotator().analyze_sentiment("非常满意") == "positive"
+
+    def test_sentiment_negative(self):
+        """负面词应判为 negative"""
+        assert AutoAnnotator().analyze_sentiment("糟糕透了") == "negative"
+
+    def test_sentiment_neutral(self):
+        """无情感词应判为 neutral"""
+        assert AutoAnnotator().analyze_sentiment("今天天气正常") == "neutral"
+
+    def test_intent_greeting(self):
+        """问候语应判为 greeting"""
+        assert AutoAnnotator().classify_intent("你好") == "greeting"
+
+    def test_intent_price(self):
+        """价格类问题应判为 price"""
+        assert AutoAnnotator().classify_intent("多少钱？") == "price"
+
+    def test_intent_troubleshooting(self):
+        """故障类问题应判为 troubleshooting"""
+        assert AutoAnnotator().classify_intent("系统报错无法使用") == "troubleshooting"
+
+    def test_annotate_custom_text_key(self):
+        """自定义 text_key 应被使用"""
+        items = [{"question": "如何申请？"}]
+        annotator = AutoAnnotator(text_key="question")
+        result = annotator.annotate(items)
+        assert "annotation" in result.items[0]
+
+    def test_generate_report_empty_dataset(self):
+        """空数据集报告应人均实体为 0"""
+        report = AutoAnnotator().generate_report([])
+        assert report["total_items"] == 0
+        assert report["avg_entities_per_item"] == 0.0
+
+    def test_annotate_does_not_mutate(self):
+        """标注不得修改调用方传入的数据"""
+        items = [{"instruction": "如何申请？", "output": "答"}]
+        before = {k: v for k, v in items[0].items()}
+        AutoAnnotator().annotate(items)
+        assert items[0] == before
