@@ -46,6 +46,9 @@ ai/
 │   ├── dataset_ops.py  # 数据集操作
 │   ├── validation.py   # 数据验证
 │   ├── converter.py    # 格式转换
+│   ├── indexer.py      # 数据索引
+│   ├── cache.py        # 缓存管理
+│   ├── config_validator.py  # 配置验证
 │   └── exceptions.py   # 自定义异常
 ├── web/                # Web前端 (React + Ant Design)
 ├── tests/              # 测试套件
@@ -128,6 +131,12 @@ python cli.py validate --input data.json --preset basic
 
 # 转换数据格式
 python cli.py convert --input data.json --output data.jsonl --format jsonl
+
+# 搜索数据集
+python cli.py search --input data.json --query "租房" --method contains
+
+# 验证配置文件
+python cli.py validate-config --config config.yaml
 ```
 
 ### 高级功能
