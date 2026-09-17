@@ -45,22 +45,22 @@ export interface QueryViewDefinition {
 }
 
 export const designerPaths = {
-  portalList: '/jaxrs/portal/assemble/designer/list',
-  portalCreate: '/jaxrs/portal/assemble/designer/create',
-  portalGet: (id: string) => `/jaxrs/portal/assemble/designer/get/${encodeURIComponent(id)}`,
-  portalSave: (id: string) => `/jaxrs/portal/assemble/designer/save/${encodeURIComponent(id)}`,
-  tableList: '/jaxrs/query/assemble/designer/table/list/manage',
-  tableGet: (flag: string) => `/jaxrs/query/assemble/designer/table/${encodeURIComponent(flag)}`,
-  tableCreate: '/jaxrs/query/assemble/designer/table',
-  tableSave: (flag: string) => `/jaxrs/query/assemble/designer/table/${encodeURIComponent(flag)}`,
-  tableExecute: (flag: string) => `/jaxrs/query/assemble/designer/table/${encodeURIComponent(flag)}/execute`,
-  viewList: (queryFlag: string) => `/jaxrs/query/assemble/designer/view/list/query/${encodeURIComponent(queryFlag)}`,
-  viewGet: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}`,
-  viewCreate: '/jaxrs/query/assemble/designer/view',
-  viewSave: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}`,
-  viewDelete: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}`,
-  viewSimulate: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}/simulate`,
-  viewBundle: (id: string) => `/jaxrs/query/assemble/designer/view/${encodeURIComponent(id)}/bundle`,
+  portalList: '/api/portal/assemble/designer/list',
+  portalCreate: '/api/portal/assemble/designer/create',
+  portalGet: (id: string) => `/api/portal/assemble/designer/get/${encodeURIComponent(id)}`,
+  portalSave: (id: string) => `/api/portal/assemble/designer/save/${encodeURIComponent(id)}`,
+  tableList: '/api/query/assemble/designer/table/list/manage',
+  tableGet: (flag: string) => `/api/query/assemble/designer/table/${encodeURIComponent(flag)}`,
+  tableCreate: '/api/query/assemble/designer/table',
+  tableSave: (flag: string) => `/api/query/assemble/designer/table/${encodeURIComponent(flag)}`,
+  tableExecute: (flag: string) => `/api/query/assemble/designer/table/${encodeURIComponent(flag)}/execute`,
+  viewList: (queryFlag: string) => `/api/query/assemble/designer/view/list/query/${encodeURIComponent(queryFlag)}`,
+  viewGet: (id: string) => `/api/query/assemble/designer/view/${encodeURIComponent(id)}`,
+  viewCreate: '/api/query/assemble/designer/view',
+  viewSave: (id: string) => `/api/query/assemble/designer/view/${encodeURIComponent(id)}`,
+  viewDelete: (id: string) => `/api/query/assemble/designer/view/${encodeURIComponent(id)}`,
+  viewSimulate: (id: string) => `/api/query/assemble/designer/view/${encodeURIComponent(id)}/simulate`,
+  viewBundle: (id: string) => `/api/query/assemble/designer/view/${encodeURIComponent(id)}/bundle`,
 }
 
 export function extractList<T>(data: unknown): T[] {

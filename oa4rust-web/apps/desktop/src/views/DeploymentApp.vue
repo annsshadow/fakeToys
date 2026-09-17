@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>部署管理</h1>
-        <p class="subtitle">/jaxrs/server/deploy/*（x_program_deploy_server）</p>
+        <p class="subtitle">/api/server/deploy/*（x_program_deploy_server）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -64,8 +64,8 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/server/deploy/list'
-const createEp = '/jaxrs/server/deploy/create'
+const listEp = '/api/server/deploy/list'
+const createEp = '/api/server/deploy/create'
 const qk = ['Deployment', 'list']
 
 const search = ref(''),
@@ -121,7 +121,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.post(`/jaxrs/server/deploy/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/server/deploy/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -136,7 +136,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/server/deploy/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/server/deploy/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

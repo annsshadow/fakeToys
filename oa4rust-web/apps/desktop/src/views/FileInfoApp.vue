@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>文件信息</h1>
-      <p class="subtitle">/jaxrs/fileinfo/* — 文档级文件元数据</p>
+      <p class="subtitle">/api/fileinfo/* — 文档级文件元数据</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -72,7 +72,7 @@ function formatSize(bytes?: number) {
 
 async function downloadFile(f: FileInfo) {
   try {
-    const r = await api.get(`/jaxrs/fileinfo/download/document/${f.id}`)
+    const r = await api.get(`/api/fileinfo/download/document/${f.id}`)
     if (r.data?.url) window.open(r.data.url, '_blank')
     else toast.info('下载链接未生成')
   } catch (e: any) {
@@ -83,7 +83,7 @@ async function downloadFile(f: FileInfo) {
 async function loadFiles() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/fileinfo/list/all')
+    const r = await api.get('/api/fileinfo/list/all')
     files.value = r.data ?? []
   } catch {
     files.value = []

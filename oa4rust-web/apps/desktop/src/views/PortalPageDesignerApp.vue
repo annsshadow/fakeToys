@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>门户页面设计器</h1>
-        <p class="subtitle">/jaxrs/portal/assemble/designer/page/*（x_portal_page）</p>
+        <p class="subtitle">/api/portal/assemble/designer/page/*（x_portal_page）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -63,8 +63,8 @@ interface PageForm {
   content?: string
 }
 
-const listEp = '/jaxrs/portal/assemble/designer/page/list'
-const createEp = '/jaxrs/portal/assemble/designer/page/create'
+const listEp = '/api/portal/assemble/designer/page/list'
+const createEp = '/api/portal/assemble/designer/page/create'
 const qk = ['PortalPageDesigner', 'list']
 
 const search = ref(''),
@@ -144,7 +144,7 @@ const saveM = useMutation({
       // 内容为空时用 {} 兜底，避免 save 的 UPDATE content=$1 将列置 NULL 造成降级。
       const raw = (form.value.content ?? '').trim()
       const content = raw ? JSON.parse(raw) : {}
-      if (editingId.value) return api.post(`/jaxrs/portal/assemble/designer/page/save/${editingId.value}`, { content })
+      if (editingId.value) return api.post(`/api/portal/assemble/designer/page/save/${editingId.value}`, { content })
       return api.post(createEp, {
         name: form.value.name ?? '',
         category: form.value.category ?? '',
@@ -163,7 +163,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/portal/assemble/designer/page/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/portal/assemble/designer/page/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

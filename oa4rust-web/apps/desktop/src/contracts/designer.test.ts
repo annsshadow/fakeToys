@@ -59,7 +59,7 @@ describe('designer contracts', () => {
   })
 
   it('encodes identifiers in every dynamic backend path', () => {
-    expect(designerPaths.tableExecute('a/b')).toBe('/jaxrs/query/assemble/designer/table/a%2Fb/execute')
-    expect(designerPaths.viewList('sales north')).toBe('/jaxrs/query/assemble/designer/view/list/query/sales%20north')
+    expect(designerPaths.tableExecute('a/b')).toBe('/api/query/assemble/designer/table/a%2Fb/execute')
+    expect(designerPaths.viewList('sales north')).toBe('/api/query/assemble/designer/view/list/query/sales%20north')
   })
 })

@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>回收站</h1>
-      <p class="subtitle">/jaxrs/recycle/*</p>
+      <p class="subtitle">/api/recycle/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="stats-row">
@@ -61,7 +61,7 @@ const hasItems = computed(() => items.value.length > 0)
 async function loadItems() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/recycle/list')
+    const r = await api.get('/api/recycle/list')
     items.value = r.data ?? []
   } catch {
     items.value = []
@@ -72,7 +72,7 @@ async function loadItems() {
 
 async function resume(item: RecycleItem) {
   try {
-    await api.post(`/jaxrs/recycle/resume/${item.id}`, null)
+    await api.post(`/api/recycle/resume/${item.id}`, null)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error('恢复失败: : ' + (e?.message ?? ''))
@@ -82,7 +82,7 @@ async function resume(item: RecycleItem) {
 async function permanentDelete(item: RecycleItem) {
   if (!(await confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`))) return
   try {
-    await api.delete(`/jaxrs/recycle/${item.id}`)
+    await api.delete(`/api/recycle/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))
@@ -92,7 +92,7 @@ async function permanentDelete(item: RecycleItem) {
 async function emptyRecycle() {
   if (!(await confirmMsg('确定清空回收站？所有项目将被永久删除。'))) return
   try {
-    await api.post('/jaxrs/recycle/empty', null)
+    await api.post('/api/recycle/empty', null)
     items.value = []
   } catch (e: any) {
     toast.error('清空失败: : ' + (e?.message ?? ''))

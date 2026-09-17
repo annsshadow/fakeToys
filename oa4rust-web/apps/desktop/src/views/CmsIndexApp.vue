@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>CMS索引设计</h1>
-        <p class="subtitle">/jaxrs/cms/core/entity/index/*</p>
+        <p class="subtitle">/api/cms/core/entity/index/*</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -62,8 +62,8 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/cms/core/entity/index/list'
-const createEp = '/jaxrs/cms/core/entity/index/create'
+const listEp = '/api/cms/core/entity/index/list'
+const createEp = '/api/cms/core/entity/index/create'
 const qk = ['cms_Index', 'list']
 
 const search = ref(''),
@@ -119,7 +119,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.put(`/jaxrs/cms/core/entity/index/save/${editingId.value}`, payload)
+      if (editingId.value) return api.put(`/api/cms/core/entity/index/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -134,7 +134,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/cms/core/entity/index/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/cms/core/entity/index/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

@@ -30,7 +30,7 @@ onMounted(async () => {
   const ssoToken = q.token ?? ''
   try {
     if (!client || !ssoToken) throw new Error('missing client/token')
-    const response = await fetch('/jaxrs/authentication/sso', {
+    const response = await fetch('/api/authentication/sso', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

@@ -87,7 +87,7 @@ const signature = ref('')
 const { data: sigData } = useQuery({
   queryKey: ['personal', 'signature'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/person/signature/list')
+    const resp = await api.get('/api/person/signature/list')
     const sigs = ((resp as any)?.data ?? []) as Array<{ content: string }>
     return sigs[0]?.content ?? ''
   },
@@ -96,7 +96,7 @@ signature.value = sigData.value ?? ''
 
 // 修改密码
 const pwdMutation = useMutation({
-  mutationFn: (data: { oldPassword: string; newPassword: string }) => api.post('/jaxrs/person/password', data),
+  mutationFn: (data: { oldPassword: string; newPassword: string }) => api.post('/api/person/password', data),
   onSuccess: () => {
     pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
     pwdError.value = ''
@@ -141,7 +141,7 @@ function handleAvatarUpload(e: Event): void {
 }
 
 const avatarMutation = useMutation({
-  mutationFn: (formData: FormData) => api.upload(`/jaxrs/person/icon/${user.value!.unique}`, formData),
+  mutationFn: (formData: FormData) => api.upload(`/api/person/icon/${user.value!.unique}`, formData),
   onSuccess: () => {
     toast.success('头像上传成功')
   },
@@ -152,7 +152,7 @@ const avatarMutation = useMutation({
 
 function saveSignature(): void {
   api
-    .post('/jaxrs/person/signature/save', { signature: signature.value })
+    .post('/api/person/signature/save', { signature: signature.value })
     .then(() => toast.success('签名已保存'))
     .catch(() => toast.error('保存失败'))
 }

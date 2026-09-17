@@ -33,7 +33,7 @@ async function doSearch() {
   loading.value = true
   queried.value = true
   try {
-    const r: any = await api.get('/jaxrs/queryview/search', { params: { keyword: query.value } })
+    const r: any = await api.get('/api/queryview/search', { params: { keyword: query.value } })
     results.value = (r?.data ?? []) as any[]
   } finally {
     loading.value = false

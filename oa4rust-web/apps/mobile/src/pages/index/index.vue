@@ -19,7 +19,7 @@ async function loadPending() {
   loading.value = true
   try {
     const resp = await processApi.pendingList(1, 50)
-    // 信封顶层 count 为本页条数（后端 java_success 语义）；取不到时退回长度。
+    // 信封顶层 count 为本页条数（后端 legacy_success 语义）；取不到时退回长度。
     pendingCount.value = resp.count ?? resp.data?.length ?? 0
   } catch {
     pendingCount.value = null

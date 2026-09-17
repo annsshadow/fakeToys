@@ -4,7 +4,7 @@
     <div class="smd-header glass-card">
       <div class="smd-title">
         <h1>SQL语句设计器</h1>
-        <p class="subtitle">/jaxrs/query/assemble/designer/*</p>
+        <p class="subtitle">/api/query/assemble/designer/*</p>
       </div>
       <div class="smd-actions">
         <button class="btn" @click="newStatement">+ 新建</button>
@@ -916,7 +916,7 @@ const { data: stmts } = useQuery({
   queryFn: async () => {
     loading.value = true
     try {
-      const r: any = await api.get('/jaxrs/query/assemble/designer/list/all')
+      const r: any = await api.get('/api/query/assemble/designer/list/all')
       return r?.data ?? []
     } finally {
       loading.value = false
@@ -977,8 +977,8 @@ function editStatement(s: Stmt) {
 const saveM = useMutation({
   mutationFn: async (data: any) => {
     if (editing.value && currentStatement.value?.id)
-      return api.put(`/jaxrs/query/assemble/designer/save/${currentStatement.value!.id}`, data)
-    return api.post('/jaxrs/query/assemble/designer/create', data)
+      return api.put(`/api/query/assemble/designer/save/${currentStatement.value!.id}`, data)
+    return api.post('/api/query/assemble/designer/create', data)
   },
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
@@ -996,7 +996,7 @@ function modalSave() {
   saveM.mutate(payload)
 }
 const delM = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
     if (currentStatement.value?.id) currentStatement.value = null
@@ -1012,7 +1012,7 @@ async function executeSQL() {
   loadingResult.value = true
   hasResults.value = true
   try {
-    const r: any = await api.post('/jaxrs/query/assemble/designer/execute', {
+    const r: any = await api.post('/api/query/assemble/designer/execute', {
       sql: sql.value,
       id: currentStatement.value?.id,
     })
@@ -1187,7 +1187,7 @@ function toggleFav(s: Stmt | null) {
 
 async function loadSchema() {
   try {
-    const r: any = await api.get('/jaxrs/query/assemble/designer/table/list/manage')
+    const r: any = await api.get('/api/query/assemble/designer/table/list/manage')
     allTables.value = (r?.data ?? []).map((t: any) => ({ name: t.tableFlag || t.name, rowCount: t.rowCount }))
   } catch {
     allTables.value = [
@@ -1205,7 +1205,7 @@ async function loadTableFields() {
   }
   try {
     const r: any = await api.get(
-      `/jaxrs/query/assemble/designer/entity/entity/properties/${selectedTableForFields.value}/default/default`,
+      `/api/query/assemble/designer/entity/entity/properties/${selectedTableForFields.value}/default/default`,
     )
     tableFields.value = (r?.data ?? []).map((f: any) => ({
       name: f.fieldName || f.name,
@@ -1279,7 +1279,7 @@ async function runBatch() {
     if (!batchRunning.value) break
     const t0 = Date.now()
     try {
-      await api.post('/jaxrs/query/assemble/designer/execute', { sql: stmt.trim() })
+      await api.post('/api/query/assemble/designer/execute', { sql: stmt.trim() })
       batchResults.value.push({ success: true, message: '执行成功', duration: Date.now() - t0 })
     } catch (e: any) {
       batchResults.value.push({ success: false, message: e?.message ?? '执行失败', duration: Date.now() - t0 })
@@ -1924,7 +1924,7 @@ async function doImport() {
     }
     for (const stmt of data) {
       try {
-        await api.post('/jaxrs/query/assemble/designer/create', stmt)
+        await api.post('/api/query/assemble/designer/create', stmt)
       } catch {}
     }
     importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条语句` }
@@ -1957,7 +1957,7 @@ async function executeBulkDelete() {
   if (!bulkIds.value.length) return
   for (const id of bulkIds.value) {
     try {
-      await api.delete(`/jaxrs/query/assemble/designer/delete/${id}`)
+      await api.delete(`/api/query/assemble/designer/delete/${id}`)
     } catch {}
   }
   bulkIds.value = []

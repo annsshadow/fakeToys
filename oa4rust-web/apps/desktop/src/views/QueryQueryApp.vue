@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>查询定义</h1>
-        <p class="subtitle">/jaxrs/query/assemble/designer/*（x_query_design）</p>
+        <p class="subtitle">/api/query/assemble/designer/*（x_query_design）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -55,9 +55,9 @@ interface Item {
   category?: string
 }
 
-const listEp = '/jaxrs/query/assemble/designer/list'
-const saveEp = '/jaxrs/query/assemble/designer/save'
-const deleteEp = '/jaxrs/query/assemble/designer/delete'
+const listEp = '/api/query/assemble/designer/list'
+const saveEp = '/api/query/assemble/designer/save'
+const deleteEp = '/api/query/assemble/designer/delete'
 const qk = ['QueryQuery', 'list']
 
 const search = ref(''),

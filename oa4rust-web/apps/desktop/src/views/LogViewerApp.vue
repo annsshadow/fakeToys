@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>日志查看器</h1>
-        <p class="subtitle">/jaxrs/log/list（x_cms_log，只读）</p>
+        <p class="subtitle">/api/log/list（x_cms_log，只读）</p>
       </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
@@ -46,7 +46,7 @@ interface Item {
   ip_address?: string
 }
 
-const listEp = '/jaxrs/log/list'
+const listEp = '/api/log/list'
 const qk = ['LogViewer', 'list']
 
 const search = ref('')

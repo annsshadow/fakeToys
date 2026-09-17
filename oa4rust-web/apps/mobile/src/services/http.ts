@@ -72,7 +72,7 @@ function buildUrl(path: string, params?: Record<string, string>): string {
 }
 
 function isRefreshRequest(path: string): boolean {
-  return path === '/jaxrs/authentication/refresh'
+  return path === '/api/authentication/refresh'
 }
 
 function authenticationFailed(): AuthenticationError {
@@ -82,7 +82,7 @@ function authenticationFailed(): AuthenticationError {
 
 async function refreshSession(): Promise<void> {
   if (!refreshPromise) {
-    refreshPromise = performRequest<never>('POST', '/jaxrs/authentication/refresh', null, {
+    refreshPromise = performRequest<never>('POST', '/api/authentication/refresh', null, {
       requireAuth: false,
       discardResponse: true,
     })

@@ -36,7 +36,7 @@ export type OrganizationSelectorSearch = (
   keyword: string,
 ) => Promise<OrganizationSelectorItem[]>
 
-const SEARCH_ROOT = '/jaxrs/organization/assemble/control'
+const SEARCH_ROOT = '/api/organization/assemble/control'
 
 export function organizationSelectorSearchPath(type: OrganizationSelectorType): string {
   return `${SEARCH_ROOT}/${type}/list/like`

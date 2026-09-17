@@ -247,7 +247,7 @@ function toggleCall(): void {
 const { data: convData, isLoading: convLoading } = useQuery({
   queryKey: ['im', 'conversations'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/message/assemble/communicate/im/conversation/list/my')
+    const resp = await api.get('/api/message/assemble/communicate/im/conversation/list/my')
     return ((resp as any)?.data ?? []) as Conversation[]
   },
   staleTime: 30 * 1000,
@@ -280,7 +280,7 @@ const {
   queryKey: ['im', 'messages', () => selectedChat.value?.id],
   queryFn: async () => {
     if (!selectedChat.value) return []
-    const resp = await api.post<{ data: Message[] }>(`/jaxrs/message/assemble/communicate/im/msg/list/1/size/50`, {
+    const resp = await api.post<{ data: Message[] }>(`/api/message/assemble/communicate/im/msg/list/1/size/50`, {
       conversationId: selectedChat.value.id,
     })
     return ((resp as any)?.data ?? []) as Message[]
@@ -316,7 +316,7 @@ const sendMutation = useMutation({
   mutationFn: (content: string) => {
     if (!selectedChat.value) throw new Error('No conversation selected')
     // 后端 im/msg handler 按带引号键 "\"conversationId\"" 读取会话归属，双键下发。
-    return api.post('/jaxrs/message/assemble/communicate/im/msg', {
+    return api.post('/api/message/assemble/communicate/im/msg', {
       ['"conversationId"']: selectedChat.value!.id,
       conversationId: selectedChat.value!.id,
       content,
@@ -380,7 +380,7 @@ function sendMessage(): void {
 
 // ── 标记已读 ───────────────────────────────────────────────────
 async function markConversationRead(convId: string): Promise<void> {
-  await api.post(`/jaxrs/message/assemble/communicate/mark_read/${convId}`, null)
+  await api.post(`/api/message/assemble/communicate/mark_read/${convId}`, null)
   // 乐观更新
   conversations.value = conversations.value.map((c) => (c.id === convId ? { ...c, unread: 0 } : c))
 }

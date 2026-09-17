@@ -46,42 +46,42 @@ describe('view auto-query invariants', () => {
   })
 
   it('keeps the consumed first-screen queries', () => {
-    expect(read('BBSForum.vue')).toContain("api.get('/jaxrs/bbs/assemble/control/section/list')")
-    expect(read('CalendarApp.vue')).toContain('/jaxrs/calendar_assemble_control/event/list/filter')
-    expect(read('Dashboard.vue')).toContain('/jaxrs/processplatform/assemble/surface/work/count/currentperson')
-    expect(read('Dashboard.vue')).toContain('/jaxrs/message/unread/count/im')
-    expect(read('IMChat.vue')).toContain('/jaxrs/message/assemble/communicate/im/conversation/list/my')
-    expect(read('MeetingApp.vue')).toContain('/jaxrs/meeting/assemble/control/building/list')
-    expect(read('JPushApp.vue')).toContain("api.get('/jaxrs/jpush_assemble_control/device/list/jpush')")
-    expect(read('JPushApp.vue')).toContain("api.get('/jaxrs/jpush/template/list')")
+    expect(read('BBSForum.vue')).toContain("api.get('/api/bbs/assemble/control/section/list')")
+    expect(read('CalendarApp.vue')).toContain('/api/calendar_assemble_control/event/list/filter')
+    expect(read('Dashboard.vue')).toContain('/api/processplatform/assemble/surface/work/count/currentperson')
+    expect(read('Dashboard.vue')).toContain('/api/message/unread/count/im')
+    expect(read('IMChat.vue')).toContain('/api/message/assemble/communicate/im/conversation/list/my')
+    expect(read('MeetingApp.vue')).toContain('/api/meeting/assemble/control/building/list')
+    expect(read('JPushApp.vue')).toContain("api.get('/api/jpush_assemble_control/device/list/jpush')")
+    expect(read('JPushApp.vue')).toContain("api.get('/api/jpush/template/list')")
   })
 
   it('does not auto-query write handlers or placeholder identifiers on mount', () => {
     for (const [view, forbidden] of [
-      ['JPushApp.vue', ['/jaxrs/jpush/assemble/control/update/control/config']],
+      ['JPushApp.vue', ['/api/jpush/assemble/control/update/control/config']],
       [
         'BBSForum.vue',
         [
-          '/jaxrs/bbs/assemble/control/topic/create',
-          '/jaxrs/bbs/assemble/control/delete/subject',
-          '/jaxrs/bbs/assemble/control/shutup/create',
-          '/jaxrs/comment/c-1/commend',
+          '/api/bbs/assemble/control/topic/create',
+          '/api/bbs/assemble/control/delete/subject',
+          '/api/bbs/assemble/control/shutup/create',
+          '/api/comment/c-1/commend',
         ],
       ],
-      ['AIChatApp.vue', ['/jaxrs/ai_assemble_control/config/delete/mcp/flag', '/jaxrs/ai/chat']],
-      ['HotpicApp.vue', ['/jaxrs/hotpic/save/hotpic', '/jaxrs/hotpic/delete/hotpic']],
-      ['DocumentApp.vue', ['/jaxrs/document/d-1/update', '/jaxrs/document/publish/d-1']],
-      ['ServerApp.vue', ['/jaxrs/cache/commonscript/flush', '/jaxrs/cache/config/flush']],
-      ['RoleManager.vue', ['/jaxrs/permission/management/refresh/all']],
-      ['AppInfoApp.vue', ['/jaxrs/appinfo/a-1/permission', '/jaxrs/appinfo/a-1/icon/size/64']],
-      ['QueryViewApp.vue', ['/jaxrs/queryview/query/qf-1', '/jaxrs/queryview/importmodel/record/r-1']],
-      ['PortalDesigner.vue', ['/jaxrs/portal/assemble/designer/get/design-1']],
-      ['MindApp.vue', ['/jaxrs/mind/core/entity/folder/folder-001']],
+      ['AIChatApp.vue', ['/api/ai_assemble_control/config/delete/mcp/flag', '/api/ai/chat']],
+      ['HotpicApp.vue', ['/api/hotpic/save/hotpic', '/api/hotpic/delete/hotpic']],
+      ['DocumentApp.vue', ['/api/document/d-1/update', '/api/document/publish/d-1']],
+      ['ServerApp.vue', ['/api/cache/commonscript/flush', '/api/cache/config/flush']],
+      ['RoleManager.vue', ['/api/permission/management/refresh/all']],
+      ['AppInfoApp.vue', ['/api/appinfo/a-1/permission', '/api/appinfo/a-1/icon/size/64']],
+      ['QueryViewApp.vue', ['/api/queryview/query/qf-1', '/api/queryview/importmodel/record/r-1']],
+      ['PortalDesigner.vue', ['/api/portal/assemble/designer/get/design-1']],
+      ['MindApp.vue', ['/api/mind/core/entity/folder/folder-001']],
       ['UnitApp.vue', []],
-      ['ProgramCenterApp.vue', ['/jaxrs/program_center/market/m-1/install/log']],
-      ['ProcessWork.vue', ['/jaxrs/processplatform/task/processing/task-001']],
-      ['CommonApp.vue', ['/jaxrs/general/assemble/control/securityclearance/enable']],
-      ['CalendarApp.vue', ['/jaxrs/calendar/core/entity/calendar/remove']],
+      ['ProgramCenterApp.vue', ['/api/program_center/market/m-1/install/log']],
+      ['ProcessWork.vue', ['/api/processplatform/task/processing/task-001']],
+      ['CommonApp.vue', ['/api/general/assemble/control/securityclearance/enable']],
+      ['CalendarApp.vue', ['/api/calendar/core/entity/calendar/remove']],
     ] as Array<[string, string[]]>) {
       const source = read(view)
       for (const path of forbidden) {

@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>查询导入设计器</h1>
-        <p class="subtitle">/jaxrs/query/assemble/designer/importer/*（x_query_import_model）</p>
+        <p class="subtitle">/api/query/assemble/designer/importer/*（x_query_import_model）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -61,8 +61,8 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/query/assemble/designer/importer/list'
-const createEp = '/jaxrs/query/assemble/designer/importer/create'
+const listEp = '/api/query/assemble/designer/importer/list'
+const createEp = '/api/query/assemble/designer/importer/create'
 const qk = ['QueryImporterDesigner', 'list']
 
 const search = ref(''),
@@ -118,7 +118,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.post(`/jaxrs/query/assemble/designer/importer/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/query/assemble/designer/importer/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -133,7 +133,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/query/assemble/designer/importer/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/query/assemble/designer/importer/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>应用管理</h1>
-      <p class="subtitle">/jaxrs/appinfo/*</p>
+      <p class="subtitle">/api/appinfo/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="stats-row">
@@ -61,10 +61,10 @@ async function doSearch() {
   loading.value = true
   try {
     if (keyword.value.trim()) {
-      const r = await api.get('/jaxrs/appinfo/filter', { params: { keyword: keyword.value } })
+      const r = await api.get('/api/appinfo/filter', { params: { keyword: keyword.value } })
       items.value = r.data ?? []
     } else {
-      const r = await api.get('/jaxrs/appinfo/list')
+      const r = await api.get('/api/appinfo/list')
       items.value = r.data ?? []
     }
   } catch {
@@ -76,7 +76,7 @@ async function doSearch() {
 
 async function viewDetail(item: any) {
   try {
-    const r = await api.get(`/jaxrs/appinfo/${item.id}`)
+    const r = await api.get(`/api/appinfo/${item.id}`)
     detailItem.value = r.data ?? item
   } catch {
     detailItem.value = item

@@ -16,7 +16,7 @@ import ScriptWorkbench, {
   type ScriptWorkbenchAdapter,
 } from '../components/ScriptWorkbench.vue'
 
-const base = '/jaxrs/portal/assemble/designer'
+const base = '/api/portal/assemble/designer'
 
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data

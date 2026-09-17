@@ -49,7 +49,7 @@ const designers = [
   { icon: '🔍', title: '查询设计器', desc: 'SQL与可视化查询', path: '/app/query-designer' },
   { icon: '🖼', title: '门户设计器', desc: '页面与组件设计', path: '/app/portal-designer' },
   // CMS dict/form/view 家族后端已实装（shared::crud 参数化 CRUD + 迁移 093 表），
-  // 卡片不再标记"未启用"；脚本设计走 /jaxrs/script/* 已注册路由。
+  // 卡片不再标记"未启用"；脚本设计走 /api/script/* 已注册路由。
   { icon: '📝', title: 'CMS表单设计', desc: '内容模型表单', path: '/app/cms-form-designer' },
   { icon: '👁', title: 'CMS视图设计', desc: '内容展示视图', path: '/app/cms-view-designer' },
   { icon: '💻', title: 'CMS脚本设计', desc: '内容处理脚本', path: '/app/cms-script-designer' },
@@ -58,8 +58,8 @@ const designers = [
 async function loadStats() {
   try {
     const [p, a] = await Promise.allSettled([
-      api.get('/jaxrs/processplatform/assemble/surface/work/count/currentperson'),
-      api.get('/jaxrs/program_center/application/list'),
+      api.get('/api/processplatform/assemble/surface/work/count/currentperson'),
+      api.get('/api/program_center/application/list'),
     ])
     const pc = p.status === 'fulfilled' ? ((p as any).value?.data?.count ?? '--') : '--'
     const ac = a.status === 'fulfilled' ? ((a as any).value?.data?.length ?? '--') : '--'

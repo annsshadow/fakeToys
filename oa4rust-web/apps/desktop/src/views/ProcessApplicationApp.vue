@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>流程应用管理</h1>
-        <p class="subtitle">/jaxrs/program_center/application/*（x_applications）</p>
+        <p class="subtitle">/api/program_center/application/*（x_applications）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -70,8 +70,8 @@ interface AppForm {
   disable?: boolean
 }
 
-const listEp = '/jaxrs/program_center/application/list'
-const createEp = '/jaxrs/program_center/application/create'
+const listEp = '/api/program_center/application/list'
+const createEp = '/api/program_center/application/create'
 const qk = ['ProcessApplication', 'list']
 
 const search = ref(''),
@@ -140,7 +140,7 @@ const saveM = useMutation({
       }
       if (editingId.value) {
         payload.disable = Boolean(form.value.disable)
-        return api.post(`/jaxrs/program_center/application/save/${editingId.value}`, payload)
+        return api.post(`/api/program_center/application/save/${editingId.value}`, payload)
       }
       return api.post(createEp, payload)
     } finally {
@@ -156,7 +156,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/program_center/application/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/program_center/application/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

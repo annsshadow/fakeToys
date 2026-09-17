@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>服务调用设计器</h1>
-        <p class="subtitle">/jaxrs/program_center/invoke/*（x_program_invoke）</p>
+        <p class="subtitle">/api/program_center/invoke/*（x_program_invoke）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -68,8 +68,8 @@ interface InvokeForm {
   category?: string
 }
 
-const listEp = '/jaxrs/program_center/invoke/list'
-const createEp = '/jaxrs/program_center/invoke/create'
+const listEp = '/api/program_center/invoke/list'
+const createEp = '/api/program_center/invoke/create'
 const qk = ['InvokeDesigner', 'list']
 
 const search = ref(''),
@@ -131,7 +131,7 @@ const saveM = useMutation({
         alias: form.value.alias ?? '',
         category: form.value.category ?? '',
       }
-      if (editingId.value) return api.post(`/jaxrs/program_center/invoke/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/program_center/invoke/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -146,7 +146,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/program_center/invoke/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/program_center/invoke/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },
@@ -159,7 +159,7 @@ async function deleteItem(item: Item) {
 const runM = useMutation({
   mutationFn: async (item: Item) => {
     const flag = item.alias || item.name || item.id
-    return api.post(`/jaxrs/program_center/invoke/${encodeURIComponent(flag)}/execute`, {})
+    return api.post(`/api/program_center/invoke/${encodeURIComponent(flag)}/execute`, {})
   },
   onSuccess: () => {
     toast.success('服务调用已执行')

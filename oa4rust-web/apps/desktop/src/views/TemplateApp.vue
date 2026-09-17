@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>模板管理</h1>
-        <p class="subtitle">/jaxrs/templateform/*（x_cms_form_v2）</p>
+        <p class="subtitle">/api/templateform/*（x_cms_form_v2）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -59,8 +59,8 @@ interface Item {
   status?: string
 }
 
-const listEp = '/jaxrs/templateform/list'
-const createEp = '/jaxrs/templateform/create'
+const listEp = '/api/templateform/list'
+const createEp = '/api/templateform/create'
 const qk = ['Template', 'list']
 
 const search = ref(''),
@@ -116,7 +116,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.post(`/jaxrs/templateform/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/templateform/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -131,7 +131,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/templateform/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/templateform/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

@@ -2,7 +2,7 @@
   <div class="query-view">
     <div class="view-header glass-card">
       <h1>查询管理</h1>
-      <p class="subtitle">/jaxrs/query/assemble/designer/*</p>
+      <p class="subtitle">/api/query/assemble/designer/*</p>
       <button class="nb" @click="showCreate=true">+ 新建查询</button>
     </div>
     <div class="ql">
@@ -73,7 +73,7 @@ const sq = ref(''),
   qc = useQueryClient()
 const { data } = useQuery({
   queryKey: ['query', 'defs'],
-  queryFn: () => api.get('/jaxrs/query/assemble/designer/list/all').then((r: any) => (r.data ?? []) as Q[]),
+  queryFn: () => api.get('/api/query/assemble/designer/list/all').then((r: any) => (r.data ?? []) as Q[]),
 })
 qs2.value = data.value ?? []
 const qsFiltered = computed(() =>
@@ -88,7 +88,7 @@ async function runQ() {
   if (!selected.value) return
   rloading.value = true
   try {
-    const r = await api.post('/jaxrs/query/assemble/designer/execute', {
+    const r = await api.post('/api/query/assemble/designer/execute', {
       id: selected.value!.id,
       filter: filterText.value,
     })
@@ -101,7 +101,7 @@ async function runQ() {
   }
 }
 const dm = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: ['query', 'defs'] })
     if (selected.value?.id) selected.value = null
@@ -111,7 +111,7 @@ function delQ() {
   if (selected.value && confirmMsg('确定删除？')) dm.mutate(selected.value.id)
 }
 const cm = useMutation({
-  mutationFn: () => api.post('/jaxrs/query/assemble/designer/create', nform.value),
+  mutationFn: () => api.post('/api/query/assemble/designer/create', nform.value),
   onSuccess: () => {
     showCreate.value = false
     qc.invalidateQueries({ queryKey: ['query', 'defs'] })

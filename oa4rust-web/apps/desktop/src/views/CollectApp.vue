@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>收集管理</h1>
-        <p class="subtitle">/jaxrs/program_center/collect/*（x_program_collect）</p>
+        <p class="subtitle">/api/program_center/collect/*（x_program_collect）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -64,8 +64,8 @@ interface CollectForm {
   url?: string
 }
 
-const listEp = '/jaxrs/program_center/collect/list'
-const createEp = '/jaxrs/program_center/collect/create'
+const listEp = '/api/program_center/collect/list'
+const createEp = '/api/program_center/collect/create'
 const qk = ['Collect', 'list']
 
 const search = ref(''),
@@ -126,7 +126,7 @@ const saveM = useMutation({
         title: form.value.title ?? '',
         url: form.value.url ?? '',
       }
-      if (editingId.value) return api.post(`/jaxrs/program_center/collect/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/program_center/collect/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -141,7 +141,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/program_center/collect/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/program_center/collect/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>人脸设置</h1>
-        <p class="subtitle">/jaxrs/personal/face/*（x_person_face）</p>
+        <p class="subtitle">/api/personal/face/*（x_person_face）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -65,8 +65,8 @@ interface FaceForm {
   status?: string
 }
 
-const listEp = '/jaxrs/personal/face/list'
-const createEp = '/jaxrs/personal/face/create'
+const listEp = '/api/personal/face/list'
+const createEp = '/api/personal/face/create'
 const qk = ['FaceSet', 'list']
 
 const search = ref(''),
@@ -128,7 +128,7 @@ const saveM = useMutation({
         faceType: form.value.faceType ?? '',
         status: form.value.status ?? '',
       }
-      if (editingId.value) return api.post(`/jaxrs/personal/face/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/personal/face/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -143,7 +143,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/personal/face/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/personal/face/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },
