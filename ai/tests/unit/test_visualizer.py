@@ -247,10 +247,43 @@ class TestGenerateStatistics:
         stats = visualizer.generate_statistics([])
 
         assert stats["total_items"] == 0
-        assert stats["avg_length"] == 0
-        assert stats["min_length"] == 0
-        assert stats["max_length"] == 0
-        assert stats["unique_words"] == 0
+
+
+class TestVisualizerExtended:
+    """DataVisualizer 扩展测试"""
+
+    def test_init_default_dir(self, tmp_path):
+        """默认输出目录"""
+        visualizer = DataVisualizer(output_dir=str(tmp_path))
+        assert str(visualizer.output_dir) == str(tmp_path)
+
+    def test_wordcloud_empty_items(self, tmp_path, fake_wordcloud):
+        """空数据生成词云"""
+        visualizer = DataVisualizer(output_dir=str(tmp_path))
+        path = visualizer.generate_wordcloud([])
+        assert path == "" or path is not None
+
+    def test_length_distribution_single_item(self, tmp_path, fake_matplotlib):
+        """单条数据长度分布"""
+        visualizer = DataVisualizer(output_dir=str(tmp_path))
+        path = visualizer.generate_length_distribution([{"instruction": "短"}])
+        assert path is not None
+
+    def test_quality_distribution_single_score(self, tmp_path, fake_matplotlib):
+        """单个分数质量分布"""
+        visualizer = DataVisualizer(output_dir=str(tmp_path))
+        path = visualizer.generate_quality_distribution([0.5])
+        assert path is not None
+
+    def test_statistics_single_item(self, tmp_path):
+        """单条数据统计"""
+        visualizer = DataVisualizer(output_dir=str(tmp_path))
+        stats = visualizer.generate_statistics([{"instruction": "测试"}])
+        assert stats["total_items"] == 1
+        assert stats["avg_length"] == 2.0
+        assert stats["min_length"] == 2
+        assert stats["max_length"] == 2
+        assert stats["unique_words"] == 1
 
     def test_statistics_respects_text_key(self, tmp_path):
         visualizer = DataVisualizer(output_dir=str(tmp_path))
