@@ -217,3 +217,22 @@ class TestConfigExtended:
         """FrameworkConfig 默认值"""
         config = FrameworkConfig()
         assert isinstance(config.frameworks, list)
+
+    def test_save_config_strips_secrets(self, tmp_path):
+        """save_config 应剥离模型密钥，避免落盘"""
+        import yaml
+        from augmentor.config import save_config
+
+        config = AppConfig()
+        config.models["openai"] = ModelConfig(type="openai", api_key="sk-actual-secret")
+        config.models["ernie"] = ModelConfig(type="baidu", api_key="ak", secret_key="real-secret")
+        path = str(tmp_path / "out_config.yaml")
+        save_config(config, path)
+        with open(path, encoding="utf-8") as f:
+            content = f.read()
+        assert "sk-actual-secret" not in content
+        assert "real-secret" not in content
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        assert "api_key" not in data["models"]["openai"]
+        assert "secret_key" not in data["models"]["ernie"]
