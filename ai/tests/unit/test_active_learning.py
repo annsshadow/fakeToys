@@ -204,3 +204,38 @@ class TestLoopLifecycle:
 
         assert payload["iteration"] == 1
         assert payload["selected_indices"] == []
+
+
+class TestActiveLearningExtended:
+    """ActiveLearningLoop 扩展测试"""
+
+    def test_hybrid_strategy(self, candidates):
+        """混合策略选择"""
+        loop = ActiveLearningLoop(strategy="hybrid", batch_size=2, score_fn=lambda item: 0.5)
+        selected = loop.select_samples(candidates)
+        assert len(selected) == 2
+
+    def test_score_fn_none_uses_random(self):
+        """无评分函数时使用随机策略"""
+        loop = ActiveLearningLoop(strategy="uncertainty", batch_size=2)
+        data = [{"instruction": f"q{i}"} for i in range(5)]
+        selected = loop.select_samples(data)
+        assert len(selected) == 2
+
+    def test_history_property(self, candidates):
+        """history 属性"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        loop.run(candidates)
+        assert len(loop.history) == 1
+
+    def test_select_samples_override_strategy(self, candidates):
+        """运行时覆盖策略"""
+        loop = ActiveLearningLoop(strategy="uncertainty", batch_size=2, score_fn=lambda item: 0.5)
+        selected = loop.select_samples(candidates, strategy="random")
+        assert len(selected) == 2
+
+    def test_run_default_iterations(self, candidates):
+        """默认迭代次数"""
+        loop = ActiveLearningLoop(batch_size=5, score_fn=lambda item: 0.5)
+        result = loop.run(candidates, iterations=1)
+        assert result["iterations"] == 1
