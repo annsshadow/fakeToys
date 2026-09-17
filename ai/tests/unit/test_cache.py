@@ -359,3 +359,10 @@ class TestMemoryCacheExtended:
         cache.get("key1")
         
         assert cache._cache["key1"].hit_count == 2
+
+    def test_clear_memory_cache(self):
+        """清空内存缓存"""
+        cache = MemoryCache()
+        cache.set("key1", "value1")
+        cache.clear()
+        assert cache.get("key1") is None
