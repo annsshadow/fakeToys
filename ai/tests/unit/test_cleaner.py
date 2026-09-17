@@ -148,7 +148,53 @@ class TestConvenienceFunctions:
         """测试提取关键词"""
         text = "如何申请租房？租房需要什么材料？"
         keywords = extract_keywords(text, top_k=3)
-        
+        assert isinstance(keywords, list)
+
+
+class TestCleanerExtended:
+    """DatasetCleaner 扩展测试"""
+
+    def test_clean_empty_dataset(self):
+        """清洗空数据集"""
+        cleaner = DatasetCleaner()
+        cleaned, result = cleaner.clean([])
+        assert cleaned == []
+        assert result.original_count == 0
+
+    def test_clean_with_all_rules(self, sample_dataset):
+        """使用所有规则清洗"""
+        cleaner = DatasetCleaner()
+        cleaned, result = cleaner.clean(
+            sample_dataset,
+            rules=["remove_empty", "remove_duplicates", "normalize_whitespace", "trim_whitespace"]
+        )
+        assert len(cleaned) <= len(sample_dataset)
+
+    def test_cleaning_result_fields(self, sample_dataset):
+        """CleaningResult 应包含所有必要字段"""
+        cleaner = DatasetCleaner()
+        cleaned, result = cleaner.clean(sample_dataset)
+        assert hasattr(result, 'original_count')
+        assert hasattr(result, 'cleaned_count')
+        assert hasattr(result, 'removed_count')
+        assert hasattr(result, 'rules_applied')
+
+    def test_text_normalizer_various(self):
+        """TextNormalizer 各种输入"""
+        normalizer = TextNormalizer()
+        assert normalizer.normalize("hello\tworld") == "hello world"
+        assert normalizer.normalize("hello\n\nworld") == "hello world"
+        assert normalizer.normalize("") == ""
+        assert normalizer.normalize("  ") == ""
+
+    def test_extract_keywords_empty(self):
+        """空文本提取关键词"""
+        keywords = extract_keywords("", top_k=5)
+        assert keywords == []
+
+    def test_extract_keywords_short(self):
+        """短文本提取关键词"""
+        keywords = extract_keywords("租房", top_k=5)
         assert isinstance(keywords, list)
 
 
