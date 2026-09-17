@@ -483,3 +483,76 @@ class TestQualityExtended:
         scorer._model = "fallback"
         diversity = scorer._calculate_diversity("text", ["text"])
         assert diversity == 0.0
+
+
+class TestQualityExtended2:
+    """QualityScorer 第二轮扩展测试（覆盖剩余边界）"""
+
+    def test_fallback_semantic_uses_ngram(self):
+        """模型为 fallback 时语义相似度走 n-gram"""
+        scorer = QualityScorer()
+        scorer._model = "fallback"
+        assert scorer._calculate_semantic_similarity("租房申请", "租房申请") == pytest.approx(1.0)
+
+    def test_fallback_relevance_uses_ngram(self):
+        """cross-encoder 为 fallback 时相关性走 n-gram"""
+        scorer = QualityScorer()
+        scorer._cross_encoder = "fallback"
+        score = scorer._calculate_relevance("租房", "租房")
+        assert score == pytest.approx(1.0)
+
+    def test_load_models_idempotent(self):
+        """_load_models 重复调用不应重新加载"""
+        scorer = QualityScorer()
+        scorer._load_models()
+        model_before = scorer._model
+        encoder_before = scorer._cross_encoder
+        scorer._load_models()
+        assert scorer._model is model_before
+        assert scorer._cross_encoder is encoder_before
+
+    def test_load_models_sets_fallback_or_model(self):
+        """_load_models 应把模型槽位设置为实例或 fallback 标记"""
+        scorer = QualityScorer()
+        scorer._model = None
+        scorer._cross_encoder = None
+        scorer._load_models()
+        assert scorer._model is not None or scorer._model == "fallback"
+        assert scorer._cross_encoder is not None or scorer._cross_encoder == "fallback"
+
+    def test_diversity_with_existing_text_monotonic(self):
+        """已有重复文本越多，多样性应越低（fallback 模式）"""
+        scorer = QualityScorer()
+        scorer._model = "fallback"
+        scorer._cross_encoder = "fallback"
+        low = scorer._calculate_diversity("租房", ["租房", "租房", "租房"])
+        high = scorer._calculate_diversity("完全不相关的文本", [])
+        assert low < high
+
+    def test_score_custom_weights_total_range(self):
+        """自定义权重下总分仍应在 0-1 区间"""
+        scorer = QualityScorer(weights=[0.1, 0.8, 0.1])
+        result = scorer.score("问题", "问题", "回答")
+        assert 0.0 <= result.total_score <= 1.0
+
+    def test_generate_report_statistics_keys(self):
+        """报告统计字典应包含均值/标准差/极值"""
+        scorer = QualityScorer()
+        items = [
+            {"original": "q1", "generated": "q1", "output": "a1"},
+            {"original": "q2", "generated": "q2", "output": "a2"},
+        ]
+        report = scorer.generate_report(items)
+        for key in ("mean", "std", "min", "max"):
+            assert key in report["total_score"]
+
+    def test_batch_score_score_items_structure(self):
+        """批量评分结果应是 QualityScore 列表且数量一致"""
+        scorer = QualityScorer()
+        items = [
+            {"original": f"q{i}", "generated": f"q{i}", "output": f"a{i}"}
+            for i in range(4)
+        ]
+        scores = scorer.batch_score(items)
+        assert all(isinstance(s, QualityScore) for s in scores)
+        assert len(scores) == 4
