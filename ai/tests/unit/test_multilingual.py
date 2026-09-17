@@ -43,6 +43,21 @@ class TestDetection:
         """空文本为 unknown"""
         assert MultilingualSupport().detect_language("") == "unknown"
 
+    def test_non_string_input(self):
+        """非字符串输入应返回 unknown"""
+        assert MultilingualSupport().detect_language(None) == "unknown"
+        assert MultilingualSupport().detect_language(123) == "unknown"
+
+    def test_pure_numbers_returns_unknown(self):
+        """纯数字应返回 unknown（无 CJK 也无 Latin 字母）"""
+        assert MultilingualSupport().detect_language("12345") == "unknown"
+
+    def test_mixed_ratio_both_below_threshold(self):
+        """当 CJK 和 Latin 比例都 > 0.1 但都 < 0.8 时应为 mixed"""
+        # 5 CJK + 5 Latin = 50% each -> mixed
+        text = "你好世界testabcd"
+        assert MultilingualSupport().detect_language(text) == "mixed"
+
     def test_is_mixed(self):
         """混合检测便捷方法"""
         support = MultilingualSupport()
@@ -140,6 +155,31 @@ class TestBatchTranslate:
 
         assert len(result) == 1
         assert result[0]["instruction"] == "中文问题"
+
+    def test_keep_original_false(self):
+        """keep_original=False 时不保留原文字段"""
+        support = MultilingualSupport(model_backend=FakeBackend())
+        result = support.batch_translate(
+            [{"instruction": "中文问题"}], target_lang="en", keep_original=False
+        )
+        assert "instruction_original" not in result[0]
+        assert result[0]["language"] == "en"
+
+    def test_custom_text_key(self):
+        """自定义 text_key 应翻译指定字段"""
+        support = MultilingualSupport(model_backend=FakeBackend())
+        result = support.batch_translate(
+            [{"question": "中文问题"}], target_lang="en", text_key="question"
+        )
+        assert result[0]["language"] == "en"
+        assert result[0].get("question_original") == "中文问题"
+
+    def test_parallel_translation(self):
+        """并行翻译应返回正确结果"""
+        support = MultilingualSupport(model_backend=FakeBackend(), max_workers=2)
+        items = [{"instruction": f"问题{i}"} for i in range(5)]
+        result = support.batch_translate(items, target_lang="en")
+        assert len(result) == 5
 
 
 class TestAnalyzeLanguages:
