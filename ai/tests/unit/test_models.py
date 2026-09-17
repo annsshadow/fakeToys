@@ -259,3 +259,31 @@ class TestModelBackendExtended:
         except RuntimeError:
             pass
         assert backend.error_count == 1
+
+
+class TestOpenAIBackend:
+    """OpenAI 后端测试"""
+
+    def test_extract_json_from_response_pure_json(self):
+        """提取纯 JSON 响应"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        result = backend.extract_json_from_response('[{"instruction": "q"}]')
+        assert result == [{"instruction": "q"}]
+
+    def test_extract_json_from_response_wrapped(self):
+        """提取包裹在文本中的 JSON"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        result = backend.extract_json_from_response('结果: [{"instruction": "q"}] 完成')
+        assert result == [{"instruction": "q"}]
+
+    def test_extract_json_from_response_no_array(self):
+        """无数组时抛出异常"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        with pytest.raises(ValueError):
+            backend.extract_json_from_response("no array here")
+
+    def test_extract_json_from_response_non_list_object(self):
+        """顶层是对象时尝试从文本提取"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        result = backend.extract_json_from_response('{"a": 1} [1, 2]')
+        assert result == [1, 2]
