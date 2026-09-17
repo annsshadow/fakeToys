@@ -120,6 +120,39 @@ class TestSuggestions:
 
         assert any("去重移除比例较高" in s for s in report.improvement_suggestions)
 
+    def test_low_semantic_similarity_suggests(self):
+        """语义相似度偏低时应建议收敛生成约束"""
+        items = [{"instruction": f"q{i}"} for i in range(3)]
+        scores = [
+            QualityScore(semantic_similarity=0.3, relevance=0.9, diversity=0.9,
+                         total_score=0.7, passed=True)
+            for _ in range(3)
+        ]
+        report = ReportGenerator().generate(items, scores)
+        assert any("语义相似度" in s for s in report.improvement_suggestions)
+
+    def test_low_relevance_suggests(self):
+        """回答相关性偏低时应建议检查问答匹配"""
+        items = [{"instruction": f"q{i}"} for i in range(3)]
+        scores = [
+            QualityScore(semantic_similarity=0.9, relevance=0.2, diversity=0.9,
+                         total_score=0.7, passed=True)
+            for _ in range(3)
+        ]
+        report = ReportGenerator().generate(items, scores)
+        assert any("相关性" in s for s in report.improvement_suggestions)
+
+    def test_low_diversity_suggests(self):
+        """多样性偏低时应建议提高 temperature"""
+        items = [{"instruction": f"q{i}"} for i in range(3)]
+        scores = [
+            QualityScore(semantic_similarity=0.9, relevance=0.9, diversity=0.1,
+                         total_score=0.63, passed=True)
+            for _ in range(3)
+        ]
+        report = ReportGenerator().generate(items, scores)
+        assert any("多样性" in s for s in report.improvement_suggestions)
+
 
 class TestSerialization:
     """序列化"""
