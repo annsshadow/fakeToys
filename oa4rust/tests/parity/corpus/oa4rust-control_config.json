@@ -2,6 +2,6 @@
   "body": null,
   "method": "GET",
   "name": "control_config",
-  "path": "/jaxrs/component_assemble_control/get/control/config",
+  "path": "/api/component_assemble_control/get/control/config",
   "status": 500
 }

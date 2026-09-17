@@ -2,6 +2,6 @@
   "body": null,
   "method": "GET",
   "name": "cms_document_list",
-  "path": "/jaxrs/cms_assemble_control/data/document",
+  "path": "/api/cms_assemble_control/data/document",
   "status": 200
 }

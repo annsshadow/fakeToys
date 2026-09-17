@@ -26,7 +26,7 @@ from pathlib import Path
 
 # ── 正则表达式 ──────────────────────────────────────────────────────────────────
 
-# FAIL 区表格行：| GET | /jaxrs/... | diff1<br>diff2 |
+# FAIL 区表格行：| GET | /api/... | diff1<br>diff2 |
 FAIL_ROW_RE = re.compile(
     r'^\|\s*(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s*'
     r'\|\s*(/[^|]+?)\s*'
@@ -419,14 +419,14 @@ def self_test() -> bool:
 
 | Method | Endpoint | Differences |
 |--------|----------|-------------|
-| GET | /jaxrs/processplatform/assemble/surface/work/list | data: missing in Java<br>prompt: missing in Rust |
-| POST | /jaxrs/processplatform/assemble/surface/attachment/update/{id} | data: missing in Java<br>status: missing in Rust<br>url: missing in Rust |
+| GET | /api/processplatform/assemble/surface/work/list | data: missing in Java<br>prompt: missing in Rust |
+| POST | /api/processplatform/assemble/surface/attachment/update/{id} | data: missing in Java<br>status: missing in Rust<br>url: missing in Rust |
 
 ### Crate: `cms_assemble_control`
 
 | Method | Endpoint | Differences |
 |--------|----------|-------------|
-| GET | /jaxrs/cms/assemble/control/document/{id} | count: type differs<br>name: missing in Java |
+| GET | /api/cms/assemble/control/document/{id} | count: type differs<br>name: missing in Java |
 
 ## Skipped (Java unreachable)
 

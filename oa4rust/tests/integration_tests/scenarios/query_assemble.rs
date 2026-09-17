@@ -42,7 +42,7 @@ pub async fn query_assemble_flow() {
     let designer_query = "SELECT 1";
 
     let d_create_resp = client
-        .post(format!("{}/jaxrs/query/assemble/designer/create", base))
+        .post(format!("{}/api/query/assemble/designer/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": designer_name,
@@ -64,7 +64,7 @@ pub async fn query_assemble_flow() {
     info!(designer_id = %designer_id, "designer created");
 
     let d_list_resp = client
-        .get(format!("{}/jaxrs/query/assemble/designer/list/{}", base, designer_category))
+        .get(format!("{}/api/query/assemble/designer/list/{}", base, designer_category))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -84,7 +84,7 @@ pub async fn query_assemble_flow() {
     let surface_content = "SELECT * FROM x_query_surface";
 
     let s_create_resp = client
-        .post(format!("{}/jaxrs/query/assemble/surface/create", base))
+        .post(format!("{}/api/query/assemble/surface/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": surface_name,
@@ -106,7 +106,7 @@ pub async fn query_assemble_flow() {
     info!(surface_id = %surface_id, "surface created");
 
     let s_list_resp = client
-        .get(format!("{}/jaxrs/query/assemble/surface/list/{}", base, surface_category))
+        .get(format!("{}/api/query/assemble/surface/list/{}", base, surface_category))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -122,7 +122,7 @@ pub async fn query_assemble_flow() {
 
     // ── preview_surface now reads the surface row from the DB ──
     let s_preview_resp = client
-        .get(format!("{}/jaxrs/query/assemble/surface/preview/{}", base, surface_id))
+        .get(format!("{}/api/query/assemble/surface/preview/{}", base, surface_id))
         .header("Authorization", &auth_header)
         .send()
         .await

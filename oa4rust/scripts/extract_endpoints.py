@@ -139,7 +139,7 @@ def java_war_for(crate_name: str) -> str:
 def java_action_from_path(crate_name: str, rust_path: str) -> str:
     """
     根据 crate 名称和 Rust 路径推导 Java action。
-    策略：去掉 /jaxrs/ 前缀，再用 crate 名称替换路径中的模块前缀。
+    策略：去掉 /api/ 前缀，再用 crate 名称替换路径中的模块前缀。
     """
     path = rust_path.lstrip("/")
     # 常见前缀映射

@@ -2,6 +2,6 @@
   "body": null,
   "method": "GET",
   "name": "ldap_config",
-  "path": "/jaxrs/ldap/config",
+  "path": "/api/ldap/config",
   "status": 200
 }

@@ -42,7 +42,7 @@ pub async fn file_portal_flow() {
     let file_name = "fp-file-it-001.txt";
 
     let create_file_resp = client
-        .post(format!("{}/jaxrs/file/core/entity/file/create", base))
+        .post(format!("{}/api/file/core/entity/file/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": file_name,
@@ -72,7 +72,7 @@ pub async fn file_portal_flow() {
     // ── file_assemble_control: list files in the folder → real DB data ──
     let list_file_resp = client
         .get(format!(
-            "{}/jaxrs/file/assemble/control/file/list/{}",
+            "{}/api/file/assemble/control/file/list/{}",
             base, folder_id
         ))
         .header("Authorization", &auth_header)
@@ -109,7 +109,7 @@ pub async fn file_portal_flow() {
     let design_name = "fp-design-it-001";
 
     let create_design_resp = client
-        .post(format!("{}/jaxrs/portal/assemble/designer/create", base))
+        .post(format!("{}/api/portal/assemble/designer/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": design_name,
@@ -136,7 +136,7 @@ pub async fn file_portal_flow() {
 
     // ── portal_assemble_designer: list designs → real DB data ──
     let list_design_resp = client
-        .get(format!("{}/jaxrs/portal/assemble/designer/list", base))
+        .get(format!("{}/api/portal/assemble/designer/list", base))
         .header("Authorization", &auth_header)
         .send()
         .await

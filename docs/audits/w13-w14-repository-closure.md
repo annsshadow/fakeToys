@@ -29,44 +29,44 @@
 
 | 视图 | 应用路由 | 声明端点 | 主要阻塞 |
 |---|---|---|---|
-| AnnApp.vue | `/app/ann` | `/jaxrs/ai/assemble/control/ann/list` | 通用名称/标识薄 CRUD，不能证明 ANN 配置闭环 |
-| CmsColumnApp.vue | `/app/cms-column` | `/jaxrs/cms/core/entity/column/list` | 无 CMS 列定义语义 |
-| CmsColumnManagerApp.vue | `/app/cms-column-manager` | `/jaxrs/cms/core/entity/column_manager/list` | 无列管理器业务交互 |
-| CmsDictDesignerApp.vue | `/app/cms-dict-designer` | `/jaxrs/cms/assemble/control/dict/list` | 无字典树/数据编辑 |
-| CmsFormDesignerApp.vue | `/app/cms-form-designer` | `/jaxrs/cms/assemble/control/form/list` | 无表单设计/运行契约 |
-| CmsIndexApp.vue | `/app/cms-index` | `/jaxrs/cms/core/entity/index/list` | 无索引字段/构建语义 |
-| CmsModuleApp.vue | `/app/cms-module` | `/jaxrs/cms/core/entity/module/list` | 查询结果一次性复制；list URL 复用于写操作 |
-| CmsScriptDesignerApp.vue | `/app/cms-script-designer` | `/jaxrs/cms/assemble/control/script/list` | 无代码编辑、补全、版本 |
-| CmsViewDesignerApp.vue | `/app/cms-view-designer` | `/jaxrs/cms/assemble/control/view/list` | 无视图布局/字段设计 |
-| CmsXformApp.vue | `/app/cms-xform` | `/jaxrs/cms/assemble/control/xform/list` | 无 XForm 编辑/运行时 |
-| CollectApp.vue | `/app/collect` | `/jaxrs/program_center/collect/list` | 前端通用 CRUD 与后端动作模型不一致 |
-| CommonApp.vue | `/app/common` | `/jaxrs/general/assemble/control/list` | 多类公共能力被误建模为单资源 CRUD |
-| DeploymentApp.vue | `/app/deployment` | `/jaxrs/server/deploy/list` | 无目标、资源、执行状态 |
-| FaceSetApp.vue | `/app/face-set` | `/jaxrs/personal/face/list` | 无采集/上传/人脸设置语义 |
-| FtSearchApp.vue | `/app/ftsearch` | `/jaxrs/ftsearch/list` | 无索引状态、搜索、运维动作 |
-| LogViewerApp.vue | `/app/log-viewer` | `/jaxrs/log/list` | 日志被误建模为可编辑名称 CRUD |
-| NoteApp.vue | `/app/note` | `/jaxrs/cms/core/entity/note/list` | 无正文编辑；list URL 复用于写操作 |
-| PortalDictDesignerApp.vue | `/app/portal-dict-designer` | `/jaxrs/portal/assemble/designer/dict/list` | 无字典树/数据编辑 |
-| PortalPageDesignerApp.vue | `/app/portal-page-designer` | `/jaxrs/portal/assemble/designer/page/list` | 无布局、模块、预览 |
-| PortalScriptDesignerApp.vue | `/app/portal-script-designer` | `/jaxrs/portal/assemble/designer/script/list` | 无代码编辑、补全、版本 |
-| PortalWidgetDesignerApp.vue | `/app/portal-widget-designer` | `/jaxrs/portal/assemble/designer/widget/list` | 无组件主体设计/预览 |
-| ProcessApplicationApp.vue | `/app/process-application` | `/jaxrs/program_center/application/list` | 流程应用被缩减为通用 CRUD |
-| ProcessDictDesignerApp.vue | `/app/process-dict-designer` | `/jaxrs/processplatform/assemble/designer/dict/list` | 无字典树/流程数据编辑 |
-| ProcessFormDesignerApp.vue | `/app/process-form-designer` | `/jaxrs/processplatform/assemble/designer/form/list` | 无表单设计/运行契约 |
-| ProcessManagerApp.vue | `/app/process-manager` | `/jaxrs/processplatform/assemble/surface/process_manager/list` | 无流程状态、流转、管理动作 |
-| ProcessScriptDesignerApp.vue | `/app/process-script-designer` | `/jaxrs/processplatform/assemble/designer/script/list` | 无代码编辑、补全、版本 |
-| ProcessTaskCenterApp.vue | `/app/process-task-center` | `/jaxrs/processplatform/service/processing/task/list` | 无办理动作/任务语义 |
-| ProcessXformApp.vue | `/app/process-xform` | `/jaxrs/processplatform/assemble/designer/xform/list` | 无 XForm 编辑/运行时 |
-| QueryExplorerApp.vue | `/app/query-explorer` | `/jaxrs/query/assemble/surface/explorer/list` | 无条件输入、执行、结果浏览 |
-| QueryImporterDesignerApp.vue | `/app/query-importer-designer` | `/jaxrs/query/assemble/designer/importer/list` | 无映射、校验、导入设计 |
-| QueryQueryApp.vue | `/app/query-query` | `/jaxrs/query/assemble/designer/list` | 无查询结构/执行验证 |
-| QueryStatDesignerApp.vue | `/app/query-stat-designer` | `/jaxrs/query/assemble/designer/stat/list` | 无维度、指标、过滤、模拟 |
-| QueryTableDesignerApp.vue | `/app/query-table-designer` | `/jaxrs/query/assemble/surface/table/list` | 无列编辑/建表/DDL |
-| QueryViewDesignerApp.vue | `/app/query-view-designer` | `/jaxrs/query/assemble/designer/view/list` | 无过滤、排序、分页、lookup、模拟 |
-| SelectorApp.vue | `/app/selector` | `/jaxrs/organization/assemble/control/person/list` | 不是可复用组织/人员/身份选择器 |
-| ServiceInvokeDesignerApp.vue | `/app/service-invoke-designer` | `/jaxrs/program_center/invoke/list` | 真实写路由在 `/invoke/{flag}`；无参数设计 |
-| TemplateApp.vue | `/app/template` | `/jaxrs/templateform/list` | 无模板正文、结构、预览 |
-| ThreeMemberApp.vue | `/app/three-member` | `/jaxrs/organization/assemble/control/threemember/list` | 无身份、同步、权限语义 |
+| AnnApp.vue | `/app/ann` | `/api/ai/assemble/control/ann/list` | 通用名称/标识薄 CRUD，不能证明 ANN 配置闭环 |
+| CmsColumnApp.vue | `/app/cms-column` | `/api/cms/core/entity/column/list` | 无 CMS 列定义语义 |
+| CmsColumnManagerApp.vue | `/app/cms-column-manager` | `/api/cms/core/entity/column_manager/list` | 无列管理器业务交互 |
+| CmsDictDesignerApp.vue | `/app/cms-dict-designer` | `/api/cms/assemble/control/dict/list` | 无字典树/数据编辑 |
+| CmsFormDesignerApp.vue | `/app/cms-form-designer` | `/api/cms/assemble/control/form/list` | 无表单设计/运行契约 |
+| CmsIndexApp.vue | `/app/cms-index` | `/api/cms/core/entity/index/list` | 无索引字段/构建语义 |
+| CmsModuleApp.vue | `/app/cms-module` | `/api/cms/core/entity/module/list` | 查询结果一次性复制；list URL 复用于写操作 |
+| CmsScriptDesignerApp.vue | `/app/cms-script-designer` | `/api/cms/assemble/control/script/list` | 无代码编辑、补全、版本 |
+| CmsViewDesignerApp.vue | `/app/cms-view-designer` | `/api/cms/assemble/control/view/list` | 无视图布局/字段设计 |
+| CmsXformApp.vue | `/app/cms-xform` | `/api/cms/assemble/control/xform/list` | 无 XForm 编辑/运行时 |
+| CollectApp.vue | `/app/collect` | `/api/program_center/collect/list` | 前端通用 CRUD 与后端动作模型不一致 |
+| CommonApp.vue | `/app/common` | `/api/general/assemble/control/list` | 多类公共能力被误建模为单资源 CRUD |
+| DeploymentApp.vue | `/app/deployment` | `/api/server/deploy/list` | 无目标、资源、执行状态 |
+| FaceSetApp.vue | `/app/face-set` | `/api/personal/face/list` | 无采集/上传/人脸设置语义 |
+| FtSearchApp.vue | `/app/ftsearch` | `/api/ftsearch/list` | 无索引状态、搜索、运维动作 |
+| LogViewerApp.vue | `/app/log-viewer` | `/api/log/list` | 日志被误建模为可编辑名称 CRUD |
+| NoteApp.vue | `/app/note` | `/api/cms/core/entity/note/list` | 无正文编辑；list URL 复用于写操作 |
+| PortalDictDesignerApp.vue | `/app/portal-dict-designer` | `/api/portal/assemble/designer/dict/list` | 无字典树/数据编辑 |
+| PortalPageDesignerApp.vue | `/app/portal-page-designer` | `/api/portal/assemble/designer/page/list` | 无布局、模块、预览 |
+| PortalScriptDesignerApp.vue | `/app/portal-script-designer` | `/api/portal/assemble/designer/script/list` | 无代码编辑、补全、版本 |
+| PortalWidgetDesignerApp.vue | `/app/portal-widget-designer` | `/api/portal/assemble/designer/widget/list` | 无组件主体设计/预览 |
+| ProcessApplicationApp.vue | `/app/process-application` | `/api/program_center/application/list` | 流程应用被缩减为通用 CRUD |
+| ProcessDictDesignerApp.vue | `/app/process-dict-designer` | `/api/processplatform/assemble/designer/dict/list` | 无字典树/流程数据编辑 |
+| ProcessFormDesignerApp.vue | `/app/process-form-designer` | `/api/processplatform/assemble/designer/form/list` | 无表单设计/运行契约 |
+| ProcessManagerApp.vue | `/app/process-manager` | `/api/processplatform/assemble/surface/process_manager/list` | 无流程状态、流转、管理动作 |
+| ProcessScriptDesignerApp.vue | `/app/process-script-designer` | `/api/processplatform/assemble/designer/script/list` | 无代码编辑、补全、版本 |
+| ProcessTaskCenterApp.vue | `/app/process-task-center` | `/api/processplatform/service/processing/task/list` | 无办理动作/任务语义 |
+| ProcessXformApp.vue | `/app/process-xform` | `/api/processplatform/assemble/designer/xform/list` | 无 XForm 编辑/运行时 |
+| QueryExplorerApp.vue | `/app/query-explorer` | `/api/query/assemble/surface/explorer/list` | 无条件输入、执行、结果浏览 |
+| QueryImporterDesignerApp.vue | `/app/query-importer-designer` | `/api/query/assemble/designer/importer/list` | 无映射、校验、导入设计 |
+| QueryQueryApp.vue | `/app/query-query` | `/api/query/assemble/designer/list` | 无查询结构/执行验证 |
+| QueryStatDesignerApp.vue | `/app/query-stat-designer` | `/api/query/assemble/designer/stat/list` | 无维度、指标、过滤、模拟 |
+| QueryTableDesignerApp.vue | `/app/query-table-designer` | `/api/query/assemble/surface/table/list` | 无列编辑/建表/DDL |
+| QueryViewDesignerApp.vue | `/app/query-view-designer` | `/api/query/assemble/designer/view/list` | 无过滤、排序、分页、lookup、模拟 |
+| SelectorApp.vue | `/app/selector` | `/api/organization/assemble/control/person/list` | 不是可复用组织/人员/身份选择器 |
+| ServiceInvokeDesignerApp.vue | `/app/service-invoke-designer` | `/api/program_center/invoke/list` | 真实写路由在 `/invoke/{flag}`；无参数设计 |
+| TemplateApp.vue | `/app/template` | `/api/templateform/list` | 无模板正文、结构、预览 |
+| ThreeMemberApp.vue | `/app/three-member` | `/api/organization/assemble/control/threemember/list` | 无身份、同步、权限语义 |
 
 共同的直接证据是各页把 TanStack Query 的 `data.value` **仅在 setup 时复制一次**到 `items.value`，没有 `watch`/`computed` 跟随异步结果；同时增改删普遍把带 `/list` 的 `ep` 直接拼接复用。`CmsModuleApp.vue` 与 `ServiceInvokeDesignerApp.vue` 已在 manifest 固化代表性证据，守卫会阻止在这些模式仍存在时把条目标成 `implemented`。
 

@@ -38,7 +38,7 @@ pub async fn cms_document_crud_flow() {
 
     // Step 1: Create (publish) a document
     let create_resp = client
-        .post(format!("{}/jaxrs/cms_assemble_control/data/document/create", base))
+        .post(format!("{}/api/cms_assemble_control/data/document/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": doc_id,
@@ -66,7 +66,7 @@ pub async fn cms_document_crud_flow() {
 
     // Step 2: List documents — created doc must be visible
     let list_resp = client
-        .get(format!("{}/jaxrs/cms_assemble_control/data/document", base))
+        .get(format!("{}/api/cms_assemble_control/data/document", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -82,7 +82,7 @@ pub async fn cms_document_crud_flow() {
 
     // Step 3: Get by id — must return real content
     let get_resp = client
-        .get(format!("{}/jaxrs/cms_assemble_control/data/document/{}", base, doc_id))
+        .get(format!("{}/api/cms_assemble_control/data/document/{}", base, doc_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -96,7 +96,7 @@ pub async fn cms_document_crud_flow() {
 
     // Step 4: Update title/status
     let update_resp = client
-        .post(format!("{}/jaxrs/cms_assemble_control/data/document/{}/update", base, doc_id))
+        .post(format!("{}/api/cms_assemble_control/data/document/{}/update", base, doc_id))
         .header("Authorization", &auth_header)
         .json(&json!({
             "title": "Integration Test Document (Updated)",
@@ -110,7 +110,7 @@ pub async fn cms_document_crud_flow() {
     assert_eq!(update_body["data"]["updated"].as_bool(), Some(true));
 
     let get2_resp = client
-        .get(format!("{}/jaxrs/cms_assemble_control/data/document/{}", base, doc_id))
+        .get(format!("{}/api/cms_assemble_control/data/document/{}", base, doc_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -122,7 +122,7 @@ pub async fn cms_document_crud_flow() {
 
     // Step 5: Soft-delete — must disappear from list and 404 on get
     let del_resp = client
-        .post(format!("{}/jaxrs/cms_assemble_control/data/document/{}/delete", base, doc_id))
+        .post(format!("{}/api/cms_assemble_control/data/document/{}/delete", base, doc_id))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -132,7 +132,7 @@ pub async fn cms_document_crud_flow() {
     assert_eq!(del_body["data"]["deleted"].as_bool(), Some(true));
 
     let list2_resp = client
-        .get(format!("{}/jaxrs/cms_assemble_control/data/document", base))
+        .get(format!("{}/api/cms_assemble_control/data/document", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -145,7 +145,7 @@ pub async fn cms_document_crud_flow() {
     );
 
     let get3_resp = client
-        .get(format!("{}/jaxrs/cms_assemble_control/data/document/{}", base, doc_id))
+        .get(format!("{}/api/cms_assemble_control/data/document/{}", base, doc_id))
         .header("Authorization", &auth_header)
         .send()
         .await
