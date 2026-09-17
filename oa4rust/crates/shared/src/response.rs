@@ -273,3 +273,142 @@ pub fn legacy_exception_for(kind: &str) -> String {
     };
     format!("com.x.base.core.project.exception.{class}")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 收集 axum 响应体为 JSON 值。
+    async fn response_json(resp: axum::response::Response) -> (axum::http::StatusCode, Value) {
+        let status = resp.status();
+        let bytes = axum::body::to_bytes(resp.into_body(), 1 << 20)
+            .await
+            .unwrap();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    #[test]
+    fn legacy_date_now_matches_o2server_format() {
+        // "yyyy-MM-dd HH:mm:ss"（o2server 信封 date 字段实测格式），19 字符定长。
+        let s = legacy_date_now();
+        assert_eq!(s.len(), 19);
+        chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S").unwrap();
+    }
+
+    #[test]
+    fn legacy_exception_for_maps_known_kinds_and_falls_back_to_internal() {
+        for kind in [
+            "ExceptionEntityNotExist",
+            "ExceptionBadRequest",
+            "ExceptionUnauthorized",
+            "ExceptionAccessDenied",
+            "ExceptionNotImplemented",
+        ] {
+            assert_eq!(
+                legacy_exception_for(kind),
+                format!("com.x.base.core.project.exception.{kind}")
+            );
+        }
+        // 未知类别收敛到 ExceptionInternal，不得泄漏内部枚举名。
+        assert_eq!(
+            legacy_exception_for("SomethingElse"),
+            "com.x.base.core.project.exception.ExceptionInternal"
+        );
+    }
+
+    #[test]
+    fn option_to_json_serializes_some_and_drops_none() {
+        assert_eq!(option_to_json(Some(42)), Some(Value::from(42)));
+        assert_eq!(option_to_json(Some("x")), Some(Value::from("x")));
+        assert_eq!(option_to_json::<i32>(None), None);
+    }
+
+    #[test]
+    fn success_envelope_has_no_prompt_and_fills_legacy_metadata() {
+        let v = serde_json::to_value(ActionResult::<i32>::success(1)).unwrap();
+        assert_eq!(v["data"], 1);
+        assert_eq!(v["type"], "success");
+        assert_eq!(v["message"], ""); // o2server 成功信封 message 恒为空串
+        assert!(v["date"].is_string());
+        assert_eq!(v["spent"], 0);
+        assert_eq!(v["size"], 0);
+        assert_eq!(v["count"], 0);
+        assert_eq!(v["position"], 0);
+        assert!(v.get("prompt").is_none(), "成功信封不得携带 prompt");
+    }
+
+    #[test]
+    fn error_envelope_omits_data_and_carries_prompt() {
+        let v = serde_json::to_value(ActionResult::<i32>::error("nope")).unwrap();
+        assert!(v.get("data").is_none());
+        assert_eq!(v["type"], "error");
+        assert_eq!(v["message"], "nope");
+        assert_eq!(v["size"], -1);
+        assert_eq!(
+            v["prompt"],
+            "com.x.base.core.project.exception.ExceptionEntityNotExist"
+        );
+    }
+
+    #[test]
+    fn legacy_success_passes_through_real_counts() {
+        // 分页端点 (total=200, size=20) 必须原样透传（前端按 count/size 算总页数）。
+        let v = serde_json::to_value(ActionResult::<i32>::legacy_success(5, 200, 20)).unwrap();
+        assert_eq!(v["data"], 5);
+        assert_eq!(v["count"], 200);
+        assert_eq!(v["size"], 20);
+        assert!(v.get("prompt").is_none());
+    }
+
+    #[tokio::test]
+    async fn app_error_variants_map_to_their_status_codes() {
+        let cases: Vec<(AppError, u16)> = vec![
+            (AppError::Internal, 500),
+            (AppError::BadRequest("bad".into()), 400),
+            (AppError::Unauthorized, 401),
+            (AppError::NotFound, 404),
+        ];
+        for (err, want) in cases {
+            let label = format!("{err:?}");
+            let (status, body) = response_json(err.into_response()).await;
+            assert_eq!(status.as_u16(), want, "status for {label}");
+            assert_eq!(body["type"], "error");
+            assert_eq!(body["size"], -1);
+            assert!(body["prompt"]
+                .as_str()
+                .unwrap()
+                .starts_with("com.x.base.core.project.exception."));
+        }
+    }
+
+    #[tokio::test]
+    async fn error_response_picks_prompt_kind_by_status() {
+        let (status, body) = response_json(error_response(
+            axum::http::StatusCode::UNAUTHORIZED,
+            "login",
+        ))
+        .await;
+        assert_eq!(status, axum::http::StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            body["prompt"],
+            "com.x.base.core.project.exception.ExceptionUnauthorized"
+        );
+
+        let (status, body) =
+            response_json(error_response(axum::http::StatusCode::NOT_FOUND, "gone")).await;
+        assert_eq!(status, axum::http::StatusCode::NOT_FOUND);
+        assert_eq!(
+            body["prompt"],
+            "com.x.base.core.project.exception.ExceptionEntityNotExist"
+        );
+
+        // 其它状态码收敛到 ExceptionInternal（如 400 参数错误）。
+        let (status, body) =
+            response_json(error_response(axum::http::StatusCode::BAD_REQUEST, "x")).await;
+        assert_eq!(status, axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(
+            body["prompt"],
+            "com.x.base.core.project.exception.ExceptionInternal"
+        );
+    }
+}

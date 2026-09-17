@@ -585,3 +585,141 @@ pub async fn rate_limit_middleware(
 
     next.run(request).await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn registry_matches_exact_before_prefix() {
+        let mut reg = PermissionRegistry::new();
+        reg.register_prefix("/api/x", PermissionLevel::Authenticated);
+        reg.register_exact("/api/x/y", PermissionLevel::Admin);
+        // 精确注册必须压过任何前缀（switchuser 类端点的权限覆盖依赖此规则）。
+        assert_eq!(reg.get_permission("/api/x/y"), Some(PermissionLevel::Admin));
+        assert_eq!(
+            reg.get_permission("/api/x/z"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn registry_picks_longest_prefix() {
+        let mut reg = PermissionRegistry::new();
+        reg.register_prefix("/api", PermissionLevel::Authenticated);
+        reg.register_prefix("/api/deep", PermissionLevel::Public);
+        assert_eq!(
+            reg.get_permission("/api/deep/r"),
+            Some(PermissionLevel::Public)
+        );
+        assert_eq!(
+            reg.get_permission("/api/other"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn registry_string_prefix_semantics() {
+        // get_permission 用字符串 starts_with（非段边界匹配）：
+        // 前缀 "/api/person" 也命中 "/api/persons"。测试钉死该语义，
+        // 注册端点时必须注册到段边界，避免短段被长段意外放行。
+        let mut reg = PermissionRegistry::new();
+        reg.register_prefix("/api/person", PermissionLevel::Authenticated);
+        assert_eq!(
+            reg.get_permission("/api/persons"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn registry_unregistered_paths_return_none() {
+        let reg = PermissionRegistry::new();
+        assert_eq!(reg.get_permission("/anything"), None);
+    }
+
+    #[test]
+    fn defaults_grant_public_to_health_and_authentication_prefix() {
+        let reg = PermissionRegistry::with_defaults();
+        assert_eq!(reg.get_permission("/health"), Some(PermissionLevel::Public));
+        assert_eq!(
+            reg.get_permission("/api/authentication/login"),
+            Some(PermissionLevel::Public)
+        );
+    }
+
+    #[test]
+    fn defaults_longer_prefix_overrides_authentication_public() {
+        let reg = PermissionRegistry::with_defaults();
+        // /api/authentication 是 Public，但 two_factor 段被更长前缀提升为需登录。
+        assert_eq!(
+            reg.get_permission("/api/authentication/two_factor/status"),
+            Some(PermissionLevel::Authenticated)
+        );
+        // switchuser 精确注册为 Admin，压过 /api/authentication 的 Public 前缀。
+        assert_eq!(
+            reg.get_permission("/api/authentication/switchuser"),
+            Some(PermissionLevel::Admin)
+        );
+    }
+
+    #[test]
+    fn defaults_person_password_requires_auth_but_icon_is_public() {
+        let reg = PermissionRegistry::with_defaults();
+        assert_eq!(
+            reg.get_permission("/api/person/password/change"),
+            Some(PermissionLevel::Authenticated)
+        );
+        // R8：头像端点公开（更长前缀 /api/person/icon 压过 /api/person）。
+        assert_eq!(
+            reg.get_permission("/api/person/icon/u-1"),
+            Some(PermissionLevel::Public)
+        );
+    }
+
+    #[test]
+    fn defaults_module_prefixes_are_authenticated_with_api_fallback() {
+        let reg = PermissionRegistry::with_defaults();
+        for path in [
+            "/api/ai/chat",
+            "/api/cms/article/list",
+            "/api/message/assemble/communicate/im/msg",
+            "/api/processplatform/assemble/surface/task/list",
+        ] {
+            assert_eq!(
+                reg.get_permission(path),
+                Some(PermissionLevel::Authenticated),
+                "path {path}"
+            );
+        }
+        // 未注册任何前缀的模块路径落到 /api 兜底（需登录）。
+        assert_eq!(
+            reg.get_permission("/api/unknown-module/x"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn defaults_express_and_batch_query_prefixes_are_public() {
+        let reg = PermissionRegistry::with_defaults();
+        assert_eq!(
+            reg.get_permission("/api/express/person/list"),
+            Some(PermissionLevel::Public)
+        );
+        assert_eq!(
+            reg.get_permission("/api/document/batch"),
+            Some(PermissionLevel::Public)
+        );
+    }
+
+    #[test]
+    fn admin_cache_roundtrip() {
+        let mut cache = AdminCache::default();
+        assert_eq!(cache.get("u-1"), None);
+        cache.set("u-1".to_string(), true);
+        cache.set("u-2".to_string(), false);
+        assert_eq!(cache.get("u-1"), Some(true));
+        assert_eq!(cache.get("u-2"), Some(false));
+        // 同一请求内重复查 admin 命中缓存，避免重复 DB 查询。
+        assert_eq!(cache.get("u-1"), Some(true));
+    }
+}
