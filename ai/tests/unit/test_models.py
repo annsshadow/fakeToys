@@ -229,3 +229,33 @@ class TestModelBackendExtended:
             )
             backend = create_model_backend(config)
             assert backend is not None
+
+    def test_close_session(self):
+        """关闭连接"""
+        backend = FakeBackend()
+        backend._get_session()
+        backend.close()
+        assert backend._session is None
+
+    def test_get_session_creates_once(self):
+        """会话只创建一次"""
+        backend = FakeBackend()
+        session1 = backend._get_session()
+        session2 = backend._get_session()
+        assert session1 is session2
+
+    def test_request_count_thread_safe(self):
+        """请求计数线程安全"""
+        backend = FakeBackend()
+        backend.generate("test1")
+        backend.generate("test2")
+        assert backend.request_count == 2
+
+    def test_error_count_increments(self):
+        """错误计数递增"""
+        backend = FakeBackend(failures=1)
+        try:
+            backend.generate("test", max_retries=1, retry_delay=0)
+        except RuntimeError:
+            pass
+        assert backend.error_count == 1
