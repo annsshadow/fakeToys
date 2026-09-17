@@ -181,3 +181,51 @@ class TestRetryMechanism:
 
         assert backend.request_count == 0
         assert backend.error_count == 0
+
+
+class TestModelBackendExtended:
+    """ModelBackend 扩展测试"""
+
+    def test_generate_returns_string(self):
+        """generate 应返回字符串"""
+        backend = FakeBackend()
+        result = backend.generate("test prompt")
+        assert isinstance(result, str)
+
+    def test_generate_with_empty_prompt(self):
+        """空 prompt 也应正常工作"""
+        backend = FakeBackend()
+        result = backend.generate("")
+        assert isinstance(result, str)
+
+    def test_stats_tracking(self):
+        """统计信息应正确追踪"""
+        backend = FakeBackend(failures=1)
+        backend.generate("test", max_retries=2, retry_delay=0)
+        assert backend.request_count == 2
+        assert backend.error_count == 1
+
+    def test_extract_json_array_complex(self):
+        """复杂文本中的 JSON 提取"""
+        text = "这是结果\n```json\n[{\"instruction\": \"q1\"}]\n```\n希望有帮助"
+        result = extract_json_array(text)
+        assert len(result) == 1
+
+    def test_extract_json_array_multiple_matches(self):
+        """多个 JSON 数组应返回第一个"""
+        text = "结果: [1, 2, 3] 其他内容"
+        result = extract_json_array(text)
+        assert result == [1, 2, 3]
+
+    def test_create_backend_with_all_types(self):
+        """测试所有后端类型创建"""
+        for model_type in ["baidu", "openai", "ollama", "claude", "gemini"]:
+            config = ModelConfig(
+                type=model_type,
+                api_key="test_key",
+                secret_key="test_secret",
+                base_url="http://localhost:11434",
+                model="test_model"
+            )
+            backend = create_model_backend(config)
+            assert backend is not None
