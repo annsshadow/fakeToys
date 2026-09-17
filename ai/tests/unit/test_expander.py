@@ -80,6 +80,16 @@ class TestTopicGenerationStrategies:
         expander = DomainExpander(ScriptedBackend(['["关联A", "关联B"]']))
         assert expander._generate_related_topics(["租金"], num_topics=5) == ["关联A", "关联B"]
 
+    def test_related_topics_parses_plain_lines(self):
+        expander = DomainExpander(ScriptedBackend(["1. 关联A\n2. 关联B\n3. 关联C"]))
+        result = expander._generate_related_topics(["租金"], num_topics=3)
+        assert result == ["关联A", "关联B", "关联C"]
+
+    def test_related_topics_strips_numbering(self):
+        expander = DomainExpander(ScriptedBackend(["- 主题X\n- 主题Y"]))
+        result = expander._generate_related_topics(["租金"], num_topics=5)
+        assert result == ["主题X", "主题Y"]
+
     def test_related_topics_returns_empty_on_failure(self):
         expander = DomainExpander(ScriptedBackend([RuntimeError("boom")]))
         assert expander._generate_related_topics(["租金"]) == []
@@ -87,6 +97,11 @@ class TestTopicGenerationStrategies:
     def test_scenario_topics_parses_json_array(self):
         expander = DomainExpander(ScriptedBackend(['["场景A"]']))
         assert expander._generate_scenario_topics(["租金"], num_topics=5) == ["场景A"]
+
+    def test_scenario_topics_parses_plain_lines(self):
+        expander = DomainExpander(ScriptedBackend(["场景一\n场景二\n场景三"]))
+        result = expander._generate_scenario_topics(["租金"], num_topics=2)
+        assert result == ["场景一", "场景二"]
 
     def test_scenario_topics_returns_empty_on_failure(self):
         expander = DomainExpander(ScriptedBackend([RuntimeError("boom")]))
@@ -212,6 +227,12 @@ class TestGenerateSeeds:
     def test_generate_seeds_for_topic_returns_empty_on_failure(self):
         expander = DomainExpander(ScriptedBackend([RuntimeError("boom")]))
         assert expander._generate_seeds_for_topic({"topic": "t"}, 3) == []
+
+    def test_generate_seeds_from_topics_empty_list(self):
+        """空主题列表应返回空"""
+        expander = DomainExpander(ScriptedBackend([]))
+        seeds = expander.generate_seeds_from_topics([])
+        assert seeds == []
 
     def test_serial_generate_seeds_from_topics(self):
         backend = ScriptedBackend(['[{"instruction": "q1"}]', '[{"instruction": "q2"}]'])
