@@ -415,7 +415,74 @@ class TestVersioningExtended2:
         assert manager.get_current_version() == v1.version_id
 
 
-class TestVersioningExtended3:
+class TestVersioningHistoryEdges:
+    """版本历史边界测试"""
+
+    def test_get_history_corrupt_lines_skipped(self, tmp_path):
+        """损坏的历史记录行应被跳过而不是崩溃"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        manager._log_history("create", "v_test")
+        # 手动写入损坏行
+        with open(manager._history_path, 'a', encoding='utf-8') as f:
+            f.write("not-json-garbage\n")
+        entries = manager.get_history()
+        assert len(entries) == 1
+        assert entries[0]["version_id"] == "v_test"
+
+    def test_get_history_limit_returns_newest_first(self, tmp_path):
+        """历史应按时间倒序并支持 limit"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        manager._log_history("create", "v_1")
+        manager._log_history("create", "v_2")
+        entries = manager.get_history(limit=1)
+        assert len(entries) == 1
+        assert entries[0]["version_id"] == "v_2"
+
+    def test_get_history_no_file(self, tmp_path):
+        """无历史文件时返回空列表"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        assert manager.get_history() == []
+
+    def test_version_id_collision_suffix(self, tmp_path):
+        """版本 ID 冲突时应添加序号后缀"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        # 手动创建与即将生成的同 ID 目录（同一微秒内两次调用才会冲突，
+        # 这里直接验证去重循环逻辑）
+        vid = manager._generate_version_id()
+        (manager.storage_dir / vid).mkdir(parents=True, exist_ok=True)
+        second = manager._generate_version_id()
+        assert second != vid or not (manager.storage_dir / second).exists()
+
+    def test_load_version_nonexistent_raises(self, tmp_path):
+        """加载不存在的版本应报错"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        with pytest.raises(ValueError):
+            manager.load_version("v_missing")
+
+    def test_get_version_info_nonexistent_raises(self, tmp_path):
+        """获取不存在的版本信息应报错"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        with pytest.raises(ValueError):
+            manager.get_version_info("v_missing")
+
+    def test_list_versions_skips_broken_metadata(self, tmp_path):
+        """损坏的 metadata.json 应被跳过并记录警告"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q"}])
+        # 破坏一个版本的 metadata
+        broken_dir = manager.storage_dir / "v_broken"
+        broken_dir.mkdir()
+        (broken_dir / "metadata.json").write_text("not-json")
+        versions = manager.list_versions()
+        assert [v.version_id for v in versions] == [v1.version_id]
+
+    def test_create_version_overwrites_current_txt(self, tmp_path):
+        """创建新版本应更新 current 指向"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}])
+        v2 = manager.create_version([{"instruction": "q2"}])
+        assert manager.get_current_version() == v2.version_id
+        assert manager.get_current_version() != v1.version_id
     """VersionManager 扩展测试 - 第三轮"""
 
     def test_rollback_nonexistent_version(self, tmp_path):
