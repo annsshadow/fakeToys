@@ -149,6 +149,61 @@ class TestEnhancedComparisonResult:
     
     def test_to_dict(self, dataset_a, dataset_b):
         """测试转换为字典"""
+        comparator = EnhancedComparator()
+        result = comparator.compare(dataset_a, dataset_b, "a", "b")
+        d = result.to_dict()
+        assert "metrics" in d
+        assert "field_comparisons" in d
+        assert "dataset_a_name" in d
+
+
+class TestCompareEnhancedExtended:
+    """EnhancedComparator 扩展测试"""
+
+    def test_compare_single_item_datasets(self):
+        """单条数据集比较"""
+        comparator = EnhancedComparator()
+        a = [{"instruction": "q1", "output": "a1"}]
+        b = [{"instruction": "q1", "output": "a1"}]
+        result = comparator.compare(a, b)
+        assert result.metrics.similarity_score == 1.0
+
+    def test_compare_completely_different(self):
+        """完全不同的数据集"""
+        comparator = EnhancedComparator()
+        a = [{"instruction": "q1", "output": "a1"}]
+        b = [{"instruction": "q2", "output": "a2"}]
+        result = comparator.compare(a, b)
+        assert result.metrics.unique_a == 1
+        assert result.metrics.unique_b == 1
+
+    def test_diff_datasets_empty(self):
+        """空数据集差异"""
+        result = diff_datasets([], [])
+        assert result["only_in_a"] == []
+        assert result["only_in_b"] == []
+
+    def test_comparison_metrics_default(self):
+        """ComparisonMetrics 默认值"""
+        metrics = ComparisonMetrics(
+            size_a=0, size_b=0, size_diff=0,
+            size_ratio=0, common_items=0,
+            unique_a=0, unique_b=0,
+            similarity_score=0, field_overlap=0
+        )
+        assert metrics.size_a == 0
+        assert metrics.size_b == 0
+
+    def test_field_comparison_default(self):
+        """FieldComparison 默认值"""
+        comp = FieldComparison(
+            field_name="test", in_a_only=0, in_b_only=0,
+            in_both=0, type_mismatches=0
+        )
+        assert comp.field_name == "test"
+        assert comp.in_a_only == 0
+    def test_to_dict(self, dataset_a, dataset_b):
+        """测试转换为字典"""
         result = compare_datasets_enhanced(dataset_a, dataset_b, "a", "b")
         d = result.to_dict()
         
