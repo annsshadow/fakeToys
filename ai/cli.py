@@ -184,6 +184,20 @@ def build_parser() -> argparse.ArgumentParser:
                                         "chatml", "llama_factory", "vicuna", "belle"],
                                 help="目标格式")
 
+    # 数据集搜索命令
+    search_parser = subparsers.add_parser("search", help="搜索数据集")
+    search_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    search_parser.add_argument("--query", type=str, required=True, help="搜索查询")
+    search_parser.add_argument("--field", type=str, nargs="+", default=["instruction", "output"],
+                               help="搜索字段")
+    search_parser.add_argument("--method", type=str, default="contains",
+                               choices=["exact", "contains", "ngram"], help="搜索方法")
+    search_parser.add_argument("--limit", type=int, default=10, help="返回数量")
+
+    # 配置验证命令
+    validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
+    validate_config_parser.add_argument("--config", type=str, help="配置文件路径")
+
     return parser
 
 
@@ -516,6 +530,46 @@ def main():
 
             result = convert_file(args.input, args.output, target_format=args.format)
             _print(result)
+
+        # ============ 数据集搜索 ============
+        elif args.command == "search":
+            from augmentor.indexer import DatasetIndexer
+
+            items = _load_items(args.input)
+            indexer = DatasetIndexer(items)
+            
+            result = indexer.search(
+                args.query,
+                fields=args.field,
+                method=args.method
+            )
+            
+            # 限制返回数量
+            result.items = result.items[:args.limit]
+            
+            print(f"找到 {result.total_matches} 条匹配结果，用时 {result.query_time_ms:.2f}ms")
+            print(f"搜索索引: {result.index_used}")
+            _print(result.items)
+
+        # ============ 配置验证 ============
+        elif args.command == "validate-config":
+            from augmentor.config_validator import validate_config_file
+
+            config_path = args.config or "config.yaml"
+            result = validate_config_file(config_path)
+            
+            print(f"配置验证结果: {'通过' if result.is_valid else '失败'}")
+            print(f"错误: {len(result.errors)}, 警告: {len(result.warnings)}, 信息: {len(result.info)}")
+            
+            if result.errors:
+                print("\n错误:")
+                for e in result.errors:
+                    print(f"  - {e.path}: {e.message}")
+            
+            if result.warnings:
+                print("\n警告:")
+                for w in result.warnings:
+                    print(f"  - {w.path}: {w.message}")
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
