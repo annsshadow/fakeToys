@@ -239,3 +239,43 @@ class TestVectorExtended:
         reloaded = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
         reloaded.load()
         assert reloaded.count() == 2
+
+    def test_add_vectors_id_length_mismatch(self):
+        """ID 长度不匹配"""
+        db = create_vector_db("faiss", dimension=4)
+        with pytest.raises(ValueError, match="ids"):
+            db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}], ids=["only_one"])
+
+    def test_add_vectors_duplicate_ids(self):
+        """重复 ID"""
+        db = create_vector_db("faiss", dimension=4)
+        with pytest.raises(ValueError, match="重复"):
+            db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}], ids=["a", "a"])
+
+    def test_add_vectors_existing_ids(self):
+        """已存在的 ID"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:1], [{"i": 0}], ids=["existing"])
+        with pytest.raises(ValueError, match="已存在"):
+            db.add_vectors(unit_vectors()[:1], [{"i": 1}], ids=["existing"])
+
+    def test_backend_property(self):
+        """backend 属性"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.backend in ("faiss", "numpy")
+
+    def test_search_empty_db(self):
+        """空数据库搜索"""
+        db = create_vector_db("faiss", dimension=4)
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32))
+        assert results == []
+
+    def test_delete_empty_list(self):
+        """删除空列表"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.delete([]) == 0
+
+    def test_get_metadata_nonexistent(self):
+        """获取不存在的元数据"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.get_metadata("nonexistent") is None
