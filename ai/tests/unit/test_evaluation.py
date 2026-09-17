@@ -11,6 +11,9 @@ from augmentor.evaluation import (
     compute_rouge_l,
     compute_similarity,
     tokenize,
+    _ngrams,
+    _lcs_length,
+    EvaluationResult,
     SUPPORTED_METRICS,
 )
 
@@ -240,3 +243,105 @@ class TestCompareModels:
 
         result = evaluator.compare_models("a", "b", prompts=["p"], references=["你好"])
         assert result["winner"] == "tie"
+
+
+class TestNgrams:
+    """n-gram 计算"""
+
+    def test_unigrams(self):
+        """1-gram 应返回每个 token 的计数"""
+        result = _ngrams(["a", "b", "a"], 1)
+        assert result[("a",)] == 2
+        assert result[("b",)] == 1
+
+    def test_bigrams(self):
+        """2-gram 应返回相邻 token 对"""
+        result = _ngrams(["a", "b", "c"], 2)
+        assert result[("a", "b")] == 1
+        assert result[("b", "c")] == 1
+
+    def test_empty_tokens(self):
+        """空 token 列表应返回空 Counter"""
+        result = _ngrams([], 2)
+        assert len(result) == 0
+
+    def test_n_larger_than_tokens(self):
+        """n 大于 token 数量时应返回空"""
+        result = _ngrams(["a"], 3)
+        assert len(result) == 0
+
+
+class TestLCSLength:
+    """最长公共子序列"""
+
+    def test_identical(self):
+        """相同序列 LCS 应等于长度"""
+        assert _lcs_length(["a", "b", "c"], ["a", "b", "c"]) == 3
+
+    def test_no_common(self):
+        """无公共元素 LCS 应为 0"""
+        assert _lcs_length(["a", "b"], ["c", "d"]) == 0
+
+    def test_subsequence(self):
+        """子序列场景"""
+        assert _lcs_length(["a", "c"], ["a", "b", "c"]) == 2
+
+    def test_empty_input(self):
+        """空输入应返回 0"""
+        assert _lcs_length([], ["a"]) == 0
+        assert _lcs_length(["a"], []) == 0
+
+
+class TestEvaluationResult:
+    """EvaluationResult 数据类"""
+
+    def test_to_dict(self):
+        """to_dict 应返回完整结构"""
+        result = EvaluationResult(
+            metrics={"bleu": 0.8, "rouge_l": 0.9},
+            sample_count=5,
+            details=[{"text": "test"}]
+        )
+        d = result.to_dict()
+        assert d["metrics"]["bleu"] == 0.8
+        assert d["sample_count"] == 5
+        assert len(d["details"]) == 1
+
+    def test_default_values(self):
+        """默认值应正确"""
+        result = EvaluationResult()
+        assert result.metrics == {}
+        assert result.sample_count == 0
+        assert result.details == []
+
+
+class TestBleuExtended:
+    """BLEU 扩展测试"""
+
+    def test_max_n_1(self):
+        """max_n=1 时应只使用 unigram 精度"""
+        score = compute_bleu("你好世界", "你好世界", max_n=1)
+        assert score == pytest.approx(1.0)
+
+    def test_score_bounded(self):
+        """分数应始终在 0-1 范围内"""
+        score = compute_bleu("很长的生成文本用于测试边界情况", "短参考", max_n=2)
+        assert 0.0 <= score <= 1.0
+
+
+class TestRougeLExtended:
+    """ROUGE-L 扩展测试"""
+
+    def test_subset_direction(self):
+        """子集关系 ROUGE-L 应为中间值"""
+        score = compute_rouge_l("你好世界", "你好世界测试")
+        assert 0.0 < score < 1.0
+
+
+class TestSimilarityExtended:
+    """相似度扩展测试"""
+
+    def test_partial_overlap(self):
+        """部分重叠应为中间值"""
+        score = compute_similarity("你好世界", "你好大家")
+        assert 0.0 < score < 1.0
