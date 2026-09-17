@@ -198,6 +198,21 @@ def build_parser() -> argparse.ArgumentParser:
     validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
     validate_config_parser.add_argument("--config", type=str, help="配置文件路径")
 
+    # 数据分析命令
+    analyze_parser = subparsers.add_parser("analyze", help="数据分析")
+    analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    analyze_parser.add_argument("--fields", type=str, nargs="+", default=["instruction", "output"],
+                               help="分析字段")
+    analyze_parser.add_argument("--output", type=str, help="输出报告路径")
+
+    # 数据清洗命令
+    clean_parser = subparsers.add_parser("clean-enhanced", help="增强数据清洗")
+    clean_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    clean_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    clean_parser.add_argument("--rules", type=str, nargs="+", 
+                             default=["remove_empty", "remove_duplicates", "normalize_whitespace", "trim_whitespace"],
+                             help="清洗规则")
+
     return parser
 
 
@@ -570,6 +585,47 @@ def main():
                 print("\n警告:")
                 for w in result.warnings:
                     print(f"  - {w.path}: {w.message}")
+
+        # ============ 数据分析 ============
+        elif args.command == "analyze":
+            from augmentor.analytics import analyze_dataset
+
+            items = _load_items(args.input)
+            report = analyze_dataset(items, args.fields)
+            
+            print(f"数据集大小: {report.dataset_size}")
+            print(f"质量分数: {report.quality_score:.2f}")
+            print(f"多样性分数: {report.diversity_score:.2f}")
+            print(f"完整性分数: {report.completeness_score:.2f}")
+            
+            if report.insights:
+                print("\n洞察:")
+                for insight in report.insights:
+                    print(f"  [{insight.severity}] {insight.title}: {insight.description}")
+                    print(f"    建议: {insight.recommendation}")
+            
+            if args.output:
+                import json
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(report.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"\n分析报告已保存到 {args.output}")
+
+        # ============ 增强数据清洗 ============
+        elif args.command == "clean-enhanced":
+            from augmentor.cleaner import clean_dataset
+
+            items = _load_items(args.input)
+            cleaned, result = clean_dataset(items, rules=args.rules)
+            
+            _save_items(cleaned, args.output)
+            
+            print(f"原始数据: {result.original_count} 条")
+            print(f"清洗后: {result.cleaned_count} 条")
+            print(f"移除: {result.removed_count} 条")
+            print(f"应用规则: {', '.join(result.rules_applied)}")
+            print(f"已保存到 {args.output}")
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
