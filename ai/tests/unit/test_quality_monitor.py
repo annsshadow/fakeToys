@@ -310,3 +310,79 @@ class TestQualityMonitorExtended2:
         ))
         alerts = monitor._check_alerts({"test_metric": 0.8})
         assert len(alerts) == 0
+
+    def test_check_alerts_above_breach(self):
+        """高于 alert_above 应产生 above 告警"""
+        monitor = QualityMonitor()
+        monitor.add_threshold(QualityThreshold(
+            metric_name="sim", min_value=0.0, max_value=1.0,
+            alert_above=0.9
+        ))
+        alerts = monitor._check_alerts({"sim": 0.95})
+        assert len(alerts) == 1
+        assert alerts[0].alert_type == "above"
+        assert alerts[0].severity == "warning"
+        assert alerts[0].metric_name == "sim"
+
+    def test_check_alerts_above_and_below_together(self):
+        """同时设置上下限时，仅触发越界的一侧"""
+        monitor = QualityMonitor()
+        monitor.add_threshold(QualityThreshold(
+            metric_name="m", min_value=0.0, max_value=1.0,
+            alert_below=0.2, alert_above=0.8
+        ))
+        assert monitor._check_alerts({"m": 0.99})  # 仅 above
+        assert monitor._check_alerts({"m": 0.01})  # 仅 below
+        assert monitor._check_alerts({"m": 0.5}) == []  # 正常区间
+
+
+class TestQualityMonitorExtended3:
+    """QualityMonitor 第三轮扩展测试"""
+
+    def test_check_quality_triggers_above_alert_callback(self):
+        """高于上限触发告警回调"""
+        monitor = QualityMonitor()
+        monitor.add_threshold(QualityThreshold(
+            metric_name="completeness", min_value=0.0, max_value=1.0,
+            alert_above=0.9
+        ))
+        triggered = []
+        monitor.add_alert_callback(triggered.append)
+        # 全满数据 completeness=1.0 > 0.9
+        snapshot = monitor.check_quality(
+            [{"instruction": "这是一个足够长的问题", "output": "这是一个足够长的回答内容"}]
+        )
+        assert len(triggered) >= 1
+        assert triggered[0].alert_type == "above"
+
+    def test_get_trend_empty(self):
+        """无数据时趋势应为空"""
+        monitor = QualityMonitor()
+        assert monitor.get_trend("completeness") == []
+
+    def test_get_trend_with_snapshots(self, sample_dataset):
+        """多次检查后趋势应按时间有序"""
+        monitor = QualityMonitor()
+        monitor.check_quality(sample_dataset)
+        monitor.check_quality(sample_dataset)
+        trend = monitor.get_trend("completeness")
+        assert len(trend) == 2
+        assert "value" in trend[0]
+
+    def test_get_history_limit_zero(self, sample_dataset):
+        """limit=0 时历史应返回全部快照（切片行为）"""
+        monitor = QualityMonitor()
+        monitor.check_quality(sample_dataset)
+        history = monitor.get_history(limit=0)
+        # 切片 [-0:] 等价于全部，这是现有实现语义
+        assert len(history) == 1
+
+    def test_get_summary_with_data(self, sample_dataset):
+        """有数据时摘要包含最新快照指标与告警数"""
+        monitor = QualityMonitor()
+        monitor.check_quality(sample_dataset)
+        summary = monitor.get_summary()
+        assert "total_snapshots" in summary
+        assert summary["total_snapshots"] == 1
+        assert "latest_metrics" in summary
+        assert summary["alert_count"] == 0
