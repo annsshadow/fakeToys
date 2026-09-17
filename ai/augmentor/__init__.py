@@ -1,6 +1,6 @@
 """AI 训练数据增强工具包"""
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 from .config import AppConfig, load_config
 from .models import create_model_backend, ModelBackend
@@ -22,6 +22,28 @@ from .benchmark import QualityBenchmark
 from .multilingual import MultilingualSupport
 from .rag import RAGFormatter
 from .evaluation import ModelEvaluator
+from .streaming import StreamReader, StreamWriter, StreamProcessor, StreamAugmentor
+from .comparison import DatasetComparator, ComparisonResult, compare_datasets
+from .dataset_ops import DatasetOperations, MergeConfig, SampleConfig, SplitConfig
+from .exceptions import (
+    AugmentorError,
+    ConfigError,
+    ModelError,
+    ModelNotConfiguredError,
+    ModelInitError,
+    ModelGenerateError,
+    DataError,
+    DataLoadError,
+    DataFormatError,
+    DataValidationError,
+    QualityError,
+    DedupError,
+    ExportError,
+    UnsupportedFormatError,
+    CheckpointError,
+    VersionError,
+    PipelineError
+)
 
 __all__ = [
     "AppConfig",
@@ -47,5 +69,33 @@ __all__ = [
     "QualityBenchmark",
     "MultilingualSupport",
     "RAGFormatter",
-    "ModelEvaluator"
+    "ModelEvaluator",
+    "StreamReader",
+    "StreamWriter",
+    "StreamProcessor",
+    "StreamAugmentor",
+    "DatasetComparator",
+    "ComparisonResult",
+    "compare_datasets",
+    "DatasetOperations",
+    "MergeConfig",
+    "SampleConfig",
+    "SplitConfig",
+    "AugmentorError",
+    "ConfigError",
+    "ModelError",
+    "ModelNotConfiguredError",
+    "ModelInitError",
+    "ModelGenerateError",
+    "DataError",
+    "DataLoadError",
+    "DataFormatError",
+    "DataValidationError",
+    "QualityError",
+    "DedupError",
+    "ExportError",
+    "UnsupportedFormatError",
+    "CheckpointError",
+    "VersionError",
+    "PipelineError"
 ]
