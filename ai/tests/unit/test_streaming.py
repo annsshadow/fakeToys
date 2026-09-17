@@ -65,6 +65,83 @@ class TestStreamConfig:
         assert config.max_memory_mb == 256
 
 
+class TestStreamReaderCountJSONL:
+    """StreamReader._count_items JSONL 路径测试"""
+
+    def test_count_jsonl_fallback(self, temp_jsonl_file):
+        """JSONL 文件计数应走 fallback 分支"""
+        reader = StreamReader(temp_jsonl_file, chunk_size=2)
+        count = reader._count_items()
+        assert count == 3
+
+    def test_count_caches_result(self, temp_jsonl_file):
+        """计数结果应被缓存，重复调用不重算"""
+        reader = StreamReader(temp_jsonl_file, chunk_size=2)
+        first = reader._count_items()
+        reader._total_count = -1
+        second = reader._count_items()
+        # 第二次调用使用缓存值（-1 证明不再重算）
+        assert second == -1
+
+    def test_count_non_list_json_returns_zero(self, tmp_path):
+        """JSON 对象（非数组）格式应返回 0"""
+        file_path = tmp_path / "obj.json"
+        file_path.write_text('{"a": 1}', encoding='utf-8')
+        reader = StreamReader(str(file_path), chunk_size=2)
+        assert reader._count_items() == 0
+
+    def test_count_blank_lines_ignored(self, tmp_path):
+        """JSONL 中空白行不应计数"""
+        file_path = tmp_path / "blank.jsonl"
+        file_path.write_text('{"a":1}\n\n  \n{"b":2}\n\n', encoding='utf-8')
+        reader = StreamReader(str(file_path), chunk_size=2)
+        assert reader._count_items() == 2
+
+
+class TestStreamWriterCloseEdges:
+    """StreamWriter 关闭边界测试"""
+
+    def test_close_json_writes_closing_bracket(self, tmp_path):
+        """JSON 格式写入模式关闭时应补上 ]"""
+        out = tmp_path / "out.json"
+        with StreamWriter(str(out), format="json", mode="w") as writer:
+            writer.write_chunk([{"a": 1}])
+        content = out.read_text(encoding="utf-8")
+        assert content.endswith("]")
+        assert json.loads(content) == [{"a": 1}]
+
+    def test_close_twice_is_safe(self, tmp_path):
+        """重复关闭不应抛异常"""
+        out = tmp_path / "out.jsonl"
+        writer = StreamWriter(str(out), format="jsonl", mode="w")
+        with writer:
+            writer.write_chunk([{"a": 1}])
+        writer.close()
+        writer.close()
+        assert writer._file is None
+
+    def test_write_chunk_json_separator(self, tmp_path):
+        """JSON 格式第二个 chunk 前应写入逗号分隔符"""
+        out = tmp_path / "out.json"
+        with StreamWriter(str(out), format="json", mode="w") as writer:
+            writer.write_chunk([{"a": 1}])
+            writer.write_chunk([{"b": 2}])
+        assert json.loads(out.read_text(encoding="utf-8")) == [{"a": 1}, {"b": 2}]
+
+    def test_write_empty_chunk(self, tmp_path):
+        """空 chunk 不应影响文件内容"""
+        out = tmp_path / "out.jsonl"
+        with StreamWriter(str(out), format="jsonl", mode="w") as writer:
+            writer.write_chunk([])
+        assert out.read_text(encoding="utf-8").strip() == ""
+
+    def test_write_chunk_unopened_raises(self, tmp_path):
+        """未打开时写入应报错"""
+        writer = StreamWriter(str(tmp_path / "x.jsonl"))
+        with pytest.raises(RuntimeError):
+            writer.write_chunk([{"a": 1}])
+
+
 class TestStreamReader:
     """StreamReader 测试"""
     
