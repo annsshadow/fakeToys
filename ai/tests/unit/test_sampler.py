@@ -324,3 +324,51 @@ class TestSamplerExtended:
         items = [{"instruction": f"问题{i}"} for i in range(10)]
         result = sampler.recommend_seeds(items)
         assert isinstance(result.recommended_seeds, list)
+
+
+class TestSamplerExtended2:
+    """ActiveSampler 扩展测试 - 第二轮"""
+
+    def test_recommend_seeds_short_items(self):
+        """短文本种子推荐"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "短"} for _ in range(5)]
+        result = sampler.recommend_seeds(items)
+        assert isinstance(result.recommended_seeds, list)
+
+    def test_recommend_seeds_long_items(self):
+        """长文本种子推荐"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "这是一段超过三十个字符的长文本内容用于测试"} for _ in range(5)]
+        result = sampler.recommend_seeds(items)
+        assert isinstance(result.recommended_seeds, list)
+
+    def test_generate_report_with_data(self):
+        """有数据的选样报告"""
+        sampler = ActiveSampler()
+        items = [{"instruction": f"问题{i}"} for i in range(5)]
+        report = sampler.generate_report(items)
+        assert "total_items" in report
+        assert "recommended_count" in report
+        assert report["total_items"] == 5
+
+    def test_generate_report_empty(self):
+        """空数据选样报告"""
+        sampler = ActiveSampler()
+        report = sampler.generate_report([])
+        assert report["total_items"] == 0
+        assert report["recommended_count"] == 0
+
+    def test_recommend_seeds_with_top_k(self):
+        """指定 top_k 的种子推荐"""
+        sampler = ActiveSampler()
+        items = [{"instruction": f"问题{i}"} for i in range(10)]
+        result = sampler.recommend_seeds(items, top_k=3)
+        assert len(result.recommended_seeds) <= 3
+
+    def test_recommendations_content(self):
+        """推荐内容检查"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "什么问题"} for _ in range(10)]
+        result = sampler.recommend_seeds(items)
+        assert isinstance(result.recommendations, list)
