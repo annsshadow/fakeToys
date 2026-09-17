@@ -183,10 +183,14 @@ function performUpload<T>(
           resolve(parsed as ApiResponse<T>)
           return
         }
-        if (status === 401 && options.requireAuth !== false && !retried) {
-          refreshSession()
-            .then(() => performUpload<T>(path, filePath, options, true).then(resolve, reject))
-            .catch(() => reject(authenticationFailed()))
+        if (status === 401) {
+          if (options.requireAuth !== false && !retried) {
+            refreshSession()
+              .then(() => performUpload<T>(path, filePath, options, true).then(resolve, reject))
+              .catch(() => reject(authenticationFailed()))
+            return
+          }
+          reject(authenticationFailed())
           return
         }
         if (status === 403) {

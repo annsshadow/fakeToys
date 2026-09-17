@@ -45,6 +45,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Run Vitest tests
         run: pnpm test
+      - name: Run mobile Vitest tests
+        run: pnpm test:mobile
       - name: Type-check all packages
         run: pnpm typecheck
       - name: Run Biome gate on the whole frontend
