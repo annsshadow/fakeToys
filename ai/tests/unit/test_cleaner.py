@@ -161,6 +161,25 @@ class TestCleanerExtended:
         assert cleaned == []
         assert result.original_count == 0
 
+    def test_normalize_mixed_whitespace_and_punct(self):
+        """normalize 同时压缩空白与合并重复标点"""
+        normalizer = TextNormalizer()
+        assert normalizer.normalize("  你好   世界！！！  ") == "你好 世界！"
+
+    def test_normalize_fullwidth_punctuation(self):
+        """全角标点应被保留并合并"""
+        normalizer = TextNormalizer()
+        assert normalizer.normalize("问题？？？") == "问题？"
+
+    def test_extract_keywords_respects_top_k(self):
+        """extract_keywords 严格限制返回数量"""
+        normalizer = TextNormalizer()
+        keywords = normalizer.extract_keywords(
+            "租房 押金 合同 维修 投诉", top_k=2
+        )
+        assert len(keywords) <= 2
+        assert all(isinstance(k, str) for k in keywords)
+
     def test_clean_with_all_rules(self, sample_dataset):
         """使用所有规则清洗"""
         cleaner = DatasetCleaner()
