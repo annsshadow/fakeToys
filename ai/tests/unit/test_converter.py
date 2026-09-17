@@ -501,3 +501,93 @@ class TestConverterExtended:
         result = converter.convert(sample_with_history, "json", "json")
         assert len(result) == 1
         assert "history" in result[0]
+
+
+class TestConverterExtended2:
+    """DatasetConverter 第二轮扩展测试（覆盖转换链路与未注册格式）"""
+
+    def test_same_format_returns_input(self, sample_dataset):
+        """源格式与目标格式相同时应原样返回"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "json")
+        assert result is sample_dataset
+
+    def test_jsonl_to_json_round_trip(self, sample_dataset):
+        """jsonl -> json 应还原字典"""
+        converter = DatasetConverter()
+        jsonl_lines = converter.convert(sample_dataset, "json", "jsonl")
+        back = converter.convert(jsonl_lines, "jsonl", "json")
+        assert back == sample_dataset
+
+    def test_json_to_csv_returns_dicts(self, sample_dataset):
+        """json -> csv 当前实现返回字典列表（保留字段）"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "csv")
+        assert len(result) == len(sample_dataset)
+        assert all(isinstance(item, dict) for item in result)
+
+    def test_unsupported_target_raises(self, sample_dataset):
+        """未注册的目标格式应报错"""
+        converter = DatasetConverter()
+        with pytest.raises(ValueError, match="不支持的转换"):
+            converter.convert(sample_dataset, "json", "parquet")
+
+    def test_jsonl_direct_loads_iterable(self, sample_dataset):
+        """_jsonl_to_json 对字符串列表逐行解析"""
+        converter = DatasetConverter()
+        lines = [json.dumps(item, ensure_ascii=False) for item in sample_dataset]
+        result = converter._jsonl_to_json(lines)
+        assert result == sample_dataset
+
+    def test_csv_to_json_list_passthrough(self, sample_dataset):
+        """_csv_to_json 对已是列表的输入直接返回"""
+        converter = DatasetConverter()
+        assert converter._csv_to_json(sample_dataset) is sample_dataset
+
+    def test_csv_to_json_empty_non_list(self):
+        """_csv_to_json 非列表输入返回空列表"""
+        converter = DatasetConverter()
+        assert converter._csv_to_json(None) == []
+
+    def test_normalize_format_case_insensitive(self):
+        """格式名标准化应忽略大小写"""
+        converter = DatasetConverter()
+        assert converter._normalize_format("JSON") == "json"
+        assert converter._normalize_format("ALPACA") == "alpaca"
+
+    def test_normalize_unknown_format_lowercases(self):
+        """未知格式应转小写并原样保留"""
+        converter = DatasetConverter()
+        assert converter._normalize_format("MyFmt") == "myfmt"
+
+    def test_json_to_llama_factory(self, sample_dataset):
+        """json -> llama_factory 字段映射"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "llama_factory")
+        assert len(result) == len(sample_dataset)
+
+    def test_json_to_vicuna(self, sample_dataset):
+        """json -> vicuna 字段映射"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "vicuna")
+        assert len(result) == len(sample_dataset)
+
+    def test_json_to_belle(self, sample_dataset):
+        """json -> belle 字段映射"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "belle")
+        assert len(result) == len(sample_dataset)
+
+    def test_json_to_chatml_roles(self, sample_with_history):
+        """json -> chatml 应展开为对话角色列表"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_with_history, "json", "chatml")
+        assert len(result) == 1
+        assert result[0]["messages"] or "messages" in result[0]
+
+    def test_convert_via_json_intermediate(self, sample_dataset):
+        """jsonl -> alpaca 应经 JSON 中间格式完成"""
+        converter = DatasetConverter()
+        jsonl = converter.convert(sample_dataset, "json", "jsonl")
+        result = converter.convert(jsonl, "jsonl", "alpaca")
+        assert len(result) == len(sample_dataset)
