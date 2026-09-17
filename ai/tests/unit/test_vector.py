@@ -317,3 +317,50 @@ class TestVectorExtended:
         db = create_vector_db("faiss", dimension=4)
         ids = db.add_vectors([np.array([3, 0, 0, 0], dtype=np.float32)], [{"i": 0}])
         assert len(ids) == 1
+
+    def test_delete_rebuilds_index(self, tmp_path):
+        """删除后重建索引"""
+        db = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        db.add_vectors(unit_vectors()[:3], [{"i": i} for i in range(3)])
+        db.delete(["default-0"])
+        assert db.count() == 2
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=1)
+        assert len(results) == 1
+
+    def test_clear_and_add_again(self):
+        """清空后再添加"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        db.clear()
+        assert db.count() == 0
+        db.add_vectors(unit_vectors()[:1], [{"i": 99}])
+        assert db.count() == 1
+
+    def test_load_with_wrong_dimension(self, tmp_path):
+        """加载维度不匹配的数据"""
+        db1 = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        db1.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        db1.persist()
+
+        db2 = create_vector_db("faiss", dimension=8, storage_dir=str(tmp_path))
+        result = db2.load()
+        assert result is True
+
+    def test_load_no_storage_dir(self):
+        """无存储目录时 load 返回 False"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.load() is False
+
+    def test_persist_no_storage_dir_raises(self):
+        """无存储目录时 persist 抛异常"""
+        db = create_vector_db("faiss", dimension=4)
+        with pytest.raises(ValueError):
+            db.persist()
+
+    def test_search_numpy_fallback(self):
+        """numpy 回退搜索"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=2)
+        assert len(results) == 2
+        assert results[0]["score"] >= results[1]["score"]
