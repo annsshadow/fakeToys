@@ -108,3 +108,6 @@ pub fn base_core_project_router() -> Router {
 pub fn router(pool: Pool) -> Router {
     base_core_project_router().layer(Extension(pool))
 }
+
+#[cfg(test)]
+mod tests;

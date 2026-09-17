@@ -204,7 +204,7 @@ mod tests {
     #[tokio::test]
     async fn test_whoami_invalid_cookie_with_valid_bearer_is_unauthorized() {
         let pool = shared::testing::test_pool();
-        let mut manager = SessionManager::new();
+        let manager = SessionManager::new();
         manager
             .create_session("user".to_string(), "good".to_string())
             .await
