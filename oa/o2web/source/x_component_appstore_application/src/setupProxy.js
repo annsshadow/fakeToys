@@ -1,1 +1,0 @@
-module.exports = require('@o2oa/react-scripts/config/o2componentProxySetup');
