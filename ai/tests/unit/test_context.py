@@ -219,3 +219,54 @@ class TestAddHistoryToSingleTurn:
     def test_empty_input_returns_empty_list(self):
         augmentor = ContextAugmentor(ScriptedBackend([]))
         assert augmentor.add_history_to_single_turn([]) == []
+
+    def test_follow_up_empty_string(self):
+        """后续问题为空字符串"""
+        augmentor = ContextAugmentor(ScriptedBackend([""]))
+        result = augmentor._generate_follow_up_question([], "q", "a")
+        assert result == ""
+
+    def test_follow_up_strips_chinese_colon(self):
+        """移除中文冒号前缀"""
+        augmentor = ContextAugmentor(ScriptedBackend(["Q：测试问题？"]))
+        result = augmentor._generate_follow_up_question([], "q", "a")
+        assert result == "测试问题？"
+
+    def test_multi_turn_with_history(self):
+        """多轮对话带历史记录"""
+        backend = ScriptedBackend(["Q2"])
+        augmentor = ContextAugmentor(backend, num_turns=2)
+        result = augmentor.generate_multi_turn(
+            {"instruction": "Q1", "output": "A1"},
+            existing_histories=[[{"role": "user", "content": "历史"}]]
+        )
+        assert len(result.get("history", [])) > 0
+
+    def test_batch_parallel_empty_items(self):
+        """并行批量处理空数据"""
+        backend = ScriptedBackend([])
+        augmentor = ContextAugmentor(backend)
+        results = augmentor.batch_generate([])
+        assert results == []
+
+    def test_convert_single_num_turns_1(self):
+        """单轮转换为1轮"""
+        backend = ScriptedBackend([])
+        augmentor = ContextAugmentor(backend, num_turns=1)
+        results = augmentor.convert_single_to_multi_turn(
+            [{"instruction": "Q1", "output": "A1"}]
+        )
+        assert len(results) == 1
+        assert results[0]["instruction"] == "Q1"
+
+    def test_add_history_length_1(self):
+        """历史长度为1"""
+        backend = ScriptedBackend([])
+        augmentor = ContextAugmentor(backend)
+        items = [
+            {"instruction": "Q1", "output": "A1"},
+            {"instruction": "Q2", "output": "A2"},
+        ]
+        results = augmentor.add_history_to_single_turn(items, history_length=1)
+        assert results[0]["history"] == []
+        assert len(results[1]["history"]) == 2
