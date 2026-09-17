@@ -133,3 +133,48 @@ class TestVisualizationConfig:
         assert config.height == 768
         assert config.theme == "dark"
         assert len(config.color_palette) == 2
+
+
+class TestEnhancedVisualizerExtended:
+    """EnhancedVisualizer 扩展测试"""
+
+    def test_generate_text_report_empty(self):
+        """空数据集文本报告"""
+        visualizer = EnhancedVisualizer()
+        report = visualizer.generate_text_report([])
+        assert isinstance(report, str)
+
+    def test_generate_json_report_empty(self):
+        """空数据集 JSON 报告"""
+        visualizer = EnhancedVisualizer()
+        report = visualizer.generate_json_report([])
+        assert isinstance(report, dict)
+        assert report["total_items"] == 0
+
+    def test_generate_json_report_fields(self):
+        """JSON 报告字段完整性"""
+        visualizer = EnhancedVisualizer()
+        data = [{"instruction": "q1", "output": "a1"}]
+        report = visualizer.generate_json_report(data)
+        assert "total_items" in report
+        assert "instruction_stats" in report
+
+    def test_generate_text_report_with_long_items(self):
+        """长文本报告"""
+        visualizer = EnhancedVisualizer()
+        data = [{"instruction": "这是一段超过五十个字符的长文本内容用于测试可视化报告的生成效果如何以及是否能正确处理长文本情况。" * 3}]
+        report = visualizer.generate_text_report(data)
+        assert "长度分布" in report
+
+    def test_generate_text_report_with_chinese_words(self):
+        """中文词汇统计"""
+        visualizer = EnhancedVisualizer()
+        data = [{"instruction": "如何申请租房？"}]
+        report = visualizer.generate_text_report(data)
+        assert "高频词汇" in report
+
+    def test_visualize_dataset(self):
+        """visualize_dataset 函数"""
+        data = [{"instruction": "q1", "output": "a1"}]
+        report = visualize_dataset(data)
+        assert isinstance(report, str)
