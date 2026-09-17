@@ -207,14 +207,6 @@ class ImageProcessor:
                 valid=False,
                 error=str(e)
             )
-            logger.warning(f"解析图像失败 {image_path}: {e}")
-            return ImageInfo(
-                path=str(path),
-                format=path.suffix.lstrip('.'),
-                size_bytes=size_bytes,
-                valid=False,
-                error=str(e)
-            )
 
         return ImageInfo(
             path=str(path),
