@@ -356,3 +356,49 @@ class TestValidationExtended:
         data = [{"instruction": "q1"}, {"instruction": "q1"}]
         result = sanitizer.remove_duplicates(data, keep="last")
         assert len(result) == 1
+
+
+class TestValidationHistoryFormat:
+    """历史记录格式验证测试"""
+
+    def test_validate_history_not_list(self):
+        """history 不是列表"""
+        validator = DatasetValidator(rules={"check_history_format": True})
+        data = [{"instruction": "q1", "history": "not a list"}]
+        result = validator.validate(data)
+        assert result.error_count > 0
+
+    def test_validate_history_item_not_dict(self):
+        """history 项不是字典"""
+        validator = DatasetValidator(rules={"check_history_format": True})
+        data = [{"instruction": "q1", "history": ["not a dict"]}]
+        result = validator.validate(data)
+        assert result.error_count > 0
+
+    def test_validate_history_missing_role(self):
+        """history 项缺少 role"""
+        validator = DatasetValidator(rules={"check_history_format": True})
+        data = [{"instruction": "q1", "history": [{"content": "answer"}]}]
+        result = validator.validate(data)
+        assert result.warning_count > 0
+
+    def test_validate_history_missing_content(self):
+        """history 项缺少 content"""
+        validator = DatasetValidator(rules={"check_history_format": True})
+        data = [{"instruction": "q1", "history": [{"role": "user"}]}]
+        result = validator.validate(data)
+        assert result.warning_count > 0
+
+    def test_validate_history_valid(self):
+        """有效的 history 格式"""
+        validator = DatasetValidator(rules={"check_history_format": True})
+        data = [{"instruction": "q1", "history": [{"role": "user", "content": "q"}, {"role": "assistant", "content": "a"}]}]
+        result = validator.validate(data)
+        assert result.error_count == 0
+
+    def test_validate_forbidden_patterns(self):
+        """禁止模式验证"""
+        validator = DatasetValidator(rules={"forbidden_patterns": ["test_pattern"]})
+        data = [{"instruction": "test_pattern found"}]
+        result = validator.validate(data)
+        assert result.error_count > 0
