@@ -384,6 +384,11 @@ class TestBatchEncodeRealModel:
         dedup._model = mock_model
         dedup._batch_encode(["a", "b"])
         assert mock_model.encode.called
+        # encode 应接收原始文本列表与固定参数
+        args, kwargs = mock_model.encode.call_args
+        assert list(args[0]) == ["a", "b"]
+        assert kwargs.get("show_progress_bar") is False
+        assert kwargs.get("batch_size") == 64
 
     def test_batch_encode_with_mock_model_no_call(self):
         """空文本列表时 encode 不被调用"""
@@ -393,6 +398,15 @@ class TestBatchEncodeRealModel:
         dedup._model = mock_model
         dedup._batch_encode([])
         assert mock_model.encode.called
+
+    def test_batch_encode_result_shape_matches_input(self):
+        """编码结果行数应与输入一致"""
+        dedup = Deduplicator()
+        mock_model = MagicMock()
+        mock_model.encode.return_value = np.array([[0.1, 0.9]] * 3)
+        dedup._model = mock_model
+        result = dedup._batch_encode(["x", "y", "z"])
+        assert result.shape[0] == 3
 
 
 class TestLoadModelExtended:
