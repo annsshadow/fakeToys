@@ -26,6 +26,20 @@ class TestExperimentLifecycle:
         assert (tmp_path / "experiments" / "exp-1.json").exists()
         assert tracker._current_experiment is experiment
 
+    def test_start_experiment_empty_model(self, tmp_path):
+        """空模型名称"""
+        tracker = make_tracker(tmp_path)
+        experiment = tracker.start_experiment("exp-empty", "v1", "")
+        assert experiment.model_name == ""
+
+    def test_start_experiment_with_metadata(self, tmp_path):
+        """带元数据的实验"""
+        tracker = make_tracker(tmp_path)
+        experiment = tracker.start_experiment(
+            "exp-meta", "v1", "test", metadata={"batch_size": 32}
+        )
+        assert experiment.metadata == {"batch_size": 32}
+
     def test_start_experiment_keeps_metadata(self, tmp_path):
         tracker = make_tracker(tmp_path)
         experiment = tracker.start_experiment(
