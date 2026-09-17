@@ -635,10 +635,12 @@ class TestPipelineExtended2:
         for v in variants:
             assert set(v.keys()) == {"instruction", "input", "output"}
 
-    def test_generate_variants_exception_returns_empty(self, pipeline, tmp_path):
+    def test_generate_variants_exception_returns_empty(self, pipeline):
         """_generate_variants 异常时应返回空列表"""
         pipeline.model_backend.raw_response = "invalid-json"
         assert pipeline._generate_variants({"instruction": "q", "output": "a"}) == []
+
+    def test_augment_dataset_serial_mode(self, pipeline, seed_file, tmp_path):
         """串行模式增强"""
         output = tmp_path / "out_serial.json"
         report = pipeline.augment_dataset(
