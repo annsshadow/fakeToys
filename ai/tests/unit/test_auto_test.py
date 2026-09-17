@@ -124,3 +124,148 @@ class TestConvenienceFunctions:
         
         assert isinstance(suite, TestSuite)
         assert suite.name == "test"
+
+
+class TestAutoTestExtended:
+    """DatasetTestRunner 扩展测试"""
+
+    def test_builtin_test_format_non_list(self):
+        """_test_format 非列表输入"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_format("not-a-list")
+        assert passed is False
+        assert "不是列表" in msg
+
+    def test_builtin_test_format_non_dict_item(self):
+        """_test_format 非字典项"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_format([{"instruction": "q"} , "not-dict"])
+        assert passed is False
+        assert "不是字典" in msg
+
+    def test_builtin_test_format_pass(self):
+        """_test_format 正常通过"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_format([{"instruction": "q", "output": "a"}])
+        assert passed is True
+        assert "1" in msg
+
+    def test_builtin_test_fields_missing(self):
+        """_test_fields 缺字段"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_fields([{"instruction": "q"}])
+        assert passed is False
+        assert "output" in msg
+
+    def test_builtin_test_fields_empty_field(self):
+        """_test_fields 字段为空"""
+        runner = DatasetTestRunner()
+        passed, _ = runner._test_fields([{"instruction": "", "output": "a"}])
+        assert passed is False
+
+    def test_builtin_test_fields_pass(self):
+        """_test_fields 正常通过"""
+        runner = DatasetTestRunner()
+        passed, _ = runner._test_fields([{"instruction": "q", "output": "a"}])
+        assert passed is True
+
+    def test_builtin_test_quality_empty(self):
+        """_test_quality 空数据"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_quality([])
+        assert passed is False
+        assert "为空" in msg
+
+    def test_builtin_test_quality_short_instruction(self):
+        """_test_quality 问题过短"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_quality([{"instruction": "短", "output": "足够长的回答内容哦呀哈"}])
+        assert passed is False
+        assert "过短" in msg
+
+    def test_builtin_test_quality_short_output(self):
+        """_test_quality 回答过短"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_quality([{"instruction": "足够长的问题", "output": "短"}])
+        assert passed is False
+
+    def test_builtin_test_quality_pass(self):
+        """_test_quality 通过"""
+        runner = DatasetTestRunner()
+        passed, _ = runner._test_quality([{"instruction": "足够长的问题", "output": "足够长的回答内容哦呀哈"}])
+        assert passed is True
+
+    def test_builtin_test_diversity_empty(self):
+        """_test_diversity 空数据"""
+        runner = DatasetTestRunner()
+        passed, _ = runner._test_diversity([])
+        assert passed is False
+
+    def test_builtin_test_diversity_no_questions(self):
+        """_test_diversity 无有效问题"""
+        runner = DatasetTestRunner()
+        passed, msg = runner._test_diversity([{"instruction": ""}])
+        assert passed is False
+        assert "没有有效问题" in msg
+
+    def test_builtin_test_diversity_low(self):
+        """_test_diversity 重复过多"""
+        runner = DatasetTestRunner()
+        items = [{"instruction": "同一个问题啊"}] * 4
+        passed, msg = runner._test_diversity(items)
+        assert passed is False
+        assert "多样性不足" in msg
+
+    def test_builtin_test_diversity_pass(self):
+        """_test_diversity 通过"""
+        runner = DatasetTestRunner()
+        items = [{"instruction": f"不同的问题{i}啊"} for i in range(4)]
+        passed, _ = runner._test_diversity(items)
+        assert passed is True
+
+    def test_builtin_test_duplicates_empty(self):
+        """_test_duplicates 空数据"""
+        runner = DatasetTestRunner()
+        passed, _ = runner._test_duplicates([])
+        assert passed is False
+
+    def test_builtin_test_duplicates_found(self):
+        """_test_duplicates 发现重复"""
+        runner = DatasetTestRunner()
+        items = [{"instruction": "同个问题呀"}] * 2
+        passed, msg = runner._test_duplicates(items)
+        assert passed is False
+
+    def test_builtin_test_duplicates_pass(self):
+        """_test_duplicates 通过"""
+        runner = DatasetTestRunner()
+        items = [{"instruction": f"问题{i}呀"} for i in range(3)]
+        passed, _ = runner._test_duplicates(items)
+        assert passed is True
+
+    def test_run_tests_with_named_suite(self, sample_dataset):
+        """run_tests 指定已有套件名"""
+        runner = DatasetTestRunner()
+        runner.create_test_suite("my_suite", "自定义")
+        suite = runner.run_tests(sample_dataset, "my_suite")
+        assert suite.name == "my_suite"
+
+    def test_run_tests_exception_caught(self):
+        """测试函数抛异常时应记录失败而不是崩溃"""
+        runner = DatasetTestRunner()
+        runner.add_custom_test(
+            test_id="boom", name="爆炸", description="",
+            test_func=lambda items, expected: (_ for _ in ()).throw(RuntimeError("boom"))
+        )
+        suite = runner.run_tests([{"instruction": "q", "output": "a"}])
+        results = [r for r in suite.results if r.test_id == "boom"]
+        assert len(results) == 1
+        assert results[0].passed is False
+        assert "异常" in results[0].message
+
+    def test_report_contains_pass_rate(self, sample_dataset):
+        """报告应包含通过率"""
+        runner = DatasetTestRunner()
+        suite = runner.run_tests(sample_dataset)
+        report = runner.get_test_report(suite)
+        assert "通过率" in report or "pass" in report.lower()
