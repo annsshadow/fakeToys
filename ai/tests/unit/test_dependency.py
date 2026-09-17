@@ -172,3 +172,40 @@ class TestConvenienceFunctions:
         assert isinstance(graph, dict)
         assert "nodes" in graph
         assert "edges" in graph
+
+
+class TestDependencyExtended:
+    """DependencyManager 扩展测试"""
+
+    def test_get_nonexistent_dataset(self, manager):
+        """获取不存在的数据集"""
+        assert manager.get_dataset("nonexistent") is None
+
+    def test_remove_nonexistent_dependency(self, manager):
+        """移除不存在的依赖"""
+        result = manager.remove_dependency("a", "b")
+        assert result is False
+
+    def test_validate_empty_dependencies(self, manager):
+        """验证空依赖"""
+        issues = manager.validate_dependencies()
+        assert len(issues) == 0
+
+    def test_dependency_to_dict(self):
+        """Dependency.to_dict"""
+        dep = Dependency(
+            source_dataset="s1", target_dataset="t1",
+            dependency_type="derived", description="test"
+        )
+        d = dep.to_dict()
+        assert d["source_dataset"] == "s1"
+        assert d["target_dataset"] == "t1"
+
+    def test_dataset_info_no_tags(self):
+        """DatasetInfo 无 tags"""
+        info = DatasetInfo(
+            dataset_id="id1", name="n", description="d",
+            path="/p", item_count=0, created_at="", updated_at=""
+        )
+        d = info.to_dict()
+        assert d["tags"] == []
