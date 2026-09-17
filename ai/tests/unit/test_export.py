@@ -197,3 +197,165 @@ class TestSupportedFormats:
         formats = Exporter().get_supported_formats()
         for expected in ["jsonl", "llama_factory", "alpaca", "sharegpt", "chatml"]:
             assert expected in formats
+
+
+class TestConvertToCSV:
+    """CSV 转换直接测试"""
+
+    def test_csv_fields(self):
+        """CSV 应包含 instruction/input/output 三个字段"""
+        exporter = Exporter()
+        data = exporter._convert_to_csv([
+            {"instruction": "问题", "input": "上下文", "output": "回答"}
+        ])
+        assert set(data[0].keys()) == {"instruction", "input", "output"}
+
+    def test_csv_empty_input_default(self):
+        """缺失字段应使用空字符串默认值"""
+        exporter = Exporter()
+        data = exporter._convert_to_csv([{"instruction": "问题"}])
+        assert data[0]["input"] == ""
+        assert data[0]["output"] == ""
+
+    def test_csv_multiple_items(self):
+        """多条数据应全部转换"""
+        exporter = Exporter()
+        items = [{"instruction": f"q{i}", "output": f"a{i}"} for i in range(5)]
+        data = exporter._convert_to_csv(items)
+        assert len(data) == 5
+
+    def test_csv_empty_list(self):
+        """空列表应返回空"""
+        exporter = Exporter()
+        data = exporter._convert_to_csv([])
+        assert data == []
+
+
+class TestExportFileFormats:
+    """各格式文件导出测试"""
+
+    def test_export_sharegpt_file(self, tmp_path):
+        """ShareGPT 导出应生成有效 JSON"""
+        exporter = Exporter()
+        output = tmp_path / "out.json"
+        fmt = exporter.export(
+            [{"instruction": "问题", "output": "回答"}], str(output), "sharegpt"
+        )
+        assert fmt == "sharegpt"
+        with open(output, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert "conversations" in data[0]
+
+    def test_export_chatml_file(self, tmp_path):
+        """ChatML 导出应生成有效 JSON"""
+        exporter = Exporter()
+        output = tmp_path / "out.json"
+        fmt = exporter.export(
+            [{"instruction": "问题", "output": "回答"}], str(output), "chatml"
+        )
+        assert fmt == "chatml"
+        with open(output, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert "messages" in data[0]
+
+    def test_export_llama_factory_file(self, tmp_path):
+        """Llama-Factory 导出应生成有效 JSON"""
+        exporter = Exporter()
+        output = tmp_path / "out.json"
+        fmt = exporter.export(
+            [{"instruction": "问题", "output": "回答"}], str(output), "llama_factory"
+        )
+        assert fmt == "llama_factory"
+        with open(output, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert "system" in data[0]
+
+    def test_export_alpaca_file(self, tmp_path):
+        """Alpaca 导出应生成有效 JSON"""
+        exporter = Exporter()
+        output = tmp_path / "out.json"
+        fmt = exporter.export(
+            [{"instruction": "问题", "output": "回答"}], str(output), "alpaca"
+        )
+        assert fmt == "alpaca"
+        with open(output, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert data[0]["instruction"] == "问题"
+
+    def test_export_csv_empty_dataset_no_file(self, tmp_path):
+        """空数据集 CSV 导出不创建文件（无数据可写）"""
+        exporter = Exporter()
+        output = tmp_path / "empty.csv"
+        exporter.export([], str(output), "csv")
+        assert not output.exists()
+
+
+class TestExportAllFormatsExtended:
+    """全格式导出扩展测试"""
+
+    def test_custom_base_name(self, tmp_path):
+        """自定义 base_name"""
+        exporter = Exporter()
+        results = exporter.export_all_formats(
+            [{"instruction": "q", "output": "a"}],
+            str(tmp_path),
+            base_name="custom"
+        )
+        for path in results.values():
+            assert "custom" in Path(path).name
+
+    def test_all_files_valid(self, tmp_path):
+        """所有导出文件应可被解析"""
+        exporter = Exporter()
+        data = [{"instruction": "问题", "output": "回答"}]
+        results = exporter.export_all_formats(data, str(tmp_path))
+        
+        for fmt_name, path in results.items():
+            p = Path(path)
+            if fmt_name == "csv":
+                content = p.read_text(encoding='utf-8')
+                assert "instruction" in content
+            elif fmt_name == "jsonl":
+                content = p.read_text(encoding='utf-8')
+                if content.strip():
+                    json.loads(content.strip().split('\n')[0])
+            else:
+                with open(p, 'r', encoding='utf-8') as f:
+                    json.load(f)
+
+
+class TestExportBatchExtended:
+    """批量导出扩展测试"""
+
+    def test_batch_serial_mode(self, tmp_path):
+        """串行模式应与并行模式产出一致"""
+        exporter = Exporter()
+        datasets = {"ds1": [{"instruction": "q", "output": "a"}]}
+        results = exporter.export_batch(
+            datasets, str(tmp_path), formats=["jsonl"], use_parallel=False
+        )
+        assert Path(results["ds1"]["jsonl"]).exists()
+
+    def test_batch_single_dataset(self, tmp_path):
+        """单数据集批量导出"""
+        exporter = Exporter()
+        results = exporter.export_batch(
+            {"only": [{"instruction": "q", "output": "a"}]},
+            str(tmp_path),
+            formats=["jsonl", "alpaca"]
+        )
+        assert set(results["only"].keys()) == {"jsonl", "alpaca"}
+
+
+class TestExporterInit:
+    """Exporter 初始化测试"""
+
+    def test_custom_max_workers(self):
+        """自定义 max_workers"""
+        exporter = Exporter(max_workers=8)
+        assert exporter.max_workers == 8
+
+    def test_default_format(self):
+        """默认格式应正确设置"""
+        exporter = Exporter(default_format="csv")
+        assert exporter.default_format == ExportFormat.CSV
