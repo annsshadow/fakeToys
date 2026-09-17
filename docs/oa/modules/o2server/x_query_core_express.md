@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 查询执行：`POST /jaxrs/query/core/express/execute` → `execute_query` 用 sqlparser（PostgreSqlDialect）解析并仅放行单条 SELECT，自动补 LIMIT 500
+- 查询执行：`POST /api/query/core/express/execute` → `execute_query` 用 sqlparser（PostgreSqlDialect）解析并仅放行单条 SELECT，自动补 LIMIT 500
 - 权限注入：execute_query 从 Session 取 person_unique，经 `get_permission_filters` 联查 auth_identity/auth_person_identity/auth_unit 生成 identity/unit 过滤，`inject_where` 将条件并入 WHERE（已有 LIMIT 则插在其前）
 - 查询历史：`GET .../history/{limit}` → `get_query_history` 按 create_time 倒序读 x_query_import_record，输出 query/executedAt
 - 结果缓存：`POST .../cache/{queryId}` → 校验 x_query 存在后写 x_query_import_record（ttl 默认 3600）；`GET .../cache/status/{queryId}` 以同名记录数返回 cached/hits/misses
@@ -44,7 +44,7 @@
 
 
 
-- `GET /jaxrs/query/core/express/cache/status/{queryId}`
-- `POST /jaxrs/query/core/express/cache/{queryId}`
-- `POST /jaxrs/query/core/express/execute`
-- `GET /jaxrs/query/core/express/history/{limit}`
+- `GET /api/query/core/express/cache/status/{queryId}`
+- `POST /api/query/core/express/cache/{queryId}`
+- `POST /api/query/core/express/execute`
+- `GET /api/query/core/express/history/{limit}`

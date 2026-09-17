@@ -72,7 +72,7 @@ updated: 2026-09-06
 
 **结果**：
 - 4,130 个测试函数生成成功
-- 错误消息正确显示路由信息（如 `"parity: route missing on ai_assemble_control: /jaxrs/ai/... (POST)"`）
+- 错误消息正确显示路由信息（如 `"parity: route missing on ai_assemble_control: /api/ai/... (POST)"`）
 - 编译错误已全部消除
 
 ### 1.5 提交历史（Round 5 + Parity 修复）
@@ -109,7 +109,7 @@ b87b1846 feat(frontend): achieve >50% stub→useQuery conversion (1,122 combined
 const { data: recycleData, isLoading } = useQuery({
   queryKey: ['recycle', 'list'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/recycle/list')
+    const resp = await api.get('/api/recycle/list')
     return (resp as any)?.data ?? []
   },
 })

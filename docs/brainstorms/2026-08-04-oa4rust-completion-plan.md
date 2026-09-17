@@ -38,25 +38,25 @@
 
 **已实现端点：**
 ```
-POST /jaxrs/authentication/login      ✅ 登录（含密码验证）
-POST /jaxrs/authentication/logout     ✅ 登出
-GET  /jaxrs/authentication/who        ✅ Whoami
-GET  /jaxrs/authentication/captcha    ⚠️ 占位实现（返回 base64 占位图）
-POST /jaxrs/authentication/bind       ✅ 绑定
-POST /jaxrs/authentication/oauth      ⚠️ 占位实现（返回示例 URL）
-POST /jaxrs/authentication/refresh    ✅ 刷新令牌
-POST /jaxrs/authentication/code       ⚠️ 占位实现（返回 UUID）
-GET  /jaxrs/person/{flag}             ⚠️ 需要验证实现
-GET  /jaxrs/person/list               ⚠️ 需要验证实现
-GET  /jaxrs/unit/list                 ✅ 组织架构
-GET  /jaxrs/role/list                 ✅ 角色列表
-GET  /jaxrs/group/list                ✅ 用户组列表
+POST /api/authentication/login      ✅ 登录（含密码验证）
+POST /api/authentication/logout     ✅ 登出
+GET  /api/authentication/who        ✅ Whoami
+GET  /api/authentication/captcha    ⚠️ 占位实现（返回 base64 占位图）
+POST /api/authentication/bind       ✅ 绑定
+POST /api/authentication/oauth      ⚠️ 占位实现（返回示例 URL）
+POST /api/authentication/refresh    ✅ 刷新令牌
+POST /api/authentication/code       ⚠️ 占位实现（返回 UUID）
+GET  /api/person/{flag}             ⚠️ 需要验证实现
+GET  /api/person/list               ⚠️ 需要验证实现
+GET  /api/unit/list                 ✅ 组织架构
+GET  /api/role/list                 ✅ 角色列表
+GET  /api/group/list                ✅ 用户组列表
 ```
 
 **缺失功能：**
 - 真正的验证码图片生成（当前返回 base64 占位图）
 - OAuth 第三方登录对接（当前返回示例 URL）
-- `/jaxrs/secret/*` 系统初始化端点（应在 program_init）
+- `/api/secret/*` 系统初始化端点（应在 program_init）
 
 ---
 
@@ -72,32 +72,32 @@ GET  /jaxrs/group/list                ✅ 用户组列表
 **需要实现的路由：**
 ```rust
 // 人员管理（统一归入 control 模块）
-GET    /jaxrs/person/list              - 获取人员列表
-GET    /jaxrs/person/{id}              - 获取人员详情
-POST   /jaxrs/person/create            - 创建人员
-PUT    /jaxrs/person/{id}/update       - 更新人员
-DELETE /jaxrs/person/{id}/delete       - 删除人员
+GET    /api/person/list              - 获取人员列表
+GET    /api/person/{id}              - 获取人员详情
+POST   /api/person/create            - 创建人员
+PUT    /api/person/{id}/update       - 更新人员
+DELETE /api/person/{id}/delete       - 删除人员
 
 // 单位管理
-GET    /jaxrs/unit/list                - 获取单位列表
-GET    /jaxrs/unit/{id}                - 获取单位详情
-POST   /jaxrs/unit/create              - 创建单位
-PUT    /jaxrs/unit/{id}/update         - 更新单位
-DELETE /jaxrs/unit/{id}/delete         - 删除单位
+GET    /api/unit/list                - 获取单位列表
+GET    /api/unit/{id}                - 获取单位详情
+POST   /api/unit/create              - 创建单位
+PUT    /api/unit/{id}/update         - 更新单位
+DELETE /api/unit/{id}/delete         - 删除单位
 
 // 角色管理
-GET    /jaxrs/role/list                - 获取角色列表
-GET    /jaxrs/role/{id}                - 获取角色详情
-POST   /jaxrs/role/create              - 创建角色
-PUT    /jaxrs/role/{id}/update         - 更新角色
-DELETE /jaxrs/role/{id}/delete         - 删除角色
+GET    /api/role/list                - 获取角色列表
+GET    /api/role/{id}                - 获取角色详情
+POST   /api/role/create              - 创建角色
+PUT    /api/role/{id}/update         - 更新角色
+DELETE /api/role/{id}/delete         - 删除角色
 
 // 用户组管理
-GET    /jaxrs/group/list               - 获取用户组列表
-GET    /jaxrs/group/{id}               - 获取用户组详情
-POST   /jaxrs/group/create             - 创建用户组
-PUT    /jaxrs/group/{id}/update        - 更新用户组
-DELETE /jaxrs/group/{id}/delete        - 删除用户组
+GET    /api/group/list               - 获取用户组列表
+GET    /api/group/{id}               - 获取用户组详情
+POST   /api/group/create             - 创建用户组
+PUT    /api/group/{id}/update        - 更新用户组
+DELETE /api/group/{id}/delete        - 删除用户组
 ```
 
 **数据库表：**
@@ -114,18 +114,18 @@ DELETE /jaxrs/group/{id}/delete        - 删除用户组
 **需要实现的路由：**
 ```rust
 // 个人信息
-GET    /jaxrs/personal/info            - 获取当前用户信息
-PUT    /jaxrs/personal/update          - 更新个人信息
-GET    /jaxrs/personal/detail/{id}     - 获取指定用户信息
+GET    /api/personal/info            - 获取当前用户信息
+PUT    /api/personal/update          - 更新个人信息
+GET    /api/personal/detail/{id}     - 获取指定用户信息
 
 // 密码管理
-POST   /jaxrs/password/change          - 修改密码
-POST   /jaxrs/password/reset           - 重置密码
-POST   /jaxrs/password/verify          - 验证密码
+POST   /api/password/change          - 修改密码
+POST   /api/password/reset           - 重置密码
+POST   /api/password/verify          - 验证密码
 
 // 头像管理
-POST   /jaxrs/personal/avatar/upload   - 上传头像
-GET    /jaxrs/personal/avatar/{id}     - 获取头像
+POST   /api/personal/avatar/upload   - 上传头像
+GET    /api/personal/avatar/{id}     - 获取头像
 ```
 
 **数据库表：**
@@ -139,13 +139,13 @@ GET    /jaxrs/personal/avatar/{id}     - 获取头像
 **需要实现的路由：**
 ```rust
 // 系统检查
-GET    /jaxrs/secret/check             - 检查系统初始化状态 ✅ 已实现
+GET    /api/secret/check             - 检查系统初始化状态 ✅ 已实现
 
 // 密码设置
-POST   /jaxrs/secret/set               - 设置系统管理员密码 ✅ 已实现
+POST   /api/secret/set               - 设置系统管理员密码 ✅ 已实现
 
 // 密码取消
-POST   /jaxrs/secret/cancel            - 取消密码保护 ✅ 已实现
+POST   /api/secret/cancel            - 取消密码保护 ✅ 已实现
 ```
 
 **数据库表：**
@@ -383,7 +383,7 @@ impl Into<Response> for AppError {
 
 ### 8.2 系统初始化端点安全
 
-`/jaxrs/secret/set` 和 `/jaxrs/secret/cancel` 属于最高权限操作：
+`/api/secret/set` 和 `/api/secret/cancel` 属于最高权限操作：
 - 必须通过管理员认证（二次验证）
 - 记录完整审计日志
 - 添加 IP 白名单限制

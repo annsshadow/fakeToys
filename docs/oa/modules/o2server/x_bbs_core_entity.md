@@ -19,10 +19,10 @@
 
 ## Key Flows
 
-- 论坛列表：`GET /jaxrs/bbs/core/entity/forum/list` → `forum_list` 查 `x_bbs_forum_info`（CreateTime 升序 limit 50），输出 id/name，description 存在时附加
+- 论坛列表：`GET /api/bbs/core/entity/forum/list` → `forum_list` 查 `x_bbs_forum_info`（CreateTime 升序 limit 50），输出 id/name，description 存在时附加
 - 版块列表：`GET .../section/list/{forumId}` → `section_list` 按 ForumId 过滤、OrderNumber 升序 limit 50，输出 id/name/forumId/sort
 - 主题列表：`GET .../subject/top/{sectionId}` → `subject_top_list` 过滤 SectionId + IsTop=true + Disable=false，CreateTime 倒序 limit 20；`GET .../subject/list/{sectionId}` → `subject_list` 仅过滤 Disable=false，limit 50
-- 论坛 CRUD：`POST /jaxrs/bbs/core/entity/forum` 创建（uuid v4、create_time=chrono Utc now、order_number=0）；`POST .../forum/{id}` 更新（name/description 缺省沿用旧值，不存在返回 error("forum not found")）；`DELETE .../forum/{id}` 先查后删
+- 论坛 CRUD：`POST /api/bbs/core/entity/forum` 创建（uuid v4、create_time=chrono Utc now、order_number=0）；`POST .../forum/{id}` 更新（name/description 缺省沿用旧值，不存在返回 error("forum not found")）；`DELETE .../forum/{id}` 先查后删
 - 版块 CRUD：`create_section`（取 forumId/sort/description）、`update_section`（缺省沿用旧值）、`delete_section`
 - 主题 CRUD：`create_subject`（replyCount/viewCount 初始 0、isTop/disable=false）、`update_subject`（可改 title/sectionId/isTop/disable）、`delete_subject`
 - 回复：`POST .../reply` → `create_reply` 仅生成 uuid 并回显 topicId，未写库（源码注释：reply 表不在本实体迁移范围）

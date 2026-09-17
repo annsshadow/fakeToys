@@ -41,7 +41,7 @@
   # 在 Rust 服务中设置环境变量
   export RUST_FEATURE_ROLLBACK=true
   # 或通过管理端点
-  curl -X POST http://localhost:8080/jaxrs/admin/rollback \
+  curl -X POST http://localhost:8080/api/admin/rollback \
     -H "Authorization: Bearer <admin_token>" \
     -H "Content-Type: application/json" \
     -d '{"module": "<module_name>", "target": "java"}'
@@ -66,8 +66,8 @@
 
 ### Rust 特性开关（待实现）
 - 环境变量：`RUST_FEATURE_ROLLBACK=true/false`
-- 管理端点：`POST /jaxrs/admin/rollback`
-- 返回当前路由状态：`GET /jaxrs/admin/routing-status`
+- 管理端点：`POST /api/admin/rollback`
+- 返回当前路由状态：`GET /api/admin/routing-status`
 
 ## 4. 回滚演练计划
 

@@ -126,10 +126,10 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     .and_then(|r| r.ok());
 
     let router = Router::new()
-        .route("/jaxrs/program_center/application", 
+        .route("/api/program_center/application", 
             post(application_create)
             .get(application_list))
-        .route("/jaxrs/program_center/application/{id}",
+        .route("/api/program_center/application/{id}",
             put(application_update).delete(application_delete))
         // ... other routes
         .layer(Extension(pool));

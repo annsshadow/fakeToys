@@ -108,7 +108,7 @@ problem_type: capability-parity-audit
 
 1. **ProcessDesigner 与流程引擎数据契约不兼容（最致命）**：输出自定义 `{config:{nodes,edges}}`（BPMN 风格），而 **Rust 引擎按 O2OA `activities` 键解析 JSONB**（`service_processing/lib.rs:2476`）→ **引擎无法执行**。缺 15 类 activity（begin/manual/choice/condition/split/merge/embed/publish/delay/invoke/service/agent/cancel）、字段权限、edition 列表/diff、waypoint；事件脚本为裸 `<textarea>`；"流程地图"含 `window.__fakeProcesses` 演示兜底。
 2. **无 Xform 表单运行时**：全局缺把 `surface/form/view` JSON 渲染为控件的运行时；`ProcessWork.vue` 审批提交空 `{}`。→ 即便有流程也无法填报审批。
-3. **FormDesigner 契约偏差**：保存自定义 `{schema}` 到 `/jaxrs/form`，非 O2OA `moduleList`；缺移动端、DOM 树、样式刷、Actions/Events/Validation。
+3. **FormDesigner 契约偏差**：保存自定义 `{schema}` 到 `/api/form`，非 O2OA `moduleList`；缺移动端、DOM 树、样式刷、Actions/Events/Validation。
 4. **3×ScriptDesigner（process/cms/portal）全为 172 行 CRUD 空壳**：零代码编辑、无 XScript 补全、无版本历史。【实测 09-11：`ProcessScriptDesignerApp`/`CmsScriptDesignerApp`/`PortalScriptDesignerApp` 各 172 行；service 域无脚本设计器视图（仅 `ServiceInvokeDesignerApp`，属 Invoke 设计器），实为特性整类缺失。】
 5. **设计器前端调用与后端路由逐端点对账【rev6】**：`ProcessDesigner/QueryStatementDesigner/QueryManagerDeep/PortalDesigner/FormDesigner.vue` 真实调用点（27 条），对账后端路由实测，**15 条不闭合分三档**（明细+复现见 §9.4；固化于测试 `oa4rust/tests/designer_route_match.rs`）：
    - **404 无路由（4）**：`POST /designer/process`（应 `/create`）、query `GET /designer/list`、`POST /designer/execute`、portal `POST /designer/script`。
@@ -123,7 +123,7 @@ problem_type: capability-parity-audit
 - **QueryTable/ViewDesigner**：列编辑/建表 DDL、可视化视图（过滤/排序/分页/simulate/bundle/lookup）为空壳。
 - **Selector（组织/人员选择器）**：核心复用组件缺位（仅 crud 壳，`packages/ui` 无组件）——**阻塞任何真实流程/表单编辑器**。
 - **IMChat**：纯文本，缺 12 类富媒体/交互能力。
-- **API 层质量缺陷**【实测 09-11】：`packages/apis/src/index.ts` 含 **11 处未插值路径参数字面量**（如 `:1214 getid:(_id)=>api.get('/jaxrs/person/empower/:id')`，另有 `/generate/:model`、`/paging/:page`、`/size/:size`、`/room/:room`、`/classname/:className`），参数被接收却不进 URL → 调用必错；部分分组仅只读壳函数。
+- **API 层质量缺陷**【实测 09-11】：`packages/apis/src/index.ts` 含 **11 处未插值路径参数字面量**（如 `:1214 getid:(_id)=>api.get('/api/person/empower/:id')`，另有 `/generate/:model`、`/paging/:page`、`/size/:size`、`/room/:room`、`/classname/:className`），参数被接收却不进 URL → 调用必错；部分分组仅只读壳函数。
 
 ### 3.4 P2
 
@@ -170,7 +170,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W6（A2｜设计器路由闭合，验收即 `tests/designer_route_match.rs` 转绿到"目标态"）**：实测对账已固化为该测试。三类动作按危险度排序——① **先消 5 条静默档**：收窄 `process/{id}`、`table/{flag}`、`page/{id}`、`script/{id}` 宽路由（给字面量段 `list/export` 设专用路由或提优先级），否则"列表页"拿到"单资源"错数据仍 200；② 前端改名命中既有：process 新建 `POST /designer/process`→`/create`（实测 `/create` 匹配）、query 保存 `PUT /update/{id}`→`POST /save/{id}`；③ 后端补缺：query 裸 `list`/`execute`、portal 裸 `POST /script`（实测 404）。每闭合一条，把测试对应 case 从当前实测档改为 `Matched` 并附真实语义 → CI 死链回归（对齐 `92d09e1f` behavior gate）。
 - **W7（A6｜3×ScriptDesigner + service 域）**：`Process/Cms/PortalScriptDesignerApp`（现各 172 行空壳）复用已引入 CodeMirror 落真实编辑器 + XScript 补全 + 版本历史；service 域脚本设计器视图当前缺失，按需补或书面排除。
 - **W8（A6｜Selector 共享组件）**：`packages/ui` 建组织/人员/身份选择器，接入 W3/W4/W5。**（先决：无它则负责人/权限无法闭环。）**
-  - **rev8 落地**：`OrganizationSelector.vue`（person/identity 搜索实调 `/jaxrs/organization/assemble/control`）已接入 **W3 ProcessDesigner 节点"负责人"**（与 `assignee` CSV 双向映射，写入 `taskIdentityList`）——负责人闭环点即此；W4/W5 无身份选择语义（审批人由流程定义决定），无需接入。
+  - **rev8 落地**：`OrganizationSelector.vue`（person/identity 搜索实调 `/api/organization/assemble/control`）已接入 **W3 ProcessDesigner 节点"负责人"**（与 `assignee` CSV 双向映射，写入 `taskIdentityList`）——负责人闭环点即此；W4/W5 无身份选择语义（审批人由流程定义决定），无需接入。
 - **W9（A6｜Portal & Query 设计器）**：Portal 拖拽布局 + 模块类型 + widget 设计器；QueryTable 列编辑/建表、QueryView 可视化过滤排序分页/simulate/bundle。
 - **W10（A6｜IMChat 富媒体）**：图片/文件/语音/视频/位置/链接卡片、引用/撤回/合并转发/收藏/拖拽上传；传输走既有 WebSocket，不承诺 XMPP 全协议（对齐 R6）。
 - **W11（A6｜API 层质量）**：修 `packages/apis` 中 11 处未插值路径参数字面量（`:id`/`:model`/`:page` 等，见 §3.3）为正确模板插值、补齐只读壳为真实调用。
@@ -295,7 +295,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 
 方法（下表逐格为对账结论；**以末尾"合计（rev6）"为准**——query `update/{id}`、`stat/do`、portal `script/run`/`script/{id}`、form `submit` 为 405 非 404；`delete/{id}`/form CRUD 匹配）。从 `ProcessDesigner/QueryStatementDesigner/QueryManagerDeep/PortalDesigner/FormDesigner.vue` 抽真实 `api.<verb>(url)` 调用点，按 `crates/*/src/{lib,routes}.rs` 全路径 + 方法链核对。图例：✅ 匹配 / ❌ 404 无路由 或 405 方法缺 / ⚠️ 静默影子(命中宽 `{id}`，200 错体)。
 
-**Process designer**（base `/jaxrs/processplatform/assemble/designer`）
+**Process designer**（base `/api/processplatform/assemble/designer`）
 | 前端调用 | 后端路由 | 判定 |
 |---|---|---|
 | GET `process/{id}` | `process/{id}` (get) | ✅ |
@@ -304,7 +304,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | GET `process/list` | 命中 `process/{id}`（id=`list`） | ⚠️ |
 | GET `process/export` | 命中 `process/{id}`（id=`export`） | ⚠️ |
 
-**Query designer**（base `/jaxrs/query/assemble/designer`）
+**Query designer**（base `/api/query/assemble/designer`）
 | 前端调用 | 后端路由 | 判定 |
 |---|---|---|
 | GET `list` | 仅 `list/{category}`；裸 `list` 无 | ❌ |
@@ -316,7 +316,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | GET `entity/entity/properties/{tbl}/default/default` | `entity/entity/properties/{query}/{category}/{entityCategory}` | ✅ |
 | POST `stat/do` | 命中 `stat/{id}`（id=`do`），但 `stat/{id}` 无 POST | ❌ 405 |
 
-**Portal designer**（base `/jaxrs/portal/assemble/designer`）
+**Portal designer**（base `/api/portal/assemble/designer`）
 | 前端调用 | 后端路由 | 判定 |
 |---|---|---|
 | GET `page/list` | 仅 `page/list/{category}`+`/portal/{id}`；裸命中 `page/{id}` | ⚠️ |
@@ -328,13 +328,13 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | POST `script`（裸） | 无裸 `script` | ❌ |
 | POST `script/run` | 无 | ❌ |
 
-**Form designer**（base `/jaxrs/form`，`cms_assemble_control::router` 承载；路由见 `cms_assemble_control/src/routes.rs:400-630`；schema 层另列 P0-3）
+**Form designer**（base `/api/form`，`cms_assemble_control::router` 承载；路由见 `cms_assemble_control/src/routes.rs:400-630`；schema 层另列 P0-3）
 | 前端调用 | 后端路由 | 判定（route-table 精确） |
 |---|---|---|
 | GET `form/list` | 命中 `form/{id}`(get, L404) id=`list`；真实列表为 `form/list/all` | ⚠️ 静默影子 |
 | GET `form/{id}` | `form/{id}` (get, L404) | ✅ |
 | PUT `form/{id}` | `form/{id}` (put, L493) | ✅ |
-| POST `form`（裸） | `/jaxrs/form` (post, L492) | ✅ |
+| POST `form`（裸） | `/api/form` (post, L492) | ✅ |
 | POST `form/submit` | 无 `form/submit`；命中 `form/{id}` 但无 POST 变体 | ❌ 405 |
 
 **合计（rev6）**：现覆盖 **27 个前端真实调用点**（process/query/portal 22 + form 5），固化于提交测试 **`oa4rust/tests/designer_route_match.rs`**（合并 `cms_assemble_control::router`）。**15 条不闭合按 HTTP 码分三档**：

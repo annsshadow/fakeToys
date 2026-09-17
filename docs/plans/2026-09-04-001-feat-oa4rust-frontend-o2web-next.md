@@ -18,14 +18,14 @@
 | 路由 | URL hash + iframe 跳转 | 无 |
 | 样式 | 全局 CSS + `.wcss` 自定义语法（o2web 的根因痛点之一） | 无 |
 | 运行时依赖 | jQuery / MooTools / mBox / ooui（自研） | 无 |
-| API 契约 | `/jaxrs/*` REST | `/jaxrs/*` REST（已对齐 Java 98%+） |
+| API 契约 | `/api/*` REST | `/api/*` REST（已对齐 Java 98%+） |
 | 认证方式 | Cookie `token=` / `Authorization: Bearer` | 同左（SessionManager） |
 
 oa4rust 已有 **96 个 crates、40+ router、3000+ 端点**，但前端是一片空白。o2web 的前端代码陈旧且存在明显缺陷，**不推荐直接移植**，而是作为 API 契约参考重新实现一套现代前端。
 
 ### 1.2 设计目标
 
-1. **完整覆盖**：前端能驱动 oa4rust 所有 `/jaxrs/*` 业务模块（认证、组织、流程、门户、BBS、IM、日历、考勤、会议、文件、AI、CMS、查询、组件等）。
+1. **完整覆盖**：前端能驱动 oa4rust 所有 `/api/*` 业务模块（认证、组织、流程、门户、BBS、IM、日历、考勤、会议、文件、AI、CMS、查询、组件等）。
 2. **彻底现代化**：Vue 3 + TypeScript + Vite 单栈，消除 o2web 的双栈维护负担。
 3. **全新视觉语言**：抛弃 o2web 的陈旧扁平风，采用深色科幻主题（Neon + Glassmorphism），突出数据可视化与效率感。
 4. **零冗余依赖**：每个库按需引入，首屏 gzip ≤ 180KB（对比 o2web 的 2MB+ 裸 JS 包）。
@@ -36,7 +36,7 @@ oa4rust 已有 **96 个 crates、40+ router、3000+ 端点**，但前端是一�
 
 - **新前端与 o2web 完全独立**：o2web 是 Java 后端的配套前端，oa4rust 前端是专门为 Rust 后端设计的独立产品，两者无任何代码复用或兼容依赖，可并行部署、互不影响。
 - **覆盖范围包含移动端**：除了 PC 桌面应用，还需提供移动端适配方案（详见第十节）。
-- **后端需配合挂载静态文件**：前端构建产物需由 oa4rust 后端服务（`tower_http::ServeDir`），开发模式下通过 Vite proxy 反向代理 `/jaxrs/*` 到 Rust 服务。
+- **后端需配合挂载静态文件**：前端构建产物需由 oa4rust 后端服务（`tower_http::ServeDir`），开发模式下通过 Vite proxy 反向代理 `/api/*` 到 Rust 服务。
 
 ---
 
@@ -143,7 +143,7 @@ D:/WORKSPACE/fakeToys/
     │   └── apis/                 # @oa4rust/apis — 业务 API 层（全部 45+ 模块覆盖，含 WebSocket）
     │       ├── src/
     │       │   ├── index.ts              # 统一导出 + api client 实例
-    │       │   ├── auth.ts               # /jaxrs/authentication/*         (28 routes)
+    │       │   ├── auth.ts               # /api/authentication/*         (28 routes)
     │       │   ├── auth_oauth.ts         # OAuth/SSO 回调                  (28 routes)
     │       │   ├── org.ts                # 组织控制 + 人员 + 身份 + 授权     (226 routes)
     │       │   ├── process.ts            # 工作流 surface（待办/审批/数据）  (960 routes)
@@ -234,16 +234,16 @@ D:/WORKSPACE/fakeToys/
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/jaxrs/authentication/login` | POST | 用户名+密码登录，返回 `{ token, person }` |
-| `/jaxrs/authentication/logout` | POST | 销毁 session |
-| `/jaxrs/authentication/who` | GET | 获取当前用户信息（需认证） |
-| `/jaxrs/authentication/refresh` | POST | 刷新 token |
-| `/jaxrs/authentication/captcha` | GET | 获取验证码图片 |
-| `/jaxrs/authentication/captcha/width/{w}/height/{h}` | GET | 自定义尺寸验证码 |
-| `/jaxrs/authentication/code` | POST | 短信/邮箱验证码发送 |
-| `/jaxrs/authentication/oauth` | GET | OAuth 列表 |
-| `/jaxrs/authentication/oauth/login/{name}/code/{code}` | GET | OAuth 回调登录 |
-| `/jaxrs/secret/check\|set\|set/cancel` | GET/POST | 系统初始化（首次安装用） |
+| `/api/authentication/login` | POST | 用户名+密码登录，返回 `{ token, person }` |
+| `/api/authentication/logout` | POST | 销毁 session |
+| `/api/authentication/who` | GET | 获取当前用户信息（需认证） |
+| `/api/authentication/refresh` | POST | 刷新 token |
+| `/api/authentication/captcha` | GET | 获取验证码图片 |
+| `/api/authentication/captcha/width/{w}/height/{h}` | GET | 自定义尺寸验证码 |
+| `/api/authentication/code` | POST | 短信/邮箱验证码发送 |
+| `/api/authentication/oauth` | GET | OAuth 列表 |
+| `/api/authentication/oauth/login/{name}/code/{code}` | GET | OAuth 回调登录 |
+| `/api/secret/check\|set\|set/cancel` | GET/POST | 系统初始化（首次安装用） |
 
 **认证头**：`Cookie: token=<value>` 或 `Authorization: Bearer <token>`
 
@@ -273,12 +273,12 @@ interface O2User {
 ### 4.2 组织模块核心路径
 
 ```
-/jaxrs/organization/assemble/control/group/*          # 部门树 CRUD
-/jaxrs/organization/assemble/control/person/*         # 人员 CRUD
-/jaxrs/organization/assemble/control/identity/*       # 身份/工号管理
-/jaxrs/organization/assemble/control/bind/*           # 人员-部门绑定
-/jaxrs/organization/assemble/authentication/*         # 认证配置
-/jaxrs/person/empower/*                               # 授权管理（person crate）
+/api/organization/assemble/control/group/*          # 部门树 CRUD
+/api/organization/assemble/control/person/*         # 人员 CRUD
+/api/organization/assemble/control/identity/*       # 身份/工号管理
+/api/organization/assemble/control/bind/*           # 人员-部门绑定
+/api/organization/assemble/authentication/*         # 认证配置
+/api/person/empower/*                               # 授权管理（person crate）
 ```
 
 ### 4.3 需要前端覆盖的主要业务域
@@ -311,12 +311,12 @@ interface O2User {
 
 | 第三方平台 | 回调路径 | 对应后端端点 |
 |-----------|---------|------------|
-| 企业微信 | `/oauth/callback/qywx` | `/jaxrs/authentication/oauth/login/qywx/code/{code}` |
-| 钉钉 | `/oauth/callback/dingding` | `/jaxrs/authentication/oauth/login/dingding/code/{code}` |
-| 和信金融 | `/oauth/callback/andfx` | `/jaxrs/authentication/oauth/name/{name}` |
-| 微信公众号 | `/oauth/callback/mpweixin` | `/jaxrs/authentication/oauth/login/name/mpweixin/code/{code}` |
+| 企业微信 | `/oauth/callback/qywx` | `/api/authentication/oauth/login/qywx/code/{code}` |
+| 钉钉 | `/oauth/callback/dingding` | `/api/authentication/oauth/login/dingding/code/{code}` |
+| 和信金融 | `/oauth/callback/andfx` | `/api/authentication/oauth/name/{name}` |
+| 微信公众号 | `/oauth/callback/mpweixin` | `/api/authentication/oauth/login/name/mpweixin/code/{code}` |
 | WeLink（华为） | `/oauth/callback/welink` | 同上命名规范 |
-| 自由门 (SSO) | `/oauth/callback/sso` | `/jaxrs/authentication/sso` |
+| 自由门 (SSO) | `/oauth/callback/sso` | `/api/authentication/sso` |
 
 **前端处理流程：**
 ```
@@ -326,7 +326,7 @@ Vue Router 匹配对应路由
     ↓
 调用 useOAuthCallback(platform, code) 
     ↓
-POST /jaxrs/authentication/oauth/login/{platform}/code/{code}
+POST /api/authentication/oauth/login/{platform}/code/{code}
     ↓
 后端返回 { token, person } → 写入 Cookie + Pinia store
     ↓
@@ -363,100 +363,100 @@ location.replace('/app')  ← 跳转主应用（清空 history 防止回退到�
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/authentication/*` | 28 | login, logout, who, refresh, captcha, oauth/*, sso/*, two_factor, switchuser | `auth.ts` |
-| `/jaxrs/organization/assemble/control/*` | 164 | group/*, person/*, identity/*, bind/*, unit/*, export/*, permissionsetting/* | `org.ts` |
-| `/jaxrs/organization/assemble/authentication/*` | 28 | oauth/*, qiyeweixin/*, mpweixin/*, welink/*, zhengwudingding/*, andfx/* | `auth_oauth.ts` |
-| `/jaxrs/person/*` | 62 | empower/*, unit/*, role/*, list/* | `org.ts`（合并） |
+| `/api/authentication/*` | 28 | login, logout, who, refresh, captcha, oauth/*, sso/*, two_factor, switchuser | `auth.ts` |
+| `/api/organization/assemble/control/*` | 164 | group/*, person/*, identity/*, bind/*, unit/*, export/*, permissionsetting/* | `org.ts` |
+| `/api/organization/assemble/authentication/*` | 28 | oauth/*, qiyeweixin/*, mpweixin/*, welink/*, zhengwudingding/*, andfx/* | `auth_oauth.ts` |
+| `/api/person/*` | 62 | empower/*, unit/*, role/*, list/* | `org.ts`（合并） |
 
 **P1 — 工作流与门户（1600+ 条）**
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/processplatform/assemble/surface/*` | 960 | work/*, task/*, data/*, read/*, attachment/*, review/*, form/*, applicationdict/* | `process.ts` |
-| `/jaxrs/processplatform/assemble/designer/*` | 114 | process/*, xform/*, script/*, dict/*, appdict/* | `process_designer.ts` |
-| `/jaxrs/processplatform/assemble/bam/*` | 90 | period/*, monitor/*, trace/* | `process_bam.ts` |
-| `/jaxrs/processplatform/service/processing/*` | 170 | work/*, task/*, applicationdict/*, execute/* | `process_service.ts` |
-| `/jaxrs/portal/assemble/surface/*` | 66 | page/*, widget/*, appdict/* | `portal_surface.ts` |
-| `/jaxrs/portal/assemble/designer/*` | 59 | page/*, widget/*, script/*, dictionary/* | `portal_designer.ts` |
-| `/jaxrs/program_center/*` | 319 | module/*, script/*, invoke/*, appstyle/*, market/*, config/*, agent/*, code/*, deploy/*, schedule/* | `program_center.ts` |
+| `/api/processplatform/assemble/surface/*` | 960 | work/*, task/*, data/*, read/*, attachment/*, review/*, form/*, applicationdict/* | `process.ts` |
+| `/api/processplatform/assemble/designer/*` | 114 | process/*, xform/*, script/*, dict/*, appdict/* | `process_designer.ts` |
+| `/api/processplatform/assemble/bam/*` | 90 | period/*, monitor/*, trace/* | `process_bam.ts` |
+| `/api/processplatform/service/processing/*` | 170 | work/*, task/*, applicationdict/*, execute/* | `process_service.ts` |
+| `/api/portal/assemble/surface/*` | 66 | page/*, widget/*, appdict/* | `portal_surface.ts` |
+| `/api/portal/assemble/designer/*` | 59 | page/*, widget/*, script/*, dictionary/* | `portal_designer.ts` |
+| `/api/program_center/*` | 319 | module/*, script/*, invoke/*, appstyle/*, market/*, config/*, agent/*, code/*, deploy/*, schedule/* | `program_center.ts` |
 
 **P1 — 即时通讯与消息（70 条）**
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/message/assemble/communicate/*` | 64 | im/*（WebSocket 消息路由在此），conversation/*, history/*, collection/* | `message.ts` |
+| `/api/message/assemble/communicate/*` | 64 | im/*（WebSocket 消息路由在此），conversation/*, history/*, collection/* | `message.ts` |
 
 **P2 — 日历 / 会议 / 考勤（365 条）**
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/calendar_assemble_control/*` | 33 | calendar/*, event/* | `calendar.ts` |
-| `/jaxrs/meeting/assemble/control/*` | 86 | room/*, meeting/*, schedule/* | `meeting.ts` |
-| `/jaxrs/attendance/assemble/control/*` | 172 | attendancedetail/*, statisticshow/*, v2/* | `attendance.ts` |
+| `/api/calendar_assemble_control/*` | 33 | calendar/*, event/* | `calendar.ts` |
+| `/api/meeting/assemble/control/*` | 86 | room/*, meeting/*, schedule/* | `meeting.ts` |
+| `/api/attendance/assemble/control/*` | 172 | attendancedetail/*, statisticshow/*, v2/* | `attendance.ts` |
 
 **P2 — 文件 / 文档 / BBS / 思维导图（230 条）**
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/file/assemble/control/*` | 25 | file/*, folder/*, attachment/*, attachment2/*, share/*, complex/* | `file.ts` |
-| `/jaxrs/file/core/entity/*` | 7 | file, list, folder/list/top, complex/top | `file.ts`（合并） |
-| `/jaxrs/document/*` | 51 | /{id}/*, filter/*, publish/*, cipher/*, batch/* | `document.ts` |
-| `/jaxrs/bbs/assemble/control/*` | 33 | forum/*, section/*, subject/*, reply/* | `bbs.ts` |
-| `/jaxrs/mind/assemble/control/*` | 26 | mind/*, folder/*, version/* | `mind.ts` |
-| `/jaxrs/mind/core/entity/*` | 7 | folder/*, mind/*, list | `mind.ts`（合并） |
+| `/api/file/assemble/control/*` | 25 | file/*, folder/*, attachment/*, attachment2/*, share/*, complex/* | `file.ts` |
+| `/api/file/core/entity/*` | 7 | file, list, folder/list/top, complex/top | `file.ts`（合并） |
+| `/api/document/*` | 51 | /{id}/*, filter/*, publish/*, cipher/*, batch/* | `document.ts` |
+| `/api/bbs/assemble/control/*` | 33 | forum/*, section/*, subject/*, reply/* | `bbs.ts` |
+| `/api/mind/assemble/control/*` | 26 | mind/*, folder/*, version/* | `mind.ts` |
+| `/api/mind/core/entity/*` | 7 | folder/*, mind/*, list | `mind.ts`（合并） |
 
 **P2 — 查询与数据（280 条）**
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/query/assemble/designer/*` | 136 | table/*, statement/*, view/*, bundle/*, importmodel/* | `query_designer.ts` |
-| `/jaxrs/query/assemble/surface/*` | 6 | （轻量表面层） | `query_designer.ts`（合并） |
-| `/jaxrs/queryview/*` | 119 | table/*, view/*, stat/*, statement/*, bundle/*, importmodel/*, record/* | `query_view.ts` |
-| `/jaxrs/query/service/processing/*` | 4 | （异步执行） | `query_view.ts`（合并） |
+| `/api/query/assemble/designer/*` | 136 | table/*, statement/*, view/*, bundle/*, importmodel/* | `query_designer.ts` |
+| `/api/query/assemble/surface/*` | 6 | （轻量表面层） | `query_designer.ts`（合并） |
+| `/api/queryview/*` | 119 | table/*, view/*, stat/*, statement/*, bundle/*, importmodel/*, record/* | `query_view.ts` |
+| `/api/query/service/processing/*` | 4 | （异步执行） | `query_view.ts`（合并） |
 
 **P2 — 通用工具与 AI（150 条）**
 
 | 模块前缀 | 路由数 | 主要子路径 | 前端 API 文件 |
 |---------|--------|-----------|--------------|
-| `/jaxrs/general/assemble/control/*` | 79 | dict/*, file/*, invoice/*, worktime/*, create/* | `general.ts` |
-| `/jaxrs/ai/*` + `/jaxrs/ai_assemble_control/*` | 66 | chat/*, config/*, model/*, mcp/*, file/*, index/*, completion/stream | `ai.ts` |
-| `/jaxrs/data/document/*` | 28 | /{id}/*（文档数据访问） | `data.ts` |
-| `/jaxrs/surface/appdict/*` | 26 | /{appDictFlag}/*（应用字典） | `appdict.ts` |
+| `/api/general/assemble/control/*` | 79 | dict/*, file/*, invoice/*, worktime/*, create/* | `general.ts` |
+| `/api/ai/*` + `/api/ai_assemble_control/*` | 66 | chat/*, config/*, model/*, mcp/*, file/*, index/*, completion/stream | `ai.ts` |
+| `/api/data/document/*` | 28 | /{id}/*（文档数据访问） | `data.ts` |
+| `/api/surface/appdict/*` | 26 | /{appDictFlag}/*（应用字典） | `appdict.ts` |
 
 **P2 — 其他业务模块（180 条）**
 
 | 模块前缀 | 路由数 | 说明 | 前端 API 文件 |
 |---------|--------|------|--------------|
-| `/jaxrs/hotpic/assemble/control/*` | 15 | 热帖管理 | `hotpic.ts` |
-| `/jaxrs/jpush/assemble/control/*` | 11 | 推送控制 | `jpush.ts` |
-| `/jaxrs/jpush_assemble_control/*` | 20 | 推送设备/模板 | `jpush.ts`（合并） |
-| `/jaxrs/appinfo/list/*` | 17 | 应用信息列表 | `appinfo.ts` |
-| `/jaxrs/categoryinfo/*` | 26 | 分类信息 | `category.ts` |
-| `/jaxrs/correlation/*` | 16 | 关联处理 | `correlation.ts` |
-| `/jaxrs/share/*` | 7 | 分享管理 | `share.ts` |
-| `/jaxrs/export/*` | 1 | 导出结果 | `export.ts` |
-| `/jaxrs/importmodel/*` | 1 | 导入模型 | `import.ts` |
-| `/jaxrs/cache/*` | 4 | 缓存操作 | `cache.ts`（管理后台用） |
-| `/jaxrs/empower/*` | 6 | 授权日志 | `empower.ts` |
-| `/jaxrs/anonymous/*` | 11 | 匿名表面访问 | `anonymous.ts` |
-| `/jaxrs/component/*` | 4 | 组件实体 | `component.ts` |
-| `/jaxrs/config/*` | 3 | 全局配置 | `config.ts` |
-| `/jaxrs/script/*` | 6 | 脚本管理 | `script.ts` |
-| `/jaxrs/unit/*` | 40 | 单元/机构 | `unit.ts` |
-| `/jaxrs/identity/*` | 12 | 身份管理 | `org.ts`（合并） |
-| `/jaxrs/group/*` | 13 | 群组管理 | `org.ts`（合并） |
+| `/api/hotpic/assemble/control/*` | 15 | 热帖管理 | `hotpic.ts` |
+| `/api/jpush/assemble/control/*` | 11 | 推送控制 | `jpush.ts` |
+| `/api/jpush_assemble_control/*` | 20 | 推送设备/模板 | `jpush.ts`（合并） |
+| `/api/appinfo/list/*` | 17 | 应用信息列表 | `appinfo.ts` |
+| `/api/categoryinfo/*` | 26 | 分类信息 | `category.ts` |
+| `/api/correlation/*` | 16 | 关联处理 | `correlation.ts` |
+| `/api/share/*` | 7 | 分享管理 | `share.ts` |
+| `/api/export/*` | 1 | 导出结果 | `export.ts` |
+| `/api/importmodel/*` | 1 | 导入模型 | `import.ts` |
+| `/api/cache/*` | 4 | 缓存操作 | `cache.ts`（管理后台用） |
+| `/api/empower/*` | 6 | 授权日志 | `empower.ts` |
+| `/api/anonymous/*` | 11 | 匿名表面访问 | `anonymous.ts` |
+| `/api/component/*` | 4 | 组件实体 | `component.ts` |
+| `/api/config/*` | 3 | 全局配置 | `config.ts` |
+| `/api/script/*` | 6 | 脚本管理 | `script.ts` |
+| `/api/unit/*` | 40 | 单元/机构 | `unit.ts` |
+| `/api/identity/*` | 12 | 身份管理 | `org.ts`（合并） |
+| `/api/group/*` | 13 | 群组管理 | `org.ts`（合并） |
 
 **P3 — 设计器与系统管理（120 条）**
 
 | 模块前缀 | 路由数 | 说明 | 前端 API 文件 |
 |---------|--------|------|--------------|
-| `/jaxrs/design/*` | 若干 | 表单/流程设计器底层 | `designer.ts` |
-| `/jaxrs/editor/*` | 若干 | 编辑器操作 | `editor.ts` |
-| `/jaxrs/console/*` | — | 控制台 | `console.ts` |
-| `/jaxrs/log/*` | — | 日志查看 | `log.ts` |
-| `/jaxrs/server/*` | — | 服务器状态 | `server.ts` |
-| `/jaxrs/sysresource/*` | — | 系统资源 | `sysresource.ts` |
-| `/jaxrs/openapi` | — | OpenAPI 入口 | — |
+| `/api/design/*` | 若干 | 表单/流程设计器底层 | `designer.ts` |
+| `/api/editor/*` | 若干 | 编辑器操作 | `editor.ts` |
+| `/api/console/*` | — | 控制台 | `console.ts` |
+| `/api/log/*` | — | 日志查看 | `log.ts` |
+| `/api/server/*` | — | 服务器状态 | `server.ts` |
+| `/api/sysresource/*` | — | 系统资源 | `sysresource.ts` |
+| `/api/openapi` | — | OpenAPI 入口 | — |
 
 #### 4.5.3 前端 API 包完整目录结构
 
@@ -465,48 +465,48 @@ location.replace('/app')  ← 跳转主应用（清空 history 防止回退到�
 ```
 packages/apis/src/
 ├── index.ts              # 统一导出
-├── auth.ts               # /jaxrs/authentication/*         (28 routes)
-├── auth_oauth.ts         # /jaxrs/organization/assemble/authentication/oauth/*  (28 routes)
-├── org.ts                # /jaxrs/organization/assemble/control/* + /jaxrs/person/* + identity/group (226 routes)
-├── process.ts            # /jaxrs/processplatform/assemble/surface/* (960 routes)
-├── process_designer.ts   # /jaxrs/processplatform/assemble/designer/* (114 routes)
-├── process_bam.ts        # /jaxrs/processplatform/assemble/bam/* (90 routes)
-├── process_service.ts    # /jaxrs/processplatform/service/processing/* (170 routes)
-├── portal_surface.ts     # /jaxrs/portal/assemble/surface/* (66 routes)
-├── portal_designer.ts    # /jaxrs/portal/assemble/designer/* (59 routes)
-├── program_center.ts     # /jaxrs/program_center/* (319 routes)
-├── message.ts            # /jaxrs/message/assemble/communicate/* (64 routes)
-├── calendar.ts           # /jaxrs/calendar_assemble_control/* (33 routes)
-├── meeting.ts            # /jaxrs/meeting/assemble/control/* (86 routes)
-├── attendance.ts         # /jaxrs/attendance/assemble/control/* (172 routes)
-├── file.ts               # /jaxrs/file/assemble/control/* + /jaxrs/file/core/* (32 routes)
-├── document.ts           # /jaxrs/document/* (51 routes)
-├── bbs.ts                # /jaxrs/bbs/assemble/control/* + /jaxrs/bbs/core/* (41 routes)
-├── mind.ts               # /jaxrs/mind/assemble/control/* + /jaxrs/mind/core/* (33 routes)
-├── query_designer.ts     # /jaxrs/query/assemble/designer/* (136 routes)
-├── query_view.ts         # /jaxrs/queryview/* + /jaxrs/query/service/* (123 routes)
-├── general.ts            # /jaxrs/general/assemble/control/* (79 routes)
-├── ai.ts                 # /jaxrs/ai/* + /jaxrs/ai_assemble_control/* (66 routes)
-├── data.ts               # /jaxrs/data/document/* (28 routes)
-├── appdict.ts            # /jaxrs/surface/appdict/* (26 routes)
-├── hotpic.ts             # /jaxrs/hotpic/assemble/control/* (15 routes)
-├── jpush.ts              # /jaxrs/jpush/* + /jaxrs/jpush_assemble_control/* (31 routes)
-├── appinfo.ts            # /jaxrs/appinfo/list/* (17 routes)
-├── category.ts           # /jaxrs/categoryinfo/* (26 routes)
-├── correlation.ts        # /jaxrs/correlation/* (16 routes)
-├── share.ts              # /jaxrs/share/* (7 routes)
-├── export.ts             # /jaxrs/export/* (1 route)
-├── import.ts             # /jaxrs/importmodel/* (1 route)
-├── cache.ts              # /jaxrs/cache/* (4 routes)
-├── empower.ts            # /jaxrs/empower/* (6 routes)
-├── anonymous.ts          # /jaxrs/anonymous/* (11 routes)
-├── unit.ts               # /jaxrs/unit/* (40 routes)
-├── designer.ts           # /jaxrs/design/* (若干)
-├── editor.ts             # /jaxrs/editor/* (若干)
-├── console.ts            # /jaxrs/console/* (若干)
-├── log.ts                # /jaxrs/log/* (若干)
-├── server.ts             # /jaxrs/server/* (若干)
-└── sysresource.ts        # /jaxrs/sysresource/* (若干)
+├── auth.ts               # /api/authentication/*         (28 routes)
+├── auth_oauth.ts         # /api/organization/assemble/authentication/oauth/*  (28 routes)
+├── org.ts                # /api/organization/assemble/control/* + /api/person/* + identity/group (226 routes)
+├── process.ts            # /api/processplatform/assemble/surface/* (960 routes)
+├── process_designer.ts   # /api/processplatform/assemble/designer/* (114 routes)
+├── process_bam.ts        # /api/processplatform/assemble/bam/* (90 routes)
+├── process_service.ts    # /api/processplatform/service/processing/* (170 routes)
+├── portal_surface.ts     # /api/portal/assemble/surface/* (66 routes)
+├── portal_designer.ts    # /api/portal/assemble/designer/* (59 routes)
+├── program_center.ts     # /api/program_center/* (319 routes)
+├── message.ts            # /api/message/assemble/communicate/* (64 routes)
+├── calendar.ts           # /api/calendar_assemble_control/* (33 routes)
+├── meeting.ts            # /api/meeting/assemble/control/* (86 routes)
+├── attendance.ts         # /api/attendance/assemble/control/* (172 routes)
+├── file.ts               # /api/file/assemble/control/* + /api/file/core/* (32 routes)
+├── document.ts           # /api/document/* (51 routes)
+├── bbs.ts                # /api/bbs/assemble/control/* + /api/bbs/core/* (41 routes)
+├── mind.ts               # /api/mind/assemble/control/* + /api/mind/core/* (33 routes)
+├── query_designer.ts     # /api/query/assemble/designer/* (136 routes)
+├── query_view.ts         # /api/queryview/* + /api/query/service/* (123 routes)
+├── general.ts            # /api/general/assemble/control/* (79 routes)
+├── ai.ts                 # /api/ai/* + /api/ai_assemble_control/* (66 routes)
+├── data.ts               # /api/data/document/* (28 routes)
+├── appdict.ts            # /api/surface/appdict/* (26 routes)
+├── hotpic.ts             # /api/hotpic/assemble/control/* (15 routes)
+├── jpush.ts              # /api/jpush/* + /api/jpush_assemble_control/* (31 routes)
+├── appinfo.ts            # /api/appinfo/list/* (17 routes)
+├── category.ts           # /api/categoryinfo/* (26 routes)
+├── correlation.ts        # /api/correlation/* (16 routes)
+├── share.ts              # /api/share/* (7 routes)
+├── export.ts             # /api/export/* (1 route)
+├── import.ts             # /api/importmodel/* (1 route)
+├── cache.ts              # /api/cache/* (4 routes)
+├── empower.ts            # /api/empower/* (6 routes)
+├── anonymous.ts          # /api/anonymous/* (11 routes)
+├── unit.ts               # /api/unit/* (40 routes)
+├── designer.ts           # /api/design/* (若干)
+├── editor.ts             # /api/editor/* (若干)
+├── console.ts            # /api/console/* (若干)
+├── log.ts                # /api/log/* (若干)
+├── server.ts             # /api/server/* (若干)
+└── sysresource.ts        # /api/sysresource/* (若干)
 ```
 
 **WebSocket API 封装：**
@@ -518,13 +518,13 @@ export function useRealtimeWebSocket(roomId: string | null) {
   // 自动重连、心跳保活、消息路由到对应 handler
 }
 export function useIMWebSocket() {
-  // IM 专用 WebSocket，订阅 /jaxrs/message/assemble/communicate/im 事件
+  // IM 专用 WebSocket，订阅 /api/message/assemble/communicate/im 事件
 }
 ```
 
 #### 4.5.4 路由到前端的映射原则
 
-1. **按业务域合并**：同一业务域的分散路由（如 `/jaxrs/file/assemble/control/*` 和 `/jaxrs/file/core/entity/*`）合并到同一个 API 文件，通过命名空间函数区分。
+1. **按业务域合并**：同一业务域的分散路由（如 `/api/file/assemble/control/*` 和 `/api/file/core/entity/*`）合并到同一个 API 文件，通过命名空间函数区分。
 2. **命名规范**：API 文件名使用小写蛇形（与 crate 名一致），导出函数使用 camelCase + 动词前缀：
    - 列表：`listXxx(page, size)` → TanStack Query `useListXxx`
    - 详情：`getXxx(id)` → `useGetXxx(id)`
@@ -698,7 +698,7 @@ export function useIMWebSocket() {
 | T0.2 搭建 `packages/sdk`：session、api、i18n、router 框架 | `@oa4rust/sdk` 基础包 |
 | T0.3 搭建 `packages/ui`：design tokens + AppShell + LoginScreen | 科幻风格登录页 |
 | T0.4 搭建 `apps/desktop` 最小可运行版本：登录 → 空首页 | Vite dev server 起得起来 |
-| T0.5 对接 `/jaxrs/authentication/login` 真实接口 | 登录后能拿到 user session |
+| T0.5 对接 `/api/authentication/login` 真实接口 | 登录后能拿到 user session |
 
 ### Phase 1：核心框架 + 组织模块（预计 2-3 周）
 
@@ -772,7 +772,7 @@ export function useIMWebSocket() {
 
 | 风险 | 等级 | 应对 |
 |------|------|------|
-| oa4rust 部分 `/jaxrs/*` 端点尚未实现（parity 仍在收敛） | 高 | 前端优先覆盖已稳定的 P0/P1 模块；不实现端点用 mock 桩占位 |
+| oa4rust 部分 `/api/*` 端点尚未实现（parity 仍在收敛） | 高 | 前端优先覆盖已稳定的 P0/P1 模块；不实现端点用 mock 桩占位 |
 | 后端 WebSocket 推送机制（message_assemble_communicate）需前端兼容 | 中 | Phase 2 开始时与后端对接，提前预留接口 |
 | 设计器类组件（XformDesigner、ProcessDesigner）复杂度极高 | 高 | 优先复用 o2web 中可参考的 JSON schema 结构；复杂设计器延后到 Phase 3 |
 | 中/英/西三语国际化工作量 | 低 | 先做中文，英文/西班牙文用 AI 辅助翻译，后续迭代补充 |
@@ -809,7 +809,7 @@ let app = app
 
 ### 9.2 开发模式
 
-开发时前端由 Vite dev server（端口 5173）服务，后端无需 serve 静态文件。通过 `vite.config.ts` proxy 配置将 `/jaxrs/*` 转发到 Rust 后端：
+开发时前端由 Vite dev server（端口 5173）服务，后端无需 serve 静态文件。通过 `vite.config.ts` proxy 配置将 `/api/*` 转发到 Rust 后端：
 
 ```typescript
 // apps/desktop/vite.config.ts
@@ -817,7 +817,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/jaxrs': {
+      '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },
@@ -857,7 +857,7 @@ cargo build --release
 
 | 风险 | 等级 | 应对 |
 |------|------|------|
-| oa4rust 部分 `/jaxrs/*` 端点尚未实现（parity 仍在收敛） | 高 | 前端优先覆盖已稳定的 P0/P1 模块；不实现端点用 mock 桩占位 |
+| oa4rust 部分 `/api/*` 端点尚未实现（parity 仍在收敛） | 高 | 前端优先覆盖已稳定的 P0/P1 模块；不实现端点用 mock 桩占位 |
 | 后端 WebSocket 推送机制（message_assemble_communicate）需前端兼容 | 中 | Phase 2 开始时与后端对接，提前预留接口 |
 | 设计器类组件（XformDesigner、ProcessDesigner）复杂度极高 | 高 | 优先复用 o2web 中可参考的 JSON schema 结构；复杂设计器延后到 Phase 3 |
 | 中/英/西三语国际化工作量 | 低 | 先做中文，英文/西班牙文用 AI 辅助翻译，后续迭代补充 |
@@ -892,7 +892,7 @@ pnpm test
 
 - ✅ 移动端适配在本轮范围内：采用一套代码响应式布局 + PWA，不拆独立移动端应用（详见 5.5 节）。
 - ✅ 新前端与 o2web 完全独立：无兼容层、无路由并存规划，新前端专属于 oa4rust。
-- ✅ 后端新增静态文件服务：授权在后端 `main.rs` 增加 `tower_http::ServeDir` 中间件，生产模式直接 serve `dist/` 构建产物，开发模式通过 Vite proxy 反向代理 `/jaxrs/*`。
+- ✅ 后端新增静态文件服务：授权在后端 `main.rs` 增加 `tower_http::ServeDir` 中间件，生产模式直接 serve `dist/` 构建产物，开发模式通过 Vite proxy 反向代理 `/api/*`。
 - ✅ SSO 回调由前端统一处理（方案 A）：Vue Router 接管所有回调路径，无需独立 HTML 页。
 
 

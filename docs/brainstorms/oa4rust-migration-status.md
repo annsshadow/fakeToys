@@ -30,7 +30,7 @@
 | attendance | x_attendance_assemble_control | 部分真实化 | — | 部分真实（list_admins、list_employee_configs、list_statistical_cycles 等 PostgreSQL 查询已实现） |
 | attendance_assemble_control | x_attendance_assemble_control | 部分真实化 | — | 部分真实（rule/list/toggle、admin list 等 PostgreSQL 查询已实现；97 个路由中约 10 个已真实） |
 | attendance_core_entity | x_attendance_core_entity | 部分真实化 | — | 部分真实（record_list、rule_list、appeal_list 等 PostgreSQL 查询已实现） |
-| auth | x_organization_assemble_authentication | 已完成（真实化） | ac279a0f（U1） | POST /jaxrs/authentication/login、DELETE /jaxrs/authentication/logout、GET /jaxrs/authentication/who、GET /jaxrs/authentication/captcha（真实 PNG 生成）、POST /jaxrs/authentication/oauth（微信/钉钉 OAuth 已实现）、POST /jaxrs/authentication/refresh、POST /jaxrs/authentication/code、POST /jaxrs/secret/check、POST /jaxrs/secret/set、POST /jaxrs/secret/cancel |
+| auth | x_organization_assemble_authentication | 已完成（真实化） | ac279a0f（U1） | POST /api/authentication/login、DELETE /api/authentication/logout、GET /api/authentication/who、GET /api/authentication/captcha（真实 PNG 生成）、POST /api/authentication/oauth（微信/钉钉 OAuth 已实现）、POST /api/authentication/refresh、POST /api/authentication/code、POST /api/secret/check、POST /api/secret/set、POST /api/secret/cancel |
 | base | x_base_core_project | 部分真实化 | — | 部分真实（cache_detail 查询 pg_class 已真实；echo/openapi 为固定响应） |
 | bbs | x_bbs_assemble_control | 部分真实化 | — | 部分真实（forum/view/section/subject 的 list/view/create/search 等 PostgreSQL 查询已实现） |
 | bbs_assemble_control | x_bbs_assemble_control | 部分真实化 | — | 部分真实（config/sections/forum/topic/reply 等 PostgreSQL 查询已实现；约 5 个端点仍为桩） |
@@ -38,8 +38,8 @@
 | calendar | x_calendar_assemble_control | 部分真实化 | — | 部分真实（calendar_list_public、calendar_list_my、calendar_get 等 PostgreSQL 查询已实现） |
 | calendar_assemble_control | x_calendar_assemble_control | 部分真实化 | — | 部分真实（config/calendars 查询已实现） |
 | calendar_core_entity | x_calendar_core_entity | 部分真实化 | — | 部分真实（calendar CRUD 已实现） |
-| cms_assemble_control | x_cms_assemble_control | 已完成（真实化） | — | GET /jaxrs/cms/assemble/control/config/get、GET /jaxrs/cms/assemble/control/sections、POST /jaxrs/cms/assemble/control/config/update |
-| cms_control | x_cms_assemble_control | 已完成（真实化） | — | GET /jaxrs/cms_control/get/control/config、GET /jaxrs/cms_control/list/control/sections |
+| cms_assemble_control | x_cms_assemble_control | 已完成（真实化） | — | GET /api/cms/assemble/control/config/get、GET /api/cms/assemble/control/sections、POST /api/cms/assemble/control/config/update |
+| cms_control | x_cms_assemble_control | 已完成（真实化） | — | GET /api/cms_control/get/control/config、GET /api/cms_control/list/control/sections |
 | cms_core_entity | x_cms_core_entity | 部分真实化 | — | 部分真实（category/app/config 查询已实现） |
 | cms_core_express | x_cms_core_express | 已接入（桩代码） | — | 桩 |
 | cms_express | x_cms_core_express | 已接入（桩代码） | — | 桩 |
@@ -47,7 +47,7 @@
 | component_assemble_control | x_component_assemble_control | 部分真实化 | — | 部分真实（config/categories/component CRUD 已实现） |
 | component_core_entity | x_component_core_entity | 已接入（桩代码） | — | 桩 |
 | console | x_console | 已接入（桩代码） | — | 桩 |
-| control | x_organization_assemble_control | 已完成（真实化） | ac279a0f（U1） | POST /jaxrs/person、GET\|PUT\|DELETE /jaxrs/person/{flag}、GET /jaxrs/person/list/{flag}/next/{count}、GET /jaxrs/person/list/{flag}/prev/{count}；POST /jaxrs/group、GET\|PUT\|DELETE /jaxrs/group/{flag}、GET /jaxrs/group/list/{flag}/next\|prev/{count}；POST /jaxrs/role、GET\|PUT\|DELETE /jaxrs/role/{flag}、GET /jaxrs/role/list/{flag}/next\|prev/{count}；POST /jaxrs/unit、GET /jaxrs/unit/list、GET\|PUT\|DELETE /jaxrs/unit/{flag}、GET /jaxrs/unit/list/{flag}/next\|prev/{count} |
+| control | x_organization_assemble_control | 已完成（真实化） | ac279a0f（U1） | POST /api/person、GET\|PUT\|DELETE /api/person/{flag}、GET /api/person/list/{flag}/next/{count}、GET /api/person/list/{flag}/prev/{count}；POST /api/group、GET\|PUT\|DELETE /api/group/{flag}、GET /api/group/list/{flag}/next\|prev/{count}；POST /api/role、GET\|PUT\|DELETE /api/role/{flag}、GET /api/role/list/{flag}/next\|prev/{count}；POST /api/unit、GET /api/unit/list、GET\|PUT\|DELETE /api/unit/{flag}、GET /api/unit/list/{flag}/next\|prev/{count} |
 | correlation | x_correlation_core_entity | 部分真实化 | — | 部分真实（type cms/processplatform 查询、readable 检查等已实现） |
 | correlation_core_entity | x_correlation_core_entity | 部分真实化 | — | 部分真实（list/list_by_source 等已实现） |
 | correlation_core_express | x_correlation_core_express | 部分真实化 | — | 部分真实（status/sync 等已实现） |
@@ -68,7 +68,7 @@
 | meeting | x_meeting_assemble_control | 部分真实化 | — | 部分真实（create/get/list/add_participant/list_participants/list_schedule 等 PostgreSQL 查询已实现；room/building/openmeeting 仍为 mock） |
 | meeting_assemble_control | x_meeting_assemble_control | 部分真实化 | — | 部分真实（list/create/delete/save 等 PostgreSQL 查询已实现；其余为桩） |
 | meeting_core_entity | x_meeting_core_entity | 部分真实化 | — | 部分真实（room/meeting CRUD 已实现） |
-| message | x_message_assemble_communicate | 已完成（真实化） | ac279a0f（U1） | GET /jaxrs/message/consume/list/{consume}/count/{count}、GET /jaxrs/message/consume/{id}/type/{type}、POST /jaxrs/message/custom/create、POST /jaxrs/message/mark_read/{id}、GET /jaxrs/message/unread/count/{consume} |
+| message | x_message_assemble_communicate | 已完成（真实化） | ac279a0f（U1） | GET /api/message/consume/list/{consume}/count/{count}、GET /api/message/consume/{id}/type/{type}、POST /api/message/custom/create、POST /api/message/mark_read/{id}、GET /api/message/unread/count/{consume} |
 | message_assemble_communicate | x_message_assemble_communicate | 部分真实化 | — | 部分真实（send/receive/mark_read 等部分真实；118 个路由中仅少量已实现） |
 | message_core_entity | x_message_core_entity | 部分真实化 | — | 部分真实（list/list_by_consume/unread_count 等已实现） |
 | mind | x_mind_assemble_control | 部分真实化 | — | 部分真实（mind/folder/version CRUD 已实现） |
@@ -77,13 +77,13 @@
 | organization_assemble_express | x_organization_assemble_express | 部分真实化 | — | 部分真实（config/units/sync/status 等已实现） |
 | organization_core_entity | x_organization_core_entity | 部分真实化 | — | 部分真实（definition/group/identity/person/custom/bind 列表已实现） |
 | organization_core_express | x_organization_core_express | 部分真实化 | — | 部分真实（status/sync/config 等已实现） |
-| personal | x_organization_assemble_personal | 已完成（真实化） | ac279a0f（U1） | GET /jaxrs/person、PUT /jaxrs/person、POST /jaxrs/person/mockputtopost、PUT /jaxrs/password、POST /jaxrs/password/mockputtopost、POST /jaxrs/reset/code、POST /jaxrs/reset/check、POST /jaxrs/reset/set |
-| personal_extend | x_organization_assemble_personal | 已完成（真实化） | ac279a0f（U1） | GET /jaxrs/personal/info、PUT /jaxrs/personal/update、GET /jaxrs/personal/detail/{id}、POST /jaxrs/password/change、POST /jaxrs/password/reset、POST /jaxrs/password/verify、POST /jaxrs/personal/avatar/upload、GET /jaxrs/personal/avatar/{id} |
+| personal | x_organization_assemble_personal | 已完成（真实化） | ac279a0f（U1） | GET /api/person、PUT /api/person、POST /api/person/mockputtopost、PUT /api/password、POST /api/password/mockputtopost、POST /api/reset/code、POST /api/reset/check、POST /api/reset/set |
+| personal_extend | x_organization_assemble_personal | 已完成（真实化） | ac279a0f（U1） | GET /api/personal/info、PUT /api/personal/update、GET /api/personal/detail/{id}、POST /api/password/change、POST /api/password/reset、POST /api/password/verify、POST /api/personal/avatar/upload、GET /api/personal/avatar/{id} |
 | portal | x_portal_assemble_surface | 部分真实化 | — | 部分真实（page/dict/widget/script 查询已实现；portal 本身仍为 mock） |
 | portal_assemble_designer | x_portal_assemble_designer | 部分真实化 | — | 部分真实（page CRUD 已实现；design 相关仍为桩） |
 | portal_assemble_surface | x_portal_assemble_surface | 部分真实化 | — | 部分真实（surface CRUD 已实现；preview/publish 仍为桩） |
 | portal_core_entity | x_portal_core_entity | 部分真实化 | — | 部分真实（page CRUD 已实现） |
-| process_bam | x_processplatform_assemble_bam | 已完成（真实化） | — | GET /jaxrs/process/state/summary、GET /jaxrs/process/state/running、GET /jaxrs/process/state/organization |
+| process_bam | x_processplatform_assemble_bam | 已完成（真实化） | — | GET /api/process/state/summary、GET /api/process/state/running、GET /api/process/state/organization |
 | process_designer | x_processplatform_assemble_designer | 部分真实化 | — | 部分真实（application/summary、designer/route 等查询已实现） |
 | process_express | x_processplatform_core_express | 部分真实化 | — | 部分真实（task/read/application count 等查询已实现） |
 | process_surface | x_processplatform_assemble_surface | 部分真实化 | — | 部分真实（list_ids/get/record 等查询已实现） |
@@ -95,13 +95,13 @@
 | processplatform_service_processing | x_processplatform_service_processing | 部分真实化 | — | 部分真实（get/create/execute/instance/cancel 等已实现；list 等仍为桩） |
 | program_center | x_program_center | 部分真实化 | — | 部分真实（applications/style/collect/config 等已实现；datastructure/modules 为桩） |
 | program_center_core_entity | x_program_center_core_entity | 部分真实化 | — | 部分真实（application/script/list 等已实现；invoke/agent/structure 为桩） |
-| program_init | x_program_init | 已完成（真实化） | ac279a0f（U1） | GET /jaxrs/secret/check、POST /jaxrs/secret/set、GET /jaxrs/secret/set/cancel |
+| program_init | x_program_init | 已完成（真实化） | ac279a0f（U1） | GET /api/secret/check、POST /api/secret/set、GET /api/secret/set/cancel |
 | query_assemble_designer | x_query_assemble_designer | 已接入（桩代码） | — | 桩 |
 | query_assemble_surface | x_query_assemble_surface | 已接入（桩代码） | — | 桩 |
 | query_core_entity | x_query_core_entity | 部分真实化 | — | 部分真实（item/view/import 查询已实现） |
 | query_core_express | x_query_core_express | 已接入（桩代码） | — | 桩 |
 | query_express | x_query_core_express | 已接入（桩代码） | — | 桩 |
-| query_service | x_query_service_processing | 已完成（真实化） | — | POST /jaxrs/query/service/neural/generate/{model_flag}、GET /jaxrs/query/service/neural/list |
+| query_service | x_query_service_processing | 已完成（真实化） | — | POST /api/query/service/neural/generate/{model_flag}、GET /api/query/service/neural/list |
 | query_service_processing | x_query_service_processing | 已接入（桩代码） | — | 桩 |
 | shared | x_base_core_project（基础设施） | 已完成（基础设施） | ac279a0f（U1） | GET /health |
 
@@ -114,7 +114,7 @@
 1. **更新表头**：将「更新时间」改为当天日期。
 2. **核对 crate 清单**：运行 `Get-ChildItem crates -Directory`（在 `oa4rust` 目录）比对表内 crate，数量应与 workspace 成员一致（当前 80 个）。新增 / 删除 crate 时同步更新表格与顶部状态分布统计。
 3. **更新状态列**：仅在实际完成后改动状态（桩 → 真实化中 → 已完成），依据：端点是否已接入 PostgreSQL 真实逻辑并通过 `cargo test`。
-4. **更新端点列表**：对状态为「已完成」或「部分真实化」的 crate，以实际路由注册为准更新「已接入的端点列表」（对照 `crates/<name>/src/routes.rs` 或 `lib.rs` 的 `route(...)` 调用；路径必须对齐 Java Action 契约 `/jaxrs/*`，非 Rust 自造路径）。
+4. **更新端点列表**：对状态为「已完成」或「部分真实化」的 crate，以实际路由注册为准更新「已接入的端点列表」（对照 `crates/<name>/src/routes.rs` 或 `lib.rs` 的 `route(...)` 调用；路径必须对齐 Java Action 契约 `/api/*`，非 Rust 自造路径）。
 5. **更新「接入 main.rs 的版本」**：crate 首次挂载 `main.rs` 时记录对应 git commit。
 6. **约定说明**：
    - 对应 Java 模块列中，短名 crate（如 `ai`）与同名 `_assemble_control` / `_core_entity` crate 可能共享一个 Java 模块（一个 Java 模块被拆分为多个 crate）；映射有歧义时以 U2 路由归属 / `main.rs` 实际挂载为准，并在表格备注。

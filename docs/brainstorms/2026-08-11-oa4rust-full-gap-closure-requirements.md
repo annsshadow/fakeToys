@@ -67,21 +67,21 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 ## Requirements
 
 **认证核心业务逻辑修复**
-- R1. 登录端点（POST /jaxrs/authentication）必须检查用户 locked 状态（返回 locked 错误）和 passwordExpired（首次登录或未修改过密码且 Config.firstLoginModifyPwd=true 时返回 passwordExpired=true），与 Java ActionLogin 行为一致
+- R1. 登录端点（POST /api/authentication）必须检查用户 locked 状态（返回 locked 错误）和 passwordExpired（首次登录或未修改过密码且 Config.firstLoginModifyPwd=true 时返回 passwordExpired=true），与 Java ActionLogin 行为一致
 - R2. 登录响应结构必须扩展为与 Java AbstractWoAuthentication 一致的字段：token, tokenType, roleList, passwordExpired, identityList, 以及完整 Person 字段（id, unique, name, mobile, email, icon, job, department, unit, position）
-- R3. check_token 端点（POST /jaxrs/authentication/check/token）必须增加管理员权限校验（isManager），返回 token 持有者的 distinguishedName 字符串（而非 {authenticated: true/false}）
-- R4. 双因素登录拆分为两阶段：第一阶段 POST /jaxrs/authentication/two/factory/login 验证密码后发送短信验证码并返回 value=true + passwordExpired；第二阶段 POST /jaxrs/authentication/code 验证 credential + codeAnswer 并签发 token
-- R5. safe_logout 端点（POST /jaxrs/authentication/safe/logout）必须写入 TokenThreshold 实体记录当前时间戳，并在多实例场景下广播更新（单实例可跳过广播）
+- R3. check_token 端点（POST /api/authentication/check/token）必须增加管理员权限校验（isManager），返回 token 持有者的 distinguishedName 字符串（而非 {authenticated: true/false}）
+- R4. 双因素登录拆分为两阶段：第一阶段 POST /api/authentication/two/factory/login 验证密码后发送短信验证码并返回 value=true + passwordExpired；第二阶段 POST /api/authentication/code 验证 credential + codeAnswer 并签发 token
+- R5. safe_logout 端点（POST /api/authentication/safe/logout）必须写入 TokenThreshold 实体记录当前时间戳，并在多实例场景下广播更新（单实例可跳过广播）
 - R6. switch_user 响应必须补全 tokenType, roleList, passwordExpired 字段，与 Java ActionSwitchUser 的 AbstractWoAuthentication 返回结构一致
 
 **个人模块端点补全**
-- R7. 补全电子签名端点：POST /jaxrs/person/signature/upload（multipart，Base64 存 PostgreSQL custom 表）、GET /jaxrs/person/signature/list（当前用户签名列表）、GET /jaxrs/person/signature/delete/{id}（软删除）；管理员可用 GET /jaxrs/person/signature/manager/list 查看所有用户签名
-- R8. 补全头像端点：GET /jaxrs/person/icon/{person}（无权限也可访问，返回该用户头像信息）、POST /jaxrs/person/icon/upload（multipart，存储为 base64 到 auth_person.icon 字段）
-- R9. 用户注册端点（POST /jaxrs/person/regist）必须校验验证码（复用 ResetCodeStore）并检查用户名/手机/邮箱唯一性，返回与 Java ActionCreate 一致的响应结构
+- R7. 补全电子签名端点：POST /api/person/signature/upload（multipart，Base64 存 PostgreSQL custom 表）、GET /api/person/signature/list（当前用户签名列表）、GET /api/person/signature/delete/{id}（软删除）；管理员可用 GET /api/person/signature/manager/list 查看所有用户签名
+- R8. 补全头像端点：GET /api/person/icon/{person}（无权限也可访问，返回该用户头像信息）、POST /api/person/icon/upload（multipart，存储为 base64 到 auth_person.icon 字段）
+- R9. 用户注册端点（POST /api/person/regist）必须校验验证码（复用 ResetCodeStore）并检查用户名/手机/邮箱唯一性，返回与 Java ActionCreate 一致的响应结构
 
 **Null 桩修复**
-- R10. correlation_core_entity delete 端点（DELETE /jaxrs/correlation/core/entity/delete/{id}）返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
-- R11. hotpic_core_entity delete 端点（DELETE /jaxrs/hotpic/core/entity/delete/{id}）同上；hotpic list 端点返回的 data 数组必须包含 base64 字段
+- R10. correlation_core_entity delete 端点（DELETE /api/correlation/core/entity/delete/{id}）返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
+- R11. hotpic_core_entity delete 端点（DELETE /api/hotpic/core/entity/delete/{id}）同上；hotpic list 端点返回的 data 数组必须包含 base64 字段
 - R12. 修复后 `cargo test -p correlation_core_entity` 和 `cargo test -p hotpic_core_entity` 全部通过
 
 **LDAP 集成**
@@ -91,35 +91,35 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - R16. Cargo.toml 新增 `ldappress` 或等效 LDAP crate 依赖
 
 **批量查询端点**
-- R17. 批量查询人员（POST /jaxrs/express/person/list）：接受 `{"ids":["id1","id2"]}` 或 `{"identities":["id1","id2"]}`，返回完整 Person 对象列表
-- R18. 批量查询组织单位（POST /jaxrs/express/unit/list）：接受单位 ID 列表，返回完整 Unit 对象列表
-- R19. 批量查询身份（POST /jaxrs/express/identity/list）：接受身份 ID 列表，返回完整 Identity 对象列表
-- R20. 批量查询群组（POST /jaxrs/express/group/list）：接受群组 ID 列表，返回完整 Group 对象列表
-- R21. 批量查询角色（POST /jaxrs/express/role/list）：接受角色 ID 列表，返回完整 Role 对象列表
-- R22. 批量查询人员所在组织（POST /jaxrs/express/person/with/unit）：接受人员 ID 列表，返回每个人员所属组织信息
-- R23. 批量查询人员所在身份（POST /jaxrs/express/person/with/identity）：接受人员 ID 列表，返回每个人员的所有身份
+- R17. 批量查询人员（POST /api/express/person/list）：接受 `{"ids":["id1","id2"]}` 或 `{"identities":["id1","id2"]}`，返回完整 Person 对象列表
+- R18. 批量查询组织单位（POST /api/express/unit/list）：接受单位 ID 列表，返回完整 Unit 对象列表
+- R19. 批量查询身份（POST /api/express/identity/list）：接受身份 ID 列表，返回完整 Identity 对象列表
+- R20. 批量查询群组（POST /api/express/group/list）：接受群组 ID 列表，返回完整 Group 对象列表
+- R21. 批量查询角色（POST /api/express/role/list）：接受角色 ID 列表，返回完整 Role 对象列表
+- R22. 批量查询人员所在组织（POST /api/express/person/with/unit）：接受人员 ID 列表，返回每个人员所属组织信息
+- R23. 批量查询人员所在身份（POST /api/express/person/with/identity）：接受人员 ID 列表，返回每个人员的所有身份
 - R24. 以上批量查询端点无需认证（express 模块特性，与 Java 一致）
 
 **授权管理（Empower）**
-- R25. 补全授权管理 CRUD：POST /jaxrs/person/empower（创建授权）、GET /jaxrs/person/empower/{id}（查询授权）、PUT /jaxrs/person/empower/{id}（更新授权）、DELETE /jaxrs/person/empower/{id}（删除授权）、GET /jaxrs/person/empower/{id}/enable（启用）、GET /jaxrs/person/empower/{id}/disable（禁用）
-- R26. 管理员端点：POST /jaxrs/person/empower/manager（管理员创建）、PUT /jaxrs/person/empower/manager/{id}（管理员更新）、DELETE /jaxrs/person/empower/manager/{id}（管理员删除）、POST /jaxrs/person/empower/manager/list/paging/{page}/size/{size}（管理员分页查询）
-- R27. 查询当前用户授权：GET /jaxrs/person/empower/list/currentperson（我的授权）、GET /jaxrs/person/empower/list/currentperson/enable（我的生效授权）、GET /jaxrs/person/empower/list/to（我拥有的被授权）、GET /jaxrs/person/empower/list/to/enable（我生效的被授权）
+- R25. 补全授权管理 CRUD：POST /api/person/empower（创建授权）、GET /api/person/empower/{id}（查询授权）、PUT /api/person/empower/{id}（更新授权）、DELETE /api/person/empower/{id}（删除授权）、GET /api/person/empower/{id}/enable（启用）、GET /api/person/empower/{id}/disable（禁用）
+- R26. 管理员端点：POST /api/person/empower/manager（管理员创建）、PUT /api/person/empower/manager/{id}（管理员更新）、DELETE /api/person/empower/manager/{id}（管理员删除）、POST /api/person/empower/manager/list/paging/{page}/size/{size}（管理员分页查询）
+- R27. 查询当前用户授权：GET /api/person/empower/list/currentperson（我的授权）、GET /api/person/empower/list/currentperson/enable（我的生效授权）、GET /api/person/empower/list/to（我拥有的被授权）、GET /api/person/empower/list/to/enable（我生效的被授权）
 - R28. 权限控制：管理员可管理他人授权，普通用户只能管理自身授权
 
 ---
 
 ## Acceptance Examples
 
-- AE1. **Covers R1, R2, R10.** Given 用户处于 locked 状态，当 POST /jaxrs/authentication 发送正确密码时，返回 locked 错误而非正常登录；Given 用户首次登录且密码未过期，响应包含 `passwordExpired: false` 和完整 Person 字段（id, unique, name, mobile, email, icon, job, department, unit, position, token, tokenType, roleList）。
-- AE2. **Covers R4, R5.** Given 双因素登录已启用，当 POST /jaxrs/authentication/two/factory/login 发送正确的 credential+password 时，返回 `{value: true, passwordExpired: false}` 并发送短信验证码；当 POST /jaxrs/authentication/code 发送正确 credential+codeAnswer 时，签发会话并返回完整 token+Person。
-- AE3. **Covers R3.** Given 普通用户调用 POST /jaxrs/authentication/check/token，返回 403；Given 管理员调用，返回 token 持有者的 distinguishedName 字符串。
-- AE4. **Covers R6.** Given 管理员调用 POST /jaxrs/authentication/switchuser 切换为其他用户，响应包含 token, tokenType, roleList, passwordExpired 和完整 PersonInfo。
-- AE5. **Covers R7.** Given 已登录用户 POST /jaxrs/person/signature/upload 上传签名图片，签名 Base64 存入 custom 表；GET /jaxrs/person/signature/list 返回该用户所有签名。
-- AE6. **Covers R8.** Given 任何用户（无需认证）GET /jaxrs/person/icon/{person}，返回该用户的头像信息；Given 已登录用户 POST /jaxrs/person/icon/upload 上传头像，auth_person.icon 字段更新。
-- AE7. **Covers R11, R12.** Given DELETE /jaxrs/correlation/core/entity/delete/{id}，返回 `{success: true}` 而非 null；Given GET /jaxrs/hotpic/core/entity/list，返回的 data 数组每条包含 base64 字段。
+- AE1. **Covers R1, R2, R10.** Given 用户处于 locked 状态，当 POST /api/authentication 发送正确密码时，返回 locked 错误而非正常登录；Given 用户首次登录且密码未过期，响应包含 `passwordExpired: false` 和完整 Person 字段（id, unique, name, mobile, email, icon, job, department, unit, position, token, tokenType, roleList）。
+- AE2. **Covers R4, R5.** Given 双因素登录已启用，当 POST /api/authentication/two/factory/login 发送正确的 credential+password 时，返回 `{value: true, passwordExpired: false}` 并发送短信验证码；当 POST /api/authentication/code 发送正确 credential+codeAnswer 时，签发会话并返回完整 token+Person。
+- AE3. **Covers R3.** Given 普通用户调用 POST /api/authentication/check/token，返回 403；Given 管理员调用，返回 token 持有者的 distinguishedName 字符串。
+- AE4. **Covers R6.** Given 管理员调用 POST /api/authentication/switchuser 切换为其他用户，响应包含 token, tokenType, roleList, passwordExpired 和完整 PersonInfo。
+- AE5. **Covers R7.** Given 已登录用户 POST /api/person/signature/upload 上传签名图片，签名 Base64 存入 custom 表；GET /api/person/signature/list 返回该用户所有签名。
+- AE6. **Covers R8.** Given 任何用户（无需认证）GET /api/person/icon/{person}，返回该用户的头像信息；Given 已登录用户 POST /api/person/icon/upload 上传头像，auth_person.icon 字段更新。
+- AE7. **Covers R11, R12.** Given DELETE /api/correlation/core/entity/delete/{id}，返回 `{success: true}` 而非 null；Given GET /api/hotpic/core/entity/list，返回的 data 数组每条包含 base64 字段。
 - AE8. **Covers R13, R14.** Given LDAP_ENABLE=true 且 LDAP_URL 已配置，当登录时 LDAP 认证成功，直接签发会话；LDAP 认证失败时回退到数据库密码校验。
-- AE9. **Covers R17.** Given POST /jaxrs/express/person/list 发送 `{"ids":["id1","id2"]}`，返回包含完整 Person 字段的列表。
-- AE10. **Covers R25, R26, R27.** Given 管理员 POST /jaxrs/person/empower/manager 创建授权，授权写入数据库；GET /jaxrs/person/empower/list/currentperson 返回当前用户的授权列表。
+- AE9. **Covers R17.** Given POST /api/express/person/list 发送 `{"ids":["id1","id2"]}`，返回包含完整 Person 字段的列表。
+- AE10. **Covers R25, R26, R27.** Given 管理员 POST /api/person/empower/manager 创建授权，授权写入数据库；GET /api/person/empower/list/currentperson 返回当前用户的授权列表。
 
 ---
 
