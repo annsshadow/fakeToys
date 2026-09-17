@@ -229,3 +229,68 @@ class TestValidationEdgeCases:
         
         assert result.is_valid is True
         assert result.total_items == 1
+
+
+class TestValidationExtended:
+    """验证扩展测试"""
+
+    def test_validate_file_missing(self, tmp_path):
+        """验证不存在的文件"""
+        validator = DatasetValidator()
+        with pytest.raises(FileNotFoundError):
+            validator.validate_file(str(tmp_path / "nonexistent.json"))
+
+    def test_validate_file_invalid_json(self, tmp_path):
+        """验证无效 JSON 文件"""
+        file_path = tmp_path / "invalid.json"
+        file_path.write_text("not json", encoding="utf-8")
+        validator = DatasetValidator()
+        with pytest.raises(json.JSONDecodeError):
+            validator.validate_file(str(file_path))
+
+    def test_sanitize_preserves_valid_data(self):
+        """清洗应保留有效数据"""
+        data = [{"instruction": "问题", "input": "", "output": "回答"}]
+        sanitizer = DataSanitizer()
+        result = sanitizer.sanitize(data)
+        assert result == data
+
+    def test_remove_duplicates_empty(self):
+        """移除空重复列表"""
+        sanitizer = DataSanitizer()
+        result = sanitizer.remove_duplicates([], keep="first")
+        assert result == []
+
+    def test_validation_result_to_dict_complete(self):
+        """ValidationResult.to_dict 完整性"""
+        from augmentor.validation import ValidationIssue, ValidationSeverity
+        result = ValidationResult(
+            is_valid=True,
+            total_items=10,
+            valid_items=8,
+            issues=[
+                ValidationIssue(field="test", message="msg", severity=ValidationSeverity.ERROR, index=0)
+            ]
+        )
+        d = result.to_dict()
+        assert d["is_valid"] is True
+        assert d["total_items"] == 10
+        assert d["valid_items"] == 8
+        assert d["error_count"] == 1
+
+    def test_validate_with_custom_rules(self):
+        """自定义规则验证"""
+        custom_rules = {"required_fields": ["question", "answer"]}
+        validator = DatasetValidator(rules=custom_rules)
+        data = [{"question": "q", "answer": "a"}]
+        result = validator.validate(data)
+        assert result.is_valid is True
+
+    def test_sanitize_control_chars_multiple(self):
+        """多种控制字符清洗"""
+        data = [{"instruction": "问\x00题\x01", "input": "", "output": "回\x02答"}]
+        sanitizer = DataSanitizer()
+        result = sanitizer.sanitize(data)
+        assert "\x00" not in result[0]["instruction"]
+        assert "\x01" not in result[0]["instruction"]
+        assert "\x02" not in result[0]["output"]
