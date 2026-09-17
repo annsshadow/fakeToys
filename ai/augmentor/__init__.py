@@ -52,6 +52,7 @@ from .data_pipeline import DataPipeline, StageResult
 from .aggregator import DataAggregator, AggregationResult, aggregate_datasets
 from .impact import ImpactEvaluator, AugmentationImpact, evaluate_augmentation
 from .data_splitter import DataSplitter, split_dataset
+from .quality_gate import QualityGate, GateRule, GateReport, build_default_gate
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -228,6 +229,10 @@ __all__ = [
     "evaluate_augmentation",
     "DataSplitter",
     "split_dataset",
+    "QualityGate",
+    "GateRule",
+    "GateReport",
+    "build_default_gate",
     "AugmentorError",
     "ConfigError",
     "ModelError",
