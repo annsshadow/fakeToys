@@ -25,6 +25,8 @@ from .evaluation import ModelEvaluator
 from .streaming import StreamReader, StreamWriter, StreamProcessor, StreamAugmentor
 from .comparison import DatasetComparator, ComparisonResult, compare_datasets
 from .dataset_ops import DatasetOperations, MergeConfig, SampleConfig, SplitConfig
+from .validation import DatasetValidator, DataSanitizer, ValidationResult, ValidationSeverity
+from .converter import DatasetConverter, DataFormat, convert_dataset, convert_file, get_supported_formats
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -81,6 +83,15 @@ __all__ = [
     "MergeConfig",
     "SampleConfig",
     "SplitConfig",
+    "DatasetValidator",
+    "DataSanitizer",
+    "ValidationResult",
+    "ValidationSeverity",
+    "DatasetConverter",
+    "DataFormat",
+    "convert_dataset",
+    "convert_file",
+    "get_supported_formats",
     "AugmentorError",
     "ConfigError",
     "ModelError",

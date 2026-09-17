@@ -168,6 +168,22 @@ def build_parser() -> argparse.ArgumentParser:
     stats_parser = subparsers.add_parser("stats", help="数据集统计信息")
     stats_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
 
+    # 数据集验证命令
+    validate_parser = subparsers.add_parser("validate", help="验证数据集格式")
+    validate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    validate_parser.add_argument("--preset", type=str, default="basic",
+                                 choices=["basic", "strict", "chat"], help="验证规则预设")
+    validate_parser.add_argument("--output", type=str, help="验证结果输出路径")
+
+    # 数据集转换命令
+    convert_parser = subparsers.add_parser("convert", help="转换数据集格式")
+    convert_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    convert_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    convert_parser.add_argument("--format", type=str, required=True,
+                                choices=["json", "jsonl", "csv", "alpaca", "sharegpt", 
+                                        "chatml", "llama_factory", "vicuna", "belle"],
+                                help="目标格式")
+
     return parser
 
 
@@ -475,6 +491,31 @@ def main():
             ops = DatasetOperations()
             stats = ops.get_statistics(items)
             _print(stats)
+
+        # ============ 数据集验证 ============
+        elif args.command == "validate":
+            from augmentor.validation import DatasetValidator
+
+            validator = DatasetValidator(preset=args.preset)
+            result = validator.validate_file(args.input)
+            
+            if args.output:
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"验证结果已保存到 {args.output}")
+            
+            print(f"验证结果: {'通过' if result.is_valid else '失败'}")
+            print(f"总数据: {result.total_items}, 有效: {result.valid_items}")
+            print(f"错误: {result.error_count}, 警告: {result.warning_count}")
+
+        # ============ 数据集转换 ============
+        elif args.command == "convert":
+            from augmentor.converter import convert_file
+
+            result = convert_file(args.input, args.output, target_format=args.format)
+            _print(result)
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
