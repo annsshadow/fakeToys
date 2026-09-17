@@ -351,3 +351,65 @@ class TestVersioningExtended:
         assert hasattr(diff, 'added_count')
         assert hasattr(diff, 'removed_count')
         assert hasattr(diff, 'modified_count')
+
+
+class TestVersioningExtended2:
+    """VersionManager 扩展测试 - 第二轮"""
+
+    def test_get_current_version_none(self, tmp_path):
+        """无当前版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        assert manager.get_current_version() is None
+
+    def test_get_current_version_after_create(self, tmp_path):
+        """创建后获取当前版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}])
+        current = manager.get_current_version()
+        assert current == v1.version_id
+
+    def test_delete_current_version_raises(self, tmp_path):
+        """删除当前版本抛出异常"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}])
+        with pytest.raises(ValueError, match="不能删除当前版本"):
+            manager.delete_version(v1.version_id)
+
+    def test_load_version_nonexistent(self, tmp_path):
+        """加载不存在的版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        with pytest.raises(ValueError):
+            manager.load_version("nonexistent")
+
+    def test_diff_same_version(self, tmp_path):
+        """对比相同版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}])
+        diff = manager.diff(v1.version_id, v1.version_id)
+        assert diff.added_count == 0
+        assert diff.removed_count == 0
+
+    def test_diff_empty_datasets(self, tmp_path):
+        """对比空数据集"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([])
+        v2 = manager.create_version([])
+        diff = manager.diff(v1.version_id, v2.version_id)
+        assert diff.added_count == 0
+        assert diff.removed_count == 0
+
+    def test_history_contains_operations(self, tmp_path):
+        """历史记录包含操作"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}], label="test")
+        history = manager.get_history()
+        assert len(history) >= 1
+        assert history[0]["action"] == "create"
+
+    def test_rollback_changes_current(self, tmp_path):
+        """回滚更改当前版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "q1"}])
+        v2 = manager.create_version([{"instruction": "q2"}])
+        manager.rollback(v1.version_id)
+        assert manager.get_current_version() == v1.version_id
