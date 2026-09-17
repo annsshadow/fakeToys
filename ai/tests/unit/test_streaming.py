@@ -466,3 +466,46 @@ class TestStreamingExtended:
         chunks = list(reader.read_chunks())
         total = sum(len(chunk) for chunk in chunks)
         assert total == len(sample_jsonl_data)
+
+    def test_read_chunks_jsonl_format(self, tmp_path):
+        """读取 JSONL 格式文件"""
+        file_path = tmp_path / "test.jsonl"
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write('{"instruction": "q1"}\n')
+            f.write('{"instruction": "q2"}\n')
+        reader = StreamReader(str(file_path), chunk_size=10)
+        chunks = list(reader.read_chunks())
+        assert len(chunks) == 1
+        assert len(chunks[0]) == 2
+
+    def test_stream_processor_partial_failure(self):
+        """部分处理失败"""
+        call_count = [0]
+        def process_item(item):
+            call_count[0] += 1
+            if call_count[0] == 2:
+                raise RuntimeError("fail")
+            return item
+        stream_process = create_stream_processor(process_item)
+        result = stream_process([{"instruction": "q1"}, {"instruction": "q2"}, {"instruction": "q3"}])
+        assert len(result) == 2
+
+    def test_stream_writer_jsonl_format(self, tmp_path):
+        """JSONL 格式写入"""
+        output_path = tmp_path / "output.jsonl"
+        with StreamWriter(str(output_path), format='jsonl') as writer:
+            writer.write_chunk([{"instruction": "q1"}])
+            writer.write_chunk([{"instruction": "q2"}])
+        with open(output_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        assert len(lines) == 2
+
+    def test_stream_config_chunk_size(self):
+        """StreamConfig chunk_size"""
+        config = StreamConfig(chunk_size=50)
+        assert config.chunk_size == 50
+
+    def test_stream_config_buffer_size(self):
+        """StreamConfig buffer_size"""
+        config = StreamConfig(buffer_size=1024)
+        assert config.buffer_size == 1024
