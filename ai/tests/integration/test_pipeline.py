@@ -483,3 +483,46 @@ class TestAugmentDatasetExtended:
             use_quality_check=True
         )
         assert isinstance(variants, list)
+
+
+class TestPipelineExtended:
+    """AugmentorPipeline 扩展测试"""
+
+    def test_augment_seed_returns_variants(self, pipeline):
+        """增强种子返回变体"""
+        variants = pipeline.augment_seed(
+            {"instruction": "测试问题", "output": "测试回答"}
+        )
+        assert isinstance(variants, list)
+
+    def test_augment_seed_empty_response(self, pipeline):
+        """空响应增强种子"""
+        pipeline.model_backend.raw_response = "[]"
+        variants = pipeline.augment_seed(
+            {"instruction": "测试问题", "output": "测试回答"}
+        )
+        assert variants == []
+
+    def test_augment_seed_invalid_json(self, pipeline):
+        """无效 JSON 响应增强种子"""
+        pipeline.model_backend.raw_response = "not json"
+        variants = pipeline.augment_seed(
+            {"instruction": "测试问题", "output": "测试回答"}
+        )
+        assert variants == []
+
+    def test_generate_variants_single(self, pipeline):
+        """生成单个变体"""
+        pipeline.model_backend.raw_response = json.dumps(
+            [{"instruction": "变体问题", "output": "变体回答"}],
+            ensure_ascii=False
+        )
+        from queue import Queue
+        queue = Queue()
+        pipeline._process_single_item(
+            0, {"instruction": "问题", "output": "回答"},
+            use_quality_check=False, result_queue=queue
+        )
+        idx, success, variants = queue.get()
+        assert success is True
+        assert len(variants) == 1
