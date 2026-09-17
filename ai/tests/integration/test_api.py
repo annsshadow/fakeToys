@@ -210,6 +210,58 @@ class TestQualityRoutes:
         assert response.status_code == 200
         assert "metrics" in response.json()
 
+    def test_outliers_detects_length_field(self, client, data_file):
+        """异常检测接口默认基于 length 字段（instruction 长度）"""
+        response = client.post("/api/quality/outliers", json={"input_file": data_file})
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert "total_items" in payload
+        assert "outlier_count" in payload
+        assert payload["method"] == "zscore"
+
+    def test_outliers_rejects_unknown_method(self, client, data_file):
+        """未知方法应返回 400"""
+        response = client.post("/api/quality/outliers", json={
+            "input_file": data_file, "method": "mad"
+        })
+        assert response.status_code == 400
+
+    def test_outliers_iqr_method(self, client, data_file):
+        """iqr 方法应正常返回"""
+        response = client.post("/api/quality/outliers", json={
+            "input_file": data_file, "method": "iqr", "threshold": 1.5
+        })
+        assert response.status_code == 200
+        assert response.json()["method"] == "iqr"
+
+    def test_outliers_missing_file(self, client, tmp_path):
+        """文件不存在应返回 404"""
+        response = client.post("/api/quality/outliers", json={
+            "input_file": str(tmp_path / "nope.json")
+        })
+        assert response.status_code == 404
+
+    def test_profiling_returns_full_report(self, client, data_file):
+        """画像接口应返回全部统计维度"""
+        response = client.post("/api/quality/profiling", json={"input_file": data_file})
+
+        assert response.status_code == 200
+        payload = response.json()
+        for key in ("total_items", "field_completeness", "length_stats",
+                    "duplicate_rate", "language_distribution", "top_keywords"):
+            assert key in payload
+
+    def test_profiling_save_to_file(self, client, data_file, tmp_path):
+        """save=true 时应写出画像文件"""
+        output = str(tmp_path / "profile_out.json")
+        response = client.post("/api/quality/profiling", json={
+            "input_file": data_file, "save": True, "output_path": output
+        })
+        assert response.status_code == 200
+        from pathlib import Path
+        assert Path(output).exists()
+
 
 class TestExportRoutes:
     """导出路由"""

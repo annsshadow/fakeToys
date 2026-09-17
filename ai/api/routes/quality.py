@@ -197,3 +197,73 @@ async def run_benchmark(request: QualityRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class OutlierRequest(BaseModel):
+    """异常值检测请求"""
+    input_file: str
+    method: str = "zscore"
+    threshold: float = 3.0
+    field: str = "length"
+
+
+class ProfilingRequest(BaseModel):
+    """数据画像请求"""
+    input_file: str
+    save: bool = False
+    output_path: str = ""
+
+
+@router.post("/api/quality/outliers")
+async def detect_outliers_endpoint(request: OutlierRequest):
+    """检测长度异常样本"""
+    try:
+        raw_items = load_items(request.input_file)
+
+        def detect():
+            from augmentor.outlier import OutlierDetector
+
+            detector = OutlierDetector(
+                method=request.method,
+                threshold=request.threshold,
+                field=request.field,
+            )
+            # 若指定 length 字段，则基于 instruction 长度现场计算
+            working_items = detector.attach_length_field(raw_items) \
+                if request.field == "length" else raw_items
+            report = detector.detect(working_items)
+            return report.to_dict()
+
+        return await run_in_thread(detect)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/quality/profiling")
+async def profile_dataset(request: ProfilingRequest):
+    """生成数据集画像"""
+    try:
+        items = load_items(request.input_file)
+
+        def profile():
+            from augmentor.profiling import DataProfiler
+
+            profiler = DataProfiler()
+            report = profiler.profile(items)
+            if request.save and request.output_path:
+                profiler.save_profile(items, request.output_path)
+            return report
+
+        return await run_in_thread(profile)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
