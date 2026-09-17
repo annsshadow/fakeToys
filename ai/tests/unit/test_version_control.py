@@ -196,3 +196,127 @@ class TestConvenienceFunctions:
         versions = list_versions(str(versions_dir))
         
         assert len(versions) == 2
+
+
+class TestVersionControlEdgeCases:
+    """版本控制边界测试"""
+
+    def test_calculate_checksum(self, tmp_path, sample_dataset):
+        """校验和应一致"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(sample_dataset, "test")
+        data_file = versions_dir / version.version_id / "data.json"
+        
+        checksum1 = manager._calculate_checksum(str(data_file))
+        checksum2 = manager._calculate_checksum(str(data_file))
+        
+        assert checksum1 == checksum2
+        assert checksum1 == version.checksum
+
+    def test_generate_version_number_carry(self, tmp_path, sample_dataset):
+        """版本号进位测试"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        # 手动设置版本号为 1.0.9
+        manager._index["versions"] = [{"version_number": "1.0.9", "version_id": "v1.0.9"}]
+        next_ver = manager._generate_version_number()
+        assert next_ver == "1.1.0"
+
+    def test_generate_version_number_major_carry(self, tmp_path, sample_dataset):
+        """主版本号进位测试"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        # 手动设置版本号为 1.9.9
+        manager._index["versions"] = [{"version_number": "1.9.9", "version_id": "v1.9.9"}]
+        next_ver = manager._generate_version_number()
+        assert next_ver == "2.0.0"
+
+    def test_generate_version_number_first(self, tmp_path):
+        """首次创建版本号应为 1.0.0"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        ver = manager._generate_version_number()
+        assert ver == "1.0.0"
+
+    def test_set_current_version_invalid(self, tmp_path, sample_dataset):
+        """设置不存在的版本为当前版本应返回 False"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        assert manager.set_current_version("nonexistent") is False
+
+    def test_delete_current_version(self, tmp_path, sample_dataset):
+        """删除当前版本后应更新当前版本"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        v1 = manager.create_version(sample_dataset, "v1")
+        v2 = manager.create_version(sample_dataset, "v2")
+        
+        manager.delete_version(v2.version_id)
+        assert manager.get_current_version() == v1.version_id
+
+    def test_delete_last_version(self, tmp_path, sample_dataset):
+        """删除最后一个版本后当前版本应为 None"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        v1 = manager.create_version(sample_dataset, "v1")
+        manager.delete_version(v1.version_id)
+        
+        assert manager.get_current_version() is None
+
+    def test_delete_nonexistent_version(self, tmp_path):
+        """删除不存在的版本应返回 False"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        assert manager.delete_version("nonexistent") is False
+
+    def test_load_version_nonexistent(self, tmp_path):
+        """加载不存在的版本数据应抛出异常"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        with pytest.raises(FileNotFoundError):
+            manager.load_version("nonexistent")
+
+    def test_get_version_nonexistent(self, tmp_path):
+        """获取不存在的版本信息应返回 None"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        assert manager.get_version("nonexistent") is None
+
+    def test_compare_identical_versions(self, tmp_path, sample_dataset):
+        """比较相同版本应返回空差异"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        v1 = manager.create_version(sample_dataset, "v1")
+        v2 = manager.create_version(sample_dataset, "v2")
+        
+        result = manager.compare_versions(v1.version_id, v2.version_id)
+        
+        assert result["stats"]["only_in_a_count"] == 0
+        assert result["stats"]["only_in_b_count"] == 0
+        assert result["stats"]["in_both_count"] == 3
+
+    def test_create_version_with_tags_and_metadata(self, tmp_path, sample_dataset):
+        """创建版本时应保存标签和元数据"""
+        versions_dir = tmp_path / "versions"
+        manager = DatasetVersionManager(str(versions_dir))
+        
+        version = manager.create_version(
+            sample_dataset, "test",
+            tags=["release", "stable"],
+            metadata={"author": "test_user"}
+        )
+        
+        assert version.tags == ["release", "stable"]
+        assert version.metadata == {"author": "test_user"}
