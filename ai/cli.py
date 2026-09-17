@@ -122,6 +122,52 @@ def build_parser() -> argparse.ArgumentParser:
     version_parser.add_argument("--version-id", type=str, help="版本 ID")
     version_parser.add_argument("--version-id-2", type=str, help="第二个版本 ID（用于 diff）")
 
+    # 数据集对比命令
+    compare_parser = subparsers.add_parser("compare", help="对比两个数据集")
+    compare_parser.add_argument("--dataset-a", type=str, required=True, help="数据集A文件路径")
+    compare_parser.add_argument("--dataset-b", type=str, required=True, help="数据集B文件路径")
+    compare_parser.add_argument("--name-a", type=str, default="Dataset A", help="数据集A的名称")
+    compare_parser.add_argument("--name-b", type=str, default="Dataset B", help="数据集B的名称")
+    compare_parser.add_argument("--output", type=str, help="对比结果输出路径")
+
+    # 流式处理命令
+    stream_parser = subparsers.add_parser("stream", help="流式处理大数据集")
+    stream_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    stream_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    stream_parser.add_argument("--chunk-size", type=int, default=1000, help="分块大小")
+    stream_parser.add_argument("--operation", type=str, required=True,
+                               choices=["quality", "dedup", "clean", "export"],
+                               help="处理操作")
+
+    # 数据集合并命令
+    merge_parser = subparsers.add_parser("merge", help="合并多个数据集")
+    merge_parser.add_argument("--inputs", type=str, nargs="+", required=True, help="输入文件路径列表")
+    merge_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    merge_parser.add_argument("--no-dedup", action="store_true", help="禁用去重")
+
+    # 数据集采样命令
+    sample_parser = subparsers.add_parser("sample", help="采样数据集")
+    sample_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    sample_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    sample_parser.add_argument("--size", type=int, help="采样数量")
+    sample_parser.add_argument("--ratio", type=float, help="采样比例 (0-1)")
+    sample_parser.add_argument("--method", type=str, default="random",
+                               choices=["random", "systematic", "stratified"], help="采样方法")
+    sample_parser.add_argument("--seed", type=int, help="随机种子")
+
+    # 数据集分割命令
+    split_parser = subparsers.add_parser("split", help="分割数据集")
+    split_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    split_parser.add_argument("--output-dir", type=str, required=True, help="输出目录")
+    split_parser.add_argument("--train-ratio", type=float, default=0.8, help="训练集比例")
+    split_parser.add_argument("--val-ratio", type=float, default=0.1, help="验证集比例")
+    split_parser.add_argument("--test-ratio", type=float, default=0.1, help="测试集比例")
+    split_parser.add_argument("--seed", type=int, help="随机种子")
+
+    # 数据集统计命令
+    stats_parser = subparsers.add_parser("stats", help="数据集统计信息")
+    stats_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+
     return parser
 
 
@@ -326,6 +372,109 @@ def main():
 
             elif args.action == "history":
                 _print(pipeline.version_manager.get_history(limit=20))
+
+        # ============ 数据集对比 ============
+        elif args.command == "compare":
+            from augmentor.comparison import compare_datasets
+
+            result = compare_datasets(
+                args.dataset_a,
+                args.dataset_b,
+                name_a=args.name_a,
+                name_b=args.name_b,
+                output_path=args.output
+            )
+            print(result.summary)
+
+        # ============ 流式处理 ============
+        elif args.command == "stream":
+            from augmentor.streaming import StreamAugmentor
+            from augmentor.quality import QualityScorer
+            from augmentor.dedup import Deduplicator
+
+            def get_processor(operation: str):
+                if operation == "quality":
+                    scorer = QualityScorer(threshold=config.quality.threshold)
+                    def process(items):
+                        scoring_items = [
+                            {
+                                "original": item.get("instruction", ""),
+                                "generated": item.get("instruction", ""),
+                                "output": item.get("output", "")
+                            }
+                            for item in items
+                        ]
+                        scores = scorer.batch_score(scoring_items)
+                        return [
+                            item for item, score in zip(items, scores) if score.passed
+                        ]
+                    return process
+                elif operation == "dedup":
+                    deduplicator = Deduplicator(threshold=config.dedup.threshold)
+                    return lambda items: deduplicator.deduplicate_and_filter(items)
+                elif operation == "clean":
+                    from augmentor.data import DataCleaner
+                    cleaner = DataCleaner()
+                    def process(items):
+                        result = cleaner.clean(items)
+                        return result.items
+                    return process
+                else:
+                    return lambda items: items
+
+            processor = get_processor(args.operation)
+            augmentor = StreamAugmentor(
+                input_file=args.input,
+                output_file=args.output,
+                processor=processor,
+                chunk_size=args.chunk_size
+            )
+            result = augmentor.augment()
+            _print(result)
+
+        # ============ 数据集合并 ============
+        elif args.command == "merge":
+            from augmentor.dataset_ops import DatasetOperations, MergeConfig
+
+            config_merge = MergeConfig(deduplicate=not args.no_dedup)
+            ops = DatasetOperations()
+            result = ops.merge_files(args.inputs, args.output, config_merge)
+            _print(result)
+
+        # ============ 数据集采样 ============
+        elif args.command == "sample":
+            from augmentor.dataset_ops import DatasetOperations, SampleConfig
+
+            config_sample = SampleConfig(
+                method=args.method,
+                size=args.size,
+                ratio=args.ratio,
+                seed=args.seed
+            )
+            ops = DatasetOperations()
+            result = ops.sample_file(args.input, args.output, config_sample)
+            _print(result)
+
+        # ============ 数据集分割 ============
+        elif args.command == "split":
+            from augmentor.dataset_ops import DatasetOperations, SplitConfig
+
+            config_split = SplitConfig(
+                ratios=(args.train_ratio, args.val_ratio, args.test_ratio),
+                seed=args.seed
+            )
+            ops = DatasetOperations()
+            result = ops.split_file(args.input, args.output_dir, config_split)
+            _print(result)
+
+        # ============ 数据集统计 ============
+        elif args.command == "stats":
+            from augmentor.dataset_ops import DatasetOperations
+
+            items = _load_items(args.input)
+            ops = DatasetOperations()
+            stats = ops.get_statistics(items)
+            _print(stats)
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
