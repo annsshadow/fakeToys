@@ -281,3 +281,31 @@ class TestBackupEdgeCases:
         manager.delete_backup("backup2")
         assert len(manager.list_backups()) == 2
         assert manager.get_backup_info("backup2") is None
+
+    def test_backup_custom_subdir(self, tmp_path, sample_file):
+        """备份目录支持嵌套子目录"""
+        custom = tmp_path / "nested" / "backups"
+        manager = DatasetBackup(str(custom))
+        info = manager.backup(sample_file, "x")
+        assert custom.exists()
+        assert info.backup_id == "x"
+
+    def test_backup_index_persists_across_instances(self, tmp_path, sample_file):
+        """备份索引应跨实例持久化"""
+        manager1 = DatasetBackup(str(tmp_path / "backups"))
+        manager1.backup(sample_file, "persisted")
+
+        manager2 = DatasetBackup(str(tmp_path / "backups"))
+        ids = [b["backup_id"] for b in manager2.list_backups()]
+        assert "persisted" in ids
+
+    def test_restore_missing_backup_raises(self, tmp_path, sample_file):
+        """恢复不存在的备份应报错"""
+        manager = DatasetBackup(str(tmp_path / "backups"))
+        with pytest.raises(ValueError, match="备份不存在"):
+            manager.restore("no_such_backup", str(tmp_path / "out.json"))
+
+    def test_delete_missing_returns_false(self, tmp_path, sample_file):
+        """删除不存在的备份应返回 False"""
+        manager = DatasetBackup(str(tmp_path / "backups"))
+        assert manager.delete_backup("ghost") is False
