@@ -1,5 +1,5 @@
 -- 096_create_ai_announcement_ftsearch_tables.sql
--- 补齐 /jaxrs/ai/assemble/control/ann/list 与 /jaxrs/ftsearch/list 斜杠路径家族所需的表。
+-- 补齐 /api/ai/assemble/control/ann/list 与 /api/ftsearch/list 斜杠路径家族所需的表。
 -- ai_ann：AI 模块公告/模型公告；ftsearch：全文检索索引文档。
 
 CREATE TABLE IF NOT EXISTS "x_ai_ann" (

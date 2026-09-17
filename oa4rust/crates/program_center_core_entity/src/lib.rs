@@ -29,16 +29,13 @@ pub fn program_center_mock_router(_db: sea_orm::DatabaseConnection) -> Router {
     use axum::routing::get;
     Router::new()
         .route(
-            "/jaxrs/program_center/application/list",
+            "/api/program_center/application/list",
             get(|| async { "ok" }),
         )
-        .route("/jaxrs/program_center/script/list", get(|| async { "ok" }))
-        .route("/jaxrs/program_center/invoke/list", get(|| async { "ok" }))
-        .route("/jaxrs/program_center/agent/list", get(|| async { "ok" }))
-        .route(
-            "/jaxrs/program_center/structure/list",
-            get(|| async { "ok" }),
-        )
+        .route("/api/program_center/script/list", get(|| async { "ok" }))
+        .route("/api/program_center/invoke/list", get(|| async { "ok" }))
+        .route("/api/program_center/agent/list", get(|| async { "ok" }))
+        .route("/api/program_center/structure/list", get(|| async { "ok" }))
 }
 
 #[cfg(test)]

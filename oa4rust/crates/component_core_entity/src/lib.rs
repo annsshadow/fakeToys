@@ -55,7 +55,7 @@ pub async fn component_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -125,11 +125,11 @@ pub async fn component_count(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub fn component_core_entity_router(pool: Pool) -> Router {
     Router::new()
         .route(
-            "/jaxrs/component/core/entity/list/all",
+            "/api/component/core/entity/list/all",
             get(component_list_all),
         )
-        .route("/jaxrs/component/core/entity/{flag}", get(component_get))
-        .route("/jaxrs/component/core/entity/count", get(component_count))
+        .route("/api/component/core/entity/{flag}", get(component_get))
+        .route("/api/component/core/entity/count", get(component_count))
         .layer(Extension(pool))
 }
 

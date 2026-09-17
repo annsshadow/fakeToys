@@ -41,7 +41,7 @@ pub async fn device_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -145,7 +145,7 @@ pub async fn template_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

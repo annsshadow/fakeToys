@@ -94,5 +94,9 @@ pub async fn list(
         })
         .collect();
 
-    Json(ActionResult::java_success(Value::Array(data), total, size))
+    Json(ActionResult::legacy_success(
+        Value::Array(data),
+        total,
+        size,
+    ))
 }

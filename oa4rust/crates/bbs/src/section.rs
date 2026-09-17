@@ -6,7 +6,7 @@ use shared::{error::AppError, response::ActionResult};
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/section/viewforum/{forumId}",
+    path = "/api/bbs/section/viewforum/{forumId}",
     params(
         ("forumId" = String, Path, description = "Forum ID")
     ),
@@ -51,7 +51,7 @@ pub async fn view_forum(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -60,7 +60,7 @@ pub async fn view_forum(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/section/view/all",
+    path = "/api/bbs/section/view/all",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -99,7 +99,7 @@ pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

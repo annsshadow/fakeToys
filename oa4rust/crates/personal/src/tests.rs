@@ -339,7 +339,7 @@ mod tests {
 // 这些测试编码业务意图：
 //  1. custom/definition 的写入是归一化 upsert —— 同名重复写入不得产生多行；
 //  2. 用户级数据端点必须认证（无 token → 401），管理员级必须校验角色；
-//  3. empowerlog 分页对非管理员强制收敛到本人数据（对齐 Java 分支语义）；
+//  3. empowerlog 分页对非管理员强制收敛到本人数据（对齐 o2server 分支语义）；
 //  4. exmail 被动读取只信回调落库数据，未登录返回零值而非报错。
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -593,7 +593,7 @@ mod u2_contract {
         let response = app(pool, sm)
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/custom/u2cfg")
+                    .uri("/api/person/custom/u2cfg")
                     .method("GET")
                     .body(axum::body::Body::empty())
                     .unwrap(),
@@ -614,7 +614,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/custom/u2cfg")
+                    .uri("/api/person/custom/u2cfg")
                     .method("PUT")
                     .header("authorization", &auth)
                     .header("content-type", "text/plain")
@@ -635,7 +635,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/custom/u2cfg")
+                    .uri("/api/person/custom/u2cfg")
                     .header("authorization", &auth)
                     .body(axum::body::Body::empty())
                     .unwrap(),
@@ -650,7 +650,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/custom/u2cfg")
+                    .uri("/api/person/custom/u2cfg")
                     .method("PUT")
                     .header("authorization", &auth)
                     .body(axum::body::Body::from("v2"))
@@ -674,7 +674,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/custom/u2cfg")
+                    .uri("/api/person/custom/u2cfg")
                     .method("DELETE")
                     .header("authorization", &auth)
                     .body(axum::body::Body::empty())
@@ -683,9 +683,15 @@ mod u2_contract {
             .await
             .unwrap();
         let v = body_bytes(response).await;
-        // W12：对齐 Java WoId——删除命中回 {id}（非旧 {value:bool}）
-        assert!(v["data"]["id"].is_string(), "delete custom 应回 {{id}}, body={v}");
-        assert!(v["data"].get("value").is_none(), "不应再带 value 键, body={v}");
+        // W12：对齐 o2server WoId——删除命中回 {id}（非旧 {value:bool}）
+        assert!(
+            v["data"]["id"].is_string(),
+            "delete custom 应回 {{id}}, body={v}"
+        );
+        assert!(
+            v["data"].get("value").is_none(),
+            "不应再带 value 键, body={v}"
+        );
     }
 
     #[tokio::test]
@@ -697,7 +703,7 @@ mod u2_contract {
         let put = |router: &axum::Router, body: &'static str| {
             router.clone().oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/definition/u2def")
+                    .uri("/api/person/definition/u2def")
                     .method("PUT")
                     .header("authorization", &auth)
                     .body(axum::body::Body::from(body))
@@ -711,7 +717,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/definition/u2def")
+                    .uri("/api/person/definition/u2def")
                     .header("authorization", &auth)
                     .body(axum::body::Body::empty())
                     .unwrap(),
@@ -737,7 +743,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/definition/u2def")
+                    .uri("/api/person/definition/u2def")
                     .method("DELETE")
                     .header("authorization", &auth)
                     .body(axum::body::Body::empty())
@@ -747,12 +753,15 @@ mod u2_contract {
             .unwrap();
         let status = response.status();
         let v = body_bytes(response).await;
-        // W12：对齐 Java WoId——删除命中回 {id}（非旧 {value:bool}）
+        // W12：对齐 o2server WoId——删除命中回 {id}（非旧 {value:bool}）
         assert!(
             v["data"]["id"].is_string(),
             "delete def 应回 {{id}}: status={status} body={v}"
         );
-        assert!(v["data"].get("value").is_none(), "不应再带 value 键, body={v}");
+        assert!(
+            v["data"].get("value").is_none(),
+            "不应再带 value 键, body={v}"
+        );
     }
 
     #[tokio::test]
@@ -804,7 +813,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/empowerlog/list/currentperson/paging/1/size/10")
+                    .uri("/api/person/empowerlog/list/currentperson/paging/1/size/10")
                     .method("POST")
                     .header("content-type", "application/json")
                     .header("authorization", &auth)
@@ -856,7 +865,7 @@ mod u2_contract {
             .clone()
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/exmail/new/count/passive")
+                    .uri("/api/person/exmail/new/count/passive")
                     .header("authorization", &auth)
                     .body(axum::body::Body::empty())
                     .unwrap(),
@@ -866,11 +875,11 @@ mod u2_contract {
         let v = body_bytes(response).await;
         assert_eq!(v["data"]["value"], 7);
 
-        // 未登录 → 返回零值（对齐 Java anonymous 分支），不报错
+        // 未登录 → 返回零值（对齐 o2server anonymous 分支），不报错
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/exmail/new/count/passive")
+                    .uri("/api/person/exmail/new/count/passive")
                     .body(axum::body::Body::empty())
                     .unwrap(),
             )
@@ -888,7 +897,7 @@ mod u2_contract {
         let response = router
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/person/signature/list/person/u2-admin@P")
+                    .uri("/api/person/signature/list/person/u2-admin@P")
                     .header("authorization", &auth)
                     .body(axum::body::Body::empty())
                     .unwrap(),
@@ -903,7 +912,7 @@ mod u2_contract {
         std::env::remove_var("PERSON_REGISTER");
         let v = u2::regist_mode().await.unwrap();
         let j = serde_json::to_value(&v.0).unwrap();
-        // Rust returns {"value": "disable"} vs Java "false" — Rust uses enable/disable semantics
+        // Rust returns {"value": "disable"} vs o2server "false" — Rust uses enable/disable semantics
         assert_eq!(j["data"]["value"], "disable");
     }
 }

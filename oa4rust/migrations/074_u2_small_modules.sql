@@ -1,8 +1,8 @@
 -- plan002 U2: 四小模块端点闭合共用 migration（program_init / base / calendar_assemble_control / program_center）。
 --
--- 1) init_external_datasource  -> program_init jaxrs/externaldatasources（set/list/check/validate/set-cancel）
--- 2) init_server_command       -> program_init jaxrs/server（execute / execute/status / stop）
--- 3) init_restore_upload       -> program_init jaxrs/restore（upload / upload/cancel）
+-- 1) init_external_datasource  -> program_init /api/externaldatasources（set/list/check/validate/set-cancel）
+-- 2) init_server_command       -> program_init /api/server（execute / execute/status / stop）
+-- 3) init_restore_upload       -> program_init /api/restore（upload / upload/cancel）
 -- 4) x_program_invoke          -> program_center invoke CRUD（POST/GET/PUT/DELETE /invoke）
 -- 5) cal_setting               -> calendar_assemble_control setting 域（list/all、{id}）
 --

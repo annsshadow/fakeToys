@@ -18,9 +18,9 @@ use uuid::Uuid;
 // ──────────────────────────────────────────────────────────────────────────────
 // bind — 扫码登录（绑定）
 //
-// 流程：GET /jaxrs/authentication/bind 生成二维码内容（meta）→ 已登录用户
-// 扫码确认（POST /jaxrs/authentication/bind/meta/{meta}，需携带会话令牌）→
-// 客户端轮询 GET /jaxrs/authentication/bind/meta/{meta}，确认后通过 HttpOnly Cookie 建立会话。
+// 流程：GET /api/authentication/bind 生成二维码内容（meta）→ 已登录用户
+// 扫码确认（POST /api/authentication/bind/meta/{meta}，需携带会话令牌）→
+// 客户端轮询 GET /api/authentication/bind/meta/{meta}，确认后通过 HttpOnly Cookie 建立会话。
 //
 // 安全：仅在已确认扫码授权后签发会话（meta 一次性，5 分钟过期）。
 // 此路径豁免认证中间件（见 shared AUTH_EXEMPT_PATHS），确认端点
@@ -116,7 +116,7 @@ fn bind_store() -> &'static BindStore {
     STORE.get_or_init(BindStore::new)
 }
 
-/// GET /jaxrs/authentication/bind —— 生成扫码登录二维码内容
+/// GET /api/authentication/bind —— 生成扫码登录二维码内容
 pub async fn bind() -> Result<Json<ActionResult<Value>>, AppError> {
     let meta = bind_store().create();
     Ok(Json(ActionResult::success(json!({
@@ -127,7 +127,7 @@ pub async fn bind() -> Result<Json<ActionResult<Value>>, AppError> {
     }))))
 }
 
-/// POST /jaxrs/authentication/bind/meta/{meta} —— 已登录用户确认扫码绑定
+/// POST /api/authentication/bind/meta/{meta} —— 已登录用户确认扫码绑定
 pub async fn bind_confirm(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
@@ -146,7 +146,7 @@ pub async fn bind_confirm(
     }
 }
 
-/// GET /jaxrs/authentication/bind/meta/{meta} —— 轮询绑定结果
+/// GET /api/authentication/bind/meta/{meta} —— 轮询绑定结果
 pub async fn bind_poll(
     session_manager: Extension<SessionManager>,
     Path(meta): Path<String>,
@@ -172,9 +172,9 @@ pub async fn bind_poll(
 
 pub fn bind_router() -> Router {
     Router::new()
-        .route("/jaxrs/authentication/bind", get(bind))
+        .route("/api/authentication/bind", get(bind))
         .route(
-            "/jaxrs/authentication/bind/meta/{meta}",
+            "/api/authentication/bind/meta/{meta}",
             get(bind_poll).post(bind_confirm),
         )
 }

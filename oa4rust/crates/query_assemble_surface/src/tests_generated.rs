@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/assemble/surface/get/test-id")
+                    .uri("/api/query/assemble/surface/get/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/assemble/surface/create")
+                    .uri("/api/query/assemble/surface/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/assemble/surface/list/test-id")
+                    .uri("/api/query/assemble/surface/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/assemble/surface/save/test-id")
+                    .uri("/api/query/assemble/surface/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/assemble/surface/delete/test-id")
+                    .uri("/api/query/assemble/surface/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/assemble/surface/preview/test-id")
+                    .uri("/api/query/assemble/surface/preview/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -149,7 +149,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/importmodel/id/test-id/execute")
+                    .uri("/api/importmodel/id/test-id/execute")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -199,7 +199,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/queryview/test-id/application/test-id/execute")
+                    .uri("/api/queryview/test-id/application/test-id/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -221,7 +221,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/queryview/test-id/application/test-id/execute/page/test-id/size/test-id")
+                    .uri("/api/queryview/test-id/application/test-id/execute/page/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

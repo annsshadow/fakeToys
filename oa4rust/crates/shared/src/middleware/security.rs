@@ -115,7 +115,7 @@ pub(crate) fn is_auth_rate_limited(path: &str) -> bool {
 }
 
 /// 路径段前缀匹配：`path` 等于 `prefix` 或 `prefix + "/"` 开头。
-/// 带段边界，避免把 /jaxrs/personal/* 误判为 /jaxrs/person*。
+/// 带段边界，避免把 /api/personal/* 误判为 /api/person*。
 pub(crate) fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
     path == prefix || path.starts_with(&format!("{}/", prefix))
 }
@@ -124,8 +124,8 @@ pub(crate) fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
 /// 需要 admin 角色。自服务端点（改密、头像）豁免。
 pub(crate) fn requires_admin(method: &axum::http::Method, path: &str) -> bool {
     if matches!(method.as_str(), "POST" | "PUT" | "DELETE") {
-        if path_starts_with_segment(path, "/jaxrs/person/password")
-            || path_starts_with_segment(path, "/jaxrs/person/icon")
+        if path_starts_with_segment(path, "/api/person/password")
+            || path_starts_with_segment(path, "/api/person/icon")
         {
             return false;
         }

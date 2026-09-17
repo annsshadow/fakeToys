@@ -12,7 +12,7 @@ pub struct SubjectSearchQuery {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/subject/top/{sectionId}",
+    path = "/api/bbs/subject/top/{sectionId}",
     params(
         ("sectionId" = String, Path, description = "Section ID")
     ),
@@ -65,7 +65,7 @@ pub async fn top(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -74,7 +74,7 @@ pub async fn top(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/subject/list/{sectionId}",
+    path = "/api/bbs/subject/list/{sectionId}",
     params(
         ("sectionId" = String, Path, description = "Section ID")
     ),
@@ -132,7 +132,7 @@ pub async fn list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -141,7 +141,7 @@ pub async fn list(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/subject/view/{id}",
+    path = "/api/bbs/subject/view/{id}",
     params(
         ("id" = String, Path, description = "Subject ID")
     ),
@@ -201,7 +201,7 @@ pub async fn view(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/bbs/subject/create",
+    path = "/api/bbs/subject/create",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -257,7 +257,7 @@ pub async fn create(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/subject/search",
+    path = "/api/bbs/subject/search",
     params(
         ("keyword" = Option<String>, Query, description = "Search keyword")
     ),
@@ -317,7 +317,7 @@ pub async fn search(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

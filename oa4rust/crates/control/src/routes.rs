@@ -9,10 +9,10 @@ use crate::{group, person, role, unit};
 
 /// 构建 control 模块路由
 ///
-/// 路径对齐 Java Action 契约（PersonAction/GroupAction/RoleAction/UnitAction）：
-/// - 创建: POST /jaxrs/{entity}
-/// - 单条: GET/PUT/DELETE /jaxrs/{entity}/{flag}
-/// - 游标分页: GET /jaxrs/{entity}/list/{flag}/next|prev/{count}
+/// 路径对齐 o2server Action 契约（PersonAction/GroupAction/RoleAction/UnitAction）：
+/// - 创建: POST /api/{entity}
+/// - 单条: GET/PUT/DELETE /api/{entity}/{flag}
+/// - 游标分页: GET /api/{entity}/list/{flag}/next|prev/{count}
 ///
 /// 增删改接口（POST/PUT/DELETE）需配合权限中间件使用。
 ///
@@ -24,45 +24,39 @@ use crate::{group, person, role, unit};
 pub fn control_router(pool: Pool) -> Router {
     Router::new()
         // 人员管理
-        .route("/jaxrs/person", post(person::create))
-        .route("/jaxrs/person/{flag}", get(person::get))
-        .route("/jaxrs/person/{flag}", put(person::update))
-        .route("/jaxrs/person/{flag}", delete(person::delete))
+        .route("/api/person", post(person::create))
+        .route("/api/person/{flag}", get(person::get))
+        .route("/api/person/{flag}", put(person::update))
+        .route("/api/person/{flag}", delete(person::delete))
         .route(
-            "/jaxrs/person/list/{flag}/next/{count}",
+            "/api/person/list/{flag}/next/{count}",
             get(person::list_next),
         )
         .route(
-            "/jaxrs/person/list/{flag}/prev/{count}",
+            "/api/person/list/{flag}/prev/{count}",
             get(person::list_prev),
         )
         // 用户组管理
-        .route("/jaxrs/group", post(group::create))
-        .route("/jaxrs/group/{flag}", get(group::get))
-        .route("/jaxrs/group/{flag}", put(group::update))
-        .route("/jaxrs/group/{flag}", delete(group::delete))
-        .route(
-            "/jaxrs/group/list/{flag}/next/{count}",
-            get(group::list_next),
-        )
-        .route(
-            "/jaxrs/group/list/{flag}/prev/{count}",
-            get(group::list_prev),
-        )
+        .route("/api/group", post(group::create))
+        .route("/api/group/{flag}", get(group::get))
+        .route("/api/group/{flag}", put(group::update))
+        .route("/api/group/{flag}", delete(group::delete))
+        .route("/api/group/list/{flag}/next/{count}", get(group::list_next))
+        .route("/api/group/list/{flag}/prev/{count}", get(group::list_prev))
         // 角色管理
-        .route("/jaxrs/role", post(role::create))
-        .route("/jaxrs/role/{flag}", get(role::get))
-        .route("/jaxrs/role/{flag}", put(role::update))
-        .route("/jaxrs/role/{flag}", delete(role::delete))
-        .route("/jaxrs/role/list/{flag}/next/{count}", get(role::list_next))
-        .route("/jaxrs/role/list/{flag}/prev/{count}", get(role::list_prev))
+        .route("/api/role", post(role::create))
+        .route("/api/role/{flag}", get(role::get))
+        .route("/api/role/{flag}", put(role::update))
+        .route("/api/role/{flag}", delete(role::delete))
+        .route("/api/role/list/{flag}/next/{count}", get(role::list_next))
+        .route("/api/role/list/{flag}/prev/{count}", get(role::list_prev))
         // 单位管理
-        .route("/jaxrs/unit", post(unit::create))
-        .route("/jaxrs/unit/list", get(unit::list))
-        .route("/jaxrs/unit/{flag}", get(unit::get))
-        .route("/jaxrs/unit/{flag}", put(unit::update))
-        .route("/jaxrs/unit/{flag}", delete(unit::delete))
-        .route("/jaxrs/unit/list/{flag}/next/{count}", get(unit::list_next))
-        .route("/jaxrs/unit/list/{flag}/prev/{count}", get(unit::list_prev))
+        .route("/api/unit", post(unit::create))
+        .route("/api/unit/list", get(unit::list))
+        .route("/api/unit/{flag}", get(unit::get))
+        .route("/api/unit/{flag}", put(unit::update))
+        .route("/api/unit/{flag}", delete(unit::delete))
+        .route("/api/unit/list/{flag}/next/{count}", get(unit::list_next))
+        .route("/api/unit/list/{flag}/prev/{count}", get(unit::list_prev))
         .layer(Extension(pool))
 }

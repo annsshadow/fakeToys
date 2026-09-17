@@ -64,7 +64,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -156,7 +156,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -255,7 +255,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -315,7 +315,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -368,7 +368,7 @@ pub async fn organization_assemble_control_person_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -518,7 +518,7 @@ pub async fn group_list_like_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -553,7 +553,7 @@ pub async fn group_list_like_pinyin(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -588,7 +588,7 @@ pub async fn group_list_like_pinyin_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -624,7 +624,7 @@ pub async fn group_list_pinyininitial(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -659,7 +659,7 @@ pub async fn group_list_pinyininitial_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -699,7 +699,7 @@ pub async fn group_list_flag_sub_direct(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -739,7 +739,7 @@ pub async fn group_list_flag_sub_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -785,7 +785,7 @@ pub async fn group_list_flag_sup_direct(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -833,7 +833,7 @@ pub async fn group_list_flag_sup_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1092,7 +1092,7 @@ pub async fn identity_list_like_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1130,7 +1130,7 @@ pub async fn identity_list_like_pinyin(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1168,7 +1168,7 @@ pub async fn identity_list_like_pinyin_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1207,7 +1207,7 @@ pub async fn identity_list_pinyininitial(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1245,7 +1245,7 @@ pub async fn identity_list_pinyininitial_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1398,7 +1398,7 @@ pub async fn inputperson_template(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1432,7 +1432,7 @@ pub async fn inputperson_wipe(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1466,7 +1466,7 @@ pub async fn permissionsetting_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1733,7 +1733,7 @@ pub async fn personcard_listgrouptypes(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1774,7 +1774,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1815,7 +1815,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1856,7 +1856,7 @@ pub async fn personcard_mylist(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1971,7 +1971,7 @@ pub async fn role_list_like_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2008,7 +2008,7 @@ pub async fn role_list_like_pinyin(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2045,7 +2045,7 @@ pub async fn role_list_like_pinyin_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2083,7 +2083,7 @@ pub async fn role_list_pinyininitial(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2120,7 +2120,7 @@ pub async fn role_list_pinyininitial_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2352,7 +2352,7 @@ pub async fn unitduty_distinct_name(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2465,7 +2465,7 @@ pub async fn unitduty_update_member(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2513,7 +2513,7 @@ pub async fn unitduty_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2561,7 +2561,7 @@ pub async fn unitduty_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2601,7 +2601,7 @@ pub async fn unitduty_list_unit_unitFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2642,7 +2642,7 @@ pub async fn unitduty_list_name_name(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2684,7 +2684,7 @@ pub async fn unitduty_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2724,7 +2724,7 @@ pub async fn unitduty_list_identity_identityFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2758,7 +2758,7 @@ pub async fn unitduty_distinct_name_like_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2809,7 +2809,7 @@ pub async fn unitattribute_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2860,7 +2860,7 @@ pub async fn unitattribute_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2903,7 +2903,7 @@ pub async fn unitattribute_list_unit_flag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2950,7 +2950,7 @@ pub async fn role_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2989,7 +2989,7 @@ pub async fn role_list_person_personFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3030,7 +3030,7 @@ pub async fn role_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3069,7 +3069,7 @@ pub async fn role_list_group_groupFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3110,7 +3110,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -3151,7 +3151,7 @@ pub async fn personcard_listpaging_page_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -3185,7 +3185,7 @@ pub async fn personcard_listVCf_idList(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3219,7 +3219,7 @@ pub async fn personcard_listPersonalVCf_idList(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3358,7 +3358,7 @@ pub async fn personattribute_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3409,7 +3409,7 @@ pub async fn personattribute_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3452,7 +3452,7 @@ pub async fn personattribute_list_person_personFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3488,7 +3488,7 @@ pub async fn loginrecord_stream(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3524,7 +3524,7 @@ pub async fn inputperson_result_flag_flag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3642,7 +3642,7 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3690,7 +3690,7 @@ pub async fn identity_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3738,7 +3738,7 @@ pub async fn identity_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3778,7 +3778,7 @@ pub async fn identity_list_unitduty_name_unitDutyName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3818,7 +3818,7 @@ pub async fn identity_list_unit_unitFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3858,7 +3858,7 @@ pub async fn identity_list_person_personFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3900,7 +3900,7 @@ pub async fn identity_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3945,7 +3945,7 @@ pub async fn group_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3990,7 +3990,7 @@ pub async fn group_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4027,7 +4027,7 @@ pub async fn group_list_role_roleFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4064,7 +4064,7 @@ pub async fn group_list_person_personFlag_sup_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4101,7 +4101,7 @@ pub async fn group_list_person_personFlag_sup_direct(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4140,7 +4140,7 @@ pub async fn group_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4149,122 +4149,122 @@ pub async fn group_list_like(
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-    .route("/jaxrs/organization/assemble/control/export/export/all", get(export_export_all))
-    .route("/jaxrs/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
-    .route("/jaxrs/organization/assemble/control/export/zhengwudingding/person", get(export_zhengwudingding_person))
-    .route("/jaxrs/organization/assemble/control/group/list/like", get(group_list_like))
-    .route("/jaxrs/organization/assemble/control/group/list/like/mockputtopost", get(group_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin", get(group_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost", get(group_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/direct", get(group_list_person_personFlag_sup_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/nested", get(group_list_person_personFlag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial", get(group_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost", get(group_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/role/{roleFlag}", get(group_list_role_roleFlag))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/next/{count}", get(group_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/prev/{count}", get(group_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/direct", get(group_list_flag_sub_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/nested", get(group_list_flag_sub_nested))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/direct", get(group_list_flag_sup_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/nested", get(group_list_flag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/group/{flag}", get(group_flag))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member", get(group_flag_add_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost", get(group_flag_add_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", get(group_flag_delete_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", get(group_flag_delete_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", get(group_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockputtopost", get(group_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/like", get(identity_list_like))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost", get(identity_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin", get(identity_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost", get(identity_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/person/{personFlag}", get(identity_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial", get(identity_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost", get(identity_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/unit/{unitFlag}", get(identity_list_unit_unitFlag))
-    .route("/jaxrs/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}", get(identity_list_unitduty_name_unitDutyName))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/next/{count}", get(identity_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/prev/{count}", get(identity_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}", get(identity_list_flag_unitduty_name_unitDutyName))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}", get(identity_flag))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", get(identity_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockputtopost", get(identity_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/order/before/{followFlag}", get(identity_flag_order_before_followFlag))
-    .route("/jaxrs/organization/assemble/control/inputperson/result/flag/{flag}", get(inputperson_result_flag_flag))
-    .route("/jaxrs/organization/assemble/control/inputperson/template", get(inputperson_template))
-    .route("/jaxrs/organization/assemble/control/inputperson/wipe", get(inputperson_wipe))
-    .route("/jaxrs/organization/assemble/control/loginrecord/{stream}", get(loginrecord_stream))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/list", get(permissionsetting_list))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}", get(permissionsetting_flag))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", get(permissionsetting_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost", get(permissionsetting_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/person/{personFlag}", get(personattribute_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/next/{count}", get(personattribute_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/prev/{count}", get(personattribute_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}", get(personattribute_flag))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", get(personattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost", get(personattribute_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/createCode/{cardId}", get(personcard_createCode_cardId))
-    .route("/jaxrs/organization/assemble/control/personcard/createQR/{cardId}", get(personcard_createQR_cardId))
-    .route("/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}", get(personcard_listPersonalVCf_idList))
-    .route("/jaxrs/organization/assemble/control/personcard/listVCf/{idList}", get(personcard_listVCf_idList))
-    .route("/jaxrs/organization/assemble/control/personcard/listgrouptypes", get(personcard_listgrouptypes))
-    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}", get(personcard_listpaging_page_page_size_size))
-    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost", get(personcard_listpaging_page_page_size_size_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}", get(personcard_listpagingwithgroup_page_page_size_size))
-    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost", get(personcard_listpagingwithgroup_page_page_size_size_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/mylist", get(personcard_mylist))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}", get(personcard_flag))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", get(personcard_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/list/group/{groupFlag}", get(role_list_group_groupFlag))
-    .route("/jaxrs/organization/assemble/control/role/list/like", get(role_list_like))
-    .route("/jaxrs/organization/assemble/control/role/list/like/mockputtopost", get(role_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin", get(role_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost", get(role_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/person/{personFlag}", get(role_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial", get(role_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost", get(role_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/{flag}/next/{count}", get(organization_assemble_control_role_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/role/list/{flag}/prev/{count}", get(role_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/role/{flag}", get(organization_assemble_control_role_flag))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", get(role_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockputtopost", get(role_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/unit/{flag}", get(unitattribute_list_unit_flag))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/next/{count}", get(unitattribute_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/prev/{count}", get(unitattribute_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}", get(unitattribute_flag))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", get(unitattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost", get(unitattribute_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name", get(unitduty_distinct_name))
-    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name/like/{key}", get(unitduty_distinct_name_like_key))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/identity/{identityFlag}", get(unitduty_list_identity_identityFlag))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/like", get(unitduty_list_like))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/name/{name}", get(unitduty_list_name_name))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/unit/{unitFlag}", get(unitduty_list_unit_unitFlag))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/next/{count}", get(unitduty_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/prev/{count}", get(unitduty_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/unitduty/update/member", get(unitduty_update_member))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}", get(unitduty_flag))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(unitduty_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockputtopost", get(unitduty_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sub/nested", get(organization_assemble_control_unit_list_flag_sub_nested))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested", get(organization_assemble_control_unit_list_flag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}", get(organization_assemble_control_unit_list_flag_sup_nested_type_type))
-    .route("/jaxrs/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
-    .route("/jaxrs/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
-    .route("/jaxrs/identity/{id}", get(identity_id))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", delete(group_flag_delete_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", delete(group_flag_delete_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", delete(group_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", delete(identity_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", delete(permissionsetting_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", delete(personattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", delete(personcard_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", delete(role_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
+    .route("/api/organization/assemble/control/export/export/all", get(export_export_all))
+    .route("/api/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
+    .route("/api/organization/assemble/control/export/zhengwudingding/person", get(export_zhengwudingding_person))
+    .route("/api/organization/assemble/control/group/list/like", get(group_list_like))
+    .route("/api/organization/assemble/control/group/list/like/mockputtopost", get(group_list_like_mockputtopost))
+    .route("/api/organization/assemble/control/group/list/like/pinyin", get(group_list_like_pinyin))
+    .route("/api/organization/assemble/control/group/list/like/pinyin/mockputtopost", get(group_list_like_pinyin_mockputtopost))
+    .route("/api/organization/assemble/control/group/list/person/{personFlag}/sup/direct", get(group_list_person_personFlag_sup_direct))
+    .route("/api/organization/assemble/control/group/list/person/{personFlag}/sup/nested", get(group_list_person_personFlag_sup_nested))
+    .route("/api/organization/assemble/control/group/list/pinyininitial", get(group_list_pinyininitial))
+    .route("/api/organization/assemble/control/group/list/pinyininitial/mockputtopost", get(group_list_pinyininitial_mockputtopost))
+    .route("/api/organization/assemble/control/group/list/role/{roleFlag}", get(group_list_role_roleFlag))
+    .route("/api/organization/assemble/control/group/list/{flag}/next/{count}", get(group_list_flag_next_count))
+    .route("/api/organization/assemble/control/group/list/{flag}/prev/{count}", get(group_list_flag_prev_count))
+    .route("/api/organization/assemble/control/group/list/{flag}/sub/direct", get(group_list_flag_sub_direct))
+    .route("/api/organization/assemble/control/group/list/{flag}/sub/nested", get(group_list_flag_sub_nested))
+    .route("/api/organization/assemble/control/group/list/{flag}/sup/direct", get(group_list_flag_sup_direct))
+    .route("/api/organization/assemble/control/group/list/{flag}/sup/nested", get(group_list_flag_sup_nested))
+    .route("/api/organization/assemble/control/group/{flag}", get(group_flag))
+    .route("/api/organization/assemble/control/group/{flag}/add/member", get(group_flag_add_member))
+    .route("/api/organization/assemble/control/group/{flag}/add/member/mockputtopost", get(group_flag_add_member_mockputtopost))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member", get(group_flag_delete_member))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member/mockputtopost", get(group_flag_delete_member_mockputtopost))
+    .route("/api/organization/assemble/control/group/{flag}/mockdeletetoget", get(group_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/group/{flag}/mockputtopost", get(group_flag_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/like", get(identity_list_like))
+    .route("/api/organization/assemble/control/identity/list/like/mockputtopost", get(identity_list_like_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/like/pinyin", get(identity_list_like_pinyin))
+    .route("/api/organization/assemble/control/identity/list/like/pinyin/mockputtopost", get(identity_list_like_pinyin_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/person/{personFlag}", get(identity_list_person_personFlag))
+    .route("/api/organization/assemble/control/identity/list/pinyininitial", get(identity_list_pinyininitial))
+    .route("/api/organization/assemble/control/identity/list/pinyininitial/mockputtopost", get(identity_list_pinyininitial_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/unit/{unitFlag}", get(identity_list_unit_unitFlag))
+    .route("/api/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}", get(identity_list_unitduty_name_unitDutyName))
+    .route("/api/organization/assemble/control/identity/list/{flag}/next/{count}", get(identity_list_flag_next_count))
+    .route("/api/organization/assemble/control/identity/list/{flag}/prev/{count}", get(identity_list_flag_prev_count))
+    .route("/api/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}", get(identity_list_flag_unitduty_name_unitDutyName))
+    .route("/api/organization/assemble/control/identity/{flag}", get(identity_flag))
+    .route("/api/organization/assemble/control/identity/{flag}/mockdeletetoget", get(identity_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/identity/{flag}/mockputtopost", get(identity_flag_mockputtopost))
+    .route("/api/organization/assemble/control/identity/{flag}/order/before/{followFlag}", get(identity_flag_order_before_followFlag))
+    .route("/api/organization/assemble/control/inputperson/result/flag/{flag}", get(inputperson_result_flag_flag))
+    .route("/api/organization/assemble/control/inputperson/template", get(inputperson_template))
+    .route("/api/organization/assemble/control/inputperson/wipe", get(inputperson_wipe))
+    .route("/api/organization/assemble/control/loginrecord/{stream}", get(loginrecord_stream))
+    .route("/api/organization/assemble/control/permissionsetting/list", get(permissionsetting_list))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}", get(permissionsetting_flag))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", get(permissionsetting_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}/mockputtopost", get(permissionsetting_flag_mockputtopost))
+    .route("/api/organization/assemble/control/personattribute/list/person/{personFlag}", get(personattribute_list_person_personFlag))
+    .route("/api/organization/assemble/control/personattribute/list/{flag}/next/{count}", get(personattribute_list_flag_next_count))
+    .route("/api/organization/assemble/control/personattribute/list/{flag}/prev/{count}", get(personattribute_list_flag_prev_count))
+    .route("/api/organization/assemble/control/personattribute/{flag}", get(personattribute_flag))
+    .route("/api/organization/assemble/control/personattribute/{flag}/mockdeletetoget", get(personattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/personattribute/{flag}/mockputtopost", get(personattribute_flag_mockputtopost))
+    .route("/api/organization/assemble/control/personcard/createCode/{cardId}", get(personcard_createCode_cardId))
+    .route("/api/organization/assemble/control/personcard/createQR/{cardId}", get(personcard_createQR_cardId))
+    .route("/api/organization/assemble/control/personcard/listPersonalVCf/{idList}", get(personcard_listPersonalVCf_idList))
+    .route("/api/organization/assemble/control/personcard/listVCf/{idList}", get(personcard_listVCf_idList))
+    .route("/api/organization/assemble/control/personcard/listgrouptypes", get(personcard_listgrouptypes))
+    .route("/api/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}", get(personcard_listpaging_page_page_size_size))
+    .route("/api/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost", get(personcard_listpaging_page_page_size_size_mockputtopost))
+    .route("/api/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}", get(personcard_listpagingwithgroup_page_page_size_size))
+    .route("/api/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost", get(personcard_listpagingwithgroup_page_page_size_size_mockputtopost))
+    .route("/api/organization/assemble/control/personcard/mylist", get(personcard_mylist))
+    .route("/api/organization/assemble/control/personcard/{flag}", get(personcard_flag))
+    .route("/api/organization/assemble/control/personcard/{flag}/mockdeletetoget", get(personcard_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/role/list/group/{groupFlag}", get(role_list_group_groupFlag))
+    .route("/api/organization/assemble/control/role/list/like", get(role_list_like))
+    .route("/api/organization/assemble/control/role/list/like/mockputtopost", get(role_list_like_mockputtopost))
+    .route("/api/organization/assemble/control/role/list/like/pinyin", get(role_list_like_pinyin))
+    .route("/api/organization/assemble/control/role/list/like/pinyin/mockputtopost", get(role_list_like_pinyin_mockputtopost))
+    .route("/api/organization/assemble/control/role/list/person/{personFlag}", get(role_list_person_personFlag))
+    .route("/api/organization/assemble/control/role/list/pinyininitial", get(role_list_pinyininitial))
+    .route("/api/organization/assemble/control/role/list/pinyininitial/mockputtopost", get(role_list_pinyininitial_mockputtopost))
+    .route("/api/organization/assemble/control/role/list/{flag}/next/{count}", get(organization_assemble_control_role_list_flag_next_count))
+    .route("/api/organization/assemble/control/role/list/{flag}/prev/{count}", get(role_list_flag_prev_count))
+    .route("/api/organization/assemble/control/role/{flag}", get(organization_assemble_control_role_flag))
+    .route("/api/organization/assemble/control/role/{flag}/mockdeletetoget", get(role_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/role/{flag}/mockputtopost", get(role_flag_mockputtopost))
+    .route("/api/organization/assemble/control/unitattribute/list/unit/{flag}", get(unitattribute_list_unit_flag))
+    .route("/api/organization/assemble/control/unitattribute/list/{flag}/next/{count}", get(unitattribute_list_flag_next_count))
+    .route("/api/organization/assemble/control/unitattribute/list/{flag}/prev/{count}", get(unitattribute_list_flag_prev_count))
+    .route("/api/organization/assemble/control/unitattribute/{flag}", get(unitattribute_flag))
+    .route("/api/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", get(unitattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitattribute/{flag}/mockputtopost", get(unitattribute_flag_mockputtopost))
+    .route("/api/organization/assemble/control/unitduty/distinct/name", get(unitduty_distinct_name))
+    .route("/api/organization/assemble/control/unitduty/distinct/name/like/{key}", get(unitduty_distinct_name_like_key))
+    .route("/api/organization/assemble/control/unitduty/list/identity/{identityFlag}", get(unitduty_list_identity_identityFlag))
+    .route("/api/organization/assemble/control/unitduty/list/like", get(unitduty_list_like))
+    .route("/api/organization/assemble/control/unitduty/list/name/{name}", get(unitduty_list_name_name))
+    .route("/api/organization/assemble/control/unitduty/list/unit/{unitFlag}", get(unitduty_list_unit_unitFlag))
+    .route("/api/organization/assemble/control/unitduty/list/{flag}/next/{count}", get(unitduty_list_flag_next_count))
+    .route("/api/organization/assemble/control/unitduty/list/{flag}/prev/{count}", get(unitduty_list_flag_prev_count))
+    .route("/api/organization/assemble/control/unitduty/update/member", get(unitduty_update_member))
+    .route("/api/organization/assemble/control/unitduty/{flag}", get(unitduty_flag))
+    .route("/api/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(unitduty_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitduty/{flag}/mockputtopost", get(unitduty_flag_mockputtopost))
+    .route("/api/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
+    .route("/api/organization/assemble/control/unit/list/{flag}/sub/nested", get(organization_assemble_control_unit_list_flag_sub_nested))
+    .route("/api/organization/assemble/control/unit/list/{flag}/sup/nested", get(organization_assemble_control_unit_list_flag_sup_nested))
+    .route("/api/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}", get(organization_assemble_control_unit_list_flag_sup_nested_type_type))
+    .route("/api/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
+    .route("/api/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
+    .route("/api/identity/{id}", get(identity_id))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member", delete(group_flag_delete_member))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member/mockputtopost", delete(group_flag_delete_member_mockputtopost))
+    .route("/api/organization/assemble/control/group/{flag}/mockdeletetoget", delete(group_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/identity/{flag}/mockdeletetoget", delete(identity_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", delete(permissionsetting_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/personattribute/{flag}/mockdeletetoget", delete(personattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/personcard/{flag}/mockdeletetoget", delete(personcard_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/role/{flag}/mockdeletetoget", delete(role_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
     .merge(u2_router::router())
     .layer(Extension(pool))
 }

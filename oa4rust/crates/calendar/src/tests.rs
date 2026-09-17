@@ -57,7 +57,7 @@ mod tests {
         let result: ActionResult<CalendarItem> = ActionResult::success(item);
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
-        // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+        // o2server 成功信封 message 恒为空串（2026-08-25 行为对比结论）
         assert_eq!(result.message, Some(String::new()));
     }
 

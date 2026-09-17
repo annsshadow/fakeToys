@@ -29,7 +29,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/list")
+                        .uri("/api/cms/category/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -52,7 +52,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/test-category-id")
+                        .uri("/api/cms/category/test-category-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/list")
+                        .uri("/api/cms/category/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -101,7 +101,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/test-category-id")
+                        .uri("/api/cms/category/test-category-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -128,7 +128,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/article/create")
+                        .uri("/api/cms/article/create")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"title":"test","categoryId":"cat-001"}"#))
@@ -152,7 +152,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/article/list")
+                        .uri("/api/cms/article/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -175,7 +175,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/article/test-article-id")
+                        .uri("/api/cms/article/test-article-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -239,11 +239,11 @@ mod tests {
             let pool = build_test_pool();
             let app = crate::cms_core_entity_router(pool);
             for uri in [
-                "/jaxrs/cms/core/entity/column/list",
-                "/jaxrs/cms/core/entity/column_manager/list",
-                "/jaxrs/cms/core/entity/index/list",
-                "/jaxrs/cms/core/entity/module/list",
-                "/jaxrs/cms/core/entity/note/list",
+                "/api/cms/core/entity/column/list",
+                "/api/cms/core/entity/column_manager/list",
+                "/api/cms/core/entity/index/list",
+                "/api/cms/core/entity/module/list",
+                "/api/cms/core/entity/note/list",
             ] {
                 let response = app
                     .clone()

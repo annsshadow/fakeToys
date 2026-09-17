@@ -23,7 +23,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/room/list")
+                    .uri("/api/meeting/room/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -42,7 +42,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/building/list")
+                    .uri("/api/meeting/building/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -61,7 +61,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/openmeeting/list/room")
+                    .uri("/api/meeting/openmeeting/list/room")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

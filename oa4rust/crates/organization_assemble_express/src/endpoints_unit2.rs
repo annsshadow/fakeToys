@@ -1,6 +1,6 @@
 //! plan002 U2 收尾 (part 4): unit 剩余 29 个端点。
 //!
-//! 对齐 Java UnitAction 其余方法。新结构 x_org_unit."type" 由迁移 071 提供。
+//! 对齐 o2server UnitAction 其余方法。新结构 x_org_unit."type" 由迁移 071 提供。
 //! 约定沿用 endpoints.rs 模块注释（无认证、批量≤100、PII 门控不涉及本组）。
 
 use axum::{
@@ -12,7 +12,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, int_list, named_list, normalize_flags, ok_java_list, ok_json, row_to_map,
+    bool_field, capped, int_list, named_list, normalize_flags, ok_json, ok_legacy_list, row_to_map,
     string_field, string_list, wrap_bool,
 };
 
@@ -25,10 +25,10 @@ fn finish_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("unitList", &list),
             list.len() as i64,
             0,
@@ -112,7 +112,7 @@ async fn unit_pick_on_identity_chain(
     }
 }
 
-/// POST /jaxrs/unit/identity/level (Java ActionGetWithIdentityWithLevel)：{unit|null}。
+/// POST /api/unit/identity/level (o2server ActionGetWithIdentityWithLevel)：{unit|null}。
 pub async fn unit_get_with_identity_with_level(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -120,7 +120,7 @@ pub async fn unit_get_with_identity_with_level(
     unit_pick_on_identity_chain(pool, body, true, false).await
 }
 
-/// POST /jaxrs/unit/identity/level/object。
+/// POST /api/unit/identity/level/object。
 pub async fn unit_get_with_identity_with_level_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -128,7 +128,7 @@ pub async fn unit_get_with_identity_with_level_object(
     unit_pick_on_identity_chain(pool, body, true, true).await
 }
 
-/// POST /jaxrs/unit/identity/type (Java ActionGetWithIdentityWithType)：{unit|null}。
+/// POST /api/unit/identity/type (o2server ActionGetWithIdentityWithType)：{unit|null}。
 pub async fn unit_get_with_identity_with_type(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -136,7 +136,7 @@ pub async fn unit_get_with_identity_with_type(
     unit_pick_on_identity_chain(pool, body, false, false).await
 }
 
-/// POST /jaxrs/unit/identity/type/object：命中的组织对象或 null。
+/// POST /api/unit/identity/type/object：命中的组织对象或 null。
 pub async fn unit_get_with_identity_with_type_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -158,7 +158,7 @@ async fn units_of_identities(
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = if objects {
         UNITS_OF_IDENTITIES_OBJ.to_string()
@@ -176,7 +176,7 @@ async fn units_of_identities(
     finish_rows(rows, objects)
 }
 
-/// POST /jaxrs/unit/list/identity (Java ActionListWithIdentity)：身份所在组织。
+/// POST /api/unit/list/identity (o2server ActionListWithIdentity)：身份所在组织。
 pub async fn unit_list_identity(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -184,7 +184,7 @@ pub async fn unit_list_identity(
     units_of_identities(pool, body, false).await
 }
 
-/// POST /jaxrs/unit/list/identity/object。
+/// POST /api/unit/list/identity/object。
 pub async fn unit_list_identity_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -203,7 +203,7 @@ async fn sup_nested_of_units(
     let flags = normalize_flags(string_list(&body, flags_key));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = format!(
         "WITH RECURSIVE seeds AS ({seeds}), \
@@ -230,7 +230,7 @@ const SEED_UNITS_OF_IDENTITIES: &str = "SELECT DISTINCT u.id, u.parent_id FROM x
      JOIN x_org_identity i ON i.unit_id = u.id AND i.deleted_at IS NULL \
      WHERE u.deleted_at IS NULL AND (i.id = ANY($1) OR i.name = ANY($1))";
 
-/// POST /jaxrs/unit/list/identity/sup/nested (Java ActionListWithIdentitySupNested)。
+/// POST /api/unit/list/identity/sup/nested (o2server ActionListWithIdentitySupNested)。
 pub async fn unit_list_identity_sup_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -238,7 +238,7 @@ pub async fn unit_list_identity_sup_nested(
     sup_nested_of_units(pool, "identityList", SEED_UNITS_OF_IDENTITIES, body, false).await
 }
 
-/// POST /jaxrs/unit/list/identity/sup/nested/object。
+/// POST /api/unit/list/identity/sup/nested/object。
 pub async fn unit_list_identity_sup_nested_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -255,7 +255,7 @@ async fn level_query(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let levels = int_list(&body, "levelList")?;
     if levels.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = format!(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND level = ANY($1) ORDER BY level, id",
@@ -269,7 +269,7 @@ async fn level_query(
     finish_rows(rows, objects)
 }
 
-/// POST /jaxrs/unit/list/level (Java ActionListWithLevel，Wi{levelList})。
+/// POST /api/unit/list/level (o2server ActionListWithLevel，Wi{levelList})。
 pub async fn unit_list_level(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -277,7 +277,7 @@ pub async fn unit_list_level(
     level_query(pool, body, false).await
 }
 
-/// POST /jaxrs/unit/list/level/object。
+/// POST /api/unit/list/level/object。
 pub async fn unit_list_level_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -285,7 +285,7 @@ pub async fn unit_list_level_object(
     level_query(pool, body, true).await
 }
 
-/// POST /jaxrs/unit/list/level/name/object (Java ActionListWithLevelNameObject，
+/// POST /api/unit/list/level/name/object (o2server ActionListWithLevelNameObject，
 /// Wi{unitList})：组织对象 + levelName 根路径 + 直接下级组织/身份/职务计数。
 pub async fn unit_list_level_name_object(
     pool: Extension<Pool>,
@@ -309,7 +309,7 @@ pub async fn unit_list_level_name_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -343,7 +343,7 @@ pub async fn unit_list_level_name_object(
         }
         data.push(obj);
     }
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 // ── unit/list/person(+object)、person/sup/nested(+object) ─────────────────────
@@ -360,7 +360,7 @@ async fn units_of_persons(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = if objects {
         UNITS_OF_PERSONS_OBJ.to_string()
@@ -378,7 +378,7 @@ async fn units_of_persons(
     finish_rows(rows, objects)
 }
 
-/// POST /jaxrs/unit/list/person (Java ActionListWithPerson)：人员所在组织。
+/// POST /api/unit/list/person (o2server ActionListWithPerson)：人员所在组织。
 pub async fn unit_list_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -386,7 +386,7 @@ pub async fn unit_list_person(
     units_of_persons(pool, body, false).await
 }
 
-/// POST /jaxrs/unit/list/person/object。
+/// POST /api/unit/list/person/object。
 pub async fn unit_list_person_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -400,7 +400,7 @@ const SEED_UNITS_OF_PERSONS_SUP: &str =
          SELECT p.unit_id FROM x_org_person p WHERE p.deleted_at IS NULL \
          AND p.unit_id IS NOT NULL AND (p.id = ANY($1) OR p.name = ANY($1)))";
 
-/// POST /jaxrs/unit/list/person/sup/nested (Java ActionListWithPersonSupNested)。
+/// POST /api/unit/list/person/sup/nested (o2server ActionListWithPersonSupNested)。
 pub async fn unit_list_person_sup_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -408,7 +408,7 @@ pub async fn unit_list_person_sup_nested(
     sup_nested_of_units(pool, "personList", SEED_UNITS_OF_PERSONS_SUP, body, false).await
 }
 
-/// POST /jaxrs/unit/list/person/sup/nested/object。
+/// POST /api/unit/list/person/sup/nested/object。
 pub async fn unit_list_person_sup_nested_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -424,7 +424,7 @@ async fn attr_units(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(name) = string_field(&body, "name") else {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             named_list("unitList", &[]),
             0,
             0,
@@ -446,7 +446,7 @@ async fn attr_units(
     finish_rows(rows, objects)
 }
 
-/// POST /jaxrs/unit/list/unitattribute (Java ActionListWithUnitAttribute，Wi{name, attribute})。
+/// POST /api/unit/list/unitattribute (o2server ActionListWithUnitAttribute，Wi{name, attribute})。
 pub async fn unit_list_unitattribute(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -454,7 +454,7 @@ pub async fn unit_list_unitattribute(
     attr_units(pool, body, false).await
 }
 
-/// POST /jaxrs/unit/list/unitattribute/object。
+/// POST /api/unit/list/unitattribute/object。
 pub async fn unit_list_unitattribute_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -468,7 +468,7 @@ async fn duty_units(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(name) = string_field(&body, "name") else {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             named_list("unitList", &[]),
             0,
             0,
@@ -490,7 +490,7 @@ async fn duty_units(
     finish_rows(rows, objects)
 }
 
-/// POST /jaxrs/unit/list/unitduty (Java ActionListWithUnitDuty，Wi{name, identity})：
+/// POST /api/unit/list/unitduty (o2server ActionListWithUnitDuty，Wi{name, identity})：
 /// 拥有指定职务名称（可叠加任职身份）的组织。
 pub async fn unit_list_unitduty(
     pool: Extension<Pool>,
@@ -499,7 +499,7 @@ pub async fn unit_list_unitduty(
     duty_units(pool, body, false).await
 }
 
-/// POST /jaxrs/unit/list/unitduty/object。
+/// POST /api/unit/list/unitduty/object。
 pub async fn unit_list_unitduty_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -509,7 +509,7 @@ pub async fn unit_list_unitduty_object(
 
 // ── check/unit/has/*、list/types(+object)、GET type/{type}/object、tree ────────
 
-/// POST /jaxrs/unit/check/unit/has/identity (Java ActionHasIdentity，Wi{unit, identity, recursive})。
+/// POST /api/unit/check/unit/has/identity (o2server ActionHasIdentity，Wi{unit, identity, recursive})。
 pub async fn unit_check_unit_has_identity(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -543,7 +543,7 @@ pub async fn unit_check_unit_has_identity(
     ))))
 }
 
-/// POST /jaxrs/unit/check/unit/has/unit (Java ActionHasUnit，Wi{unit, subUnit, recursive})：
+/// POST /api/unit/check/unit/has/unit (o2server ActionHasUnit，Wi{unit, subUnit, recursive})：
 /// 校验 subUnit 是否属于 unit 的下级（recursive 时含任意层级）。
 pub async fn unit_check_unit_has_unit(
     pool: Extension<Pool>,
@@ -585,7 +585,7 @@ async fn types_query(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     capped(&types)?;
     if types.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = format!(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND \"type\" = ANY($1) ORDER BY level, id",
@@ -597,10 +597,10 @@ async fn types_query(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/unit/list/types (Java ActionListWithTypes，Wi{typeList})。
+/// POST /api/unit/list/types (o2server ActionListWithTypes，Wi{typeList})。
 pub async fn unit_list_types(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -608,7 +608,7 @@ pub async fn unit_list_types(
     types_query(normalize_flags(string_list(&body, "typeList")), false, pool).await
 }
 
-/// POST /jaxrs/unit/list/types/object。
+/// POST /api/unit/list/types/object。
 pub async fn unit_list_types_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -616,7 +616,7 @@ pub async fn unit_list_types_object(
     types_query(normalize_flags(string_list(&body, "typeList")), true, pool).await
 }
 
-/// GET /jaxrs/unit/list/type/{type}/object (Java ActionListWithTypeObject)。
+/// GET /api/unit/list/type/{type}/object (o2server ActionListWithTypeObject)。
 pub async fn unit_list_type_type_object(
     pool: Extension<Pool>,
     Path(unit_type): Path<String>,
@@ -624,7 +624,7 @@ pub async fn unit_list_type_type_object(
     types_query(vec![unit_type], true, pool).await
 }
 
-/// POST /jaxrs/unit/list/unit/tree (Java ActionListWithUnitTree，Wi{unitList})：
+/// POST /api/unit/list/unit/tree (o2server ActionListWithUnitTree，Wi{unitList})：
 /// 以种子组织为根的真实递归子树，内存装配嵌套 children 结构。
 pub async fn unit_list_unit_tree(
     pool: Extension<Pool>,
@@ -642,7 +642,7 @@ pub async fn unit_list_unit_tree(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -702,5 +702,5 @@ pub async fn unit_list_unit_tree(
             roots.push(assemble(id, &base, &children_map, &mut seen));
         }
     }
-    ok_java_list(roots.len(), roots)
+    ok_legacy_list(roots.len(), roots)
 }

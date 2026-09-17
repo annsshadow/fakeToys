@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/uuid/random")
+                    .uri("/api/cms/uuid/random")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/templateform/list")
+                    .uri("/api/cms/templateform/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/view/list/all")
+                    .uri("/api/cms/view/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/terminate/work-001")
+                    .uri("/api/processplatform/work/terminate/work-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/retract/work-001")
+                    .uri("/api/processplatform/work/retract/work-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -64,7 +64,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/processing/work-001")
+                    .uri("/api/processplatform/work/processing/work-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -84,7 +84,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/task/processing/task-001")
+                    .uri("/api/processplatform/task/processing/task-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -104,7 +104,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/count/with/person/person-001")
+                    .uri("/api/processplatform/work/count/with/person/person-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -124,7 +124,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/task/count/with/person/person-001")
+                    .uri("/api/processplatform/task/count/with/person/person-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

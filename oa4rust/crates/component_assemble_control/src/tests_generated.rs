@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/get/control/config")
+                    .uri("/api/component_assemble_control/get/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/list/control/categories")
+                    .uri("/api/component_assemble_control/list/control/categories")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/update/control/config")
+                    .uri("/api/component_assemble_control/update/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/list/components")
+                    .uri("/api/component_assemble_control/list/components")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/get/component/test-id")
+                    .uri("/api/component_assemble_control/get/component/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/create/component")
+                    .uri("/api/component_assemble_control/create/component")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/save/component")
+                    .uri("/api/component_assemble_control/save/component")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component_assemble_control/delete/component")
+                    .uri("/api/component_assemble_control/delete/component")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component/assemble/control/component/delete/all")
+                    .uri("/api/component/assemble/control/component/delete/all")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component/assemble/control/status/list")
+                    .uri("/api/component/assemble/control/status/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

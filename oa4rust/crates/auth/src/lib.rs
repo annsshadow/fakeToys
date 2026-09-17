@@ -71,7 +71,7 @@ pub(crate) fn session_response<T: Serialize>(
     )
 }
 
-/// 匿名（无任何凭据）whoami 负载，字段对齐 O2OA v9 Java 匿名响应。
+/// 匿名（无任何凭据）whoami 负载，字段对齐 O2OA v9 o2server 匿名响应。
 fn anonymous_whoami_map() -> serde_json::Map<String, Value> {
     let mut map = serde_json::Map::new();
     map.insert(
@@ -183,7 +183,7 @@ pub struct TwoFactorLoginResponse {
 
 // --- 认证处理器 ---
 
-/// 用户登录接口（契约路径 POST /jaxrs/authentication，兼容自造路径）
+/// 用户登录接口（契约路径 POST /api/authentication，兼容自造路径）
 ///
 /// 接收用户名/工号（credential）和密码，验证通过后签发 2 小时有效会话令牌。
 /// 支持 bcrypt（前缀 {bcrypt}）与 MD5/DES 兼容校验。限流由 shared 中间件统一处理。
@@ -376,7 +376,7 @@ pub async fn refresh(
     ))
 }
 
-/// 用户登出接口（契约路径 DELETE /jaxrs/authentication，兼容自造路径）
+/// 用户登出接口（契约路径 DELETE /api/authentication，兼容自造路径）
 /// 幂等且不接收 body token。
 #[allow(non_snake_case)]
 pub async fn logout(
@@ -399,11 +399,11 @@ pub async fn logout(
     ))
 }
 
-/// 查询当前认证用户信息（契约路径 GET /jaxrs/authentication，兼容自造路径）
+/// 查询当前认证用户信息（契约路径 GET /api/authentication，兼容自造路径）
 ///
 /// 从会话解析当前用户身份，按 unique_id 查询数据库（不再取首条记录）。
 /// 凭据语义（对齐计划 R3，不回退 Bearer）：
-/// - 完全无凭据 → 匿名 200（Java 行为，前端首访/探测）。
+/// - 完全无凭据 → 匿名 200（o2server 行为，前端首访/探测）。
 /// - 凭据存在但无效（空/过期/篡改，或 Cookie 存在故不回退 Bearer）→ 401。
 #[allow(non_snake_case)]
 pub async fn whoami(
@@ -413,7 +413,7 @@ pub async fn whoami(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session_token = match extract_authentication(&headers) {
         None => {
-            return Ok(Json(ActionResult::java_success(
+            return Ok(Json(ActionResult::legacy_success(
                 Value::Object(anonymous_whoami_map()),
                 0,
                 -1,
@@ -447,7 +447,7 @@ pub async fn whoami(
 
     match row {
         Some(row) => {
-            // 字段集对齐 O2OA v9 Java GET /jaxrs/authentication（whoami）实测响应
+            // 字段集对齐 O2OA v9 o2server GET /api/authentication（whoami）实测响应
             // （plan002 U2 行为对齐，基准见 docs/audits/behavior-compare-first-run.md）。
             let id: String = row.get("id");
             let unique_id: String = row.get("unique_id");
@@ -495,8 +495,12 @@ pub async fn whoami(
             map.insert("createTime".to_string(), Value::String(String::new()));
             map.insert("updateTime".to_string(), Value::String(String::new()));
             map.insert("sequence".to_string(), Value::String(String::new()));
-            // Java 非分页端点信封实测：size=-1、count=0
-            Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)))
+            // o2server 非分页端点信封实测：size=-1、count=0
+            Ok(Json(ActionResult::legacy_success(
+                Value::Object(map),
+                0,
+                -1,
+            )))
         }
         None => Ok(Json(ActionResult::error("user not found"))),
     }
@@ -657,7 +661,7 @@ pub(crate) fn temp_token_store() -> &'static TempTokenStore {
     STORE.get_or_init(TempTokenStore::new)
 }
 
-/// GET /jaxrs/authentication/code/credential/{credential} —— 向凭据发送登录验证码
+/// GET /api/authentication/code/credential/{credential} —— 向凭据发送登录验证码
 #[allow(non_snake_case)]
 pub async fn code_send(
     pool: Extension<Pool>,
@@ -695,7 +699,7 @@ pub async fn code_send(
     ))))
 }
 
-/// POST /jaxrs/authentication/code —— 双因素登录第二阶段
+/// POST /api/authentication/code —— 双因素登录第二阶段
 ///
 /// 验证 credential + codeAnswer + temp_token，签发完整会话
 #[allow(non_snake_case)]
@@ -832,7 +836,7 @@ pub async fn unit_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -865,7 +869,7 @@ pub async fn role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -895,7 +899,7 @@ pub async fn group_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -938,54 +942,54 @@ pub async fn captcha_verify(captcha_id: &str, answer: &str) -> Result<bool, AppE
 
 /// 构建认证模块路由
 ///
-/// 契约路径（Java AuthenticationAction 对齐）：
-///   POST   /jaxrs/authentication            登录
-///   DELETE /jaxrs/authentication            登出
-///   GET    /jaxrs/authentication            当前用户
-///   POST   /jaxrs/authentication/refresh    刷新令牌
+/// 契约路径（o2server AuthenticationAction 对齐）：
+///   POST   /api/authentication            登录
+///   DELETE /api/authentication            登出
+///   GET    /api/authentication            当前用户
+///   POST   /api/authentication/refresh    刷新令牌
 /// 保留自造路径 /login、/logout、/who 作兼容（前端尚未切到契约路径）。
 /// 验证码、扫码绑定、OAuth 端点由对应模块子 router 提供。
 pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionManager) -> Router {
     Router::new()
-        .route("/jaxrs/authentication", post(login))
-        .route("/jaxrs/authentication", delete(logout))
-        .route("/jaxrs/authentication", get(whoami))
-        .route("/jaxrs/authentication/login", post(login))
-        .route("/jaxrs/authentication/logout", post(logout))
-        .route("/jaxrs/authentication/who", get(whoami))
-        .route("/jaxrs/authentication/refresh", post(refresh))
-        .route("/jaxrs/authentication/code", post(code))
+        .route("/api/authentication", post(login))
+        .route("/api/authentication", delete(logout))
+        .route("/api/authentication", get(whoami))
+        .route("/api/authentication/login", post(login))
+        .route("/api/authentication/logout", post(logout))
+        .route("/api/authentication/who", get(whoami))
+        .route("/api/authentication/refresh", post(refresh))
+        .route("/api/authentication/code", post(code))
         .route(
-            "/jaxrs/authentication/code/credential/{credential}",
+            "/api/authentication/code/credential/{credential}",
             get(code_send),
         )
-        .route("/jaxrs/authentication/oauth/list", get(oauth::oauth_list))
+        .route("/api/authentication/oauth/list", get(oauth::oauth_list))
         .route(
-            "/jaxrs/authentication/oauth/qywx/config",
+            "/api/authentication/oauth/qywx/config",
             get(oauth::oauth_qywx_config),
         )
         .route(
-            "/jaxrs/authentication/oauth/dingding/config",
+            "/api/authentication/oauth/dingding/config",
             get(oauth::oauth_dingding_config),
         )
         .route(
-            "/jaxrs/authentication/oauth/name/{name}",
+            "/api/authentication/oauth/name/{name}",
             get(oauth::oauth_name_config),
         )
         .route(
-            "/jaxrs/authentication/oauth/login/qywx/code/{code}",
+            "/api/authentication/oauth/login/qywx/code/{code}",
             get(oauth::oauth_login_qywx),
         )
         .route(
-            "/jaxrs/authentication/oauth/login/dingding/code/{code}",
+            "/api/authentication/oauth/login/dingding/code/{code}",
             get(oauth::oauth_login_dingding),
         )
         .route(
-            "/jaxrs/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}",
+            "/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}",
             get(oauth::oauth_login_name),
         )
         .route(
-            "/jaxrs/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
+            "/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
             get(oauth::oauth_bind_name),
         )
         .merge(oidc::oidc_router())
@@ -997,32 +1001,32 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
         .merge(qiyeweixin::router())
         .merge(zhengwudingding::router())
         .route(
-            "/jaxrs/authentication/two_factor",
+            "/api/authentication/two_factor",
             post(two_factor::two_factor_login),
         )
         .route(
-            "/jaxrs/authentication/safe/logout",
+            "/api/authentication/safe/logout",
             post(safe_logout::safe_logout),
         )
         .route(
-            "/jaxrs/authentication/check/token",
+            "/api/authentication/check/token",
             post(check_token::check_token),
         )
-        .route("/jaxrs/authentication/sso", post(sso::sso_post_login))
-        .route("/jaxrs/authentication/sso/encrypt", post(sso::sso_encrypt))
+        .route("/api/authentication/sso", post(sso::sso_post_login))
+        .route("/api/authentication/sso/encrypt", post(sso::sso_encrypt))
         .route(
-            "/jaxrs/authentication/sso/client/{client}/token/{token}",
+            "/api/authentication/sso/client/{client}/token/{token}",
             get(sso::sso_get_login),
         )
         .route(
-            "/jaxrs/authentication/switchuser",
+            "/api/authentication/switchuser",
             post(switch_user::switch_user),
         )
-        .route("/jaxrs/authentication/unit/list", get(unit_list))
-        .route("/jaxrs/authentication/role/list", get(role_list))
-        .route("/jaxrs/authentication/group/list", get(group_list))
+        .route("/api/authentication/unit/list", get(unit_list))
+        .route("/api/authentication/role/list", get(role_list))
+        .route("/api/authentication/group/list", get(group_list))
         .route(
-            "/jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}",
+            "/api/andfx/moa/sso/token/{token}/enter/{enterId}",
             get(andfx::andfx_moa_sso),
         )
         .layer(Extension(pool))

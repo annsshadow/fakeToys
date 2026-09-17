@@ -90,7 +90,7 @@ pub async fn view_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -219,7 +219,7 @@ pub async fn item_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -262,7 +262,7 @@ pub async fn import_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -271,11 +271,11 @@ pub async fn import_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 pub fn query_core_entity_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/query/item/list", get(item_list))
-        .route("/jaxrs/query/view/list", get(view_list))
-        .route("/jaxrs/query/view/{id}", get(view_get))
-        .route("/jaxrs/query/view/create", post(view_create))
-        .route("/jaxrs/query/import/list", get(import_list))
+        .route("/api/query/item/list", get(item_list))
+        .route("/api/query/view/list", get(view_list))
+        .route("/api/query/view/{id}", get(view_get))
+        .route("/api/query/view/create", post(view_create))
+        .route("/api/query/import/list", get(import_list))
         .layer(Extension(pool))
 }
 

@@ -77,7 +77,7 @@ async fn test_get_bam_config_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/bam/get/bam-1")
+                .uri("/api/processplatform/assemble/bam/get/bam-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -102,7 +102,7 @@ async fn test_create_bam_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/bam/create")
+                .uri("/api/processplatform/assemble/bam/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -122,7 +122,7 @@ async fn test_list_bams_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/bam/list/processplatform")
+                .uri("/api/processplatform/assemble/bam/list/processplatform")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -141,7 +141,7 @@ async fn test_delete_bam_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/bam/delete/bam-1")
+                .uri("/api/processplatform/assemble/bam/delete/bam-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -160,7 +160,7 @@ async fn test_get_bam_status_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/bam/status/bam-1")
+                .uri("/api/processplatform/assemble/bam/status/bam-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -172,7 +172,7 @@ async fn test_get_bam_status_route_exists() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 新增：Java 精确路径闭合（42 端点）的测试
+// plan002 U2 新增：o2server 精确路径闭合（42 端点）的测试
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[test]
@@ -233,13 +233,13 @@ async fn bam_u2_route_status(method: Method, uri: &str) -> axum::http::StatusCod
 async fn test_bam_stubs_completed_task_applicationstubs_registered() {
     let status = bam_u2_route_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs",
+        "/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs",
     )
     .await;
     assert_ne!(
         status,
         StatusCode::NOT_FOUND,
-        "applicationstubs 桩端点应注册为 Java 精确路径"
+        "applicationstubs 桩端点应注册为 o2server 精确路径"
     );
 }
 
@@ -247,7 +247,7 @@ async fn test_bam_stubs_completed_task_applicationstubs_registered() {
 async fn test_bam_count_completed_task_by_unit_registered() {
     let status = bam_u2_route_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit",
+        "/api/processplatform/assemble/bam/period/list/count/completed/task/application/app1/process/p1/activity/a1/by/unit",
     )
     .await;
     assert_ne!(
@@ -261,7 +261,7 @@ async fn test_bam_count_completed_task_by_unit_registered() {
 async fn test_bam_count_start_work_total_registered() {
     let status = bam_u2_route_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1",
+        "/api/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1",
     )
     .await;
     assert_ne!(
@@ -275,7 +275,7 @@ async fn test_bam_count_start_work_total_registered() {
 async fn test_bam_state_category_exact_path_registered() {
     let status = bam_u2_route_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/bam/state/category",
+        "/api/processplatform/assemble/bam/state/category",
     )
     .await;
     assert_ne!(status, StatusCode::NOT_FOUND);
@@ -285,7 +285,7 @@ async fn test_bam_state_category_exact_path_registered() {
 async fn test_bam_state_category_trigger_all_registered() {
     let status = bam_u2_route_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/bam/state/category/trigger",
+        "/api/processplatform/assemble/bam/state/category/trigger",
     )
     .await;
     assert_ne!(
@@ -299,7 +299,7 @@ async fn test_bam_state_category_trigger_all_registered() {
 async fn test_bam_state_applicationtstubs_trigger_registered() {
     let status = bam_u2_route_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger",
+        "/api/processplatform/assemble/bam/state/applicationtstubs/trigger",
     )
     .await;
     assert_ne!(status, StatusCode::NOT_FOUND);
@@ -307,10 +307,10 @@ async fn test_bam_state_applicationtstubs_trigger_registered() {
 
 #[tokio::test]
 async fn test_bam_count_endpoint_rejects_wrong_verb() {
-    // Java 清单中 count 切片是 GET；POST 不应命中同一路径（防止动词漂移回归）
+    // o2server 清单中 count 切片是 GET；POST 不应命中同一路径（防止动词漂移回归）
     let status = bam_u2_route_status(
         Method::POST,
-        "/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1",
+        "/api/processplatform/assemble/bam/period/list/count/start/work/application/app1/process/p1/unit/u1/person/per1",
     )
     .await;
     assert_eq!(

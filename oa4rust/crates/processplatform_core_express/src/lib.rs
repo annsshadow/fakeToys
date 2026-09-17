@@ -176,27 +176,24 @@ pub async fn task_count_with_person(
 pub fn processplatform_core_express_router(pool: Pool) -> Router {
     Router::new()
         .route(
-            "/jaxrs/processplatform/work/terminate/{id}",
+            "/api/processplatform/work/terminate/{id}",
             get(work_terminate),
         )
+        .route("/api/processplatform/work/retract/{id}", get(work_retract))
         .route(
-            "/jaxrs/processplatform/work/retract/{id}",
-            get(work_retract),
-        )
-        .route(
-            "/jaxrs/processplatform/work/processing/{id}",
+            "/api/processplatform/work/processing/{id}",
             get(work_processing),
         )
         .route(
-            "/jaxrs/processplatform/task/processing/{id}",
+            "/api/processplatform/task/processing/{id}",
             get(task_processing),
         )
         .route(
-            "/jaxrs/processplatform/work/count/with/person/{id}",
+            "/api/processplatform/work/count/with/person/{id}",
             get(work_count_with_person),
         )
         .route(
-            "/jaxrs/processplatform/task/count/with/person/{id}",
+            "/api/processplatform/task/count/with/person/{id}",
             get(task_count_with_person),
         )
         .layer(Extension(pool))

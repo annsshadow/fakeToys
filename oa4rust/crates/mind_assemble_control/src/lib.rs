@@ -7,7 +7,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/mind_assemble_control";
+pub const API_BASE: &str = "/api/mind_assemble_control";
 pub mod routes;
 pub mod u2;
 
@@ -147,7 +147,7 @@ pub async fn list_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

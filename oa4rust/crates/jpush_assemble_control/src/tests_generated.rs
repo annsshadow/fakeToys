@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/config")
+                    .uri("/api/jpush/assemble/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/list/control/apps")
+                    .uri("/api/jpush/assemble/control/list/control/apps")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/update/control/config")
+                    .uri("/api/jpush/assemble/control/update/control/config")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/list")
+                    .uri("/api/jpush/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/get/test-id")
+                    .uri("/api/jpush/get/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/create")
+                    .uri("/api/jpush/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/save/test-id")
+                    .uri("/api/jpush/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/delete/test-id")
+                    .uri("/api/jpush/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/device/admin/unbind/all/person")
+                    .uri("/api/jpush/assemble/control/device/admin/unbind/all/person")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/device/bind")
+                    .uri("/api/jpush/assemble/control/device/bind")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,9 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/jpush/assemble/control/device/check/deviceName/deviceType/pushType",
-                    )
+                    .uri("/api/jpush/assemble/control/device/check/deviceName/deviceType/pushType")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -246,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/device/config/push/type")
+                    .uri("/api/jpush/assemble/control/device/config/push/type")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -267,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/device/list/pushType")
+                    .uri("/api/jpush/assemble/control/device/list/pushType")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -288,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType")
+                    .uri("/api/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -309,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType")
+                    .uri("/api/jpush/assemble/control/device/unbind/deviceName/deviceType")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -330,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/assemble/control/message/test/send")
+                    .uri("/api/jpush/assemble/control/message/test/send")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

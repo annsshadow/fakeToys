@@ -12,7 +12,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use shared::{db::dialect, error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/ai_assemble_control";
+pub const API_BASE: &str = "/api/ai_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -192,7 +192,7 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -218,18 +218,39 @@ pub async fn ann_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -403,23 +424,23 @@ pub async fn get_usage_stats(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
     let router = Router::new()
         .route(
-            "/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}",
+            "/api/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}",
             get(config_list_mcp_paging_page_size_size),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/get/mcp/{id}",
+            "/api/ai/assemble/control/config/get/mcp/{id}",
             get(config_get_mcp_flag),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/create/mcp",
+            "/api/ai/assemble/control/config/create/mcp",
             post(config_create_mcp),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/update/mcp/{id}",
+            "/api/ai/assemble/control/config/update/mcp/{id}",
             post(config_update_mcp_flag),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/delete/mcp/{id}",
+            "/api/ai/assemble/control/config/delete/mcp/{id}",
             post(config_delete_mcp_flag),
         );
 
@@ -844,7 +865,7 @@ pub async fn config_list_enable_model(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -907,7 +928,7 @@ pub async fn config_list_mcp_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -967,7 +988,7 @@ pub async fn config_list_model_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1221,7 +1242,7 @@ pub async fn file_delete_flag(
     ))))
 }
 
-/// Java FileAction.listWithIds（POST /file/list）：按 id 列表查找文件。
+/// o2server FileAction.listWithIds（POST /file/list）：按 id 列表查找文件。
 /// ids 经归一化查重（trim、去空、保序去重）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -1250,7 +1271,7 @@ pub async fn file_list_with_ids(
         .collect();
 
     if ids.is_empty() {
-        return Ok(Json(ActionResult::java_success(
+        return Ok(Json(ActionResult::legacy_success(
             Value::Array(Vec::new()),
             0,
             0,
@@ -1288,7 +1309,7 @@ pub async fn file_list_with_ids(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1332,7 +1353,7 @@ pub async fn file_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1401,7 +1422,7 @@ pub async fn file_upload(
             ),
             (
                 "date".to_string(),
-                Value::String(shared::response::java_date_now()),
+                Value::String(shared::response::legacy_date_now()),
             ),
             (
                 "spent".to_string(),
@@ -1548,7 +1569,7 @@ pub async fn index_cms_doc_with_app_appId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1638,14 +1659,14 @@ pub async fn index_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// Java IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
+/// o2server IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
 /// 将全部启用文档标记为已同步知识库。GET 无请求体——不得要求 JSON body。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2060,7 +2081,7 @@ pub async fn chat_completion_stream(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 端点全量闭合：Java ChatAction/ConfigAction 缺口端点。
+// plan002 U2 端点全量闭合：o2server ChatAction/ConfigAction 缺口端点。
 //   - 真实参数化 SQL 操作既有表（x_ai_conversation / x_ai_chat / x_ai_mcp_config）
 //   - LLM 调用类沿用 AI_API_KEY 门控约定（无 key 时模拟，非假壳）
 // ──────────────────────────────────────────────────────────────────────────────
@@ -2092,14 +2113,14 @@ async fn u2_normalized_name_dup(
     Ok(cnt > 0)
 }
 
-/// Java ConfigAction.getConfig（GET /config/get）：读取基础 AI 配置。
+/// o2server ConfigAction.getConfig（GET /config/get）：读取基础 AI 配置。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     get_ai_control_config(pool).await
 }
 
-/// Java ChatAction.listPaging（GET /chat/list/paging/{page}/size/{size}）：
+/// o2server ChatAction.listPaging（GET /chat/list/paging/{page}/size/{size}）：
 /// 分页列示当前用户的线索（映射 x_ai_conversation，按 create_time 倒序）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2149,14 +2170,14 @@ pub async fn chat_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// Java ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
+/// o2server ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
 /// 按线索分页查找对话（映射 x_ai_chat.conversation_id，按 create_time 倒序）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2207,14 +2228,14 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// Java ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
+/// o2server ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
 /// 归属校验：仅线索所有者可删（他人线索 → 403）。软删除保持既有约定。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2275,7 +2296,7 @@ pub async fn chat_delete_clue_id(
     ))))
 }
 
-/// Java ChatAction.writeCompletionExtra（POST /chat/write/completion/extra）：
+/// o2server ChatAction.writeCompletionExtra（POST /chat/write/completion/extra）：
 /// 写入对话扩展数据。id 必填（对应 ExceptionFieldEmpty）；扩展数据真实落库
 /// x_ai_chat.extra；网关转发沿用 AI_API_KEY 门控——无 key 时标记 simulated，
 /// 落库仍真实发生（非假成功）。

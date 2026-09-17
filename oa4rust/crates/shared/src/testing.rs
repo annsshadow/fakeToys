@@ -55,10 +55,10 @@ pub fn test_app_with(state: SecurityState, pool: Pool) -> Router {
     use axum::routing::{get, post};
     Router::new()
         .route("/health", get(|| async { "ok" }))
-        .route("/jaxrs/unit/list", get(|| async { "ok" }))
-        .route("/jaxrs/authentication/login", post(|| async { "ok" }))
-        .route("/jaxrs/reset", post(|| async { "ok" }))
-        .route("/jaxrs/person", post(|| async { "ok" }))
+        .route("/api/unit/list", get(|| async { "ok" }))
+        .route("/api/authentication/login", post(|| async { "ok" }))
+        .route("/api/reset", post(|| async { "ok" }))
+        .route("/api/person", post(|| async { "ok" }))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             crate::middleware::authorize_middleware,

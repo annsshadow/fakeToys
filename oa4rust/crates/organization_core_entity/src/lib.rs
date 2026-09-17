@@ -934,48 +934,48 @@ pub fn organization_core_entity_router(_pool: deadpool_postgres::Pool) -> Router
     // The pool is kept for backwards compatibility with crates that still use it.
     Router::new()
         // definition
-        .route("/jaxrs/organization/definition/list", get(definition_list))
-        .route("/jaxrs/organization/definition", post(definition_create))
+        .route("/api/organization/definition/list", get(definition_list))
+        .route("/api/organization/definition", post(definition_create))
         .route(
-            "/jaxrs/organization/definition/{id}",
+            "/api/organization/definition/{id}",
             put(definition_update).delete(definition_delete),
         )
         // group
-        .route("/jaxrs/organization/group/list", get(group_list))
-        .route("/jaxrs/organization/group", post(group_create))
+        .route("/api/organization/group/list", get(group_list))
+        .route("/api/organization/group", post(group_create))
         .route(
-            "/jaxrs/organization/group/{id}",
+            "/api/organization/group/{id}",
             put(group_update).delete(group_delete),
         )
         // identity
-        .route("/jaxrs/organization/identity/list", get(identity_list))
-        .route("/jaxrs/organization/identity", post(identity_create))
+        .route("/api/organization/identity/list", get(identity_list))
+        .route("/api/organization/identity", post(identity_create))
         .route(
-            "/jaxrs/organization/identity/{id}",
+            "/api/organization/identity/{id}",
             put(identity_update).delete(identity_delete),
         )
         // person
-        .route("/jaxrs/organization/person/list", get(person_list))
-        .route("/jaxrs/organization/person", post(person_create))
+        .route("/api/organization/person/list", get(person_list))
+        .route("/api/organization/person", post(person_create))
         .route(
-            "/jaxrs/organization/person/{id}",
+            "/api/organization/person/{id}",
             put(person_update).delete(person_delete),
         )
         // custom
         .route(
-            "/jaxrs/organization/custom/list/{identityId}",
+            "/api/organization/custom/list/{identityId}",
             get(custom_list),
         )
-        .route("/jaxrs/organization/custom", post(custom_create))
+        .route("/api/organization/custom", post(custom_create))
         .route(
-            "/jaxrs/organization/custom/{id}",
+            "/api/organization/custom/{id}",
             put(custom_update).delete(custom_delete),
         )
         // bind
-        .route("/jaxrs/organization/bind/list", get(bind_list))
-        .route("/jaxrs/organization/bind", post(bind_create))
+        .route("/api/organization/bind/list", get(bind_list))
+        .route("/api/organization/bind", post(bind_create))
         .route(
-            "/jaxrs/organization/bind/{id}",
+            "/api/organization/bind/{id}",
             put(bind_update).delete(bind_delete),
         )
 }

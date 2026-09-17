@@ -8,176 +8,166 @@ use crate::u2;
 use crate::{
     create_reply, create_topic, forum_view_all, get_control_config, get_forum,
     list_control_sections, list_forums, login, logout, mobile_view_all,
-    permission_section_sectionId, permission_subject_subjectId, reply_list_sub_id,
-    section_create, section_delete, section_update, section_viewforum_forumId,
-    shutup_create, shutup_delete, shutup_list, subject_creamed_list, subject_filter_list,
-    subject_index_list, subject_statgrade, subject_top_sectionId, subject_view_id,
-    topic_recommended_index, update_control_config, user_forum_list, user_info,
-    user_section_list, uuid_generate,
+    permission_section_sectionId, permission_subject_subjectId, reply_list_sub_id, section_create,
+    section_delete, section_update, section_viewforum_forumId, shutup_create, shutup_delete,
+    shutup_list, subject_creamed_list, subject_filter_list, subject_index_list, subject_statgrade,
+    subject_top_sectionId, subject_view_id, topic_recommended_index, update_control_config,
+    user_forum_list, user_info, user_section_list, uuid_generate,
 };
 
-/// plan002 U2 — Java 端点全集（106 条）统一前缀。
-pub const JAVA_BASE: &str = "/jaxrs/bbs/assemble/control";
+/// plan002 U2 — o2server 端点全集（106 条）统一前缀。
+pub const API_BASE: &str = "/api/bbs/assemble/control";
 
 pub fn router(pool: Pool) -> Router {
     Router::new()
-        // ════════ 既有业务路由（保留，非 Java 全集成员的扩展端点）════════
+        // ════════ 既有业务路由（保留，非 o2server 全集成员的扩展端点）════════
+        .route("/api/bbs/assemble/control/config", get(get_control_config))
         .route(
-            "/jaxrs/bbs/assemble/control/config",
-            get(get_control_config),
-        )
-        .route(
-            "/jaxrs/bbs/assemble/control/section/list",
+            "/api/bbs/assemble/control/section/list",
             get(list_control_sections),
         )
         // 版块发布/管理写路由（x_bbs_assemble_control_section；无 deleted_at → 硬删）
         .route(
-            "/jaxrs/bbs/assemble/control/section/create",
+            "/api/bbs/assemble/control/section/create",
             post(section_create),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/section/save/{id}",
+            "/api/bbs/assemble/control/section/save/{id}",
             put(section_update).post(section_update),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/section/delete/{id}",
+            "/api/bbs/assemble/control/section/delete/{id}",
             delete(section_delete).post(section_delete),
         )
-        .route("/jaxrs/bbs/assemble/control/forum/list", get(list_forums))
+        .route("/api/bbs/assemble/control/forum/list", get(list_forums))
+        .route("/api/bbs/assemble/control/topic/create", post(create_topic))
         .route(
-            "/jaxrs/bbs/assemble/control/topic/create",
-            post(create_topic),
-        )
-        .route(
-            "/jaxrs/bbs/assemble/control/topic/list/forum/{forumId}",
+            "/api/bbs/assemble/control/topic/list/forum/{forumId}",
             get(crate::list_topics_by_forum),
         )
+        .route("/api/bbs/assemble/control/reply/create", post(create_reply))
         .route(
-            "/jaxrs/bbs/assemble/control/reply/create",
-            post(create_reply),
-        )
-        .route(
-            "/jaxrs/bbs/assemble/control/update/control/config",
+            "/api/bbs/assemble/control/update/control/config",
             post(update_control_config),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/update/control/config",
+            "/api/bbs/assemble/control/update/control/config",
             put(update_control_config),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/shutup/create",
+            "/api/bbs/assemble/control/shutup/create",
             post(shutup_create),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/shutup/delete",
+            "/api/bbs/assemble/control/shutup/delete",
             post(shutup_delete),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/shutup/delete",
+            "/api/bbs/assemble/control/shutup/delete",
             delete(shutup_delete),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/delete/forum",
+            "/api/bbs/assemble/control/delete/forum",
             post(crate::delete_forum),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/delete/forum",
+            "/api/bbs/assemble/control/delete/forum",
             delete(crate::delete_forum),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/delete/reply",
+            "/api/bbs/assemble/control/delete/reply",
             post(crate::delete_reply),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/delete/reply",
+            "/api/bbs/assemble/control/delete/reply",
             delete(crate::delete_reply),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/delete/subject",
+            "/api/bbs/assemble/control/delete/subject",
             post(crate::delete_subject),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/delete/subject",
+            "/api/bbs/assemble/control/delete/subject",
             delete(crate::delete_subject),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/list/reply/filter",
+            "/api/bbs/assemble/control/list/reply/filter",
             get(crate::list_reply_filter),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/list/subjects/filtered",
+            "/api/bbs/assemble/control/list/subjects/filtered",
             get(crate::list_subjects_filtered),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/list/subjects/index",
+            "/api/bbs/assemble/control/list/subjects/index",
             get(crate::list_subjects_index),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/list/subjects/recommended/index",
+            "/api/bbs/assemble/control/list/subjects/recommended/index",
             get(crate::list_subjects_recommended_index),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/list/topics/creamed",
+            "/api/bbs/assemble/control/list/topics/creamed",
             get(crate::list_topics_creamed),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/list/topics/recommended",
+            "/api/bbs/assemble/control/list/topics/recommended",
             get(crate::list_topics_recommended),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/picture/list/{subjectId}",
+            "/api/bbs/assemble/control/picture/list/{subjectId}",
             get(crate::picture_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/subject/creamed/list",
+            "/api/bbs/assemble/control/subject/creamed/list",
             get(subject_creamed_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/subject/filter/list",
+            "/api/bbs/assemble/control/subject/filter/list",
             get(subject_filter_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/subject/index/list",
+            "/api/bbs/assemble/control/subject/index/list",
             get(subject_index_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/subject/search",
+            "/api/bbs/assemble/control/subject/search",
             get(crate::subject_search),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/subject/statgrade",
+            "/api/bbs/assemble/control/subject/statgrade",
             get(subject_statgrade),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/creamed/list",
+            "/api/bbs/assemble/control/topic/creamed/list",
             get(crate::topic_creamed_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/filter/list",
+            "/api/bbs/assemble/control/topic/filter/list",
             get(crate::topic_filter_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/filter/listsubjectinfo",
+            "/api/bbs/assemble/control/topic/filter/listsubjectinfo",
             post(crate::topic_filter_listsubjectinfo),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/index/list",
+            "/api/bbs/assemble/control/topic/index/list",
             get(crate::topic_index_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/recommended/index",
+            "/api/bbs/assemble/control/topic/recommended/index",
             get(crate::topic_recommended_index),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/recommended/list",
+            "/api/bbs/assemble/control/topic/recommended/list",
             get(crate::topic_recommended_list),
         )
         .route(
-            "/jaxrs/bbs/assemble/control/topic/search",
+            "/api/bbs/assemble/control/topic/search",
             get(crate::topic_search),
         )
-        .route("/jaxrs/bbs/assemble/control/user/info", get(user_info))
-        // ════════ Java 全集对齐（106 条；U2 冲刺 100%）════════
+        .route("/api/bbs/assemble/control/user/info", get(user_info))
+        // ════════ o2server 全集对齐（106 条；U2 冲刺 100%）════════
         // ── attachment（AttachmentAction，7 条；二进制流显式 501）──
         .route(&fmt("attachment/{id}"), get(u2::u2_attachment_get))
         .route(&fmt("attachment/{id}"), delete(u2::u2_attachment_delete))
@@ -485,11 +475,11 @@ pub fn router(pool: Pool) -> Router {
         .route(&fmt("userinfo"), put(u2::u2_userinfo_filter))
         // ── uuid（UUIDAction；legacy /uuid 保留兼容）──
         .route(&fmt("uuid/random"), get(uuid_generate))
-        .route("/jaxrs/bbs/assemble/control/uuid", get(uuid_generate))
+        .route("/api/bbs/assemble/control/uuid", get(uuid_generate))
         .layer(axum::extract::Extension(pool))
 }
 
-fn fmt(java_relative: &str) -> String {
-    let normalized = u2::normalize_java_path("", java_relative);
-    format!("{}/{}", JAVA_BASE, normalized)
+fn fmt(legacy_relative: &str) -> String {
+    let normalized = u2::normalize_legacy_path("", legacy_relative);
+    format!("{}/{}", API_BASE, normalized)
 }

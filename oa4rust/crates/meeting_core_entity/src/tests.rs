@@ -27,7 +27,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/list")
+                    .uri("/api/meeting/core/entity/room/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -46,7 +46,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/create")
+                    .uri("/api/meeting/core/entity/room/create")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"name":"Test Room","capacity":10}"#))
@@ -66,7 +66,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/room-001")
+                    .uri("/api/meeting/core/entity/room/room-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -88,7 +88,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/save/room-001")
+                    .uri("/api/meeting/core/entity/room/save/room-001")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"name":"Updated Room"}"#))
@@ -109,7 +109,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/save/room-001")
+                    .uri("/api/meeting/core/entity/room/save/room-001")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"name":"Updated Room"}"#))
@@ -132,7 +132,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/delete/room-001")
+                    .uri("/api/meeting/core/entity/room/delete/room-001")
                     .method(axum::http::Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -155,7 +155,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/meeting/list")
+                    .uri("/api/meeting/core/entity/meeting/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -175,7 +175,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/meeting/list/by/room-001")
+                    .uri("/api/meeting/core/entity/meeting/list/by/room-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

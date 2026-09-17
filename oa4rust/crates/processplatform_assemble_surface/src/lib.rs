@@ -135,7 +135,7 @@ pub async fn list_surfaces(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -165,18 +165,42 @@ pub async fn process_manager_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("version".to_string(), Value::String(row.get::<_, Option<String>>("version").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
-                ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -480,7 +504,7 @@ pub async fn application_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -518,7 +542,7 @@ pub async fn application_list_complex(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -606,7 +630,7 @@ pub async fn application_list_key_key(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -645,7 +669,7 @@ pub async fn application_list_range(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -685,7 +709,7 @@ pub async fn application_list_terminal_terminal(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -858,7 +882,7 @@ pub async fn applicationdict_list_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2384,7 +2408,7 @@ pub async fn correlation_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2425,7 +2449,7 @@ pub async fn correlation_list_job_job_site_site(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2499,7 +2523,7 @@ pub async fn data_fetch_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2540,7 +2564,7 @@ pub async fn data_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2581,7 +2605,7 @@ pub async fn data_job_job_array_data(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2667,7 +2691,7 @@ pub async fn data_job_job_path0(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2753,7 +2777,7 @@ pub async fn data_job_job_path0_path1(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2844,7 +2868,7 @@ pub async fn data_job_job_path0_path1_path2(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -2941,7 +2965,7 @@ pub async fn data_job_job_path0_path1_path2_path3(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3040,7 +3064,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3135,7 +3159,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3223,7 +3247,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3309,7 +3333,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3523,7 +3547,7 @@ pub async fn data_work_id_path0(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3660,7 +3684,7 @@ pub async fn data_work_id_path0_path1(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3802,7 +3826,7 @@ pub async fn data_work_id_path0_path1_path2(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -3955,7 +3979,7 @@ pub async fn data_work_id_path0_path1_path2_path3(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4111,7 +4135,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4264,7 +4288,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4405,7 +4429,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4542,7 +4566,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4679,7 +4703,7 @@ pub async fn data_workcompleted_id(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4720,7 +4744,7 @@ pub async fn data_workcompleted_id_from_data(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4761,7 +4785,7 @@ pub async fn data_workcompleted_id_from_item(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4847,7 +4871,7 @@ pub async fn data_workcompleted_id_path0(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -4933,7 +4957,7 @@ pub async fn data_workcompleted_id_path0_path1(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5024,7 +5048,7 @@ pub async fn data_workcompleted_id_path0_path1_path2(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5121,7 +5145,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5220,7 +5244,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5315,7 +5339,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5403,7 +5427,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5489,7 +5513,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5607,7 +5631,7 @@ pub async fn datarecord_list_job_job(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5647,7 +5671,7 @@ pub async fn documentversion_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5688,7 +5712,7 @@ pub async fn documentversion_list_job_job_category_category(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5729,7 +5753,7 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5770,7 +5794,7 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_catego
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5877,7 +5901,7 @@ pub async fn draft_list_my_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5918,7 +5942,7 @@ pub async fn draft_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -5959,7 +5983,7 @@ pub async fn draft_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -6207,7 +6231,7 @@ pub async fn file_list_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -6699,7 +6723,7 @@ pub async fn handover_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7103,7 +7127,7 @@ pub async fn mode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7264,7 +7288,7 @@ pub async fn process_list_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7305,7 +7329,7 @@ pub async fn process_list_application_applicationFlag_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7346,7 +7370,7 @@ pub async fn process_list_available_identity_process_flag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7387,7 +7411,7 @@ pub async fn process_list_controllable_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7426,7 +7450,7 @@ pub async fn process_list_ids(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7717,7 +7741,7 @@ pub async fn read_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         count,
         0,
@@ -7868,7 +7892,7 @@ pub async fn read_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7909,7 +7933,7 @@ pub async fn read_list_my_filter_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -7950,7 +7974,7 @@ pub async fn read_list_my_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8024,7 +8048,7 @@ pub async fn read_list_work_work(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8065,7 +8089,7 @@ pub async fn read_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8106,7 +8130,7 @@ pub async fn read_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8147,7 +8171,7 @@ pub async fn read_list_id_next_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8188,7 +8212,7 @@ pub async fn read_list_id_next_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8229,7 +8253,7 @@ pub async fn read_list_id_next_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8270,7 +8294,7 @@ pub async fn read_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8311,7 +8335,7 @@ pub async fn read_list_id_prev_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8352,7 +8376,7 @@ pub async fn read_list_id_prev_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8393,7 +8417,7 @@ pub async fn read_list_id_prev_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8447,7 +8471,7 @@ pub async fn read_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -8487,7 +8511,7 @@ pub async fn read_v2_list_create_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8528,7 +8552,7 @@ pub async fn read_v2_list_create_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8569,7 +8593,7 @@ pub async fn read_v2_list_create_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8610,7 +8634,7 @@ pub async fn read_v2_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8651,7 +8675,7 @@ pub async fn read_v2_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -8692,7 +8716,7 @@ pub async fn read_v2_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9328,7 +9352,7 @@ pub async fn readcompleted_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         count,
         0,
@@ -9479,7 +9503,7 @@ pub async fn readcompleted_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9520,7 +9544,7 @@ pub async fn readcompleted_list_my_filter_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9561,7 +9585,7 @@ pub async fn readcompleted_list_my_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9602,7 +9626,7 @@ pub async fn readcompleted_list_work_work(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9643,7 +9667,7 @@ pub async fn readcompleted_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9684,7 +9708,7 @@ pub async fn readcompleted_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9725,7 +9749,7 @@ pub async fn readcompleted_list_id_next_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9766,7 +9790,7 @@ pub async fn readcompleted_list_id_next_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9807,7 +9831,7 @@ pub async fn readcompleted_list_id_next_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9848,7 +9872,7 @@ pub async fn readcompleted_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9889,7 +9913,7 @@ pub async fn readcompleted_list_id_prev_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9930,7 +9954,7 @@ pub async fn readcompleted_list_id_prev_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -9971,7 +9995,7 @@ pub async fn readcompleted_list_id_prev_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10029,7 +10053,7 @@ pub async fn readcompleted_v2_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -10069,7 +10093,7 @@ pub async fn readcompleted_v2_list_create_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10110,7 +10134,7 @@ pub async fn readcompleted_v2_list_create_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10151,7 +10175,7 @@ pub async fn readcompleted_v2_list_create_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10192,7 +10216,7 @@ pub async fn readcompleted_v2_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10233,7 +10257,7 @@ pub async fn readcompleted_v2_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10274,7 +10298,7 @@ pub async fn readcompleted_v2_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10498,7 +10522,7 @@ pub async fn readrecord_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10539,7 +10563,7 @@ pub async fn readrecord_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10613,7 +10637,7 @@ pub async fn record_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10654,7 +10678,7 @@ pub async fn record_list_job_job_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10695,7 +10719,7 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -10736,7 +10760,7 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_siz
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11113,7 +11137,7 @@ pub async fn review_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11167,7 +11191,7 @@ pub async fn review_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -11207,7 +11231,7 @@ pub async fn review_v2_list_create_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11248,7 +11272,7 @@ pub async fn review_v2_list_create_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11289,7 +11313,7 @@ pub async fn review_v2_list_create_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11330,7 +11354,7 @@ pub async fn review_v2_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11404,7 +11428,7 @@ pub async fn review_v2_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11445,7 +11469,7 @@ pub async fn review_v2_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11665,7 +11689,7 @@ pub async fn route_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -11915,7 +11939,7 @@ pub async fn serialnumber_list_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -11956,7 +11980,7 @@ pub async fn serialnumber_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12249,7 +12273,7 @@ pub async fn sign_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12577,7 +12601,7 @@ pub async fn task_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         count,
         0,
@@ -12728,7 +12752,7 @@ pub async fn task_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12769,7 +12793,7 @@ pub async fn task_list_my_filter_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12835,7 +12859,7 @@ pub async fn task_list_my_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12909,7 +12933,7 @@ pub async fn task_list_work_work(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12950,7 +12974,7 @@ pub async fn task_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -12991,7 +13015,7 @@ pub async fn task_list_id_next_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13032,7 +13056,7 @@ pub async fn task_list_id_next_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13139,7 +13163,7 @@ pub async fn task_list_id_next_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13180,7 +13204,7 @@ pub async fn task_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13221,7 +13245,7 @@ pub async fn task_list_id_prev_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13262,7 +13286,7 @@ pub async fn task_list_id_prev_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13369,7 +13393,7 @@ pub async fn task_list_id_prev_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13423,7 +13447,7 @@ pub async fn task_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -13463,7 +13487,7 @@ pub async fn task_v2_list_create_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13504,7 +13528,7 @@ pub async fn task_v2_list_create_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13545,7 +13569,7 @@ pub async fn task_v2_list_create_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13586,7 +13610,7 @@ pub async fn task_v2_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13627,7 +13651,7 @@ pub async fn task_v2_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -13668,7 +13692,7 @@ pub async fn task_v2_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14592,7 +14616,7 @@ pub async fn taskcompleted_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         count,
         0,
@@ -14743,7 +14767,7 @@ pub async fn taskcompleted_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14784,7 +14808,7 @@ pub async fn taskcompleted_list_my_filter_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14825,7 +14849,7 @@ pub async fn taskcompleted_list_my_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14866,7 +14890,7 @@ pub async fn taskcompleted_list_prev_manual_flag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14907,7 +14931,7 @@ pub async fn taskcompleted_list_work_work(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14948,7 +14972,7 @@ pub async fn taskcompleted_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -14989,7 +15013,7 @@ pub async fn taskcompleted_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15030,7 +15054,7 @@ pub async fn taskcompleted_list_id_next_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15071,7 +15095,7 @@ pub async fn taskcompleted_list_id_next_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15112,7 +15136,7 @@ pub async fn taskcompleted_list_id_next_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15153,7 +15177,7 @@ pub async fn taskcompleted_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15194,7 +15218,7 @@ pub async fn taskcompleted_list_id_prev_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15235,7 +15259,7 @@ pub async fn taskcompleted_list_id_prev_count_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15276,7 +15300,7 @@ pub async fn taskcompleted_list_id_prev_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15367,7 +15391,7 @@ pub async fn taskcompleted_v2_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -15407,7 +15431,7 @@ pub async fn taskcompleted_v2_list_create_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15448,7 +15472,7 @@ pub async fn taskcompleted_v2_list_create_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15489,7 +15513,7 @@ pub async fn taskcompleted_v2_list_create_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15530,7 +15554,7 @@ pub async fn taskcompleted_v2_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15571,7 +15595,7 @@ pub async fn taskcompleted_v2_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -15612,7 +15636,7 @@ pub async fn taskcompleted_v2_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16112,7 +16136,7 @@ pub async fn work_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         count,
         0,
@@ -16283,7 +16307,7 @@ pub async fn work_list_my_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16357,7 +16381,7 @@ pub async fn work_list_id_next_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16398,7 +16422,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16505,7 +16529,7 @@ pub async fn work_list_id_next_count_creator_current(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16546,7 +16570,7 @@ pub async fn work_list_id_next_count_creator_current_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16587,7 +16611,7 @@ pub async fn work_list_id_next_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16628,7 +16652,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16669,7 +16693,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16776,7 +16800,7 @@ pub async fn work_list_id_prev_count_creator_current(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16817,7 +16841,7 @@ pub async fn work_list_id_prev_count_creator_current_filter(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16858,7 +16882,7 @@ pub async fn work_list_id_prev_count_process_processFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -16961,7 +16985,7 @@ pub async fn work_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -17001,7 +17025,7 @@ pub async fn work_v2_list_paging_page_size_size(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -17042,7 +17066,7 @@ pub async fn work_v2_list_id_activity_goback(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -17083,7 +17107,7 @@ pub async fn work_v2_list_id_next_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -17124,7 +17148,7 @@ pub async fn work_v2_list_id_prev_count(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -18302,7 +18326,7 @@ pub async fn workcompleted_filter_list_id_prev_count_application_applicationFlag
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -18321,7 +18345,7 @@ pub async fn workcompleted_list_count_application(
         .map_err(|_| AppError::Internal)?
         .get(0);
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         count,
         0,
@@ -18505,7 +18529,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -18546,7 +18570,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -18653,7 +18677,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -18694,7 +18718,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -19095,7 +19119,7 @@ pub async fn worklog_list_add_split_work_workId(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -19136,7 +19160,7 @@ pub async fn worklog_list_job_job(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -19177,7 +19201,7 @@ pub async fn worklog_list_rollback_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -19218,7 +19242,7 @@ pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
 
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -19226,7 +19250,7 @@ pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
     }
 }
 
-// ═════════ plan002 U2：Java 对齐缺口补齐（snap / attachment 域） ═════════
+// ═════════ plan002 U2：o2server 对齐缺口补齐（snap / attachment 域） ═════════
 // 表结构见 migrations/065_process_surface_u2_tables.sql（pp_c_snap / pp_c_attachment）。
 // 写操作执行资源级 IDOR 门禁（owner 或 admin），模式与 cms_assemble_control U2 先例一致。
 // 列名访问使用裸输出列名（SELECT "xCol" 的结果列名为 xCol，不带引号字符）。
@@ -19502,7 +19526,7 @@ pub async fn snap_u2_list_next_count(
     let rows = u2_snap_page(&pool, &id, count, false).await?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -19518,7 +19542,7 @@ pub async fn snap_u2_list_prev_count(
     rows.reverse();
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -19535,7 +19559,7 @@ pub async fn snap_u2_list_next_count_manage(
     let rows = u2_snap_page_all(&pool, &id, count, false).await?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json_full).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -19553,7 +19577,7 @@ pub async fn snap_u2_list_prev_count_manage(
     rows.reverse();
     let data: Vec<Value> = rows.iter().map(u2_snap_json_full).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -19585,7 +19609,7 @@ async fn u2_snap_by_type(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -19691,12 +19715,12 @@ async fn u2_att_list(
     u2_att_list_shaped(pool, where_clause, param, false).await
 }
 
-/// 同上；java_shape=true 时按 Java 信封返回裸数组（仅行为对比报告列出的端点）。
+/// 同上；legacy_shape=true 时按 o2server 信封返回裸数组（仅行为对比报告列出的端点）。
 async fn u2_att_list_shaped(
     pool: &Pool,
     where_clause: &str,
     param: &str,
-    java_shape: bool,
+    legacy_shape: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let sql = format!(
@@ -19708,16 +19732,16 @@ async fn u2_att_list_shaped(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_att_json).collect();
-    if java_shape {
+    if legacy_shape {
         let count = data.len() as i64;
-        return Ok(Json(ActionResult::java_success(
+        return Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
         )));
     }
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -19894,7 +19918,7 @@ pub async fn attachment_u2_get_by_workcompleted(
 }
 
 // ════════════ plan002 U2 批量第二注册：缺失端点补齐（snap / attachment 域） ════════════
-// Java 对齐缺口：GET /jaxrs/snap/{id}/mockdeletetoget、snap 列表族（application/process 过滤）、
+// o2server 对齐缺口：GET /api/snap/{id}/mockdeletetoget、snap 列表族（application/process 过滤）、
 // attachment 元数据读取与删除族。复用 U2 门禁与列映射基建（u2_check_owner/u2_snap_json/u2_att_json）。
 // 分页约定与既有 sibling handler 一致：LIMIT=size，OFFSET=page。
 
@@ -19910,7 +19934,7 @@ fn u2_snap_page_json(rows: &[deadpool_postgres::tokio_postgres::Row]) -> Json<Ac
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     {
         let count = data.len() as i64;
-        Json(ActionResult::java_success(Value::Array(data), count, 0))
+        Json(ActionResult::legacy_success(Value::Array(data), count, 0))
     }
 }
 
@@ -19963,7 +19987,7 @@ pub async fn snap_list_my_filter_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // Java POST 过滤变体：与分页变体同查询（crate 既有约定：Wi 过滤体不参与 SQL）
+    // o2server POST 过滤变体：与分页变体同查询（crate 既有约定：Wi 过滤体不参与 SQL）
     let rows = u2_snap_list_offset(&pool, page, size, None).await?;
     Ok(u2_snap_page_json(&rows))
 }
@@ -20003,7 +20027,7 @@ fn u2_snap_cursor_response(
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     {
         let count = data.len() as i64;
-        Json(ActionResult::java_success(Value::Array(data), count, 0))
+        Json(ActionResult::legacy_success(Value::Array(data), count, 0))
     }
 }
 
@@ -20106,7 +20130,7 @@ pub async fn attachment_id(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // DELETE /jaxrs/attachment/{id}：资源级 IDOR 门禁（creator 或 admin），模式同 snap_u2_delete
+    // DELETE /api/attachment/{id}：资源级 IDOR 门禁（creator 或 admin），模式同 snap_u2_delete
     match u2_check_owner(
         &pool,
         "\"pp_c_attachment\"",
@@ -20149,7 +20173,7 @@ pub async fn attachment_id(
 //   - 元数据管理（改名/复制/批删/排序等）：真实 SQL + IDOR 门禁（owner 或 admin）。
 //
 // 已知不可表达（保留跳过并记录）：axum/matchit 不支持段内多参数捕获，以下 4 条
-// Java 端点无法注册路由 —— download/{id}/work/{workId}/{name}.{ext} 及其
+// o2server 端点无法注册路由 —— download/{id}/work/{workId}/{name}.{ext} 及其
 // /stream/、workcompleted 变体（共 4 条）。其余 attachment 族缺口全部落地。
 
 fn u2_capability_unavailable(capability: &'static str) -> AppError {
@@ -20434,7 +20458,7 @@ pub async fn attachment_u2b_download_transfer(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    // Java 语义：按 flag 定位已转储的附件字节流。flag 即附件标识（work 或 id 均可命中）。
+    // o2server 语义：按 flag 定位已转储的附件字节流。flag 即附件标识（work 或 id 均可命中）。
     let row = match u2_att_load_blob_row(&pool, "id = $1", &flag, None).await? {
         Some(r) => Some(r),
         None => {
@@ -21389,10 +21413,10 @@ pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
 //     会话 person 作用域强制），模式与 U2 snap/attachment 先例一致；
 //   - 表结构依赖 migrations/075_process_surface_u2_keylock_serialnumber.sql。
 //
-// 已知形状残差（如实记录，非静默降级）：Java
+// 已知形状残差（如实记录，非静默降级）：o2server
 // `/attachment/download/{id}/work/{workId}/(stream/){fileName}.{ext}` 为"单段双参数"，
 // matchit(axum 0.8) 强制每段仅允许一个参数，故以 `{fileName}` 单段注册并在 handler 内
-// 解析 name.ext —— 行为等价（下载 + 命名），严格归一化口径下与 Java 形状存在 4 条无法
+// 解析 name.ext —— 行为等价（下载 + 命名），严格归一化口径下与 o2server 形状存在 4 条无法
 // 精确闭合的残差。
 
 use deadpool_postgres::tokio_postgres::types::ToSql;
@@ -21411,7 +21435,7 @@ fn u2_like_pattern(key: &str) -> String {
     format!("%{}%", out)
 }
 
-/// Java adjustPage：页码从 1 起；adjustSize：每页 1..=200。
+/// o2server adjustPage：页码从 1 起；adjustSize：每页 1..=200。
 fn u2_adjust_page(page: i64) -> i64 {
     if page < 1 {
         1
@@ -21489,7 +21513,7 @@ impl U2FilterSql {
     }
 }
 
-/// Java BaseAction.FilterWi：applicationList / processList / personList / key。
+/// o2server BaseAction.FilterWi：applicationList / processList / personList / key。
 #[derive(Debug, Default, Deserialize)]
 #[allow(non_snake_case)]
 pub struct U2FilterWi {
@@ -21528,7 +21552,7 @@ fn u2_paged_result(data: Vec<Value>, total: i64) -> Json<ActionResult<Value>> {
         ("count".to_string(), Value::Number(total.into())),
         ("data".to_string(), Value::Array(data)),
     ]);
-    Json(ActionResult::java_success(
+    Json(ActionResult::legacy_success(
         Value::Object(envelope),
         total,
         count_val,
@@ -21631,7 +21655,7 @@ async fn u2_snap_manage_cursor(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let limit = count.clamp(1, 500);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 锚点必须真实存在（Java ExceptionEntityNotExist 对应）
+    // 锚点必须真实存在（o2server ExceptionEntityNotExist 对应）
     let exists = client
         .query_opt("SELECT id FROM \"pp_c_snap\" WHERE id = $1", &[&anchor_id])
         .await
@@ -21661,7 +21685,7 @@ async fn u2_snap_manage_cursor(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -21770,8 +21794,8 @@ async fn u2_attr_month_counts(
         .collect())
 }
 
-/// 组装某资源的可过滤属性清单（Java ActionFilterAttribute 的 Wo 形状，按本库实际列裁剪）。
-/// 返回 map 键即 Java Wo 字段名；列不存在的组按 Java"空列表"语义返回 []。
+/// 组装某资源的可过滤属性清单（o2server ActionFilterAttribute 的 Wo 形状，按本库实际列裁剪）。
+/// 返回 map 键即 o2server Wo 字段名；列不存在的组按 o2server"空列表"语义返回 []。
 async fn u2_build_attribute_wo(
     pool: &Pool,
     table: &str,
@@ -21899,12 +21923,12 @@ pub async fn review_u2_v2_search(
     session: Extension<shared::session::Session>,
     Json(wi): Json<U2ReviewSearchWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // Java V2Search：query 为空直接抛 ExceptionEmptyQuery
+    // o2server V2Search：query 为空直接抛 ExceptionEmptyQuery
     let query = wi.query.unwrap_or_default();
     if query.trim().is_empty() {
         return Ok(Json(ActionResult::error("query is empty")));
     }
-    // IDOR：非 manager 不允许检索他人数据（Java getPerson 同语义）
+    // IDOR：非 manager 不允许检索他人数据（o2server getPerson 同语义）
     let admin = u2_is_admin(&pool, &session).await?;
     let person = if admin {
         wi.person.filter(|p| !p.trim().is_empty())
@@ -21912,7 +21936,7 @@ pub async fn review_u2_v2_search(
         Some(session.person_unique.clone())
     };
 
-    let size = wi.size.map(u2_adjust_size).unwrap_or(20); // Java DEFAULT_PAGESIZE = 20
+    let size = wi.size.map(u2_adjust_size).unwrap_or(20); // o2server DEFAULT_PAGESIZE = 20
     let page = wi.page.map(u2_adjust_page).unwrap_or(1);
     let offset = (page - 1) * size;
 
@@ -22187,7 +22211,7 @@ pub async fn serialnumber_u2_generate(
     u2_require_admin(&pool, &session).await?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
-    // 行级锁内自增，保证并发取号不重号（Java 委托 processing service 的原子语义等价实现）
+    // 行级锁内自增，保证并发取号不重号（o2server 委托 processing service 的原子语义等价实现）
     let row = tx
         .query_opt(
             "UPDATE \"pp_c_serialnumber\" SET \"xserial\" = COALESCE(\"xserial\", 0) + 1, \
@@ -22230,7 +22254,7 @@ pub async fn handover_u2_create(
     Json(wi): Json<U2HandoverCreateWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    // Java ExceptionFieldEmpty：type/scheme/person/targetIdentity 必填
+    // o2server ExceptionFieldEmpty：type/scheme/person/targetIdentity 必填
     let missing: Vec<&str> = [
         ("type", wi.r#type.as_deref()),
         ("scheme", wi.scheme.as_deref()),
@@ -22251,7 +22275,7 @@ pub async fn handover_u2_create(
     }
     let id = uuid::Uuid::new_v4().to_string();
     let target_identity = wi.targetIdentity.clone().unwrap_or_default();
-    // 本库无组织解析服务：targetPerson 以 targetIdentity 原样落库（Java 由 organization 解析）
+    // 本库无组织解析服务：targetPerson 以 targetIdentity 原样落库（o2server 由 organization 解析）
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
@@ -22354,7 +22378,7 @@ pub async fn work_u2_v3_retract(
         return Ok(Json(ActionResult::error("retractTaskList is required")));
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 1) 所有任务存在且属于同一个 job（Java ExceptionEntityNotExist / 单 job 校验）
+    // 1) 所有任务存在且属于同一个 job（o2server ExceptionEntityNotExist / 单 job 校验）
     let rows = client
         .query(
             "SELECT xid, xjob FROM \"pp_c_task\" WHERE xid = ANY($1)",
@@ -22525,7 +22549,7 @@ pub async fn snap_u2_upload(
     Json(wi): Json<U2SnapUploadWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    // Java check()：job 非空且（work 或 workCompleted 至少其一）——否则内容混淆异常
+    // o2server check()：job 非空且（work 或 workCompleted 至少其一）——否则内容混淆异常
     let job = wi.job.clone().unwrap_or_default();
     let has_target = wi.work.is_some() || wi.workCompleted.is_some();
     if job.trim().is_empty() || !has_target {
@@ -22606,7 +22630,7 @@ pub async fn snap_u2_download(
                     .and_then(Value::as_str)
                     .unwrap_or("snap");
                 let title = m.get("title").and_then(Value::as_str).unwrap_or("");
-                // Java WoFile：以 processName-title 命名的快照归档下载
+                // o2server WoFile：以 processName-title 命名的快照归档下载
                 m.insert(
                     "fileName".to_string(),
                     Value::String(format!("{}-{}.json", process_name, title)),
@@ -22720,7 +22744,7 @@ pub async fn review_u2_filter_create_entry(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // Java ActionFilterCreateEntry：以 (xperson = me AND xcreatorPerson = me) 为作用域
+    // o2server ActionFilterCreateEntry：以 (xperson = me AND xcreatorPerson = me) 为作用域
     let me = &session.person_unique;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     async fn distinct_list(
@@ -22781,7 +22805,7 @@ pub async fn review_u2_filter_create_entry(
     Ok(Json(ActionResult::success(wo)))
 }
 
-// ── route/list POST 别名（Java Wi.valueList → 按 id 批量取路由） ─────────────
+// ── route/list POST 别名（o2server Wi.valueList → 按 id 批量取路由） ─────────────
 
 #[derive(Debug, Default, Deserialize)]
 #[allow(non_snake_case)]
@@ -22796,7 +22820,7 @@ pub async fn route_u2_list_by_ids(
     Json(wi): Json<U2RouteListWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if wi.valueList.is_empty() {
-        return Ok(Json(ActionResult::java_success(
+        return Ok(Json(ActionResult::legacy_success(
             Value::Array(Vec::new()),
             0,
             0,
@@ -22825,7 +22849,7 @@ pub async fn route_u2_list_by_ids(
         .collect();
     {
         let count = data.len() as i64;
-        Ok(Json(ActionResult::java_success(
+        Ok(Json(ActionResult::legacy_success(
             Value::Array(data),
             count,
             0,
@@ -22869,7 +22893,7 @@ pub async fn task_list_date_hour_exclude_draft_manage(
         })
         .collect();
     let data_len = data.len() as i64;
-    Ok(Json(ActionResult::java_success(data, data_len, 0)))
+    Ok(Json(ActionResult::legacy_success(data, data_len, 0)))
 }
 
 #[allow(non_snake_case)]
@@ -22898,5 +22922,5 @@ pub async fn task_list_person_exclude_draft_manage(
         })
         .collect();
     let data_len = data.len() as i64;
-    Ok(Json(ActionResult::java_success(data, data_len, 0)))
+    Ok(Json(ActionResult::legacy_success(data, data_len, 0)))
 }
