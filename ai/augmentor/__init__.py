@@ -51,6 +51,7 @@ from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
 from .data_pipeline import DataPipeline, StageResult
 from .aggregator import DataAggregator, AggregationResult, aggregate_datasets
 from .impact import ImpactEvaluator, AugmentationImpact, evaluate_augmentation
+from .data_splitter import DataSplitter, split_dataset
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -225,6 +226,8 @@ __all__ = [
     "ImpactEvaluator",
     "AugmentationImpact",
     "evaluate_augmentation",
+    "DataSplitter",
+    "split_dataset",
     "AugmentorError",
     "ConfigError",
     "ModelError",
