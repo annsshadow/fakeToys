@@ -315,3 +315,108 @@ class TestDatasetOperationsExtended:
         output = tmp_path / "merged.json"
         result = merge_datasets([str(file_a)], str(output))
         assert result["total_output"] == 0
+
+
+class TestDatasetOpsExtended:
+    """DatasetOperations 第二轮扩展测试（覆盖剩余分支）"""
+
+    def test_merge_preserve_order_false_shuffles(self, test_data):
+        """preserve_order=False 应打乱顺序（设种子验证）"""
+        ops = DatasetOperations()
+        b = [{"instruction": f"x{i}"} for i in range(5)]
+        merged = ops.merge([test_data, b], MergeConfig(preserve_order=False))
+        assert len(merged) == 10
+
+    def test_merge_max_items_truncates(self, test_data):
+        """max_items 应限制合并后数量"""
+        ops = DatasetOperations()
+        b = [{"instruction": "y"}] * 5
+        merged = ops.merge([test_data, b], MergeConfig(max_items=3))
+        assert len(merged) == 3
+
+    def test_merge_dedup_same_instruction(self, test_data):
+        """相同 instruction 去重"""
+        ops = DatasetOperations()
+        dup = [{"instruction": test_data[0]["instruction"]}]
+        merged = ops.merge([test_data, dup], MergeConfig(deduplicate=True))
+        assert len(merged) == len(test_data)
+
+    def test_sample_by_size(self, test_data):
+        """按数量采样"""
+        ops = DatasetOperations()
+        sampled = ops.sample(test_data, SampleConfig(size=2, seed=1))
+        assert len(sampled) == 2
+
+    def test_sample_by_ratio(self, test_data):
+        """按比例采样"""
+        ops = DatasetOperations()
+        sampled = ops.sample(test_data, SampleConfig(ratio=0.4, seed=1))
+        assert len(sampled) == 2  # 5 * 0.4 = 2
+
+    def test_sample_default_no_config(self, test_data):
+        """无采样配置应返回全部（默认 random 方法）"""
+        ops = DatasetOperations()
+        sampled = ops.sample(test_data)
+        assert sorted(i["instruction"] for i in sampled) == \
+               sorted(i["instruction"] for i in test_data)
+
+    def test_split_three_ways(self, test_data):
+        """三向分割数量应正确"""
+        ops = DatasetOperations()
+        train, val, test = ops.split(
+            test_data, SplitConfig(ratios=(0.6, 0.2, 0.2))
+        )
+        assert len(train) + len(val) + len(test) == len(test_data)
+
+    def test_filter_by_keyword_include(self, test_data):
+        """关键词包含过滤"""
+        ops = DatasetOperations()
+        filtered = ops.filter_by_keyword(test_data, ["租房"], mode="include")
+        assert all("租房" in item["instruction"] for item in filtered)
+
+    def test_merge_files_writes_output(self, tmp_path, test_data):
+        """merge_files 应写出结果文件"""
+        ops = DatasetOperations()
+        f1 = tmp_path / "a.json"
+        f1.write_text(json.dumps(test_data), encoding="utf-8")
+        f2 = tmp_path / "b.json"
+        f2.write_text(json.dumps([{"instruction": "z"}]), encoding="utf-8")
+        output = tmp_path / "out.json"
+        result = ops.merge_files([str(f1), str(f2)], str(output))
+        assert output.exists()
+        assert result["total_input"] == 6
+
+    def test_deduplicate_empty(self):
+        """空列表去重"""
+        ops = DatasetOperations()
+        assert ops._deduplicate([]) == []
+
+    def test_deduplicate_uses_instruction_hash(self):
+        """去重应基于 instruction 哈希"""
+        ops = DatasetOperations()
+        items = [
+            {"instruction": "same", "output": "a"},
+            {"instruction": "same", "output": "b"},
+        ]
+        result = ops._deduplicate(items)
+        assert len(result) == 1
+
+    def test_convenience_split_dataset(self, test_data, tmp_path):
+        """便捷函数 split_dataset 应写出分割文件"""
+        import json as _json
+        src = tmp_path / "src.json"
+        src.write_text(_json.dumps(test_data), encoding="utf-8")
+        outdir = str(tmp_path / "split")
+        result = split_dataset(str(src), outdir)
+        assert result["output_dir"] == outdir
+        assert (tmp_path / "split" / "train.json").exists()
+
+    def test_convenience_sample_dataset(self, test_data, tmp_path):
+        """便捷函数 sample_dataset 应采样并写出文件"""
+        import json as _json
+        src = tmp_path / "src.json"
+        src.write_text(_json.dumps(test_data), encoding="utf-8")
+        out = str(tmp_path / "sampled.json")
+        result = sample_dataset_func(str(src), out, size=2, seed=0)
+        assert result["output_count"] == 2
+        assert Path(out).exists()
