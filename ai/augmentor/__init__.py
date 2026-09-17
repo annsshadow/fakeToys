@@ -1,6 +1,6 @@
 """AI 训练数据增强工具包"""
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 from .config import AppConfig, load_config
 from .models import create_model_backend, ModelBackend
@@ -44,6 +44,9 @@ from .auto_test import DatasetTestRunner, TestSuite, TestCase, TestResult, run_d
 from .quality_monitor import QualityMonitor, QualityThreshold, QualityAlert, QualitySnapshot, monitor_quality, create_monitor
 from .dependency import DependencyManager, Dependency, DatasetInfo, register_dataset, add_dependency, get_dependency_graph
 from .migration import DatasetMigrator, MigrationRule, MigrationResult, migrate_dataset, migrate_file
+from .outlier import OutlierDetector, OutlierReport, detect_outliers
+from .profiling import DataProfiler, ProfilingConfig, profile_dataset
+from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -198,6 +201,15 @@ __all__ = [
     "MigrationResult",
     "migrate_dataset",
     "migrate_file",
+    "OutlierDetector",
+    "OutlierReport",
+    "detect_outliers",
+    "DataProfiler",
+    "ProfilingConfig",
+    "profile_dataset",
+    "FeatureDetector",
+    "FeatureInfo",
+    "detect_features",
     "AugmentorError",
     "ConfigError",
     "ModelError",
