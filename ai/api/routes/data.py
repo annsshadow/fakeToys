@@ -171,3 +171,41 @@ async def visualize_data(filename: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ 演示数据 ============
+
+_DEMO_DATA = [
+    {
+        "instruction": "什么是人工智能？",
+        "input": "",
+        "output": "人工智能（AI）是计算机科学的一个分支，致力于创建能够执行通常需要人类智能的任务的系统，如学习、推理、问题解决、感知和语言理解。"
+    },
+    {
+        "instruction": "解释一下机器学习的基本概念",
+        "input": "",
+        "output": "机器学习是人工智能的子领域，它使计算机能够从数据中学习并做出决策或预测，而无需显式编程。主要类型包括监督学习、无监督学习和强化学习。"
+    },
+    {
+        "instruction": "深度学习与传统机器学习有什么区别？",
+        "input": "",
+        "output": "深度学习使用多层神经网络自动提取特征，适合处理大量数据；传统机器学习通常需要人工特征工程，在小数据集上可能更高效。"
+    },
+    {
+        "instruction": "什么是自然语言处理（NLP）？",
+        "input": "",
+        "output": "自然语言处理是AI的一个分支，专注于让计算机理解、解释和生成人类语言。应用包括机器翻译、情感分析、聊天机器人和文本摘要。"
+    },
+    {
+        "instruction": "请介绍一下计算机视觉的基本任务",
+        "input": "",
+        "output": "计算机视觉的基本任务包括图像分类、目标检测、语义分割、实例分割和图像生成。这些技术应用于自动驾驶、医学影像、安防监控等领域。"
+    }
+]
+
+
+@router.get("/api/demo/data")
+async def get_demo_data():
+    """获取内置演示数据集，开箱即用"""
+    from fastapi.responses import JSONResponse
+    return JSONResponse(_DEMO_DATA)

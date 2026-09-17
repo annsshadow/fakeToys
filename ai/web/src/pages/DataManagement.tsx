@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Space, message, Modal, Input, Pagination } from 'antd'
-import { DownloadOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
-import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData } from '../services/api'
+import { Table, Button, Space, message, Modal, Input, Pagination, Upload } from 'antd'
+import { DownloadOutlined, DeleteOutlined, EditOutlined, UploadOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { getDataFiles, loadData, updateDataItem, deleteDataItem, exportData, uploadData } from '../services/api'
 
 interface DataItem {
   instruction: string
@@ -24,6 +24,7 @@ export default function DataManagement() {
   const [pageSize, setPageSize] = useState(20)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingItem, setEditingItem] = useState<DataItem | null>(null)
   const [editingIndex, setEditingIndex] = useState(-1)
@@ -69,6 +70,34 @@ export default function DataManagement() {
       message.success(`导出为 ${format} 格式成功`)
     } catch (error) {
       message.error('导出失败')
+    }
+  }
+
+  const handleUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      await uploadData(file)
+      message.success('上传成功')
+      loadFiles()
+    } catch (error) {
+      message.error('上传失败')
+    } finally {
+      setUploading(false)
+    }
+    return false
+  }
+
+  const handleLoadDemo = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/demo/data')
+      const blob = await response.blob()
+      const file = new File([blob], 'demo_data.json', { type: 'application/json' })
+      await handleUpload(file)
+    } catch (error) {
+      message.error('加载演示数据失败')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -168,6 +197,15 @@ export default function DataManagement() {
           />
         </Space>
         <Space>
+          <Upload
+            accept=".json"
+            showUploadList={false}
+            beforeUpload={handleUpload}
+            disabled={uploading}
+          >
+            <Button icon={<UploadOutlined />} loading={uploading}>上传数据</Button>
+          </Upload>
+          <Button icon={<PlayCircleOutlined />} onClick={handleLoadDemo}>加载演示数据</Button>
           <Button icon={<DownloadOutlined />} onClick={() => handleExport('jsonl')}>导出 JSONL</Button>
           <Button icon={<DownloadOutlined />} onClick={() => handleExport('llama_factory')}>导出 Llama-Factory</Button>
           <Button icon={<DownloadOutlined />} onClick={() => handleExport('alpaca')}>导出 Alpaca</Button>
