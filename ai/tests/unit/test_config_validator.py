@@ -552,3 +552,54 @@ class TestConfigValidatorEdgeCases:
         
         assert result.is_valid is False
         assert any("值过大" in e.message for e in result.errors)
+
+
+class TestConfigValidatorExtended:
+    """ConfigValidator 扩展测试"""
+
+    def test_validate_empty_config(self):
+        """验证空配置"""
+        validator = ConfigValidator()
+        result = validator.validate_config({})
+        assert result.is_valid is False
+
+    def test_validate_valid_config(self, valid_config):
+        """验证有效配置"""
+        validator = ConfigValidator()
+        result = validator.validate_config(valid_config)
+        assert result.is_valid is True
+
+    def test_validate_config_with_extra_fields(self):
+        """验证包含额外字段的配置"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0", "extra": "field"},
+            "models": {"default": "ernie"}
+        }
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        # 额外字段不应导致验证失败
+        assert result.is_valid is True
+
+    def test_validate_config_type_error(self):
+        """验证类型错误的配置"""
+        config = {
+            "app": "not a dict",
+            "models": {"default": "ernie"}
+        }
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        assert result.is_valid is False
+
+    def test_validation_result_to_dict(self):
+        """ValidationResult.to_dict 完整性"""
+        result = ValidationResult(is_valid=True)
+        d = result.to_dict()
+        assert d["is_valid"] is True
+        assert "errors" in d
+        assert "warnings" in d
+
+    def test_severity_values(self):
+        """Severity 枚举值"""
+        assert Severity.ERROR.value == "error"
+        assert Severity.WARNING.value == "warning"
+        assert Severity.INFO.value == "info"
