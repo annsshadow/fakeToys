@@ -153,3 +153,158 @@ class TestSearchResult:
         assert "items" in d
         assert "total_matches" in d
         assert "query" in d
+
+
+class TestEvaluateFilter:
+    """过滤操作符测试"""
+
+    def test_eq_operator(self):
+        """eq 操作符"""
+        searcher = EnhancedSearcher([{"status": "active"}])
+        assert searcher._evaluate_filter("active", "eq", "active") is True
+        assert searcher._evaluate_filter("active", "eq", "inactive") is False
+
+    def test_ne_operator(self):
+        """ne 操作符"""
+        searcher = EnhancedSearcher([{"status": "active"}])
+        assert searcher._evaluate_filter("active", "ne", "inactive") is True
+        assert searcher._evaluate_filter("active", "ne", "active") is False
+
+    def test_contains_operator(self):
+        """contains 操作符"""
+        searcher = EnhancedSearcher([{"text": "hello world"}])
+        assert searcher._evaluate_filter("hello world", "contains", "hello") is True
+        assert searcher._evaluate_filter("hello world", "contains", "xyz") is False
+        assert searcher._evaluate_filter(123, "contains", "1") is False
+
+    def test_gt_operator(self):
+        """gt 操作符"""
+        searcher = EnhancedSearcher([{"count": 10}])
+        assert searcher._evaluate_filter(10, "gt", 5) is True
+        assert searcher._evaluate_filter(10, "gt", 10) is False
+        assert searcher._evaluate_filter("10", "gt", 5) is False
+
+    def test_lt_operator(self):
+        """lt 操作符"""
+        searcher = EnhancedSearcher([{"count": 5}])
+        assert searcher._evaluate_filter(5, "lt", 10) is True
+        assert searcher._evaluate_filter(5, "lt", 5) is False
+        assert searcher._evaluate_filter("5", "lt", 10) is False
+
+    def test_gte_operator(self):
+        """gte 操作符"""
+        searcher = EnhancedSearcher([{"count": 10}])
+        assert searcher._evaluate_filter(10, "gte", 10) is True
+        assert searcher._evaluate_filter(10, "gte", 5) is True
+        assert searcher._evaluate_filter(10, "gte", 15) is False
+
+    def test_lte_operator(self):
+        """lte 操作符"""
+        searcher = EnhancedSearcher([{"count": 5}])
+        assert searcher._evaluate_filter(5, "lte", 5) is True
+        assert searcher._evaluate_filter(5, "lte", 10) is True
+        assert searcher._evaluate_filter(5, "lte", 3) is False
+
+    def test_in_operator(self):
+        """in 操作符"""
+        searcher = EnhancedSearcher([{"status": "active"}])
+        assert searcher._evaluate_filter("active", "in", ["active", "pending"]) is True
+        assert searcher._evaluate_filter("active", "in", ["inactive"]) is False
+        assert searcher._evaluate_filter("active", "in", "not_a_list") is False
+
+    def test_not_in_operator(self):
+        """not_in 操作符"""
+        searcher = EnhancedSearcher([{"status": "active"}])
+        assert searcher._evaluate_filter("active", "not_in", ["inactive"]) is True
+        assert searcher._evaluate_filter("active", "not_in", ["active"]) is False
+        assert searcher._evaluate_filter("active", "not_in", "not_a_list") is True
+
+    def test_unknown_operator(self):
+        """未知操作符应返回 False"""
+        searcher = EnhancedSearcher([{"field": "value"}])
+        assert searcher._evaluate_filter("value", "unknown", "value") is False
+
+
+class TestSearchMethodsExtended:
+    """搜索方法扩展测试"""
+
+    def test_search_exact_no_match(self):
+        """精确搜索无匹配"""
+        searcher = EnhancedSearcher([{"instruction": "hello"}])
+        result = searcher.search("xyz", method="exact")
+        assert result.total_matches == 0
+
+    def test_search_contains_case_insensitive(self):
+        """包含搜索应不区分大小写"""
+        searcher = EnhancedSearcher([{"instruction": "Hello World"}])
+        result = searcher.search("hello", method="contains")
+        assert result.total_matches == 1
+
+    def test_search_fuzzy_no_match(self):
+        """模糊搜索无匹配"""
+        searcher = EnhancedSearcher([{"instruction": "hello"}])
+        result = searcher.search("xyz123", method="fuzzy")
+        assert result.total_matches == 0
+
+    def test_search_regex_invalid_pattern(self):
+        """无效正则应返回空结果"""
+        searcher = EnhancedSearcher([{"instruction": "hello"}])
+        result = searcher.search("[invalid", method="regex")
+        assert result.total_matches == 0
+
+    def test_search_no_items(self):
+        """空数据集搜索"""
+        searcher = EnhancedSearcher([])
+        result = searcher.search("test")
+        assert result.total_matches == 0
+
+    def test_search_highlights(self):
+        """高亮应包含匹配信息"""
+        items = [{"instruction": "如何申请租房"}]
+        searcher = EnhancedSearcher(items)
+        result = searcher.search("申请", method="contains")
+        
+        assert len(result.highlights) > 0
+        assert result.highlights[0]["index"] == 0
+
+    def test_search_with_multiple_filters(self):
+        """多个过滤器应同时生效"""
+        items = [
+            {"instruction": "申请租房", "category": "rent"},
+            {"instruction": "申请买房", "category": "buy"},
+            {"instruction": "租房流程", "category": "rent"},
+        ]
+        searcher = EnhancedSearcher(items)
+        
+        filters = [
+            SearchFilter(field="category", operator="eq", value="rent"),
+            SearchFilter(field="instruction", operator="contains", value="申请"),
+        ]
+        result = searcher.search("租房", filters=filters)
+        
+        assert result.total_matches == 1
+        assert result.items[0]["category"] == "rent"
+
+    def test_build_indexes_non_string(self):
+        """非字符串值不应被索引"""
+        items = [{"count": 123, "name": "test"}]
+        searcher = EnhancedSearcher(items)
+        
+        assert "name" in searcher._indexes
+        assert "count" not in searcher._indexes
+
+    def test_search_pagination(self):
+        """分页应正确工作"""
+        items = [{"instruction": f"question {i}"} for i in range(10)]
+        searcher = EnhancedSearcher(items)
+        
+        result = searcher.search("question", limit=3, offset=5)
+        assert len(result.items) <= 3
+
+    def test_statistics_after_load(self):
+        """加载数据后统计信息应更新"""
+        searcher = EnhancedSearcher()
+        assert searcher.get_statistics()["total_items"] == 0
+        
+        searcher.load([{"instruction": "test"}])
+        assert searcher.get_statistics()["total_items"] == 1
