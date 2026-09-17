@@ -294,3 +294,65 @@ class TestValidationExtended:
         assert "\x00" not in result[0]["instruction"]
         assert "\x01" not in result[0]["instruction"]
         assert "\x02" not in result[0]["output"]
+
+
+class TestValidationExtended:
+    """DatasetValidator 扩展测试"""
+
+    def test_validate_empty_dataset(self):
+        """验证空数据集"""
+        validator = DatasetValidator()
+        result = validator.validate([])
+        assert result.total_items == 0
+
+    def test_validate_single_item(self):
+        """验证单条数据"""
+        validator = DatasetValidator()
+        data = [{"instruction": "q1", "input": "", "output": "a1"}]
+        result = validator.validate(data)
+        assert result.is_valid is True
+
+    def test_validate_file_missing(self, tmp_path):
+        """验证缺失文件"""
+        validator = DatasetValidator()
+        with pytest.raises(FileNotFoundError):
+            validator.validate_file(str(tmp_path / "missing.json"))
+
+    def test_validate_file_invalid_json(self, tmp_path):
+        """验证无效 JSON 文件"""
+        file_path = tmp_path / "invalid.json"
+        file_path.write_text("not json", encoding='utf-8')
+        validator = DatasetValidator()
+        with pytest.raises(json.JSONDecodeError):
+            validator.validate_file(str(file_path))
+
+    def test_sanitize_empty(self):
+        """清洗空数据"""
+        sanitizer = DataSanitizer()
+        result = sanitizer.sanitize([])
+        assert result == []
+
+    def test_sanitize_remove_empty_fields(self):
+        """清洗移除空字段"""
+        data = [{"instruction": "", "input": "", "output": ""}]
+        sanitizer = DataSanitizer()
+        result = sanitizer.sanitize(data)
+        assert len(result) == 0
+
+    def test_validation_result_warning_count(self):
+        """ValidationResult 警告计数"""
+        from augmentor.validation import ValidationIssue, ValidationSeverity
+        result = ValidationResult(
+            is_valid=True, total_items=10, valid_items=10,
+            issues=[
+                ValidationIssue(field="f", message="m", severity=ValidationSeverity.WARNING, index=0)
+            ]
+        )
+        assert result.warning_count == 1
+
+    def test_remove_duplicates_keep_last(self):
+        """移除重复保留最后"""
+        sanitizer = DataSanitizer()
+        data = [{"instruction": "q1"}, {"instruction": "q1"}]
+        result = sanitizer.remove_duplicates(data, keep="last")
+        assert len(result) == 1
