@@ -104,11 +104,11 @@
 
 - **x_organization_assemble_authentication** — 认证服务，综合评分 4.3
   - 依赖数：3，被依赖数：0
-  - 包含端点：/jaxrs/authentication/*（login, logout, who, captcha, code, bind, oauth 等）
+  - 包含端点：/api/authentication/*（login, logout, who, captcha, code, bind, oauth 等）
 
 - **x_organization_assemble_control** — 组织控制，综合评分 5.7
   - 依赖数：3，被依赖数：0
-  - 包含端点：/jaxrs/person/*、/jaxrs/unit/*、/jaxrs/role/*、/jaxrs/group/* 等
+  - 包含端点：/api/person/*、/api/unit/*、/api/role/*、/api/group/* 等
 
 ### 优先级排序（Top 10）
 
@@ -132,21 +132,21 @@
 - **职责：** 认证服务，处理登录、登出、whoami、captcha、code、bind、oauth 等
 - **依赖模块：** x_base_core_project, x_organization_core_entity, x_organization_core_express
 - **被依赖模块：** 0
-- **关键端点：** /jaxrs/authentication/login, /jaxrs/authentication/logout, /jaxrs/authentication/who, /jaxrs/authentication/captcha, /jaxrs/authentication/code, /jaxrs/authentication/bind, /jaxrs/authentication/oauth
+- **关键端点：** /api/authentication/login, /api/authentication/logout, /api/authentication/who, /api/authentication/captcha, /api/authentication/code, /api/authentication/bind, /api/authentication/oauth
 
 ### x_organization_assemble_control
 
 - **职责：** 组织控制，处理人员、单位、角色、组等 CRUD 操作
 - **依赖模块：** x_base_core_project, x_organization_core_entity, x_general_core_entity
 - **被依赖模块：** 0
-- **关键端点：** /jaxrs/person/*, /jaxrs/unit/*, /jaxrs/role/*, /jaxrs/group/*
+- **关键端点：** /api/person/*, /api/unit/*, /api/role/*, /api/group/*
 
-### x_program_init（系统初始化，含 /jaxrs/secret/*）
+### x_program_init（系统初始化，含 /api/secret/*）
 
 - **职责：** 系统初始化，处理密码设置、数据库检查、恢复等
 - **依赖模块：** x_base_core_project
 - **被依赖模块：** 0
-- **关键端点：** /jaxrs/secret/check, /jaxrs/secret/set, /jaxrs/secret/cancel
+- **关键端点：** /api/secret/check, /api/secret/set, /api/secret/cancel
 
 ---
 

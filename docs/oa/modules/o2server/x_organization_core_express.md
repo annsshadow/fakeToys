@@ -19,9 +19,9 @@
 
 ## Key Flows
 
-- 服务状态：`GET /jaxrs/organization/core/express/status` → `get_status` 经 deadpool 连接池统计 `SELECT COUNT(*) FROM x_org_person / x_org_group`，并读 `x_org_config` 的 sync_enabled，输出 status="running"、personCount、groupCount、enabled
-- 组织同步：`GET /jaxrs/organization/core/express/sync` → `sync_organization` 统计 x_org_person 记录数，输出 synced=count>0、syncedRecords、lastSyncTime、message="同步完成"
-- 服务配置：`GET /jaxrs/organization/core/express/config` → `get_config` 读 `x_org_config WHERE config_key='sync_enabled'`，输出 enabled 与固定值 syncInterval=300、maxRecords=10000
+- 服务状态：`GET /api/organization/core/express/status` → `get_status` 经 deadpool 连接池统计 `SELECT COUNT(*) FROM x_org_person / x_org_group`，并读 `x_org_config` 的 sync_enabled，输出 status="running"、personCount、groupCount、enabled
+- 组织同步：`GET /api/organization/core/express/sync` → `sync_organization` 统计 x_org_person 记录数，输出 synced=count>0、syncedRecords、lastSyncTime、message="同步完成"
+- 服务配置：`GET /api/organization/core/express/config` → `get_config` 读 `x_org_config WHERE config_key='sync_enabled'`，输出 enabled 与固定值 syncInterval=300、maxRecords=10000
 - 路由注册：`organization_core_express_router(pool)` 挂 status/sync/config 共 3 条 GET 路由并以 `.layer(Extension(pool))` 注入连接池；routes.rs 委托回 lib.rs
 
 ## Dependencies
@@ -39,6 +39,6 @@
 
 
 
-- `GET /jaxrs/organization/core/express/config`
-- `GET /jaxrs/organization/core/express/status`
-- `GET /jaxrs/organization/core/express/sync`
+- `GET /api/organization/core/express/config`
+- `GET /api/organization/core/express/status`
+- `GET /api/organization/core/express/sync`

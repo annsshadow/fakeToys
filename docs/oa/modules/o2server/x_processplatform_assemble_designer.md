@@ -44,9 +44,9 @@
 
 
 
-- `POST /jaxrs/processplatform/assemble/designer/create`
-- `POST /jaxrs/processplatform/assemble/designer/delete/{id}`
-- `GET /jaxrs/processplatform/assemble/designer/get/{id}`
-- `GET /jaxrs/processplatform/assemble/designer/list/{category}`
-- `GET /jaxrs/processplatform/assemble/designer/preview/{id}`
-- `POST /jaxrs/processplatform/assemble/designer/save/{id}`
+- `POST /api/processplatform/assemble/designer/create`
+- `POST /api/processplatform/assemble/designer/delete/{id}`
+- `GET /api/processplatform/assemble/designer/get/{id}`
+- `GET /api/processplatform/assemble/designer/list/{category}`
+- `GET /api/processplatform/assemble/designer/preview/{id}`
+- `POST /api/processplatform/assemble/designer/save/{id}`

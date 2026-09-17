@@ -57,7 +57,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     .and_then(|r| r.ok());
 
     let router = Router::new()
-        .route("/jaxrs/...", get(list_handler))
+        .route("/api/...", get(list_handler))
         // ... other routes
         .layer(Extension(pool));
 

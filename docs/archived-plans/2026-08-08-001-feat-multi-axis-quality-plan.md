@@ -30,7 +30,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 - R1. Replace at least 150 `INTERNAL_SERVER_ERROR` stub assertions with behavior-verifying tests that exercise handler logic through a mock database client.
 - R2. Achieve ≥80% route coverage by endpoint inventory: every crate in `docs/brainstorms/oa4rust-endpoint-inventory.md` marked "partial" or "stub" must have all routes registered and returning non-500 on a valid request.
 - R3. The behavior comparison suite (`tests/behavior_compare.rs`) must run end-to-end against both Rust and Java services, produce a Markdown diff report, and fail when response status or body structure diverges beyond an allowlist.
-- R4. An MCP server process must expose the existing `/jaxrs/*` routes as `list_tools` / `call_tool` operations, with auth forwarded from the current session model.
+- R4. An MCP server process must expose the existing `/api/*` routes as `list_tools` / `call_tool` operations, with auth forwarded from the current session model.
 - R5. An OpenAPI JSON spec must be generated at build time and served at `/openapi.json`, covering ≥90% of registered routes.
 - R6. A PostgreSQL-backed integration test suite must exist that runs in CI, migrates a disposable schema per job, and verifies ≥5 cross-crate happy paths (e.g., create org → add person → schedule meeting → post in bbs).
 - R7. All unit and integration tests must pass in a single `cargo test --workspace` invocation on a clean checkout, without requiring manual database setup.
@@ -119,9 +119,9 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 - `crates/portal/src/routes.rs` (path-param patterns)
 
 **Test scenarios:**
-- Happy path: `GET /jaxrs/{module}/{id}` with valid mock → `OK` with expected JSON keys.
-- Edge case: `GET /jaxrs/{module}/{id}` with nonexistent ID → `NOT_FOUND` or empty `ActionResult` (matching Java behavior).
-- Error path: `POST /jaxrs/{module}` with malformed body → `BAD_REQUEST` before handler executes.
+- Happy path: `GET /api/{module}/{id}` with valid mock → `OK` with expected JSON keys.
+- Edge case: `GET /api/{module}/{id}` with nonexistent ID → `NOT_FOUND` or empty `ActionResult` (matching Java behavior).
+- Error path: `POST /api/{module}` with malformed body → `BAD_REQUEST` before handler executes.
 - Verification: route count in `src/main.rs` `create_app()` matches the Java `@Path` count for that module.
 
 **Verification:**
@@ -169,7 +169,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 
 ### U4. MCP Tool Layer
 
-**Goal:** Expose the existing `/jaxrs/*` routes as MCP `tools` so AI agents can discover and invoke the full OA API surface without raw HTTP knowledge.
+**Goal:** Expose the existing `/api/*` routes as MCP `tools` so AI agents can discover and invoke the full OA API surface without raw HTTP knowledge.
 
 **Requirements:** R4
 
@@ -191,7 +191,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 3. Implement `list_tools` returning all mapped tools, and `call_tool` forwarding to axum via `axum::Server`'s `ServiceExt::oneshot` or by constructing an HTTP request internally.
 4. Provide two transport modes:
    - **stdio** (default): spawn as subprocess; read JSON-RPC on stdin, write to stdout. Suitable for IDE/agent integration.
-   - **HTTP** (optional, behind `--http` flag): mount at `/mcp` in the existing axum app, using the same auth middleware as `/jaxrs/*`.
+   - **HTTP** (optional, behind `--http` flag): mount at `/mcp` in the existing axum app, using the same auth middleware as `/api/*`.
 
 **Patterns to follow:**
 - `crates/ai_assemble_control/src/mcp_config/` (existing MCP config management patterns, for naming conventions only)
@@ -199,7 +199,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 
 **Test scenarios:**
 - Happy path: `list_tools` returns ≥200 tools (matching route count).
-- Happy path: `call_tool` with valid params for `jaxrs_base_echo` returns the same JSON as `GET /jaxrs/base/echo`.
+- Happy path: `call_tool` with valid params for `jaxrs_base_echo` returns the same JSON as `GET /api/base/echo`.
 - Auth path: `call_tool` without valid session → `UNAUTHORIZED` error tool result.
 - Error path: `call_tool` with unknown tool name → `INVALID_REQUEST` error tool result.
 - Verification: `cargo run --bin mcp_server -- stdio` responds to `{"jsonrpc":"2.0","id":1,"method":"tools/list"}` with a non-empty `tools` array.
@@ -358,7 +358,7 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 
 - `docs/brainstorms/oa4rust-endpoint-inventory.md` must be kept in sync with U2 progress; update status badges after each crate wave.
 - MCP server configuration (stdio vs HTTP, session forwarding) should be documented in a new `docs/operations/mcp-setup.md`.
-- OpenAPI spec URL (`/openapi.json`) should be linked from the project README and from the existing `/jaxrs/base/openapi/info` endpoint (replace the hardcoded JSON with a redirect to `/openapi.json`).
+- OpenAPI spec URL (`/openapi.json`) should be linked from the project README and from the existing `/api/base/openapi/info` endpoint (replace the hardcoded JSON with a redirect to `/openapi.json`).
 - Integration test database name pattern (`oa4rust_test_<pid>`) should be documented in `.env.test.example` so developers can run the suite locally without clobbering their dev database.
 
 ---

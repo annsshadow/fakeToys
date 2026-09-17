@@ -98,7 +98,7 @@ for (const { name, prefix } of modulesNeedingFallback) {
 // Apply patches in reverse order
 for (const patch of patches.sort((a, b) => b.startLine - a.startLine)) {
   const fallback = `  request: (method: string, path: string, body?: unknown) => {
-    const url = "/jaxrs/${prefix}" + path;
+    const url = "/api/${prefix}" + path;
     if (method === "GET") return api.get(url);
     if (method === "POST") return api.post(url, body);
     if (method === "PUT") return api.put(url, body);

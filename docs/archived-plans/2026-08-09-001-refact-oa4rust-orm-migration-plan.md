@@ -496,8 +496,8 @@ pub async fn person_list(
 ```python
 # scripts/extract_endpoints.py 输出示例
 # 格式：crate_name, method, rust_path, java_war, java_action
-auth, POST, /jaxrs/authentication/login, x_organization_assemble_authentication, jaxrs/authentication/login
-auth, GET, /jaxrs/authentication/whoami, x_organization_assemble_authentication, jaxrs/authentication/whoami
+auth, POST, /api/authentication/login, x_organization_assemble_authentication, jaxrs/authentication/login
+auth, GET, /api/authentication/whoami, x_organization_assemble_authentication, jaxrs/authentication/whoami
 # ... 7624 entries
 ```
 

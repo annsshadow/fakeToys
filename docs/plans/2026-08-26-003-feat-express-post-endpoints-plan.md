@@ -84,24 +84,24 @@ superseded_by: docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 
 **Approach:**
 - 端点清单（按 body 参数分组）：
-  - `POST /jaxrs/person/list` — 全量人员列表
-  - `POST /jaxrs/person/list/group` — 按组查人员
-  - `POST /jaxrs/person/list/identity` — 按身份查人员
-  - `POST /jaxrs/person/list/role` — 按角色查人员
-  - `POST /jaxrs/person/list/unit/sub/direct` — 直属下级单位人员
-  - `POST /jaxrs/person/list/unit/sub/nested` — 嵌套下级单位人员
-  - `POST /jaxrs/person/list/person/sub/direct` — 直属下级人员
-  - `POST /jaxrs/person/list/person/sub/nested` — 嵌套下级人员
-  - `POST /jaxrs/person/list/person/sup/direct` — 直属上级人员
-  - `POST /jaxrs/person/list/person/sup/nested` — 嵌套上级人员
-  - `POST /jaxrs/person/list/login/after` — 登录后人员
-  - `POST /jaxrs/person/list/login/recent` — 近期登录人员
-  - `POST /jaxrs/person/list/pair/identity` — 身份配对列表
-  - `POST /jaxrs/person/list/group/object` — 按组查人员（对象格式）
-  - `POST /jaxrs/person/list/identity/object` — 按身份查人员（对象格式）
-  - `POST /jaxrs/person/list/unit/sub/direct/like` — 模糊搜索直属下级
-  - `POST /jaxrs/person/list/unit/sub/nested/like` — 模糊搜索嵌套下级
-  - `POST /jaxrs/person/detail/{flag}` — 人员详情
+  - `POST /api/person/list` — 全量人员列表
+  - `POST /api/person/list/group` — 按组查人员
+  - `POST /api/person/list/identity` — 按身份查人员
+  - `POST /api/person/list/role` — 按角色查人员
+  - `POST /api/person/list/unit/sub/direct` — 直属下级单位人员
+  - `POST /api/person/list/unit/sub/nested` — 嵌套下级单位人员
+  - `POST /api/person/list/person/sub/direct` — 直属下级人员
+  - `POST /api/person/list/person/sub/nested` — 嵌套下级人员
+  - `POST /api/person/list/person/sup/direct` — 直属上级人员
+  - `POST /api/person/list/person/sup/nested` — 嵌套上级人员
+  - `POST /api/person/list/login/after` — 登录后人员
+  - `POST /api/person/list/login/recent` — 近期登录人员
+  - `POST /api/person/list/pair/identity` — 身份配对列表
+  - `POST /api/person/list/group/object` — 按组查人员（对象格式）
+  - `POST /api/person/list/identity/object` — 按身份查人员（对象格式）
+  - `POST /api/person/list/unit/sub/direct/like` — 模糊搜索直属下级
+  - `POST /api/person/list/unit/sub/nested/like` — 模糊搜索嵌套下级
+  - `POST /api/person/detail/{flag}` — 人员详情
 - 每个端点：解析 POST body → 调用 Control 查询函数 → 返回 `java_success`
 - 用宏或辅助函数减少重复代码
 
@@ -131,18 +131,18 @@ superseded_by: docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 
 **Approach:**
 - 端点清单：
-  - `POST /jaxrs/unit/list/identity` — 按身份查单位
-  - `POST /jaxrs/unit/list/identity/sup/nested` — 嵌套上级身份单位
-  - `POST /jaxrs/unit/list/level` — 按层级查单位
-  - `POST /jaxrs/unit/list/person` — 按人员查单位
-  - `POST /jaxrs/unit/list/person/sup/nested` — 嵌套上级人员单位
-  - `POST /jaxrs/unit/list/types` — 单位类型列表
-  - `POST /jaxrs/unit/list/unitduty` — 单位职责列表
-  - `POST /jaxrs/unit/identity/level` — 身份层级列表
-  - `POST /jaxrs/unit/identity/type` — 身份类型列表
-  - `POST /jaxrs/unit/check/unit/has/identity` — 单位身份检查
-  - `POST /jaxrs/unit/check/unit/has/person` — 单位人员检查
-  - `POST /jaxrs/unit/check/unit/has/unit` — 单位隶属检查
+  - `POST /api/unit/list/identity` — 按身份查单位
+  - `POST /api/unit/list/identity/sup/nested` — 嵌套上级身份单位
+  - `POST /api/unit/list/level` — 按层级查单位
+  - `POST /api/unit/list/person` — 按人员查单位
+  - `POST /api/unit/list/person/sup/nested` — 嵌套上级人员单位
+  - `POST /api/unit/list/types` — 单位类型列表
+  - `POST /api/unit/list/unitduty` — 单位职责列表
+  - `POST /api/unit/identity/level` — 身份层级列表
+  - `POST /api/unit/identity/type` — 身份类型列表
+  - `POST /api/unit/check/unit/has/identity` — 单位身份检查
+  - `POST /api/unit/check/unit/has/person` — 单位人员检查
+  - `POST /api/unit/check/unit/has/unit` — 单位隶属检查
 - 检查端点返回布尔值，需确认 Java 返回格式
 
 **Test scenarios:**
@@ -169,21 +169,21 @@ superseded_by: docs/plans/2026-08-26-002-oa4rust-fail-closure-master-plan.md
 
 **Approach:**
 - 端点清单：
-  - `POST /jaxrs/group/list` — 全量组列表
-  - `POST /jaxrs/group/list/group/sub/direct` — 直属下级组
-  - `POST /jaxrs/group/list/group/sub/nested` — 嵌套下级组
-  - `POST /jaxrs/group/list/group/sup/direct` — 直属上级组
-  - `POST /jaxrs/group/list/group/sup/nested` — 嵌套上级组
-  - `POST /jaxrs/group/list/identity` — 按身份查组
-  - `POST /jaxrs/group/list/person` — 按人员查组
-  - `POST /jaxrs/group/has/role` — 角色存在检查
-  - `POST /jaxrs/person/has/role` — 角色存在检查
-  - `POST /jaxrs/role/list` — 全量角色列表
-  - `POST /jaxrs/role/list/person` — 按人员查角色
-  - `POST /jaxrs/personattribute/append/person/name` — 追加人员属性
-  - `POST /jaxrs/personattribute/set/person/name` — 设置人员属性
-  - `POST /jaxrs/unitattribute/append/unit/name` — 追加单位属性
-  - `POST /jaxrs/unitattribute/set/unit/name` — 设置单位属性
+  - `POST /api/group/list` — 全量组列表
+  - `POST /api/group/list/group/sub/direct` — 直属下级组
+  - `POST /api/group/list/group/sub/nested` — 嵌套下级组
+  - `POST /api/group/list/group/sup/direct` — 直属上级组
+  - `POST /api/group/list/group/sup/nested` — 嵌套上级组
+  - `POST /api/group/list/identity` — 按身份查组
+  - `POST /api/group/list/person` — 按人员查组
+  - `POST /api/group/has/role` — 角色存在检查
+  - `POST /api/person/has/role` — 角色存在检查
+  - `POST /api/role/list` — 全量角色列表
+  - `POST /api/role/list/person` — 按人员查角色
+  - `POST /api/personattribute/append/person/name` — 追加人员属性
+  - `POST /api/personattribute/set/person/name` — 设置人员属性
+  - `POST /api/unitattribute/append/unit/name` — 追加单位属性
+  - `POST /api/unitattribute/set/unit/name` — 设置单位属性
 
 **Test scenarios:**
 - Happy path: 组列表返回正确数据

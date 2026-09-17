@@ -143,8 +143,8 @@ origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requiremen
 - **单一信息源原则**：`docs/brainstorms/oa4rust-migration-status.md` 是迁移进度的权威来源，每完成一个模块后必须立即更新
 - **Axum 0.8 升级**：已完成，所有 crate 已使用 `{param}` 语法
 - **会话持久化缺失**：当前 `SessionManager` 为纯内存 HashMap，重启即失效，生产环境需持久化（Redis 或 DB 表），多实例部署必现问题
-- **路由冲突**：`control` 与 `auth` 重复注册 `/jaxrs/person/list`、`/jaxrs/unit/list` 等；`GET /jaxrs/person/{flag}` 与 `GET /jaxrs/person/{id}` 路径规范化后冲突
-- **认证绕过漏洞**：现有 `POST /jaxrs/authentication/bind` 直接按 `unique_id` 查询并签发会话，无密码/授权校验，必须在完整流程实现前从路由中移除
+- **路由冲突**：`control` 与 `auth` 重复注册 `/api/person/list`、`/api/unit/list` 等；`GET /api/person/{flag}` 与 `GET /api/person/{id}` 路径规范化后冲突
+- **认证绕过漏洞**：现有 `POST /api/authentication/bind` 直接按 `unique_id` 查询并签发会话，无密码/授权校验，必须在完整流程实现前从路由中移除
 - **密码哈希双算法兼容**：新写入使用 bcrypt（带方案前缀），校验路径同时支持 bcrypt 与既有 MD5/DES，登录成功后自动 rehash
 - **响应格式硬约束**：前端 `action.js` 依赖 `ActionResult<T>` 的 9 字段 JSON 结构（`data, type, message, date, spent, size, count, position, prompt`），业务错误返回 HTTP 200 + `type=error`，HTTP 状态码仅用于传输层错误（401/403/429）
 - **幂等迁移模式**：数据迁移使用 `INSERT ON CONFLICT` 支持幂等重跑；四步切换流程（数据迁移 → 部署 → 切流 → 观察），每步之间允许回滚
@@ -320,7 +320,7 @@ origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requiremen
 **Test scenarios:**
 - Happy: 创建人员 → 查询 → 更新 → 删除 → 确认软删除后不可见
 - Happy: 游标分页 `list_next` / `list_prev` 正确返回 `count`、`size`、`position`
-- Edge: `GET /jaxrs/person/{flag}` 传入不存在的 flag 返回空
+- Edge: `GET /api/person/{flag}` 传入不存在的 flag 返回空
 - Error: 删除不存在的记录返回 404
 - Error: 密码长度不足返回 400
 - Error: 上传非图片文件返回 400

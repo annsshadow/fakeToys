@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 记录列表：`GET /jaxrs/attendance/core/entity/record/list` → `record_list` 查 `x_attendance_record`（sea-orm，CreateTime 倒序 limit 20），输出 id/userId/checkInTime/status，checkOutTime 存在时附加
+- 记录列表：`GET /api/attendance/core/entity/record/list` → `record_list` 查 `x_attendance_record`（sea-orm，CreateTime 倒序 limit 20），输出 id/userId/checkInTime/status，checkOutTime 存在时附加
 - 记录创建：`POST .../record/create` → `record_create` 从 payload 取 userId（键名为带引号的 `"\"userId\""`）/checkInTime/status（默认 normal）→ uuid v4 生成 id → ActiveModel INSERT 后 find_by_id 回读返回
 - 记录更新：`POST .../record/{id}/update` → `record_update` 先查原记录（无则 NotFound），仅覆盖 checkOutTime 与 status（缺省沿用旧值）后 update 回读
 - 记录删除：`GET .../record/{id}/delete` → `record_delete` delete_by_id，rows_affected=0 时返回 error("attendance record not found")，否则 `{id, deleted}`

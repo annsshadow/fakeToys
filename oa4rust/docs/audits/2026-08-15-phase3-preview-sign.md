@@ -23,7 +23,7 @@
 
 ### 1.2 Document preview — PARTIAL, real for plain-text DOCX only
 - Route (registered): `crates/file_assemble_control/src/routes.rs:29`
-  `GET /jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}`
+  `GET /api/file/assemble/control/attachment2/{id}/office/preview/type/{type}`
   → `attachment2_id_office_preview_type_type`.
 - Handler: `crates/file_assemble_control/src/lib.rs:1364`. For `.docx` (or `wordprocessingml` mime)
   it calls `docx_to_html(&bytes)` (`lib.rs:1306`); for any other type or parse failure it **falls back

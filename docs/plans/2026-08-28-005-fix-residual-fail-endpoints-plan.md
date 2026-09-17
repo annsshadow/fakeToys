@@ -61,7 +61,7 @@ FAIL 分类分布：
 
 ### 已完成修复
 
-1. **R401J200 认证端点**（8个）：`/jaxrs/authentication/*`、`/jaxrs/organization/assemble/authentication/authentication/*`、`/jaxrs/program_center/authentication`
+1. **R401J200 认证端点**（8个）：`/api/authentication/*`、`/api/organization/assemble/authentication/authentication/*`、`/api/program_center/authentication`
    - 加入 `AUTH_EXEMPT_PATHS` + `PermissionRegistry` Public
    - whoami handler 返回 anonymous session info
 
@@ -79,7 +79,7 @@ FAIL 分类分布：
 ### 现存问题
 
 #### P1: R500J200 — queryview execute v2 SQL cast 问题
-- 端点：`/jaxrs/queryview/{view}/application/{app}/execute/page/{page}/size/{size}`
+- 端点：`/api/queryview/{view}/application/{app}/execute/page/{page}/size/{size}`
 - 错误：`LIMIT $4::bigint` 类型绑定失败 → 500
 - 待修复：改用 `LIMIT $4::int` 或移除 cast
 
@@ -123,7 +123,7 @@ FAIL 分类分布：
 
 ### U1. 修复 queryview execute v2 SQL cast 问题
 
-**Goal:** 修复 `/jaxrs/queryview/{view}/application/{app}/execute/page/{page}/size/{size}` 的 500 错误
+**Goal:** 修复 `/api/queryview/{view}/application/{app}/execute/page/{page}/size/{size}` 的 500 错误
 
 **Requirements:** R1
 
@@ -139,7 +139,7 @@ FAIL 分类分布：
 - 同时检查 `view_id_execute_v2_page_page_size_size` 是否有同样问题（line 1957）
 
 **Test scenarios:**
-- Happy path: 请求 `/jaxrs/queryview/test/application/test/execute/page/1/size/10` 返回 HTTP 200
+- Happy path: 请求 `/api/queryview/test/application/test/execute/page/1/size/10` 返回 HTTP 200
 - Edge case: page=1, size=10 分页参数正常
 - Regression: 不引入新的 FAIL
 
@@ -203,12 +203,12 @@ Path((a, b)): Path<(String, String)>,
 3. 同时更新 PermissionRegistry 中对应前缀为 Public
 
 **候选豁免路径：**
-- `/jaxrs/person/list/*`（已有部分豁免）
-- `/jaxrs/unit/list/*`（已有部分豁免）
-- `/jaxrs/group/list/*`（已有部分豁免）
-- `/jaxrs/role/list/*`（已有部分豁免）
-- `/jaxrs/processplatform/assemble/surface/work/count/*`（需豁免）
-- `/jaxrs/attendance/assemble/control/*`（部分需豁免）
+- `/api/person/list/*`（已有部分豁免）
+- `/api/unit/list/*`（已有部分豁免）
+- `/api/group/list/*`（已有部分豁免）
+- `/api/role/list/*`（已有部分豁免）
+- `/api/processplatform/assemble/surface/work/count/*`（需豁免）
+- `/api/attendance/assemble/control/*`（部分需豁免）
 
 **Test scenarios:**
 - 被豁免的端点无 token 时返回 200

@@ -149,7 +149,7 @@ oa4rust 已完成 81 个 crate 的真实化和 SeaORM 迁移，但 `docs/plans/`
 **Approach:**
 参照 `organization_core_entity` 的 write handler 模式，为每个实体添加 create/update/delete：
 
-- **application**（5 字段，无 deleted_at）：create（POST `/jaxrs/program_center/application`）、update（PUT `/jaxrs/program_center/application/{id}`）、delete 返回 note 不支持物理删除
+- **application**（5 字段，无 deleted_at）：create（POST `/api/program_center/application`）、update（PUT `/api/program_center/application/{id}`）、delete 返回 note 不支持物理删除
 - **script**（5 字段，无 deleted_at）：同上模式
 - **invoke**（6 字段，有 deleted_at）：create、update、软删除（SET deleted_at = NOW()）
 - **agent**（8 字段，有 deleted_at）：同上模式
@@ -208,12 +208,12 @@ oa4rust 已完成 81 个 crate 的真实化和 SeaORM 迁移，但 `docs/plans/`
 使用与 organization_core_entity 相同的测试池构建模式（`build_test_pool()`），但由于没有真实数据库，测试主要验证路由可达性和响应格式。
 
 **Test scenarios:**
-- Happy: `POST /jaxrs/program_center/application` 返回 INTERNAL_SERVER_ERROR（无 DB 时的预期行为，与 organization_core_entity 测试模式一致）
-- Happy: `PUT /jaxrs/program_center/application/{id}` 返回 INTERNAL_SERVER_ERROR
-- Happy: `POST /jaxrs/program_center/invoke` 返回 INTERNAL_SERVER_ERROR
-- Happy: `DELETE /jaxrs/program_center/invoke/{id}` 返回 INTERNAL_SERVER_ERROR
-- Edge: `POST /jaxrs/program_center/application` 缺少 name 返回 type=error（参数验证在 handler 内部执行，不依赖 DB）
-- Edge: `PUT /jaxrs/program_center/application/nonexistent` 返回 INTERNAL_SERVER_ERROR（无 DB 时 find_by_id 失败）
+- Happy: `POST /api/program_center/application` 返回 INTERNAL_SERVER_ERROR（无 DB 时的预期行为，与 organization_core_entity 测试模式一致）
+- Happy: `PUT /api/program_center/application/{id}` 返回 INTERNAL_SERVER_ERROR
+- Happy: `POST /api/program_center/invoke` 返回 INTERNAL_SERVER_ERROR
+- Happy: `DELETE /api/program_center/invoke/{id}` 返回 INTERNAL_SERVER_ERROR
+- Edge: `POST /api/program_center/application` 缺少 name 返回 type=error（参数验证在 handler 内部执行，不依赖 DB）
+- Edge: `PUT /api/program_center/application/nonexistent` 返回 INTERNAL_SERVER_ERROR（无 DB 时 find_by_id 失败）
 
 **Verification:**
 - `cargo test -p program_center_core_entity` 全部通过（无失败）

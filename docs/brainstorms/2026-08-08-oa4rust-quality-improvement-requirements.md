@@ -85,7 +85,7 @@ O2OA 的 Java 后端正在迁移到 Rust（oa4rust）。2026-08-08 的全量代�
 - R56. 统一列表端点响应形状，部分有 page 部分无
 - R57. 为 migration 008 添加回滚迁移脚本
 - R58. 移除 migration 008 的冗余单列索引（复合 PK 已创建隐式索引）
-- R59. 修复前缀匹配过宽问题：`/jaxrs/ai_extra` 不应匹配 `/jaxrs/ai` Admin 前缀（`crates/shared/src/middleware.rs:647`）
+- R59. 修复前缀匹配过宽问题：`/api/ai_extra` 不应匹配 `/api/ai` Admin 前缀（`crates/shared/src/middleware.rs:647`）
 - R60. 为新增端点添加 API 版本前缀
 
 ---
@@ -93,10 +93,10 @@ O2OA 的 Java 后端正在迁移到 Rust（oa4rust）。2026-08-08 的全量代�
 ## Acceptance Examples
 
 - AE1. **覆盖 R1, R5, R6.** 部署后运行 `cargo test --workspace --lib` 全部通过；`migrations/` 下无编号冲突；`query_service` 的 ON CONFLICT 在测试数据库中成功执行不报错。
-- AE2. **覆盖 R3, R4.** `GET /jaxrs/ai/model/list` 返回的 API key 字段为 `***` 或 null；`POST /jaxrs/file/entity/create` 的 creator 字段来自认证上下文而非请求体。
+- AE2. **覆盖 R3, R4.** `GET /api/ai/model/list` 返回的 API key 字段为 `***` 或 null；`POST /api/file/entity/create` 的 creator 字段来自认证上下文而非请求体。
 - AE3. **覆盖 R14, R15, R33-R36.** 所有路由存在性测试使用 mock-based 断言成功响应（200 + type=success）；新增 POST 端点有对应的行为测试；中间件有独立的单元测试。
 - AE4. **覆盖 R7.** `ADMIN_WRITE_PREFIXES` 列表在代码中明确注释来源和变更历史；前端或集成方收到变更通知。
-- AE5. **覆盖 R11, R12.** 用户 A 尝试删除用户 B 的文件返回 403；`POST /jaxrs/person/permission/set` 使用 Owner 权限时正确执行所有权校验。
+- AE5. **覆盖 R11, R12.** 用户 A 尝试删除用户 B 的文件返回 403；`POST /api/person/permission/set` 使用 Owner 权限时正确执行所有权校验。
 - AE6. **覆盖 R19, R20, R38-R41.** 授权中间件在高并发（100 QPS）下 P99 延迟 < 50ms；所有分页端点拒绝 size > 1000 的请求；无 LIMIT 的查询全部添加合理上限。
 
 ---

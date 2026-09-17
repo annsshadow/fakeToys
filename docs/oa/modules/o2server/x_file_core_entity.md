@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 顶层文件夹：`GET /jaxrs/file/core/entity/folder/list/top` → `folder_list_top` 查 file_folder 过滤 Superior 为 ""/NULL 且 DeletedAt IS NULL，Name 升序 limit 50，输出 id/name/person/superior 及占位 attachmentCount/size/folderCount
+- 顶层文件夹：`GET /api/file/core/entity/folder/list/top` → `folder_list_top` 查 file_folder 过滤 Superior 为 ""/NULL 且 DeletedAt IS NULL，Name 升序 limit 50，输出 id/name/person/superior 及占位 attachmentCount/size/folderCount
 - 子文件夹列表：`GET .../folder/list/{id}` → 按 Superior=id + DeletedAt IS NULL，Name 升序 limit 50
 - 文件列表：`GET .../file/list` → `file_list` 查 file_file 过滤 DeletedAt IS NULL，Name 升序 limit 50，输出含 referenceType（键名为带引号的 `"\"referenceType\""`）/extension/length
 - 复合视图：`GET .../complex/top` → `complex_top` 并行取顶层文件夹 limit 20 与文件 limit 20，输出 folderList+attachmentList

@@ -266,8 +266,8 @@ origin: docs/brainstorms/2026-08-25-oa4rust-o2server-residual-gaps-requirements.
    - 写操作 POST/PUT/DELETE → 保持认证要求
    - 系统配置端点 → 评估是否公开
 2. 批量添加豁免路径：
-   - `/jaxrs/person/list/*`、`/jaxrs/unit/list/*`、`/jaxrs/group/list/*`、`/jaxrs/role/list/*`（扩展现有）
-   - `/jaxrs/processplatform/assemble/surface/work/count/*`、`/jaxrs/attendance/assemble/control/*`（新增）
+   - `/api/person/list/*`、`/api/unit/list/*`、`/api/group/list/*`、`/api/role/list/*`（扩展现有）
+   - `/api/processplatform/assemble/surface/work/count/*`、`/api/attendance/assemble/control/*`（新增）
 3. 同步更新 `PermissionRegistry` 对应前缀为 `Public`
 
 **Test Scenarios**：

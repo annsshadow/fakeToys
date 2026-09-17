@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 字典列表与创建：`GET /jaxrs/general/dict/list` Name 升序 limit 20；`POST .../dict/create` uuid v4 主键
+- 字典列表与创建：`GET /api/general/dict/list` Name 升序 limit 20；`POST .../dict/create` uuid v4 主键
 - 字典查询/更新/删除：`GET .../dict/{id}` 无则 error("dict not found")；`POST .../dict/update/{id}` 覆盖 name/application；`POST .../dict/delete/{id}` 物理删除 delete_by_id
 - 字典项：`GET .../dict/item/list/{dictId}` 过滤 DictId；item 的 create/get/update/delete 同 CRUD 模式，缺失时 error("dict item not found")
 - 通用文件：`GET .../file/list` CreateTime 倒序 limit 20；`POST .../file/create` size 默认 0、creator 默认 "system"、create_time=NotSet；`GET .../file/download/{id}` 返回文件元数据而非二进制流

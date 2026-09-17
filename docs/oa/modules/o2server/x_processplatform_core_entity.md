@@ -19,10 +19,10 @@
 
 ## Key Flows
 
-- 工作列表/详情：`GET /jaxrs/process/work/list|work/{id}` → SeaORM 查 pp_work，DeletedAt IS NULL，list 按 CreateTime 倒序 limit 20，formData 字符串反序列化为 JSON；详情未命中报 NotFound
-- 任务查询：`GET /jaxrs/process/task/list|task/{id}` → pp_task 同规则过滤软删（list CreateTime 倒序 limit 20），输出 workId/title/assigneeId/status/createTime
-- 工票查询：`GET /jaxrs/process/ticket/list` → `ticket_list` 过滤 DeletedAt IS NULL 按 CreateTime 倒序 limit 20，description 可空
-- 已办列表：`GET /jaxrs/process/workcompleted/list` → `workcompleted_list` 查 pp_work_completed 按 CompleteTime 倒序 limit 20，输出 workId/result/completeTime
+- 工作列表/详情：`GET /api/process/work/list|work/{id}` → SeaORM 查 pp_work，DeletedAt IS NULL，list 按 CreateTime 倒序 limit 20，formData 字符串反序列化为 JSON；详情未命中报 NotFound
+- 任务查询：`GET /api/process/task/list|task/{id}` → pp_task 同规则过滤软删（list CreateTime 倒序 limit 20），输出 workId/title/assigneeId/status/createTime
+- 工票查询：`GET /api/process/ticket/list` → `ticket_list` 过滤 DeletedAt IS NULL 按 CreateTime 倒序 limit 20，description 可空
+- 已办列表：`GET /api/process/workcompleted/list` → `workcompleted_list` 查 pp_work_completed 按 CompleteTime 倒序 limit 20，输出 workId/result/completeTime
 - 路由注册：`processplatform_core_entity_router(_pool)` 挂 work/task/ticket/workcompleted 共 6 条只读路由；routes.rs 委托回 lib.rs
 
 ## Dependencies
@@ -41,9 +41,9 @@
 
 
 
-- `GET /jaxrs/process/task/list`
-- `GET /jaxrs/process/task/{id}`
-- `GET /jaxrs/process/ticket/list`
-- `GET /jaxrs/process/work/list`
-- `GET /jaxrs/process/work/{id}`
-- `GET /jaxrs/process/workcompleted/list`
+- `GET /api/process/task/list`
+- `GET /api/process/task/{id}`
+- `GET /api/process/ticket/list`
+- `GET /api/process/work/list`
+- `GET /api/process/work/{id}`
+- `GET /api/process/workcompleted/list`

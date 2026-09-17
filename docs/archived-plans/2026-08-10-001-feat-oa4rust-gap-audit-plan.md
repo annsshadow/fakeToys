@@ -116,7 +116,7 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 - **SSO 端点的完整请求/响应结构：** 需对照 Java SsoAction 的实际 JSON 契约确定
 - **用户注册的唯一性冲突处理细节：** 需确认 Java 端在用户名/手机/邮箱冲突时的具体错误消息
 - **电子签名的存储方式：** 本地文件系统 vs 对象存储，需评估现有文件存储模块能力
-- **MCP 脚本自动生成的路径参数解析规则：** 需确定如何处理带路径参数的端点（如 `/jaxrs/person/{id}`）
+- **MCP 脚本自动生成的路径参数解析规则：** 需确定如何处理带路径参数的端点（如 `/api/person/{id}`）
 - **OpenAPI 生成的 tag 分配规则：** 需确定按 crate 名还是按业务域分配 tag
 - **SSO 3DES key 的分发方式：** 加密辅助端点返回的加密 token 中，key 如何安全分发（预共享 vs API 动态传递）
 - **safe_logout 并发注销的 SessionManager 锁粒度：** RwLock 是否足够，大量 session 批量删除的性能风险
@@ -184,9 +184,9 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 
 **Approach:**
 - SSO token 格式：`加密(credential#timestamp)`，使用 auth crate 已有的 `des_encrypt` 函数（3DES ECB 模式，8 字节 key）
-- GET 端点：`/jaxrs/authentication/sso/client/{client}/token/{token}` — 解密 token，验证时间戳有效期（如 5 分钟内），签发会话
-- POST 端点：`/jaxrs/authentication/sso` — 从请求体解密 token，逻辑同 GET
-- 加密辅助端点：`POST /jaxrs/authentication/sso/encrypt`（请求体包含 key 和 credential）— 返回加密后的 token（供前端或第三方使用）；避免 GET 端点在 URL 中暴露敏感参数
+- GET 端点：`/api/authentication/sso/client/{client}/token/{token}` — 解密 token，验证时间戳有效期（如 5 分钟内），签发会话
+- POST 端点：`/api/authentication/sso` — 从请求体解密 token，逻辑同 GET
+- 加密辅助端点：`POST /api/authentication/sso/encrypt`（请求体包含 key 和 credential）— 返回加密后的 token（供前端或第三方使用）；避免 GET 端点在 URL 中暴露敏感参数
 - 时间戳校验：防止重放攻击，token 超过 5 分钟有效期拒绝
 
 **Patterns to follow:**
@@ -223,14 +223,14 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 - Test: `crates/auth/src/tests.rs`（新增用户切换测试）
 
 **Approach:**
-- 端点：`PUT /jaxrs/authentication/switchuser` 和 `POST /jaxrs/authentication/switchuser/mockputtopost`
+- 端点：`PUT /api/authentication/switchuser` 和 `POST /api/authentication/switchuser/mockputtopost`
 - 权限：仅 admin 可调用，通过 `is_admin(pool, &session.person_unique).await` 检查
 - 逻辑：管理员请求体包含目标 credential，系统为该 credential 创建新 session，返回新 token
 - 原管理员 session 保持有效（切换是"以他人身份操作"而非"替换身份"）
 - 记录切换日志（可选：写入 CONSOLE_LOG 或独立 audit 表）
 
 **Patterns to follow:**
-- **User switching:** admin-only endpoint (`PUT /jaxrs/authentication/switchuser`) — verify admin role via `is_admin()`, create new session for target credential, log the switch action
+- **User switching:** admin-only endpoint (`PUT /api/authentication/switchuser`) — verify admin role via `is_admin()`, create new session for target credential, log the switch action
 - 错误处理：非管理员调用返回 `AppError::Forbidden`
 - Session 创建：复用 `session_manager.create_session(person_unique, token)` 模式
 
@@ -313,7 +313,7 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 - 生成脚本：读取 `docs/brainstorms/oa4rust-endpoint-inventory.md` 和源码中的路由注册，自动生成 `ROUTE_DEFS` 数组
 - 脚本输出：生成 `crates/mcp_server/src/generated_routes.rs`（或直接嵌入 tool_bridge.rs）
 - 工具命名：保持 `jaxrs_{crate}_{action}` 命名约定
-- 路径参数提取：从路由路径（如 `/jaxrs/person/{id}`）自动提取 path_params
+- 路径参数提取：从路由路径（如 `/api/person/{id}`）自动提取 path_params
 - body_params 推断：根据 HTTP method 和路径模式推断（POST/PUT/DELETE 有 body，GET 无 body）
 - requires_auth 推断：从 PermissionRegistry 获取权限级别，Public → false，其他 → true
 
@@ -353,7 +353,7 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 - 生成脚本：读取端点清单，为每个端点生成 `#[utoipa::path]` 注解的占位函数
 - 占位函数风格：参考现有 `crates/openapi/src/lib.rs` 的空函数模式
 - 自动推断 tag：从 crate 名映射（如 `auth` → "authentication"，`calendar` → "calendar"）
-- 自动推断 summary：从路径段生成（如 `/jaxrs/calendar/event/list/{calendarId}` → "List calendar events"）
+- 自动推断 summary：从路径段生成（如 `/api/calendar/event/list/{calendarId}` → "List calendar events"）
 - 编译约束：utoipa derive 宏对路径数量有限制，如 883 个路径导致编译超时，考虑分 tag 生成或多文件结构
 - 备选方案：如果 utoipa derive 无法处理大规模路径，改为运行时生成 OpenAPI JSON（不依赖 derive 宏）
 
@@ -392,7 +392,7 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 **Approach:**
 - 端点清单生成：编写或扩展现有脚本，从源码路由注册自动提取全部 ~883 个端点
 - 每个端点条目：`crate_name`、`method`、`rust_path`、`java_war`、`java_action`、`body`（可选）、`requires_auth`
-- java_war 映射：从端点路径前缀推断（如 `/jaxrs/calendar/` → `x_calendar_core_entity`）
+- java_war 映射：从端点路径前缀推断（如 `/api/calendar/` → `x_calendar_core_entity`）
 - allowlist 扩展：覆盖 Rust camelCase 与 Java snake_case 的所有已知命名差异（当前仅覆盖时间戳字段）
 - Java 不可用降级：已有 SKIP 机制，验证全量端点均能正确标记为 SKIP
 
