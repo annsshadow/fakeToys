@@ -369,13 +369,41 @@ class TestERNIEBackend:
             backend.generate("问题", max_retries=1, retry_delay=0)
 
     def test_extract_json_from_response(self):
-        """应能从响应文本中提取 JSON 数组"""
+        """从文本中提取 JSON"""
         backend = ERNIEBackend(ModelConfig(
             type="baidu", api_key="ak", secret_key="sk", model="ernie"
         ))
         result = backend.extract_json_from_response('结果：[{"instruction": "a"}]')
 
         assert result == [{"instruction": "a"}]
+
+
+class TestERNIEBackendExtended:
+    """ERNIE 后端扩展测试"""
+
+    def test_extract_json_no_array(self):
+        """无数组抛异常"""
+        backend = ERNIEBackend(ModelConfig(
+            type="baidu", api_key="ak", secret_key="sk", model="ernie"
+        ))
+        with pytest.raises(ValueError):
+            backend.extract_json_from_response('no json here')
+
+    def test_extract_json_direct_list(self):
+        """直接解析 JSON 数组"""
+        backend = ERNIEBackend(ModelConfig(
+            type="baidu", api_key="ak", secret_key="sk", model="ernie"
+        ))
+        result = backend.extract_json_from_response('[{"x": 1}]')
+        assert result == [{"x": 1}]
+
+    def test_extract_json_in_text(self):
+        """从文本中提取 JSON"""
+        backend = ERNIEBackend(ModelConfig(
+            type="baidu", api_key="ak", secret_key="sk", model="ernie"
+        ))
+        result = backend.extract_json_from_response('前缀 [{"a": 1}] 后缀')
+        assert result == [{"a": 1}]
 
 
 class TestBackendLifecycle:
