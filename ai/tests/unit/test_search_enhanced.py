@@ -1,5 +1,6 @@
 """数据集搜索增强模块测试"""
 
+import re
 import pytest
 from augmentor.search_enhanced import (
     EnhancedSearcher, SearchResult, SearchFilter,
@@ -98,6 +99,52 @@ class TestEnhancedSearcher:
     def test_get_statistics(self, sample_dataset):
         """测试获取统计信息"""
         searcher = EnhancedSearcher(sample_dataset)
+        stats = searcher.get_statistics()
+        assert "total_items" in stats
+        assert stats["total_items"] == 5
+
+    def test_search_no_results(self, sample_dataset):
+        """搜索无结果"""
+        searcher = EnhancedSearcher(sample_dataset)
+        result = searcher.search("不存在的关键词", method="contains")
+        assert result.total_matches == 0
+
+    def test_search_invalid_regex(self, sample_dataset):
+        """无效正则表达式 - 返回空结果"""
+        searcher = EnhancedSearcher(sample_dataset)
+        result = searcher.search("[invalid", method="regex")
+        assert result.total_matches == 0
+
+    def test_search_with_empty_data(self):
+        """空数据集搜索"""
+        searcher = EnhancedSearcher()
+        result = searcher.search("test")
+        assert result.total_matches == 0
+
+    def test_search_exact_no_match(self, sample_dataset):
+        """精确搜索无匹配"""
+        searcher = EnhancedSearcher(sample_dataset)
+        result = searcher.search("不存在", method="exact")
+        assert result.total_matches == 0
+
+    def test_search_fuzzy_no_match(self, sample_dataset):
+        """模糊搜索无匹配"""
+        searcher = EnhancedSearcher(sample_dataset)
+        result = searcher.search("xyz123", method="fuzzy")
+        assert result.total_matches == 0
+
+    def test_search_with_filter_no_match(self, sample_dataset):
+        """带过滤器搜索无匹配"""
+        searcher = EnhancedSearcher(sample_dataset)
+        filters = [SearchFilter(field="instruction", operator="contains", value="不存在")]
+        result = searcher.search("租房", filters=filters)
+        assert result.total_matches == 0
+
+    def test_create_searcher(self, sample_dataset):
+        """create_searcher 工厂函数"""
+        searcher = create_searcher(sample_dataset)
+        assert isinstance(searcher, EnhancedSearcher)
+        assert len(searcher._items) == 5
         stats = searcher.get_statistics()
         
         assert "total_items" in stats
