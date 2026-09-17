@@ -150,6 +150,64 @@ class TestOllamaBackend:
         with pytest.raises(RuntimeError):
             backend.generate("问题", max_retries=1, retry_delay=0)
 
+    def test_config_validation(self):
+        """配置验证 - 缺少 base_url"""
+        config = ModelConfig(type="ollama", api_key="", base_url="")
+        with pytest.raises(ValueError, match="base_url"):
+            OllamaBackend(config)
+
+    def test_extract_json_direct(self):
+        """直接解析 JSON"""
+        backend = OllamaBackend(ModelConfig(
+            type="ollama", base_url="http://localhost:11434", model="qwen"
+        ))
+        result = backend.extract_json_from_response('[{"key": "value"}]')
+        assert result == [{"key": "value"}]
+
+    def test_extract_json_in_text(self):
+        """从文本中提取 JSON"""
+        backend = OllamaBackend(ModelConfig(
+            type="ollama", base_url="http://localhost:11434", model="qwen"
+        ))
+        result = backend.extract_json_from_response('some text [{"key": "value"}] more text')
+        assert result == [{"key": "value"}]
+
+    def test_extract_json_no_array(self):
+        """无数组抛异常"""
+        backend = OllamaBackend(ModelConfig(
+            type="ollama", base_url="http://localhost:11434", model="qwen"
+        ))
+        with pytest.raises(ValueError):
+            backend.extract_json_from_response('no json here')
+
+    def test_extract_json_raw_list(self):
+        """直接返回 list 类型"""
+        backend = OllamaBackend(ModelConfig(
+            type="ollama", base_url="http://localhost:11434", model="qwen"
+        ))
+        result = backend.extract_json_from_response('[1, 2, 3]')
+        assert result == [1, 2, 3]
+
+    def test_extract_json_brackets_only(self):
+        """仅括号"""
+        backend = OllamaBackend(ModelConfig(
+            type="ollama", base_url="http://localhost:11434", model="qwen"
+        ))
+        result = backend.extract_json_from_response('[]')
+        assert result == []
+
+    def test_config_with_url(self):
+        """有 URL 的配置"""
+        config = ModelConfig(type="ollama", api_key="", base_url="http://localhost:11434")
+        backend = OllamaBackend(config)
+        assert backend.api_url == "http://localhost:11434/api/chat"
+
+    def test_config_trailing_slash(self):
+        """URL 尾部斜杠"""
+        config = ModelConfig(type="ollama", api_key="", base_url="http://localhost:11434/")
+        backend = OllamaBackend(config)
+        assert backend.api_url == "http://localhost:11434/api/chat"
+
 
 class TestClaudeBackend:
     """Claude 后端"""
