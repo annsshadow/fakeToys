@@ -307,3 +307,77 @@ class TestMultimodalProcessor:
         assert report["total_records"] == 1
         assert report["modality_counts"]["image"] == 1
         assert report["valid_records"] == 1
+
+
+class TestMultimodalExtended:
+    """MultimodalProcessor 扩展测试（覆盖剩余分支）"""
+
+    def test_process_directory_empty(self, tmp_path):
+        """空目录应返回空记录列表而不是崩溃"""
+        records = MultimodalProcessor().process_directory(str(tmp_path))
+        assert records == []
+
+    def test_process_directory_unpaired_files(self, tmp_path):
+        """无配对的独立文件各生成独立记录"""
+        make_png(tmp_path / "solo.png")
+        make_wav(tmp_path / "lone.wav")
+
+        records = MultimodalProcessor().process_directory(str(tmp_path))
+
+        assert len(records) == 2
+
+    def test_generate_report_empty_records(self):
+        """空记录列表报告不应除零"""
+        report = MultimodalProcessor().generate_report([])
+        assert report["total_records"] == 0
+
+    def test_audio_batch_multiple(self, tmp_path):
+        """批量音频处理结果需与输入数量一致"""
+        paths = []
+        for i in range(3):
+            p = tmp_path / f"a{i}.wav"
+            make_wav(p)
+            paths.append(str(p))
+
+        results = AudioProcessor().batch_process(paths)
+        assert len(results) == 3
+
+    def test_image_batch_mixed_valid_invalid(self, tmp_path):
+        """批量图像应同时包含有效与无效结果"""
+        valid = tmp_path / "ok.png"
+        make_png(valid)
+        broken = tmp_path / "bad.png"
+        broken.write_bytes(b"\x89PNG\r\n\x1a\n\x00")
+
+        results = ImageProcessor().batch_process([str(valid), str(broken)])
+        assert results[0].valid is True
+        assert results[1].valid is False
+
+
+class TestAudioExtended:
+    """AudioProcessor 扩展测试"""
+
+    def test_audio_info_to_dict(self, tmp_path):
+        """AudioInfo.to_dict 应包含全部字段"""
+        path = tmp_path / "a.wav"
+        make_wav(path, seconds=0.5, sample_rate=16000, channels=2)
+        info = AudioProcessor().process_audio(str(path))
+        d = info.to_dict()
+        assert d["sample_rate"] == 16000
+        assert d["channels"] == 2
+        assert d["valid"] is True
+
+    def test_audio_sample_rate_variant(self, tmp_path):
+        """不同采样率的 WAV 应被正确解析"""
+        for rate in (8000, 16000, 44100):
+            path = tmp_path / f"{rate}.wav"
+            make_wav(path, sample_rate=rate)
+            info = AudioProcessor().process_audio(str(path))
+            assert info.sample_rate == rate
+
+    def test_audio_corrupt_raises_invalid(self, tmp_path):
+        """损坏的音频应标记 invalid 而不是抛异常"""
+        path = tmp_path / "x.wav"
+        path.write_bytes(b"RIFF\x00\x00WAVExxxx")
+        info = AudioProcessor().process_audio(str(path))
+        assert info.valid is False
