@@ -162,3 +162,86 @@ class TestMigrationResult:
         assert d["total_items"] == 100
         assert d["migrated_items"] == 95
         assert d["failed_items"] == 5
+
+
+class TestMigrationExtended:
+    """DatasetMigrator 扩展测试"""
+
+    def test_migrate_empty_dataset(self):
+        """迁移空数据集"""
+        migrator = DatasetMigrator()
+        result = migrator.migrate([])
+        assert result.migrated_items == 0
+
+    def test_migrate_with_transform_func(self):
+        """使用转换函数迁移"""
+        migrator = DatasetMigrator()
+        rule = MigrationRule(
+            rule_id="custom",
+            name="custom",
+            description="custom",
+            source_field="instruction",
+            target_field="question",
+            transform_func=lambda x: x.upper()
+        )
+        migrator.add_rule(rule)
+        data = [{"instruction": "hello"}]
+        result = migrator.migrate(data, rules=["custom"])
+        assert result.migrated_items == 1
+
+    def test_migrate_with_default_value(self):
+        """使用默认值迁移"""
+        migrator = DatasetMigrator()
+        rule = MigrationRule(
+            rule_id="default_rule",
+            name="default",
+            description="default",
+            source_field="missing_field",
+            target_field="new_field",
+            default_value="default_value"
+        )
+        migrator.add_rule(rule)
+        data = [{"instruction": "q1"}]
+        result = migrator.migrate(data, rules=["default_rule"])
+        assert result.migrated_items == 1
+
+    def test_migrate_save_to_file(self, tmp_path):
+        """迁移保存到文件"""
+        migrator = DatasetMigrator()
+        data = [{"instruction": "q1"}]
+        output_path = str(tmp_path / "output.json")
+        result = migrator.migrate(data, output_path=output_path)
+        assert result.migrated_items == 1
+
+    def test_flatten_conversation_list(self):
+        """展平对话列表"""
+        migrator = DatasetMigrator()
+        conversations = [
+            {"from": "human", "value": "问题"},
+            {"from": "gpt", "value": "回答"}
+        ]
+        result = migrator._flatten_conversations(conversations)
+        assert "human: 问题" in result
+        assert "gpt: 回答" in result
+
+    def test_flatten_conversation_string(self):
+        """展平字符串对话"""
+        migrator = DatasetMigrator()
+        result = migrator._flatten_conversations("简单文本")
+        assert result == "简单文本"
+
+    def test_migrate_error_handling(self):
+        """迁移错误处理"""
+        migrator = DatasetMigrator()
+        rule = MigrationRule(
+            rule_id="error_rule",
+            name="error",
+            description="error",
+            source_field="instruction",
+            target_field="question",
+            transform_func=lambda x: 1/0
+        )
+        migrator.add_rule(rule)
+        data = [{"instruction": "q1"}]
+        result = migrator.migrate(data, rules=["error_rule"])
+        assert result.failed_items == 1
