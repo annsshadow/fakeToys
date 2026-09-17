@@ -213,3 +213,86 @@ class TestComparisonEdgeCases:
         
         assert result.winner == "tie"
         assert result.quality_diff["avg_score"] == 0
+
+
+class TestComputeMethods:
+    """各计算方法单独测试"""
+
+    def test_compute_quality_metrics_empty(self):
+        """空数据集质量指标应返回零值"""
+        comparator = DatasetComparator()
+        metrics = comparator._compute_quality_metrics([])
+        
+        assert metrics["avg_score"] == 0.0
+        assert metrics["pass_rate"] == 0.0
+        assert metrics["min_score"] == 0.0
+        assert metrics["max_score"] == 0.0
+
+    def test_compute_length_metrics_empty(self):
+        """空数据集长度指标应返回零值"""
+        comparator = DatasetComparator()
+        metrics = comparator._compute_length_metrics([])
+        
+        assert metrics["avg"] == 0
+        assert metrics["min"] == 0
+        assert metrics["max"] == 0
+        assert metrics["std"] == 0
+
+    def test_compute_length_metrics_custom_key(self):
+        """自定义字段长度指标"""
+        items = [{"question": "短"}, {"question": "这是一个较长的问题"}]
+        comparator = DatasetComparator()
+        metrics = comparator._compute_length_metrics(items, key="question")
+        
+        assert metrics["min"] == len("短")
+        assert metrics["max"] == len("这是一个较长的问题")
+        assert metrics["avg"] > 0
+
+    def test_compute_vocabulary_size_empty(self):
+        """空数据集词汇量应为 0"""
+        comparator = DatasetComparator()
+        vocab = comparator._compute_vocabulary_size([])
+        
+        assert vocab["unique_chars"] == 0
+        assert vocab["total_chars"] == 0
+
+    def test_compute_vocabulary_size(self):
+        """词汇量计算应正确"""
+        items = [{"instruction": "abc"}, {"instruction": "abd"}]
+        comparator = DatasetComparator()
+        vocab = comparator._compute_vocabulary_size(items)
+        
+        assert vocab["unique_chars"] == 4  # a, b, c, d
+        assert vocab["total_chars"] == 6   # 3 + 3
+
+    def test_compute_dedup_metrics_single_item(self):
+        """单条数据去重指标"""
+        comparator = DatasetComparator()
+        metrics = comparator._compute_dedup_metrics([{"instruction": "test"}])
+        
+        assert metrics["duplication_rate"] == 0.0
+        assert metrics["unique_count"] == 1
+
+    def test_generate_summary_contains_sections(self):
+        """摘要应包含所有部分"""
+        comparator = DatasetComparator()
+        data_a = [{"instruction": "问题A", "output": "回答A"}]
+        data_b = [{"instruction": "问题B", "output": "回答B"}]
+        result = comparator.compare(data_a, data_b, "DS-A", "DS-B")
+        
+        assert "基本信息" in result.summary
+        assert "质量对比" in result.summary
+        assert "长度对比" in result.summary
+        assert "结论" in result.summary
+        assert "DS-A" in result.summary
+        assert "DS-B" in result.summary
+
+    def test_save_comparison_creates_parent_dirs(self, tmp_path, dataset_a, dataset_b):
+        """保存对比结果应自动创建父目录"""
+        comparator = DatasetComparator()
+        result = comparator.compare(dataset_a, dataset_b)
+        
+        output_path = tmp_path / "subdir" / "nested" / "result.json"
+        comparator.save_comparison(result, str(output_path))
+        
+        assert output_path.exists()
