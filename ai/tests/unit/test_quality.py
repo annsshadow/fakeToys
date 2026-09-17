@@ -383,3 +383,58 @@ class TestModelPaths:
         ]
         scores = scorer.batch_score(items, existing_generated=["问题1"])
         assert len(scores) == 1
+
+
+class TestQualityExtended:
+    """QualityScorer 扩展测试"""
+
+    def test_score_empty_texts(self):
+        """空文本评分"""
+        scorer = QualityScorer()
+        score = scorer.score("", "", "")
+        assert score.semantic_similarity == 0.0
+        assert score.relevance == 0.0
+
+    def test_score_identical_texts(self):
+        """相同文本评分"""
+        scorer = QualityScorer()
+        score = scorer.score("你好世界", "你好世界", "回答")
+        assert score.semantic_similarity == 1.0
+
+    def test_filter_by_quality(self):
+        """按质量过滤"""
+        scorer = QualityScorer(threshold=0.5)
+        items = [
+            {"original": "q1", "generated": "q1", "output": "a1"},
+            {"original": "q2", "generated": "完全不同", "output": "a2"},
+        ]
+        filtered = scorer.filter_by_quality(items)
+        assert len(filtered) <= len(items)
+
+    def test_quality_score_fields(self):
+        """QualityScore 应包含所有必要字段"""
+        scorer = QualityScorer()
+        score = scorer.score("test", "test", "answer")
+        assert hasattr(score, 'semantic_similarity')
+        assert hasattr(score, 'relevance')
+        assert hasattr(score, 'diversity')
+        assert hasattr(score, 'total_score')
+        assert hasattr(score, 'passed')
+
+    def test_batch_score_empty(self):
+        """空批量评分"""
+        scorer = QualityScorer()
+        scores = scorer.batch_score([])
+        assert scores == []
+
+    def test_generate_report(self):
+        """生成质量报告"""
+        scorer = QualityScorer()
+        items = [
+            {"original": "q1", "generated": "q1", "output": "a1"},
+            {"original": "q2", "generated": "q2", "output": "a2"},
+        ]
+        report = scorer.generate_report(items)
+        assert "total_samples" in report
+        assert "passed_samples" in report
+        assert report["total_samples"] == 2
