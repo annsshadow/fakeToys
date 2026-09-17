@@ -244,3 +244,69 @@ class TestQualityMonitorExtended:
         assert "metrics" in d
         assert "alerts" in d
         assert "timestamp" in d
+
+
+class TestQualityMonitorExtended2:
+    """QualityMonitor 扩展测试 - 第二轮"""
+
+    def test_add_alert_callback(self):
+        """添加告警回调"""
+        monitor = QualityMonitor()
+        callback = lambda alert: None
+        monitor.add_alert_callback(callback)
+        assert len(monitor._alert_callbacks) == 1
+
+    def test_alert_callback_triggered(self):
+        """告警回调被触发"""
+        monitor = QualityMonitor()
+        triggered = [False]
+        def callback(alert):
+            triggered[0] = True
+        monitor.add_alert_callback(callback)
+        bad_data = [{"instruction": "", "output": ""}]
+        monitor.check_quality(bad_data)
+        assert triggered[0] is True
+
+    def test_alert_callback_exception_handled(self):
+        """告警回调异常被处理"""
+        monitor = QualityMonitor()
+        def bad_callback(alert):
+            raise RuntimeError("callback error")
+        monitor.add_alert_callback(bad_callback)
+        bad_data = [{"instruction": "", "output": ""}]
+        snapshot = monitor.check_quality(bad_data)
+        assert snapshot is not None
+
+    def test_calculate_metrics_empty(self):
+        """空数据集计算指标"""
+        monitor = QualityMonitor()
+        metrics = monitor._calculate_metrics([])
+        assert isinstance(metrics, dict)
+
+    def test_calculate_metrics_with_data(self):
+        """有数据集计算指标"""
+        monitor = QualityMonitor()
+        data = [{"instruction": "q1", "output": "a1"}]
+        metrics = monitor._calculate_metrics(data)
+        assert "completeness" in metrics
+        assert metrics["completeness"] == 1.0
+
+    def test_check_alerts_with_breach(self):
+        """检查告警触发"""
+        monitor = QualityMonitor()
+        monitor.add_threshold(QualityThreshold(
+            metric_name="test_metric", min_value=0.0,
+            max_value=1.0, alert_below=0.5
+        ))
+        alerts = monitor._check_alerts({"test_metric": 0.2})
+        assert len(alerts) > 0
+
+    def test_check_alerts_no_breach(self):
+        """检查告警未触发"""
+        monitor = QualityMonitor()
+        monitor.add_threshold(QualityThreshold(
+            metric_name="test_metric", min_value=0.0,
+            max_value=1.0, alert_below=0.5
+        ))
+        alerts = monitor._check_alerts({"test_metric": 0.8})
+        assert len(alerts) == 0
