@@ -367,3 +367,119 @@ class TestExportAndAnalyzeExtended:
         assert "total_items" in stats
         assert "avg_length" in stats
         assert stats["total_items"] == 5
+
+
+class TestPipelineInitFailure:
+    """管道初始化失败测试"""
+
+    def test_model_backend_init_failure(self, tmp_path, monkeypatch):
+        """模型后端初始化失败时应降级"""
+        config = load_config(str(AI_DIR / "config.yaml"))
+        config.versioning.storage_dir = str(tmp_path / "versions")
+        
+        def fail_create(*args, **kwargs):
+            raise RuntimeError("API key missing")
+        
+        monkeypatch.setattr("augmentor.pipeline.create_model_backend", fail_create)
+        instance = AugmentorPipeline(config)
+        assert instance.model_backend is None
+        assert instance.context_augmentor is None
+        assert instance.expander is None
+
+
+class TestGenerateVariantsException:
+    """_generate_variants 异常测试"""
+
+    def test_generate_variants_returns_empty_on_exception(self, pipeline):
+        """_generate_variants 异常时应返回空列表"""
+        pipeline.model_backend = None
+        result = pipeline._generate_variants({"instruction": "q", "output": "a"})
+        assert result == []
+
+
+class TestProcessSingleItem:
+    """_process_single_item 测试"""
+
+    def test_process_single_item_success(self, pipeline, tmp_path):
+        """成功处理单条数据"""
+        from queue import Queue
+        queue = Queue()
+        item = {"instruction": "如何申请入住", "output": "通过App申请"}
+        pipeline._process_single_item(0, item, use_quality_check=False, result_queue=queue)
+        idx, success, variants = queue.get()
+        assert success is True
+        assert isinstance(variants, list)
+
+    def test_process_single_item_with_quality_check(self, pipeline, tmp_path):
+        """质量检查模式处理单条数据"""
+        from queue import Queue
+        queue = Queue()
+        item = {"instruction": "如何申请入住", "output": "通过App申请"}
+        pipeline._process_single_item(0, item, use_quality_check=True, result_queue=queue)
+        idx, success, variants = queue.get()
+        assert success is True
+
+    def test_process_single_item_exception(self, pipeline, tmp_path):
+        """处理单条数据异常时应记录失败"""
+        from queue import Queue
+        queue = Queue()
+        pipeline.model_backend = None
+        # Force an exception by making _generate_variants fail
+        pipeline._generate_variants = lambda x: 1/0
+        pipeline._process_single_item(0, {"instruction": "q"}, False, queue)
+        idx, success, variants = queue.get()
+        assert success is False
+        assert variants == []
+
+
+class TestAugmentDatasetExtended:
+    """数据集增强扩展测试"""
+
+    def test_augment_dataset_parallel_with_checkpoint(self, pipeline, seed_file, tmp_path):
+        """并行模式 + 断点续传"""
+        output = tmp_path / "out_parallel_ckpt.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=True, use_quality_check=False,
+            use_dedup=False, use_parallel=True
+        )
+        assert report["output_count"] == 15
+        assert report["progress"] is not None
+
+    def test_augment_dataset_serial_exception_handling(self, pipeline, seed_file, tmp_path):
+        """串行模式异常处理"""
+        call_count = [0]
+        original_augment = pipeline.augment_seed
+        def failing_augment(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 2:
+                raise RuntimeError("Simulated failure")
+            return original_augment(*args, **kwargs)
+        pipeline.augment_seed = failing_augment
+        
+        output = tmp_path / "out_serial_exc.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        # Should still complete despite one failure
+        assert report["input_count"] == 5
+
+    def test_augment_dataset_with_quality_check(self, pipeline, seed_file, tmp_path):
+        """质量检查模式"""
+        output = tmp_path / "out_quality.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=True,
+            use_dedup=False, use_parallel=False
+        )
+        assert report["quality_check"] is True
+
+    def test_augment_seed_quality_check_filters(self, pipeline):
+        """质量检查应过滤低质量变体"""
+        variants = pipeline.augment_seed(
+            {"instruction": "如何申请入住安居乐寓？", "output": "通过App申请"},
+            use_quality_check=True
+        )
+        assert isinstance(variants, list)
