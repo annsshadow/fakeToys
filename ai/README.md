@@ -41,6 +41,7 @@ ai/
 │   ├── quality.py      # 质量评分
 │   ├── dedup.py        # 智能去重
 │   ├── export.py       # 多格式导出
+│   ├── export_enhanced.py  # 增强导出
 │   ├── streaming.py    # 流式处理
 │   ├── comparison.py   # 数据集对比
 │   ├── dataset_ops.py  # 数据集操作
@@ -51,6 +52,9 @@ ai/
 │   ├── config_validator.py  # 配置验证
 │   ├── analytics.py    # 数据分析
 │   ├── cleaner.py      # 数据清洗
+│   ├── quality_report.py  # 质量报告
+│   ├── visualize_enhanced.py  # 增强可视化
+│   ├── backup.py       # 数据备份
 │   └── exceptions.py   # 自定义异常
 ├── web/                # Web前端 (React + Ant Design)
 ├── tests/              # 测试套件
@@ -145,6 +149,21 @@ python cli.py analyze --input data.json --output analysis_report.json
 
 # 增强数据清洗
 python cli.py clean-enhanced --input data.json --output cleaned.json --rules remove_empty remove_duplicates
+
+# 增强数据导出
+python cli.py export-enhanced --input data.json --output exported.json --format alpaca
+
+# 质量报告
+python cli.py quality-report --input data.json --output quality_report.json
+
+# 数据可视化
+python cli.py visualize --input data.json --output visualization.txt
+
+# 数据备份
+python cli.py backup --action create --input data.json --name my_backup
+python cli.py backup --action list
+python cli.py backup --action restore --name my_backup --output restored.json
+python cli.py backup --action delete --name my_backup
 ```
 
 ### 高级功能
