@@ -210,6 +210,59 @@ class TestQualityRoutes:
         assert response.status_code == 200
         assert "metrics" in response.json()
 
+    def test_quality_evaluate_returns_summary(self, client, data_file):
+        """质量评估应返回通过率摘要"""
+        response = client.post("/api/quality/evaluate", json={"input_file": data_file})
+
+        assert response.status_code == 200
+        payload = response.json()
+        for key in ("total_samples", "passed_samples", "pass_rate"):
+            assert key in payload
+
+    def test_quality_evaluate_missing_file(self, client, tmp_path):
+        """文件不存在应返回 404"""
+        response = client.post(
+            "/api/quality/evaluate",
+            json={"input_file": str(tmp_path / "missing.json")}
+        )
+        assert response.status_code == 404
+
+    def test_quality_dedup(self, client, data_file):
+        """去重接口应返回去重统计"""
+        response = client.post("/api/quality/dedup", json={"input_file": data_file})
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert "original_count" in payload
+        assert "removed_count" in payload
+
+    def test_quality_dedup_missing_file(self, client, tmp_path):
+        """去重文件缺失应 404"""
+        response = client.post(
+            "/api/quality/dedup",
+            json={"input_file": str(tmp_path / "no.json")}
+        )
+        assert response.status_code == 404
+
+    def test_quality_clean(self, client, data_file):
+        """清洗接口应返回清洗统计"""
+        response = client.post("/api/quality/clean", json={"input_file": data_file})
+
+        assert response.status_code == 200
+        assert "cleaned_count" in response.json()
+
+    def test_quality_annotate(self, client, data_file):
+        """自动标注接口应返回报告"""
+        response = client.post("/api/quality/annotate", json={"input_file": data_file})
+
+        assert response.status_code == 200
+
+    def test_quality_report(self, client, data_file):
+        """质量报告接口应返回完整报告结构"""
+        response = client.post("/api/quality/report", json={"input_file": data_file})
+
+        assert response.status_code == 200
+
     def test_outliers_detects_length_field(self, client, data_file):
         """异常检测接口默认基于 length 字段（instruction 长度）"""
         response = client.post("/api/quality/outliers", json={"input_file": data_file})
