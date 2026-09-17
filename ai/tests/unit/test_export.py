@@ -357,5 +357,70 @@ class TestExporterInit:
 
     def test_default_format(self):
         """默认格式应正确设置"""
+
+    def test_export_chatml_system_history(self, tmp_path):
+        """ChatML 导出应包含 system 与历史对话"""
+        exporter = Exporter()
+        items = [
+            {
+                "instruction": "q",
+                "output": "a",
+                "system": "你是客服",
+                "history": [{"role": "user", "content": "之前的问题"}]
+            }
+        ]
+        out = str(tmp_path / "chatml.json")
+        exporter.export(items, out, format="chatml")
+        with open(out, encoding="utf-8") as f:
+            data = json.load(f)
+        roles = [m["role"] for m in data[0]["messages"]]
+        assert "system" in roles
+        assert "user" in roles
+        assert "assistant" in roles
+
+    def test_export_unsupported_format_raises(self, tmp_path):
+        """不支持的导出格式应报错"""
+        exporter = Exporter()
+        with pytest.raises(ValueError):
+            exporter.export([{"instruction": "q"}], str(tmp_path / "x.xml"), format="xml")
+
+    def test_export_default_format_is_jsonl(self, tmp_path):
+        """未指定格式应使用默认 jsonl"""
+        exporter = Exporter()
+        used = exporter.export([{"instruction": "q", "output": "a"}], str(tmp_path / "d.jsonl"))
+        assert used == "jsonl"
+
+    def test_export_creates_parent_dirs(self, tmp_path):
+        """导出应自动创建父目录"""
+        exporter = Exporter()
+        out = str(tmp_path / "nested" / "dir" / "out.jsonl")
+        exporter.export([{"instruction": "q", "output": "a"}], out)
+        assert Path(out).exists()
+
+    def test_export_csv_empty_creates_file(self, tmp_path):
+        """空数据 CSV 导出：父目录被创建，文件本体可能为空"""
+        exporter = Exporter()
+        out_dir = tmp_path / "csvdir"
+        out = str(out_dir / "empty.csv")
+        exporter.export([], out, format="csv")
+        assert out_dir.exists()
+
+    def test_export_sharegpt_format(self, tmp_path):
+        """sharegpt 格式导出"""
+        exporter = Exporter()
+        out = str(tmp_path / "sg.json")
+        exporter.export([{"instruction": "q", "output": "a"}], out, format="sharegpt")
+        with open(out, encoding="utf-8") as f:
+            data = json.load(f)
+        assert "conversations" in data[0]
+
+    def test_export_llama_factory_format(self, tmp_path):
+        """llama_factory 格式导出"""
+        exporter = Exporter()
+        out = str(tmp_path / "lf.json")
+        exporter.export([{"instruction": "q", "output": "a"}], out, format="llama_factory")
+        with open(out, encoding="utf-8") as f:
+            data = json.load(f)
+        assert "system" in data[0]
         exporter = Exporter(default_format="csv")
         assert exporter.default_format == ExportFormat.CSV
