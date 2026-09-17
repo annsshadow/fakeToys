@@ -514,3 +514,81 @@ class TestInsightsGeneration:
         report = analyzer.analyze()
         warnings = [i for i in report.insights if "回答过短" in i.title]
         assert len(warnings) >= 1
+
+
+class TestAnalyticsExtended:
+    """DatasetAnalyzer 扩展测试（覆盖剩余分支）"""
+
+    def test_load_resets_items(self):
+        """load 应替换内部数据"""
+        analyzer = DatasetAnalyzer([{"instruction": "old"}])
+        analyzer.load([{"instruction": "new"}])
+        assert analyzer._items[0]["instruction"] == "new"
+
+    def test_tokenize_mixed(self):
+        """分词应处理中英数字"""
+        analyzer = DatasetAnalyzer([])
+        tokens = analyzer._tokenize("你好abc123")
+        assert "你好" in tokens
+        assert "abc" in tokens
+        assert "123" in tokens
+
+    def test_get_words_filters_single_char(self):
+        """_get_words 应过滤单字符非字母词"""
+        analyzer = DatasetAnalyzer([])
+        words = analyzer._get_words("a b 中 好")
+        assert all(len(w) > 1 or w.isalpha() for w in words)
+
+    def test_get_sentences_splits_punctuation(self):
+        """句子应按中英文标点切分"""
+        analyzer = DatasetAnalyzer([])
+        sentences = analyzer._get_sentences("第一句。第二句！第三句？")
+        assert len(sentences) == 3
+
+    def test_text_statistics_empty(self):
+        """空文本统计应全为零值"""
+        analyzer = DatasetAnalyzer([])
+        stats = analyzer._calculate_text_statistics([])
+        assert stats.total_chars == 0
+        assert stats.vocabulary_size == 0
+        assert stats.top_words == []
+
+    def test_text_statistics_with_data(self):
+        """有数据时统计应正确计算字数与词频"""
+        analyzer = DatasetAnalyzer([])
+        stats = analyzer._calculate_text_statistics(["如何申请", "如何退租"])
+        assert stats.total_chars == 8
+        assert stats.avg_chars == pytest.approx(4.0)
+        assert stats.vocabulary_size > 0
+
+    def test_quality_score_range(self):
+        """质量分应在 0-1 之间"""
+        items = [{"instruction": f"问题{i}", "output": f"回答{i}"} for i in range(10)]
+        score = DatasetAnalyzer(items)._calculate_quality_score()
+        assert 0.0 <= score <= 1.0
+
+    def test_diversity_score_range(self):
+        """多样性分应在 0-1 之间"""
+        items = [{"instruction": f"不同的问题{i}啊"} for i in range(10)]
+        score = DatasetAnalyzer(items)._calculate_diversity_score()
+        assert 0.0 <= score <= 1.0
+
+    def test_completeness_score_fields(self):
+        """完整性分应基于指定字段计算"""
+        items = [{"instruction": "q", "output": "a", "input": ""}] * 5
+        score = DatasetAnalyzer(items)._calculate_completeness_score(["instruction", "output", "input"])
+        assert 0.0 <= score <= 1.0
+
+    def test_analyze_custom_fields(self):
+        """analyze 应支持自定义字段列表"""
+        items = [{"custom": "内容"}] * 3
+        report = DatasetAnalyzer(items).analyze(fields=["custom"])
+        assert "custom" in report.field_statistics
+
+    def test_report_to_dict(self):
+        """AnalysisReport.to_dict 应包含全部字段"""
+        items = [{"instruction": "q", "output": "a"}]
+        report = DatasetAnalyzer(items).analyze()
+        d = report.to_dict()
+        assert "dataset_size" in d
+        assert "quality_score" in d or "scores" in d
