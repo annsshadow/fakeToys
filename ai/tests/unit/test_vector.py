@@ -200,7 +200,106 @@ class TestMetadataLookup:
         assert db.get_metadata("missing") is None
 
 
-class TestVectorExtended:
+class TestFAISSExtended3:
+    """FAISS 数据库第三轮扩展测试（覆盖 mock 索引路径）"""
+
+    @pytest.fixture
+    def db(self):
+        return create_vector_db("faiss", dimension=4)
+
+    def test_ids_length_mismatch_raises(self, db):
+        """ids 数量与 vectors 不一致应报错"""
+        with pytest.raises(ValueError, match="ids 长度"):
+            db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}], ids=["only-one"])
+
+    def test_duplicate_ids_in_batch_raises(self, db):
+        """同批 ids 内部重复应报错"""
+        with pytest.raises(ValueError, match="重复"):
+            db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}], ids=["x", "x"])
+
+    def test_existing_id_rejected(self, db):
+        """与已有 ID 冲突应报错"""
+        db.add_vectors(unit_vectors()[:1], [{"i": 0}], ids=["a"])
+        with pytest.raises(ValueError, match="ID 已存在"):
+            db.add_vectors(unit_vectors()[1:2], [{"i": 1}], ids=["a"])
+
+    def test_backend_reports_numpy_when_faiss_missing(self, db):
+        """faiss 未安装时 backend 应报告 numpy 回退"""
+        assert db.backend in ("faiss", "numpy")
+        # 强制模拟 faiss 不可用
+        db._faiss = None
+        db._index = None
+        assert db.backend == "numpy"
+
+    def test_search_uses_mock_index(self, db, monkeypatch):
+        """提供 mock faiss 索引时应走 index.search 路径"""
+        import types
+
+        class MockIndex:
+            def add(self, vectors):
+                pass
+
+            def search(self, query, k):
+                # 返回与 numpy 回退一致的确定性结果：第 0 维向量最相似
+                return (np.array([[0.9, 0.5]], dtype=np.float32),
+                        np.array([[0, 1]], dtype=np.int64))
+
+        db._index = MockIndex()
+        db._faiss = types.SimpleNamespace()
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=2)
+        assert len(results) == 2
+        assert results[0]["id"] in ("default-0", "default-1")
+
+    def test_search_top_k_larger_than_count_capped(self, db):
+        """top_k 大于向量数时应收敛到实际数量"""
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=100)
+        assert len(results) == 2
+
+    def test_delete_removes_all(self, db):
+        """删除全部向量后 count 为 0 且检索为空"""
+        ids = db.add_vectors(unit_vectors()[:3], [{"i": i} for i in range(3)])
+        removed = db.delete(ids)
+        assert removed == 3
+        assert db.count() == 0
+        assert db.search(np.array([1, 0, 0, 0], dtype=np.float32)) == []
+
+    def test_delete_nonexistent_returns_zero(self, db):
+        """删除不存在的 ID 应返回 0"""
+        assert db.delete(["ghost"]) == 0
+
+    def test_load_vector_count_check(self, db, tmp_path, monkeypatch):
+        """加载时元数据与向量数量应一致"""
+        db.storage_dir = tmp_path
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        db.persist()
+        db2 = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        assert db2.load() is True
+        assert db2.count() == 2
+
+    def test_generate_ids_sequential(self, db):
+        """自动生成 ID 应按 default-N 递增"""
+        db.add_vectors(unit_vectors()[:1], [{"i": 0}])
+        ids = db.add_vectors(unit_vectors()[1:2], [{"i": 1}])
+        assert ids == ["default-1"]
+
+
+class TestVectorExtended3:
+    """向量数据库第三轮扩展测试"""
+
+    def test_search_2d_query_matrix(self):
+        """二维查询矩阵（批量查询）应被 reshape 正确处理"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+        query = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], dtype=np.float32)
+        results = db.search(query, top_k=1)
+        assert results[0]["id"] == "default-0"
+
+    def test_add_empty_metadata_lists(self):
+        """空向量列表添加应返回空"""
+        db = create_vector_db("faiss", dimension=4)
+        assert db.add_vectors([], []) == []
     """VectorDB 扩展测试"""
 
     def test_search_top_k(self):
