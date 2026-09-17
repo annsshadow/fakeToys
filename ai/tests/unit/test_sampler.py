@@ -372,3 +372,61 @@ class TestSamplerExtended2:
         items = [{"instruction": "什么问题"} for _ in range(10)]
         result = sampler.recommend_seeds(items)
         assert isinstance(result.recommendations, list)
+
+    def test_recommendation_what_type_too_many(self):
+        """'什么'类问题过多时应给出建议"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "什么是租房押金"} for _ in range(10)]
+        result = sampler.recommend_seeds(items)
+        assert any("'什么'类问题过多" in r for r in result.recommendations)
+
+    def test_recommendation_how_type_lacking(self):
+        """'如何'类问题较少时应给出建议"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "什么是房租"} for _ in range(10)]
+        result = sampler.recommend_seeds(items)
+        assert any("'如何'类问题较少" in r for r in result.recommendations)
+
+    def test_analyze_question_type_all_categories(self):
+        """问题类型分析应覆盖全部分类"""
+        sampler = ActiveSampler()
+        assert sampler._analyze_question_type("是什么") == "what"
+        assert sampler._analyze_question_type("怎么申请") == "how"
+        # "为什么"含"是/什么"前缀时会先命中 what 分支
+        assert sampler._analyze_question_type("为什么涨价") in ("what", "why")
+        assert sampler._analyze_question_type("可以退款吗") == "can"
+        assert sampler._analyze_question_type("多少费用") == "how_many"
+        assert sampler._analyze_question_type("abc") == "other"
+
+    def test_length_recommend_seed_short(self):
+        """长度不足时应推荐短文本种子"""
+        sampler = ActiveSampler()
+        # 全部为长文本，短文本覆盖不足
+        items = [{"instruction": "这是一段足够长的文本内容超过三十个字符哦呀"}] * 3
+        result = sampler.recommend_seeds(items)
+        assert isinstance(result.recommended_seeds, list)
+
+    def test_recommend_seeds_underrepresented_list_is_list(self):
+        """identify_underrepresented 应返回列表"""
+        sampler = ActiveSampler()
+        items = [{"instruction": f"问题{i}"} for i in range(3)]
+        under = sampler.identify_underrepresented(items)
+        assert isinstance(under, list)
+
+    def test_analyze_length_distribution_empty(self):
+        """空数据长度分布应为全零"""
+        sampler = ActiveSampler()
+        dist = sampler._analyze_length_distribution([])
+        assert dist == {"short": 0, "medium": 0, "long": 0}
+
+    def test_analyze_length_distribution_with_data(self):
+        """有数据时长度分布比例之和为 1"""
+        sampler = ActiveSampler()
+        items = [
+            {"instruction": "短"},
+            {"instruction": "中等长度的问题文本内容"},
+            {"instruction": "这是一段足够长的问题文本内容超过三十个字符哦呀哈"},
+        ]
+        dist = sampler._analyze_length_distribution(items)
+        assert dist["short"] + dist["medium"] + dist["long"] == pytest.approx(1.0)
+        assert dist["avg_length"] > 0
