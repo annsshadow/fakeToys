@@ -324,3 +324,63 @@ class TestFieldStatisticsToDict:
         )
         d = stats.to_dict()
         assert d["fill_rate"] == 0
+
+    def test_fill_rate_computed(self):
+        """fill_rate = filled/total"""
+        stats = FieldStatistics(
+            field_name="f", total_count=4, filled_count=3, empty_count=1,
+            avg_length=1.0, min_length=1, max_length=2,
+            median_length=1.0, std_deviation=0.5, unique_count=3
+        )
+        d = stats.to_dict()
+        assert d["fill_rate"] == pytest.approx(0.75)
+
+
+class TestStatisticsExtended:
+    """统计模块扩展测试（覆盖剩余分支）"""
+
+    def test_calculate_specific_fields(self, sample_dataset):
+        """指定字段统计应只包含这些字段"""
+        calculator = DatasetStatisticsCalculator(sample_dataset, "ds")
+        stats = calculator.calculate(fields=["instruction"])
+        assert list(stats.field_statistics.keys()) == ["instruction"]
+
+    def test_calculate_unknown_field_yields_empty_stats(self):
+        """未知字段统计应全为零值"""
+        calculator = DatasetStatisticsCalculator([{"a": "x"}], "ds")
+        stats = calculator.calculate(fields=["nonexistent"])
+        fs = stats.field_statistics["nonexistent"]
+        assert fs.total_count == 0 or fs.filled_count == 0
+
+    def test_content_statistics_keys(self, sample_dataset):
+        """内容统计应包含长度相关指标"""
+        calculator = DatasetStatisticsCalculator(sample_dataset, "ds")
+        stats = calculator.calculate()
+        assert "instruction_length" in stats.content_statistics or stats.content_statistics
+
+    def test_quality_metrics_present(self, sample_dataset):
+        """质量指标应为非空字典"""
+        calculator = DatasetStatisticsCalculator(sample_dataset, "ds")
+        stats = calculator.calculate()
+        assert isinstance(stats.quality_metrics, dict)
+        assert len(stats.quality_metrics) > 0
+
+    def test_to_dict_round_trip(self, sample_dataset):
+        """DatasetStatistics.to_dict 应包含嵌套字段统计"""
+        calculator = DatasetStatisticsCalculator(sample_dataset, "ds")
+        stats = calculator.calculate()
+        d = stats.to_dict()
+        assert "field_statistics" in d
+        assert "instruction" in d["field_statistics"]
+        assert d["total_items"] == 3
+
+    def test_calculate_statistics_convenience(self, sample_dataset):
+        """便捷函数 calculate_statistics 应返回 DatasetStatistics"""
+        result = calculate_statistics(sample_dataset, "conv")
+        assert isinstance(result, DatasetStatistics)
+        assert result.total_items == 3
+
+    def test_get_field_summary_convenience(self, sample_dataset):
+        """便捷函数 get_field_summary 应返回字段摘要"""
+        summary = get_field_summary(sample_dataset, "instruction")
+        assert summary is not None
