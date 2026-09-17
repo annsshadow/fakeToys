@@ -1,1 +1,0 @@
-"processing",		//可选值:start,processing,hanging
