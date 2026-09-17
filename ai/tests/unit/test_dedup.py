@@ -279,3 +279,94 @@ class TestFallbackEncode:
         norms = np.linalg.norm(embeddings, axis=1)
         for norm in norms:
             assert abs(norm - 1.0) < 1e-6
+
+
+class TestComputeSimilarityMatrixChunked:
+    """分块相似度矩阵测试"""
+
+    def test_chunked_matrix_shape(self):
+        """输出矩阵应为 n x n"""
+        dedup = Deduplicator()
+        embeddings = np.random.rand(5, 10)
+        matrix = dedup._compute_similarity_matrix_chunked(embeddings, chunk_size=2)
+        assert matrix.shape == (5, 5)
+
+    def test_chunked_matrix_symmetric(self):
+        """相似度矩阵应对称"""
+        dedup = Deduplicator()
+        embeddings = np.random.rand(6, 10)
+        matrix = dedup._compute_similarity_matrix_chunked(embeddings, chunk_size=3)
+        np.testing.assert_allclose(matrix, matrix.T, atol=1e-6)
+
+    def test_chunked_matrix_diagonal_positive(self):
+        """对角线元素应为 1（自相似）"""
+        dedup = Deduplicator()
+        embeddings = np.random.rand(4, 10)
+        matrix = dedup._compute_similarity_matrix_chunked(embeddings, chunk_size=1000)
+        for i in range(4):
+            assert matrix[i, i] >= 0.99
+
+    def test_zero_embeddings_handled(self):
+        """零向量不应导致除零错误"""
+        dedup = Deduplicator()
+        embeddings = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0]], dtype=np.float32)
+        matrix = dedup._compute_similarity_matrix_chunked(embeddings)
+        assert matrix.shape == (3, 3)
+
+
+class TestFindDuplicatesFaiss:
+    """FAISS 去重测试（ImportError 分支）"""
+
+    def test_faiss_not_installed_raises(self):
+        """未安装 faiss 时应抛出 ImportError"""
+        dedup = Deduplicator()
+        embeddings = np.random.rand(3, 10)
+        with pytest.raises(ImportError, match="FAISS"):
+            dedup._find_duplicates_faiss(["a", "b", "c"], embeddings)
+
+
+class TestDeduplicateChunked:
+    """分块去重流程测试"""
+
+    def test_empty_texts_returns_empty(self):
+        """空文本列表应返回空重复组"""
+        dedup = Deduplicator()
+        dedup._model = "fallback"
+        groups = dedup._find_duplicate_groups_chunked([], chunk_size=1000)
+        assert groups == []
+
+    def test_small_dataset_single_chunk(self):
+        """小数据集应使用单个分块"""
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+        texts = ["相同问题", "相同问题", "不同问题"]
+        groups = dedup._find_duplicate_groups_chunked(texts, chunk_size=1000)
+        assert isinstance(groups, list)
+
+    def test_large_chunk_size(self):
+        """chunk_size 大于数据量时应正常工作"""
+        dedup = Deduplicator(threshold=0.9)
+        dedup._model = "fallback"
+        texts = ["问题A", "问题B"]
+        groups = dedup._find_duplicate_groups_chunked(texts, chunk_size=10000)
+        assert isinstance(groups, list)
+
+
+class TestBatchEncodeFallback:
+    """批量编码 fallback 测试"""
+
+    def test_batch_encode_fallback(self):
+        """fallback 模型应使用 n-gram 编码"""
+        dedup = Deduplicator()
+        dedup._model = "fallback"
+        texts = ["hello", "world", "test"]
+        embeddings = dedup._batch_encode(texts)
+        assert embeddings.shape[0] == 3
+        assert embeddings.shape[1] > 0
+
+    def test_batch_encode_single_text(self):
+        """单条文本也应正常编码"""
+        dedup = Deduplicator()
+        dedup._model = "fallback"
+        embeddings = dedup._batch_encode(["hello"])
+        assert embeddings.shape[0] == 1
