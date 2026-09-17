@@ -2,6 +2,7 @@
 
 import json
 import pytest
+from pathlib import Path
 from augmentor.migration import (
     DatasetMigrator, MigrationRule, MigrationResult,
     migrate_dataset, migrate_file
@@ -245,3 +246,104 @@ class TestMigrationExtended:
         data = [{"instruction": "q1"}]
         result = migrator.migrate(data, rules=["error_rule"])
         assert result.failed_items == 1
+
+
+class TestMigrationExtended:
+    """DatasetMigrator 扩展测试（覆盖剩余分支）"""
+
+    def test_builtin_rules_exist(self):
+        """内置规则应包含重命名与展平"""
+        migrator = DatasetMigrator()
+        rule_ids = [r.rule_id for r in migrator._builtin_rules]
+        assert "rename_instruction" in rule_ids
+        assert "rename_output" in rule_ids
+        assert "flatten_conversations" in rule_ids
+
+    def test_rename_instruction_applies(self, sample_dataset):
+        """rename_instruction 应将 instruction 重命名为 question"""
+        migrator = DatasetMigrator()
+        migrated = migrator._apply_rules(
+            sample_dataset[0],
+            [r for r in migrator._builtin_rules if r.rule_id == "rename_instruction"]
+        )
+        assert "question" in migrated
+        assert "instruction" not in migrated
+
+    def test_rename_output_applies(self, sample_dataset):
+        """rename_output 应将 output 重命名为 answer"""
+        migrator = DatasetMigrator()
+        migrated = migrator._apply_rules(
+            sample_dataset[0],
+            [r for r in migrator._builtin_rules if r.rule_id == "rename_output"]
+        )
+        assert "answer" in migrated
+        assert "output" not in migrated
+
+    def test_migrate_empty_dataset(self):
+        """空数据集迁移应为 0"""
+        migrator = DatasetMigrator()
+        result = migrator.migrate([])
+        assert result.total_items == 0
+        assert result.migrated_items == 0
+
+    def test_migrate_unknown_rule_skipped(self, sample_dataset):
+        """未知规则应被跳过而不是崩溃"""
+        migrator = DatasetMigrator()
+        result = migrator.migrate(sample_dataset, rules=["nonexistent_rule"])
+        assert result.migrated_items == 2
+        assert "nonexistent_rule" not in result.rules_applied
+
+    def test_migrate_with_output_path_writes_file(self, sample_dataset, tmp_path):
+        """带输出路径的迁移应写文件"""
+        migrator = DatasetMigrator()
+        output = str(tmp_path / "out.json")
+        result = migrator.migrate(sample_dataset, output_path=output)
+        assert Path(output).exists()
+        assert result.migrated_items == 2
+
+    def test_migrate_file_missing_source_raises(self, tmp_path):
+        """源文件不存在应报错"""
+        migrator = DatasetMigrator()
+        with pytest.raises(FileNotFoundError):
+            migrator.migrate_file(str(tmp_path / "nope.json"), str(tmp_path / "out.json"))
+
+    def test_migrate_file_creates_parent_dirs(self, sample_dataset, tmp_path):
+        """迁移文件应自动创建父目录"""
+        migrator = DatasetMigrator()
+        source = tmp_path / "src.json"
+        source.write_text(json.dumps(sample_dataset), encoding="utf-8")
+        target = tmp_path / "nested" / "deep" / "out.json"
+        migrator.migrate_file(str(source), str(target))
+        assert target.exists()
+
+    def test_flatten_conversations_mixed_types(self):
+        """混合类型对话展平"""
+        migrator = DatasetMigrator()
+        result = migrator._flatten_conversations("文本")
+        assert result == "文本"
+
+    def test_migration_result_to_dict_limits_errors(self):
+        """MigrationResult.to_dict 应限制错误数量"""
+        result = MigrationResult(
+            migration_id="m1", source_path="s", target_path="t",
+            total_items=10, migrated_items=5, failed_items=5,
+            rules_applied=["r1"],
+            errors=[{"i": i} for i in range(20)]
+        )
+        d = result.to_dict()
+        assert len(d["errors"]) == 10
+
+    def test_convenience_migrate_dataset(self, sample_dataset):
+        """便捷函数 migrate_dataset 应返回 MigrationResult"""
+        result = migrate_dataset(sample_dataset)
+        assert isinstance(result, MigrationResult)
+        assert result.total_items == 2
+
+    def test_convenience_migrate_file(self, sample_dataset, tmp_path):
+        """便捷函数 migrate_file 应完成迁移"""
+        src = tmp_path / "s.json"
+        src.write_text(json.dumps(sample_dataset), encoding="utf-8")
+        target = tmp_path / "t.json"
+        result = migrate_file(str(src), str(target))
+        assert target.exists()
+        assert result.migrated_items == 2
