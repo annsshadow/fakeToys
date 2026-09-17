@@ -203,3 +203,69 @@ class TestAnalyzeLanguages:
         report = MultilingualSupport().analyze_languages([])
         assert report["total_items"] == 0
         assert report["ratios"] == {}
+
+    def test_translate_non_string(self):
+        """非字符串输入翻译"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend)
+        assert support.translate(123, "en") == ""
+        assert backend.calls == 0
+
+    def test_batch_translate_empty_items(self):
+        """空项目列表"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend)
+        result = support.batch_translate([])
+        assert result == []
+
+    def test_detect_language_pure_latin(self):
+        """纯拉丁文检测"""
+        support = MultilingualSupport()
+        assert support.detect_language("hello world test") == "en"
+
+    def test_batch_translate_unsupported_target(self):
+        """批量翻译不支持目标语言"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend)
+        with pytest.raises(ValueError):
+            support.batch_translate([{"instruction": "x"}], "ja")
+
+    def test_batch_translate_keep_false(self):
+        """不保留原文"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend)
+        result = support.batch_translate(
+            [{"instruction": "中文问题"}], target_lang="en", keep_original=False
+        )
+        assert "instruction_original" not in result[0]
+
+    def test_custom_text_key_translate(self):
+        """自定义文本键批量翻译"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend)
+        result = support.batch_translate(
+            [{"question": "中文问题"}], target_lang="en", text_key="question"
+        )
+        assert result[0]["language"] == "en"
+        assert result[0].get("question_original") == "中文问题"
+
+    def test_parallel_translation_result(self):
+        """并行翻译结果"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend, max_workers=2)
+        items = [{"instruction": f"问题{i}"} for i in range(5)]
+        result = support.batch_translate(items, target_lang="en")
+        assert len(result) == 5
+
+    def test_lang_name_exists(self):
+        """语言名称存在"""
+        support = MultilingualSupport()
+        assert "zh" in support.supported_langs
+        assert support._lang_name("zh") == "中文"
+
+    def test_translate_same_language_no_backend_call(self):
+        """相同语言无后端调用"""
+        backend = FakeBackend()
+        support = MultilingualSupport(model_backend=backend)
+        support.translate("中文内容", "zh")
+        assert backend.calls == 0
