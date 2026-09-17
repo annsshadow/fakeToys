@@ -36,6 +36,21 @@ class TestFollowUpQuestion:
         result = augmentor._generate_follow_up_question([], "如何入住？", "通过 App 申请。")
         assert result == "押金怎么退？"
 
+    def test_strips_q_prefix(self):
+        augmentor = ContextAugmentor(ScriptedBackend(["Q：怎么续租？"]))
+        result = augmentor._generate_follow_up_question([], "如何入住？", "通过 App。")
+        assert result == "怎么续租？"
+
+    def test_strips_a_prefix(self):
+        augmentor = ContextAugmentor(ScriptedBackend(["A：押金可以退"]))
+        result = augmentor._generate_follow_up_question([], "如何入住？", "通过 App。")
+        assert result == "押金可以退"
+
+    def test_strips_raw_q_colon(self):
+        augmentor = ContextAugmentor(ScriptedBackend(["Q：怎么付款？"]))
+        result = augmentor._generate_follow_up_question([], "q", "a")
+        assert result == "怎么付款？"
+
     def test_prompt_contains_history_roles(self):
         backend = ScriptedBackend(["还想问什么？"])
         augmentor = ContextAugmentor(backend)
@@ -101,6 +116,17 @@ class TestGenerateMultiTurn:
         )
         assert result["instruction"] == "Q2"
         assert len(result["history"]) == 2
+
+
+    def test_all_duplicates_falls_back_to_original(self):
+        """所有后续问题都重复时应退化为原始数据"""
+        augmentor = ContextAugmentor(ScriptedBackend(["Q1", "Q1", "Q1"]), num_turns=3)
+        existing = [[{"role": "user", "content": "Q1"}]]
+        result = augmentor.generate_multi_turn(
+            {"instruction": "Q1", "output": "A1"}, existing_histories=existing
+        )
+        assert result["instruction"] == "Q1"
+        assert result["history"] == []
 
 
 class TestBatchGenerate:
