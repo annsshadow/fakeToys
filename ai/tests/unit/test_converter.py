@@ -453,3 +453,51 @@ class TestConverterFileOperations:
         
         with pytest.raises(ValueError, match="无法从"):
             converter._to_json([], "unsupported")
+
+
+class TestConverterExtended:
+    """DatasetConverter 扩展测试"""
+
+    def test_convert_empty_dataset(self):
+        """转换空数据集"""
+        converter = DatasetConverter()
+        result = converter.convert([], "json", "csv")
+        assert result == []
+
+    def test_convert_single_item(self):
+        """转换单条数据"""
+        converter = DatasetConverter()
+        data = [{"instruction": "q1", "input": "", "output": "a1"}]
+        result = converter.convert(data, "json", "csv")
+        assert len(result) == 1
+
+    def test_get_supported_formats(self):
+        """获取支持的格式"""
+        formats = get_supported_formats()
+        assert "json" in formats
+        assert "csv" in formats
+
+    def test_format_enum_values(self):
+        """格式枚举值"""
+        assert DataFormat.JSON.value == "json"
+        assert DataFormat.CSV.value == "csv"
+        assert DataFormat.JSONL.value == "jsonl"
+
+    def test_convert_json_to_alpaca(self, sample_dataset):
+        """转换 JSON 到 Alpaca 格式"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "alpaca")
+        assert len(result) == len(sample_dataset)
+
+    def test_convert_json_to_sharegpt(self, sample_dataset):
+        """转换 JSON 到 ShareGPT 格式"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "sharegpt")
+        assert len(result) == len(sample_dataset)
+
+    def test_convert_with_history(self, sample_with_history):
+        """转换带历史记录的数据"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_with_history, "json", "json")
+        assert len(result) == 1
+        assert "history" in result[0]
