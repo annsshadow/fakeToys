@@ -603,3 +603,100 @@ class TestConfigValidatorExtended:
         assert Severity.ERROR.value == "error"
         assert Severity.WARNING.value == "warning"
         assert Severity.INFO.value == "info"
+
+
+class TestConfigValidatorExtended2:
+    """ConfigValidator 第二轮扩展测试（覆盖文件路径/列表/环境引用边界）"""
+
+    def test_validate_file_nonexistent(self, tmp_path):
+        """不存在的文件应报错"""
+        validator = ConfigValidator()
+        result = validator.validate_file(str(tmp_path / "nope.yaml"))
+        assert result.is_valid is False
+        assert any("文件不存在" in e.message for e in result.errors)
+
+    def test_validate_file_directory(self, tmp_path):
+        """目录路径应报错"""
+        validator = ConfigValidator()
+        result = validator.validate_file(str(tmp_path))
+        assert result.is_valid is False
+        assert any("不是有效文件" in e.message for e in result.errors)
+
+    def test_validate_file_yaml_error(self, tmp_path, valid_config):
+        """YAML 解析错误应被捕获"""
+        path = tmp_path / "bad.yaml"
+        path.write_text("a: [unclosed", encoding="utf-8")
+        result = ConfigValidator().validate_file(str(path))
+        assert result.is_valid is False
+        assert any("YAML解析错误" in e.message for e in result.errors)
+
+    def test_validate_file_valid_yaml(self, tmp_path, valid_config):
+        """有效 YAML 文件应通过"""
+        path = tmp_path / "good.yaml"
+        with open(path, "w", encoding="utf-8") as f:
+            yaml.dump(valid_config, f)
+        result = ConfigValidator().validate_file(str(path))
+        assert result.is_valid is True
+
+    def test_validate_config_none_yaml(self):
+        """YAML 文件为空（None 解析）应按非字典报错"""
+        result = ConfigValidator().validate_config(None)
+        assert result.is_valid is False
+        assert any("配置必须是字典类型" in e.message for e in result.errors)
+
+    def test_env_ref_in_list_item_warns(self, monkeypatch):
+        """列表中未设置的环境变量应产生警告"""
+        monkeypatch.delenv("MISSING_CLI_VAR", raising=False)
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "keys": ["${MISSING_CLI_VAR}", "plain"],
+        }
+        result = ConfigValidator().validate_config(config)
+        assert any("MISSING_CLI_VAR" in w.message for w in result.warnings)
+
+    def test_env_ref_set_no_warning(self, monkeypatch):
+        """已设置环境变量的引用不应警告"""
+        monkeypatch.setenv("SET_CLI_VAR", "value")
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "api": {"key": "${SET_CLI_VAR}"},
+        }
+        result = ConfigValidator().validate_config(config)
+        assert not any("SET_CLI_VAR" in w.message for w in result.warnings)
+
+    def test_env_ref_nested_dict_warns(self, monkeypatch):
+        """嵌套字典中未设置的环境变量应警告"""
+        monkeypatch.delenv("NESTED_MISSING_VAR", raising=False)
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "secret": {"token": "${NESTED_MISSING_VAR}"},
+        }
+        result = ConfigValidator().validate_config(config)
+        assert any("NESTED_MISSING_VAR" in w.message for w in result.warnings)
+
+    def test_required_field_missing_nested(self):
+        """嵌套必填字段缺失应报错"""
+        config = {
+            "app": {"name": "test"},
+            "models": {},  # 缺少 default
+        }
+        result = ConfigValidator().validate_config(config)
+        assert result.is_valid is False
+        assert any("models.default" in e.message for e in result.errors)
+
+    def test_valid_full_config_passes(self):
+        """完整有效配置应零错误零警告"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0", "debug": True},
+            "models": {"default": "ernie"},
+            "augmentation": {"variants_per_seed": 5, "num_threads": 4},
+            "quality": {"enabled": True, "threshold": 0.7},
+            "dedup": {"enabled": True},
+            "output": {"export_dir": "./out"},
+        }
+        result = ConfigValidator().validate_config(config)
+        assert result.is_valid is True
+        assert result.errors == []
