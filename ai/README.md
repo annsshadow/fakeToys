@@ -44,6 +44,7 @@ ai/
 │   ├── export_enhanced.py  # 增强导出
 │   ├── streaming.py    # 流式处理
 │   ├── comparison.py   # 数据集对比
+│   ├── compare_enhanced.py  # 增强比较
 │   ├── dataset_ops.py  # 数据集操作
 │   ├── validation.py   # 数据验证
 │   ├── converter.py    # 格式转换
@@ -55,6 +56,9 @@ ai/
 │   ├── quality_report.py  # 质量报告
 │   ├── visualize_enhanced.py  # 增强可视化
 │   ├── backup.py       # 数据备份
+│   ├── search_enhanced.py  # 增强搜索
+│   ├── statistics.py   # 数据统计
+│   ├── version_control.py  # 版本控制
 │   └── exceptions.py   # 自定义异常
 ├── web/                # Web前端 (React + Ant Design)
 ├── tests/              # 测试套件
@@ -164,6 +168,21 @@ python cli.py backup --action create --input data.json --name my_backup
 python cli.py backup --action list
 python cli.py backup --action restore --name my_backup --output restored.json
 python cli.py backup --action delete --name my_backup
+
+# 增强搜索
+python cli.py search-enhanced --input data.json --query "租房" --method contains
+
+# 增强统计
+python cli.py stats-enhanced --input data.json --output stats.json
+
+# 增强比较
+python cli.py compare-enhanced --dataset-a data1.json --dataset-b data2.json --output comparison.json
+
+# 版本控制
+python cli.py version-control --action create --input data.json --description "初始版本"
+python cli.py version-control --action list
+python cli.py version-control --action load --version v1.0.0 --output loaded.json
+python cli.py version-control --action compare --version v1.0.0 --output diff.json
 ```
 
 ### 高级功能
