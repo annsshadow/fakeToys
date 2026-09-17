@@ -325,6 +325,96 @@ class TestFindDuplicatesFaiss:
         with pytest.raises(ImportError, match="FAISS"):
             dedup._find_duplicates_faiss(["a", "b", "c"], embeddings)
 
+    def test_faiss_mock_finds_duplicates(self, monkeypatch):
+        """mock faiss 应能找出重复组"""
+        import types
+
+        dedup = Deduplicator(threshold=0.5)
+        texts = ["问题一", "问题一", "完全不同的问题二"]
+        embeddings = np.array([
+            [1.0, 0.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+        ], dtype=np.float32)
+
+        class MockFaiss:
+            IndexFlatIP = None
+
+        def make_index(dim):
+            vectors = []
+            vec_index = {}
+
+            class Index:
+                def add(self, arr):
+                    nonlocal vectors
+                    vectors = [tuple(v) for v in arr]
+
+                def search(self, query, k):
+                    import math
+                    q = np.asarray(query[0], dtype=np.float32)
+                    qn = np.linalg.norm(q) or 1.0
+                    q = q / qn
+                    sims = [
+                        float(np.dot(q, np.asarray(v))) for v in vectors
+                    ]
+                    idx = sorted(range(len(sims)), key=lambda i: -sims[i])[:k]
+                    # 返回 2D 数组以匹配真实 faiss 的 (1, k) 形状
+                    dist = np.array([sims[i] for i in idx], dtype=np.float32).reshape(1, -1)
+                    ids = np.array(idx, dtype=np.int64).reshape(1, -1)
+                    return dist, ids
+
+            return Index()
+
+        fake = types.SimpleNamespace(
+            IndexFlatIP=make_index,
+        )
+        monkeypatch.setitem(
+            __import__("sys").modules, "faiss", fake
+        )
+
+        groups = dedup._find_duplicates_faiss(texts, embeddings)
+        # 前两条文本完全相同，应落入同一重复组
+        assert any(len(g) >= 2 for g in groups)
+
+    def test_faiss_mock_no_duplicates(self, monkeypatch):
+        """mock faiss 在互不相同时不应产生重复组"""
+        import types
+        import math
+
+        dedup = Deduplicator(threshold=0.99)
+        texts = ["完全不同的问题一", "完全不同的问题二", "完全不同的问题三"]
+        embeddings = np.array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ], dtype=np.float32)
+
+        def make_index(dim):
+            vectors = []
+
+            class Index:
+                def add(self, arr):
+                    nonlocal vectors
+                    vectors = [tuple(v) for v in arr]
+
+                def search(self, query, k):
+                    q = np.asarray(query[0], dtype=np.float32)
+                    qn = np.linalg.norm(q) or 1.0
+                    q = q / qn
+                    sims = [float(np.dot(q, np.asarray(v))) for v in vectors]
+                    idx = sorted(range(len(sims)), key=lambda i: -sims[i])[:k]
+                    dist = np.array([sims[i] for i in idx], dtype=np.float32).reshape(1, -1)
+                    ids = np.array(idx, dtype=np.int64).reshape(1, -1)
+                    return dist, ids
+
+            return Index()
+
+        fake = types.SimpleNamespace(IndexFlatIP=make_index)
+        monkeypatch.setitem(__import__("sys").modules, "faiss", fake)
+
+        groups = dedup._find_duplicates_faiss(texts, embeddings)
+        assert groups == []
+
 
 class TestDeduplicateChunked:
     """分块去重流程测试"""
