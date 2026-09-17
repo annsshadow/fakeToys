@@ -46,6 +46,20 @@ class TestGenerate:
         assert report.filtered_samples == 2
         assert report.pass_rate == pytest.approx(0.5)
 
+    def test_empty_items_report(self):
+        """空项目报告"""
+        report = ReportGenerator(threshold=0.6).generate([], [])
+        assert report.total_samples == 0
+        assert report.pass_rate == 0.0
+
+    def test_all_passed_report(self):
+        """全部通过报告"""
+        items = [{"instruction": "q1"}]
+        scores = make_scores([0.9])
+        report = ReportGenerator(threshold=0.5).generate(items, scores)
+        assert report.passed_samples == 1
+        assert report.pass_rate == 1.0
+
     def test_metric_summary_statistics(self):
         """均值/极值统计必须正确，供前端雷达图使用"""
         items = [{"instruction": f"问题{i}"} for i in range(3)]
