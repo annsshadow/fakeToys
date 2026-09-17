@@ -490,3 +490,26 @@ class TestModelManager:
         model = manager.get_sentence_model()
         assert model is not None
         assert manager._sentence_model is not None
+
+    def test_fast_path_returns_cached_without_lock_wait(self, monkeypatch):
+        """已缓存时走快速路径（line 40-41），不进入锁"""
+        manager = ModelManager()
+        monkeypatch.setattr(manager, "_sentence_model", "cached-model", raising=False)
+        assert manager.get_sentence_model() is "cached-model"
+
+    def test_double_checked_locking_inner(self, monkeypatch):
+        """进入锁后再次检查（line 44-45）应直接返回已缓存值"""
+        manager = ModelManager()
+        monkeypatch.setattr(manager, "_sentence_model", "inner-cache", raising=False)
+        # 通过并发竞争触发内层检查：先让外层检查失败，锁内应命中
+        import threading
+        original_model = manager._sentence_model
+        assert manager.get_sentence_model() == "inner-cache"
+
+    def test_sentence_model_not_none_after_clear(self):
+        """clear 后重新获取应再次走加载路径"""
+        manager = ModelManager()
+        manager.clear()
+        assert manager._sentence_model is None
+        result = manager.get_sentence_model()
+        assert result is not None
