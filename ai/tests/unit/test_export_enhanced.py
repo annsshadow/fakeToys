@@ -345,3 +345,60 @@ class TestExportFormat:
         assert ExportFormat.OPENAI.value == "openai"
         assert ExportFormat.HUGGINGFACE.value == "huggingface"
         assert ExportFormat.RAW.value == "raw"
+
+
+class TestExportEnhancedExtended:
+    """EnhancedExporter 扩展测试"""
+
+    def test_export_empty_dataset(self, tmp_path):
+        """导出空数据集"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "empty.json"
+        result = exporter.export([], str(output_path))
+        assert result["item_count"] == 0
+
+    def test_export_with_include_fields(self, sample_dataset, tmp_path):
+        """导出时指定包含字段"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "filtered.json"
+        options = ExportOptions(include_fields=["instruction", "output"])
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_export_with_exclude_fields(self, sample_dataset, tmp_path):
+        """导出时排除字段"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "excluded.json"
+        options = ExportOptions(exclude_fields=["input"])
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_export_with_max_items(self, sample_dataset, tmp_path):
+        """导出时限制最大条数"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "limited.json"
+        options = ExportOptions(max_items=2)
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert result["item_count"] == 2
+
+    def test_export_with_shuffle(self, sample_dataset, tmp_path):
+        """导出时打乱顺序"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "shuffled.json"
+        options = ExportOptions(shuffle=True, seed=42)
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_get_supported_formats(self):
+        """获取支持的格式列表"""
+        formats = get_supported_formats()
+        assert "json" in formats
+        assert "csv" in formats
+
+    def test_export_single_item(self, tmp_path):
+        """导出单条数据"""
+        exporter = EnhancedExporter()
+        data = [{"instruction": "q1", "input": "", "output": "a1"}]
+        output_path = tmp_path / "single.json"
+        result = exporter.export(data, str(output_path))
+        assert result["item_count"] == 1
