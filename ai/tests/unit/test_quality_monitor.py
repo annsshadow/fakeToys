@@ -213,3 +213,34 @@ class TestQualityMonitorExtended:
         )
         assert alert.alert_id == "a1"
         assert alert.severity == "warning"
+
+    def test_check_with_custom_threshold(self):
+        """自定义阈值检查"""
+        monitor = QualityMonitor()
+        monitor.add_threshold(QualityThreshold(
+            metric_name="custom_metric",
+            min_value=0.0, max_value=1.0,
+            alert_below=0.3, alert_above=0.9
+        ))
+        data = [{"instruction": "test"}]
+        snapshot = monitor.check_quality(data)
+        assert snapshot is not None
+
+    def test_history_with_limit(self):
+        """限制历史记录数量"""
+        monitor = QualityMonitor()
+        data = [{"instruction": "test"}]
+        monitor.check_quality(data)
+        monitor.check_quality(data)
+        history = monitor.get_history(limit=1)
+        assert len(history) == 1
+
+    def test_snapshot_to_dict(self, sample_dataset):
+        """Snapshot.to_dict 完整性"""
+        monitor = QualityMonitor()
+        snapshot = monitor.check_quality(sample_dataset)
+        d = snapshot.to_dict()
+        assert "snapshot_id" in d
+        assert "metrics" in d
+        assert "alerts" in d
+        assert "timestamp" in d
