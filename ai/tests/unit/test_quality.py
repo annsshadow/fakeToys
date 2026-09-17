@@ -261,3 +261,125 @@ class TestComputeTextsHash:
         hash2 = scorer._compute_texts_hash(texts[:100])
         
         assert hash1 == hash2
+
+
+class TestModelPaths:
+    """模型路径覆盖率测试（mock sentence-transformers）"""
+
+    def test_calculate_semantic_similarity_with_model(self):
+        """有模型时应使用 embedding 计算语义相似度"""
+        scorer = QualityScorer()
+        # 构造一个假模型，返回固定 embedding
+        class FakeModel:
+            def encode(self, texts, **kwargs):
+                import numpy as np
+                # 相同文本返回相同 embedding
+                return np.array([[1.0, 0.0, 0.0]] * len(texts)) if texts[0] == texts[1] else np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        
+        scorer._model = FakeModel()
+        sim = scorer._calculate_semantic_similarity("hello", "hello")
+        assert sim == pytest.approx(1.0)
+        
+        sim_diff = scorer._calculate_semantic_similarity("hello", "world")
+        assert sim_diff == pytest.approx(0.0)
+
+    def test_calculate_relevance_with_cross_encoder(self):
+        """有 cross_encoder 时应使用其预测结果"""
+        scorer = QualityScorer()
+        
+        class FakeCrossEncoder:
+            def predict(self, pairs):
+                return 0.8
+        
+        scorer._cross_encoder = FakeCrossEncoder()
+        score = scorer._calculate_relevance("question", "answer")
+        # 归一化: (0.8 + 1) / 2 = 0.9
+        assert score == pytest.approx(0.9)
+
+    def test_calculate_diversity_with_model(self):
+        """有模型时应使用 embedding 计算多样性"""
+        scorer = QualityScorer(diversity_sample_size=5)
+        import numpy as np
+        
+        class FakeModel:
+            def encode(self, texts, **kwargs):
+                # 所有文本返回相同方向的 embedding
+                return np.array([[1.0, 0.0, 0.0]] * len(texts))
+        
+        scorer._model = FakeModel()
+        diversity = scorer._calculate_diversity("text1", ["existing1", "existing2"])
+        # 与已有文本完全相同 → max_sim=1 → diversity=0
+        assert diversity == pytest.approx(0.0)
+
+    def test_calculate_diversity_with_model_different_texts(self):
+        """有模型时，不同文本应有较高多样性"""
+        scorer = QualityScorer()
+        import numpy as np
+        
+        class FakeModel:
+            def encode(self, texts, **kwargs):
+                # 根据文本内容生成不同的 embedding
+                result = []
+                for t in texts:
+                    if "existing" in t:
+                        result.append([0.0, 1.0, 0.0])
+                    else:
+                        result.append([1.0, 0.0, 0.0])
+                return np.array(result)
+        
+        scorer._model = FakeModel()
+        scorer._existing_texts_hash = None
+        diversity = scorer._calculate_diversity("new_text", ["existing1"])
+        assert diversity == pytest.approx(1.0)
+
+    def test_calculate_diversity_empty_existing_embeddings(self):
+        """空缓存 embedding 应返回 1.0"""
+        scorer = QualityScorer()
+        import numpy as np
+        
+        class FakeModel:
+            def encode(self, texts, **kwargs):
+                return np.array([[1.0, 0.0, 0.0]] * len(texts))
+        
+        scorer._model = FakeModel()
+        # 预设缓存使 hash 匹配且 embeddings 为空
+        scorer._existing_embeddings = []
+        scorer._existing_texts = ["existing"]
+        scorer._existing_texts_hash = scorer._compute_texts_hash(["existing"])
+        diversity = scorer._calculate_diversity("text1", ["existing"])
+        assert diversity == pytest.approx(1.0)
+
+    def test_batch_score_with_model(self):
+        """有模型时 batch_score 应使用模型计算"""
+        scorer = QualityScorer(threshold=0.0)
+        import numpy as np
+        
+        class FakeModel:
+            def encode(self, texts, **kwargs):
+                return np.array([[1.0, 0.0, 0.0]] * len(texts))
+        
+        scorer._model = FakeModel()
+        items = [
+            {"original": "问题1", "generated": "问题1", "output": "回答1"},
+            {"original": "问题2", "generated": "问题2", "output": "回答2"},
+        ]
+        scores = scorer.batch_score(items)
+        assert len(scores) == 2
+        for s in scores:
+            assert 0.0 <= s.semantic_similarity <= 1.0
+
+    def test_diversity_with_existing_generated(self):
+        """batch_score 中 existing_generated 参数应被使用"""
+        scorer = QualityScorer(threshold=0.0)
+        import numpy as np
+        
+        class FakeModel:
+            def encode(self, texts, **kwargs):
+                return np.array([[1.0, 0.0, 0.0]] * len(texts))
+        
+        scorer._model = FakeModel()
+        items = [
+            {"original": "问题1", "generated": "问题1", "output": "回答1"},
+        ]
+        scores = scorer.batch_score(items, existing_generated=["问题1"])
+        assert len(scores) == 1
