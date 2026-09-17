@@ -164,3 +164,52 @@ class TestConvenienceFunctions:
         monitor = create_monitor()
         
         assert isinstance(monitor, QualityMonitor)
+
+
+class TestQualityMonitorExtended:
+    """QualityMonitor 扩展测试"""
+
+    def test_check_empty_dataset(self):
+        """检查空数据集"""
+        monitor = QualityMonitor()
+        snapshot = monitor.check_quality([])
+        assert snapshot is not None
+
+    def test_history_empty(self):
+        """空历史记录"""
+        monitor = QualityMonitor()
+        history = monitor.get_history()
+        assert history == []
+
+    def test_trend_empty(self):
+        """空趋势"""
+        monitor = QualityMonitor()
+        trend = monitor.get_trend("completeness")
+        assert trend == []
+
+    def test_summary_empty(self):
+        """空摘要"""
+        monitor = QualityMonitor()
+        summary = monitor.get_summary()
+        assert summary["status"] == "no_data"
+
+    def test_quality_threshold_to_dict(self):
+        """QualityThreshold.to_dict 完整性"""
+        threshold = QualityThreshold(
+            metric_name="test", min_value=0.0,
+            max_value=1.0, alert_below=0.3
+        )
+        d = threshold.to_dict()
+        assert d["min_value"] == 0.0
+        assert d["max_value"] == 1.0
+
+    def test_quality_alert_fields(self):
+        """QualityAlert 字段检查"""
+        alert = QualityAlert(
+            alert_id="a1", metric_name="m",
+            current_value=0.5, threshold_value=0.3,
+            alert_type="below", severity="warning",
+            message="msg", timestamp="2024-01-01T00:00:00"
+        )
+        assert alert.alert_id == "a1"
+        assert alert.severity == "warning"
