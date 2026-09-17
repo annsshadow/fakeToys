@@ -56,7 +56,230 @@ class TestSelectSamples:
 
         assert len(selected) == 2
 
-    def test_batch_size_capped_by_data(self, candidates):
+    def test_empty_data_returns_empty(self, candidates):
+        """空候选列表应返回空而不是抛异常"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        assert loop.select_samples([]) == []
+
+    def test_invalid_strategy_rejected(self, candidates):
+        """select_samples 传未知策略应立即报错"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        with pytest.raises(ValueError, match="不支持"):
+            loop.select_samples(candidates, strategy="magic")
+
+    def test_selected_items_carry_score_and_index(self, candidates):
+        """选中样本应附带 _al_score 与 _al_index，便于追溯"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.7)
+        selected = loop.select_samples(candidates)
+        for item in selected:
+            assert "_al_score" in item
+            assert "_al_index" in item
+
+    def test_selected_items_are_copies(self, candidates):
+        """选择不得修改调用方传入的原始数据"""
+        loop = ActiveLearningLoop(batch_size=1, score_fn=lambda item: 0.5)
+        before = dict(candidates[0])
+        loop.select_samples(candidates)
+        assert candidates[0] == before
+
+
+class TestEvaluatePerformance:
+    """性能评估"""
+
+    def test_empty_loop_report(self):
+        """无数据时性能报告仅含基础字段"""
+        loop = ActiveLearningLoop(score_fn=lambda item: 0.5)
+        report = loop.evaluate_performance()
+        assert report["iteration"] == 0
+        assert report["labeled_count"] == 0
+        assert "avg_selection_score" not in report
+
+    def test_labeled_scores_reported(self):
+        """有标注数据时应统计选择分数的均值/极值"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        items = [{"instruction": f"q{i}"} for i in range(3)]
+        loop.update_model(items)
+        for item in loop._labeled:
+            item["_al_score"] = 0.5
+        report = loop.evaluate_performance()
+        assert report["avg_selection_score"] == 0.5
+        assert report["max_selection_score"] == 0.5
+        assert report["min_selection_score"] == 0.5
+
+    def test_candidate_ratio_reported(self):
+        """候选数据存在时应计算标注占比"""
+        loop = ActiveLearningLoop(batch_size=1, score_fn=lambda item: 0.5)
+        data = [{"instruction": "q1"}]
+        loop.update_model([{"instruction": "labeled", "_al_score": 0.5}])
+        report = loop.evaluate_performance(data)
+        assert report["candidate_count"] == 1
+        assert report["labeled_ratio"] == pytest.approx(1.0)
+
+    def test_history_stats_in_report(self, candidates):
+        """有迭代历史时应统计平均批量大小"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        loop.run(candidates, iterations=2)
+        report = loop.evaluate_performance()
+        assert report["iterations"] == 2
+        assert report["avg_batch_size"] == pytest.approx(2.0)
+
+
+class TestRunLoop:
+    """循环执行"""
+
+    def test_multiple_iterations_reduce_remaining(self, candidates):
+        """多轮运行后剩余候选应递减直至耗尽"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        report = loop.run(candidates, iterations=3)
+        assert report["total_selected"] == 5
+        assert report["remaining_count"] == 0
+        assert report["iterations"] == 3
+
+    def test_indices_map_back_to_original_data(self, candidates):
+        """第二轮选出的 _al_index 必须指向原始数据的下标"""
+        loop = ActiveLearningLoop(batch_size=2, score_fn=lambda item: 0.5)
+        report = loop.run(candidates, iterations=2)
+        selected_indices = [
+            item["_al_index"]
+            for batch in report["batches"]
+            for item in batch
+        ]
+        assert selected_indices == sorted(selected_indices)
+        assert len(set(selected_indices)) == len(selected_indices)
+        for index in selected_indices:
+            assert candidates[index]["instruction"] in [
+                item["instruction"] for batch in report["batches"] for item in batch
+            ]
+
+    def test_zero_iterations_rejected(self, candidates):
+        """iterations=0 必须报错"""
+        loop = ActiveLearningLoop(batch_size=1, score_fn=lambda item: 0.5)
+        with pytest.raises(ValueError, match="iterations"):
+            loop.run(candidates, iterations=0)
+
+    def test_random_strategy_is_reproducible(self, candidates):
+        """随机策略在相同种子下必须可复现"""
+        loop_a = ActiveLearningLoop(
+            batch_size=2, strategy="random", score_fn=lambda item: 0.5, random_state=42
+        )
+        loop_b = ActiveLearningLoop(
+            batch_size=2, strategy="random", score_fn=lambda item: 0.5, random_state=42
+        )
+        report_a = loop_a.run(candidates, iterations=1)
+        report_b = loop_b.run(candidates, iterations=1)
+        assert [i["_al_index"] for i in report_a["batches"][0]] == \
+               [i["_al_index"] for i in report_b["batches"][0]]
+
+    def test_diversity_strategy_prefers_dissimilar(self, candidates):
+        """多样性策略应优先选择彼此差异大的样本"""
+        data = [
+            {"instruction": "如何申请入住安居乐寓？"},
+            {"instruction": "如何申请入住安居乐寓呢？"},
+            {"instruction": "押金什么时候退还？"},
+        ]
+        loop = ActiveLearningLoop(
+            batch_size=2, strategy="diversity", score_fn=lambda item: 0.5
+        )
+        selected = loop.select_samples(data)
+        instructions = [item["instruction"] for item in selected]
+        # 两条相似问题不应同时被选中
+        assert not all("申请入住安居乐寓" in i for i in instructions)
+
+
+class TestUpdateModel:
+    """标注更新"""
+
+    def test_update_increments_iteration(self):
+        loop = ActiveLearningLoop(score_fn=lambda item: 0.5)
+        assert loop._iteration == 0
+        loop.update_model([{"instruction": "a"}])
+        assert loop._iteration == 1
+        assert len(loop._labeled) == 1
+
+    def test_update_with_empty_data_only_increments(self):
+        loop = ActiveLearningLoop(score_fn=lambda item: 0.5)
+        loop.update_model([])
+        assert loop._iteration == 1
+        assert len(loop._labeled) == 0
+
+
+class TestIterationRecord:
+    """迭代记录"""
+
+    def test_to_dict_fields(self):
+        record = IterationRecord(
+            iteration=1, strategy="uncertainty",
+            selected_count=2, selected_indices=[0, 1],
+            performance={"avg": 0.5}
+        )
+        d = record.to_dict()
+        assert d["iteration"] == 1
+        assert d["selected_indices"] == [0, 1]
+        assert d["performance"] == {"avg": 0.5}
+
+    def test_default_fields(self):
+        record = IterationRecord(iteration=1, strategy="random", selected_count=0)
+        assert record.selected_indices == []
+        assert record.performance == {}
+
+
+class TestUncertaintyScores:
+    """不确定性打分"""
+
+    def test_score_near_threshold_is_higher(self):
+        loop = ActiveLearningLoop(threshold=0.6, score_fn=lambda item: 0.6)
+        far = ActiveLearningLoop(threshold=0.6, score_fn=lambda item: 0.1)
+        items = [{"instruction": "q"}]
+        assert loop._uncertainty_scores(items)[0] == pytest.approx(1.0)
+        assert far._uncertainty_scores(items)[0] == pytest.approx(0.5)
+
+    def test_scores_clamped_to_unit_range(self):
+        loop = ActiveLearningLoop(threshold=0.6, score_fn=lambda item: 0.9)
+        result = loop._uncertainty_scores([{"instruction": "q"}])
+        assert 0.0 <= result[0] <= 1.0
+
+
+class TestHybridScores:
+    """混合策略打分"""
+
+    def test_hybrid_averages_uncertainty_and_diversity(self):
+        items = [{"instruction": f"不同的问题{i}啊哈"} for i in range(3)]
+        loop = ActiveLearningLoop(batch_size=3, score_fn=lambda item: 0.5)
+        hybrid = loop._compute_scores(items, "hybrid")
+        uncertainty = loop._uncertainty_scores(items)
+        diversity = loop._diversity_scores(items)
+        for i in range(len(items)):
+            assert hybrid[i] == pytest.approx((uncertainty[i] + diversity[i]) / 2.0)
+
+    def test_diversity_scores_empty(self):
+        loop = ActiveLearningLoop(score_fn=lambda item: 0.5)
+        assert loop._diversity_scores([]) == []
+
+
+class TestScoreFn:
+    """自定义打分函数"""
+
+    def test_score_fn_takes_priority(self):
+        loop = ActiveLearningLoop(score_fn=lambda item: float(item["value"]))
+        items = [
+            {"instruction": "a", "value": 0.1},
+            {"instruction": "b", "value": 0.9},
+        ]
+        selected = loop.select_samples(items, strategy="uncertainty")
+        # 越接近阈值 0.6 的 uncertainty 越高；0.9 距 0.3，0.1 距 0.5 -> 0.9 分更高
+        assert selected[0]["instruction"] == "b"
+
+    def test_default_scorer_lazy_creation(self):
+        loop = ActiveLearningLoop()
+        assert loop._get_scorer() is not None
+        # 二次获取应复用同一实例
+        assert loop._get_scorer() is loop._scorer
+
+
+class TestSelectSamplesEdge:
+    """选择边界补充"""
+
+    def test_batch_size_exceeds_data_capped(self, candidates):
         """batch_size 超过数据量时应自动收敛"""
         loop = ActiveLearningLoop(batch_size=100, score_fn=lambda item: 0.5)
         assert len(loop.select_samples(candidates)) == len(candidates)
