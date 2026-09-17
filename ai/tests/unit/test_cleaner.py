@@ -218,3 +218,41 @@ class TestCleaningResult:
         assert d["removed_count"] == 2
         assert d["modified_count"] == 1
         assert len(d["rules_applied"]) == 2
+
+    def test_to_dict_empty_result(self):
+        """空结果字典"""
+        result = CleaningResult(
+            original_count=0, cleaned_count=0, removed_count=0,
+            modified_count=0, rules_applied=[]
+        )
+        d = result.to_dict()
+        assert d["original_count"] == 0
+        assert d["cleaned_count"] == 0
+
+
+class TestCleanerExtended:
+    """数据清洗扩展测试"""
+
+    def test_text_normalizer_empty_string(self):
+        """空字符串归一化"""
+        normalizer = TextNormalizer()
+        result = normalizer.normalize("")
+        assert result == ""
+
+    def test_text_normalizer_whitespace_only(self):
+        """仅空白字符归一化"""
+        normalizer = TextNormalizer()
+        result = normalizer.normalize("   \t\n  ")
+        assert result == ""
+
+    def test_extract_keywords_empty(self):
+        """空文本提取关键词"""
+        result = extract_keywords("")
+        assert result == []
+
+    def test_clean_empty_dataset(self):
+        """清洗空数据集"""
+        cleaner = DatasetCleaner()
+        cleaned, result = cleaner.clean([])
+        assert cleaned == []
+        assert result.original_count == 0
