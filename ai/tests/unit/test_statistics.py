@@ -153,3 +153,174 @@ class TestConvenienceFunctions:
         assert isinstance(summary, dict)
         assert "field_name" in summary
         assert summary["field_name"] == "instruction"
+
+
+class TestGetAllFields:
+    """字段自动发现测试"""
+
+    def test_mixed_fields(self):
+        """不同字段应被自动发现"""
+        items = [
+            {"instruction": "q1", "output": "a1"},
+            {"question": "q2", "answer": "a2"},
+        ]
+        calculator = DatasetStatisticsCalculator(items)
+        fields = calculator._get_all_fields()
+        
+        assert "instruction" in fields
+        assert "output" in fields
+        assert "question" in fields
+        assert "answer" in fields
+
+    def test_empty_items(self):
+        """空数据集应返回空字段列表"""
+        calculator = DatasetStatisticsCalculator([])
+        fields = calculator._get_all_fields()
+        assert fields == []
+
+
+class TestContentStatisticsEdgeCases:
+    """内容统计边界测试"""
+
+    def test_empty_data(self):
+        """空数据集内容统计应为空"""
+        calculator = DatasetStatisticsCalculator([])
+        stats = calculator._calculate_content_statistics()
+        assert stats == {}
+
+    def test_empty_string_values(self):
+        """空字符串值不应计入统计"""
+        items = [{"instruction": "", "output": ""}]
+        calculator = DatasetStatisticsCalculator(items)
+        stats = calculator._calculate_content_statistics()
+        assert stats == {}
+
+
+class TestQualityMetricsEdgeCases:
+    """质量指标边界测试"""
+
+    def test_empty_data(self):
+        """空数据集质量指标应为空"""
+        calculator = DatasetStatisticsCalculator([])
+        metrics = calculator._calculate_quality_metrics()
+        assert metrics == {}
+
+    def test_no_instructions(self):
+        """无 instruction 数据时多样性为 0"""
+        items = [{"output": "answer1"}, {"output": "answer2"}]
+        calculator = DatasetStatisticsCalculator(items)
+        metrics = calculator._calculate_quality_metrics()
+        assert metrics["diversity"] == 0
+
+    def test_identical_instructions(self):
+        """相同 instruction 时多样性为 1/总数"""
+        items = [
+            {"instruction": "same", "output": "a1"},
+            {"instruction": "same", "output": "a2"},
+        ]
+        calculator = DatasetStatisticsCalculator(items)
+        metrics = calculator._calculate_quality_metrics()
+        assert metrics["diversity"] == 0.5
+
+    def test_instruction_equals_output(self):
+        """instruction 等于 output 时一致性为 0"""
+        items = [{"instruction": "same", "output": "same"}]
+        calculator = DatasetStatisticsCalculator(items)
+        metrics = calculator._calculate_quality_metrics()
+        assert metrics["consistency"] == 0.0
+
+
+class TestFieldStatisticsExtended:
+    """FieldStatistics 扩展测试"""
+
+    def test_median_even_count(self):
+        """偶数个数据的中位数"""
+        items = [
+            {"field": "aa"},
+            {"field": "aaaa"},
+            {"field": "a"},
+            {"field": "aaa"},
+        ]
+        calculator = DatasetStatisticsCalculator(items)
+        stats = calculator._calculate_field_statistics("field")
+        
+        # lengths: 1, 2, 3, 4 → median = (2+3)/2 = 2.5
+        assert stats.median_length == 2.5
+
+    def test_median_odd_count(self):
+        """奇数个数据的中位数"""
+        items = [
+            {"field": "aa"},
+            {"field": "aaaa"},
+            {"field": "a"},
+        ]
+        calculator = DatasetStatisticsCalculator(items)
+        stats = calculator._calculate_field_statistics("field")
+        
+        # lengths: 1, 2, 4 → median = 2
+        assert stats.median_length == 2
+
+    def test_non_string_values(self):
+        """非字符串值应转换为字符串计算长度"""
+        items = [{"field": 12345}]
+        calculator = DatasetStatisticsCalculator(items)
+        stats = calculator._calculate_field_statistics("field")
+        
+        assert stats.avg_length == 5
+
+    def test_partial_empty_values(self):
+        """部分空值的字段统计"""
+        items = [
+            {"field": "hello"},
+            {"field": ""},
+            {"field": "world"},
+        ]
+        calculator = DatasetStatisticsCalculator(items)
+        stats = calculator._calculate_field_statistics("field")
+        
+        assert stats.filled_count == 2
+        assert stats.empty_count == 1
+
+
+class TestGenerateSummary:
+    """摘要生成测试"""
+
+    def test_summary_contains_key_info(self):
+        """摘要应包含关键信息"""
+        items = [
+            {"instruction": "question", "output": "answer"},
+        ]
+        calculator = DatasetStatisticsCalculator(items, "my_dataset")
+        stats = calculator.calculate()
+        
+        assert "my_dataset" in stats.summary
+        assert "1 条数据" in stats.summary
+
+    def test_summary_with_quality_metrics(self):
+        """摘要应包含质量指标"""
+        items = [{"instruction": "q", "output": "a"}]
+        calculator = DatasetStatisticsCalculator(items, "test")
+        stats = calculator.calculate()
+        
+        assert "质量指标" in stats.summary
+
+    def test_summary_empty_dataset(self):
+        """空数据集摘要"""
+        calculator = DatasetStatisticsCalculator([], "empty")
+        stats = calculator.calculate()
+        
+        assert "0 条数据" in stats.summary
+
+
+class TestFieldStatisticsToDict:
+    """FieldStatistics.to_dict 扩展测试"""
+
+    def test_fill_rate_zero_total(self):
+        """total_count 为 0 时 fill_rate 应为 0"""
+        stats = FieldStatistics(
+            field_name="test", total_count=0, filled_count=0,
+            empty_count=0, avg_length=0, min_length=0, max_length=0,
+            median_length=0, std_deviation=0, unique_count=0
+        )
+        d = stats.to_dict()
+        assert d["fill_rate"] == 0
