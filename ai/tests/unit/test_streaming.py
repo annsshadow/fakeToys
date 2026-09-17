@@ -405,3 +405,64 @@ class TestCreateStreamProcessor:
         
         # 应该跳过返回None的项
         assert len(result) == 2
+
+
+class TestStreamingExtended:
+    """流式处理扩展测试"""
+
+    def test_read_chunks_empty_file(self, tmp_path):
+        """空文件分块读取"""
+        file_path = tmp_path / "empty.json"
+        file_path.write_text("[]", encoding="utf-8")
+        reader = StreamReader(str(file_path), chunk_size=10)
+        chunks = list(reader.read_chunks())
+        assert chunks == []
+
+    def test_read_chunks_single_item(self, tmp_path):
+        """单条数据分块读取"""
+        file_path = tmp_path / "single.json"
+        file_path.write_text('[{"instruction": "q"}]', encoding="utf-8")
+        reader = StreamReader(str(file_path), chunk_size=10)
+        chunks = list(reader.read_chunks())
+        assert len(chunks) == 1
+        assert chunks[0] == [{"instruction": "q"}]
+
+    def test_write_json_multiple_chunks(self, tmp_path):
+        """多次写入 JSON 格式"""
+        output_path = tmp_path / "output.json"
+        with StreamWriter(str(output_path), format='json') as writer:
+            writer.write_chunk([{"instruction": "q1"}])
+            writer.write_chunk([{"instruction": "q2"}])
+        with open(output_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert len(data) == 2
+
+    def test_stream_processor_empty_input(self):
+        """空输入流式处理"""
+        def process_item(item):
+            return item
+        stream_process = create_stream_processor(process_item)
+        result = stream_process([])
+        assert result == []
+
+    def test_stream_processor_all_fail(self):
+        """全部处理失败"""
+        def process_item(item):
+            raise RuntimeError("always fail")
+        stream_process = create_stream_processor(process_item)
+        result = stream_process([{"instruction": "q1"}, {"instruction": "q2"}])
+        assert result == []
+
+    def test_stream_config_defaults(self):
+        """StreamConfig 默认值"""
+        config = StreamConfig()
+        assert config.chunk_size > 0
+        assert config.buffer_size > 0
+        assert config.max_memory_mb > 0
+
+    def test_read_all_jsonl(self, temp_jsonl_file, sample_jsonl_data):
+        """读取全部 JSONL 数据"""
+        reader = StreamReader(temp_jsonl_file)
+        chunks = list(reader.read_chunks())
+        total = sum(len(chunk) for chunk in chunks)
+        assert total == len(sample_jsonl_data)
