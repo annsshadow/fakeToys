@@ -147,6 +147,48 @@ class TestImageProcessor:
         assert len(results) == 3
         assert [r.width for r in results] == [1, 2, 3]
 
+    def test_parses_jpeg_dimensions(self, tmp_path):
+        """JPEG 文件头尺寸解析（标准库路径，绕过 Pillow）"""
+        # 构造最小 SOF0 段：FF C0 00 0B 08 0030 0064 03 ...
+        sof0 = b"\xff\xc0\x00\x0b\x08" + struct.pack(">HH", 0x0030, 0x0064) + b"\x03\x01\x11\x00"
+        file_path = tmp_path / "sample.jpg"
+        file_path.write_bytes(b"\xff\xd8" + sof0 + b"\x00" * 20 + b"\xff\xd9")
+
+        processor = ImageProcessor()
+        info = processor._parse_header(file_path)
+        assert info["width"] == 0x64
+        assert info["height"] == 0x030
+
+    def test_header_parse_unsupported_format(self, tmp_path):
+        """webp 无文件头解析器时应报错"""
+        file_path = tmp_path / "a.webp"
+        file_path.write_bytes(b"RIFF\x00\x00\x00\x00WEBPVP8 ")
+        with pytest.raises(ValueError, match="不支持通过文件头解析"):
+            ImageProcessor()._parse_header(file_path)
+
+    def test_parse_header_too_small_file(self, tmp_path):
+        """文件过小（<26 字节）时报错"""
+        file_path = tmp_path / "tiny.png"
+        file_path.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00")
+        with pytest.raises(ValueError, match="文件过小"):
+            ImageProcessor()._parse_header(file_path)
+
+    def test_custom_supported_extensions(self, tmp_path):
+        """自定义扩展名列表应生效"""
+        processor = ImageProcessor(supported_extensions=[".txt"])
+        assert processor.is_supported("a.txt")
+        assert not processor.is_supported("a.png")
+
+    def test_image_info_to_dict_fields(self):
+        """ImageInfo.to_dict 应包含所有字段"""
+        from augmentor.data.image import ImageInfo
+        info = ImageInfo(path="p", format="PNG", width=1, height=2,
+                          mode="RGB", size_bytes=10, valid=True,
+                          metadata={"k": "v"})
+        d = info.to_dict()
+        assert d["width"] == 1
+        assert d["metadata"] == {"k": "v"}
+
 
 class TestAudioProcessor:
     """音频处理"""
