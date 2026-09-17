@@ -249,3 +249,77 @@ class TestSaveAndDelete:
         manager.update_progress(0, True)
 
         assert manager.list_checkpoints() == ["task-a"]
+
+
+class TestCheckpointExtended:
+    """CheckpointManager 扩展测试"""
+
+    def test_checkpoint_data_fields(self):
+        """CheckpointData 应包含所有必要字段"""
+        from datetime import datetime
+        data = CheckpointData(
+            task_id="test",
+            total_items=10,
+            processed_items=5,
+            failed_items=1,
+            completed_indices=[0, 1, 2, 3, 4],
+            failed_indices=[5],
+            quality_scores={0: 0.9, 1: 0.8},
+            start_time=datetime.now().isoformat(),
+            last_update_time=datetime.now().isoformat()
+        )
+        assert data.task_id == "test"
+        assert data.total_items == 10
+        assert len(data.completed_indices) == 5
+
+    def test_update_progress_multiple_success(self, tmp_path):
+        """多次成功更新"""
+        manager = make_manager(tmp_path)
+        manager.create_checkpoint("task-1", 10)
+        for i in range(5):
+            manager.update_progress(i, True, quality_score=0.8)
+        assert manager._current_checkpoint.processed_items == 5
+
+    def test_update_progress_mixed_success_failure(self, tmp_path):
+        """混合成功和失败更新"""
+        manager = make_manager(tmp_path)
+        manager.create_checkpoint("task-1", 10)
+        manager.update_progress(0, True)
+        manager.update_progress(1, False)
+        manager.update_progress(2, True)
+        assert manager._current_checkpoint.processed_items == 2
+        assert manager._current_checkpoint.failed_items == 1
+
+    def test_get_remaining_indices_all_completed(self, tmp_path):
+        """全部完成后剩余索引为空"""
+        manager = make_manager(tmp_path)
+        manager.create_checkpoint("task-1", 3)
+        for i in range(3):
+            manager.update_progress(i, True)
+        manager.save_checkpoint()
+        assert manager.get_remaining_indices() == []
+
+    def test_delete_checkpoint_nonexistent(self, tmp_path):
+        """删除不存在的 checkpoint 不应报错"""
+        manager = make_manager(tmp_path)
+        manager.delete_checkpoint("nonexistent")
+        assert manager.list_checkpoints() == []
+
+    def test_format_time_various(self, tmp_path):
+        """各种时间格式"""
+        manager = make_manager(tmp_path)
+        assert manager._format_time(0) == "0.0秒"
+        assert manager._format_time(0.5) == "0.5秒"
+        assert manager._format_time(60) == "1.0分钟"
+        assert manager._format_time(3600) == "1.0小时"
+
+    def test_progress_with_failed_items(self, tmp_path):
+        """有失败项时的进度"""
+        manager = make_manager(tmp_path)
+        manager.create_checkpoint("task-1", 4)
+        manager.update_progress(0, True)
+        manager.update_progress(1, False)
+        manager.update_progress(2, True)
+        progress = manager.get_progress()
+        assert progress["failed_items"] == 1
+        assert progress["processed_items"] == 2
