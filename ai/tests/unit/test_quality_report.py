@@ -54,6 +54,72 @@ class TestQualityReporter:
         
         assert report.total_items == 0
         assert len(report.metrics) > 0
+
+    def test_diversity_metric_duplicated_items(self):
+        """全部重复问题应拉低多样性指标"""
+        reporter = QualityReporter()
+        items = [{"instruction": "同一个问题"}] * 4
+        metric = reporter._calculate_diversity(items)
+        assert metric.value == pytest.approx(0.25)
+        assert metric.name == "多样性"
+
+    def test_diversity_metric_no_instructions(self):
+        """无有效问题时应返回未通过"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_diversity([{"output": "x"}])
+        assert metric.passed is False
+        assert "没有有效问题" in metric.description
+
+    def test_diversity_metric_empty(self):
+        """空数据多样性应返回 0"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_diversity([])
+        assert metric.value == 0
+        assert metric.passed is False
+
+    def test_length_distribution_metric(self, sample_dataset):
+        """长度分布指标应计算标准差分数"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_length_distribution(sample_dataset)
+        assert metric.name == "长度分布"
+        assert 0.0 <= metric.value <= 1.0
+
+    def test_length_distribution_metric_uniform_lengths(self):
+        """长度完全一致时多样性分数应为 1"""
+        reporter = QualityReporter()
+        items = [{"instruction": "固定长度文本"}] * 3
+        metric = reporter._calculate_length_distribution(items)
+        assert metric.value == pytest.approx(1.0)
+        assert metric.passed is True
+
+    def test_duplication_rate_metric_duplicates(self):
+        """有重复时重复率指标应反映唯一比例"""
+        reporter = QualityReporter()
+        items = [
+            {"instruction": "问题一"},
+            {"instruction": "问题一"},
+            {"instruction": "问题二"},
+        ]
+        metric = reporter._calculate_duplication_rate(items)
+        assert metric.value == pytest.approx(2 / 3)
+
+    def test_duplication_rate_metric_empty(self):
+        """空数据重复率默认通过"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_duplication_rate([])
+        assert metric.value == 1.0
+        assert metric.passed is True
+
+    def test_quality_metric_to_dict(self):
+        """QualityMetric.to_dict 应包含全部字段"""
+        metric = QualityMetric(
+            name="完整性", value=0.8, threshold=0.7, passed=True,
+            description="ok", recommendation="保持"
+        )
+        d = metric.to_dict()
+        assert d["name"] == "完整性"
+        assert d["value"] == 0.8
+        assert d["passed"] is True
     
     def test_calculate_completeness(self, sample_dataset):
         """测试计算完整性指标"""
