@@ -398,6 +398,51 @@ class TestExportEnhancedExtended:
     def test_export_single_item(self, tmp_path):
         """导出单条数据"""
         exporter = EnhancedExporter()
+        output_path = tmp_path / "single.json"
+        result = exporter.export([{"instruction": "q1", "output": "a1"}], str(output_path))
+        assert output_path.exists()
+        assert result["item_count"] == 1
+
+    def test_export_jsonl_format(self, sample_dataset, tmp_path):
+        """导出 JSONL 格式"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "output.jsonl"
+        options = ExportOptions(format=ExportFormat.JSONL)
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_export_csv_format(self, sample_dataset, tmp_path):
+        """导出 CSV 格式"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "output.csv"
+        options = ExportOptions(format=ExportFormat.CSV)
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_export_alpaca_format(self, sample_dataset, tmp_path):
+        """导出 Alpaca 格式"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "output_alpaca.json"
+        options = ExportOptions(format=ExportFormat.ALPACA)
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_export_sharegpt_format(self, sample_dataset, tmp_path):
+        """导出 ShareGPT 格式"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "output_sharegpt.json"
+        options = ExportOptions(format=ExportFormat.SHAREGPT)
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+
+    def test_export_with_both_fields_options(self, sample_dataset, tmp_path):
+        """同时指定 include 和 exclude"""
+        exporter = EnhancedExporter()
+        output_path = tmp_path / "both.json"
+        options = ExportOptions(include_fields=["instruction"], exclude_fields=["input"])
+        result = exporter.export(sample_dataset, str(output_path), options)
+        assert output_path.exists()
+        exporter = EnhancedExporter()
         data = [{"instruction": "q1", "input": "", "output": "a1"}]
         output_path = tmp_path / "single.json"
         result = exporter.export(data, str(output_path))
