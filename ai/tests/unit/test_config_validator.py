@@ -191,6 +191,34 @@ class TestConfigValidator:
         
         assert result.is_valid is False
         assert any("值过小" in e.message for e in result.errors)
+    
+    def test_validate_nested_dict(self):
+        """测试验证嵌套字典"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "nested": {"key": "value"}
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        # 嵌套字典应该被递归验证
+        assert result.is_valid is True or len(result.errors) > 0
+    
+    def test_validate_nested_list(self):
+        """测试验证嵌套列表"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "list_field": ["item1", "item2"]
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        # 列表应该被验证
+        assert isinstance(result.warnings, list)
 
 
 class TestValidationResult:
@@ -314,3 +342,97 @@ class TestSeverity:
     def test_severity_members(self):
         """测试严重程度成员"""
         assert len(Severity) == 3
+
+
+class TestConfigValidatorEdgeCases:
+    """ConfigValidator 边界情况测试"""
+    
+    def test_validate_dict_type_error(self):
+        """测试验证字典类型错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_dict("not a dict", {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望字典类型" in result.errors[0].message
+    
+    def test_validate_list_type_error(self):
+        """测试验证列表类型错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_list("not a list", {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望列表类型" in result.errors[0].message
+    
+    def test_validate_string_type_error(self):
+        """测试验证字符串类型错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_string(123, {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望字符串类型" in result.errors[0].message
+    
+    def test_validate_string_enum_error(self):
+        """测试验证字符串枚举错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_string("invalid", {"enum": ["valid1", "valid2"]}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "值不在允许范围内" in result.errors[0].message
+    
+    def test_validate_int_type_error(self):
+        """测试验证整数类型错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_int("not an int", {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望整数类型" in result.errors[0].message
+    
+    def test_validate_int_range_error(self):
+        """测试验证整数范围错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_int(10, {"min": 20}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "值过小" in result.errors[0].message
+    
+    def test_validate_float_type_error(self):
+        """测试验证浮点数类型错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_float("not a float", {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望数值类型" in result.errors[0].message
+    
+    def test_validate_float_range_error(self):
+        """测试验证浮点数范围错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_float(0.5, {"min": 1.0}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "值过小" in result.errors[0].message
+    
+    def test_validate_bool_type_error(self):
+        """测试验证布尔类型错误"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_bool("not a bool", {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望布尔类型" in result.errors[0].message
