@@ -277,6 +277,31 @@ def build_parser() -> argparse.ArgumentParser:
     version_parser.add_argument("--description", type=str, default="", help="版本描述")
     version_parser.add_argument("--versions-dir", type=str, default=".versions", help="版本目录")
 
+    # 自动化测试命令
+    auto_test_parser = subparsers.add_parser("auto-test", help="自动化测试")
+    auto_test_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    auto_test_parser.add_argument("--output", type=str, help="输出报告路径")
+    auto_test_parser.add_argument("--suite", type=str, help="测试套件名称")
+
+    # 质量监控命令
+    monitor_parser = subparsers.add_parser("monitor", help="质量监控")
+    monitor_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    monitor_parser.add_argument("--output", type=str, help="输出报告路径")
+
+    # 依赖管理命令
+    dependency_parser = subparsers.add_parser("dependency", help="依赖管理")
+    dependency_parser.add_argument("--action", type=str, required=True, choices=["register", "list", "graph", "validate"], help="操作类型")
+    dependency_parser.add_argument("--input", type=str, help="输入文件路径")
+    dependency_parser.add_argument("--name", type=str, help="数据集名称")
+    dependency_parser.add_argument("--output", type=str, help="输出报告路径")
+    dependency_parser.add_argument("--registry-path", type=str, default=".dependency_registry", help="注册表路径")
+
+    # 迁移命令
+    migrate_parser = subparsers.add_parser("migrate", help="数据迁移")
+    migrate_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    migrate_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    migrate_parser.add_argument("--rules", type=str, nargs="+", help="迁移规则")
+
     return parser
 
 
@@ -935,6 +960,121 @@ def main():
                 print(f"  仅在A中: {result['stats']['only_in_a_count']} 条")
                 print(f"  仅在B中: {result['stats']['only_in_b_count']} 条")
                 print(f"  共同数据: {result['stats']['in_both_count']} 条")
+
+        # ============ 自动化测试 ============
+        elif args.command == "auto-test":
+            from augmentor.auto_test import run_dataset_tests
+
+            items = _load_items(args.input)
+            suite = run_dataset_tests(items, args.suite)
+            
+            runner = DatasetTestRunner()
+            report = runner.get_test_report(suite)
+            print(report)
+            
+            if args.output:
+                import json
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(suite.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"\n测试报告已保存到 {args.output}")
+
+        # ============ 质量监控 ============
+        elif args.command == "monitor":
+            from augmentor.quality_monitor import monitor_quality
+
+            items = _load_items(args.input)
+            snapshot = monitor_quality(items)
+            
+            print(f"质量监控结果:")
+            print(f"  快照ID: {snapshot.snapshot_id}")
+            print(f"  时间: {snapshot.timestamp}")
+            print(f"  指标:")
+            for metric_name, metric_value in snapshot.metrics.items():
+                print(f"    {metric_name}: {metric_value:.2f}")
+            
+            if snapshot.alerts:
+                print(f"  告警:")
+                for alert in snapshot.alerts:
+                    print(f"    - {alert.message}")
+            
+            if args.output:
+                import json
+                output_path = Path(args.output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(snapshot.to_dict(), f, ensure_ascii=False, indent=2)
+                print(f"\n监控报告已保存到 {args.output}")
+
+        # ============ 依赖管理 ============
+        elif args.command == "dependency":
+            from augmentor.dependency import DependencyManager
+
+            manager = DependencyManager(args.registry_path)
+            
+            if args.action == "register":
+                if not args.input or not args.name:
+                    print("错误: --input 和 --name 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                items = _load_items(args.input)
+                info = manager.register_dataset(args.name, args.input, len(items))
+                print(f"数据集注册成功")
+                print(f"  ID: {info.dataset_id}")
+                print(f"  名称: {info.name}")
+                print(f"  数据量: {info.item_count} 条")
+            
+            elif args.action == "list":
+                datasets = manager.list_datasets()
+                if not datasets:
+                    print("没有注册的数据集")
+                else:
+                    print(f"找到 {len(datasets)} 个数据集:")
+                    for ds in datasets:
+                        print(f"  - {ds.dataset_id}: {ds.name} ({ds.item_count} 条)")
+            
+            elif args.action == "graph":
+                graph = manager.get_dependency_graph()
+                print(f"依赖图:")
+                print(f"  节点数: {len(graph['nodes'])}")
+                print(f"  边数: {len(graph['edges'])}")
+                
+                if args.output:
+                    import json
+                    output_path = Path(args.output)
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        json.dump(graph, f, ensure_ascii=False, indent=2)
+                    print(f"  依赖图已保存到 {args.output}")
+            
+            elif args.action == "validate":
+                issues = manager.validate_dependencies()
+                if not issues:
+                    print("依赖关系验证通过")
+                else:
+                    print(f"发现 {len(issues)} 个问题:")
+                    for issue in issues:
+                        print(f"  - {issue['message']}")
+
+        # ============ 数据迁移 ============
+        elif args.command == "migrate":
+            from augmentor.migration import migrate_file
+
+            result = migrate_file(args.input, args.output, args.rules)
+            
+            print(f"数据迁移完成")
+            print(f"  迁移ID: {result.migration_id}")
+            print(f"  总数据: {result.total_items} 条")
+            print(f"  成功迁移: {result.migrated_items} 条")
+            print(f"  失败: {result.failed_items} 条")
+            
+            if result.rules_applied:
+                print(f"  应用规则: {', '.join(result.rules_applied)}")
+            
+            if result.errors:
+                print(f"  错误详情:")
+                for error in result.errors[:5]:
+                    print(f"    - 第 {error['index']} 条: {error['error']}")
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
