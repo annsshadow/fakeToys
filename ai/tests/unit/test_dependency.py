@@ -209,3 +209,65 @@ class TestDependencyExtended:
         )
         d = info.to_dict()
         assert d["tags"] == []
+
+
+class TestDependencyExtended2:
+    """DependencyManager 第二轮扩展测试（覆盖剩余分支）"""
+
+    def test_register_dataset_persists_across_instances(self, tmp_path):
+        """注册的数据集应跨实例持久化"""
+        m1 = DependencyManager(str(tmp_path / "reg"))
+        info = m1.register_dataset("ds1", "/p", 10)
+        m2 = DependencyManager(str(tmp_path / "reg"))
+        assert m2.get_dataset(info.dataset_id) is not None
+
+    def test_add_dependency_persists_across_instances(self, tmp_path):
+        """添加的依赖应跨实例持久化"""
+        m1 = DependencyManager(str(tmp_path / "reg"))
+        i1 = m1.register_dataset("a", "/a", 1)
+        i2 = m1.register_dataset("b", "/b", 1)
+        m1.add_dependency(i1.dataset_id, i2.dataset_id, "derived")
+
+        m2 = DependencyManager(str(tmp_path / "reg"))
+        deps = m2.get_dependencies(i1.dataset_id)
+        assert len(deps) == 1
+
+    def test_get_dependencies_upstream_only(self, manager):
+        """upstream 模式只返回上游依赖"""
+        i1 = manager.register_dataset("s", "/s", 1)
+        i2 = manager.register_dataset("m", "/m", 1)
+        i3 = manager.register_dataset("e", "/e", 1)
+        manager.add_dependency(i1.dataset_id, i2.dataset_id, "derived")
+        manager.add_dependency(i2.dataset_id, i3.dataset_id, "derived")
+        upstream = manager.get_dependencies(i2.dataset_id, "upstream")
+        assert len(upstream) == 1
+        assert upstream[0].source_dataset == i1.dataset_id
+
+    def test_dependency_graph_nodes_include_all_datasets(self, manager):
+        """依赖图节点应包含所有相关数据集"""
+        i1 = manager.register_dataset("x", "/x", 1)
+        i2 = manager.register_dataset("y", "/y", 1)
+        manager.add_dependency(i1.dataset_id, i2.dataset_id, "derived")
+        graph = manager.get_dependency_graph()
+        node_ids = [n["id"] for n in graph["nodes"]]
+        assert i1.dataset_id in node_ids
+        assert i2.dataset_id in node_ids
+
+    def test_validate_reports_missing_dataset(self, manager):
+        """依赖指向未注册数据集时应报问题"""
+        manager.add_dependency("ghost", "target", "derived")
+        issues = manager.validate_dependencies()
+        assert len(issues) >= 1
+
+    def test_list_datasets_empty(self, manager):
+        """无注册数据集时列表为空"""
+        assert manager.list_datasets() == []
+
+    def test_register_same_name_overwrites(self, manager):
+        """同名数据集按 name 键覆盖，列表只保留最新一条"""
+        manager.register_dataset("same", "/a", 1)
+        manager.register_dataset("same", "/b", 2)
+        datasets = manager.list_datasets()
+        same = [d for d in datasets if d.name == "same"]
+        assert len(same) == 1
+        assert same[0].item_count == 2
