@@ -12,6 +12,7 @@ import sys
 import types
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from augmentor.visualizer import DataVisualizer
@@ -291,3 +292,36 @@ class TestVisualizerExtended:
             [{"instruction": "问题", "output": "回答内容"}], text_key="output"
         )
         assert stats["avg_length"] == 4
+
+
+class TestTopicClusterWithFakeSklearn:
+    """使用假 sklearn 测试话题聚类"""
+
+    def test_generates_topic_cluster_file(self, tmp_path, fake_matplotlib, monkeypatch):
+        """话题聚类图生成"""
+        # 注入假 sklearn
+        sklearn_module = types.ModuleType("sklearn")
+        feature_extraction = types.ModuleType("sklearn.feature_extraction")
+        text_module = types.ModuleType("sklearn.feature_extraction.text")
+        text_module.TfidfVectorizer = type("TfidfVectorizer", (), {
+            "__init__": lambda self, **kw: None,
+            "fit_transform": lambda self, X: type("FakeMatrix", (), {
+                "toarray": lambda self: np.array([[1.0, 0.0], [0.0, 1.0]])
+            })()
+        })
+        manifold = types.ModuleType("sklearn.manifold")
+        manifold.TSNE = type("TSNE", (), {
+            "__init__": lambda self, **kw: None,
+            "fit_transform": lambda self, X: np.array([[0.0, 0.0], [1.0, 1.0]])
+        })
+        monkeypatch.setitem(sys.modules, "sklearn", sklearn_module)
+        monkeypatch.setitem(sys.modules, "sklearn.feature_extraction", feature_extraction)
+        monkeypatch.setitem(sys.modules, "sklearn.feature_extraction.text", text_module)
+        monkeypatch.setitem(sys.modules, "sklearn.manifold", manifold)
+
+        visualizer = DataVisualizer(output_dir=str(tmp_path))
+        path = visualizer.generate_topic_cluster(
+            [{"instruction": "租金"}, {"instruction": "押金"}]
+        )
+        assert path.endswith("topic_cluster.png")
+        assert Path(path).exists()
