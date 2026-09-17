@@ -49,6 +49,8 @@ ai/
 │   ├── indexer.py      # 数据索引
 │   ├── cache.py        # 缓存管理
 │   ├── config_validator.py  # 配置验证
+│   ├── analytics.py    # 数据分析
+│   ├── cleaner.py      # 数据清洗
 │   └── exceptions.py   # 自定义异常
 ├── web/                # Web前端 (React + Ant Design)
 ├── tests/              # 测试套件
@@ -137,6 +139,12 @@ python cli.py search --input data.json --query "租房" --method contains
 
 # 验证配置文件
 python cli.py validate-config --config config.yaml
+
+# 数据分析
+python cli.py analyze --input data.json --output analysis_report.json
+
+# 增强数据清洗
+python cli.py clean-enhanced --input data.json --output cleaned.json --rules remove_empty remove_duplicates
 ```
 
 ### 高级功能
