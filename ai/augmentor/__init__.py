@@ -50,6 +50,7 @@ from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
 from .data_pipeline import DataPipeline, StageResult
 from .aggregator import DataAggregator, AggregationResult, aggregate_datasets
+from .impact import ImpactEvaluator, AugmentationImpact, evaluate_augmentation
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -221,6 +222,9 @@ __all__ = [
     "DataAggregator",
     "AggregationResult",
     "aggregate_datasets",
+    "ImpactEvaluator",
+    "AugmentationImpact",
+    "evaluate_augmentation",
     "AugmentorError",
     "ConfigError",
     "ModelError",
