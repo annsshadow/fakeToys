@@ -296,11 +296,11 @@ class EnhancedExporter:
         belle_items = []
         for item in items:
             instruction = item.get("instruction", "")
-            output = item.get("output", "")
+            output_text = item.get("output", "")
             
             belle_item = {
                 "instruction": instruction,
-                "output": output
+                "output": output_text
             }
             belle_items.append(belle_item)
         
@@ -311,13 +311,13 @@ class EnhancedExporter:
         openai_items = []
         for item in items:
             instruction = item.get("instruction", "")
-            output = item.get("output", "")
+            output_text = item.get("output", "")
             
             messages = []
             if instruction:
                 messages.append({"role": "user", "content": instruction})
-            if output:
-                messages.append({"role": "assistant", "content": output})
+            if output_text:
+                messages.append({"role": "assistant", "content": output_text})
             
             openai_items.append({"messages": messages})
         
