@@ -159,3 +159,61 @@ class TestModelConfig:
         assert model_config.temperature == 0.99
         assert model_config.top_p == 0.95
         assert model_config.max_output_tokens == 2048
+
+
+class TestConfigExtended:
+    """AppConfig 扩展测试"""
+
+    def test_app_config_defaults(self):
+        """AppConfig 默认值"""
+        config = AppConfig()
+        assert config.default_model == "ernie"
+        assert config.augmentation.variants_per_seed == 5
+
+    def test_model_config_custom(self):
+        """ModelConfig 自定义参数"""
+        config = ModelConfig(type="openai", temperature=0.5, top_p=0.9)
+        assert config.temperature == 0.5
+        assert config.top_p == 0.9
+
+    def test_quality_config_defaults(self):
+        """QualityConfig 默认值"""
+        config = AppConfig()
+        assert config.quality.threshold == 0.6
+        assert config.quality.enabled is True
+
+    def test_dedup_config_defaults(self):
+        """DedupConfig 默认值"""
+        config = AppConfig()
+        assert config.dedup.threshold == 0.9
+
+    def test_multilingual_config_defaults(self):
+        """MultilingualConfig 默认值"""
+        config = MultilingualConfig()
+        assert config.enabled is False
+
+    def test_rag_config_defaults(self):
+        """RAGConfig 默认值"""
+        config = RAGConfig()
+        assert config.chunk_size == 512
+        assert config.chunk_overlap == 64
+
+    def test_vector_config_defaults(self):
+        """VectorConfig 默认值"""
+        config = VectorConfig()
+        assert config.backend == "faiss"
+
+    def test_benchmark_config_defaults(self):
+        """BenchmarkConfig 默认值"""
+        config = BenchmarkConfig()
+        assert isinstance(config.metrics, list)
+
+    def test_active_learning_config_defaults(self):
+        """ActiveLearningConfig 默认值"""
+        config = ActiveLearningConfig()
+        assert config.strategy == "uncertainty"
+
+    def test_framework_config_defaults(self):
+        """FrameworkConfig 默认值"""
+        config = FrameworkConfig()
+        assert isinstance(config.frameworks, list)
