@@ -244,6 +244,34 @@ class DataProfiler:
         logger.info(f"画像已保存到 {output_path}")
         return output_path
 
+    def compare_profiles(self,
+                         profile_a: Dict[str, Any],
+                         profile_b: Dict[str, Any]) -> Dict[str, Any]:
+        """对比两份画像的关键指标变化
+
+        Args:
+            profile_a: 第一份画像
+            profile_b: 第二份画像
+
+        Returns:
+            对比字典：delta 键为 profile_b - profile_a
+        """
+        keys = ("total_items", "duplicate_rate")
+        delta: Dict[str, Any] = {}
+        for key in keys:
+            value_a = float(profile_a.get(key, 0))
+            value_b = float(profile_b.get(key, 0))
+            delta[key] = round(value_b - value_a, 6)
+
+        language_a = profile_a.get("language_distribution", {})
+        language_b = profile_b.get("language_distribution", {})
+        all_langs = set(language_a) | set(language_b)
+        delta["language_delta"] = {
+            lang: language_b.get(lang, 0) - language_a.get(lang, 0)
+            for lang in sorted(all_langs)
+        }
+        return delta
+
 
 def profile_dataset(items: List[Dict],
                    output_path: Optional[str] = None) -> Dict[str, Any]:

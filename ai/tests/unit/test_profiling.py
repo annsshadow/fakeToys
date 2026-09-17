@@ -162,3 +162,34 @@ class TestExport:
         assert report["total_items"] == 5
         import os
         assert os.path.exists(path)
+
+
+class TestCompareProfiles:
+    """画像对比"""
+
+    def test_compare_reports_delta(self, sample_items):
+        profiler = DataProfiler()
+        profile_a = profiler.profile(sample_items)
+        profile_b = profiler.profile(sample_items + [
+            {"instruction": "如何申请租房？", "output": "重复"}
+        ])
+        comparison = profiler.compare_profiles(profile_a, profile_b)
+        assert comparison["total_items"] == 1.0
+        assert "duplicate_rate" in comparison
+        assert "language_delta" in comparison
+
+    def test_compare_language_delta(self):
+        profiler = DataProfiler()
+        profile_a = profiler.profile([{"instruction": "中文"}])
+        profile_b = profiler.profile([{"instruction": "english"}])
+        comparison = profiler.compare_profiles(profile_a, profile_b)
+        assert comparison["language_delta"]["zh"] == -1
+        assert comparison["language_delta"]["en"] == 1
+
+    def test_compare_empty_profiles(self):
+        profiler = DataProfiler()
+        empty_a = profiler.profile([])
+        empty_b = profiler.profile([])
+        comparison = profiler.compare_profiles(empty_a, empty_b)
+        assert comparison["total_items"] == 0.0
+        assert comparison["language_delta"] == {}
