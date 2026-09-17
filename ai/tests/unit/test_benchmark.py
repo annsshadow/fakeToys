@@ -231,3 +231,46 @@ class TestReport:
         }
 
         assert "## 与基准对比" in bench.generate_report(results)
+
+
+class TestBenchmarkExtended:
+    """QualityBenchmark 扩展测试"""
+
+    def test_run_benchmark_empty(self):
+        """空数据基准测试"""
+        bench = make_benchmark()
+        results = bench.run_benchmark([])
+        assert results["sample_count"] == 0
+
+    def test_run_benchmark_single_item(self):
+        """单条数据基准测试"""
+        bench = make_benchmark()
+        results = bench.run_benchmark([{"instruction": "q1"}])
+        assert results["sample_count"] == 1
+
+    def test_save_and_load_baseline(self, tmp_path):
+        """保存并加载基准"""
+        bench = make_benchmark(baseline_file=str(tmp_path / "baseline.json"))
+        results = bench.run_benchmark([{"instruction": "q1"}])
+        bench.save_baseline(results)
+        loaded = bench.load_baseline()
+        assert loaded is not None
+        assert "metrics" in loaded
+
+    def test_supported_metrics(self):
+        """支持的指标列表"""
+        assert "pass_rate" in SUPPORTED_METRICS
+        assert "duplication_rate" in SUPPORTED_METRICS
+
+    def test_metric_directions(self):
+        """指标方向"""
+        assert METRIC_DIRECTIONS["pass_rate"] is True
+        assert METRIC_DIRECTIONS["duplication_rate"] is False
+
+    def test_compare_overall_improved(self):
+        """整体改善判定"""
+        bench = make_benchmark()
+        baseline = {"metrics": {"pass_rate": 0.5}, "timestamp": "t0"}
+        current = {"metrics": {"pass_rate": 0.9}, "timestamp": "t1"}
+        comparison = bench.compare_with_baseline(current, baseline)
+        assert comparison["overall"] == "improved"
