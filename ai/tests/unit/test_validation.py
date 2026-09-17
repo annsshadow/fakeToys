@@ -402,3 +402,80 @@ class TestValidationHistoryFormat:
         data = [{"instruction": "test_pattern found"}]
         result = validator.validate(data)
         assert result.error_count > 0
+
+
+class TestValidationExtended:
+    """DatasetValidator 第二轮扩展测试（覆盖剩余分支）"""
+
+    def test_unknown_preset_falls_back_to_basic(self):
+        """未知 preset 应回退到 basic"""
+        validator = DatasetValidator(preset="nonexistent_preset")
+        assert validator.rules == DatasetValidator.PRESET_RULES["basic"]
+
+    def test_validate_non_dict_item(self):
+        """非字典数据项应产生 root 错误"""
+        validator = DatasetValidator()
+        result = validator.validate(["not-a-dict"])
+        assert result.error_count > 0
+        assert any("root" in str(i.field) for i in result.issues if i.field)
+
+    def test_validate_non_string_required_field(self):
+        """必填字段非字符串应产生错误"""
+        validator = DatasetValidator()
+        result = validator.validate([{"instruction": 123, "output": "a"}])
+        assert result.error_count > 0
+
+    def test_validate_empty_required_field_warning(self):
+        """空必填字段应产生警告而非错误"""
+        validator = DatasetValidator()
+        result = validator.validate([{"instruction": "   ", "output": "a"}])
+        assert result.warning_count > 0
+        assert result.error_count == 0
+
+    def test_validate_min_length_violation(self):
+        """低于最小长度应产生警告"""
+        validator = DatasetValidator(rules={"min_instruction_length": 10})
+        result = validator.validate([{"instruction": "短", "output": "a" * 10}])
+        assert any("长度" in i.message for i in result.issues)
+
+    def test_validate_max_length_violation(self):
+        """超过最大长度应产生警告"""
+        validator = DatasetValidator(rules={"max_instruction_length": 3})
+        result = validator.validate([{"instruction": "这段文本超过了长度限制", "output": "a"}])
+        assert any("长度" in i.message for i in result.issues)
+
+    def test_validate_missing_required_field(self):
+        """缺少必填字段应产生错误"""
+        validator = DatasetValidator()
+        result = validator.validate([{"output": "a"}])
+        assert result.error_count > 0
+
+    def test_validate_all_valid_dataset(self):
+        """全部有效数据集应通过"""
+        validator = DatasetValidator()
+        result = validator.validate([
+            {"instruction": "如何申请租房？", "output": "登录官网申请"}
+        ])
+        assert result.is_valid is True
+        assert result.error_count == 0
+
+    def test_validate_result_fields(self):
+        """ValidationResult 应包含全部统计字段"""
+        validator = DatasetValidator()
+        result = validator.validate([{"instruction": "q", "output": "a"}])
+        assert result.total_items == 1
+        assert result.valid_items == 1
+        assert "issues" in result.__dict__ or hasattr(result, "issues")
+
+    def test_validate_file_preset_strict(self, valid_dataset, tmp_path):
+        """strict 预设验证文件"""
+        validator = DatasetValidator(preset="strict")
+        from augmentor.validation import ValidationResult
+        result = validator.validate(valid_dataset)
+        assert isinstance(result, ValidationResult)
+
+    def test_validate_chat_preset(self, valid_dataset):
+        """chat 预设验证"""
+        validator = DatasetValidator(preset="chat")
+        result = validator.validate(valid_dataset)
+        assert result.total_items == 3
