@@ -33,6 +33,19 @@ def _save_items(items, path: str):
         json.dump(items, f, ensure_ascii=False, indent=2)
 
 
+def _dump_json(data, path: str):
+    """将任意可 JSON 序列化对象写入文件
+
+    Args:
+        data: 可 JSON 序列化对象
+        path: 输出文件路径
+    """
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+
+
 def _print(data):
     """打印 JSON 结果
 
@@ -107,7 +120,6 @@ def build_parser() -> argparse.ArgumentParser:
     # 分析命令
     analyze_parser = subparsers.add_parser("analyze", help="分析数据集")
     analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
-
     # 可视化命令
     visualize_parser = subparsers.add_parser("visualize", help="可视化数据集")
     visualize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
@@ -198,8 +210,8 @@ def build_parser() -> argparse.ArgumentParser:
     validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
     validate_config_parser.add_argument("--config", type=str, help="配置文件路径")
 
-    # 数据分析命令
-    analyze_parser = subparsers.add_parser("analyze", help="数据分析")
+    # 数据分析命令（合并到 analyze 子命令）
+    analyze_parser = subparsers.add_parser("analyze-data", help="数据分析")
     analyze_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     analyze_parser.add_argument("--fields", type=str, nargs="+", default=["instruction", "output"],
                                help="分析字段")
@@ -232,8 +244,8 @@ def build_parser() -> argparse.ArgumentParser:
     quality_report_parser.add_argument("--format", type=str, default="json", choices=["json", "markdown"], help="报告格式")
     quality_report_parser.add_argument("--threshold", type=float, default=0.7, help="质量阈值")
 
-    # 可视化命令
-    visualize_parser = subparsers.add_parser("visualize", help="数据可视化")
+    # 可视化命令（增强版）
+    visualize_parser = subparsers.add_parser("visualize-data", help="数据可视化")
     visualize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
     visualize_parser.add_argument("--output", type=str, help="输出报告路径")
     visualize_parser.add_argument("--format", type=str, default="text", choices=["text", "json"], help="报告格式")
@@ -302,6 +314,40 @@ def build_parser() -> argparse.ArgumentParser:
     migrate_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
     migrate_parser.add_argument("--rules", type=str, nargs="+", help="迁移规则")
 
+    # 数据画像命令
+    profiling_parser = subparsers.add_parser("profile", help="生成数据集画像")
+    profiling_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    profiling_parser.add_argument("--output", type=str, help="画像输出路径（.json）")
+
+    # 异常检测命令
+    outlier_parser = subparsers.add_parser("outliers", help="检测长度异常样本")
+    outlier_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    outlier_parser.add_argument("--method", type=str, default="zscore",
+                                choices=["zscore", "iqr", "zscore_one_sided"], help="检测方法")
+    outlier_parser.add_argument("--threshold", type=float, default=3.0, help="判定阈值")
+    outlier_parser.add_argument("--field", type=str, default="length", help="检测字段")
+    outlier_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
+
+    # 特征检测命令
+    feature_parser = subparsers.add_parser("features", help="检测数据集特征维度")
+    feature_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    feature_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
+
+    # 自动配置推荐命令
+    auto_config_parser = subparsers.add_parser("auto-config", help="推荐数据管线参数")
+    auto_config_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    auto_config_parser.add_argument("--output", type=str, help="推荐结果输出路径（.json）")
+
+    # 数据聚合命令
+    aggregate_parser = subparsers.add_parser("aggregate", help="聚合多个数据集")
+    aggregate_parser.add_argument("--inputs", type=str, nargs="+", required=True,
+                                   help="源数据集文件路径列表")
+    aggregate_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    aggregate_parser.add_argument("--strategy", type=str, default="union",
+                                   choices=["union", "intersection", "weighted", "consistent"],
+                                   help="聚合策略")
+    aggregate_parser.add_argument("--target-size", type=int, default=100, help="加权采样目标量")
+
     return parser
 
 
@@ -315,6 +361,85 @@ def main():
 
     # 加载配置
     config = load_config(args.config)
+
+    # 数据画像命令
+    if args.command == "profile":
+        from augmentor.profiling import DataProfiler
+
+        items = _load_items(args.input)
+        profiler = DataProfiler()
+        report = profiler.profile(items)
+        if args.output:
+            profiler.save_profile(items, args.output)
+            _print({"saved_to": args.output})
+        else:
+            _print(report)
+        return
+
+    # 异常检测命令
+    if args.command == "outliers":
+        from augmentor.outlier import OutlierDetector
+
+        items = _load_items(args.input)
+        detector = OutlierDetector(
+            method=args.method, threshold=args.threshold, field=args.field
+        )
+        if args.field == "length":
+            items = detector.attach_length_field(items)
+        report = detector.detect(items)
+        _print(report.to_dict())
+        if args.output:
+            _dump_json(report.to_dict(), args.output)
+        return
+
+    # 特征检测命令
+    if args.command == "features":
+        from augmentor.feature_detect import FeatureDetector
+
+        items = _load_items(args.input)
+        detector = FeatureDetector()
+        report = detector.detect(items)
+        _print(report)
+        if args.output:
+            _dump_json(report, args.output)
+        return
+
+    # 自动配置推荐命令
+    if args.command == "auto-config":
+        from augmentor.auto_config import AutoConfig
+        from augmentor.profiling import DataProfiler
+
+        items = _load_items(args.input)
+        profile = DataProfiler().profile(items)
+        total = len(items)
+        recommendation = AutoConfig().recommend(profile, total)
+        _print(recommendation.to_dict())
+        if args.output:
+            _dump_json(recommendation.to_dict(), args.output)
+        return
+
+    # 数据聚合命令
+    if args.command == "aggregate":
+        from augmentor.aggregator import DataAggregator
+
+        datasets = {}
+        for index, path in enumerate(args.inputs):
+            source_name = Path(path).stem if index == 0 else f"source-{index}"
+            datasets[source_name] = _load_items(path)
+        aggregator = DataAggregator()
+        result = aggregator.aggregate(
+            datasets,
+            args.strategy,
+            target_size=args.target_size,
+        )
+        _save_items(result.aggregated, args.output)
+        _print({
+            "aggregated_count": result.total_count,
+            "source_counts": result.source_counts,
+            "removed_duplicates": result.removed_duplicates,
+            "conflicts": result.conflicts,
+        })
+        return
 
     try:
         # ============ 质量评估 ============
