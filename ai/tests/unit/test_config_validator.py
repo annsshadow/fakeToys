@@ -436,3 +436,119 @@ class TestConfigValidatorEdgeCases:
         
         assert len(result.errors) == 1
         assert "期望布尔类型" in result.errors[0].message
+
+    def test_validate_int_bool_excluded(self):
+        """bool 应被排除在 int 验证之外"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_int(True, {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望整数类型" in result.errors[0].message
+
+    def test_validate_float_bool_excluded(self):
+        """bool 应被排除在 float 验证之外"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_float(False, {}, "test.path", result)
+        
+        assert len(result.errors) == 1
+        assert "期望数值类型" in result.errors[0].message
+
+    def test_validate_float_int_accepted(self):
+        """int 应被接受为 float"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_float(5, {"min": 0, "max": 10}, "test.path", result)
+        
+        assert len(result.errors) == 0
+
+    def test_validate_string_enum_valid(self):
+        """有效枚举值不应报错"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_string("valid1", {"enum": ["valid1", "valid2"]}, "test.path", result)
+        
+        assert len(result.errors) == 0
+
+    def test_validate_int_valid(self):
+        """有效整数不应报错"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_int(5, {"min": 0, "max": 10}, "test.path", result)
+        
+        assert len(result.errors) == 0
+
+    def test_validate_float_valid(self):
+        """有效浮点数不应报错"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_float(0.5, {"min": 0.0, "max": 1.0}, "test.path", result)
+        
+        assert len(result.errors) == 0
+
+    def test_validate_bool_valid(self):
+        """有效布尔值不应报错"""
+        validator = ConfigValidator()
+        result = ValidationResult(is_valid=True)
+        
+        validator._validate_bool(True, {}, "test.path", result)
+        
+        assert len(result.errors) == 0
+
+    def test_error_to_dict(self):
+        """ValidationError.to_dict 应返回正确结构"""
+        from augmentor.config_validator import ValidationError
+        err = ValidationError(path="test.path", message="test msg", severity=Severity.ERROR, line=10)
+        d = err.to_dict()
+        
+        assert d["path"] == "test.path"
+        assert d["message"] == "test msg"
+        assert d["severity"] == "error"
+        assert d["line"] == 10
+
+    def test_validate_file_read_error(self, tmp_path):
+        """测试验证文件读取错误"""
+        config_file = tmp_path / "bad.yaml"
+        # 写入二进制内容导致 YAML 解析失败
+        config_file.write_bytes(b'\x00\x01\x02')
+        
+        result = validate_config_file(str(config_file))
+        # 应该有错误（YAML 解析或读取失败）
+        assert result.is_valid is False
+
+    def test_validate_config_with_null_field(self):
+        """测试验证包含 null 字段的配置"""
+        config = {
+            "app": {
+                "name": None,  # null 值
+                "version": "1.0.0"
+            },
+            "models": {"default": "ernie"}
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        assert result.is_valid is False
+        assert any("字段不能为null" in e.message for e in result.errors)
+
+    def test_validate_range_float(self):
+        """测试浮点数范围验证"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "quality": {"threshold": 1.5}  # 超过最大值 1.0
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        assert result.is_valid is False
+        assert any("值过大" in e.message for e in result.errors)
