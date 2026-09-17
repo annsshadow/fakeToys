@@ -198,3 +198,44 @@ class TestMetadataLookup:
 
         assert db.get_metadata(ids[0]) == {"tag": "x"}
         assert db.get_metadata("missing") is None
+
+
+class TestVectorExtended:
+    """VectorDB 扩展测试"""
+
+    def test_search_top_k(self):
+        """搜索 top_k 限制"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=2)
+        assert len(results) == 2
+
+    def test_count_after_add(self):
+        """添加后计数"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        assert db.count() == 2
+
+    def test_delete_by_ids(self):
+        """按 ID 删除"""
+        db = create_vector_db("faiss", dimension=4)
+        ids = db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)])
+        deleted = db.delete(ids[:2])
+        assert deleted == 2
+        assert db.count() == 2
+
+    def test_add_empty_vectors(self):
+        """添加空向量列表"""
+        db = create_vector_db("faiss", dimension=4)
+        result = db.add_vectors([], [])
+        assert result == []
+
+    def test_persist_and_reload_count(self, tmp_path):
+        """持久化后重新加载计数一致"""
+        db = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        db.persist()
+
+        reloaded = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        reloaded.load()
+        assert reloaded.count() == 2
