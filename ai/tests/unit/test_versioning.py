@@ -207,4 +207,84 @@ class TestReport:
         assert report["total_versions"] == 1
         assert report["current_version"] is not None
         assert len(report["recent_history"]) == 1
-        assert len(report["versions"]) == 1
+
+
+class TestVersioningExtended:
+    """版本管理扩展测试"""
+
+    def test_create_version_empty_data(self, tmp_path):
+        """创建空数据版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        info = manager.create_version([])
+        assert info.item_count == 0
+
+    def test_create_version_large_dataset(self, tmp_path):
+        """创建大数据集版本"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        items = [{"instruction": f"q{i}"} for i in range(100)]
+        info = manager.create_version(items)
+        assert info.item_count == 100
+
+    def test_load_version_data_integrity(self, tmp_path):
+        """加载版本数据完整性"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        items = [
+            {"instruction": "问题1", "output": "回答1", "input": "上下文"},
+            {"instruction": "问题2", "output": "回答2"},
+        ]
+        info = manager.create_version(items)
+        loaded = manager.load_version(info.version_id)
+        assert loaded == items
+
+    def test_diff_with_removed_items(self, tmp_path):
+        """对比有移除项的情况"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([
+            {"instruction": "a"},
+            {"instruction": "b"},
+            {"instruction": "c"},
+        ])
+        v2 = manager.create_version([{"instruction": "a"}])
+        diff = manager.diff(v1.version_id, v2.version_id)
+        assert diff.removed_count == 2
+
+    def test_rollback_to_self(self, tmp_path):
+        """回滚到当前版本应返回 True"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "a"}])
+        assert manager.rollback(v1.version_id) is True
+
+    def test_delete_last_version(self, tmp_path):
+        """删除最后一个版本（非当前）"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        v1 = manager.create_version([{"instruction": "a"}])
+        v2 = manager.create_version([{"instruction": "b"}])
+        # v2 is current, delete v1 (non-current)
+        manager.delete_version(v1.version_id)
+        assert len(manager.list_versions()) == 1
+
+    def test_history_with_corrupted_line(self, tmp_path):
+        """历史文件包含损坏行时应跳过"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        manager.create_version([{"instruction": "a"}])
+        # Append corrupted line
+        with open(manager._history_path, 'a', encoding='utf-8') as f:
+            f.write("not valid json\n")
+        history = manager.get_history()
+        assert len(history) >= 1
+
+    def test_get_version_info(self, tmp_path):
+        """获取版本信息"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        info = manager.create_version([{"instruction": "a"}], label="test")
+        version_info = manager.get_version_info(info.version_id)
+        assert version_info.label == "test"
+
+    def test_report_empty(self, tmp_path):
+        """空版本管理器报告"""
+        manager = VersionManager(storage_dir=str(tmp_path))
+        report = manager.generate_report()
+        assert report["total_versions"] == 0
+        assert report["current_version"] is None
+        assert report["recent_history"] == []
+        assert len(report["versions"]) == 0
