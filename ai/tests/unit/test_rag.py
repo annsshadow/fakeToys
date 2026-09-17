@@ -155,3 +155,59 @@ class TestRoundTrip:
 
         assert restored[0]["instruction"] == "问题"
         assert restored[0]["output"] == "回答"
+
+
+class TestRAGExtended:
+    """RAGFormatter 扩展测试"""
+
+    def test_chunk_text_empty(self):
+        """空文本分块"""
+        formatter = RAGFormatter()
+        assert formatter.chunk_text("") == []
+
+    def test_chunk_text_single_char(self):
+        """单字符文本分块"""
+        formatter = RAGFormatter(chunk_size=5, chunk_overlap=1)
+        assert formatter.chunk_text("a") == ["a"]
+
+    def test_format_empty_dataset(self):
+        """空数据集格式化"""
+        formatter = RAGFormatter()
+        records = formatter.format([], "llamaindex")
+        assert records == []
+
+    def test_to_llamaindex_empty(self):
+        """空数据转 LlamaIndex"""
+        formatter = RAGFormatter()
+        records = formatter.to_llamaindex([])
+        assert records == []
+
+    def test_to_langchain_empty(self):
+        """空数据转 LangChain"""
+        formatter = RAGFormatter()
+        records = formatter.to_langchain([])
+        assert records == []
+
+    def test_to_custom_empty(self):
+        """空数据转自定义格式"""
+        formatter = RAGFormatter()
+        records = formatter.to_custom([])
+        assert records == []
+
+    def test_from_llamaindex_empty(self):
+        """空 LlamaIndex 数据转回"""
+        formatter = RAGFormatter()
+        records = formatter.from_llamaindex([])
+        assert records == []
+
+    def test_from_langchain_empty(self):
+        """空 LangChain 数据转回"""
+        formatter = RAGFormatter()
+        records = formatter.from_langchain([])
+        assert records == []
+
+    def test_supported_formats_list(self):
+        """支持的格式列表"""
+        assert "llamaindex" in SUPPORTED_FORMATS
+        assert "langchain" in SUPPORTED_FORMATS
+        assert "custom" in SUPPORTED_FORMATS
