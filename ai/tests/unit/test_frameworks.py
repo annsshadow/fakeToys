@@ -184,3 +184,107 @@ class TestFrameworksExtended:
         result = integration.from_langchain_dataset(docs)
         assert result[0]["source"] == "src"
         assert result[0]["language"] == "zh"
+
+    def test_from_object_form_page_content(self):
+        """非 dict 形式的 Document 对象还原（langchain 已装时）"""
+        class FakeDoc:
+            def __init__(self, page_content, metadata):
+                self.page_content = page_content
+                self.metadata = metadata
+        integration = LangChainIntegration()
+        restored = integration.from_langchain_dataset(
+            [FakeDoc("内容", {"answer": "答案", "source": "s", "language": "en"})]
+        )
+        assert restored[0]["instruction"] == "内容"
+        assert restored[0]["output"] == "答案"
+        assert restored[0]["source"] == "s"
+        assert restored[0]["language"] == "en"
+
+    def test_to_dicts_object_form(self):
+        """非 dict 形式对象应转换为字典（覆盖 to_dicts 对象分支）"""
+        class FakeDoc:
+            page_content = "c"
+            metadata = {"answer": "a"}
+        integration = LangChainIntegration()
+        result = integration.to_dicts([FakeDoc()])
+        assert result[0]["page_content"] == "c"
+        assert result[0]["metadata"]["answer"] == "a"
+
+    def test_to_dicts_object_metadata_none(self):
+        """对象 metadata 为 None 时应转为空 dict"""
+        class FakeDoc:
+            page_content = "c"
+            metadata = None
+        integration = LangChainIntegration()
+        result = integration.to_dicts([FakeDoc()])
+        assert result[0]["metadata"] == {}
+
+    def test_from_object_metadata_missing_attrs(self):
+        """对象缺少属性时应安全回退默认值"""
+        class BareDoc:
+            pass
+        integration = LangChainIntegration()
+        restored = integration.from_langchain_dataset([BareDoc()])
+        assert restored[0]["instruction"] == ""
+        assert restored[0]["output"] == ""
+
+    def test_to_langchain_dataset_default_fields(self):
+        """缺少 source/language 字段时 metadata 应为空字符串"""
+        integration = LangChainIntegration()
+        docs = integration.to_langchain_dataset([{"instruction": "q"}])
+        assert docs[0]["metadata"]["source"] == ""
+        assert docs[0]["metadata"]["language"] == ""
+
+    def test_llamaindex_from_object_form_text_attr(self):
+        """非 dict 形式 TextNode 对象还原（覆盖 text 属性分支）"""
+        class FakeNode:
+            def __init__(self, text, metadata):
+                self.text = text
+                self.metadata = metadata
+        integration = LlamaIndexIntegration()
+        restored = integration.from_llamaindex_dataset(
+            [FakeNode("内容", {"answer": "答案", "source": "s", "language": "en"})]
+        )
+        assert restored[0]["instruction"] == "内容"
+        assert restored[0]["output"] == "答案"
+        assert restored[0]["source"] == "s"
+
+    def test_llamaindex_from_object_form_get_content(self):
+        """仅有 get_content 方法（无 text 属性）的对象也应可还原"""
+        class OldNode:
+            def get_content(self):
+                return "旧版内容"
+        integration = LlamaIndexIntegration()
+        restored = integration.from_llamaindex_dataset([OldNode()])
+        assert restored[0]["instruction"] == "旧版内容"
+
+    def test_llamaindex_to_dicts_object_form(self):
+        """非 dict 对象转字典（覆盖对象分支）"""
+        class FakeNode:
+            text = "t"
+            metadata = {"answer": "a"}
+        integration = LlamaIndexIntegration()
+        result = integration.to_dicts([FakeNode()])
+        assert result[0]["text"] == "t"
+
+    def test_llamaindex_to_dicts_object_metadata_none(self):
+        """对象 metadata 为 None 时应转为空 dict"""
+        class FakeNode:
+            text = "t"
+            metadata = None
+        integration = LlamaIndexIntegration()
+        result = integration.to_dicts([FakeNode()])
+        assert result[0]["metadata"] == {}
+
+    def test_llamaindex_default_fields_empty_strings(self):
+        """缺少 source/language 时 metadata 应为空字符串"""
+        integration = LlamaIndexIntegration()
+        nodes = integration.to_llamaindex_dataset([{"instruction": "q"}])
+        assert nodes[0]["metadata"]["source"] == ""
+        assert nodes[0]["metadata"]["language"] == ""
+
+    def test_llamaindex_node_id_format(self):
+        """节点 ID 应为 node-000000 格式"""
+        integration = LlamaIndexIntegration()
+        nodes = integration.to_llamaindex_dataset([{"instruction": "q"}])
+        assert nodes[0]["id_"] == "node-000000"
