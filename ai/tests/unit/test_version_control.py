@@ -320,3 +320,89 @@ class TestVersionControlEdgeCases:
         
         assert version.tags == ["release", "stable"]
         assert version.metadata == {"author": "test_user"}
+
+
+class TestVersionControlExtended:
+    """DatasetVersionManager 第二轮扩展测试（覆盖剩余分支）"""
+
+    def test_version_numbers_increment(self, tmp_path, sample_dataset):
+        """连续创建版本应递增 patch 号"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        numbers = [
+            manager.create_version(sample_dataset).version_number
+            for _ in range(3)
+        ]
+        assert numbers == ["1.0.0", "1.0.1", "1.0.2"]
+
+    def test_current_version_set_to_latest(self, tmp_path, sample_dataset):
+        """最新版本应成为 current_version"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        manager.create_version(sample_dataset, "old")
+        latest = manager.create_version(sample_dataset, "new")
+        assert manager.get_current_version() == latest.version_id
+
+    def test_load_version_missing_raises(self, tmp_path, sample_dataset):
+        """加载不存在的版本应报错"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        with pytest.raises(FileNotFoundError):
+            manager.load_version("v9.9.9")
+
+    def test_get_version_data_missing_file(self, tmp_path):
+        """版本目录缺失 data.json 时应报错"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        with pytest.raises(FileNotFoundError):
+            manager.load_version("v1.0.0")
+
+    def test_list_versions_empty(self, tmp_path):
+        """无版本时列表应为空"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        assert manager.list_versions() == []
+
+    def test_list_versions_returns_all(self, tmp_path, sample_dataset):
+        """列表应包含全部已创建版本"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        manager.create_version(sample_dataset, "1")
+        manager.create_version(sample_dataset, "2")
+        versions = manager.list_versions()
+        assert len(versions) == 2
+        # list_versions 返回字典列表
+        assert [v["version_id"] for v in versions] == ["v1.0.0", "v1.0.1"]
+
+    def test_version_to_dict_fields(self):
+        """DatasetVersion.to_dict 应包含全部字段"""
+        version = DatasetVersion(
+            version_id="v1", version_number="1.0.0",
+            timestamp="t", description="d", item_count=3,
+            checksum="c", tags=["x"], metadata={"k": "v"}
+        )
+        d = version.to_dict()
+        assert d["version_id"] == "v1"
+        assert d["tags"] == ["x"]
+        assert d["metadata"] == {"k": "v"}
+
+    def test_create_version_convenience_function(self, tmp_path, sample_dataset):
+        """便捷函数 create_version 应创建版本"""
+        version = create_version(sample_dataset, str(tmp_path / "versions"), "desc")
+        assert version.version_number == "1.0.0"
+
+    def test_load_version_convenience_function(self, tmp_path, sample_dataset):
+        """便捷函数 load_version 应加载数据"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        version = manager.create_version(sample_dataset)
+        data = load_version(version.version_id, str(tmp_path / "versions"))
+        assert data == sample_dataset
+
+    def test_list_versions_convenience_function(self, tmp_path, sample_dataset):
+        """便捷函数 list_versions 应列出版本"""
+        manager = DatasetVersionManager(str(tmp_path / "versions"))
+        manager.create_version(sample_dataset)
+        versions = list_versions(str(tmp_path / "versions"))
+        assert len(versions) == 1
+
+    def test_index_persistence_across_instances(self, tmp_path, sample_dataset):
+        """索引应跨实例持久化"""
+        dir_path = str(tmp_path / "versions")
+        m1 = DatasetVersionManager(dir_path)
+        m1.create_version(sample_dataset, "a")
+        m2 = DatasetVersionManager(dir_path)
+        assert len(m2.list_versions()) == 1
