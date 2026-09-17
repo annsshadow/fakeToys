@@ -226,6 +226,11 @@ export const getConfig = async () => {
   return response.data
 }
 
+export const updateConfig = async (config: any) => {
+  const response = await api.post('/config', config)
+  return response.data
+}
+
 export const getModels = async () => {
   const response = await api.get('/models')
   return response.data
