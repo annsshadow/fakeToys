@@ -43,16 +43,16 @@ fn app() -> Router {
 }
 
 fn p(t: &str) -> String {
-    format!("/jaxrs/processplatform/assemble/designer{t}")
+    format!("/api/processplatform/assemble/designer{t}")
 }
 fn q(t: &str) -> String {
-    format!("/jaxrs/query/assemble/designer{t}")
+    format!("/api/query/assemble/designer{t}")
 }
 fn t_(t: &str) -> String {
-    format!("/jaxrs/portal/assemble/designer{t}")
+    format!("/api/portal/assemble/designer{t}")
 }
 fn f(t: &str) -> String {
-    format!("/jaxrs/form{t}")
+    format!("/api/form{t}")
 }
 
 fn classify(code: u16) -> Expect {
@@ -231,7 +231,7 @@ async fn designer_route_reconciliation() {
             Expect::Matched,
             "W7 流程脚本删除（u2_script::delete 软删）",
         ),
-        // ── Form designer (FormDesigner.vue, base /jaxrs/form, served by cms_assemble_control) ──
+        // ── Form designer (FormDesigner.vue, base /api/form, served by cms_assemble_control) ──
         (
             Method::GET,
             f("/list/all"),

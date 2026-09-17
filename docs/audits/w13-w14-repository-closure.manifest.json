@@ -31,7 +31,7 @@
       "view": "AnnApp.vue",
       "route": "/app/ann",
       "title": "神经网络AI配置",
-      "endpoint": "/jaxrs/ai/assemble/control/ann/list",
+      "endpoint": "/api/ai/assemble/control/ann/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "AI 公告/模型公告家族数据驱动 CRUD：list/create/save/delete 实挂迁移 096 x_ai_ann（title/content/category/status 类型化字段、参数化写、软删、删除需确认）",
@@ -39,7 +39,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/AnnApp.vue",
-            "contains": "const listEp = '/jaxrs/ai/assemble/control/ann/list'"
+            "contains": "const listEp = '/api/ai/assemble/control/ann/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/AnnApp.vue",
@@ -55,7 +55,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/ai_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/ai/assemble/control/ann/create\""
+            "contains": "\"/api/ai/assemble/control/ann/create\""
           },
           {
             "file": "oa4rust/migrations/096_create_ai_ann_ftsearch_tables.sql",
@@ -71,7 +71,7 @@
       "view": "CmsColumnApp.vue",
       "route": "/app/cms-column",
       "title": "CMS列管理",
-      "endpoint": "/jaxrs/cms/core/entity/column/list",
+      "endpoint": "/api/cms/core/entity/column/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "CMS 列定义家族数据驱动 CRUD：list/create/save/delete 实挂迁移 093 x_cms_column（camelCase 读写同口径、参数化防注入、deleted_at 软删），视图按 name/parent/sort/description 类型化字段操作",
@@ -79,7 +79,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsColumnApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/core/entity/column/list'"
+            "contains": "const listEp = '/api/cms/core/entity/column/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsColumnApp.vue",
@@ -95,7 +95,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
-            "contains": "\"/jaxrs/cms/core/entity/column/create\""
+            "contains": "\"/api/cms/core/entity/column/create\""
           },
           {
             "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
@@ -111,7 +111,7 @@
       "view": "CmsColumnManagerApp.vue",
       "route": "/app/cms-column-manager",
       "title": "CMS列管理器",
-      "endpoint": "/jaxrs/cms/core/entity/column_manager/list",
+      "endpoint": "/api/cms/core/entity/column_manager/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "CMS 列管理人指派家族数据驱动 CRUD：list/create/save/delete 实挂迁移 093 x_cms_column_manager（columnId/personId/role 类型化字段、参数化写、软删）",
@@ -119,7 +119,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsColumnManagerApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/core/entity/column_manager/list'"
+            "contains": "const listEp = '/api/cms/core/entity/column_manager/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsColumnManagerApp.vue",
@@ -135,7 +135,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
-            "contains": "\"/jaxrs/cms/core/entity/column_manager/create\""
+            "contains": "\"/api/cms/core/entity/column_manager/create\""
           },
           {
             "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
@@ -151,14 +151,14 @@
       "view": "CmsDictDesignerApp.vue",
       "route": "/app/cms-dict-designer",
       "title": "CMS字典设计器",
-      "endpoint": "/jaxrs/cms/assemble/control/dict/list",
+      "endpoint": "/api/cms/assemble/control/dict/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsDictDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/assemble/control/dict/list'"
+            "contains": "const listEp = '/api/cms/assemble/control/dict/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsDictDesignerApp.vue",
@@ -174,7 +174,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/cms/assemble/control/dict/create\""
+            "contains": "\"/api/cms/assemble/control/dict/create\""
           }
         ]
       },
@@ -187,14 +187,14 @@
       "view": "CmsFormDesignerApp.vue",
       "route": "/app/cms-form-designer",
       "title": "CMS表单设计器",
-      "endpoint": "/jaxrs/cms/assemble/control/form/list",
+      "endpoint": "/api/cms/assemble/control/form/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsFormDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/assemble/control/form/list'"
+            "contains": "const listEp = '/api/cms/assemble/control/form/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsFormDesignerApp.vue",
@@ -210,7 +210,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/cms/assemble/control/form/create\""
+            "contains": "\"/api/cms/assemble/control/form/create\""
           }
         ]
       },
@@ -223,7 +223,7 @@
       "view": "CmsIndexApp.vue",
       "route": "/app/cms-index",
       "title": "CMS索引设计",
-      "endpoint": "/jaxrs/cms/core/entity/index/list",
+      "endpoint": "/api/cms/core/entity/index/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "CMS 索引家族数据驱动 CRUD：list/create/save/delete 实挂迁移 093 x_cms_index（name/target/sortOrder/description 类型化字段、参数化写、软删）",
@@ -231,7 +231,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsIndexApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/core/entity/index/list'"
+            "contains": "const listEp = '/api/cms/core/entity/index/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsIndexApp.vue",
@@ -247,7 +247,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
-            "contains": "\"/jaxrs/cms/core/entity/index/create\""
+            "contains": "\"/api/cms/core/entity/index/create\""
           },
           {
             "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
@@ -263,7 +263,7 @@
       "view": "CmsModuleApp.vue",
       "route": "/app/cms-module",
       "title": "CMS模块管理",
-      "endpoint": "/jaxrs/cms/core/entity/module/list",
+      "endpoint": "/api/cms/core/entity/module/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "CMS 模块注册家族数据驱动 CRUD：list/create/save/delete 实挂迁移 093 x_cms_module（name/appId/moduleType/description 类型化字段、参数化写、软删）",
@@ -271,7 +271,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsModuleApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/core/entity/module/list'"
+            "contains": "const listEp = '/api/cms/core/entity/module/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsModuleApp.vue",
@@ -287,7 +287,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
-            "contains": "\"/jaxrs/cms/core/entity/module/create\""
+            "contains": "\"/api/cms/core/entity/module/create\""
           },
           {
             "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
@@ -303,14 +303,14 @@
       "view": "CmsViewDesignerApp.vue",
       "route": "/app/cms-view-designer",
       "title": "CMS视图设计器",
-      "endpoint": "/jaxrs/cms/assemble/control/view/list",
+      "endpoint": "/api/cms/assemble/control/view/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsViewDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/assemble/control/view/list'"
+            "contains": "const listEp = '/api/cms/assemble/control/view/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsViewDesignerApp.vue",
@@ -326,7 +326,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/cms/assemble/control/view/create\""
+            "contains": "\"/api/cms/assemble/control/view/create\""
           }
         ]
       },
@@ -339,14 +339,14 @@
       "view": "CmsXformApp.vue",
       "route": "/app/cms-xform",
       "title": "CMS XForm",
-      "endpoint": "/jaxrs/cms/assemble/control/xform/list",
+      "endpoint": "/api/cms/assemble/control/xform/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsXformApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/assemble/control/xform/list'"
+            "contains": "const listEp = '/api/cms/assemble/control/xform/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CmsXformApp.vue",
@@ -362,7 +362,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/cms/assemble/control/xform/create\""
+            "contains": "\"/api/cms/assemble/control/xform/create\""
           }
         ]
       },
@@ -375,7 +375,7 @@
       "view": "CollectApp.vue",
       "route": "/app/collect",
       "title": "收集管理",
-      "endpoint": "/jaxrs/program_center/collect/list",
+      "endpoint": "/api/program_center/collect/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "收集记录数据驱动 CRUD：list/create/save/delete 实挂 x_program_collect（personId/title/url 类型化字段，参数化写、软删、删除需确认）",
@@ -383,7 +383,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CollectApp.vue",
-            "contains": "const listEp = '/jaxrs/program_center/collect/list'"
+            "contains": "const listEp = '/api/program_center/collect/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CollectApp.vue",
@@ -399,7 +399,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/collect/create\""
+            "contains": "\"/api/program_center/collect/create\""
           }
         ]
       }
@@ -411,7 +411,7 @@
       "view": "CommonApp.vue",
       "route": "/app/common",
       "title": "公共组件库",
-      "endpoint": "/jaxrs/general/assemble/control/list",
+      "endpoint": "/api/general/assemble/control/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "公共组件配置数据驱动 CRUD：list/create/save/delete 实挂 x_general_assemble_control_config（systemName/version/maintenanceMode/allowRegistration 类型化字段，布尔以文本往返，参数化写、软删）",
@@ -419,7 +419,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/CommonApp.vue",
-            "contains": "const listEp = '/jaxrs/general/assemble/control/list'"
+            "contains": "const listEp = '/api/general/assemble/control/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/CommonApp.vue",
@@ -435,7 +435,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/general_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/general/assemble/control/create\""
+            "contains": "\"/api/general/assemble/control/create\""
           }
         ]
       }
@@ -447,7 +447,7 @@
       "view": "DeploymentApp.vue",
       "route": "/app/deployment",
       "title": "部署管理",
-      "endpoint": "/jaxrs/server/deploy/list",
+      "endpoint": "/api/server/deploy/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "部署目标数据驱动 CRUD：list/create/save/delete 实挂 x_program_deploy_server（appId/appName/application/category/disable 类型化字段，参数化写、软删、删除需确认）",
@@ -455,7 +455,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/DeploymentApp.vue",
-            "contains": "const listEp = '/jaxrs/server/deploy/list'"
+            "contains": "const listEp = '/api/server/deploy/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/DeploymentApp.vue",
@@ -471,7 +471,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/console/src/routes.rs",
-            "contains": "\"/jaxrs/server/deploy/create\""
+            "contains": "\"/api/server/deploy/create\""
           }
         ]
       }
@@ -483,7 +483,7 @@
       "view": "FaceSetApp.vue",
       "route": "/app/face-set",
       "title": "人脸设置",
-      "endpoint": "/jaxrs/personal/face/list",
+      "endpoint": "/api/personal/face/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "人脸设置数据驱动 CRUD：list/create/save/delete 实挂 x_person_face（personId/faceName/faceType/status 类型化字段，参数化写、软删、删除需确认）",
@@ -491,7 +491,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/FaceSetApp.vue",
-            "contains": "const listEp = '/jaxrs/personal/face/list'"
+            "contains": "const listEp = '/api/personal/face/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/FaceSetApp.vue",
@@ -507,7 +507,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/personal_extend/src/routes.rs",
-            "contains": "\"/jaxrs/personal/face/create\""
+            "contains": "\"/api/personal/face/create\""
           }
         ]
       }
@@ -519,7 +519,7 @@
       "view": "FtSearchApp.vue",
       "route": "/app/ftsearch",
       "title": "全文搜索引擎",
-      "endpoint": "/jaxrs/ftsearch/list",
+      "endpoint": "/api/ftsearch/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "检索文档数据驱动 CRUD：list/create/save/delete 实挂 x_ftsearch_document（title/body/source 类型化字段，参数化写、软删、删除需确认）",
@@ -527,7 +527,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/FtSearchApp.vue",
-            "contains": "const listEp = '/jaxrs/ftsearch/list'"
+            "contains": "const listEp = '/api/ftsearch/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/FtSearchApp.vue",
@@ -543,7 +543,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/search/src/lib.rs",
-            "contains": "\"/jaxrs/ftsearch/create\""
+            "contains": "\"/api/ftsearch/create\""
           },
           {
             "file": "oa4rust/migrations/096_create_ai_ann_ftsearch_tables.sql",
@@ -559,14 +559,14 @@
       "view": "LogViewerApp.vue",
       "route": "/app/log-viewer",
       "title": "日志查看器",
-      "endpoint": "/jaxrs/log/list",
+      "endpoint": "/api/log/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/LogViewerApp.vue",
-            "contains": "const listEp = '/jaxrs/log/list'"
+            "contains": "const listEp = '/api/log/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/LogViewerApp.vue",
@@ -582,11 +582,11 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/log/list\""
+            "contains": "\"/api/log/list\""
           }
         ]
       },
-      "acceptance": "日志只读查看：GET /jaxrs/log/list 实挂 x_cms_log（app_id/operation_type/operation_level/person_id/ip_address/operation_detail 检索展示；日志家族无写语义，不声明写能力）"
+      "acceptance": "日志只读查看：GET /api/log/list 实挂 x_cms_log（app_id/operation_type/operation_level/person_id/ip_address/operation_detail 检索展示；日志家族无写语义，不声明写能力）"
     },
     {
       "id": "w13:NoteApp.vue",
@@ -595,7 +595,7 @@
       "view": "NoteApp.vue",
       "route": "/app/note",
       "title": "笔记管理",
-      "endpoint": "/jaxrs/cms/core/entity/note/list",
+      "endpoint": "/api/cms/core/entity/note/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "笔记家族数据驱动 CRUD：list/create/save/delete 实挂迁移 093 x_cms_note（title/content/personId 类型化字段、正文编辑、参数化写、软删、删除需确认）",
@@ -603,7 +603,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/NoteApp.vue",
-            "contains": "const listEp = '/jaxrs/cms/core/entity/note/list'"
+            "contains": "const listEp = '/api/cms/core/entity/note/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/NoteApp.vue",
@@ -619,7 +619,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_core_entity/src/lib.rs",
-            "contains": "\"/jaxrs/cms/core/entity/note/create\""
+            "contains": "\"/api/cms/core/entity/note/create\""
           },
           {
             "file": "oa4rust/migrations/093_create_cms_core_entity_tables.sql",
@@ -635,14 +635,14 @@
       "view": "PortalDictDesignerApp.vue",
       "route": "/app/portal-dict-designer",
       "title": "门户字典设计器",
-      "endpoint": "/jaxrs/portal/assemble/designer/dict/list",
+      "endpoint": "/api/portal/assemble/designer/dict/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/PortalDictDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/portal/assemble/designer/dict/list'"
+            "contains": "const listEp = '/api/portal/assemble/designer/dict/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/PortalDictDesignerApp.vue",
@@ -658,7 +658,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/portal_assemble_designer/src/lib.rs",
-            "contains": "\"/jaxrs/portal/assemble/designer/dict/create\""
+            "contains": "\"/api/portal/assemble/designer/dict/create\""
           }
         ]
       },
@@ -671,14 +671,14 @@
       "view": "PortalPageDesignerApp.vue",
       "route": "/app/portal-page-designer",
       "title": "门户页面设计器",
-      "endpoint": "/jaxrs/portal/assemble/designer/page/list",
+      "endpoint": "/api/portal/assemble/designer/page/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/PortalPageDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/portal/assemble/designer/page/list'"
+            "contains": "const listEp = '/api/portal/assemble/designer/page/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/PortalPageDesignerApp.vue",
@@ -694,7 +694,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/portal_assemble_designer/src/lib.rs",
-            "contains": "\"/jaxrs/portal/assemble/designer/page/create\""
+            "contains": "\"/api/portal/assemble/designer/page/create\""
           }
         ]
       },
@@ -707,14 +707,14 @@
       "view": "PortalWidgetDesignerApp.vue",
       "route": "/app/portal-widget-designer",
       "title": "门户组件设计器",
-      "endpoint": "/jaxrs/portal/assemble/designer/widget/list",
+      "endpoint": "/api/portal/assemble/designer/widget/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/portal/assemble/designer/widget/list'"
+            "contains": "const listEp = '/api/portal/assemble/designer/widget/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/PortalWidgetDesignerApp.vue",
@@ -730,7 +730,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/portal_assemble_designer/src/lib.rs",
-            "contains": "\"/jaxrs/portal/assemble/designer/widget/create\""
+            "contains": "\"/api/portal/assemble/designer/widget/create\""
           }
         ]
       },
@@ -743,7 +743,7 @@
       "view": "ProcessApplicationApp.vue",
       "route": "/app/process-application",
       "title": "流程应用管理",
-      "endpoint": "/jaxrs/program_center/application/list",
+      "endpoint": "/api/program_center/application/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "流程应用数据驱动 CRUD：list/create/save/delete 实挂 x_applications（name/appId/description/disable 类型化字段，后端 typed request 用 snake_case app_id，参数化写、删除需确认）",
@@ -751,7 +751,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessApplicationApp.vue",
-            "contains": "const listEp = '/jaxrs/program_center/application/list'"
+            "contains": "const listEp = '/api/program_center/application/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessApplicationApp.vue",
@@ -771,7 +771,7 @@
           },
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/application/delete/{id}\""
+            "contains": "\"/api/program_center/application/delete/{id}\""
           }
         ]
       }
@@ -783,14 +783,14 @@
       "view": "ProcessDictDesignerApp.vue",
       "route": "/app/process-dict-designer",
       "title": "流程字典设计器",
-      "endpoint": "/jaxrs/processplatform/assemble/designer/dict/list",
+      "endpoint": "/api/processplatform/assemble/designer/dict/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessDictDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/processplatform/assemble/designer/dict/list'"
+            "contains": "const listEp = '/api/processplatform/assemble/designer/dict/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessDictDesignerApp.vue",
@@ -806,7 +806,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/processplatform_assemble_designer/src/routes.rs",
-            "contains": "\"/jaxrs/processplatform/assemble/designer/dict/create\""
+            "contains": "\"/api/processplatform/assemble/designer/dict/create\""
           }
         ]
       },
@@ -819,14 +819,14 @@
       "view": "ProcessFormDesignerApp.vue",
       "route": "/app/process-form-designer",
       "title": "流程表单设计器",
-      "endpoint": "/jaxrs/processplatform/assemble/designer/form/list",
+      "endpoint": "/api/processplatform/assemble/designer/form/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessFormDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/processplatform/assemble/designer/form/list'"
+            "contains": "const listEp = '/api/processplatform/assemble/designer/form/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessFormDesignerApp.vue",
@@ -842,7 +842,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/processplatform_assemble_designer/src/routes.rs",
-            "contains": "\"/jaxrs/processplatform/assemble/designer/form/create\""
+            "contains": "\"/api/processplatform/assemble/designer/form/create\""
           }
         ]
       },
@@ -855,14 +855,14 @@
       "view": "ProcessManagerApp.vue",
       "route": "/app/process-manager",
       "title": "流程实例管理",
-      "endpoint": "/jaxrs/processplatform/assemble/surface/process_manager/list",
+      "endpoint": "/api/processplatform/assemble/surface/process_manager/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessManagerApp.vue",
-            "contains": "const listEp = '/jaxrs/processplatform/assemble/surface/process_manager/list'"
+            "contains": "const listEp = '/api/processplatform/assemble/surface/process_manager/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessManagerApp.vue",
@@ -878,7 +878,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/processplatform_assemble_surface/src/routes.rs",
-            "contains": "\"/jaxrs/processplatform/assemble/surface/process_manager/list\""
+            "contains": "\"/api/processplatform/assemble/surface/process_manager/list\""
           }
         ]
       },
@@ -891,14 +891,14 @@
       "view": "ProcessTaskCenterApp.vue",
       "route": "/app/process-task-center",
       "title": "流程任务中心",
-      "endpoint": "/jaxrs/processplatform/service/processing/task/list",
+      "endpoint": "/api/processplatform/service/processing/task/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessTaskCenterApp.vue",
-            "contains": "const listEp = '/jaxrs/processplatform/service/processing/task/list'"
+            "contains": "const listEp = '/api/processplatform/service/processing/task/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessTaskCenterApp.vue",
@@ -918,7 +918,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/processplatform_service_processing/src/routes.rs",
-            "contains": "\"/jaxrs/processplatform/service/processing/task/list\""
+            "contains": "\"/api/processplatform/service/processing/task/list\""
           }
         ]
       },
@@ -931,14 +931,14 @@
       "view": "ProcessXformApp.vue",
       "route": "/app/process-xform",
       "title": "流程XForm",
-      "endpoint": "/jaxrs/processplatform/assemble/designer/xform/list",
+      "endpoint": "/api/processplatform/assemble/designer/xform/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessXformApp.vue",
-            "contains": "const listEp = '/jaxrs/processplatform/assemble/designer/xform/list'"
+            "contains": "const listEp = '/api/processplatform/assemble/designer/xform/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProcessXformApp.vue",
@@ -954,7 +954,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/processplatform_assemble_designer/src/routes.rs",
-            "contains": "\"/jaxrs/processplatform/assemble/designer/xform/create\""
+            "contains": "\"/api/processplatform/assemble/designer/xform/create\""
           },
           {
             "file": "oa4rust/migrations/097_create_pp_xform_table.sql",
@@ -971,14 +971,14 @@
       "view": "QueryExplorerApp.vue",
       "route": "/app/query-explorer",
       "title": "查询浏览器",
-      "endpoint": "/jaxrs/query/assemble/surface/explorer/list",
+      "endpoint": "/api/query/assemble/surface/explorer/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryExplorerApp.vue",
-            "contains": "const listEp = '/jaxrs/query/assemble/surface/explorer/list'"
+            "contains": "const listEp = '/api/query/assemble/surface/explorer/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryExplorerApp.vue",
@@ -994,7 +994,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/query_assemble_surface/src/lib.rs",
-            "contains": "\"/jaxrs/query/assemble/surface/explorer/list\""
+            "contains": "\"/api/query/assemble/surface/explorer/list\""
           }
         ]
       },
@@ -1007,14 +1007,14 @@
       "view": "QueryImporterDesignerApp.vue",
       "route": "/app/query-importer-designer",
       "title": "导入设计器",
-      "endpoint": "/jaxrs/query/assemble/designer/importer/list",
+      "endpoint": "/api/query/assemble/designer/importer/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryImporterDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/query/assemble/designer/importer/list'"
+            "contains": "const listEp = '/api/query/assemble/designer/importer/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryImporterDesignerApp.vue",
@@ -1030,7 +1030,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
-            "contains": "\"/jaxrs/query/assemble/designer/importer/create\""
+            "contains": "\"/api/query/assemble/designer/importer/create\""
           }
         ]
       },
@@ -1043,7 +1043,7 @@
       "view": "QueryQueryApp.vue",
       "route": "/app/query-query",
       "title": "查询定义",
-      "endpoint": "/jaxrs/query/assemble/designer/list",
+      "endpoint": "/api/query/assemble/designer/list",
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "查询定义数据驱动管理：bare list/save(upsert)/delete 全挂 x_query_design，视图支持 name/category/查询定义文本编辑、upsert 新建与软删（删除需确认），写端点与 list 端点分离",
@@ -1051,7 +1051,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryQueryApp.vue",
-            "contains": "const listEp = '/jaxrs/query/assemble/designer/list'"
+            "contains": "const listEp = '/api/query/assemble/designer/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryQueryApp.vue",
@@ -1067,7 +1067,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
-            "contains": "\"/jaxrs/query/assemble/designer/save\", put(save_designer_bare)"
+            "contains": "\"/api/query/assemble/designer/save\", put(save_designer_bare)"
           },
           {
             "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
@@ -1083,14 +1083,14 @@
       "view": "QueryStatDesignerApp.vue",
       "route": "/app/query-stat-designer",
       "title": "统计设计器",
-      "endpoint": "/jaxrs/query/assemble/designer/stat/list",
+      "endpoint": "/api/query/assemble/designer/stat/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryStatDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/query/assemble/designer/stat/list'"
+            "contains": "const listEp = '/api/query/assemble/designer/stat/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/QueryStatDesignerApp.vue",
@@ -1106,7 +1106,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/query_assemble_designer/src/lib.rs",
-            "contains": "\"/jaxrs/query/assemble/designer/stat/create\""
+            "contains": "\"/api/query/assemble/designer/stat/create\""
           }
         ]
       },
@@ -1119,14 +1119,14 @@
       "view": "ServiceInvokeDesignerApp.vue",
       "route": "/app/service-invoke-designer",
       "title": "服务调用设计器",
-      "endpoint": "/jaxrs/program_center/invoke/list",
+      "endpoint": "/api/program_center/invoke/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/program_center/invoke/list'"
+            "contains": "const listEp = '/api/program_center/invoke/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
@@ -1142,7 +1142,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/invoke/create\""
+            "contains": "\"/api/program_center/invoke/create\""
           }
         ]
       },
@@ -1155,14 +1155,14 @@
       "view": "TemplateApp.vue",
       "route": "/app/template",
       "title": "模板管理",
-      "endpoint": "/jaxrs/templateform/list",
+      "endpoint": "/api/templateform/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/TemplateApp.vue",
-            "contains": "const listEp = '/jaxrs/templateform/list'"
+            "contains": "const listEp = '/api/templateform/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/TemplateApp.vue",
@@ -1178,7 +1178,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/templateform/create\""
+            "contains": "\"/api/templateform/create\""
           }
         ]
       },
@@ -1191,14 +1191,14 @@
       "view": "ThreeMemberApp.vue",
       "route": "/app/three-member",
       "title": "三方成员管理",
-      "endpoint": "/jaxrs/organization/assemble/control/threemember/list",
+      "endpoint": "/api/organization/assemble/control/threemember/list",
       "status": "implemented",
       "replacementClaim": true,
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ThreeMemberApp.vue",
-            "contains": "const listEp = '/jaxrs/organization/assemble/control/threemember/list'"
+            "contains": "const listEp = '/api/organization/assemble/control/threemember/list'"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ThreeMemberApp.vue",
@@ -1214,7 +1214,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/organization_assemble_control/src/u2_router.rs",
-            "contains": "\"/jaxrs/organization/assemble/control/threemember/create\""
+            "contains": "\"/api/organization/assemble/control/threemember/create\""
           }
         ]
       },
@@ -1233,13 +1233,13 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "MindApp 目录树 GET /jaxrs/mind/folder/tree/my、导图列表改调已注册 PUT /jaxrs/mind/assemble/control/mind/filter/list/{folderId}/next/1（原 /mind/mind/list/{folder}/1 死路由不再调用），并有新建导图 + 保存入口。",
+      "decision": "MindApp 目录树 GET /api/mind/folder/tree/my、导图列表改调已注册 PUT /api/mind/assemble/control/mind/filter/list/{folderId}/next/1（原 /mind/mind/list/{folder}/1 死路由不再调用），并有新建导图 + 保存入口。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
-            "contains": "`/jaxrs/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`"
+            "contains": "`/api/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
@@ -1255,7 +1255,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/mind_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/mind/assemble/control/mind/filter/list/{id}/next/{page}\""
+            "contains": "\"/api/mind/assemble/control/mind/filter/list/{id}/next/{page}\""
           }
         ]
       },
@@ -1274,7 +1274,7 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "MindApp 内置画布编辑器：节点树/SVG 连线/拖拽换父/缩放/双击重命名/增删节点，保存走 POST /jaxrs/mind/assemble/control/mind/save（x_mind + 版本），列表卡展示 fileVersion；Minder JSON 已结构化为节点编辑，非仅查看弹窗。",
+      "decision": "MindApp 内置画布编辑器：节点树/SVG 连线/拖拽换父/缩放/双击重命名/增删节点，保存走 POST /api/mind/assemble/control/mind/save（x_mind + 版本），列表卡展示 fileVersion；Minder JSON 已结构化为节点编辑，非仅查看弹窗。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
@@ -1284,7 +1284,7 @@
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/MindApp.vue",
-            "contains": "'/jaxrs/mind/assemble/control/mind/save'"
+            "contains": "'/api/mind/assemble/control/mind/save'"
           }
         ],
         "routing": [
@@ -1296,7 +1296,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/mind_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/mind/assemble/control/mind/save\""
+            "contains": "\"/api/mind/assemble/control/mind/save\""
           },
           {
             "file": "oa4rust/crates/mind_assemble_control/src/u2.rs",
@@ -1319,13 +1319,13 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "ProgramCenterApp Agent 行新增「编辑」弹窗（name/flag/description → POST /jaxrs/program_center/agent/save/{id}，agent_save 参数化 UPDATE x_program_agent，COALESCE 语义保留原值）；启停/删除/新建原本已可用。",
+      "decision": "ProgramCenterApp Agent 行新增「编辑」弹窗（name/flag/description → POST /api/program_center/agent/save/{id}，agent_save 参数化 UPDATE x_program_agent，COALESCE 语义保留原值）；启停/删除/新建原本已可用。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "`/jaxrs/program_center/agent/save/${id}`"
+            "contains": "`/api/program_center/agent/save/${id}`"
           }
         ],
         "routing": [
@@ -1337,7 +1337,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/agent/save/{id}\""
+            "contains": "\"/api/program_center/agent/save/{id}\""
           }
         ]
       },
@@ -1356,17 +1356,17 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "ProgramCenterApp 字典卡新增「数据」编辑器：GET dict/{flag}/data 读 app_data、JSON 校验后 POST dict/{flag}/data/data 落库（dict_data_write 参数化写 x_program_dict）；字典创建由 prompt 框改为弹窗，且修复原 /dict/create 死端点 + flag→dictFlag 字段误配，改调已注册 POST /jaxrs/program_center/dict。",
+      "decision": "ProgramCenterApp 字典卡新增「数据」编辑器：GET dict/{flag}/data 读 app_data、JSON 校验后 POST dict/{flag}/data/data 落库（dict_data_write 参数化写 x_program_dict）；字典创建由 prompt 框改为弹窗，且修复原 /dict/create 死端点 + flag→dictFlag 字段误配，改调已注册 POST /api/program_center/dict。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "`/jaxrs/program_center/dict/${encodeURIComponent(flag)}/data`"
+            "contains": "`/api/program_center/dict/${encodeURIComponent(flag)}/data`"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "api.post('/jaxrs/program_center/dict', data)"
+            "contains": "api.post('/api/program_center/dict', data)"
           }
         ],
         "routing": [
@@ -1378,7 +1378,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/dict/{dictFlag}/{path}/data\""
+            "contains": "\"/api/program_center/dict/{dictFlag}/{path}/data\""
           }
         ]
       },
@@ -1397,17 +1397,17 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "ServiceInvokeDesignerApp 为数据驱动 CRUD：list/create/save/{id}/delete/{id} 全走已注册路由（写操作不再复用 list 端点），新增「执行」按钮 POST /jaxrs/program_center/invoke/{flag}/execute（u3_invoke_execute，按 id/name/alias 命中 + token 门禁）；manifest 原「薄壳」结论陈旧。",
+      "decision": "ServiceInvokeDesignerApp 为数据驱动 CRUD：list/create/save/{id}/delete/{id} 全走已注册路由（写操作不再复用 list 端点），新增「执行」按钮 POST /api/program_center/invoke/{flag}/execute（u3_invoke_execute，按 id/name/alias 命中 + token 门禁）；manifest 原「薄壳」结论陈旧。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
-            "contains": "/jaxrs/program_center/invoke/${encodeURIComponent(flag)}/execute"
+            "contains": "/api/program_center/invoke/${encodeURIComponent(flag)}/execute"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/program_center/invoke/list'"
+            "contains": "const listEp = '/api/program_center/invoke/list'"
           }
         ],
         "routing": [
@@ -1419,7 +1419,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/invoke/{flag}/execute\""
+            "contains": "\"/api/program_center/invoke/{flag}/execute\""
           }
         ]
       },
@@ -1438,13 +1438,13 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "ProgramCenterApp 脚本卡新增「编辑代码」（GET script/{flag} 读 content + POST script/{flag} 保存 x_program_script.content）与「版本」（GET /jaxrs/scriptversion/list/script/{scriptId} 版本历史）；代码编辑为等宽 textarea，补全能力不在本次边界。",
+      "decision": "ProgramCenterApp 脚本卡新增「编辑代码」（GET script/{flag} 读 content + POST script/{flag} 保存 x_program_script.content）与「版本」（GET /api/scriptversion/list/script/{scriptId} 版本历史）；代码编辑为等宽 textarea，补全能力不在本次边界。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "`/jaxrs/scriptversion/list/script/${encodeURIComponent(scriptId)}`"
+            "contains": "`/api/scriptversion/list/script/${encodeURIComponent(scriptId)}`"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
@@ -1460,11 +1460,11 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/script/{flag}\""
+            "contains": "\"/api/program_center/script/{flag}\""
           },
           {
             "file": "oa4rust/crates/cms_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/scriptversion/list/script/{scriptId}\""
+            "contains": "\"/api/scriptversion/list/script/{scriptId}\""
           }
         ]
       },
@@ -1493,7 +1493,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
-            "contains": "const listEp = '/jaxrs/program_center/invoke/list'"
+            "contains": "const listEp = '/api/program_center/invoke/list'"
           }
         ],
         "routing": [
@@ -1505,7 +1505,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "\"/jaxrs/program_center/invoke/{flag}/execute\""
+            "contains": "\"/api/program_center/invoke/{flag}/execute\""
           }
         ]
       },
@@ -1541,13 +1541,13 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/ProgramCenterApp.vue",
-            "contains": "api.post('/jaxrs/program_center/market/list/paging/1/20', {})"
+            "contains": "api.post('/api/program_center/market/list/paging/1/20', {})"
           }
         ],
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "/jaxrs/program_center/market/list/paging/{page}/size/{size}"
+            "contains": "/api/program_center/market/list/paging/{page}/size/{size}"
           }
         ]
       }
@@ -1583,7 +1583,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/program_center/src/routes.rs",
-            "contains": "/jaxrs/program_center/market/{flag}/install/or/update"
+            "contains": "/api/program_center/market/{flag}/install/or/update"
           }
         ]
       }
@@ -1602,17 +1602,17 @@
       "status": "implemented",
       "replacementClaim": true,
       "acceptance": "论坛主页的版块列表、全部/推荐/精华/我的四个页签列表与版块筛选读取；关键词搜索由 ForumSearch、发帖/详情/回复闭环由 ForumDocument、个人主页由 ForumPerson 条目单独裁决。",
-      "decision": "BBSForum 五类列表全部改调已注册可实跑路由：页签走 fmt 分页参数化路由（PUT subject/{index,creamed,recommended}/list/page/{p}/count/{n}、POST subject/filter/listsubjectinfo 本人主题）、版块筛选走 GET /jaxrs/bbs/subject/list/{sectionId}（bbs_subject_info 实表），裸静态无参 GET 路由（运行时 Path 提取 500）不再被前端调用。",
+      "decision": "BBSForum 五类列表全部改调已注册可实跑路由：页签走 fmt 分页参数化路由（PUT subject/{index,creamed,recommended}/list/page/{p}/count/{n}、POST subject/filter/listsubjectinfo 本人主题）、版块筛选走 GET /api/bbs/subject/list/{sectionId}（bbs_subject_info 实表），裸静态无参 GET 路由（运行时 Path 提取 500）不再被前端调用。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.get('/jaxrs/bbs/assemble/control/section/list')"
+            "contains": "api.get('/api/bbs/assemble/control/section/list')"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`"
+            "contains": "`/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`"
           }
         ],
         "routing": [
@@ -1624,11 +1624,11 @@
         "backend": [
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/section/list\""
+            "contains": "\"/api/bbs/assemble/control/section/list\""
           },
           {
             "file": "oa4rust/crates/bbs/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/subject/list/{sectionId}\""
+            "contains": "\"/api/bbs/subject/list/{sectionId}\""
           }
         ]
       }
@@ -1656,7 +1656,7 @@
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post('/jaxrs/bbs/assemble/control/section/create', { name })"
+            "contains": "api.post('/api/bbs/assemble/control/section/create', { name })"
           }
         ],
         "routing": [
@@ -1668,7 +1668,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/section/create\""
+            "contains": "\"/api/bbs/assemble/control/section/create\""
           },
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/lib.rs",
@@ -1691,17 +1691,17 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "发帖 POST /jaxrs/bbs/subject/create（bbs crate 实装写 bbs_subject_info）；打开详情补拉 GET /jaxrs/bbs/subject/view/{id} 全量正文（列表行仅摘要）；回复闭环 = GET 参数化 reply/filter/list + POST reply/create 后刷新回复与列表。发帖弹窗预选版块（当前版块优先），避免必填项空缺。",
+      "decision": "发帖 POST /api/bbs/subject/create（bbs crate 实装写 bbs_subject_info）；打开详情补拉 GET /api/bbs/subject/view/{id} 全量正文（列表行仅摘要）；回复闭环 = GET 参数化 reply/filter/list + POST reply/create 后刷新回复与列表。发帖弹窗预选版块（当前版块优先），避免必填项空缺。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post('/jaxrs/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' })"
+            "contains": "api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' })"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/subject/view/${targetId}`"
+            "contains": "`/api/bbs/subject/view/${targetId}`"
           }
         ],
         "routing": [
@@ -1713,15 +1713,15 @@
         "backend": [
           {
             "file": "oa4rust/crates/bbs/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/subject/create\""
+            "contains": "\"/api/bbs/subject/create\""
           },
           {
             "file": "oa4rust/crates/bbs/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/subject/view/{id}\""
+            "contains": "\"/api/bbs/subject/view/{id}\""
           },
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/reply/create\""
+            "contains": "\"/api/bbs/assemble/control/reply/create\""
           }
         ]
       },
@@ -1791,7 +1791,7 @@
         "frontend": [
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`"
+            "contains": "`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`"
           }
         ],
         "routing": [
@@ -1826,7 +1826,7 @@
       ],
       "status": "implemented",
       "replacementClaim": true,
-      "decision": "版块发布/管理已实装：后端新增 x_bbs_assemble_control_section 写路由（POST section/create 会话自动填 creator、PUT/POST section/save/{id} 改名、DELETE/POST section/delete/{id} 硬删，shared::crud 参数化白名单），前端 BBSForum 侧栏加号/重命名/删除全接线并按 POST 别名调用；版块筛选此前已修好（GET /jaxrs/bbs/subject/list/{sectionId}）。写路由由 live 轮测 test_section_crud_roundtrip 实跑验证。",
+      "decision": "版块发布/管理已实装：后端新增 x_bbs_assemble_control_section 写路由（POST section/create 会话自动填 creator、PUT/POST section/save/{id} 改名、DELETE/POST section/delete/{id} 硬删，shared::crud 参数化白名单），前端 BBSForum 侧栏加号/重命名/删除全接线并按 POST 别名调用；版块筛选此前已修好（GET /api/bbs/subject/list/{sectionId}）。写路由由 live 轮测 test_section_crud_roundtrip 实跑验证。",
       "blockerCodes": [],
       "evidence": {
         "frontend": [
@@ -1836,15 +1836,15 @@
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "api.post('/jaxrs/bbs/assemble/control/section/create', { name })"
+            "contains": "api.post('/api/bbs/assemble/control/section/create', { name })"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`"
+            "contains": "`/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`"
           },
           {
             "file": "oa4rust-web/apps/desktop/src/views/BBSForum.vue",
-            "contains": "`/jaxrs/bbs/assemble/control/section/delete/${sec.id}`"
+            "contains": "`/api/bbs/assemble/control/section/delete/${sec.id}`"
           }
         ],
         "routing": [
@@ -1856,7 +1856,7 @@
         "backend": [
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/section/create\""
+            "contains": "\"/api/bbs/assemble/control/section/create\""
           },
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/lib.rs",
@@ -1864,7 +1864,7 @@
           },
           {
             "file": "oa4rust/crates/bbs_assemble_control/src/routes.rs",
-            "contains": "\"/jaxrs/bbs/assemble/control/section/delete/{id}\""
+            "contains": "\"/api/bbs/assemble/control/section/delete/{id}\""
           }
         ]
       },

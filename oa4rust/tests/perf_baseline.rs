@@ -3,8 +3,8 @@
 //! 独立的集成测试目标，镜像 `tests/integration_runner.rs`：
 //! 初始化一次性测试数据库、启动完整应用、然后对两个关键路径进行延迟压测：
 //!
-//!   (a) `POST /jaxrs/authentication`  (it-admin / password123) —— 认证 DB 密码校验路径
-//!   (b) `GET  /jaxrs/cms_assemble_control/data/document`        —— 列表读取路径
+//!   (a) `POST /api/authentication`  (it-admin / password123) —— 认证 DB 密码校验路径
+//!   (b) `GET  /api/cms_assemble_control/data/document`        —— 列表读取路径
 //!
 //! 使用 `std::time::Instant` 采集 N 次迭代的延迟，汇总 avg / p50 / p99。
 //!
@@ -72,12 +72,12 @@ fn perf_baseline() {
         // 3) warm-up —— 不计入统计
         for _ in 0..WARMUP {
             let _ = client
-                .post(format!("{}/jaxrs/authentication", base))
+                .post(format!("{}/api/authentication", base))
                 .json(&json!({ "credential": "it-admin", "password": "password123" }))
                 .send()
                 .await;
             let _ = client
-                .get(format!("{}/jaxrs/cms_assemble_control/data/document", base))
+                .get(format!("{}/api/cms_assemble_control/data/document", base))
                 .header("Authorization", &auth_header)
                 .send()
                 .await;
@@ -91,7 +91,7 @@ fn perf_baseline() {
             // (a) 认证 DB 密码校验路径
             let start = Instant::now();
             let auth_resp = client
-                .post(format!("{}/jaxrs/authentication", base))
+                .post(format!("{}/api/authentication", base))
                 .json(&json!({ "credential": "it-admin", "password": "password123" }))
                 .send()
                 .await
@@ -100,7 +100,7 @@ fn perf_baseline() {
             let _ = auth_resp.text().await;
             if !auth_status.is_success() {
                 panic!(
-                    "POST /jaxrs/authentication returned {} at iter {}, aborting baseline",
+                    "POST /api/authentication returned {} at iter {}, aborting baseline",
                     auth_status, i
                 );
             }
@@ -110,7 +110,7 @@ fn perf_baseline() {
             // (b) 列表读取路径
             let start = Instant::now();
             let list_resp = client
-                .get(format!("{}/jaxrs/cms_assemble_control/data/document", base))
+                .get(format!("{}/api/cms_assemble_control/data/document", base))
                 .header("Authorization", &auth_header)
                 .send()
                 .await
@@ -119,7 +119,7 @@ fn perf_baseline() {
             let _ = list_resp.text().await;
             if !list_status.is_success() {
                 panic!(
-                    "GET /jaxrs/cms_assemble_control/data/document returned {} at iter {}, aborting baseline",
+                    "GET /api/cms_assemble_control/data/document returned {} at iter {}, aborting baseline",
                     list_status, i
                 );
             }
@@ -128,8 +128,8 @@ fn perf_baseline() {
         }
 
         // 5) 汇总并打印 JSON 产物（供 CI artifact 或脚本消费）
-        let auth_json = json_stats("POST /jaxrs/authentication", &auth_ms);
-        let list_json = json_stats("GET  /jaxrs/cms_assemble_control/data/document", &list_ms);
+        let auth_json = json_stats("POST /api/authentication", &auth_ms);
+        let list_json = json_stats("GET  /api/cms_assemble_control/data/document", &list_ms);
         println!(
             "\n=== OA4Rust perf baseline (iterations={}, warmup={}) ===\n{}\n{}",
             ITERATIONS, WARMUP, auth_json, list_json

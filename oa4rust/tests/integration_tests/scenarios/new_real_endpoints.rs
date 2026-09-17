@@ -89,16 +89,16 @@ pub async fn ai_endpoints_flow() {
         .expect("seed x_ai_file");
     }
 
-    let dl = get_ok(&base, &client, &auth, &format!("/jaxrs/ai/file/{}/download", file_id)).await;
+    let dl = get_ok(&base, &client, &auth, &format!("/api/ai/file/{}/download", file_id)).await;
     assert_eq!(dl["data"]["id"].as_str(), Some(file_id.as_str()));
     info!(file_id = %file_id, "file_download returned real row");
 
-    let dls = get_ok(&base, &client, &auth, &format!("/jaxrs/ai/file/{}/download/scale", file_id)).await;
+    let dls = get_ok(&base, &client, &auth, &format!("/api/ai/file/{}/download/scale", file_id)).await;
     assert_eq!(dls["data"]["id"].as_str(), Some(file_id.as_str()));
     info!(file_id = %file_id, "file_download_scale returned real row");
 
     // DELETE then verify the row is gone (side effect).
-    let del = get_ok(&base, &client, &auth, &format!("/jaxrs/ai/file/delete/{}", file_id)).await;
+    let del = get_ok(&base, &client, &auth, &format!("/api/ai/file/delete/{}", file_id)).await;
     assert_eq!(del["data"]["id"].as_str(), Some(file_id.as_str()));
     let c = pool.get().await.expect("pool");
     let remaining = c
@@ -130,7 +130,7 @@ pub async fn ai_endpoints_flow() {
         .expect("seed x_ai_mcp_config");
     }
 
-    let list = get_ok(&base, &client, &auth, "/jaxrs/ai/config/list/mcp/paging/1/size/10").await;
+    let list = get_ok(&base, &client, &auth, "/api/ai/config/list/mcp/paging/1/size/10").await;
     let mcp_items = list["data"]["data"].as_array().expect("mcp data array");
     assert!(
         mcp_items.iter().any(|r| r["id"].as_str() == Some(mcp_id.as_str())),
@@ -138,7 +138,7 @@ pub async fn ai_endpoints_flow() {
     );
     info!(mcp_id = %mcp_id, "config_list_mcp_paging returned real row");
 
-    let get_mcp = get_ok(&base, &client, &auth, &format!("/jaxrs/ai/config/get/mcp/{}", mcp_id)).await;
+    let get_mcp = get_ok(&base, &client, &auth, &format!("/api/ai/config/get/mcp/{}", mcp_id)).await;
     assert_eq!(get_mcp["data"]["id"].as_str(), Some(mcp_id.as_str()));
     info!(mcp_id = %mcp_id, "config_get_mcp returned real row");
 
@@ -153,7 +153,7 @@ pub async fn ai_endpoints_flow() {
         .await
         .expect("seed x_ai_index");
     }
-    let del_idx = get_ok(&base, &client, &auth, &format!("/jaxrs/ai/index/delete/{}", idx_id)).await;
+    let del_idx = get_ok(&base, &client, &auth, &format!("/api/ai/index/delete/{}", idx_id)).await;
     assert_eq!(del_idx["data"]["id"].as_str(), Some(idx_id.as_str()));
     let c = pool.get().await.expect("pool");
     let idx_remaining = c
@@ -194,7 +194,7 @@ pub async fn query_endpoints_flow() {
         &base,
         &client,
         &auth,
-        &format!("/jaxrs/query/core/express/cache/status/{}", q_id),
+        &format!("/api/query/core/express/cache/status/{}", q_id),
     ).await;
     assert_eq!(cached["data"]["queryId"].as_str(), Some(q_id.as_str()));
     assert_eq!(cached["data"]["cached"].as_bool(), Some(true));
@@ -205,7 +205,7 @@ pub async fn query_endpoints_flow() {
         &base,
         &client,
         &auth,
-        &format!("/jaxrs/query/core/express/cache/status/{}", uniq("q-missing")),
+        &format!("/api/query/core/express/cache/status/{}", uniq("q-missing")),
     ).await;
     assert_eq!(missing["data"]["cached"].as_bool(), Some(false));
     info!("get_cache_status returned cached=false for missing id (no 500)");
@@ -231,7 +231,7 @@ pub async fn bbs_endpoints_flow() {
         &base,
         &client,
         &auth,
-        "/jaxrs/bbs/core/entity/reply",
+        "/api/bbs/core/entity/reply",
         json!({ "topicId": topic_id, "content": "hello reply", "creator": "it-admin" }),
     ).await;
     let reply_id = resp["data"]["id"].as_str().expect("reply id missing").to_string();
@@ -275,7 +275,7 @@ pub async fn portal_endpoints_flow() {
         .expect("seed x_portal");
     }
 
-    let list = get_ok(&base, &client, &auth, "/jaxrs/portalcategory/list").await;
+    let list = get_ok(&base, &client, &auth, "/api/portalcategory/list").await;
     let cats = list["data"]["data"].as_array().expect("category data array");
     assert!(
         cats.iter().any(|r| r["id"].as_str() == Some(cat.as_str())),
@@ -301,7 +301,7 @@ pub async fn component_assemble_control_flow() {
 
     // update_control_config is registered as GET but reads a JSON body.
     let upd = client
-        .get(format!("{}/jaxrs/component_assemble_control/update/control/config", base))
+        .get(format!("{}/api/component_assemble_control/update/control/config", base))
         .header("Authorization", &auth)
         .json(&json!({ "enabled": true, "maxComponentCount": 42, "allowCustomComponents": true }))
         .send()
@@ -329,7 +329,7 @@ pub async fn component_assemble_control_flow() {
     info!("update_control_config persisted config row");
 
     // get_control_config reads the real row back.
-    let get_cfg = get_ok(&base, &client, &auth, "/jaxrs/component_assemble_control/get/control/config").await;
+    let get_cfg = get_ok(&base, &client, &auth, "/api/component_assemble_control/get/control/config").await;
     assert_eq!(get_cfg["data"]["enabled"].as_bool(), Some(true));
     assert_eq!(get_cfg["data"]["maxComponentCount"].as_i64(), Some(42));
     info!("get_control_config returned real config");
@@ -370,7 +370,7 @@ pub async fn correlation_endpoints_flow() {
         &client,
         &auth,
         &format!(
-            "/jaxrs/correlation/service/processing/unlink/{}/{}/{}/{}",
+            "/api/correlation/service/processing/unlink/{}/{}/{}/{}",
             source_type, source_id, target_type, target_id
         ),
         json!({}),
@@ -437,7 +437,7 @@ pub async fn org_assemble_control_flow() {
         &base,
         &client,
         &auth,
-        &format!("/jaxrs/organization/assemble/control/role/{}", role_id),
+        &format!("/api/organization/assemble/control/role/{}", role_id),
     ).await;
     assert_eq!(role["data"]["id"].as_str(), Some(role_id.as_str()));
     info!(role_id = %role_id, "organization_assemble_control_role_flag returned real row");
@@ -446,7 +446,7 @@ pub async fn org_assemble_control_flow() {
         &base,
         &client,
         &auth,
-        &format!("/jaxrs/organization/assemble/control/unit/{}", unit_id),
+        &format!("/api/organization/assemble/control/unit/{}", unit_id),
     ).await;
     assert_eq!(unit["data"]["id"].as_str(), Some(unit_id.as_str()));
     info!(unit_id = %unit_id, "organization_assemble_control_unit_flag returned real row");
@@ -455,7 +455,7 @@ pub async fn org_assemble_control_flow() {
         &base,
         &client,
         &auth,
-        &format!("/jaxrs/organization/assemble/control/identity/{}", idn_id),
+        &format!("/api/organization/assemble/control/identity/{}", idn_id),
     ).await;
     assert_eq!(idn["data"]["id"].as_str(), Some(idn_id.as_str()));
     info!(idn_id = %idn_id, "identity_flag returned real row");
@@ -464,7 +464,7 @@ pub async fn org_assemble_control_flow() {
         &base,
         &client,
         &auth,
-        &format!("/jaxrs/organization/assemble/control/personcard/{}", person_id),
+        &format!("/api/organization/assemble/control/personcard/{}", person_id),
     ).await;
     assert_eq!(person["data"]["id"].as_str(), Some(person_id.as_str()));
     info!(person_id = %person_id, "personcard_flag returned real row");
@@ -473,7 +473,7 @@ pub async fn org_assemble_control_flow() {
         &base,
         &client,
         &auth,
-        "/jaxrs/organization/assemble/control/person/list/like",
+        "/api/organization/assemble/control/person/list/like",
         json!({ "name": person_id }),
     ).await;
     let people = like["data"]["data"].as_array().expect("person list data");
@@ -499,7 +499,7 @@ pub async fn console_jpush_express_flow() {
     let base = format!("http://{}", _addr);
     let auth = format!("Bearer {}", token);
 
-    let status = get_ok(&base, &client, &auth, "/jaxrs/console/status").await;
+    let status = get_ok(&base, &client, &auth, "/api/console/status").await;
     assert!(status["data"]["status"].as_str().is_some());
     info!("console get_status returned real status");
 
@@ -514,7 +514,7 @@ pub async fn console_jpush_express_flow() {
         .await
         .expect("seed x_console_metric");
     }
-    let metric = get_ok(&base, &client, &auth, "/jaxrs/console/metric/cpu").await;
+    let metric = get_ok(&base, &client, &auth, "/api/console/metric/cpu").await;
     assert_eq!(metric["data"]["name"].as_str(), Some("cpu"));
     assert_eq!(metric["data"]["value"].as_i64(), Some(42), "get_metric returned real xvalue");
     assert_eq!(metric["data"]["unit"].as_str(), Some("%"), "get_metric returned real xunit");
@@ -528,7 +528,7 @@ pub async fn console_jpush_express_flow() {
         &base,
         &client,
         &auth,
-        "/jaxrs/organization/assemble/express/status/get",
+        "/api/organization/assemble/express/status/get",
     ).await;
     assert!(express["data"]["status"].as_str().is_some());
     info!("organization_assemble_express get_express_status returned real status");

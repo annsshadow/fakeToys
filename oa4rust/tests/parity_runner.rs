@@ -143,27 +143,27 @@ fn parity_record() {
         let auth_header = format!("Bearer {}", token);
 
         // 跨模块已知可用（无路径参数）的只读端点，录制 oa4rust 基线响应。
-        // 带路径参数的端点（如 /jaxrs/ai/file/{id}/download）需种子数据，留待 o2server 语料齐备后扩展。
+        // 带路径参数的端点（如 /api/ai/file/{id}/download）需种子数据，留待 o2server 语料齐备后扩展。
         let endpoints: Vec<(&str, &str, &str)> = vec![
             (
                 "cms_document_list",
                 "GET",
-                "/jaxrs/cms_assemble_control/data/document",
+                "/api/cms_assemble_control/data/document",
             ),
-            ("program_applications", "GET", "/jaxrs/program/applications"),
-            ("ldap_config", "GET", "/jaxrs/ldap/config"),
-            ("portalcategory_list", "GET", "/jaxrs/portalcategory/list"),
-            ("console_status", "GET", "/jaxrs/console/status"),
-            ("console_metric_cpu", "GET", "/jaxrs/console/metric/cpu"),
+            ("program_applications", "GET", "/api/program/applications"),
+            ("ldap_config", "GET", "/api/ldap/config"),
+            ("portalcategory_list", "GET", "/api/portalcategory/list"),
+            ("console_status", "GET", "/api/console/status"),
+            ("console_metric_cpu", "GET", "/api/console/metric/cpu"),
             (
                 "control_config",
                 "GET",
-                "/jaxrs/component_assemble_control/get/control/config",
+                "/api/component_assemble_control/get/control/config",
             ),
             (
                 "ai_mcp_config_list",
                 "GET",
-                "/jaxrs/ai/config/list/mcp/paging/1/size/10",
+                "/api/ai/config/list/mcp/paging/1/size/10",
             ),
         ];
 

@@ -49,7 +49,7 @@ pub async fn bpmn_process_flow() {
 
     // Step 1: Start a process (work/create). Inserts x_work (status=running).
     let create_resp = client
-        .post(format!("{}/jaxrs/processplatform/service/processing/work/create", base))
+        .post(format!("{}/api/processplatform/service/processing/work/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "processId": process_id,
@@ -78,7 +78,7 @@ pub async fn bpmn_process_flow() {
     // Sets work to processing and inserts an x_task.
     let exec_resp = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/execute/{}",
+            "{}/api/processplatform/service/processing/execute/{}",
             base, work_id
         ))
         .header("Authorization", &auth_header)
@@ -102,7 +102,7 @@ pub async fn bpmn_process_flow() {
     // Step 3: Task query (task/v2/{id}). Must return real DB row.
     let task_resp = client
         .get(format!(
-            "{}/jaxrs/processplatform/service/processing/task/v2/{}",
+            "{}/api/processplatform/service/processing/task/v2/{}",
             base, task_id
         ))
         .header("Authorization", &auth_header)
@@ -118,7 +118,7 @@ pub async fn bpmn_process_flow() {
     // Step 4: agree(approve) the task. Completes the task and archives the work.
     let agree_resp = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/agree",
+            "{}/api/processplatform/service/processing/task/{}/agree",
             base, task_id
         ))
         .header("Authorization", &auth_header)
@@ -141,7 +141,7 @@ pub async fn bpmn_process_flow() {
     // present and reflect the completed task.
     let complex_resp = client
         .get(format!(
-            "{}/jaxrs/processplatform/service/processing/process/{}/complex",
+            "{}/api/processplatform/service/processing/process/{}/complex",
             base, work_id
         ))
         .header("Authorization", &auth_header)
@@ -204,7 +204,7 @@ pub async fn bpmn_task_actions_flow() {
         let aid = format!("bpmn-it-{}-app-{}", suffix, std::process::id());
         let create = client
             .post(format!(
-                "{}/jaxrs/processplatform/service/processing/work/create",
+                "{}/api/processplatform/service/processing/work/create",
                 base
             ))
             .header("Authorization", auth_header)
@@ -225,7 +225,7 @@ pub async fn bpmn_task_actions_flow() {
             .to_string();
         let exec = client
             .post(format!(
-                "{}/jaxrs/processplatform/service/processing/execute/{}",
+                "{}/api/processplatform/service/processing/execute/{}",
                 base, work_id
             ))
             .header("Authorization", auth_header)
@@ -253,7 +253,7 @@ pub async fn bpmn_task_actions_flow() {
     // transfer → reassign to "bob"
     let xfer = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/transfer",
+            "{}/api/processplatform/service/processing/task/{}/transfer",
             base, task_a
         ))
         .header("Authorization", &auth_header)
@@ -274,7 +274,7 @@ pub async fn bpmn_task_actions_flow() {
     // return(退回) → single-task work reactivates itself; work returns to processing
     let ret = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/return",
+            "{}/api/processplatform/service/processing/task/{}/return",
             base, task_a
         ))
         .header("Authorization", &auth_header)
@@ -322,7 +322,7 @@ pub async fn bpmn_task_actions_flow() {
 
     let dis = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/disagree",
+            "{}/api/processplatform/service/processing/task/{}/disagree",
             base, task_b
         ))
         .header("Authorization", &auth_header)
@@ -398,7 +398,7 @@ pub async fn bpmn_countersign_flow() {
         let aid = format!("bpmn-cs-{}-app-{}", suffix, std::process::id());
         let create = client
             .post(format!(
-                "{}/jaxrs/processplatform/service/processing/work/create",
+                "{}/api/processplatform/service/processing/work/create",
                 base
             ))
             .header("Authorization", auth_header)
@@ -419,7 +419,7 @@ pub async fn bpmn_countersign_flow() {
             .to_string();
         let exec = client
             .post(format!(
-                "{}/jaxrs/processplatform/service/processing/execute/{}",
+                "{}/api/processplatform/service/processing/execute/{}",
                 base, work_id
             ))
             .header("Authorization", auth_header)
@@ -466,7 +466,7 @@ pub async fn bpmn_countersign_flow() {
     // approver A (alice) agrees → still waiting
     let a1 = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/agree",
+            "{}/api/processplatform/service/processing/task/{}/agree",
             base, task_a
         ))
         .header("Authorization", &auth_header)
@@ -513,7 +513,7 @@ pub async fn bpmn_countersign_flow() {
     // approver B (bob) agrees → all agreed, work completes
     let a2 = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/agree",
+            "{}/api/processplatform/service/processing/task/{}/agree",
             base, task_a
         ))
         .header("Authorization", &auth_header)
@@ -554,7 +554,7 @@ pub async fn bpmn_countersign_flow() {
     // carol agrees → waiting
     let b1 = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/agree",
+            "{}/api/processplatform/service/processing/task/{}/agree",
             base, task_b
         ))
         .header("Authorization", &auth_header)
@@ -570,7 +570,7 @@ pub async fn bpmn_countersign_flow() {
     // dave disagrees → work rejected (countersign aborted)
     let b2 = client
         .post(format!(
-            "{}/jaxrs/processplatform/service/processing/task/{}/disagree",
+            "{}/api/processplatform/service/processing/task/{}/disagree",
             base, task_b
         ))
         .header("Authorization", &auth_header)

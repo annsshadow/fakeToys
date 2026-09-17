@@ -60,7 +60,7 @@ pub async fn program_center_core_entity_application_flow() {
 
     // Step 2: Call the list endpoint and verify the record is returned
     let list_resp = client
-        .get(format!("{}/jaxrs/program_center/applications", base))
+        .get(format!("{}/api/program_center/applications", base))
         .send()
         .await
         .expect("list application request failed");

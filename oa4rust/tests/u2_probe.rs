@@ -30,8 +30,7 @@ async fn p5_ws_realtime_handshake_is_auth_guarded() {
         .await
         .expect("create_app must build in non-production test env");
 
-    let status =
-        shared::testing::send(&app, Method::GET, "/ws/realtime", None, None).await;
+    let status = shared::testing::send(&app, Method::GET, "/ws/realtime", None, None).await;
     assert_eq!(
         status,
         StatusCode::UNAUTHORIZED,

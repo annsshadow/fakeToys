@@ -60,7 +60,7 @@ pub async fn bbs_correlation_flow() {
 
     // Step 2: Create a BBS post (subject)
     let post_resp = client
-        .post(format!("{}/jaxrs/bbs/subject/create", base))
+        .post(format!("{}/api/bbs/subject/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "title": "Integration Test Post",
@@ -109,7 +109,7 @@ pub async fn bbs_correlation_flow() {
     // Step 4: Verify auth works via correlation list endpoint
     let corr_resp = client
         .get(format!(
-            "{}/jaxrs/correlation/core/entity/list/by/bbs_subject/{}",
+            "{}/api/correlation/core/entity/list/by/bbs_subject/{}",
             base, post_id
         ))
         .header("Authorization", &auth_header)
