@@ -296,3 +296,31 @@ class TestSamplerExtended:
         )
         assert len(result.recommended_seeds) == 1
         assert result.coverage_analysis["total_items"] == 1
+
+    def test_load_model_sklearn_available(self):
+        """加载模型（sklearn 缺失时 _model 为 None）"""
+        sampler = ActiveSampler()
+        sampler._load_model()
+        # sklearn not installed, _model stays None
+        assert sampler._model is None
+
+    def test_analyze_topic_distribution_with_data(self):
+        """有数据的主题分布"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "租金问题"}, {"instruction": "押金问题"}]
+        dist = sampler._analyze_topic_distribution(items)
+        assert "unique_words" in dist
+
+    def test_identify_underrepresented(self):
+        """识别不足表示"""
+        sampler = ActiveSampler()
+        items = [{"instruction": f"问题{i}"} for i in range(10)]
+        result = sampler.identify_underrepresented(items)
+        assert isinstance(result, list)
+
+    def test_recommend_seeds_with_items(self):
+        """有数据的种子推荐"""
+        sampler = ActiveSampler()
+        items = [{"instruction": f"问题{i}"} for i in range(10)]
+        result = sampler.recommend_seeds(items)
+        assert isinstance(result.recommended_seeds, list)
