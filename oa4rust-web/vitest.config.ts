@@ -12,6 +12,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['**/*.test.ts'],
-    exclude: ['node_modules', 'dist', '**/node_modules/**'],
+    // mobile 使用独立 vitest 配置（apps/mobile/vitest.config.ts，含 @ → src 别名），
+    // 见根 package.json 的 test:mobile 脚本。
+    exclude: ['node_modules', 'dist', '**/node_modules/**', 'apps/mobile/**'],
   },
 })
