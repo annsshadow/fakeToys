@@ -108,6 +108,53 @@ class TestTopicGenerationStrategies:
         assert expander._generate_scenario_topics(["租金"]) == []
 
 
+class TestDomainExpanderExtended:
+    """DomainExpander 扩展测试"""
+
+    def test_extract_topics_empty(self):
+        """空数据提取主题"""
+        expander = DomainExpander(ScriptedBackend([]))
+        topics = expander._extract_topics([])
+        assert topics == ["通用问题"]
+
+    def test_generate_similar_topics_exception(self):
+        """异常时返回空列表"""
+        expander = DomainExpander(ScriptedBackend([RuntimeError("error")]))
+        topics = expander._generate_similar_topics(["租金"])
+        assert topics == []
+
+    def test_generate_related_topics_exception(self):
+        """异常时返回空列表"""
+        expander = DomainExpander(ScriptedBackend([RuntimeError("error")]))
+        topics = expander._generate_related_topics(["租金"])
+        assert topics == []
+
+    def test_generate_scenario_topics_exception(self):
+        """异常时返回空列表"""
+        expander = DomainExpander(ScriptedBackend([RuntimeError("error")]))
+        topics = expander._generate_scenario_topics(["租金"])
+        assert topics == []
+
+    def test_expand_topics_similar(self):
+        """扩展相似主题"""
+        expander = DomainExpander(ScriptedBackend(['["主题A", "主题B"]']))
+        result = expander.expand([{"instruction": "租金怎么算"}], strategy="similar")
+        assert isinstance(result, ExpansionResult)
+        assert result.strategy == "similar"
+
+    def test_expand_topics_related(self):
+        """扩展关联主题"""
+        expander = DomainExpander(ScriptedBackend(['["关联A"]']))
+        result = expander.expand([{"instruction": "租金相关"}], strategy="related")
+        assert isinstance(result, ExpansionResult)
+
+    def test_expand_topics_scenario(self):
+        """扩展场景主题"""
+        expander = DomainExpander(ScriptedBackend(['["场景A"]']))
+        result = expander.expand([{"instruction": "场景问题"}], strategy="scenario")
+        assert isinstance(result, ExpansionResult)
+
+
 class TestExpand:
     @pytest.mark.parametrize(
         "strategy,response",
