@@ -1,0 +1,189 @@
+"""数据集质量报告模块测试"""
+
+import json
+import pytest
+from pathlib import Path
+from augmentor.quality_report import (
+    QualityReporter, QualityReport, QualityMetric,
+    generate_quality_report, save_quality_report
+)
+
+
+@pytest.fixture
+def sample_dataset():
+    """创建测试数据集"""
+    return [
+        {"instruction": "如何申请租房？", "input": "", "output": "请登录官网申请"},
+        {"instruction": "租房需要什么材料？", "input": "", "output": "身份证、工作证明"},
+        {"instruction": "租房流程是什么？", "input": "", "output": "选房、签约、付款"},
+        {"instruction": "如何申请买房？", "input": "", "output": "请咨询销售顾问"},
+        {"instruction": "买房需要什么材料？", "input": "", "output": "身份证、收入证明、征信报告"},
+    ]
+
+
+@pytest.fixture
+def empty_dataset():
+    """创建空数据集"""
+    return []
+
+
+class TestQualityReporter:
+    """QualityReporter 测试"""
+    
+    def test_init(self):
+        """测试初始化"""
+        reporter = QualityReporter(threshold=0.7)
+        assert reporter._threshold == 0.7
+    
+    def test_generate_report(self, sample_dataset):
+        """测试生成报告"""
+        reporter = QualityReporter()
+        report = reporter.generate_report(sample_dataset, "test_dataset")
+        
+        assert isinstance(report, QualityReport)
+        assert report.dataset_name == "test_dataset"
+        assert report.total_items == 5
+        assert len(report.metrics) > 0
+        assert report.overall_score >= 0
+        assert report.overall_score <= 1
+    
+    def test_generate_report_empty_dataset(self, empty_dataset):
+        """测试生成空数据集报告"""
+        reporter = QualityReporter()
+        report = reporter.generate_report(empty_dataset, "empty_dataset")
+        
+        assert report.total_items == 0
+        assert len(report.metrics) > 0
+    
+    def test_calculate_completeness(self, sample_dataset):
+        """测试计算完整性指标"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_completeness(sample_dataset)
+        
+        assert isinstance(metric, QualityMetric)
+        assert metric.name == "完整性"
+        assert metric.value >= 0
+        assert metric.value <= 1
+    
+    def test_calculate_consistency(self, sample_dataset):
+        """测试计算一致性指标"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_consistency(sample_dataset)
+        
+        assert isinstance(metric, QualityMetric)
+        assert metric.name == "一致性"
+        assert metric.value >= 0
+        assert metric.value <= 1
+    
+    def test_calculate_diversity(self, sample_dataset):
+        """测试计算多样性指标"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_diversity(sample_dataset)
+        
+        assert isinstance(metric, QualityMetric)
+        assert metric.name == "多样性"
+        assert metric.value >= 0
+        assert metric.value <= 1
+    
+    def test_calculate_length_distribution(self, sample_dataset):
+        """测试计算长度分布指标"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_length_distribution(sample_dataset)
+        
+        assert isinstance(metric, QualityMetric)
+        assert metric.name == "长度分布"
+        assert metric.value >= 0
+        assert metric.value <= 1
+    
+    def test_calculate_duplication_rate(self, sample_dataset):
+        """测试计算重复率指标"""
+        reporter = QualityReporter()
+        metric = reporter._calculate_duplication_rate(sample_dataset)
+        
+        assert isinstance(metric, QualityMetric)
+        assert metric.name == "重复率"
+        assert metric.value >= 0
+        assert metric.value <= 1
+
+
+class TestQualityReport:
+    """QualityReport 测试"""
+    
+    def test_to_dict(self, sample_dataset):
+        """测试转换为字典"""
+        report = generate_quality_report(sample_dataset, "test")
+        d = report.to_dict()
+        
+        assert isinstance(d, dict)
+        assert "dataset_name" in d
+        assert "metrics" in d
+        assert "overall_score" in d
+    
+    def test_to_markdown(self, sample_dataset):
+        """测试转换为Markdown"""
+        report = generate_quality_report(sample_dataset, "test")
+        md = report.to_markdown()
+        
+        assert isinstance(md, str)
+        assert "数据集质量报告" in md
+        assert "test" in md
+
+
+class TestConvenienceFunctions:
+    """便捷函数测试"""
+    
+    def test_generate_quality_report(self, sample_dataset):
+        """测试生成质量报告"""
+        report = generate_quality_report(sample_dataset, "test")
+        
+        assert isinstance(report, QualityReport)
+        assert report.dataset_name == "test"
+    
+    def test_save_quality_report_json(self, sample_dataset, tmp_path):
+        """测试保存JSON格式报告"""
+        report = generate_quality_report(sample_dataset, "test")
+        output_path = tmp_path / "report.json"
+        
+        save_quality_report(report, str(output_path), "json")
+        
+        assert output_path.exists()
+        
+        with open(output_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        assert data["dataset_name"] == "test"
+    
+    def test_save_quality_report_markdown(self, sample_dataset, tmp_path):
+        """测试保存Markdown格式报告"""
+        report = generate_quality_report(sample_dataset, "test")
+        output_path = tmp_path / "report.md"
+        
+        save_quality_report(report, str(output_path), "markdown")
+        
+        assert output_path.exists()
+        
+        with open(output_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        assert "数据集质量报告" in content
+
+
+class TestQualityMetric:
+    """QualityMetric 测试"""
+    
+    def test_to_dict(self):
+        """测试转换为字典"""
+        metric = QualityMetric(
+            name="test_metric",
+            value=0.8,
+            threshold=0.7,
+            passed=True,
+            description="测试指标",
+            recommendation="测试建议"
+        )
+        
+        d = metric.to_dict()
+        
+        assert d["name"] == "test_metric"
+        assert d["value"] == 0.8
+        assert d["passed"] is True
