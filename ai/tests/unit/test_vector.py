@@ -279,3 +279,41 @@ class TestVectorExtended:
         """获取不存在的元数据"""
         db = create_vector_db("faiss", dimension=4)
         assert db.get_metadata("nonexistent") is None
+
+    def test_search_dimension_mismatch(self):
+        """搜索向量维度不匹配"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        with pytest.raises(ValueError, match="维度"):
+            db.search(np.array([1, 0, 0], dtype=np.float32))
+
+    def test_search_top_k_larger_than_count(self):
+        """搜索 top_k 大于数据量"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        results = db.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=10)
+        assert len(results) == 2
+
+    def test_delete_nonexistent_ids(self):
+        """删除不存在的 ID"""
+        db = create_vector_db("faiss", dimension=4)
+        db.add_vectors(unit_vectors()[:2], [{"i": 0}, {"i": 1}])
+        deleted = db.delete(["nonexistent"])
+        assert deleted == 0
+
+    def test_persist_and_reload_search(self, tmp_path):
+        """持久化后搜索结果一致"""
+        db = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        db.add_vectors(unit_vectors(), [{"i": i} for i in range(4)], ids=[f"v{i}" for i in range(4)])
+        db.persist()
+
+        reloaded = create_vector_db("faiss", dimension=4, storage_dir=str(tmp_path))
+        reloaded.load()
+        results = reloaded.search(np.array([1, 0, 0, 0], dtype=np.float32), top_k=1)
+        assert results[0]["id"] == "v0"
+
+    def test_add_vectors_normalized(self):
+        """添加向量后自动归一化"""
+        db = create_vector_db("faiss", dimension=4)
+        ids = db.add_vectors([np.array([3, 0, 0, 0], dtype=np.float32)], [{"i": 0}])
+        assert len(ids) == 1
