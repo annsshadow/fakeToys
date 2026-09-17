@@ -150,6 +150,69 @@ class TestDatasetConverter:
         assert len(result) == 1
         # 应该包含历史记录
         assert len(result[0]["conversations"]) > 2
+    
+    def test_convert_json_to_csv(self, sample_dataset):
+        """测试 JSON 转 CSV"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "csv")
+        
+        assert isinstance(result, list)
+        assert len(result) == 3
+    
+    def test_convert_csv_to_json(self, sample_dataset):
+        """测试 CSV 转 JSON"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "csv", "json")
+        
+        assert isinstance(result, list)
+        assert len(result) == 3
+    
+    def test_convert_json_to_llama_factory(self, sample_dataset):
+        """测试 JSON 转 Llama-Factory"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "llama_factory")
+        
+        assert isinstance(result, list)
+        assert len(result) == 3
+        for item in result:
+            assert "instruction" in item
+            assert "input" in item
+            assert "output" in item
+    
+    def test_convert_json_to_belle(self, sample_dataset):
+        """测试 JSON 转 BELLE"""
+        converter = DatasetConverter()
+        result = converter.convert(sample_dataset, "json", "belle")
+        
+        assert isinstance(result, list)
+        assert len(result) == 3
+        for item in result:
+            assert "instruction" in item
+            assert "output" in item
+    
+    def test_normalize_format(self):
+        """测试格式标准化"""
+        converter = DatasetConverter()
+        
+        assert converter._normalize_format("JSON") == "json"
+        assert converter._normalize_format("Json") == "json"
+        assert converter._normalize_format("json") == "json"
+        assert converter._normalize_format("unknown") == "unknown"
+    
+    def test_convert_with_system_message(self):
+        """测试带系统消息的转换"""
+        data = [
+            {
+                "instruction": "问题",
+                "output": "回答",
+                "system": "你是一个助手"
+            }
+        ]
+        converter = DatasetConverter()
+        result = converter.convert(data, "json", "chatml")
+        
+        assert len(result) == 1
+        assert result[0]["messages"][0]["role"] == "system"
 
 
 class TestConvenienceFunctions:
@@ -228,3 +291,51 @@ class TestConverterEdgeCases:
         
         with pytest.raises(ValueError):
             converter.convert([], "unknown", "json")
+
+
+class TestDataFormat:
+    """DataFormat 测试"""
+    
+    def test_all_formats(self):
+        """测试所有格式"""
+        formats = list(DataFormat)
+        assert len(formats) == 10
+    
+    def test_format_values(self):
+        """测试格式值"""
+        assert DataFormat.JSON.value == "json"
+        assert DataFormat.JSONL.value == "jsonl"
+        assert DataFormat.CSV.value == "csv"
+        assert DataFormat.TSV.value == "tsv"
+        assert DataFormat.ALPACA.value == "alpaca"
+        assert DataFormat.SHAREGPT.value == "sharegpt"
+        assert DataFormat.CHATML.value == "chatml"
+        assert DataFormat.LLAMA_FACTORY.value == "llama_factory"
+        assert DataFormat.VICUNA.value == "vicuna"
+        assert DataFormat.BELLE.value == "belle"
+
+
+class TestConverterFileOperations:
+    """文件操作测试"""
+    
+    def test_infer_format(self):
+        """测试格式推断"""
+        converter = DatasetConverter()
+        
+        assert converter._infer_format(Path("test.json")) == "json"
+        assert converter._infer_format(Path("test.jsonl")) == "jsonl"
+        assert converter._infer_format(Path("test.csv")) == "csv"
+        assert converter._infer_format(Path("test.tsv")) == "tsv"
+        assert converter._infer_format(Path("test.unknown")) == "json"
+    
+    def test_convert_file_creates_output_directory(self, tmp_path, sample_dataset):
+        """测试转换文件时创建输出目录"""
+        input_file = tmp_path / "input.json"
+        output_file = tmp_path / "subdir" / "output.jsonl"
+        
+        with open(input_file, 'w', encoding='utf-8') as f:
+            json.dump(sample_dataset, f, ensure_ascii=False)
+        
+        result = convert_file(str(input_file), str(output_file))
+        
+        assert output_file.exists()

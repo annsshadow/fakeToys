@@ -4,6 +4,7 @@
 """
 
 import pytest
+import numpy as np
 
 from augmentor.dedup import Deduplicator, DedupResult
 
@@ -17,6 +18,16 @@ class TestInit:
             Deduplicator(threshold=1.5)
         with pytest.raises(ValueError):
             Deduplicator(threshold=-0.1)
+
+    def test_default_threshold(self):
+        """默认阈值应为 0.9"""
+        dedup = Deduplicator()
+        assert dedup.threshold == 0.9
+
+    def test_custom_threshold(self):
+        """自定义阈值应正确设置"""
+        dedup = Deduplicator(threshold=0.8)
+        assert dedup.threshold == 0.8
 
 
 class TestDeduplicate:
@@ -65,6 +76,61 @@ class TestDeduplicate:
         assert result.original_count == 2
         assert result.deduplicated_count <= 2
 
+    def test_no_duplicates(self):
+        """没有重复时应保留所有数据"""
+        dedup = Deduplicator(threshold=0.9)
+        items = [
+            {"instruction": "完全不同的问题1"},
+            {"instruction": "完全不同的问题2"},
+            {"instruction": "完全不同的问题3"},
+        ]
+        result = dedup.deduplicate(items)
+
+        assert result.original_count == 3
+        assert result.removed_count == 0
+        assert result.deduplicated_count == 3
+
+    def test_all_duplicates(self):
+        """全部相同时应只保留一个"""
+        dedup = Deduplicator(threshold=0.9)
+        items = [
+            {"instruction": "相同问题"},
+            {"instruction": "相同问题"},
+            {"instruction": "相同问题"},
+        ]
+        result = dedup.deduplicate(items)
+
+        assert result.original_count == 3
+        assert result.removed_count >= 2
+        assert result.deduplicated_count == 1
+
+    def test_dedup_result_fields(self):
+        """DedupResult 应包含所有必要字段"""
+        dedup = Deduplicator(threshold=0.9)
+        items = [{"instruction": "测试"}]
+        result = dedup.deduplicate(items)
+
+        assert hasattr(result, 'original_count')
+        assert hasattr(result, 'deduplicated_count')
+        assert hasattr(result, 'removed_count')
+        assert hasattr(result, 'duplicate_groups')
+        assert hasattr(result, 'kept_indices')
+
+    def test_duplicate_groups_structure(self):
+        """重复组应为索引列表的列表"""
+        dedup = Deduplicator(threshold=0.9)
+        items = [
+            {"instruction": "相同问题1"},
+            {"instruction": "相同问题1"},
+            {"instruction": "不同问题"},
+        ]
+        result = dedup.deduplicate(items)
+
+        assert isinstance(result.duplicate_groups, list)
+        for group in result.duplicate_groups:
+            assert isinstance(group, list)
+            assert len(group) >= 2
+
 
 class TestReport:
     """去重报告"""
@@ -84,6 +150,20 @@ class TestReport:
         """空数据集移除比例应为 0"""
         report = Deduplicator().generate_report([])
         assert report["removal_rate"] == 0
+
+    def test_report_contains_all_fields(self):
+        """报告应包含所有必要字段"""
+        dedup = Deduplicator(threshold=0.9)
+        items = [{"instruction": "测试"}]
+        report = dedup.generate_report(items)
+
+        assert "original_count" in report
+        assert "deduplicated_count" in report
+        assert "removed_count" in report
+        assert "removal_rate" in report
+        assert "duplicate_groups_count" in report
+        assert "avg_group_size" in report
+        assert "threshold" in report
 
 
 class TestFindSimilarPairs:
@@ -112,3 +192,90 @@ class TestFindSimilarPairs:
         """少于两条数据时无相似对可言"""
         dedup = Deduplicator()
         assert dedup.find_similar_pairs([{"instruction": "唯一"}]) == []
+
+    def test_returns_empty_for_empty_dataset(self):
+        """空数据集应返回空列表"""
+        dedup = Deduplicator()
+        assert dedup.find_similar_pairs([]) == []
+
+    def test_top_k_limits_results(self):
+        """top_k 应限制返回的相似对数量"""
+        dedup = Deduplicator(threshold=0.5)
+        items = [{"instruction": f"问题{i}"} for i in range(10)]
+        pairs = dedup.find_similar_pairs(items, top_k=3)
+
+        assert len(pairs) <= 3
+
+    def test_similarity_range(self):
+        """相似度应在 0-1 之间"""
+        dedup = Deduplicator(threshold=0.5)
+        items = [
+            {"instruction": "如何申请租房？"},
+            {"instruction": "如何申请租房呢？"},
+        ]
+        pairs = dedup.find_similar_pairs(items, top_k=5)
+
+        for _, _, similarity in pairs:
+            assert 0.0 <= similarity <= 1.0
+
+
+class TestNgramSimilarity:
+    """N-gram 相似度测试"""
+
+    def test_identical_texts(self):
+        """相同文本相似度应为 1"""
+        dedup = Deduplicator()
+        sim = dedup._ngram_similarity("hello", "hello")
+        assert sim == pytest.approx(1.0)
+
+    def test_disjoint_texts(self):
+        """无公共字符的文本相似度应为 0"""
+        dedup = Deduplicator()
+        sim = dedup._ngram_similarity("abcd", "wxyz")
+        assert sim == pytest.approx(0.0)
+
+    def test_empty_texts(self):
+        """空文本相似度应为 0"""
+        dedup = Deduplicator()
+        sim = dedup._ngram_similarity("", "abc")
+        assert sim == 0.0
+
+    def test_one_empty_text(self):
+        """一个空文本相似度应为 0"""
+        dedup = Deduplicator()
+        sim = dedup._ngram_similarity("abc", "")
+        assert sim == 0.0
+
+    def test_both_empty(self):
+        """两个空文本相似度应为 0"""
+        dedup = Deduplicator()
+        sim = dedup._ngram_similarity("", "")
+        assert sim == 0.0
+
+
+class TestFallbackEncode:
+    """Fallback 编码测试"""
+
+    def test_fallback_encode_returns_matrix(self):
+        """Fallback 编码应返回矩阵"""
+        dedup = Deduplicator()
+        dedup._model = "fallback"
+        
+        texts = ["hello world", "test text"]
+        embeddings = dedup._fallback_encode(texts)
+        
+        assert embeddings.shape[0] == 2
+        assert embeddings.shape[1] > 0
+
+    def test_fallback_encode_normalization(self):
+        """Fallback 编码应进行 L2 归一化"""
+        dedup = Deduplicator()
+        dedup._model = "fallback"
+        
+        texts = ["hello", "world"]
+        embeddings = dedup._fallback_encode(texts)
+        
+        # 检查归一化
+        norms = np.linalg.norm(embeddings, axis=1)
+        for norm in norms:
+            assert abs(norm - 1.0) < 1e-6

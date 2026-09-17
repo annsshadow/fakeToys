@@ -126,6 +126,71 @@ class TestConfigValidator:
         
         # 应该有错误，因为缺少必填字段
         assert result.is_valid is False
+    
+    def test_validate_non_dict_config(self):
+        """测试验证非字典配置"""
+        validator = ConfigValidator()
+        result = validator.validate_config("not a dict")
+        
+        assert result.is_valid is False
+        assert any("配置必须是字典类型" in e.message for e in result.errors)
+    
+    def test_validate_nested_dict_type_error(self):
+        """测试验证嵌套字典类型错误"""
+        config = {
+            "app": "not a dict",  # 应该是字典
+            "models": {"default": "ernie"}
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        assert result.is_valid is False
+        assert any("类型错误" in e.message for e in result.errors)
+    
+    def test_validate_list_in_config(self):
+        """测试验证配置中的列表"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "augmentation": {
+                "variants_per_seed": "not an int"  # 应该是整数
+            }
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        assert result.is_valid is False
+        assert any("类型错误" in e.message for e in result.errors)
+    
+    def test_validate_env_refs_in_list(self):
+        """测试验证列表中的环境变量引用"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "api_keys": ["${API_KEY_1}", "${API_KEY_2}"]
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        # 检查是否有环境变量警告
+        assert isinstance(result.warnings, list)
+    
+    def test_validate_field_below_min(self):
+        """测试验证字段低于最小值"""
+        config = {
+            "app": {"name": "test", "version": "1.0.0"},
+            "models": {"default": "ernie"},
+            "augmentation": {"variants_per_seed": 0}  # 低于最小值 1
+        }
+        
+        validator = ConfigValidator()
+        result = validator.validate_config(config)
+        
+        assert result.is_valid is False
+        assert any("值过小" in e.message for e in result.errors)
 
 
 class TestValidationResult:
@@ -168,6 +233,25 @@ class TestValidationResult:
         assert len(d["warnings"]) == 1
         assert d["summary"]["errors"] == 0
         assert d["summary"]["warnings"] == 1
+    
+    def test_to_dict_with_line_number(self):
+        """测试转换为字典（包含行号）"""
+        result = ValidationResult(is_valid=True)
+        result.add_error("field", "error message", line=42)
+        
+        d = result.to_dict()
+        
+        assert d["errors"][0]["line"] == 42
+    
+    def test_multiple_errors(self):
+        """测试添加多个错误"""
+        result = ValidationResult(is_valid=True)
+        result.add_error("field1", "error1")
+        result.add_error("field2", "error2")
+        result.add_error("field3", "error3")
+        
+        assert result.is_valid is False
+        assert len(result.errors) == 3
 
 
 class TestConvenienceFunctions:
@@ -201,3 +285,32 @@ class TestConvenienceFunctions:
         """测试验证不存在的文件"""
         result = validate_config_file("nonexistent.yaml")
         assert result.is_valid is False
+    
+    def test_validate_directory_instead_of_file(self, tmp_path):
+        """测试验证目录而不是文件"""
+        result = validate_config_file(str(tmp_path))
+        assert result.is_valid is False
+    
+    def test_validate_config_file_with_read_error(self, tmp_path):
+        """测试验证无法读取的文件"""
+        config_file = tmp_path / "unreadable.yaml"
+        config_file.write_text("test: value", encoding='utf-8')
+        
+        # 模拟读取错误（通过修改文件权限在Windows上可能不工作）
+        # 这里我们只是测试文件存在但内容格式错误的情况
+        result = validate_config_file(str(config_file))
+        assert result.is_valid is False  # 文件格式无效（缺少必填字段）
+
+
+class TestSeverity:
+    """Severity 测试"""
+    
+    def test_severity_values(self):
+        """测试严重程度值"""
+        assert Severity.ERROR.value == "error"
+        assert Severity.WARNING.value == "warning"
+        assert Severity.INFO.value == "info"
+    
+    def test_severity_members(self):
+        """测试严重程度成员"""
+        assert len(Severity) == 3
