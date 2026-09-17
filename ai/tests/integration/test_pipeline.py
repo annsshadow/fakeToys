@@ -526,3 +526,62 @@ class TestPipelineExtended:
         idx, success, variants = queue.get()
         assert success is True
         assert len(variants) == 1
+
+
+class TestPipelineExtended2:
+    """AugmentorPipeline 扩展测试 - 第二轮"""
+
+    def test_augment_dataset_serial_mode(self, pipeline, seed_file, tmp_path):
+        """串行模式增强"""
+        output = tmp_path / "out_serial.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        assert report["output_count"] == 15
+
+    def test_augment_dataset_with_dedup(self, pipeline, seed_file, tmp_path):
+        """去重模式增强"""
+        output = tmp_path / "out_dedup.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=True, use_parallel=False
+        )
+        assert report["output_count"] >= 0
+
+    def test_augment_dataset_checkpoint_resume(self, pipeline, seed_file, tmp_path):
+        """断点续传"""
+        output = tmp_path / "out_resume.json"
+        report1 = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=True, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        report2 = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=True, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        assert report2["output_count"] == report1["output_count"]
+
+    def test_augment_seed_with_existing_generated(self, pipeline):
+        """带已有生成的增强"""
+        variants = pipeline.augment_seed(
+            {"instruction": "测试问题", "output": "测试回答"},
+            existing_generated=["已有问题1", "已有问题2"]
+        )
+        assert isinstance(variants, list)
+
+    def test_augment_dataset_report_fields(self, pipeline, seed_file, tmp_path):
+        """报告字段完整性"""
+        output = tmp_path / "out_fields.json"
+        report = pipeline.augment_dataset(
+            seed_file, str(output),
+            use_checkpoint=False, use_quality_check=False,
+            use_dedup=False, use_parallel=False
+        )
+        assert "input_count" in report
+        assert "output_count" in report
+        assert "task_id" in report
