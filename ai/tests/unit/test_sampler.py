@@ -239,3 +239,60 @@ class TestMissingInstructionField:
         """覆盖分析应处理缺失字段"""
         coverage = sampler.analyze_coverage([{"output": "回答"}])
         assert coverage["total_items"] == 1
+
+
+class TestSamplerExtended:
+    """ActiveSampler 扩展测试"""
+
+    def test_analyze_question_type_how_many(self):
+        """how_many 类型分析"""
+        sampler = ActiveSampler()
+        assert sampler._analyze_question_type("多少钱") == "how_many"
+
+    def test_analyze_question_type_can(self):
+        """can 类型分析"""
+        sampler = ActiveSampler()
+        assert sampler._analyze_question_type("可以退吗") == "can"
+
+    def test_analyze_length_distribution_all_short(self):
+        """全短文本长度分布"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "短"}]
+        dist = sampler._analyze_length_distribution(items)
+        assert dist["short"] == 1.0
+
+    def test_analyze_length_distribution_all_long(self):
+        """全长文本长度分布"""
+        sampler = ActiveSampler()
+        items = [{"instruction": "这是一段非常长的文本内容用于测试，包含很多字符，超过五十个字符的长度要求"}]
+        dist = sampler._analyze_length_distribution(items)
+        assert dist["long"] == 1.0
+
+    def test_analyze_topic_distribution_empty(self):
+        """空主题分布"""
+        sampler = ActiveSampler()
+        dist = sampler._analyze_topic_distribution([])
+        assert dist["unique_words"] == 0
+
+    def test_analyze_coverage_empty(self):
+        """空覆盖分析"""
+        sampler = ActiveSampler()
+        coverage = sampler.analyze_coverage([])
+        assert coverage["total_items"] == 0
+
+    def test_recommend_seeds_empty(self):
+        """空推荐种子"""
+        sampler = ActiveSampler()
+        result = sampler.recommend_seeds([])
+        assert result.recommended_seeds == []
+
+    def test_sampling_result_fields(self):
+        """SamplingResult 字段检查"""
+        from augmentor.sampler import SamplingResult
+        result = SamplingResult(
+            recommended_seeds=[{"instruction": "q1"}],
+            coverage_analysis={"total_items": 1},
+            recommendations=["rec1"]
+        )
+        assert len(result.recommended_seeds) == 1
+        assert result.coverage_analysis["total_items"] == 1
