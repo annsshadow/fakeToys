@@ -104,6 +104,18 @@ class TestLoadAndList:
 
         assert [e.experiment_id for e in tracker.list_experiments()] == ["exp-1"]
 
+    def test_save_experiment_handles_write_failure(self, tmp_path, monkeypatch):
+        """保存实验文件失败时不应崩溃"""
+        tracker = make_tracker(tmp_path)
+        tracker.start_experiment("exp-1", "v1", "ernie")
+        
+        def fail_write(*args, **kwargs):
+            raise OSError("Permission denied")
+        
+        monkeypatch.setattr("builtins.open", fail_write)
+        tracker._save_experiment(tracker._current_experiment)
+        # 不应抛异常
+
 
 class TestCompareExperiments:
     def test_returns_error_when_nothing_found(self, tmp_path):
@@ -138,6 +150,18 @@ class TestCompareExperiments:
 
         result = tracker.compare_experiments(["exp-1", "missing"])
         assert result["experiments"] == ["exp-1"]
+
+    def test_identical_metrics(self, tmp_path):
+        """所有实验指标完全重叠时应正确处理"""
+        tracker = make_tracker(tmp_path)
+        for i in range(3):
+            tracker.start_experiment(f"exp-{i}", "v1", "model")
+            tracker.log_metric("loss", 0.5)
+            tracker.end_experiment()
+        result = tracker.compare_experiments(["exp-0", "exp-1", "exp-2"])
+        assert result["metric_comparison"]["loss"] == {
+            "exp-0": 0.5, "exp-1": 0.5, "exp-2": 0.5
+        }
 
 
 class TestGenerateReport:
