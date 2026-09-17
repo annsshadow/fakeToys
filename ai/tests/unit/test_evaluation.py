@@ -90,6 +90,10 @@ class TestRougeL:
         """空输入返回 0"""
         assert compute_rouge_l("", "abc") == 0.0
 
+    def test_non_string_input(self):
+        """非字符串输入"""
+        assert compute_rouge_l(123, "abc") == 0.0
+
 
 class TestSimilarity:
     """Jaccard 相似度"""
