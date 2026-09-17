@@ -213,6 +213,39 @@ def build_parser() -> argparse.ArgumentParser:
                              default=["remove_empty", "remove_duplicates", "normalize_whitespace", "trim_whitespace"],
                              help="清洗规则")
 
+    # 增强导出命令
+    export_enhanced_parser = subparsers.add_parser("export-enhanced", help="增强数据导出")
+    export_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    export_enhanced_parser.add_argument("--output", type=str, required=True, help="输出文件路径")
+    export_enhanced_parser.add_argument("--format", type=str, default="json",
+                                       choices=["json", "jsonl", "csv", "tsv", "alpaca", "sharegpt", 
+                                               "chatml", "llama_factory", "vicuna", "belle", "openai", "huggingface"],
+                                       help="导出格式")
+    export_enhanced_parser.add_argument("--max-items", type=int, help="最大导出数量")
+    export_enhanced_parser.add_argument("--shuffle", action="store_true", help="随机打乱")
+    export_enhanced_parser.add_argument("--seed", type=int, default=42, help="随机种子")
+
+    # 质量报告命令
+    quality_report_parser = subparsers.add_parser("quality-report", help="生成质量报告")
+    quality_report_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    quality_report_parser.add_argument("--output", type=str, help="输出报告路径")
+    quality_report_parser.add_argument("--format", type=str, default="json", choices=["json", "markdown"], help="报告格式")
+    quality_report_parser.add_argument("--threshold", type=float, default=0.7, help="质量阈值")
+
+    # 可视化命令
+    visualize_parser = subparsers.add_parser("visualize", help="数据可视化")
+    visualize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    visualize_parser.add_argument("--output", type=str, help="输出报告路径")
+    visualize_parser.add_argument("--format", type=str, default="text", choices=["text", "json"], help="报告格式")
+
+    # 备份命令
+    backup_parser = subparsers.add_parser("backup", help="数据备份")
+    backup_parser.add_argument("--action", type=str, required=True, choices=["create", "restore", "list", "delete"], help="操作类型")
+    backup_parser.add_argument("--input", type=str, help="输入文件路径")
+    backup_parser.add_argument("--output", type=str, help="输出文件路径")
+    backup_parser.add_argument("--name", type=str, help="备份名称")
+    backup_parser.add_argument("--backup-dir", type=str, default=".backups", help="备份目录")
+
     return parser
 
 
@@ -626,6 +659,102 @@ def main():
             print(f"移除: {result.removed_count} 条")
             print(f"应用规则: {', '.join(result.rules_applied)}")
             print(f"已保存到 {args.output}")
+
+        # ============ 增强数据导出 ============
+        elif args.command == "export-enhanced":
+            from augmentor.export_enhanced import export_dataset
+
+            items = _load_items(args.input)
+            result = export_dataset(
+                items, 
+                args.output, 
+                format=args.format,
+                max_items=args.max_items,
+                shuffle=args.shuffle,
+                seed=args.seed
+            )
+            
+            print(f"导出格式: {result['format']}")
+            print(f"导出数量: {result['item_count']} 条")
+            print(f"已保存到 {args.output}")
+
+        # ============ 质量报告 ============
+        elif args.command == "quality-report":
+            from augmentor.quality_report import generate_quality_report, save_quality_report
+
+            items = _load_items(args.input)
+            dataset_name = Path(args.input).stem
+            report = generate_quality_report(items, dataset_name, args.threshold)
+            
+            print(f"数据集: {report.dataset_name}")
+            print(f"数据总量: {report.total_items}")
+            print(f"总体评分: {report.overall_score:.2f}")
+            print(f"总体状态: {'通过' if report.overall_passed else '未通过'}")
+            
+            print("\n质量指标:")
+            for metric in report.metrics:
+                status = "✅" if metric.passed else "❌"
+                print(f"  {status} {metric.name}: {metric.value:.2f} ({metric.description})")
+            
+            if report.recommendations:
+                print("\n改进建议:")
+                for rec in report.recommendations:
+                    print(f"  - {rec}")
+            
+            if args.output:
+                save_quality_report(report, args.output, args.format)
+                print(f"\n报告已保存到 {args.output}")
+
+        # ============ 数据可视化 ============
+        elif args.command == "visualize":
+            from augmentor.visualize_enhanced import visualize_dataset
+
+            items = _load_items(args.input)
+            result = visualize_dataset(items, args.output, args.format)
+            
+            print(result)
+
+        # ============ 数据备份 ============
+        elif args.command == "backup":
+            from augmentor.backup import create_backup, restore_backup, list_backups, delete_backup
+
+            if args.action == "create":
+                if not args.input:
+                    print("错误: --input 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                info = create_backup(args.input, args.backup_dir, args.name)
+                print(f"备份创建成功")
+                print(f"备份ID: {info.backup_id}")
+                print(f"数据量: {info.item_count} 条")
+                print(f"文件大小: {info.file_size} 字节")
+            
+            elif args.action == "restore":
+                if not args.name or not args.output:
+                    print("错误: --name 和 --output 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                result = restore_backup(args.name, args.output, args.backup_dir)
+                print(f"恢复成功")
+                print(f"恢复数量: {result['item_count']} 条")
+                print(f"保存到: {args.output}")
+            
+            elif args.action == "list":
+                backups = list_backups(args.backup_dir)
+                if not backups:
+                    print("没有找到备份")
+                else:
+                    print(f"找到 {len(backups)} 个备份:")
+                    for backup in backups:
+                        print(f"  - {backup['backup_id']}: {backup['item_count']} 条 ({backup['timestamp']})")
+            
+            elif args.action == "delete":
+                if not args.name:
+                    print("错误: --name 参数是必需的", file=sys.stderr)
+                    sys.exit(1)
+                success = delete_backup(args.name, args.backup_dir)
+                if success:
+                    print(f"删除成功: {args.name}")
+                else:
+                    print(f"删除失败: 备份不存在 {args.name}")
 
     except Exception as e:
         print(f"错误: {e}", file=sys.stderr)
