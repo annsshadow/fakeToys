@@ -119,3 +119,59 @@ class TestErrors:
 
         preview = PreviewGenerator().preview([{"instruction": "x", "output": "y"}], "alpaca")
         assert json.loads(json.dumps(preview.to_dict(), ensure_ascii=False))
+
+
+class TestTruncate:
+    """截断逻辑测试"""
+
+    def test_truncate_non_string_values(self):
+        """非字符串值应原样返回"""
+        gen = PreviewGenerator()
+        assert gen._truncate(123) == 123
+        assert gen._truncate(None) is None
+        assert gen._truncate([1, 2, 3]) == [1, 2, 3]
+
+    def test_truncate_short_string(self):
+        """短字符串不应被截断"""
+        gen = PreviewGenerator()
+        assert gen._truncate("hello") == "hello"
+
+    def test_truncate_nested_record(self):
+        """嵌套字典应递归截断"""
+        gen = PreviewGenerator()
+        long_text = "x" * 300
+        record = {"a": {"b": long_text}, "c": [long_text, "short"]}
+        result = gen._truncate_record(record)
+        assert result["a"]["b"].endswith("...")
+        assert result["c"][0].endswith("...")
+        assert result["c"][1] == "short"
+
+    def test_truncate_record_with_int_values(self):
+        """记录中包含整数值时不应报错"""
+        gen = PreviewGenerator()
+        record = {"count": 42, "name": "test"}
+        result = gen._truncate_record(record)
+        assert result["count"] == 42
+
+    def test_chatml_preview(self):
+        """ChatML 格式预览应生成 messages 结构"""
+        generator = PreviewGenerator()
+        items = [{"instruction": "问题", "output": "回答"}]
+        preview = generator.preview(items, "chatml")
+        assert preview.format == "chatml"
+        assert "messages" in preview.converted_data[0]
+
+    def test_chatml_warns_no_history(self):
+        """ChatML 无 history 应告警"""
+        generator = PreviewGenerator()
+        items = [{"instruction": "问题", "output": "回答"}]
+        preview = generator.preview(items, "chatml")
+        assert any("history" in w for w in preview.warnings)
+
+    def test_csv_preview(self):
+        """CSV 格式预览应生成字段结构"""
+        generator = PreviewGenerator()
+        items = [{"instruction": "问题", "output": "回答"}]
+        preview = generator.preview(items, "csv")
+        assert preview.format == "csv"
+        assert "instruction" in preview.converted_data[0]
