@@ -204,3 +204,38 @@ class TestGenerateReport:
         assert report["total_items"] == 0
         assert report["recommended_count"] == 0
         assert report["recommended_seed_indices"] == []
+
+
+class TestLoadModel:
+    """_load_model 测试"""
+
+    def test_load_model_idempotent(self):
+        """重复调用 _load_model 应保持一致状态"""
+        sampler = ActiveSampler()
+        sampler._load_model()
+        first_model = sampler._model
+        sampler._load_model()
+        assert sampler._model is first_model
+
+
+class TestMissingInstructionField:
+    """缺少 instruction 字段的条目"""
+
+    def test_question_type_with_missing_field(self, sampler):
+        """缺失 instruction 应返回 other"""
+        assert sampler._analyze_question_type("") == "other"
+
+    def test_length_distribution_missing_field(self, sampler):
+        """缺失 instruction 应按空字符串处理"""
+        dist = sampler._analyze_length_distribution([{"output": "回答"}])
+        assert dist["short"] == 1.0
+
+    def test_topic_distribution_missing_field(self, sampler):
+        """缺失 instruction 应不影响统计"""
+        dist = sampler._analyze_topic_distribution([{"output": "回答"}])
+        assert dist["unique_words"] == 0
+
+    def test_analyze_coverage_missing_field(self, sampler):
+        """覆盖分析应处理缺失字段"""
+        coverage = sampler.analyze_coverage([{"output": "回答"}])
+        assert coverage["total_items"] == 1
