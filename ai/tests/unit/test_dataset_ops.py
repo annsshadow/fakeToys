@@ -251,3 +251,67 @@ class TestDatasetOperationsEdgeCases:
         stats = ops.get_statistics([])
         
         assert stats["total"] == 0
+
+
+class TestDatasetOperationsExtended:
+    """DatasetOperations 扩展测试"""
+
+    def test_merge_single_dataset(self):
+        """合并单个数据集"""
+        ops = DatasetOperations()
+        data = [{"instruction": "q1"}, {"instruction": "q2"}]
+        merged = ops.merge([data])
+        assert len(merged) == 2
+
+    def test_sample_random_with_seed(self, test_data):
+        """随机采样可复现性"""
+        ops = DatasetOperations()
+        config = SampleConfig(method="random", size=3, seed=42)
+        sampled1 = ops.sample(test_data, config)
+        sampled2 = ops.sample(test_data, config)
+        assert [item["instruction"] for item in sampled1] == [item["instruction"] for item in sampled2]
+
+    def test_sample_stratified(self, test_data):
+        """分层采样"""
+        ops = DatasetOperations()
+        config = SampleConfig(method="stratified", size=3, stratify_key="instruction")
+        sampled = ops.sample(test_data, config)
+        assert len(sampled) == 3
+
+    def test_split_all_to_train(self, test_data):
+        """全部分到训练集"""
+        ops = DatasetOperations()
+        config = SplitConfig(ratios=(1.0, 0.0, 0.0))
+        train, val, test = ops.split(test_data, config)
+        assert len(train) == len(test_data)
+        assert len(val) == 0
+        assert len(test) == 0
+
+    def test_filter_by_keyword_exclude(self, test_data):
+        """排除关键词过滤"""
+        ops = DatasetOperations()
+        filtered = ops.filter_by_keyword(test_data, ["租房"], mode="exclude")
+        for item in filtered:
+            assert "租房" not in item["instruction"]
+
+    def test_filter_by_keyword_empty(self, test_data):
+        """空关键词列表过滤应返回全部"""
+        ops = DatasetOperations()
+        filtered = ops.filter_by_keyword(test_data, [], mode="include")
+        assert len(filtered) == 0
+
+    def test_merge_with_max_items_and_dedup(self, test_data):
+        """同时使用 max_items 和 dedup"""
+        ops = DatasetOperations()
+        dataset_b = [{"instruction": "如何申请租房？"}]  # duplicate
+        config = MergeConfig(max_items=3, deduplicate=True)
+        merged = ops.merge([test_data, dataset_b], config)
+        assert len(merged) <= 3
+
+    def test_merge_files_empty(self, tmp_path):
+        """合并空文件"""
+        file_a = tmp_path / "empty.json"
+        file_a.write_text("[]", encoding="utf-8")
+        output = tmp_path / "merged.json"
+        result = merge_datasets([str(file_a)], str(output))
+        assert result["total_output"] == 0
