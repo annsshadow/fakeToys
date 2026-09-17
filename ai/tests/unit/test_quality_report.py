@@ -187,3 +187,56 @@ class TestQualityMetric:
         assert d["name"] == "test_metric"
         assert d["value"] == 0.8
         assert d["passed"] is True
+
+
+class TestQualityReportExtended:
+    """QualityReport 扩展测试"""
+
+    def test_report_to_dict(self, sample_dataset):
+        """QualityReport.to_dict 完整性"""
+        report = generate_quality_report(sample_dataset, "test")
+        d = report.to_dict()
+        assert "dataset_name" in d
+        assert "total_items" in d
+        assert "overall_score" in d
+        assert "metrics" in d
+        assert "timestamp" in d
+
+    def test_report_markdown_header(self, sample_dataset):
+        """报告 Markdown 格式包含标题"""
+        report = generate_quality_report(sample_dataset, "test")
+        md = report.to_markdown()
+        assert "质量报告" in md or "quality" in md.lower()
+
+    def test_empty_dataset_report(self):
+        """空数据集报告"""
+        report = generate_quality_report([], "empty")
+        assert report.total_items == 0
+
+    def test_single_item_report(self):
+        """单条数据报告"""
+        data = [{"instruction": "q1", "input": "", "output": "a1"}]
+        report = generate_quality_report(data, "single")
+        assert report.total_items == 1
+
+    def test_quality_report_fields(self, sample_dataset):
+        """QualityReport 字段检查"""
+        report = generate_quality_report(sample_dataset, "test")
+        assert hasattr(report, 'overall_score')
+        assert hasattr(report, 'dataset_name')
+        assert hasattr(report, 'total_items')
+        assert hasattr(report, 'timestamp')
+
+    def test_save_json(self, sample_dataset, tmp_path):
+        """保存 JSON 格式"""
+        report = generate_quality_report(sample_dataset, "test")
+        path = tmp_path / "report.json"
+        save_quality_report(report, str(path), "json")
+        assert path.exists()
+
+    def test_save_markdown(self, sample_dataset, tmp_path):
+        """保存 Markdown 格式"""
+        report = generate_quality_report(sample_dataset, "test")
+        path = tmp_path / "report.md"
+        save_quality_report(report, str(path), "markdown")
+        assert path.exists()
