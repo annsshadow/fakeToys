@@ -139,7 +139,7 @@ pub async fn list_surfaces(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -247,7 +247,7 @@ pub async fn surface_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -327,82 +327,82 @@ pub async fn surface_publish(
 
 pub fn portal_assemble_surface_router() -> Router {
     Router::new()
-        .route("/jaxrs/portal/assemble/surface/get/{id}", get(get_surface))
-        .route("/jaxrs/portal/assemble/surface/create", post(create_surface))
-        .route("/jaxrs/portal/assemble/surface/list/{category}", get(list_surfaces))
-        .route("/jaxrs/portal/assemble/surface/preview/{id}", get(preview_surface))
-        .route("/jaxrs/portal/assemble/surface/publish/{id}", post(publish_surface))
-        .route("/jaxrs/portal/surface/list", get(surface_list))
-        .route("/jaxrs/portal/surface/{id}/preview", get(surface_preview))
-        .route("/jaxrs/portal/surface/publish", post(surface_publish))
-        .route("/jaxrs/portal/assemble/surface/delete/layout", post(crate::delete_layout))
-        .route("/jaxrs/portal/assemble/surface/dict/portal/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/dict/portal/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_data))
-        .route("/jaxrs/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_path_data))
-        .route("/jaxrs/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
-        .route("/jaxrs/portal/assemble/surface/dict/portal/path/data/mockputtopost/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockputtopost))
-        .route("/jaxrs/portal/assemble/surface/dict/list/portal/{portalFlag}", get(crate::dict_list_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/file/{flag}", get(crate::file_flag))
-        .route("/jaxrs/portal/assemble/surface/file/download/{flag}", get(crate::file_flag_download))
-        .route("/jaxrs/portal/assemble/surface/file/portal/content/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_content))
-        .route("/jaxrs/portal/assemble/surface/file/portal/download/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_download))
-        .route("/jaxrs/portal/assemble/surface/file/list/portal/{portalFlag}", get(crate::file_list_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/get/layout", get(crate::get_layout))
-        .route("/jaxrs/portal/assemble/surface/list/layouts", get(crate::list_layouts))
-        .route("/jaxrs/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_mobile))
-        .route("/jaxrs/portal/assemble/surface/{page}/{id}", get(crate::page_id))
-        .route("/jaxrs/portal/assemble/surface/mobile/{page}/{id}", get(crate::page_id_mobile))
-        .route("/jaxrs/portal/assemble/surface/list/portal/portal/{page}", get(crate::page_list_portal_portal))
-        .route("/jaxrs/portal/assemble/surface/v2/portal/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag_mobile))
-        .route("/jaxrs/portal/assemble/surface/v2/{page}/{id}", get(crate::page_v2_id))
-        .route("/jaxrs/portal/assemble/surface/v2/mobile/{page}/{id}", get(crate::page_v2_id_mobile))
-        .route("/jaxrs/portal/assemble/surface/portal/{flag}", get(crate::portal_flag))
-        .route("/jaxrs/portal/assemble/surface/portal/corner/mark/{flag}", get(crate::portal_flag_corner_mark))
-        .route("/jaxrs/portal/assemble/surface/portal/icon/{id}", get(crate::portal_id_icon))
-        .route("/jaxrs/portal/assemble/surface/portal/icon/base64/{id}", get(crate::portal_id_icon_base64))
-        .route("/jaxrs/portal/assemble/surface/save/layout", post(crate::save_layout))
-        .route("/jaxrs/portal/assemble/surface/script/{id}", get(crate::script_id))
-        .route("/jaxrs/portal/assemble/surface/script/list/portal/portal", get(crate::script_list_portal_portal))
-        .route("/jaxrs/portal/assemble/surface/script/portal/portal/{name}/{name}", get(crate::script_portal_portal_name_name))
-        .route("/jaxrs/portal/assemble/surface/script/portal/portal/imported/{name}/{name}", post(crate::script_portal_portal_name_name_imported))
-        .route("/jaxrs/portal/assemble/surface/widget/portal/{flag}/{portalFlag}", get(crate::widget_flag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/widget/portal/mobile/{flag}/{portalFlag}", get(crate::widget_flag_portal_portalFlag_mobile))
-        .route("/jaxrs/portal/assemble/surface/widget/{id}", get(crate::widget_id))
-        .route("/jaxrs/portal/assemble/surface/widget/mobile/{id}", get(crate::widget_id_mobile))
-        .route("/jaxrs/portal/assemble/surface/widget/list/portal/portal", get(crate::widget_list_portal_portal))
-        .route("/jaxrs/portal/assemble/surface/delete/layout", delete(delete_layout))
-        .route("/jaxrs/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", delete(dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
-        .route("/jaxrs/portal/assemble/surface/save/layout", put(save_layout))
+        .route("/api/portal/assemble/surface/get/{id}", get(get_surface))
+        .route("/api/portal/assemble/surface/create", post(create_surface))
+        .route("/api/portal/assemble/surface/list/{category}", get(list_surfaces))
+        .route("/api/portal/assemble/surface/preview/{id}", get(preview_surface))
+        .route("/api/portal/assemble/surface/publish/{id}", post(publish_surface))
+        .route("/api/portal/surface/list", get(surface_list))
+        .route("/api/portal/surface/{id}/preview", get(surface_preview))
+        .route("/api/portal/surface/publish", post(surface_publish))
+        .route("/api/portal/assemble/surface/delete/layout", post(crate::delete_layout))
+        .route("/api/portal/assemble/surface/dict/portal/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/dict/portal/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_data))
+        .route("/api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag_path_data))
+        .route("/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
+        .route("/api/portal/assemble/surface/dict/portal/path/data/mockputtopost/{dictFlag}/{portalFlag}", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockputtopost))
+        .route("/api/portal/assemble/surface/dict/list/portal/{portalFlag}", get(crate::dict_list_portal_portalFlag))
+        .route("/api/portal/assemble/surface/file/{flag}", get(crate::file_flag))
+        .route("/api/portal/assemble/surface/file/download/{flag}", get(crate::file_flag_download))
+        .route("/api/portal/assemble/surface/file/portal/content/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_content))
+        .route("/api/portal/assemble/surface/file/portal/download/{flag}/{portalFlag}", get(crate::file_flag_portal_portalFlag_download))
+        .route("/api/portal/assemble/surface/file/list/portal/{portalFlag}", get(crate::file_list_portal_portalFlag))
+        .route("/api/portal/assemble/surface/get/layout", get(crate::get_layout))
+        .route("/api/portal/assemble/surface/list/layouts", get(crate::list_layouts))
+        .route("/api/portal/assemble/surface/portal/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/{page}/{id}", get(crate::page_id))
+        .route("/api/portal/assemble/surface/mobile/{page}/{id}", get(crate::page_id_mobile))
+        .route("/api/portal/assemble/surface/list/portal/portal/{page}", get(crate::page_list_portal_portal))
+        .route("/api/portal/assemble/surface/v2/portal/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/v2/portal/mobile/{page}/{flag}/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/v2/{page}/{id}", get(crate::page_v2_id))
+        .route("/api/portal/assemble/surface/v2/mobile/{page}/{id}", get(crate::page_v2_id_mobile))
+        .route("/api/portal/assemble/surface/portal/{flag}", get(crate::portal_flag))
+        .route("/api/portal/assemble/surface/portal/corner/mark/{flag}", get(crate::portal_flag_corner_mark))
+        .route("/api/portal/assemble/surface/portal/icon/{id}", get(crate::portal_id_icon))
+        .route("/api/portal/assemble/surface/portal/icon/base64/{id}", get(crate::portal_id_icon_base64))
+        .route("/api/portal/assemble/surface/save/layout", post(crate::save_layout))
+        .route("/api/portal/assemble/surface/script/{id}", get(crate::script_id))
+        .route("/api/portal/assemble/surface/script/list/portal/portal", get(crate::script_list_portal_portal))
+        .route("/api/portal/assemble/surface/script/portal/portal/{name}/{name}", get(crate::script_portal_portal_name_name))
+        .route("/api/portal/assemble/surface/script/portal/portal/imported/{name}/{name}", post(crate::script_portal_portal_name_name_imported))
+        .route("/api/portal/assemble/surface/widget/portal/{flag}/{portalFlag}", get(crate::widget_flag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/widget/portal/mobile/{flag}/{portalFlag}", get(crate::widget_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/widget/{id}", get(crate::widget_id))
+        .route("/api/portal/assemble/surface/widget/mobile/{id}", get(crate::widget_id_mobile))
+        .route("/api/portal/assemble/surface/widget/list/portal/portal", get(crate::widget_list_portal_portal))
+        .route("/api/portal/assemble/surface/delete/layout", delete(delete_layout))
+        .route("/api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}", delete(dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
+        .route("/api/portal/assemble/surface/save/layout", put(save_layout))
         // ── plan002 U2: portal/dict 族缺口 (27) ──
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/data", get(crate::dict_dictFlag_portal_portalFlag_data))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", delete(crate::dict_dictFlag_portal_portalFlag_path_data_delete))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", get(crate::dict_dictFlag_portal_portalFlag_path_data))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", post(crate::dict_dictFlag_portal_portalFlag_path_data_post))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", put(crate::dict_dictFlag_portal_portalFlag_path_data_put))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockdeletetoget", get(crate::dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
-        .route("/jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockputtopost", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockputtopost))
-        .route("/jaxrs/portal/assemble/surface/file/{flag}/portal/{portalFlag}/content", get(crate::file_flag_portal_portalFlag_content))
-        .route("/jaxrs/portal/assemble/surface/file/{flag}/portal/{portalFlag}/download", get(crate::file_flag_portal_portalFlag_download))
-        .route("/jaxrs/portal/assemble/surface/page/list/portal/{portal}", get(crate::page_list_portal_portal))
-        .route("/jaxrs/portal/assemble/surface/page/v2/{id}", get(crate::page_v2_id))
-        .route("/jaxrs/portal/assemble/surface/page/v2/{id}/mobile", get(crate::page_v2_id_mobile))
-        .route("/jaxrs/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}/mobile", get(crate::page_v2_flag_portal_portalFlag_mobile))
-        .route("/jaxrs/portal/assemble/surface/page/{id}/mobile", get(crate::page_id_mobile))
-        .route("/jaxrs/portal/assemble/surface/page/{flag}/portal/{portalFlag}", get(crate::page_flag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/page/{flag}/portal/{portalFlag}/mobile", get(crate::page_flag_portal_portalFlag_mobile))
-        .route("/jaxrs/portal/assemble/surface/portal/list/mobile", get(crate::portal_list_mobile))
-        .route("/jaxrs/portal/assemble/surface/portal/{flag}/corner/mark", get(crate::portal_flag_corner_mark))
-        .route("/jaxrs/portal/assemble/surface/portal/{id}/icon", get(crate::portal_id_icon))
-        .route("/jaxrs/portal/assemble/surface/portal/{id}/icon/base64", get(crate::portal_id_icon_base64))
-        .route("/jaxrs/portal/assemble/surface/script/portal/{portal}/name/{name}", post(crate::script_portal_portal_name_post))
-        .route("/jaxrs/portal/assemble/surface/script/portal/{portal}/name/{name}/imported", get(crate::script_portal_portal_name_name_imported))
-        .route("/jaxrs/portal/assemble/surface/widget/{id}/mobile", get(crate::widget_id_mobile))
-        .route("/jaxrs/portal/assemble/surface/widget/{flag}/portal/{portalFlag}", get(crate::widget_flag_portal_portalFlag))
-        .route("/jaxrs/portal/assemble/surface/widget/{flag}/portal/{portalFlag}/mobile", get(crate::widget_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}", get(crate::dict_dictFlag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/data", get(crate::dict_dictFlag_portal_portalFlag_data))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", delete(crate::dict_dictFlag_portal_portalFlag_path_data_delete))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", get(crate::dict_dictFlag_portal_portalFlag_path_data))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", post(crate::dict_dictFlag_portal_portalFlag_path_data_post))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data", put(crate::dict_dictFlag_portal_portalFlag_path_data_put))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockdeletetoget", get(crate::dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget))
+        .route("/api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockputtopost", post(crate::dict_dictFlag_portal_portalFlag_path_data_mockputtopost))
+        .route("/api/portal/assemble/surface/file/{flag}/portal/{portalFlag}/content", get(crate::file_flag_portal_portalFlag_content))
+        .route("/api/portal/assemble/surface/file/{flag}/portal/{portalFlag}/download", get(crate::file_flag_portal_portalFlag_download))
+        .route("/api/portal/assemble/surface/page/list/portal/{portal}", get(crate::page_list_portal_portal))
+        .route("/api/portal/assemble/surface/page/v2/{id}", get(crate::page_v2_id))
+        .route("/api/portal/assemble/surface/page/v2/{id}/mobile", get(crate::page_v2_id_mobile))
+        .route("/api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}", get(crate::page_v2_flag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}/mobile", get(crate::page_v2_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/page/{id}/mobile", get(crate::page_id_mobile))
+        .route("/api/portal/assemble/surface/page/{flag}/portal/{portalFlag}", get(crate::page_flag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/page/{flag}/portal/{portalFlag}/mobile", get(crate::page_flag_portal_portalFlag_mobile))
+        .route("/api/portal/assemble/surface/portal/list/mobile", get(crate::portal_list_mobile))
+        .route("/api/portal/assemble/surface/portal/{flag}/corner/mark", get(crate::portal_flag_corner_mark))
+        .route("/api/portal/assemble/surface/portal/{id}/icon", get(crate::portal_id_icon))
+        .route("/api/portal/assemble/surface/portal/{id}/icon/base64", get(crate::portal_id_icon_base64))
+        .route("/api/portal/assemble/surface/script/portal/{portal}/name/{name}", post(crate::script_portal_portal_name_post))
+        .route("/api/portal/assemble/surface/script/portal/{portal}/name/{name}/imported", get(crate::script_portal_portal_name_name_imported))
+        .route("/api/portal/assemble/surface/widget/{id}/mobile", get(crate::widget_id_mobile))
+        .route("/api/portal/assemble/surface/widget/{flag}/portal/{portalFlag}", get(crate::widget_flag_portal_portalFlag))
+        .route("/api/portal/assemble/surface/widget/{flag}/portal/{portalFlag}/mobile", get(crate::widget_flag_portal_portalFlag_mobile))
 }
 
 #[cfg(test)]
@@ -487,7 +487,7 @@ pub async fn list_layouts(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -637,7 +637,7 @@ pub async fn dict_list_portal_portalFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -863,7 +863,7 @@ pub async fn file_list_portal_portalFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1023,7 +1023,7 @@ pub async fn page_list_portal_portal(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1336,7 +1336,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1375,7 +1375,7 @@ pub async fn portal_list_mobile(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1537,7 +1537,7 @@ pub async fn script_list_portal_portal(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1683,7 +1683,7 @@ pub async fn widget_list_portal_portal(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

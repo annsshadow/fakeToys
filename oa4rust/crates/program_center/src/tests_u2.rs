@@ -49,52 +49,52 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_applications_and_storagemappings_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/applications").await,
+            status_of("GET", "/api/program_center/applications").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/storagemappings").await,
+            status_of("GET", "/api/program_center/storagemappings").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
 
     #[tokio::test]
     async fn u2_authentication_who_anonymous_returns_ok_json() {
-        // Java AuthenticationAction GET = who；无会话时返回 error ActionResult 而非 500
-        let response_status = status_of("GET", "/jaxrs/program_center/authentication").await;
+        // o2server AuthenticationAction GET = who；无会话时返回 error ActionResult 而非 500
+        let response_status = status_of("GET", "/api/program_center/authentication").await;
         assert_eq!(response_status, StatusCode::OK);
     }
 
     #[tokio::test]
     async fn u2_warnlog_family_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/warnlog").await,
+            status_of("POST", "/api/program_center/warnlog").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/warnlog/w-1").await,
+            status_of("GET", "/api/program_center/warnlog/w-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/warnlog/list/w-1/next/10").await,
+            status_of("GET", "/api/program_center/warnlog/list/w-1/next/10").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/warnlog/list/w-1/next/10/date/2026-08-22"
+                "/api/program_center/warnlog/list/w-1/next/10/date/2026-08-22"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/warnlog/list/w-1/prev/5").await,
+            status_of("GET", "/api/program_center/warnlog/list/w-1/prev/5").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/warnlog/list/w-1/prev/5/date/2026-08-22"
+                "/api/program_center/warnlog/list/w-1/prev/5/date/2026-08-22"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -102,7 +102,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/warnlog/view/system/log/tag/sync"
+                "/api/program_center/warnlog/view/system/log/tag/sync"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -112,11 +112,11 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_agent_root_list_and_flag_delete_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/agent").await,
+            status_of("GET", "/api/program_center/agent").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/program_center/agent/a-flag").await,
+            status_of("DELETE", "/api/program_center/agent/a-flag").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -124,12 +124,12 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_apppack_family_reachable() {
         for uri in [
-            "/jaxrs/program_center/apppack/pack/info",
-            "/jaxrs/program_center/apppack/pack/info/file/last",
-            "/jaxrs/program_center/apppack/pack/info/file/download/pk-1",
-            "/jaxrs/program_center/apppack/pack/info/logo",
-            "/jaxrs/program_center/apppack/pack/info/android/repack",
-            "/jaxrs/program_center/apppack/server/connect",
+            "/api/program_center/apppack/pack/info",
+            "/api/program_center/apppack/pack/info/file/last",
+            "/api/program_center/apppack/pack/info/file/download/pk-1",
+            "/api/program_center/apppack/pack/info/logo",
+            "/api/program_center/apppack/pack/info/android/repack",
+            "/api/program_center/apppack/server/connect",
         ] {
             assert_eq!(
                 status_of("GET", uri).await,
@@ -138,8 +138,8 @@ mod u2_tests {
             );
         }
         for uri in [
-            "/jaxrs/program_center/apppack/pack/info/android/start",
-            "/jaxrs/program_center/apppack/pack/info/file/publish",
+            "/api/program_center/apppack/pack/info/android/start",
+            "/api/program_center/apppack/pack/info/file/publish",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -151,7 +151,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/apppackanony/pack/info/file/last"
+                "/api/program_center/apppackanony/pack/info/file/last"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -159,7 +159,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/apppackanony/pack/info/file/download/pk-1"
+                "/api/program_center/apppackanony/pack/info/file/download/pk-1"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -169,20 +169,20 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_dict_write_routes_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/dict").await,
+            status_of("POST", "/api/program_center/dict").await,
             StatusCode::NOT_FOUND
         );
         // 参数化 data 路径：PUT/POST 需 body（415），DELETE 直达 DB 查询（500），均非 404/405。
         // 段值不能叫 dictFlag/path——那会命中同形的旧字面量路由（静态优先，仅注册了 GET）
-        let put_status = status_of("PUT", "/jaxrs/program_center/dict/my-flag/my-path/data").await;
+        let put_status = status_of("PUT", "/api/program_center/dict/my-flag/my-path/data").await;
         assert_ne!(put_status, StatusCode::NOT_FOUND);
         assert_ne!(put_status, StatusCode::METHOD_NOT_ALLOWED);
         assert_eq!(
-            status_of("DELETE", "/jaxrs/program_center/dict/my-flag/my-path/data").await,
+            status_of("DELETE", "/api/program_center/dict/my-flag/my-path/data").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("DELETE", "/jaxrs/program_center/dict/d-id").await,
+            status_of("DELETE", "/api/program_center/dict/d-id").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -190,16 +190,16 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_script_write_routes_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/script").await,
+            status_of("POST", "/api/program_center/script").await,
             StatusCode::NOT_FOUND
         );
-        let flag_status = status_of("POST", "/jaxrs/program_center/script/sc-flag").await;
+        let flag_status = status_of("POST", "/api/program_center/script/sc-flag").await;
         assert_ne!(flag_status, StatusCode::NOT_FOUND);
         assert_ne!(flag_status, StatusCode::METHOD_NOT_ALLOWED);
-        let id_put = status_of("PUT", "/jaxrs/program_center/script/sc-id").await;
+        let id_put = status_of("PUT", "/api/program_center/script/sc-id").await;
         assert_ne!(id_put, StatusCode::NOT_FOUND);
         assert_ne!(id_put, StatusCode::METHOD_NOT_ALLOWED);
-        let del = status_of("DELETE", "/jaxrs/program_center/script/sc-id").await;
+        let del = status_of("DELETE", "/api/program_center/script/sc-id").await;
         assert_ne!(del, StatusCode::NOT_FOUND);
         assert_ne!(del, StatusCode::METHOD_NOT_ALLOWED);
     }
@@ -207,57 +207,57 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_dead_code_handlers_now_routed() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/mpweixin/menu/list/weixin").await,
+            status_of("GET", "/api/program_center/mpweixin/menu/list/weixin").await,
             StatusCode::OK
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/module/output/list/structure").await,
+            status_of("GET", "/api/program_center/module/output/list/structure").await,
             StatusCode::OK
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/jest/center/list").await,
+            status_of("GET", "/api/program_center/jest/center/list").await,
             StatusCode::OK
         );
     }
 
     #[tokio::test]
     async fn u2_method_chains_accept_new_verbs() {
-        // Java 侧 PUT 动词承载的查询端点：链式注册后可达（不再 405）
+        // o2server 侧 PUT 动词承载的查询端点：链式注册后可达（不再 405）
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/input/compare").await,
+            status_of("PUT", "/api/program_center/input/compare").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/input/create").await,
+            status_of("PUT", "/api/program_center/input/create").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/collect/validate/password").await,
+            status_of("PUT", "/api/program_center/collect/validate/password").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/module/write/flag").await,
+            status_of("PUT", "/api/program_center/module/write/flag").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java GET /output/list 与 GET /market/{flag}/install/or/update
+        // o2server GET /output/list 与 GET /market/{flag}/install/or/update
         assert_ne!(
-            status_of("GET", "/jaxrs/program_center/output/list").await,
-            StatusCode::METHOD_NOT_ALLOWED
-        );
-        assert_ne!(
-            status_of("GET", "/jaxrs/program_center/market/flag/install/or/update").await,
+            status_of("GET", "/api/program_center/output/list").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/market/flag/install/or/update").await,
+            status_of("GET", "/api/program_center/market/flag/install/or/update").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/command/execute").await,
+            status_of("PUT", "/api/program_center/market/flag/install/or/update").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/designer/search").await,
+            status_of("POST", "/api/program_center/command/execute").await,
+            StatusCode::METHOD_NOT_ALLOWED
+        );
+        assert_ne!(
+            status_of("POST", "/api/program_center/designer/search").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
     }
@@ -265,7 +265,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_cachedispatch_admin_only_route_registered() {
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/cachedispatch").await,
+            status_of("PUT", "/api/program_center/cachedispatch").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -288,7 +288,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_authentication_who_without_session_is_error_contract() {
         let r: ActionResult<serde_json::Value> = authentication_who(None).await.unwrap().0;
-        // Rust returns success with anonymous session data (not error like Java)
+        // Rust returns success with anonymous session data (not error like o2server)
         assert_eq!(r.r#type.as_deref(), Some("success"));
         let data = r.data.unwrap();
         assert_eq!(data["tokenType"], "anonymous");

@@ -10,7 +10,7 @@ mod tests {
         let app = mind_router();
 
         let request = Request::builder()
-            .uri("/jaxrs/mind/folder/tree/my")
+            .uri("/api/mind/folder/tree/my")
             .body(Body::empty())
             .unwrap();
 
@@ -23,7 +23,7 @@ mod tests {
         let app = mind_router();
 
         let request = Request::builder()
-            .uri("/jaxrs/mind/mind/test-id")
+            .uri("/api/mind/mind/test-id")
             .body(Body::empty())
             .unwrap();
 
@@ -36,7 +36,7 @@ mod tests {
         let app = mind_router();
 
         let request = Request::builder()
-            .uri("/jaxrs/mind/mind/list/test-id/version")
+            .uri("/api/mind/mind/list/test-id/version")
             .body(Body::empty())
             .unwrap();
 

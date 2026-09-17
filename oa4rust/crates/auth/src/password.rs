@@ -109,7 +109,7 @@ pub(crate) fn des_encrypt(plain: &str, key: &str) -> Result<Vec<u8>, ()> {
 // ──────────────────────────────────────────────────────────────────────────────
 // 3DES EDE (Encrypt-Decrypt-Encrypt) for SSO token encryption
 //
-// Java SSO uses 3DES with a 16-byte (EDE2) or 24-byte (EDE3) key.
+// o2server SSO uses 3DES with a 16-byte (EDE2) or 24-byte (EDE3) key.
 // Token format: base64(3DES_encrypt(credential#timestamp))
 // ──────────────────────────────────────────────────────────────────────────────
 

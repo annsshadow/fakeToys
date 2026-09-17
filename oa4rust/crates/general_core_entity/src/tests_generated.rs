@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/list")
+                    .uri("/api/general/dict/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/item/list/test-id")
+                    .uri("/api/general/dict/item/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/create")
+                    .uri("/api/general/dict/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/test-id")
+                    .uri("/api/general/dict/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/update/test-id")
+                    .uri("/api/general/dict/update/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/delete/test-id")
+                    .uri("/api/general/dict/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/item/create")
+                    .uri("/api/general/dict/item/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/item/test-id")
+                    .uri("/api/general/dict/item/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/item/update/test-id")
+                    .uri("/api/general/dict/item/update/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/item/delete/test-id")
+                    .uri("/api/general/dict/item/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/file/list")
+                    .uri("/api/general/file/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/invoice/list")
+                    .uri("/api/general/invoice/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -265,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/file/create")
+                    .uri("/api/general/file/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -286,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/file/test-id")
+                    .uri("/api/general/file/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -307,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/file/update/test-id")
+                    .uri("/api/general/file/update/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -328,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/file/delete/test-id")
+                    .uri("/api/general/file/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -349,7 +349,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/file/download/test-id")
+                    .uri("/api/general/file/download/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -370,7 +370,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/invoice/create")
+                    .uri("/api/general/invoice/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -391,7 +391,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/invoice/test-id")
+                    .uri("/api/general/invoice/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -412,7 +412,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/invoice/update/test-id")
+                    .uri("/api/general/invoice/update/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -433,7 +433,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/invoice/delete/test-id")
+                    .uri("/api/general/invoice/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

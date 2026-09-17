@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/list")
+                    .uri("/api/mind/core/entity/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/folder/list")
+                    .uri("/api/mind/core/entity/folder/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/mind")
+                    .uri("/api/mind/core/entity/mind")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/mind/test-id")
+                    .uri("/api/mind/core/entity/mind/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -98,7 +98,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/mind/test-id")
+                    .uri("/api/mind/core/entity/mind/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -119,7 +119,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/folder")
+                    .uri("/api/mind/core/entity/folder")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -140,7 +140,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/folder/test-id")
+                    .uri("/api/mind/core/entity/folder/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -161,7 +161,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/folder/test-id")
+                    .uri("/api/mind/core/entity/folder/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -182,7 +182,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/core/entity/version")
+                    .uri("/api/mind/core/entity/version")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

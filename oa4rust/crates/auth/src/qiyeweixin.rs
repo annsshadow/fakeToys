@@ -124,7 +124,7 @@ async fn create_session(
     Ok(())
 }
 
-/// GET /jaxrs/qiyeweixin/code/{code}
+/// GET /api/qiyeweixin/code/{code}
 pub async fn qiyeweixin_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -181,7 +181,7 @@ pub async fn qiyeweixin_login(
     }
 }
 
-/// GET /jaxrs/qiyeweixin/update/person/detail/{code}
+/// GET /api/qiyeweixin/update/person/detail/{code}
 pub async fn qiyeweixin_update_person_detail(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -304,7 +304,7 @@ fn get_qywx_agent_id() -> Option<String> {
     std::env::var("QYWX_AGENT_ID").ok()
 }
 
-/// POST /jaxrs/qiyeweixin/jssdk/sign/info
+/// POST /api/qiyeweixin/jssdk/sign/info
 pub async fn qiyeweixin_jssdk_sign(
     AxumJson(req): AxumJson<JssdkSignRequest>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
@@ -333,13 +333,13 @@ pub async fn qiyeweixin_jssdk_sign(
 
 pub fn router() -> Router {
     Router::new()
-        .route("/jaxrs/qiyeweixin/code/{code}", get(qiyeweixin_login))
+        .route("/api/qiyeweixin/code/{code}", get(qiyeweixin_login))
         .route(
-            "/jaxrs/qiyeweixin/update/person/detail/{code}",
+            "/api/qiyeweixin/update/person/detail/{code}",
             get(qiyeweixin_update_person_detail),
         )
         .route(
-            "/jaxrs/qiyeweixin/jssdk/sign/info",
+            "/api/qiyeweixin/jssdk/sign/info",
             post(qiyeweixin_jssdk_sign),
         )
 }

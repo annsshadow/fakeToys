@@ -27,7 +27,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/user/hotpic/exists/check")
+                    .uri("/api/hotpic/user/hotpic/exists/check")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -48,7 +48,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/user/hotpic/hotpic-001")
+                    .uri("/api/hotpic/user/hotpic/hotpic-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -69,7 +69,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/user/hotpic/CMS/doc-123")
+                    .uri("/api/hotpic/user/hotpic/CMS/doc-123")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

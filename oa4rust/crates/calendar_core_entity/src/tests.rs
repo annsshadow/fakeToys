@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar/core/entity/calendar/list/public")
+                    .uri("/api/calendar/core/entity/calendar/list/public")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar/core/entity/calendar/list/my")
+                    .uri("/api/calendar/core/entity/calendar/list/my")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -64,7 +64,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar/core/entity/calendar/test-id")
+                    .uri("/api/calendar/core/entity/calendar/test-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

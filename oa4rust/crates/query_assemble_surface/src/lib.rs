@@ -132,7 +132,7 @@ pub async fn list_surfaces(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -141,13 +141,11 @@ pub async fn list_surfaces(
 
 // ── surface/explorer/list（桌面 QueryExplorerApp 配置串引用，查 x_query_view 保存的查询）──
 #[allow(non_snake_case)]
-pub async fn explorer_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn explorer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, query_type, create_time FROM x_query_view ORDER BY create_time DESC",
+            "SELECT id, name, query_type, create_time::text AS create_time FROM x_query_view ORDER BY x_query_view.create_time DESC",
             &[],
         )
         .await
@@ -156,20 +154,26 @@ pub async fn explorer_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
+            let name: Option<String> = row.get("name");
+            let query_type: Option<String> = row.get("query_type");
+            let create_time: Option<String> = row.get("create_time");
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("queryType".to_string(), Value::String(row.get("query_type"))),
+                ("name".to_string(), Value::String(name.unwrap_or_default())),
+                (
+                    "queryType".to_string(),
+                    Value::String(query_type.unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(create_time.unwrap_or_default()),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -264,140 +268,484 @@ pub async fn preview_surface(
 pub fn query_assemble_surface_router() -> Router {
     use u2_closures as u2;
     Router::new()
-        .route("/jaxrs/query/assemble/surface/get/{id}", get(get_surface))
-        .route("/jaxrs/query/assemble/surface/create", post(create_surface))
-        .route("/jaxrs/query/assemble/surface/list/{category}", get(list_surfaces))
-        .route("/jaxrs/query/assemble/surface/explorer/list", get(explorer_list))
-        .route("/jaxrs/query/assemble/surface/save/{id}", post(save_surface))
-        .route("/jaxrs/query/assemble/surface/delete/{id}", post(delete_surface))
-        .route("/jaxrs/query/assemble/surface/preview/{id}", get(preview_surface))
-        .route("/jaxrs/queryview/{view}/application/{app}/execute", get(view_flag_flag_query_queryFlag_execute))
-        .route("/jaxrs/queryview/{view}/application/{app}/execute/page/{page}/size/{size}", get(view_flag_flag_query_queryFlag_execute_v2_page_page_size_size))
-        .route("/jaxrs/importmodel/id/{id}/execute", post(importmodel_id_execute))
-        .route("/jaxrs/queryview/importmodel/execute/record/{recordId}", post(crate::importmodel_execute_record_recordId))
-        .route("/jaxrs/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}", post(crate::importmodel_flag_flag_query_queryFlag))
-        .route("/jaxrs/queryview/importmodel/{id}", post(crate::importmodel_id))
-        .route("/jaxrs/queryview/importmodel/list/{query}/{queryFlag}", post(crate::importmodel_list_query_queryFlag))
-        .route("/jaxrs/queryview/importmodel/list/record/item/paging/{page}/{size}/{size}", post(crate::importmodel_list_record_item_paging_page_size_size))
-        .route("/jaxrs/queryview/importmodel/list/record/paging/{page}/{size}/{size}", post(crate::importmodel_list_record_paging_page_size_size))
-        .route("/jaxrs/queryview/importmodel/record/{recordId}", post(crate::importmodel_record_recordId))
-        .route("/jaxrs/queryview/importmodel/record/mockdeletetoget/{recordId}", post(crate::importmodel_record_recordId_mockdeletetoget))
-        .route("/jaxrs/queryview/importmodel/record/{recordId}/{status}", post(crate::importmodel_record_recordId_status))
-        .route("/jaxrs/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}", get(crate::neural_list_calculate_model_modelFlag_work_workId))
-        .route("/jaxrs/queryview/{query}/{flag}", get(crate::query_flag))
-        .route("/jaxrs/queryview/list/{query}/{key}/{key}", get(crate::query_list_key_key))
-        .route("/jaxrs/queryview/table/{flag}", get(crate::table_flag))
-        .route("/jaxrs/queryview/table/list/{id}/{next}/{count}", get(crate::table_list_id_next_count))
-        .route("/jaxrs/queryview/table/list/paging/{page}/{size}/{size}", get(crate::table_list_paging_page_size_size))
-        .route("/jaxrs/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count))
-        .route("/jaxrs/queryview/table/list/row/select/{tableFlag}", get(crate::table_list_tableFlag_row_select))
-        .route("/jaxrs/queryview/table/list/row/select/where/where/{tableFlag}", get(crate::table_list_tableFlag_row_select_where_where))
-        .route("/jaxrs/queryview/table/list/table/row/paging/{tableFlag}/{page}/{size}/{size}", get(crate::table_list_table_tableFlag_row_paging_page_size_size))
-        .route("/jaxrs/queryview/table/row/{tableFlag}", get(crate::table_tableFlag_row))
-        .route("/jaxrs/queryview/table/row/where/where/{tableFlag}/{count}", get(crate::table_tableFlag_row_count_where_where))
-        .route("/jaxrs/queryview/table/row/delete/all/{tableFlag}", post(crate::table_tableFlag_row_delete_all))
-        .route("/jaxrs/queryview/table/row/delete/all/mockdeletetoget/{tableFlag}", post(crate::table_tableFlag_row_delete_all_mockdeletetoget))
-        .route("/jaxrs/queryview/table/row/{tableFlag}/{id}", get(crate::table_tableFlag_row_id))
-        .route("/jaxrs/queryview/table/row/mockdeletetoget/{tableFlag}/{id}", post(crate::table_tableFlag_row_id_mockdeletetoget))
-        .route("/jaxrs/queryview/table/row/mockputtopost/{tableFlag}/{id}", post(crate::table_tableFlag_row_id_mockputtopost))
-        .route("/jaxrs/queryview/table/row/part/update/{tableFlag}/{id}", post(crate::table_tableFlag_row_id_part_update))
-        .route("/jaxrs/queryview/table/row/one/{tableFlag}", get(crate::table_tableFlag_row_one))
-        .route("/jaxrs/queryview/excel/result/{view}/{flag}", get(crate::view_excel_result_flag))
-        .route("/jaxrs/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}", get(crate::view_flag_flag_query_queryFlag))
-        .route("/jaxrs/queryview/bundle/{view}/{flag}/{flag}/{query}/{queryFlag}", get(crate::view_flag_flag_query_queryFlag_bundle))
-        .route("/jaxrs/queryview/bundle/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}", post(crate::view_flag_flag_query_queryFlag_bundle_mockputtopost))
-        .route("/jaxrs/queryview/excel/{view}/{flag}/{flag}/{query}/{queryFlag}", get(crate::view_flag_flag_query_queryFlag_excel))
-        .route("/jaxrs/queryview/excel/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}", post(crate::view_flag_flag_query_queryFlag_excel_mockputtopost))
-        .route("/jaxrs/queryview/execute/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}", post(crate::view_flag_flag_query_queryFlag_execute_mockputtopost))
-        .route("/jaxrs/queryview/bundle/{view}/{id}", get(crate::view_id_bundle))
-        .route("/jaxrs/queryview/bundle/mockputtopost/{view}/{id}", post(crate::view_id_bundle_mockputtopost))
-        .route("/jaxrs/queryview/bundle/v2/{view}/{id}", get(crate::view_id_bundle_v2))
-        .route("/jaxrs/queryview/excel/{view}/{id}", get(crate::view_id_excel))
-        .route("/jaxrs/queryview/excel/mockputtopost/{view}/{id}", post(crate::view_id_excel_mockputtopost))
-        .route("/jaxrs/queryview/execute/{view}/{id}", get(crate::view_id_execute))
-        .route("/jaxrs/queryview/execute/mockputtopost/{view}/{id}", post(crate::view_id_execute_mockputtopost))
-        .route("/jaxrs/queryview/execute/v2/{view}/{id}/{page}/{size}", get(crate::view_id_execute_v2_page_page_size_size))
+        .route("/api/query/assemble/surface/get/{id}", get(get_surface))
+        .route("/api/query/assemble/surface/create", post(create_surface))
+        .route(
+            "/api/query/assemble/surface/list/{category}",
+            get(list_surfaces),
+        )
+        .route(
+            "/api/query/assemble/surface/explorer/list",
+            get(explorer_list),
+        )
+        .route("/api/query/assemble/surface/save/{id}", post(save_surface))
+        .route(
+            "/api/query/assemble/surface/delete/{id}",
+            post(delete_surface),
+        )
+        .route(
+            "/api/query/assemble/surface/preview/{id}",
+            get(preview_surface),
+        )
+        .route(
+            "/api/queryview/{view}/application/{app}/execute",
+            get(view_flag_flag_query_queryFlag_execute),
+        )
+        .route(
+            "/api/queryview/{view}/application/{app}/execute/page/{page}/size/{size}",
+            get(view_flag_flag_query_queryFlag_execute_v2_page_page_size_size),
+        )
+        .route(
+            "/api/importmodel/id/{id}/execute",
+            post(importmodel_id_execute),
+        )
+        .route(
+            "/api/queryview/importmodel/execute/record/{recordId}",
+            post(crate::importmodel_execute_record_recordId),
+        )
+        .route(
+            "/api/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}",
+            post(crate::importmodel_flag_flag_query_queryFlag),
+        )
+        .route(
+            "/api/queryview/importmodel/{id}",
+            post(crate::importmodel_id),
+        )
+        .route(
+            "/api/queryview/importmodel/list/{query}/{queryFlag}",
+            post(crate::importmodel_list_query_queryFlag),
+        )
+        .route(
+            "/api/queryview/importmodel/list/record/item/paging/{page}/{size}/{size}",
+            post(crate::importmodel_list_record_item_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/importmodel/list/record/paging/{page}/{size}/{size}",
+            post(crate::importmodel_list_record_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/importmodel/record/{recordId}",
+            post(crate::importmodel_record_recordId),
+        )
+        .route(
+            "/api/queryview/importmodel/record/mockdeletetoget/{recordId}",
+            post(crate::importmodel_record_recordId_mockdeletetoget),
+        )
+        .route(
+            "/api/queryview/importmodel/record/{recordId}/{status}",
+            post(crate::importmodel_record_recordId_status),
+        )
+        .route(
+            "/api/queryview/neural/list/calculate/model/{modelFlag}/{work}/{workId}",
+            get(crate::neural_list_calculate_model_modelFlag_work_workId),
+        )
+        .route("/api/queryview/{query}/{flag}", get(crate::query_flag))
+        .route(
+            "/api/queryview/list/{query}/{key}/{key}",
+            get(crate::query_list_key_key),
+        )
+        .route("/api/queryview/table/{flag}", get(crate::table_flag))
+        .route(
+            "/api/queryview/table/list/{id}/{next}/{count}",
+            get(crate::table_list_id_next_count),
+        )
+        .route(
+            "/api/queryview/table/list/paging/{page}/{size}/{size}",
+            get(crate::table_list_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/table/list/row/{tableFlag}/{id}/{next}/{count}",
+            get(crate::table_list_tableFlag_row_id_next_count),
+        )
+        .route(
+            "/api/queryview/table/list/row/select/{tableFlag}",
+            get(crate::table_list_tableFlag_row_select),
+        )
+        .route(
+            "/api/queryview/table/list/row/select/where/where/{tableFlag}",
+            get(crate::table_list_tableFlag_row_select_where_where),
+        )
+        .route(
+            "/api/queryview/table/list/table/row/paging/{tableFlag}/{page}/{size}/{size}",
+            get(crate::table_list_table_tableFlag_row_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/table/row/{tableFlag}",
+            get(crate::table_tableFlag_row),
+        )
+        .route(
+            "/api/queryview/table/row/where/where/{tableFlag}/{count}",
+            get(crate::table_tableFlag_row_count_where_where),
+        )
+        .route(
+            "/api/queryview/table/row/delete/all/{tableFlag}",
+            post(crate::table_tableFlag_row_delete_all),
+        )
+        .route(
+            "/api/queryview/table/row/delete/all/mockdeletetoget/{tableFlag}",
+            post(crate::table_tableFlag_row_delete_all_mockdeletetoget),
+        )
+        .route(
+            "/api/queryview/table/row/{tableFlag}/{id}",
+            get(crate::table_tableFlag_row_id),
+        )
+        .route(
+            "/api/queryview/table/row/mockdeletetoget/{tableFlag}/{id}",
+            post(crate::table_tableFlag_row_id_mockdeletetoget),
+        )
+        .route(
+            "/api/queryview/table/row/mockputtopost/{tableFlag}/{id}",
+            post(crate::table_tableFlag_row_id_mockputtopost),
+        )
+        .route(
+            "/api/queryview/table/row/part/update/{tableFlag}/{id}",
+            post(crate::table_tableFlag_row_id_part_update),
+        )
+        .route(
+            "/api/queryview/table/row/one/{tableFlag}",
+            get(crate::table_tableFlag_row_one),
+        )
+        .route(
+            "/api/queryview/excel/result/{view}/{flag}",
+            get(crate::view_excel_result_flag),
+        )
+        .route(
+            "/api/queryview/{view}/{flag}/{flag}/{query}/{queryFlag}",
+            get(crate::view_flag_flag_query_queryFlag),
+        )
+        .route(
+            "/api/queryview/bundle/{view}/{flag}/{flag}/{query}/{queryFlag}",
+            get(crate::view_flag_flag_query_queryFlag_bundle),
+        )
+        .route(
+            "/api/queryview/bundle/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
+            post(crate::view_flag_flag_query_queryFlag_bundle_mockputtopost),
+        )
+        .route(
+            "/api/queryview/excel/{view}/{flag}/{flag}/{query}/{queryFlag}",
+            get(crate::view_flag_flag_query_queryFlag_excel),
+        )
+        .route(
+            "/api/queryview/excel/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
+            post(crate::view_flag_flag_query_queryFlag_excel_mockputtopost),
+        )
+        .route(
+            "/api/queryview/execute/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}",
+            post(crate::view_flag_flag_query_queryFlag_execute_mockputtopost),
+        )
+        .route(
+            "/api/queryview/bundle/{view}/{id}",
+            get(crate::view_id_bundle),
+        )
+        .route(
+            "/api/queryview/bundle/mockputtopost/{view}/{id}",
+            post(crate::view_id_bundle_mockputtopost),
+        )
+        .route(
+            "/api/queryview/bundle/v2/{view}/{id}",
+            get(crate::view_id_bundle_v2),
+        )
+        .route(
+            "/api/queryview/excel/{view}/{id}",
+            get(crate::view_id_excel),
+        )
+        .route(
+            "/api/queryview/excel/mockputtopost/{view}/{id}",
+            post(crate::view_id_excel_mockputtopost),
+        )
+        .route(
+            "/api/queryview/execute/{view}/{id}",
+            get(crate::view_id_execute),
+        )
+        .route(
+            "/api/queryview/execute/mockputtopost/{view}/{id}",
+            post(crate::view_id_execute_mockputtopost),
+        )
+        .route(
+            "/api/queryview/execute/v2/{view}/{id}/{page}/{size}",
+            get(crate::view_id_execute_v2_page_page_size_size),
+        )
         // ── plan002 U2：已实现未注册 handler 补挂 ──
-        .route("/jaxrs/queryview/importmodel/uuid", get(importmodel_uuid))
-        .route("/jaxrs/queryview/importmodel/record/delete/{recordId}", delete(u2::importmodel_record_delete))
-        .route("/jaxrs/queryview/importmodel/execute/record/{recordId}", get(u2::importmodel_reexecute_record))
-        .route("/jaxrs/queryview/list", get(query_list))
-        .route("/jaxrs/queryview/table/list/{id}/prev/{count}", get(table_list_id_prev_count))
-        .route("/jaxrs/queryview/table/list/row/{tableFlag}/{id}/prev/{count}", get(table_list_tableFlag_row_id_prev_count))
-        .route("/jaxrs/queryview/table/reload/dynamic", get(table_reload_dynamic))
-        .route("/jaxrs/queryview/view/{id}", get(view_id))
-        .route("/jaxrs/queryview/view/list/query/{queryFlag}", get(view_list_query_queryFlag))
+        .route("/api/queryview/importmodel/uuid", get(importmodel_uuid))
+        .route(
+            "/api/queryview/importmodel/record/delete/{recordId}",
+            delete(u2::importmodel_record_delete),
+        )
+        .route(
+            "/api/queryview/importmodel/execute/record/{recordId}",
+            get(u2::importmodel_reexecute_record),
+        )
+        .route("/api/queryview/list", get(query_list))
+        .route(
+            "/api/queryview/table/list/{id}/prev/{count}",
+            get(table_list_id_prev_count),
+        )
+        .route(
+            "/api/queryview/table/list/row/{tableFlag}/{id}/prev/{count}",
+            get(table_list_tableFlag_row_id_prev_count),
+        )
+        .route(
+            "/api/queryview/table/reload/dynamic",
+            get(table_reload_dynamic),
+        )
+        .route("/api/queryview/view/{id}", get(view_id))
+        .route(
+            "/api/queryview/view/list/query/{queryFlag}",
+            get(view_list_query_queryFlag),
+        )
         // ── plan002 U2：statement / stat / search / morelikethis 缺口 ──
-        .route("/jaxrs/queryview/statement/{id}/format", get(u2::statement_get_format))
-        .route("/jaxrs/queryview/statement/{id}", get(u2::statement_get_id))
-        .route("/jaxrs/queryview/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
-        .route("/jaxrs/queryview/statement/execute/{flag}/page/{page}/size/{size}", post(u2::statement_execute))
-        .route("/jaxrs/queryview/statement/list/query/{queryFlag}", post(u2::statement_list_with_query))
-        .route("/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}", get(u2::stat_get_with_query))
-        .route("/jaxrs/queryview/stat/list/query/{queryFlag}", get(u2::stat_list_with_query))
-        .route("/jaxrs/queryview/stat/{id}", get(u2::stat_get_id))
-        .route("/jaxrs/queryview/stat/{id}/execute", put(u2::stat_execute))
-        .route("/jaxrs/queryview/stat/{id}/execute/mockputtopost", post(u2::stat_execute))
-        .route("/jaxrs/queryview/stat/execute/mockputtopost/{id}", post(u2::stat_execute))
-        .route("/jaxrs/queryview/search", post(u2::search_post))
-        .route("/jaxrs/queryview/morelikethis", post(u2::morelikethis_post))
+        .route(
+            "/api/queryview/statement/{id}/format",
+            get(u2::statement_get_format),
+        )
+        .route("/api/queryview/statement/{id}", get(u2::statement_get_id))
+        .route(
+            "/api/queryview/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}",
+            post(u2::statement_execute_mode_v2),
+        )
+        .route(
+            "/api/queryview/statement/execute/{flag}/page/{page}/size/{size}",
+            post(u2::statement_execute),
+        )
+        .route(
+            "/api/queryview/statement/list/query/{queryFlag}",
+            post(u2::statement_list_with_query),
+        )
+        .route(
+            "/api/queryview/stat/flag/{flag}/query/{queryFlag}",
+            get(u2::stat_get_with_query),
+        )
+        .route(
+            "/api/queryview/stat/list/query/{queryFlag}",
+            get(u2::stat_list_with_query),
+        )
+        .route("/api/queryview/stat/{id}", get(u2::stat_get_id))
+        .route("/api/queryview/stat/{id}/execute", put(u2::stat_execute))
+        .route(
+            "/api/queryview/stat/{id}/execute/mockputtopost",
+            post(u2::stat_execute),
+        )
+        .route(
+            "/api/queryview/stat/execute/mockputtopost/{id}",
+            post(u2::stat_execute),
+        )
+        .route("/api/queryview/search", post(u2::search_post))
+        .route("/api/queryview/morelikethis", post(u2::morelikethis_post))
         // ── plan002 U2：table 行级 + view bundle v2 缺口 ──
-        .route("/jaxrs/queryview/table/row/delete/{tableFlag}/{id}", delete(u2::table_row_delete))
-        .route("/jaxrs/queryview/table/row/insert/{tableFlag}", post(u2::table_row_insert))
-        .route("/jaxrs/queryview/table/row/one/insert/{tableFlag}", post(u2::table_row_insert_one))
-        .route("/jaxrs/queryview/bundle/v2/post/{id}", post(u2::view_bundle_v2_post))
-        // ── plan002 U2 v9：Java 精确路径/动词闭合（权威清单 docs/audits/java-endpoint-inventory.json）──
-        .route("/jaxrs/queryview/importmodel/flag/{flag}/query/{queryFlag}", get(crate::importmodel_flag_flag_query_queryFlag))
-        .route("/jaxrs/queryview/importmodel/list/query/{queryFlag}", get(crate::importmodel_list_query_queryFlag))
-        .route("/jaxrs/queryview/importmodel/list/record/item/paging/{page}/size/{size}", post(crate::importmodel_list_record_item_paging_page_size_size))
-        .route("/jaxrs/queryview/importmodel/list/record/paging/{page}/size/{size}", post(crate::importmodel_list_record_paging_page_size_size))
-        .route("/jaxrs/queryview/importmodel/record/{recordId}", get(crate::importmodel_record_recordId))
-        .route("/jaxrs/queryview/importmodel/record/{recordId}/mockdeletetoget", get(crate::importmodel_record_recordId_mockdeletetoget))
-        .route("/jaxrs/queryview/importmodel/record/{recordId}/status", get(crate::importmodel_record_recordId_status))
-        .route("/jaxrs/queryview/importmodel/record/{recordId}", delete(u2::importmodel_record_delete))
-        .route("/jaxrs/queryview/importmodel/{id}", get(crate::importmodel_id))
-        .route("/jaxrs/queryview/importmodel/{id}/execute", post(crate::importmodel_id_execute))
-        .route("/jaxrs/queryview/neural/list/calculate/model/{modelFlag}/work/{workId}", get(crate::neural_list_calculate_model_modelFlag_work_workId))
-        .route("/jaxrs/queryview/query/list", get(query_list))
-        .route("/jaxrs/queryview/query/list/key/{key}", get(crate::query_list_key_key))
-        .route("/jaxrs/queryview/query/{flag}", get(crate::query_flag))
-        .route("/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}/execute", put(u2::stat_execute_with_query_put))
-        .route("/jaxrs/queryview/stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost", post(u2::stat_execute_with_query_mock))
-        .route("/jaxrs/queryview/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
-        .route("/jaxrs/queryview/statement/{flag}/execute/page/{page}/size/{size}", post(u2::statement_execute))
-        .route("/jaxrs/queryview/table/list/paging/{page}/size/{size}", post(crate::table_list_paging_page_size_size))
-        .route("/jaxrs/queryview/table/list/table/{tableFlag}/row/paging/{page}/size/{size}", post(crate::table_list_table_tableFlag_row_paging_page_size_size))
-        .route("/jaxrs/queryview/table/list/{id}/next/{count}", get(crate::table_list_id_next_count))
-        .route("/jaxrs/queryview/table/list/{id}/row/select", post(u2::table_row_select_post))
-        .route("/jaxrs/queryview/table/list/{id}/row/select/where/{where}", get(crate::table_list_tableFlag_row_select_where_where))
-        .route("/jaxrs/queryview/table/list/{id}/row/{rid}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
-        .route("/jaxrs/queryview/table/list/{id}/row/{rid}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
-        .route("/jaxrs/queryview/table/{flag}/row", post(u2::table_row_insert))
-        .route("/jaxrs/queryview/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
-        .route("/jaxrs/queryview/table/{flag}/row/delete/all", delete(crate::table_tableFlag_row_delete_all))
-        .route("/jaxrs/queryview/table/{flag}/row/delete/all/mockdeletetoget", get(crate::table_tableFlag_row_delete_all_mockdeletetoget))
-        .route("/jaxrs/queryview/table/{flag}/row/one", post(u2::table_row_insert_one))
-        .route("/jaxrs/queryview/table/{flag}/row/{rid}", get(crate::table_tableFlag_row_id).put(crate::table_tableFlag_row_id_mockputtopost).delete(u2::table_row_delete))
-        .route("/jaxrs/queryview/table/{flag}/row/{rid}/mockdeletetoget", get(crate::table_tableFlag_row_id_mockdeletetoget))
-        .route("/jaxrs/queryview/table/{flag}/row/{rid}/mockputtopost", post(crate::table_tableFlag_row_id_mockputtopost))
-        .route("/jaxrs/queryview/table/{flag}/row/{rid}/part/update", post(crate::table_tableFlag_row_id_part_update))
-        .route("/jaxrs/queryview/view/excel/result/{flag}", get(crate::view_excel_result_flag))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}", get(crate::view_flag_flag_query_queryFlag))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/bundle", put(u2::view_flag_query_bundle_put))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/bundle/mockputtopost", post(u2::view_flag_query_bundle_mock))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/excel", put(u2::view_flag_query_excel_put))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/excel/mockputtopost", post(u2::view_flag_query_excel_mock))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/execute", put(u2::view_flag_query_execute_put))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/execute/mockputtopost", post(u2::view_flag_query_execute_mock))
-        .route("/jaxrs/queryview/view/flag/{flag}/query/{queryFlag}/execute/v2/page/{page}/size/{size}", post(u2::view_execute_v2_flag_query))
-        .route("/jaxrs/queryview/view/{id}/bundle", put(u2::view_id_bundle_put))
-        .route("/jaxrs/queryview/view/{id}/bundle/mockputtopost", post(u2::view_id_bundle_mock))
-        .route("/jaxrs/queryview/view/{id}/bundle/v2", post(u2::view_bundle_v2_post))
-        .route("/jaxrs/queryview/view/{id}/excel", put(u2::view_id_excel_put))
-        .route("/jaxrs/queryview/view/{id}/excel/mockputtopost", post(crate::view_id_excel_mockputtopost))
-        .route("/jaxrs/queryview/view/{id}/execute", put(u2::view_id_execute_put))
-        .route("/jaxrs/queryview/view/{id}/execute/mockputtopost", post(crate::view_id_execute_mockputtopost))
-        .route("/jaxrs/queryview/view/{id}/execute/v2/page/{page}/size/{size}", post(u2::view_execute_v2_id))
+        .route(
+            "/api/queryview/table/row/delete/{tableFlag}/{id}",
+            delete(u2::table_row_delete),
+        )
+        .route(
+            "/api/queryview/table/row/insert/{tableFlag}",
+            post(u2::table_row_insert),
+        )
+        .route(
+            "/api/queryview/table/row/one/insert/{tableFlag}",
+            post(u2::table_row_insert_one),
+        )
+        .route(
+            "/api/queryview/bundle/v2/post/{id}",
+            post(u2::view_bundle_v2_post),
+        )
+        // ── plan002 U2 v9：o2server 精确路径/动词闭合（权威清单 docs/audits/o2server-endpoint-inventory.json）──
+        .route(
+            "/api/queryview/importmodel/flag/{flag}/query/{queryFlag}",
+            get(crate::importmodel_flag_flag_query_queryFlag),
+        )
+        .route(
+            "/api/queryview/importmodel/list/query/{queryFlag}",
+            get(crate::importmodel_list_query_queryFlag),
+        )
+        .route(
+            "/api/queryview/importmodel/list/record/item/paging/{page}/size/{size}",
+            post(crate::importmodel_list_record_item_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/importmodel/list/record/paging/{page}/size/{size}",
+            post(crate::importmodel_list_record_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/importmodel/record/{recordId}",
+            get(crate::importmodel_record_recordId),
+        )
+        .route(
+            "/api/queryview/importmodel/record/{recordId}/mockdeletetoget",
+            get(crate::importmodel_record_recordId_mockdeletetoget),
+        )
+        .route(
+            "/api/queryview/importmodel/record/{recordId}/status",
+            get(crate::importmodel_record_recordId_status),
+        )
+        .route(
+            "/api/queryview/importmodel/record/{recordId}",
+            delete(u2::importmodel_record_delete),
+        )
+        .route(
+            "/api/queryview/importmodel/{id}",
+            get(crate::importmodel_id),
+        )
+        .route(
+            "/api/queryview/importmodel/{id}/execute",
+            post(crate::importmodel_id_execute),
+        )
+        .route(
+            "/api/queryview/neural/list/calculate/model/{modelFlag}/work/{workId}",
+            get(crate::neural_list_calculate_model_modelFlag_work_workId),
+        )
+        .route("/api/queryview/query/list", get(query_list))
+        .route(
+            "/api/queryview/query/list/key/{key}",
+            get(crate::query_list_key_key),
+        )
+        .route("/api/queryview/query/{flag}", get(crate::query_flag))
+        .route(
+            "/api/queryview/stat/flag/{flag}/query/{queryFlag}/execute",
+            put(u2::stat_execute_with_query_put),
+        )
+        .route(
+            "/api/queryview/stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost",
+            post(u2::stat_execute_with_query_mock),
+        )
+        .route(
+            "/api/queryview/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}",
+            post(u2::statement_execute_mode_v2),
+        )
+        .route(
+            "/api/queryview/statement/{flag}/execute/page/{page}/size/{size}",
+            post(u2::statement_execute),
+        )
+        .route(
+            "/api/queryview/table/list/paging/{page}/size/{size}",
+            post(crate::table_list_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/table/list/table/{tableFlag}/row/paging/{page}/size/{size}",
+            post(crate::table_list_table_tableFlag_row_paging_page_size_size),
+        )
+        .route(
+            "/api/queryview/table/list/{id}/next/{count}",
+            get(crate::table_list_id_next_count),
+        )
+        .route(
+            "/api/queryview/table/list/{id}/row/select",
+            post(u2::table_row_select_post),
+        )
+        .route(
+            "/api/queryview/table/list/{id}/row/select/where/{where}",
+            get(crate::table_list_tableFlag_row_select_where_where),
+        )
+        .route(
+            "/api/queryview/table/list/{id}/row/{rid}/next/{count}",
+            get(crate::table_list_tableFlag_row_id_next_count),
+        )
+        .route(
+            "/api/queryview/table/list/{id}/row/{rid}/prev/{count}",
+            get(crate::table_list_tableFlag_row_id_prev_count),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row",
+            post(u2::table_row_insert),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/count/where/{where}",
+            get(crate::table_tableFlag_row_count_where_where),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/delete/all",
+            delete(crate::table_tableFlag_row_delete_all),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/delete/all/mockdeletetoget",
+            get(crate::table_tableFlag_row_delete_all_mockdeletetoget),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/one",
+            post(u2::table_row_insert_one),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/{rid}",
+            get(crate::table_tableFlag_row_id)
+                .put(crate::table_tableFlag_row_id_mockputtopost)
+                .delete(u2::table_row_delete),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/{rid}/mockdeletetoget",
+            get(crate::table_tableFlag_row_id_mockdeletetoget),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/{rid}/mockputtopost",
+            post(crate::table_tableFlag_row_id_mockputtopost),
+        )
+        .route(
+            "/api/queryview/table/{flag}/row/{rid}/part/update",
+            post(crate::table_tableFlag_row_id_part_update),
+        )
+        .route(
+            "/api/queryview/view/excel/result/{flag}",
+            get(crate::view_excel_result_flag),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}",
+            get(crate::view_flag_flag_query_queryFlag),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/bundle",
+            put(u2::view_flag_query_bundle_put),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/bundle/mockputtopost",
+            post(u2::view_flag_query_bundle_mock),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/excel",
+            put(u2::view_flag_query_excel_put),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/excel/mockputtopost",
+            post(u2::view_flag_query_excel_mock),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/execute",
+            put(u2::view_flag_query_execute_put),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/execute/mockputtopost",
+            post(u2::view_flag_query_execute_mock),
+        )
+        .route(
+            "/api/queryview/view/flag/{flag}/query/{queryFlag}/execute/v2/page/{page}/size/{size}",
+            post(u2::view_execute_v2_flag_query),
+        )
+        .route(
+            "/api/queryview/view/{id}/bundle",
+            put(u2::view_id_bundle_put),
+        )
+        .route(
+            "/api/queryview/view/{id}/bundle/mockputtopost",
+            post(u2::view_id_bundle_mock),
+        )
+        .route(
+            "/api/queryview/view/{id}/bundle/v2",
+            post(u2::view_bundle_v2_post),
+        )
+        .route("/api/queryview/view/{id}/excel", put(u2::view_id_excel_put))
+        .route(
+            "/api/queryview/view/{id}/excel/mockputtopost",
+            post(crate::view_id_excel_mockputtopost),
+        )
+        .route(
+            "/api/queryview/view/{id}/execute",
+            put(u2::view_id_execute_put),
+        )
+        .route(
+            "/api/queryview/view/{id}/execute/mockputtopost",
+            post(crate::view_id_execute_mockputtopost),
+        )
+        .route(
+            "/api/queryview/view/{id}/execute/v2/page/{page}/size/{size}",
+            post(u2::view_execute_v2_id),
+        )
 }
 
 #[cfg(test)]
@@ -513,7 +861,7 @@ pub async fn importmodel_list_query_queryFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -555,7 +903,7 @@ pub async fn importmodel_list_record_item_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -597,7 +945,7 @@ pub async fn importmodel_list_record_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -701,7 +1049,7 @@ pub async fn importmodel_uuid(
     _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    // Java returns String(uuid), not Object {uuid: String}
+    // o2server returns String(uuid), not Object {uuid: String}
     Ok(Json(ActionResult::success(Value::String(id))))
 }
 
@@ -826,7 +1174,7 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -862,7 +1210,7 @@ pub async fn query_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -901,7 +1249,7 @@ pub async fn query_list_key_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -980,7 +1328,7 @@ pub async fn table_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1017,7 +1365,7 @@ pub async fn table_list_table_tableFlag_row_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1054,7 +1402,7 @@ pub async fn table_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1091,7 +1439,7 @@ pub async fn table_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1128,7 +1476,7 @@ pub async fn table_list_tableFlag_row_select(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1165,7 +1513,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1202,7 +1550,7 @@ pub async fn table_list_tableFlag_row_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1239,7 +1587,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1260,7 +1608,7 @@ pub async fn table_reload_dynamic(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    // W12 收敛：对齐 Java ActionBuildQueryDispatch——Wo extends WrapBoolean，
+    // W12 收敛：对齐 o2server ActionBuildQueryDispatch——Wo extends WrapBoolean，
     // 成功路径恒 value=true（不携带 reloaded/success 等额外键）。
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
@@ -1333,7 +1681,7 @@ pub async fn table_tableFlag_row(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1428,7 +1776,7 @@ pub async fn table_tableFlag_row_delete_all_mockdeletetoget(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1631,7 +1979,7 @@ pub async fn view_excel_result_flag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1930,7 +2278,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1973,7 +2321,7 @@ pub async fn view_list_query_queryFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2306,7 +2654,7 @@ pub async fn view_id_execute_v2_page_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

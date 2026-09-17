@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/core/entity/app/list")
+                    .uri("/api/ai/core/entity/app/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/core/entity/model/list")
+                    .uri("/api/ai/core/entity/model/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/consume/list/test-id/count/test-id")
+                    .uri("/api/message/consume/list/test-id/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/consume/test-id/type/test-id")
+                    .uri("/api/message/consume/test-id/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/custom/create")
+                    .uri("/api/message/custom/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/mark_read/test-id")
+                    .uri("/api/message/mark_read/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/unread/count/test-id")
+                    .uri("/api/message/unread/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

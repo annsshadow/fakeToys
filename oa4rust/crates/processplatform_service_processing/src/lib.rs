@@ -203,7 +203,7 @@ pub async fn list_processes(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -622,7 +622,7 @@ pub async fn work_id_projection(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -735,18 +735,45 @@ pub async fn task_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
-                ("work".to_string(), Value::String(row.get::<_, Option<String>>("work").unwrap_or_default())),
-                ("activity".to_string(), Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default())),
-                ("person".to_string(), Value::String(row.get::<_, Option<String>>("person").unwrap_or_default())),
-                ("taskStatus".to_string(), Value::String(row.get::<_, Option<String>>("task_status").unwrap_or_default())),
-                ("startTime".to_string(), Value::String(row.get::<_, Option<String>>("start_time").unwrap_or_default())),
-                ("endTime".to_string(), Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default())),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "work".to_string(),
+                    Value::String(row.get::<_, Option<String>>("work").unwrap_or_default()),
+                ),
+                (
+                    "activity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("start_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "endTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1405,7 +1432,7 @@ pub async fn touch_loglongdetained(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -1748,7 +1775,7 @@ pub async fn data_work_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1764,7 +1791,7 @@ pub async fn data_work_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1780,7 +1807,7 @@ pub async fn data_work_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1854,7 +1881,7 @@ pub async fn work_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
@@ -2014,7 +2041,7 @@ pub async fn data_workcompleted_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -2030,7 +2057,7 @@ pub async fn data_workcompleted_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -2055,7 +2082,7 @@ pub async fn documentversion_work_work(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2116,7 +2143,7 @@ pub async fn form_suitable_activity_activityId(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2184,7 +2211,7 @@ pub async fn job_job(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2222,7 +2249,7 @@ pub async fn record_job_job(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2244,7 +2271,7 @@ pub async fn record_task_processing(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2266,7 +2293,7 @@ pub async fn record_work_processing(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2288,7 +2315,7 @@ pub async fn record_work_terminate(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2449,7 +2476,7 @@ pub async fn attachment_id_work_workId(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2471,7 +2498,7 @@ pub async fn attachment_id_workcompleted_workCompletedId(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2564,7 +2591,7 @@ pub async fn applicationdict_id_path0_path1_path2_data(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2592,7 +2619,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_data(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2645,7 +2672,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_data(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2702,7 +2729,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2724,7 +2751,7 @@ pub async fn workcompleted_process_processFlag(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -3282,7 +3309,7 @@ pub async fn gateway_fork(
     }
 
     let total_created_tasks = created_tasks.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(created_tasks),
         total_created_tasks as i64,
         0,

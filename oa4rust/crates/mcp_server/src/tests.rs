@@ -201,15 +201,15 @@ mod tests {
         // Key tool names that must be registered by the register_tool! macro.
         // Verifying the macro expansion is correct.
         let expected_tools = [
-            "jaxrs_base_health",
-            "jaxrs_authentication_login",
-            "jaxrs_person_list",
-            "jaxrs_person_get",
-            "jaxrs_base_echo",
-            "jaxrs_bbs_topic_list",
-            "jaxrs_file_upload",
-            "jaxrs_ai_chat",
-            "jaxrs_console_status",
+            "base_health",
+            "authentication_login",
+            "person_list",
+            "person_get",
+            "base_echo",
+            "bbs_topic_list",
+            "file_upload",
+            "ai_chat",
+            "console_status",
         ];
         assert!(expected_tools.len() >= 9);
     }
@@ -222,9 +222,9 @@ mod tests {
         // This validates the register_tool! macro path handling
         let paths = vec![
             "/health",
-            "/jaxrs/authentication/login",
-            "/jaxrs/person/{id}",
-            "/jaxrs/bbs/topic/{id}",
+            "/api/authentication/login",
+            "/api/person/{id}",
+            "/api/bbs/topic/{id}",
         ];
         for path in &paths {
             assert!(path.starts_with('/'), "Path must start with /: {}", path);

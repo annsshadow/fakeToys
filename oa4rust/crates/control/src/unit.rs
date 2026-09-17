@@ -8,7 +8,7 @@ use shared::response::ActionResult;
 
 use crate::pagination::page_result;
 
-/// 创建单位请求体（契约路径 POST /jaxrs/unit）
+/// 创建单位请求体（契约路径 POST /api/unit）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct UnitCreateRequest {
     /// 单位名称
@@ -19,7 +19,7 @@ pub struct UnitCreateRequest {
     pub level: i32,
 }
 
-/// 更新单位请求体（契约路径 PUT /jaxrs/unit/{flag}）
+/// 更新单位请求体（契约路径 PUT /api/unit/{flag}）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct UnitUpdateRequest {
     /// 单位名称
@@ -32,7 +32,7 @@ pub struct UnitUpdateRequest {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/unit/{flag}",
+    path = "/api/unit/{flag}",
     params(
         ("flag" = String, Path, description = "Unit flag (id or name)")
     ),
@@ -82,7 +82,7 @@ pub async fn get(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 获取单位列表（树形结构）：GET /jaxrs/unit/list
+/// 获取单位列表（树形结构）：GET /api/unit/list
 #[allow(non_snake_case)]
 pub async fn list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -206,7 +206,7 @@ async fn query_page(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/unit/list/{flag}/next/{count}",
+    path = "/api/unit/list/{flag}/next/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -228,7 +228,7 @@ pub async fn list_next(
     Ok(page_result(total, data, true))
 }
 
-/// 获取单位列表（上一批）：GET /jaxrs/unit/list/{flag}/prev/{count}
+/// 获取单位列表（上一批）：GET /api/unit/list/{flag}/prev/{count}
 #[allow(non_snake_case)]
 pub async fn list_prev(
     pool: Extension<Pool>,
@@ -238,7 +238,7 @@ pub async fn list_prev(
     Ok(page_result(total, data, false))
 }
 
-/// 创建单位：POST /jaxrs/unit
+/// 创建单位：POST /api/unit
 #[allow(non_snake_case)]
 pub async fn create(
     pool: Extension<Pool>,
@@ -279,7 +279,7 @@ pub async fn create(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 更新单位信息：PUT /jaxrs/unit/{flag}
+/// 更新单位信息：PUT /api/unit/{flag}
 #[allow(non_snake_case)]
 pub async fn update(
     pool: Extension<Pool>,
@@ -333,7 +333,7 @@ pub async fn update(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 软删除单位：DELETE /jaxrs/unit/{flag}
+/// 软删除单位：DELETE /api/unit/{flag}
 #[allow(non_snake_case)]
 pub async fn delete(
     pool: Extension<Pool>,

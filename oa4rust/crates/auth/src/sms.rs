@@ -122,7 +122,7 @@ pub async fn sms_send(phone: &str) -> Result<ActionResult<Value>, AppError> {
     }
 }
 
-/// POST /jaxrs/authentication/sms/send —— 发送短信验证码
+/// POST /api/authentication/sms/send —— 发送短信验证码
 pub async fn sms_send_handler(
     Json(payload): Json<SmsSendRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -135,7 +135,7 @@ pub struct SmsVerifyRequest {
     pub code: String,
 }
 
-/// POST /jaxrs/authentication/sms/verify —— 校验短信验证码
+/// POST /api/authentication/sms/verify —— 校验短信验证码
 pub async fn sms_verify_handler(
     Json(req): Json<SmsVerifyRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -157,6 +157,6 @@ pub async fn sms_verify_handler(
 
 pub fn sms_router() -> Router {
     Router::new()
-        .route("/jaxrs/authentication/sms/send", post(sms_send_handler))
-        .route("/jaxrs/authentication/sms/verify", post(sms_verify_handler))
+        .route("/api/authentication/sms/send", post(sms_send_handler))
+        .route("/api/authentication/sms/verify", post(sms_verify_handler))
 }

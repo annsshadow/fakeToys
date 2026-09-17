@@ -14,7 +14,7 @@ fn body_str<'a>(body: &'a Value, key: &str) -> Option<&'a str> {
     body.get(key).and_then(Value::as_str)
 }
 
-/// POST /jaxrs/processplatform/assemble/designer/script —— 新建脚本并落 v1 版本快照
+/// POST /api/processplatform/assemble/designer/script —— 新建脚本并落 v1 版本快照
 pub async fn create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -60,7 +60,7 @@ pub async fn create(
     ))))
 }
 
-/// PUT /jaxrs/processplatform/assemble/designer/script/{id} —— 更新脚本并落新版本快照
+/// PUT /api/processplatform/assemble/designer/script/{id} —— 更新脚本并落新版本快照
 pub async fn update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -112,7 +112,7 @@ pub async fn update(
     ))))
 }
 
-/// DELETE /jaxrs/processplatform/assemble/designer/script/{id} —— 软删除
+/// DELETE /api/processplatform/assemble/designer/script/{id} —— 软删除
 pub async fn delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,

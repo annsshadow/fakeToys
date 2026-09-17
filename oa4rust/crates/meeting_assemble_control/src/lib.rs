@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/meeting_assemble_control";
+pub const API_BASE: &str = "/api/meeting_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -64,7 +64,7 @@ pub async fn list_meeting_controls(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -201,7 +201,7 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -261,7 +261,7 @@ pub async fn building_list_like_pinyin_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -321,7 +321,7 @@ pub async fn building_list_like_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -380,7 +380,7 @@ pub async fn building_list_pinyininitial_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -439,7 +439,7 @@ pub async fn building_list_start_start_completed_completed(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -498,7 +498,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -562,7 +562,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -636,7 +636,7 @@ pub async fn config_system_config(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    // Build config object: Java returns single MeetingConfigProperties object
+    // Build config object: o2server returns single MeetingConfigProperties object
     // (not an array of rows). Map key-value rows to object fields.
     let mut config_map: serde_json::Map<String, Value> = serde_json::Map::new();
     for row in &rows {
@@ -645,7 +645,7 @@ pub async fn config_system_config(
         config_map.insert(key, Value::String(value));
     }
 
-    // Ensure required fields exist with defaults (matching Java MeetingConfigProperties)
+    // Ensure required fields exist with defaults (matching o2server MeetingConfigProperties)
     config_map
         .entry("weekBegin".to_string())
         .or_insert(Value::String("1".to_string()));
@@ -687,7 +687,7 @@ pub async fn config_system_config(
         .or_insert(Value::Array(vec![]));
 
     let data = Value::Object(config_map);
-    Ok(Json(ActionResult::java_success(data, 1, 1)))
+    Ok(Json(ActionResult::legacy_success(data, 1, 1)))
 }
 
 #[allow(non_snake_case)]
@@ -776,7 +776,7 @@ pub async fn meeting_list_applied_completed(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -822,7 +822,7 @@ pub async fn meeting_list_applied_processing(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -868,7 +868,7 @@ pub async fn meeting_list_applied_wait(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -918,7 +918,7 @@ pub async fn meeting_list_apply_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -942,7 +942,7 @@ pub async fn meeting_list_coming_day_count(
         Ok(rows) => rows,
         Err(e) => {
             eprintln!("DIAG meeting_coming_day query err: {:?}", e);
-            return Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)));
+            return Ok(Json(ActionResult::legacy_success(Value::Array(vec![]), 0, 0)));
         }
     };
 
@@ -974,7 +974,7 @@ pub async fn meeting_list_coming_day_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1021,7 +1021,7 @@ pub async fn meeting_list_coming_month_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1068,7 +1068,7 @@ pub async fn meeting_list_forward_monthcount_monthCount(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1115,7 +1115,7 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1165,7 +1165,7 @@ pub async fn meeting_list_invite_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1211,7 +1211,7 @@ pub async fn meeting_list_invited_completed(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1257,7 +1257,7 @@ pub async fn meeting_list_invited_processing(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1303,7 +1303,7 @@ pub async fn meeting_list_invited_rejected(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1349,7 +1349,7 @@ pub async fn meeting_list_invited_wait(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1395,7 +1395,7 @@ pub async fn meeting_list_wait_accept(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1441,7 +1441,7 @@ pub async fn meeting_list_wait_confirm(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1495,7 +1495,7 @@ pub async fn meeting_list_year_year_month_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1549,7 +1549,7 @@ pub async fn meeting_list_year_year_month_month_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1599,7 +1599,7 @@ pub async fn meeting_list_year_year_month_month_day_day(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1649,7 +1649,7 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1699,7 +1699,7 @@ pub async fn meeting_list_year_year_month_month_day_day_roomId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1758,7 +1758,7 @@ pub async fn meeting_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1807,7 +1807,7 @@ pub async fn meeting_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1857,7 +1857,7 @@ pub async fn meeting_list_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1907,7 +1907,7 @@ pub async fn meeting_list_page_size_size_manage(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -2450,7 +2450,7 @@ pub async fn openmeeting_list_room(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2506,7 +2506,7 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2566,7 +2566,7 @@ pub async fn room_list_like_pinyin_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2626,7 +2626,7 @@ pub async fn room_list_like_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2685,7 +2685,7 @@ pub async fn room_list_pinyininitial_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2780,17 +2780,17 @@ pub async fn room_id_photo(
     }
 }
 
-// ════════════ plan002 U2：meeting 模块端点全量闭合（Java jaxrs 76 端点对齐） ════════════
+// ════════════ plan002 U2：meeting 模块端点全量闭合（o2server o2server 76 端点对齐） ════════════
 // 语义红线（沿用 file_assemble_control U2 先例，禁止假成功壳）：
 //   - 附件上传 = BlobStorage put + 回读校验。FS 后端真实落盘；STORAGE_BACKEND=db 时
 //     DbBlobStorage.get 必然 Err -> 显式 501 + warn，不落“内容必丢”的元数据行。
 //     FS 模式下 content 列双写 base64，保证下载端点不依赖 blob 后端即可回放。
 //   - IDOR 门禁：meeting 写操作 require_owner(meeting.creator)；attachment 写操作经
-//     meeting 关联 creator 校验；building/room 编辑对应 Java buildingEditAvailable
+//     meeting 关联 creator 校验；building/room 编辑对应 o2server buildingEditAvailable
 //     （manager 或 MeetingManager 角色）-> is_admin 近似。
 //   - 归一化查重：building/room 创建与改名时 normalize(name) 冲突检测。
 //
-// 跨 crate 裁决记录：全部缺口路由均挂 /jaxrs/meeting/assemble/control 前缀
+// 跨 crate 裁决记录：全部缺口路由均挂 /api/meeting/assemble/control 前缀
 // （本 crate 专属前缀），经归一化查重无跨 crate 占用。
 
 async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Result<(), AppError> {
@@ -3025,7 +3025,7 @@ pub async fn u2_attachment_list_with_meeting(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(u2_attachment_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3268,7 +3268,7 @@ async fn u2_attachment_paged(
         data.reverse();
     }
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3383,7 +3383,7 @@ pub async fn u2_attachment_delete(
     ))))
 }
 
-// ── Building 族补齐（create / delete / edit：Java buildingEditAvailable ≈ is_admin）──
+// ── Building 族补齐（create / delete / edit：o2server buildingEditAvailable ≈ is_admin）──
 
 async fn u2_building_name_taken(
     client: &deadpool_postgres::tokio_postgres::Client,
@@ -3630,7 +3630,7 @@ pub async fn u2_config_manage_get(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3756,7 +3756,7 @@ pub async fn u2_meeting_put_save(
     ))))
 }
 
-/// Java ActionCheckIn.execute(effectivePerson, id)：以当前登录人签到。
+/// o2server ActionCheckIn.execute(effectivePerson, id)：以当前登录人签到。
 #[allow(non_snake_case)]
 pub async fn u2_meeting_checkin_get(
     pool: Extension<Pool>,
@@ -3978,7 +3978,7 @@ pub async fn u2_room_delete(
     ))))
 }
 
-/// Java ActionSetPhoto：multipart 上传照片字节。落地为 x_meeting_room_photo 行
+/// o2server ActionSetPhoto：multipart 上传照片字节。落地为 x_meeting_room_photo 行
 /// （photo_url 存 base64 回放数据，photo_name 存文件名）。
 #[allow(non_snake_case)]
 pub async fn u2_room_set_photo(

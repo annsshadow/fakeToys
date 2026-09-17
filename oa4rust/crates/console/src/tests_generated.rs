@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/console/status")
+                    .uri("/api/console/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/console/logs/test-id")
+                    .uri("/api/console/logs/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/console/send/message")
+                    .uri("/api/console/send/message")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/console/cache/clear/test-id")
+                    .uri("/api/console/cache/clear/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/console/metric/test-id")
+                    .uri("/api/console/metric/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -119,7 +119,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/console/system/info")
+                    .uri("/api/console/system/info")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

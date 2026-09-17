@@ -373,7 +373,7 @@ mod macro_self_test {
     parity_test!(
         crate: base,
         router_fn: router,
-        route: "/jaxrs/base/echo/get",
+        route: "/api/base/echo/get",
         method: GET,
         handler: base_echo_get_handler,
         test_name: parity_self_test_base_echo_get,

@@ -103,17 +103,17 @@ pub fn err(msg: &str) -> HandlerResult {
 
 pub fn list_ok(rows: Vec<Value>) -> HandlerResult {
     let count = rows.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(rows),
         count,
         0,
     )))
 }
 
-/// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
-pub fn list_ok_java(rows: Vec<Value>) -> HandlerResult {
+/// o2server 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+pub fn list_ok_legacy(rows: Vec<Value>) -> HandlerResult {
     let count = rows.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(rows),
         count,
         0,
@@ -219,7 +219,7 @@ pub async fn generic_list_all(pool: &Pool, table: &str, extra_cols: &[&str]) -> 
         .query(&sql, &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(
+    list_ok_legacy(
         rows.iter()
             .map(|r| entity_row_json(r, extra_cols))
             .collect(),
@@ -233,7 +233,7 @@ pub async fn generic_like_search(
     key: &str,
     pinyin_mode: bool,
     extra_cols: &[&str],
-    java_bare: bool,
+    legacy_bare: bool,
 ) -> HandlerResult {
     let client = client_of(pool).await?;
     let cols = select_cols(extra_cols);
@@ -246,8 +246,8 @@ pub async fn generic_like_search(
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return if java_bare {
-            list_ok_java(
+        return if legacy_bare {
+            list_ok_legacy(
                 rows.iter()
                     .map(|r| entity_row_json(r, extra_cols))
                     .collect(),
@@ -275,8 +275,8 @@ pub async fn generic_like_search(
         .query(&sql, &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
-    if java_bare {
-        list_ok_java(
+    if legacy_bare {
+        list_ok_legacy(
             rows.iter()
                 .map(|r| entity_row_json(r, extra_cols))
                 .collect(),
@@ -296,7 +296,7 @@ pub async fn generic_pinyininitial_filter(
     table: &str,
     initials: &[String],
     extra_cols: &[&str],
-    java_bare: bool,
+    legacy_bare: bool,
 ) -> HandlerResult {
     check_batch_len(initials.len())?;
     let client = client_of(pool).await?;
@@ -309,8 +309,8 @@ pub async fn generic_pinyininitial_filter(
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return if java_bare {
-            list_ok_java(
+        return if legacy_bare {
+            list_ok_legacy(
                 rows.iter()
                     .map(|r| entity_row_json(r, extra_cols))
                     .collect(),
@@ -331,8 +331,8 @@ pub async fn generic_pinyininitial_filter(
         .query(&sql, &[&owned])
         .await
         .map_err(|_| AppError::Internal)?;
-    if java_bare {
-        list_ok_java(
+    if legacy_bare {
+        list_ok_legacy(
             rows.iter()
                 .map(|r| entity_row_json(r, extra_cols))
                 .collect(),

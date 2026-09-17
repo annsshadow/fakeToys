@@ -7,7 +7,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs";
+pub const API_BASE: &str = "/api";
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -86,21 +86,21 @@ pub async fn sysresource_filepath(
 
 pub fn base_core_project_router() -> Router {
     Router::new()
-        .route("/jaxrs/cache", post(cache_post))
-        .route("/jaxrs/cache/config/flush", get(cache_config_flush))
+        .route("/api/cache", post(cache_post))
+        .route("/api/cache/config/flush", get(cache_config_flush))
         .route(
-            "/jaxrs/cache/commonscript/flush",
+            "/api/cache/commonscript/flush",
             get(cache_commonscript_flush),
         )
-        .route("/jaxrs/cache/detail", get(cache_detail))
-        .route("/jaxrs/echo", get(echo))
+        .route("/api/cache/detail", get(cache_detail))
+        .route("/api/echo", get(echo))
         .route(
-            "/jaxrs/fireschedule/classname/{className}",
+            "/api/fireschedule/classname/{className}",
             get(fireschedule_classname),
         )
-        .route("/jaxrs/openapi", get(openapi))
+        .route("/api/openapi", get(openapi))
         .route(
-            "/jaxrs/sysresource/filePath/{filePath}",
+            "/api/sysresource/filePath/{filePath}",
             get(sysresource_filepath),
         )
 }

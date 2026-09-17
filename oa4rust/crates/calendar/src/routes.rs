@@ -13,17 +13,17 @@ use crate::{
 pub fn calendar_router(pool: Pool) -> Router {
     Router::new()
         .route(
-            "/jaxrs/calendar/calendar/list/public",
+            "/api/calendar/calendar/list/public",
             get(calendar_list_public),
         )
-        .route("/jaxrs/calendar/calendar/list/my", get(calendar_list_my))
-        .route("/jaxrs/calendar/calendar/{id}", get(calendar_get))
-        .route("/jaxrs/calendar/calendar/create", post(calendar_create))
-        .route("/jaxrs/calendar/calendar/update", post(calendar_update))
-        .route("/jaxrs/calendar/calendar/remove", post(calendar_remove))
-        .route("/jaxrs/calendar/event/create", post(event_create))
-        .route("/jaxrs/calendar/event/update", post(event_update))
-        .route("/jaxrs/calendar/event/remove", post(event_remove))
-        .route("/jaxrs/calendar/event/list/{calendarId}", get(event_list))
+        .route("/api/calendar/calendar/list/my", get(calendar_list_my))
+        .route("/api/calendar/calendar/{id}", get(calendar_get))
+        .route("/api/calendar/calendar/create", post(calendar_create))
+        .route("/api/calendar/calendar/update", post(calendar_update))
+        .route("/api/calendar/calendar/remove", post(calendar_remove))
+        .route("/api/calendar/event/create", post(event_create))
+        .route("/api/calendar/event/update", post(event_update))
+        .route("/api/calendar/event/remove", post(event_remove))
+        .route("/api/calendar/event/list/{calendarId}", get(event_list))
         .layer(Extension(pool))
 }

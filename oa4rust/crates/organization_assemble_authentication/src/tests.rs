@@ -18,7 +18,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/jaxrs/organization/assemble/authentication/person/{}/icon",
+                        "/api/organization/assemble/authentication/person/{}/icon",
                         TEST_PERSON_ID
                     ))
                     .method(axum::http::Method::GET)
@@ -40,7 +40,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/jaxrs/organization/assemble/authentication/identity/{}",
+                        "/api/organization/assemble/authentication/identity/{}",
                         TEST_IDENTITY_ID
                     ))
                     .method(axum::http::Method::GET)
@@ -61,7 +61,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/qiyeweixin/login/testcode")
+                    .uri("/api/organization/assemble/authentication/qiyeweixin/login/testcode")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -85,7 +85,7 @@ mod tests {
 // 这些测试编码业务意图：
 //  1. 验证码登录必须先过一次性验证码，再过密码——两道闸缺一不可；
 //  2. safe/logout 必须使本人全部会话失效（而非仅当前 token）；
-//  3. mockdeletetoget 等 GET 别名与 Java 契约同义（登出真实生效）；
+//  3. mockdeletetoget 等 GET 别名与 o2server 契约同义（登出真实生效）；
 //  4. 配置驱动端点在未配置时显式报错，不伪造成功。
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -178,7 +178,7 @@ mod u2_contract {
             app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/organization/assemble/authentication/authentication/mode")
+                        .uri("/api/organization/assemble/authentication/authentication/mode")
                         .body(Body::empty())
                         .unwrap(),
                 )
@@ -209,7 +209,7 @@ mod u2_contract {
             app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
+                        .uri("/api/organization/assemble/authentication/authentication/captcha")
                         .method("POST")
                         .header("content-type", "application/json")
                         .body(Body::from(body.to_string()))
@@ -249,7 +249,7 @@ mod u2_contract {
             app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
+                        .uri("/api/organization/assemble/authentication/authentication/captcha")
                         .method("POST")
                         .header("content-type", "application/json")
                         .body(Body::from(body.to_string()))
@@ -274,7 +274,7 @@ mod u2_contract {
             app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/organization/assemble/authentication/authentication/captcha")
+                        .uri("/api/organization/assemble/authentication/authentication/captcha")
                         .method("POST")
                         .header("content-type", "application/json")
                         .body(Body::from(bad.to_string()))
@@ -308,7 +308,7 @@ mod u2_contract {
         let v = body_bytes(
             app.oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/authentication/safe/logout")
+                    .uri("/api/organization/assemble/authentication/authentication/safe/logout")
                     .header("authorization", format!("Bearer {t1}"))
                     .body(Body::empty())
                     .unwrap(),
@@ -340,13 +340,16 @@ mod u2_contract {
         let app = organization_assemble_authentication_router()
             .layer(axum::extract::Extension(sm.clone()))
             .layer(axum::extract::Extension(pool));
-        let response = app.oneshot(
-            Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget")
-                .header("authorization", format!("Bearer {token}"))
-                .body(Body::empty())
-                .unwrap(),
-        ).await.unwrap();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/organization/assemble/authentication/authentication/mockdeletetoget")
+                    .header("authorization", format!("Bearer {token}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
         let v = body_bytes(response).await;
         assert_eq!(v["type"], "success");
@@ -360,7 +363,7 @@ mod u2_contract {
     async fn u2_sso_encrypt_get_returns_encrypted_payload() {
         let v = body_bytes(app().oneshot(
             Request::builder()
-                .uri("/jaxrs/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P")
+                .uri("/api/organization/assemble/authentication/sso/encrypt/client/u2c/key/u2key-1234567890-abcdef-/credential/user@P")
                 .body(Body::empty())
                 .unwrap(),
         ).await.unwrap()).await;
@@ -377,7 +380,7 @@ mod u2_contract {
             app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/organization/assemble/authentication/dingding/info")
+                        .uri("/api/organization/assemble/authentication/dingding/info")
                         .method("POST")
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"url":"https://e.x"}"#))
@@ -418,7 +421,7 @@ mod u2_contract {
             app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/organization/assemble/authentication/bind/list")
+                        .uri("/api/organization/assemble/authentication/bind/list")
                         .body(Body::empty())
                         .unwrap(),
                 )
@@ -445,7 +448,7 @@ mod u2_contract {
         let response = app
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/oauth/auth?client_id=test")
+                    .uri("/api/organization/assemble/authentication/oauth/auth?client_id=test")
                     .method(axum::http::Method::GET)
                     .body(axum::body::Body::empty())
                     .unwrap(),
@@ -462,7 +465,7 @@ mod u2_contract {
         let response = app
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/oauth/info")
+                    .uri("/api/organization/assemble/authentication/oauth/info")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(axum::body::Body::from(body))
@@ -481,7 +484,7 @@ mod u2_contract {
         let response = app
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign")
+                    .uri("/api/organization/assemble/authentication/qiyeweixin/info/sign")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(axum::body::Body::from(body))

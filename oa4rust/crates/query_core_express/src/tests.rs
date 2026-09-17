@@ -76,7 +76,7 @@ async fn test_execute_query_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/core/express/execute")
+                .uri("/api/query/core/express/execute")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -96,7 +96,7 @@ async fn test_get_query_history_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/core/express/history/10")
+                .uri("/api/query/core/express/history/10")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -120,7 +120,7 @@ async fn test_cache_query_result_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/core/express/cache/query-1")
+                .uri("/api/query/core/express/cache/query-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -140,7 +140,7 @@ async fn test_get_cache_status_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/core/express/cache/status/query-1")
+                .uri("/api/query/core/express/cache/status/query-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),

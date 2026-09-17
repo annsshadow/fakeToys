@@ -129,7 +129,10 @@ pub fn parse_uplink(room: &str, sender: &str, text: &str) -> Uplink {
         Ok(v) => v,
         Err(_) => return Uplink::Ignore,
     };
-    let msg_type = envelope.get("type").and_then(Value::as_str).unwrap_or_default();
+    let msg_type = envelope
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     let data = envelope.get("data").cloned().unwrap_or_else(|| Value::Null);
     match msg_type {
         "im_create" | "im_revoke" | "im_conversation" | "notification" | "process_task" => {
@@ -251,7 +254,7 @@ impl RealtimeManager {
     /// P5：登记房间在线身份（roster）。
     pub async fn register_sender(&self, room_id: &str, sender: &str) {
         if sender.is_empty() {
-            return
+            return;
         }
         if let Some(room) = self.rooms.lock().await.get(room_id) {
             room.senders.lock().await.insert(sender.to_string());
@@ -398,7 +401,10 @@ async fn send_presence(
         data: serde_json::json!({ "room": room_id, "online": roster, "count": count }),
     };
     let json = msg.to_json().map_err(|e| e.to_string())?;
-    ws_sender.send(Message::Text(json.into())).await.map_err(|e| e.to_string())?;
+    ws_sender
+        .send(Message::Text(json.into()))
+        .await
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 
@@ -644,8 +650,9 @@ mod tests {
     fn p5_message_uplink_routes_to_channel_room() {
         // SDK send(channel, data) 产生 {type:'message', channel, data}：
         // 归一为 im_create 并路由到 channel 房间（而非当前房间）。
-        let text = serde_json::json!({ "type": "message", "channel": "conv-9", "data": { "body": "hi" } })
-            .to_string();
+        let text =
+            serde_json::json!({ "type": "message", "channel": "conv-9", "data": { "body": "hi" } })
+                .to_string();
         match parse_uplink("default", "person-1", &text) {
             Uplink::Im(msg) => {
                 assert_eq!(msg.room, "conv-9");
@@ -663,7 +670,11 @@ mod tests {
             Uplink::JoinRoom(r) if r == "room-x"
         ));
         assert!(matches!(
-            parse_uplink("room-x", "p", &serde_json::json!({ "type": "leave_room" }).to_string()),
+            parse_uplink(
+                "room-x",
+                "p",
+                &serde_json::json!({ "type": "leave_room" }).to_string()
+            ),
             Uplink::LeaveRoom
         ));
         // presence 上行声明身份（缺省回落当前连接 sender）
@@ -677,12 +688,23 @@ mod tests {
         ));
         // 心跳与未知 / 非 JSON 一律忽略（不广播，不拒绝连接）
         assert!(matches!(
-            parse_uplink("room-x", "p", &serde_json::json!({ "type": "ping" }).to_string()),
+            parse_uplink(
+                "room-x",
+                "p",
+                &serde_json::json!({ "type": "ping" }).to_string()
+            ),
             Uplink::Ignore
         ));
-        assert!(matches!(parse_uplink("room-x", "p", "not json"), Uplink::Ignore));
         assert!(matches!(
-            parse_uplink("room-x", "p", &serde_json::json!({ "type": "unknown_xyz" }).to_string()),
+            parse_uplink("room-x", "p", "not json"),
+            Uplink::Ignore
+        ));
+        assert!(matches!(
+            parse_uplink(
+                "room-x",
+                "p",
+                &serde_json::json!({ "type": "unknown_xyz" }).to_string()
+            ),
             Uplink::Ignore
         ));
     }
@@ -717,7 +739,11 @@ mod tests {
         manager.register_sender("conv-1", "").await; // 空身份不登记
 
         let (roster, count) = manager.presence("conv-1").await;
-        assert_eq!(roster, vec!["alice".to_string(), "bob".to_string()], "roster 排序稳定");
+        assert_eq!(
+            roster,
+            vec!["alice".to_string(), "bob".to_string()],
+            "roster 排序稳定"
+        );
         assert_eq!(count, 2);
         assert_eq!(manager.presence("ghost").await, (Vec::new(), 0));
     }
@@ -746,7 +772,10 @@ mod tests {
         assert_eq!(manager.room_connections("room-a").await, 0);
         assert_eq!(rx.recv().await.unwrap().content, "cross");
         assert_eq!(rx_other.recv().await.unwrap().content, "cross");
-        assert_eq!(manager.presence("room-b").await.0, vec!["alice".to_string()]);
+        assert_eq!(
+            manager.presence("room-b").await.0,
+            vec!["alice".to_string()]
+        );
     }
 }
 

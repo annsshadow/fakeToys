@@ -14,7 +14,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/bind")
+                    .uri("/api/authentication/bind")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -37,7 +37,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/captcha")
+                    .uri("/api/authentication/captcha")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -59,7 +59,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/captcha/verify")
+                    .uri("/api/secret/captcha/verify")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -88,7 +88,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/unit/list")
+                    .uri("/api/authentication/unit/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -109,7 +109,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/role/list")
+                    .uri("/api/authentication/role/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -130,7 +130,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/group/list")
+                    .uri("/api/authentication/group/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -172,7 +172,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/qiyeweixin/jssdk/sign/info")
+                    .uri("/api/qiyeweixin/jssdk/sign/info")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -195,7 +195,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/sms/send")
+                    .uri("/api/authentication/sms/send")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -216,7 +216,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/sms/verify")
+                    .uri("/api/authentication/sms/verify")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/zhengwudingding/info")
+                    .uri("/api/zhengwudingding/info")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

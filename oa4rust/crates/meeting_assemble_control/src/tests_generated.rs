@@ -14,7 +14,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/create")
+                    .uri("/api/meeting/assemble/control/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/delete/test-id")
+                    .uri("/api/meeting/assemble/control/delete/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/list")
+                    .uri("/api/meeting/assemble/control/building/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/list/like/pinyin/test-id")
+                    .uri("/api/meeting/assemble/control/building/list/like/pinyin/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -98,7 +98,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/list/like/test-id")
+                    .uri("/api/meeting/assemble/control/building/list/like/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -119,7 +119,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/list/pinyininitial/test-id")
+                    .uri("/api/meeting/assemble/control/building/list/pinyininitial/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -143,7 +143,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/test-id")
+                    .uri("/api/meeting/assemble/control/building/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -164,7 +164,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/config/system/config")
+                    .uri("/api/meeting/assemble/control/config/system/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -185,7 +185,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/config/system/config/manage")
+                    .uri("/api/meeting/assemble/control/config/system/config/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -206,7 +206,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/applied/completed")
+                    .uri("/api/meeting/assemble/control/meeting/list/applied/completed")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -227,7 +227,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/applied/processing")
+                    .uri("/api/meeting/assemble/control/meeting/list/applied/processing")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -248,7 +248,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/applied/wait")
+                    .uri("/api/meeting/assemble/control/meeting/list/applied/wait")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -269,7 +269,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/apply/test-id/size/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/list/apply/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -290,7 +290,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/coming/day/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/list/coming/day/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -315,7 +315,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/invited/completed")
+                    .uri("/api/meeting/assemble/control/meeting/list/invited/completed")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -336,7 +336,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/invited/processing")
+                    .uri("/api/meeting/assemble/control/meeting/list/invited/processing")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -357,7 +357,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/invited/rejected")
+                    .uri("/api/meeting/assemble/control/meeting/list/invited/rejected")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -378,7 +378,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/invited/wait")
+                    .uri("/api/meeting/assemble/control/meeting/list/invited/wait")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -399,7 +399,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/wait/accept")
+                    .uri("/api/meeting/assemble/control/meeting/list/wait/accept")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -420,7 +420,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/wait/confirm")
+                    .uri("/api/meeting/assemble/control/meeting/list/wait/confirm")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -441,7 +441,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/year/test-id/month/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/list/year/test-id/month/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -462,7 +462,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/year/test-id/month/test-id/all")
+                    .uri(
+                        "/api/meeting/assemble/control/meeting/list/year/test-id/month/test-id/all",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -483,7 +485,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/year/test-id/month/test-id/day/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/list/year/test-id/month/test-id/day/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -504,7 +506,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/year/test-id/month/test-id/day/test-id/all")
+                    .uri("/api/meeting/assemble/control/meeting/list/year/test-id/month/test-id/day/test-id/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -530,7 +532,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -551,7 +553,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/create")
+                    .uri("/api/meeting/assemble/control/meeting/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -572,7 +574,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/save/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -593,7 +595,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/delete/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -614,7 +616,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/accept")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/accept")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -635,7 +637,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/add/invite")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/add/invite")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -656,7 +658,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/checkin")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/checkin")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -678,7 +680,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/confirm/allow")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/confirm/allow")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -699,7 +701,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/confirm/deny")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/confirm/deny")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -720,7 +722,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/delete/invite")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/delete/invite")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -741,7 +743,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/manual/completed")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/manual/completed")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -762,7 +764,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/modify/completedtime")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/modify/completedtime")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -783,7 +785,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/modify/starttime")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/modify/starttime")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -804,7 +806,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/reject")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/reject")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -825,7 +827,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/openmeeting/list/room")
+                    .uri("/api/meeting/assemble/control/openmeeting/list/room")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -846,7 +848,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/room/list")
+                    .uri("/api/meeting/assemble/control/room/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -870,7 +872,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/room/test-id")
+                    .uri("/api/meeting/assemble/control/room/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

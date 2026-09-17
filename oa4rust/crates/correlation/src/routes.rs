@@ -5,16 +5,13 @@ use shared::{error::AppError, response::ActionResult};
 
 pub fn correlation_router(pool: Pool) -> Router {
     Router::new()
+        .route("/api/correlation/type/cms/list", get(list_cms_correlations))
         .route(
-            "/jaxrs/correlation/type/cms/list",
-            get(list_cms_correlations),
-        )
-        .route(
-            "/jaxrs/correlation/type/processplatform/list",
+            "/api/correlation/type/processplatform/list",
             get(list_process_platform_correlations),
         )
         .route(
-            "/jaxrs/correlation/type/cms/readable",
+            "/api/correlation/type/cms/readable",
             get(check_cms_readable),
         )
         .layer(Extension(pool))
@@ -22,7 +19,7 @@ pub fn correlation_router(pool: Pool) -> Router {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/correlation/type/cms/list",
+    path = "/api/correlation/type/cms/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -72,7 +69,7 @@ pub async fn list_cms_correlations(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -81,7 +78,7 @@ pub async fn list_cms_correlations(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/correlation/type/processplatform/list",
+    path = "/api/correlation/type/processplatform/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -131,7 +128,7 @@ pub async fn list_process_platform_correlations(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -140,7 +137,7 @@ pub async fn list_process_platform_correlations(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/correlation/type/cms/readable",
+    path = "/api/correlation/type/cms/readable",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),

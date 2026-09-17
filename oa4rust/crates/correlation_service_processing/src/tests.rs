@@ -81,7 +81,7 @@ async fn test_link_service_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/link")
+                .uri("/api/correlation/service/processing/link")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -99,7 +99,7 @@ async fn test_get_link_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/link/message/msg-1")
+                .uri("/api/correlation/service/processing/link/message/msg-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -116,7 +116,7 @@ async fn test_list_links_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/list/message")
+                .uri("/api/correlation/service/processing/list/message")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -134,7 +134,7 @@ async fn test_unlink_service_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/unlink/message/msg-1/process/proc-1")
+                .uri("/api/correlation/service/processing/unlink/message/msg-1/process/proc-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -153,7 +153,7 @@ async fn test_get_correlation_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/test-id")
+                .uri("/api/correlation/service/processing/test-id")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -174,7 +174,7 @@ async fn test_create_correlation_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/create")
+                .uri("/api/correlation/service/processing/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -193,7 +193,7 @@ async fn test_save_correlation_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/save/test-id")
+                .uri("/api/correlation/service/processing/save/test-id")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -211,7 +211,7 @@ async fn test_delete_correlation_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/delete/test-id")
+                .uri("/api/correlation/service/processing/delete/test-id")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -228,7 +228,7 @@ async fn test_correlation_delete_type_cms_document_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/doc-1")
+                .uri("/api/correlation/service/processing/correlation/delete/type/cms/document/doc-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(serde_json::json!({"idList": ["probe-id"]}).to_string()))
@@ -246,7 +246,7 @@ async fn test_correlation_delete_type_processplatform_job_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/job-1")
+                .uri("/api/correlation/service/processing/correlation/delete/type/processplatform/job/job-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(serde_json::json!({"idList": ["probe-id"]}).to_string()))
@@ -264,7 +264,7 @@ async fn test_correlation_list_type_cms_document_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-1")
+                .uri("/api/correlation/service/processing/correlation/list/type/cms/document/doc-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -281,7 +281,7 @@ async fn test_correlation_list_type_cms_document_site_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-1/site/site-1")
+                .uri("/api/correlation/service/processing/correlation/list/type/cms/document/doc-1/site/site-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -298,7 +298,7 @@ async fn test_correlation_list_type_processplatform_job_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/job-1")
+                .uri("/api/correlation/service/processing/correlation/list/type/processplatform/job/job-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -315,7 +315,7 @@ async fn test_correlation_list_type_processplatform_job_site_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/job-1/site/site-1")
+                .uri("/api/correlation/service/processing/correlation/list/type/processplatform/job/job-1/site/site-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -332,7 +332,7 @@ async fn test_correlation_readable_type_cms_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/readable/type/cms")
+                .uri("/api/correlation/service/processing/correlation/readable/type/cms")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"person":"p","doucment":"d"}"#))
@@ -350,7 +350,9 @@ async fn test_correlation_readable_type_processplatform_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform")
+                .uri(
+                    "/api/correlation/service/processing/correlation/readable/type/processplatform",
+                )
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"person":"p","job":"j"}"#))
@@ -368,7 +370,7 @@ async fn test_correlation_type_cms_document_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/type/cms/document/doc-1")
+                .uri("/api/correlation/service/processing/correlation/type/cms/document/doc-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -385,7 +387,7 @@ async fn test_correlation_type_processplatform_job_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/job-1")
+                .uri("/api/correlation/service/processing/correlation/type/processplatform/job/job-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -403,7 +405,7 @@ async fn test_correlation_update_type_cms_document_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/doc-1")
+                .uri("/api/correlation/service/processing/correlation/update/type/cms/document/doc-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -423,7 +425,7 @@ async fn test_correlation_update_type_processplatform_job_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/job-1")
+                .uri("/api/correlation/service/processing/correlation/update/type/processplatform/job/job-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -477,7 +479,7 @@ async fn test_create_correlation_empty_person_id() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/create")
+                .uri("/api/correlation/service/processing/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -496,7 +498,7 @@ async fn test_create_correlation_missing_type() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/create")
+                .uri("/api/correlation/service/processing/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -515,7 +517,7 @@ async fn test_save_correlation_missing_target_id() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/save/test-id")
+                .uri("/api/correlation/service/processing/save/test-id")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -533,7 +535,7 @@ async fn test_link_service_empty_body() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/link")
+                .uri("/api/correlation/service/processing/link")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::empty())
@@ -552,7 +554,7 @@ async fn test_unlink_service_route_ok() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/correlation/service/processing/unlink/type1/id1/type2/id2")
+                .uri("/api/correlation/service/processing/unlink/type1/id1/type2/id2")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -571,7 +573,7 @@ fn test_correlation_service_processing_router_builds() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// plan002 U2：Java CorrelationAction 契约端点（u2 模块）行为测试
+// plan002 U2：o2server CorrelationAction 契约端点（u2 模块）行为测试
 //
 // 这些测试编码业务意图：
 //  1. create 是 upsert —— 同 (from,target,site) 不产生重复行；
@@ -701,7 +703,7 @@ mod u2_contract {
             let response = app()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/job-1")
+                        .uri("/api/correlation/service/processing/correlation/type/processplatform/job/job-1")
                         .method(Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(body.to_string()))
@@ -753,7 +755,7 @@ mod u2_contract {
         let response = app()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/job-2")
+                    .uri("/api/correlation/service/processing/correlation/type/processplatform/job/job-2")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body.to_string()))
@@ -791,7 +793,7 @@ mod u2_contract {
         let response = app()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/job-1")
+                    .uri("/api/correlation/service/processing/correlation/delete/type/processplatform/job/job-1")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body.to_string()))
@@ -828,7 +830,7 @@ mod u2_contract {
         let response = app()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform")
+                    .uri("/api/correlation/service/processing/correlation/readable/type/processplatform")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"person":"someone@P","job":"job-empty"}"#))
@@ -860,7 +862,7 @@ mod u2_contract {
         let response = app()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform")
+                    .uri("/api/correlation/service/processing/correlation/readable/type/processplatform")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"person":"creator-a@P","job":"job-target"}"#))
@@ -897,7 +899,7 @@ mod u2_contract {
         let response = app()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/doc-l/site/s1")
+                    .uri("/api/correlation/service/processing/correlation/list/type/cms/document/doc-l/site/s1")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -905,7 +907,7 @@ mod u2_contract {
             .await
             .unwrap();
         let v = body_bytes(response).await;
-        // java_success 裸数组信封：count 在顶层，data 为数组（9d81b8ca 列表包装模式战役）
+        // legacy_success 裸数组信封：count 在顶层，data 为数组（9d81b8ca 列表包装模式战役）
         assert_eq!(v["count"], 1);
         assert_eq!(v["data"][0]["id"], "l1");
         assert_eq!(v["data"][0]["site"], "s1");
@@ -940,7 +942,7 @@ mod u2_contract {
         let response = app()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/doc-u")
+                    .uri("/api/correlation/service/processing/correlation/update/type/cms/document/doc-u")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body.to_string()))
@@ -965,7 +967,7 @@ mod u2_contract {
         assert!(bundles.contains(&"t-new".to_string()), "新目标应写入");
     }
 
-    /// Wi 字段名兼容 Java 历史拼写 doucment
+    /// Wi 字段名兼容 o2server 历史拼写 doucment
     #[tokio::test]
     async fn u2_readable_cms_accepts_doucment_field() {
         let wi: u2::ReadableCmsWi =

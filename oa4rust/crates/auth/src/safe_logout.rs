@@ -6,7 +6,7 @@ use shared::middleware::extract_token_from_headers;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 
-/// POST /jaxrs/authentication/safe/logout —— 安全注销
+/// POST /api/authentication/safe/logout —— 安全注销
 ///
 /// 使当前用户所有 session 全部过期（批量注销）。
 /// 从 Authorization header 提取 token，验证后批量移除该用户所有会话。

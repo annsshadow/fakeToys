@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/service/processing/process")
+                    .uri("/api/query/service/processing/process")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/service/processing/batch")
+                    .uri("/api/query/service/processing/batch")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/service/processing/status")
+                    .uri("/api/query/service/processing/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/service/processing/reset")
+                    .uri("/api/query/service/processing/reset")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

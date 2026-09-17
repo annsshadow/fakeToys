@@ -63,7 +63,7 @@ pub async fn list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -213,20 +213,20 @@ pub async fn delete_by_id(
 
 /// 创建关联核心实体路由
 /// 注册以下路由：
-/// - /jaxrs/correlation/core/entity/list - 关联列表
-/// - /jaxrs/correlation/core/entity/list/by/{sourceType}/{sourceId} - 按类型查询关联
-/// - /jaxrs/correlation/core/entity/create - 创建关联
-/// - /jaxrs/correlation/core/entity/delete/{id} - 删除关联
+/// - /api/correlation/core/entity/list - 关联列表
+/// - /api/correlation/core/entity/list/by/{sourceType}/{sourceId} - 按类型查询关联
+/// - /api/correlation/core/entity/create - 创建关联
+/// - /api/correlation/core/entity/delete/{id} - 删除关联
 pub fn correlation_core_entity_router(_pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/correlation/core/entity/list", get(list))
+        .route("/api/correlation/core/entity/list", get(list))
         .route(
-            "/jaxrs/correlation/core/entity/list/by/{sourceType}/{sourceId}",
+            "/api/correlation/core/entity/list/by/{sourceType}/{sourceId}",
             get(list_by_source),
         )
-        .route("/jaxrs/correlation/core/entity/create", post(create))
+        .route("/api/correlation/core/entity/create", post(create))
         .route(
-            "/jaxrs/correlation/core/entity/delete/{id}",
+            "/api/correlation/core/entity/delete/{id}",
             delete(delete_by_id),
         )
 }

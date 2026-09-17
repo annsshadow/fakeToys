@@ -281,7 +281,7 @@ pub async fn statement_list_with_query(
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -557,7 +557,7 @@ pub async fn stat_list_with_query(
     let data: Vec<Value> = rows.iter().map(stat_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -797,7 +797,7 @@ pub async fn table_row_insert_one(
 
 // ── importmodel 记录管理补齐 ─────────────────────────────────────────────
 
-/// 删除导入记录（Java ActionDeleteRecord）
+/// 删除导入记录（o2server ActionDeleteRecord）
 #[allow(non_snake_case)]
 pub async fn importmodel_record_delete(
     pool: Extension<Pool>,
@@ -1391,7 +1391,7 @@ pub async fn table_row_select_post(
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

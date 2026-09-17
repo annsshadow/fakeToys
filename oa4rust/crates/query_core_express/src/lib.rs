@@ -320,20 +320,20 @@ pub async fn get_cache_status(
 }
 
 /// 查询核心Express路由
-/// 路由前缀: /jaxrs/query/core/express/*
+/// 路由前缀: /api/query/core/express/*
 pub fn query_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/query/core/express/execute", post(execute_query))
+        .route("/api/query/core/express/execute", post(execute_query))
         .route(
-            "/jaxrs/query/core/express/history/{limit}",
+            "/api/query/core/express/history/{limit}",
             get(get_query_history),
         )
         .route(
-            "/jaxrs/query/core/express/cache/{queryId}",
+            "/api/query/core/express/cache/{queryId}",
             post(cache_query_result),
         )
         .route(
-            "/jaxrs/query/core/express/cache/status/{queryId}",
+            "/api/query/core/express/cache/status/{queryId}",
             get(get_cache_status),
         )
         .layer(Extension(pool))

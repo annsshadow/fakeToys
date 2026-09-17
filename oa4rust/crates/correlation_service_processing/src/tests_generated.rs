@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/link")
+                    .uri("/api/correlation/service/processing/link")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/link/test-id/test-id")
+                    .uri("/api/correlation/service/processing/link/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/list/test-id")
+                    .uri("/api/correlation/service/processing/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/test-id")
+                    .uri("/api/correlation/service/processing/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/create")
+                    .uri("/api/correlation/service/processing/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/save/test-id")
+                    .uri("/api/correlation/service/processing/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/delete/test-id")
+                    .uri("/api/correlation/service/processing/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/unlink/test-id/test-id/test-id/test-id")
+                    .uri("/api/correlation/service/processing/unlink/test-id/test-id/test-id/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/test-id")
+                    .uri("/api/correlation/service/processing/correlation/delete/type/cms/document/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/test-id")
+                    .uri("/api/correlation/service/processing/correlation/delete/type/processplatform/job/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/test-id")
+                    .uri("/api/correlation/service/processing/correlation/list/type/cms/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/test-id/site/test-id")
+                    .uri("/api/correlation/service/processing/correlation/list/type/cms/document/test-id/site/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -265,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/test-id")
+                    .uri("/api/correlation/service/processing/correlation/list/type/processplatform/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -286,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/test-id/site/test-id")
+                    .uri("/api/correlation/service/processing/correlation/list/type/processplatform/job/test-id/site/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -307,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/readable/type/cms")
+                    .uri("/api/correlation/service/processing/correlation/readable/type/cms")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -328,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform")
+                    .uri("/api/correlation/service/processing/correlation/readable/type/processplatform")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -349,7 +349,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/type/cms/document/test-id")
+                    .uri(
+                        "/api/correlation/service/processing/correlation/type/cms/document/test-id",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -370,7 +372,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/test-id")
+                    .uri("/api/correlation/service/processing/correlation/type/processplatform/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -391,7 +393,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/test-id")
+                    .uri("/api/correlation/service/processing/correlation/update/type/cms/document/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -412,7 +414,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/test-id")
+                    .uri("/api/correlation/service/processing/correlation/update/type/processplatform/job/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

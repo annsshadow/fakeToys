@@ -91,11 +91,11 @@ pub async fn view_unpublish(
 
 pub fn cms_express_router() -> Router {
     Router::new()
-        .route("/jaxrs/cms/uuid/random", get(uuid_random))
-        .route("/jaxrs/cms/templateform/list", get(template_form_list))
-        .route("/jaxrs/cms/view/list/all", get(view_list_all))
-        .route("/jaxrs/cms/view/publish/{id}", post(view_publish))
-        .route("/jaxrs/cms/view/unpublish/{id}", post(view_unpublish))
+        .route("/api/cms/uuid/random", get(uuid_random))
+        .route("/api/cms/templateform/list", get(template_form_list))
+        .route("/api/cms/view/list/all", get(view_list_all))
+        .route("/api/cms/view/publish/{id}", post(view_publish))
+        .route("/api/cms/view/unpublish/{id}", post(view_unpublish))
 }
 
 pub fn router(pool: Pool) -> axum::Router {

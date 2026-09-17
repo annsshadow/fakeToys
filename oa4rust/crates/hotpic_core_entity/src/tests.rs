@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/list")
+                    .uri("/api/hotpic/core/entity/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/list/by/app/app-001/info-001")
+                    .uri("/api/hotpic/core/entity/list/by/app/app-001/info-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -68,7 +68,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/exists/check/app/app-001/info-001")
+                    .uri("/api/hotpic/core/entity/exists/check/app/app-001/info-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -116,7 +116,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/create")
+                    .uri("/api/hotpic/core/entity/create")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -142,7 +142,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/delete/hotpic-test-001")
+                    .uri("/api/hotpic/core/entity/delete/hotpic-test-001")
                     .method(axum::http::Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),

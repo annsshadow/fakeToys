@@ -69,7 +69,7 @@ mod u2_tests {
     async fn u2_connector_route_reachable() {
         let status = status_of_json(
             "POST",
-            "/jaxrs/message/assemble/communicate/connector",
+            "/api/message/assemble/communicate/connector",
             json!({"type": "taskCreate", "person": "u1", "title": "t", "body": {"k": 1}})
                 .to_string(),
         )
@@ -82,26 +82,26 @@ mod u2_tests {
         assert_eq!(
             status_of_json(
                 "POST",
-                "/jaxrs/message/assemble/communicate/ws",
+                "/api/message/assemble/communicate/ws",
                 r#"{"person":"u1"}"#.to_string()
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/message/assemble/communicate/ws/count/person").await,
+            status_of("GET", "/api/message/assemble/communicate/ws/count/person").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/message/assemble/communicate/ws/list/person/current/node"
+                "/api/message/assemble/communicate/ws/list/person/current/node"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/message/assemble/communicate/ws/list/person").await,
+            status_of("GET", "/api/message/assemble/communicate/ws/list/person").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -111,17 +111,17 @@ mod u2_tests {
         // POST /mass 与 DELETE /mass/{id}、GET enable/type、GET mockdeletetoget
         // 均带 Session 提取器：router 未注入会话 → 500（而非 404/405）
         assert_eq!(
-            status_of("POST", "/jaxrs/message/assemble/communicate/mass").await,
+            status_of("POST", "/api/message/assemble/communicate/mass").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/message/assemble/communicate/mass/m-1").await,
+            status_of("DELETE", "/api/message/assemble/communicate/mass/m-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
             status_of(
                 "GET",
-                "/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget"
+                "/api/message/assemble/communicate/mass/m-1/mockdeletetoget"
             )
             .await,
             StatusCode::NOT_FOUND
@@ -129,67 +129,63 @@ mod u2_tests {
         assert_ne!(
             status_of(
                 "GET",
-                "/jaxrs/message/assemble/communicate/mass/m-1/mockdeletetoget"
+                "/api/message/assemble/communicate/mass/m-1/mockdeletetoget"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
     }
 
-    // ── 路由可达性：Java 动词链式补齐（405 = 动词仍缺失）───────
+    // ── 路由可达性：o2server 动词链式补齐（405 = 动词仍缺失）───────
 
     #[tokio::test]
-    async fn u2_java_verb_chains_accept_new_verbs() {
-        // Java GET /consume/{id}/type/{type}
+    async fn u2_legacy_verb_chains_accept_new_verbs() {
+        // o2server GET /consume/{id}/type/{type}
         assert_ne!(
             status_of(
                 "GET",
-                "/jaxrs/message/assemble/communicate/consume/c-1/type/ticket"
+                "/api/message/assemble/communicate/consume/c-1/type/ticket"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java PUT /consume/type/{type}
+        // o2server PUT /consume/type/{type}
         assert_ne!(
             status_of(
                 "PUT",
-                "/jaxrs/message/assemble/communicate/consume/type/ticket"
+                "/api/message/assemble/communicate/consume/type/ticket"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java POST /im/conversation/list/with/person
+        // o2server POST /im/conversation/list/with/person
         assert_ne!(
             status_of(
                 "POST",
-                "/jaxrs/message/assemble/communicate/im/conversation/list/with/person"
+                "/api/message/assemble/communicate/im/conversation/list/with/person"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java GET /im/conversation/{id}/group/quit/self
+        // o2server GET /im/conversation/{id}/group/quit/self
         assert_ne!(
             status_of(
                 "GET",
-                "/jaxrs/message/assemble/communicate/im/conversation/c-1/group/quit/self"
+                "/api/message/assemble/communicate/im/conversation/c-1/group/quit/self"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java GET /im/msg/revoke/{id}
+        // o2server GET /im/msg/revoke/{id}
         assert_ne!(
-            status_of(
-                "GET",
-                "/jaxrs/message/assemble/communicate/im/msg/revoke/m-1"
-            )
-            .await,
+            status_of("GET", "/api/message/assemble/communicate/im/msg/revoke/m-1").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java POST /im/msg/list/{page}/size/{size} 与 /im/msg/list/object
+        // o2server POST /im/msg/list/{page}/size/{size} 与 /im/msg/list/object
         assert_ne!(
             status_of(
                 "POST",
-                "/jaxrs/message/assemble/communicate/im/msg/list/1/size/20"
+                "/api/message/assemble/communicate/im/msg/list/1/size/20"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
@@ -197,43 +193,39 @@ mod u2_tests {
         assert_ne!(
             status_of(
                 "POST",
-                "/jaxrs/message/assemble/communicate/im/msg/list/object"
+                "/api/message/assemble/communicate/im/msg/list/object"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java PUT /instant/currentperson/consumed
+        // o2server PUT /instant/currentperson/consumed
         assert_ne!(
             status_of(
                 "PUT",
-                "/jaxrs/message/assemble/communicate/instant/currentperson/consumed"
+                "/api/message/assemble/communicate/instant/currentperson/consumed"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java POST /message/list/paging/{page}/size/{size}
+        // o2server POST /message/list/paging/{page}/size/{size}
         assert_ne!(
             status_of(
                 "POST",
-                "/jaxrs/message/assemble/communicate/message/list/paging/1/size/20"
+                "/api/message/assemble/communicate/message/list/paging/1/size/20"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java GET /mass/enable/type
+        // o2server GET /mass/enable/type
         assert_ne!(
-            status_of(
-                "GET",
-                "/jaxrs/message/assemble/communicate/mass/enable/type"
-            )
-            .await,
+            status_of("GET", "/api/message/assemble/communicate/mass/enable/type").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
-        // Java PUT 主动词：im read / top set
+        // o2server PUT 主动词：im read / top set
         assert_ne!(
             status_of(
                 "PUT",
-                "/jaxrs/message/assemble/communicate/im/conversation/c-1/read"
+                "/api/message/assemble/communicate/im/conversation/c-1/read"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
@@ -241,7 +233,7 @@ mod u2_tests {
         assert_ne!(
             status_of(
                 "PUT",
-                "/jaxrs/message/assemble/communicate/im/conversation/c-1/top/set"
+                "/api/message/assemble/communicate/im/conversation/c-1/top/set"
             )
             .await,
             StatusCode::METHOD_NOT_ALLOWED
@@ -250,18 +242,18 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_im_single_virtual_delete_routes_registered() {
-        // Java DELETE /im/conversation/{id}/single + GET single/mockdeletetoget
+        // o2server DELETE /im/conversation/{id}/single + GET single/mockdeletetoget
         assert_ne!(
             status_of(
                 "DELETE",
-                "/jaxrs/message/assemble/communicate/im/conversation/c-1/single"
+                "/api/message/assemble/communicate/im/conversation/c-1/single"
             )
             .await,
             StatusCode::NOT_FOUND
         );
         let get_status = status_of(
             "GET",
-            "/jaxrs/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget",
+            "/api/message/assemble/communicate/im/conversation/c-1/single/mockdeletetoget",
         )
         .await;
         assert_ne!(get_status, StatusCode::NOT_FOUND);
@@ -279,7 +271,7 @@ mod u2_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/upload/conv-1/type/image")
+                    .uri("/api/message/assemble/communicate/im/msg/upload/conv-1/type/image")
                     .method("POST")
                     .header(
                         "content-type",
@@ -329,7 +321,7 @@ mod u2_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/download/file-1")
+                    .uri("/api/message/assemble/communicate/im/msg/download/file-1")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -393,7 +385,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_mass_target_list_merges_and_dedups() {
         // 业务规则：personList/identityList/groupList/unitList 合并去重，
-        // 空串不算有效目标（对应 Java ExceptionEmptyTarget）
+        // 空串不算有效目标（对应 o2server ExceptionEmptyTarget）
         let targets = mass_target_list(&json!({
             "personList": ["u1", "u2"],
             "identityList": ["i1"],
@@ -417,7 +409,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_ws_create_reports_false_without_open_session_semantics() {
-        // ws_create 在无在线连接时如实返回 value=false（Java 同义）；
+        // ws_create 在无在线连接时如实返回 value=false（o2server 同义）；
         // 无 DB 时连接查询失败 → Internal，绝不假成功
         let pool = mock_pool();
         let client_err = crate::ws_create(

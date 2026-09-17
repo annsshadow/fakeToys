@@ -1,6 +1,6 @@
 -- 026: create AI core entity tables referenced by ai_core_entity SeaORM entities.
 -- These tables were never created by any prior migration, causing the
--- /jaxrs/ai/core/entity/app/list and /conversation/list handlers to 500.
+-- /api/ai/core/entity/app/list and /conversation/list handlers to 500.
 
 CREATE TABLE IF NOT EXISTS "x_ai_app" (
     "id" CHARACTER VARYING(255) NOT NULL,

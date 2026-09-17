@@ -15,7 +15,7 @@ mod tests {
             ActionResult::success(serde_json::json!({"key": "value"}));
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
-        // Java 成功信封实测恒填空串 message（Gson 对齐，见 shared::response）
+        // o2server 成功信封实测恒填空串 message（Gson 对齐，见 shared::response）
         assert_eq!(result.message, Some(String::new()));
         assert_eq!(result.count, Some(0));
     }
@@ -52,7 +52,7 @@ mod tests {
             let response = app
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/program/applications")
+                        .uri("/api/program/applications")
                         .body(Body::empty())
                         .unwrap(),
                 )
@@ -62,7 +62,7 @@ mod tests {
             assert_ne!(
                 response.status(),
                 StatusCode::NOT_FOUND,
-                "route /jaxrs/program/applications should be registered"
+                "route /api/program/applications should be registered"
             );
         });
     }
@@ -73,7 +73,7 @@ mod tests {
         let json = serde_json::to_value(&result).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"], 42);
-        // Java 成功信封实测 message 为空串而非缺省
+        // o2server 成功信封实测 message 为空串而非缺省
         assert_eq!(json["message"], Value::String(String::new()));
     }
 
@@ -86,13 +86,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_program_applications() {
+    async fn test_get_program_applications() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program/applications")
+                    .uri("/api/program/applications")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -103,13 +103,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_program_appstyle_current_style() {
+    async fn test_get_program_appstyle_current_style() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program/appstyle/current/style")
+                    .uri("/api/program/appstyle/current/style")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -120,13 +120,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_program_datastructure_modules_all() {
+    async fn test_get_program_datastructure_modules_all() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program/datastructure/modules/all")
+                    .uri("/api/program/datastructure/modules/all")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -137,13 +137,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_program_center_agent_create() {
+    async fn test_post_program_center_agent_create() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/create")
+                    .uri("/api/program_center/agent/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -154,13 +154,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_program_center_agent_save_id() {
+    async fn test_post_program_center_agent_save_id() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/save/test-id")
+                    .uri("/api/program_center/agent/save/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -171,13 +171,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_program_center_application_create() {
+    async fn test_post_program_center_application_create() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/create")
+                    .uri("/api/program_center/application/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -188,13 +188,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_program_center_application_save_id() {
+    async fn test_post_program_center_application_save_id() {
         let pool = build_dummy_pool().await;
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/save/test-id")
+                    .uri("/api/program_center/application/save/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),

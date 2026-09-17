@@ -347,33 +347,27 @@ pub async fn rule_delete(
 pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     // 尝试创建数据库连接，测试环境中可能没有活跃的tokio runtime
     Router::new()
+        .route("/api/attendance/core/entity/record/list", get(record_list))
         .route(
-            "/jaxrs/attendance/core/entity/record/list",
-            get(record_list),
-        )
-        .route(
-            "/jaxrs/attendance/core/entity/record/create",
+            "/api/attendance/core/entity/record/create",
             post(record_create),
         )
         .route(
-            "/jaxrs/attendance/core/entity/record/{id}/update",
+            "/api/attendance/core/entity/record/{id}/update",
             post(record_update),
         )
         .route(
-            "/jaxrs/attendance/core/entity/record/{id}/delete",
+            "/api/attendance/core/entity/record/{id}/delete",
             get(record_delete),
         )
-        .route("/jaxrs/attendance/core/entity/rule/list", get(rule_list))
+        .route("/api/attendance/core/entity/rule/list", get(rule_list))
+        .route("/api/attendance/core/entity/rule/create", post(rule_create))
         .route(
-            "/jaxrs/attendance/core/entity/rule/create",
-            post(rule_create),
-        )
-        .route(
-            "/jaxrs/attendance/core/entity/rule/{id}/update",
+            "/api/attendance/core/entity/rule/{id}/update",
             post(rule_update),
         )
         .route(
-            "/jaxrs/attendance/core/entity/rule/{id}/delete",
+            "/api/attendance/core/entity/rule/{id}/delete",
             get(rule_delete),
         )
 }

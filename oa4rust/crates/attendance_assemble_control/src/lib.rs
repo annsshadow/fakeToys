@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{db::dialect, error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/attendance_assemble_control";
+pub const API_BASE: &str = "/api/attendance_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -63,14 +63,14 @@ pub async fn list_control_rules(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-// ── rule/create + statistics/list（前端 Java 斜杠口径补齐）──────────────────
+// ── rule/create + statistics/list（前端 o2server 斜杠口径补齐）──────────────────
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn create_control_rule(
@@ -89,7 +89,10 @@ pub async fn create_control_rule(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let enabled = payload
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
@@ -124,9 +127,7 @@ pub async fn create_control_rule(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_statistics(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -155,7 +156,7 @@ pub async fn list_statistics(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -210,7 +211,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::routes::attendance_assemble_control_routes(pool)
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
+/// GET /api/attendance/assemble/control/attendanceadmin/list/all
 pub async fn attendanceadmin_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -241,14 +242,14 @@ pub async fn attendanceadmin_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceadmin/{id}
+/// GET /api/attendance/assemble/control/attendanceadmin/{id}
 pub async fn attendanceadmin_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -283,7 +284,7 @@ pub async fn attendanceadmin_id(
     }
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}
+/// POST /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}
 pub async fn attendanceappealInfo_appeal_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -320,7 +321,7 @@ pub async fn attendanceappealInfo_appeal_id(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceconfig/list
+/// GET /api/attendance/assemble/control/attendanceconfig/list
 pub async fn attendanceconfig_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -355,14 +356,14 @@ pub async fn attendanceconfig_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceconfig/save
+/// POST /api/attendance/assemble/control/attendanceconfig/save
 pub async fn attendanceconfig_save(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -432,7 +433,7 @@ pub async fn attendanceconfig_save(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}
+/// POST /api/attendance/assemble/control/attendanceappealInfo/archive/{id}
 pub async fn attendanceappealInfo_archive_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -462,7 +463,7 @@ pub async fn attendanceappealInfo_archive_id(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/audit
+/// POST /api/attendance/assemble/control/attendanceappealInfo/audit
 pub async fn attendanceappealInfo_audit(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -504,7 +505,7 @@ pub async fn attendanceappealInfo_audit(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check
+/// POST /api/attendance/assemble/control/attendanceappealInfo/check
 pub async fn attendanceappealInfo_check(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -543,7 +544,7 @@ pub async fn attendanceappealInfo_check(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}
 pub async fn attendanceappealInfo_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -575,14 +576,14 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}
 pub async fn attendanceappealInfo_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -614,14 +615,14 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}
 pub async fn attendanceappealInfo_manager_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -651,14 +652,14 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
+/// POST /api/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
 pub async fn attendanceappealInfo_workflow_appeal_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -688,7 +689,7 @@ pub async fn attendanceappealInfo_workflow_appeal_id(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync
+/// POST /api/attendance/assemble/control/attendanceappealInfo/workflow/sync
 pub async fn attendanceappealInfo_workflow_sync(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -723,7 +724,7 @@ pub async fn attendanceappealInfo_workflow_sync(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
+/// GET /api/attendance/assemble/control/attendanceappealInfo/{id}
 pub async fn attendanceappealInfo_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -755,7 +756,7 @@ pub async fn attendanceappealInfo_id(
     }
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse
+/// POST /api/attendance/assemble/control/attendancedetail/analyse
 pub async fn attendancedetail_analyse(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -794,7 +795,7 @@ pub async fn attendancedetail_analyse(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}
+/// POST /api/attendance/assemble/control/attendancedetail/analyse/id/{id}
 pub async fn attendancedetail_analyse_id_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -820,7 +821,7 @@ pub async fn attendancedetail_analyse_id_id(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/redo
+/// POST /api/attendance/assemble/control/attendancedetail/analyse/redo
 pub async fn attendancedetail_analyse_redo(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -851,7 +852,7 @@ pub async fn attendancedetail_analyse_redo(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
+/// POST /api/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
 pub async fn attendancedetail_analyse_startDate_endDate(
     pool: Extension<Pool>,
     Path((start_date, end_date)): Path<(String, String)>,
@@ -874,7 +875,7 @@ pub async fn attendancedetail_analyse_startDate_endDate(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/archive/{id}
+/// POST /api/attendance/assemble/control/attendancedetail/archive/{id}
 pub async fn attendancedetail_archive_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -904,7 +905,7 @@ pub async fn attendancedetail_archive_id(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
+/// POST /api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
 pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
     pool: Extension<Pool>,
     Path((cycle_year, cycle_month)): Path<(String, String)>,
@@ -943,7 +944,7 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list
+/// GET /api/attendance/assemble/control/attendancedetail/filter/list
 pub async fn attendancedetail_filter_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -970,14 +971,14 @@ pub async fn attendancedetail_filter_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit
+/// GET /api/attendance/assemble/control/attendancedetail/filter/list/topUnit
 pub async fn attendancedetail_filter_list_topUnit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1004,14 +1005,14 @@ pub async fn attendancedetail_filter_list_topUnit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit
+/// GET /api/attendance/assemble/control/attendancedetail/filter/list/unit
 pub async fn attendancedetail_filter_list_unit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1039,14 +1040,14 @@ pub async fn attendancedetail_filter_list_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/user
+/// GET /api/attendance/assemble/control/attendancedetail/filter/list/user
 pub async fn attendancedetail_filter_list_user(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1073,14 +1074,14 @@ pub async fn attendancedetail_filter_list_user(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
 pub async fn attendancedetail_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -1108,14 +1109,14 @@ pub async fn attendancedetail_filter_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
 pub async fn attendancedetail_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -1143,14 +1144,14 @@ pub async fn attendancedetail_filter_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign
+/// GET /api/attendance/assemble/control/attendancedetail/list/persons/nonesign
 pub async fn attendancedetail_list_persons_nonesign(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1177,14 +1178,14 @@ pub async fn attendancedetail_list_persons_nonesign(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/list/{file_id}
+/// GET /api/attendance/assemble/control/attendancedetail/list/{file_id}
 pub async fn attendancedetail_list_file_id(
     pool: Extension<Pool>,
     Path(file_id): Path<String>,
@@ -1212,14 +1213,14 @@ pub async fn attendancedetail_list_file_id(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
+/// GET /api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
 pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
@@ -1248,14 +1249,14 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview
+/// GET /api/attendance/assemble/control/attendancedetail/mobile/mobilepreview
 pub async fn attendancedetail_mobile_mobilepreview(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -1295,7 +1296,7 @@ pub async fn attendancedetail_mobile_mobilepreview(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/my
+/// GET /api/attendance/assemble/control/attendancedetail/mobile/my
 pub async fn attendancedetail_mobile_my(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -1329,14 +1330,14 @@ pub async fn attendancedetail_mobile_my(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/mobile/recive
+/// POST /api/attendance/assemble/control/attendancedetail/mobile/recive
 pub async fn attendancedetail_mobile_recive(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -1370,7 +1371,7 @@ pub async fn attendancedetail_mobile_recive(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}
+/// GET /api/attendance/assemble/control/attendancedetail/mobile/{id}
 pub async fn attendancedetail_mobile_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1399,7 +1400,7 @@ pub async fn attendancedetail_mobile_id(
     }
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/recive
+/// POST /api/attendance/assemble/control/attendancedetail/recive
 pub async fn attendancedetail_recive(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -1428,7 +1429,7 @@ pub async fn attendancedetail_recive(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail/reciveSingle
+/// POST /api/attendance/assemble/control/attendancedetail/reciveSingle
 pub async fn attendancedetail_reciveSingle(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -1457,7 +1458,7 @@ pub async fn attendancedetail_reciveSingle(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancedetail/{id}
+/// GET /api/attendance/assemble/control/attendancedetail/{id}
 pub async fn attendancedetail_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1486,7 +1487,7 @@ pub async fn attendancedetail_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all
+/// GET /api/attendance/assemble/control/attendanceemployeeconfig/list/all
 pub async fn attendanceemployeeconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1515,14 +1516,14 @@ pub async fn attendanceemployeeconfig_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
+/// GET /api/attendance/assemble/control/attendanceemployeeconfig/{id}
 pub async fn attendanceemployeeconfig_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1553,7 +1554,7 @@ pub async fn attendanceemployeeconfig_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all
+/// GET /api/attendance/assemble/control/attendanceimportfileinfo/list/all
 pub async fn attendanceimportfileinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1585,14 +1586,14 @@ pub async fn attendanceimportfileinfo_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
+/// GET /api/attendance/assemble/control/attendanceimportfileinfo/{id}
 pub async fn attendanceimportfileinfo_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1626,7 +1627,7 @@ pub async fn attendanceimportfileinfo_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all
+/// GET /api/attendance/assemble/control/attendanceschedulesetting/list/all
 pub async fn attendanceschedulesetting_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1655,14 +1656,14 @@ pub async fn attendanceschedulesetting_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
+/// GET /api/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
 pub async fn attendanceschedulesetting_list_topUnit_name(
     pool: Extension<Pool>,
     Path(_name): Path<String>,
@@ -1692,14 +1693,14 @@ pub async fn attendanceschedulesetting_list_topUnit_name(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
+/// GET /api/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
 pub async fn attendanceschedulesetting_list_unit_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
@@ -1730,14 +1731,14 @@ pub async fn attendanceschedulesetting_list_unit_name(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
+/// GET /api/attendance/assemble/control/attendanceschedulesetting/{id}
 pub async fn attendanceschedulesetting_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1768,7 +1769,7 @@ pub async fn attendanceschedulesetting_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}
 pub async fn attendanceselfholiday_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -1798,14 +1799,14 @@ pub async fn attendanceselfholiday_filter_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}
 pub async fn attendanceselfholiday_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -1835,14 +1836,14 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/list/all
+/// GET /api/attendance/assemble/control/attendanceselfholiday/list/all
 pub async fn attendanceselfholiday_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1872,14 +1873,14 @@ pub async fn attendanceselfholiday_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
+/// GET /api/attendance/assemble/control/attendanceselfholiday/{id}
 pub async fn attendanceselfholiday_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -1911,7 +1912,7 @@ pub async fn attendanceselfholiday_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancesetting/code/{code}
+/// GET /api/attendance/assemble/control/attendancesetting/code/{code}
 pub async fn attendancesetting_code_code(
     pool: Extension<Pool>,
     Path(code): Path<String>,
@@ -1940,13 +1941,13 @@ pub async fn attendancesetting_code_code(
     }
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancesetting/enable/type
+/// POST /api/attendance/assemble/control/attendancesetting/enable/type
 pub async fn attendancesetting_enable_type(
     pool: Extension<Pool>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // Java 端该端点为 GET 无 body；字段均可选
+    // o2server 端该端点为 GET 无 body；字段均可选
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
 
     let code = payload
@@ -1983,7 +1984,7 @@ pub async fn attendancesetting_enable_type(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancesetting/list/all
+/// GET /api/attendance/assemble/control/attendancesetting/list/all
 pub async fn attendancesetting_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2010,14 +2011,14 @@ pub async fn attendancesetting_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancesetting/{id}
+/// GET /api/attendance/assemble/control/attendancesetting/{id}
 pub async fn attendancesetting_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2046,7 +2047,7 @@ pub async fn attendancesetting_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}
+/// GET /api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}
 pub async fn attendancestatisticalcycle_cycleDetail_year_month(
     pool: Extension<Pool>,
     Path((year, month)): Path<(String, String)>,
@@ -2078,7 +2079,7 @@ pub async fn attendancestatisticalcycle_cycleDetail_year_month(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/list/all
+/// GET /api/attendance/assemble/control/attendancestatisticalcycle/list/all
 pub async fn attendancestatisticalcycle_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2108,14 +2109,14 @@ pub async fn attendancestatisticalcycle_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
+/// GET /api/attendance/assemble/control/attendancestatisticalcycle/{id}
 pub async fn attendancestatisticalcycle_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2147,7 +2148,7 @@ pub async fn attendancestatisticalcycle_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/list/all
+/// GET /api/attendance/assemble/control/attendancestatisticrequirelog/list/all
 pub async fn attendancestatisticrequirelog_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2176,14 +2177,14 @@ pub async fn attendancestatisticrequirelog_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
+/// GET /api/attendance/assemble/control/attendancestatisticrequirelog/{id}
 pub async fn attendancestatisticrequirelog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2214,7 +2215,7 @@ pub async fn attendancestatisticrequirelog_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter
+/// GET /api/attendance/assemble/control/attendanceworkdayconfig/filter
 pub async fn attendanceworkdayconfig_filter(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -2252,14 +2253,14 @@ pub async fn attendanceworkdayconfig_filter(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/list/all
+/// GET /api/attendance/assemble/control/attendanceworkdayconfig/list/all
 pub async fn attendanceworkdayconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2285,14 +2286,14 @@ pub async fn attendanceworkdayconfig_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
+/// GET /api/attendance/assemble/control/attendanceworkdayconfig/{id}
 pub async fn attendanceworkdayconfig_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -2320,7 +2321,7 @@ pub async fn attendanceworkdayconfig_id(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}
+/// GET /api/attendance/assemble/control/selfholidaysimple/docId/{docId}
 pub async fn selfholidaysimple_docId_docId(
     pool: Extension<Pool>,
     Path(doc_id): Path<String>,
@@ -2352,7 +2353,7 @@ pub async fn selfholidaysimple_docId_docId(
     }
 }
 
-/// POST /jaxrs/attendance/assemble/control/statistic/do
+/// POST /api/attendance/assemble/control/statistic/do
 pub async fn statistic_do(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -2360,7 +2361,7 @@ pub async fn statistic_do(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // Java 端该端点为 GET 无 body；字段均可选，缺省空串
+    // o2server 端该端点为 GET 无 body；字段均可选，缺省空串
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
 
     let person_id = payload
@@ -2395,7 +2396,7 @@ pub async fn statistic_do(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}
 pub async fn statisticshow_filter_personMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2423,14 +2424,14 @@ pub async fn statisticshow_filter_personMonth_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}
 pub async fn statisticshow_filter_personMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2458,14 +2459,14 @@ pub async fn statisticshow_filter_personMonth_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}
 pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2492,14 +2493,14 @@ pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/prev/{count}
 pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2526,14 +2527,14 @@ pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/next/{count}
 pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2561,14 +2562,14 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/prev/{count}
 pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2596,14 +2597,14 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/next/{count}
 pub async fn statisticshow_filter_unitDay_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2631,14 +2632,14 @@ pub async fn statisticshow_filter_unitDay_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}
 pub async fn statisticshow_filter_unitDay_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2666,14 +2667,14 @@ pub async fn statisticshow_filter_unitDay_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}
 pub async fn statisticshow_filter_unitMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2702,14 +2703,14 @@ pub async fn statisticshow_filter_unitMonth_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}
+/// GET /api/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}
 pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -2738,14 +2739,14 @@ pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
 pub async fn statisticshow_person_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -2775,7 +2776,7 @@ pub async fn statisticshow_person_name_year_month(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
 pub async fn statisticshow_persons_unit_subnested_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -2802,14 +2803,14 @@ pub async fn statisticshow_persons_unit_subnested_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
 pub async fn statisticshow_persons_unit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -2836,14 +2837,14 @@ pub async fn statisticshow_persons_unit_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
 pub async fn statisticshow_topUnit_day_name_year_month(
     pool: Extension<Pool>,
     Path((_name, year, month)): Path<(String, String, String)>,
@@ -2870,14 +2871,14 @@ pub async fn statisticshow_topUnit_day_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
 pub async fn statisticshow_topUnit_name_year_month(
     pool: Extension<Pool>,
     Path((_name, year, month)): Path<(String, String, String)>,
@@ -2905,14 +2906,14 @@ pub async fn statisticshow_topUnit_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/topUnit/{name}/{date}
+/// GET /api/attendance/assemble/control/statisticshow/unit/day/topUnit/{name}/{date}
 pub async fn statisticshow_unit_day_topUnit_name_date(
     pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
@@ -2939,14 +2940,14 @@ pub async fn statisticshow_unit_day_topUnit_name_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{date}
+/// GET /api/attendance/assemble/control/statisticshow/unit/day/{name}/{date}
 pub async fn statisticshow_unit_day_name_date(
     pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
@@ -2974,14 +2975,14 @@ pub async fn statisticshow_unit_day_name_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
 pub async fn statisticshow_unit_day_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -3008,14 +3009,14 @@ pub async fn statisticshow_unit_day_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
 pub async fn statisticshow_unit_subnested_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -3042,14 +3043,14 @@ pub async fn statisticshow_unit_subnested_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
 pub async fn statisticshow_unit_sum_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -3081,7 +3082,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
             Ok(Json(ActionResult::success(result)))
         }
         None => {
-            // Java returns empty object {}, not null
+            // o2server returns empty object {}, not null
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::new(),
             ))))
@@ -3089,7 +3090,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
 pub async fn statisticshow_unit_topUnit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -3118,14 +3119,14 @@ pub async fn statisticshow_unit_topUnit_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
+/// GET /api/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
 pub async fn statisticshow_unit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
@@ -3154,21 +3155,21 @@ pub async fn statisticshow_unit_name_year_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/uuid/random
+/// GET /api/attendance/assemble/control/uuid/random
 pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Array(vec![
         Value::String(uuid::Uuid::new_v4().to_string()),
     ]))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/workplace/list/all
+/// GET /api/attendance/assemble/control/workplace/list/all
 pub async fn workplace_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3194,14 +3195,14 @@ pub async fn workplace_list_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/attendance/assemble/control/workplace/{id}
+/// GET /api/attendance/assemble/control/workplace/{id}
 pub async fn workplace_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -3230,7 +3231,7 @@ pub async fn workplace_id(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// plan002 U2 — Java 对齐缺口端点
+// plan002 U2 — o2server 对齐缺口端点
 //
 // 写操作遵循 require_owner / is_admin 权限模式
 // （docs/solutions/security-issues/idor-vulnerability-write-handlers.md）：
@@ -3358,7 +3359,7 @@ async fn delete_owned_record(
 
 // ── legacy POST 创建（9 个，全部真实 INSERT 现有表） ─────────────────
 
-/// POST /jaxrs/attendance/assemble/control/attendanceadmin
+/// POST /api/attendance/assemble/control/attendanceadmin
 pub async fn attendanceadmin_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3403,7 +3404,7 @@ pub async fn attendanceadmin_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceemployeeconfig
+/// POST /api/attendance/assemble/control/attendanceemployeeconfig
 pub async fn attendanceemployeeconfig_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3442,7 +3443,7 @@ pub async fn attendanceemployeeconfig_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceschedulesetting
+/// POST /api/attendance/assemble/control/attendanceschedulesetting
 pub async fn attendanceschedulesetting_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3481,7 +3482,7 @@ pub async fn attendanceschedulesetting_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceselfholiday
+/// POST /api/attendance/assemble/control/attendanceselfholiday
 pub async fn attendanceselfholiday_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3525,7 +3526,7 @@ pub async fn attendanceselfholiday_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancedetail
+/// POST /api/attendance/assemble/control/attendancedetail
 pub async fn attendancedetail_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3573,7 +3574,7 @@ pub async fn attendancedetail_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/selfholidaysimple
+/// POST /api/attendance/assemble/control/selfholidaysimple
 pub async fn selfholidaysimple_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3617,7 +3618,7 @@ pub async fn selfholidaysimple_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancesetting
+/// POST /api/attendance/assemble/control/attendancesetting
 pub async fn attendancesetting_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3653,7 +3654,7 @@ pub async fn attendancesetting_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancestatisticalcycle
+/// POST /api/attendance/assemble/control/attendancestatisticalcycle
 pub async fn attendancestatisticalcycle_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3692,7 +3693,7 @@ pub async fn attendancestatisticalcycle_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendancestatisticrequirelog
+/// POST /api/attendance/assemble/control/attendancestatisticrequirelog
 pub async fn attendancestatisticrequirelog_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3731,7 +3732,7 @@ pub async fn attendancestatisticrequirelog_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/attendanceworkdayconfig
+/// POST /api/attendance/assemble/control/attendanceworkdayconfig
 pub async fn attendanceworkdayconfig_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3770,7 +3771,7 @@ pub async fn attendanceworkdayconfig_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/workplace
+/// POST /api/attendance/assemble/control/workplace
 pub async fn workplace_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3807,7 +3808,7 @@ pub async fn workplace_create(
 
 // ── legacy DELETE（13 个，链式注册到既有路径；真实 DELETE + 权限校验） ──
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceadmin/{id}
+/// DELETE /api/attendance/assemble/control/attendanceadmin/{id}
 pub async fn attendanceadmin_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3823,7 +3824,7 @@ pub async fn attendanceadmin_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
+/// DELETE /api/attendance/assemble/control/attendanceappealInfo/{id}
 pub async fn attendanceappealInfo_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3832,7 +3833,7 @@ pub async fn attendanceappealInfo_delete(
     delete_owned_record(&pool, "x_attendance_appeal_info", &id, &session).await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendancedetail/{id}
+/// DELETE /api/attendance/assemble/control/attendancedetail/{id}
 pub async fn attendancedetail_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3841,7 +3842,7 @@ pub async fn attendancedetail_delete(
     delete_owned_record(&pool, "x_attendance_detail", &id, &session).await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}
+/// DELETE /api/attendance/assemble/control/attendancedetail/mobile/{id}
 pub async fn attendancedetail_mobile_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3850,7 +3851,7 @@ pub async fn attendancedetail_mobile_delete(
     delete_owned_record(&pool, "x_attendance_detail", &id, &session).await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
+/// DELETE /api/attendance/assemble/control/attendanceemployeeconfig/{id}
 pub async fn attendanceemployeeconfig_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3866,7 +3867,7 @@ pub async fn attendanceemployeeconfig_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
+/// DELETE /api/attendance/assemble/control/attendanceimportfileinfo/{id}
 pub async fn attendanceimportfileinfo_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3882,7 +3883,7 @@ pub async fn attendanceimportfileinfo_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
+/// DELETE /api/attendance/assemble/control/attendanceschedulesetting/{id}
 pub async fn attendanceschedulesetting_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3898,7 +3899,7 @@ pub async fn attendanceschedulesetting_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
+/// DELETE /api/attendance/assemble/control/attendanceselfholiday/{id}
 pub async fn attendanceselfholiday_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3907,7 +3908,7 @@ pub async fn attendanceselfholiday_delete(
     delete_owned_record(&pool, "x_attendance_selfholiday", &id, &session).await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendancesetting/{id}
+/// DELETE /api/attendance/assemble/control/attendancesetting/{id}
 pub async fn attendancesetting_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3923,7 +3924,7 @@ pub async fn attendancesetting_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
+/// DELETE /api/attendance/assemble/control/attendancestatisticalcycle/{id}
 pub async fn attendancestatisticalcycle_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3939,7 +3940,7 @@ pub async fn attendancestatisticalcycle_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
+/// DELETE /api/attendance/assemble/control/attendancestatisticrequirelog/{id}
 pub async fn attendancestatisticrequirelog_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3955,7 +3956,7 @@ pub async fn attendancestatisticrequirelog_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
+/// DELETE /api/attendance/assemble/control/attendanceworkdayconfig/{id}
 pub async fn attendanceworkdayconfig_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3971,7 +3972,7 @@ pub async fn attendanceworkdayconfig_delete(
     .await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/workplace/{id}
+/// DELETE /api/attendance/assemble/control/workplace/{id}
 pub async fn workplace_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3980,7 +3981,7 @@ pub async fn workplace_delete(
     delete_admin_record(&pool, "x_attendance_workplace", &id, &session, "workplace").await
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}
+/// DELETE /api/attendance/assemble/control/selfholidaysimple/docId/{docId}
 pub async fn selfholidaysimple_docId_docId_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -3991,7 +3992,7 @@ pub async fn selfholidaysimple_docId_docId_delete(
 
 // ── v2 group（6 个） ────────────────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/group/{id}
+/// GET /api/attendance/assemble/control/v2/group/{id}
 pub async fn v2_group_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4065,7 +4066,7 @@ pub async fn v2_group_get(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/group/{id}/delete
+/// GET /api/attendance/assemble/control/v2/group/{id}/delete
 pub async fn v2_group_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4074,7 +4075,7 @@ pub async fn v2_group_delete(
     delete_owned_record(&pool, "x_attendance_v2_group", &id, &session).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/group/{id}/refresh/participate
+/// GET /api/attendance/assemble/control/v2/group/{id}/refresh/participate
 pub async fn v2_group_refresh_participate(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4101,7 +4102,7 @@ pub async fn v2_group_refresh_participate(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/group/person/{person}/date/{date}
+/// GET /api/attendance/assemble/control/v2/group/person/{person}/date/{date}
 pub async fn v2_group_person_date(
     pool: Extension<Pool>,
     Path((person, date)): Path<(String, String)>,
@@ -4156,14 +4157,14 @@ pub async fn v2_group_person_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/group
+/// POST /api/attendance/assemble/control/v2/group
 pub async fn v2_group_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4208,7 +4209,7 @@ pub async fn v2_group_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/group/list/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/group/list/{page}/size/{size}
 pub async fn v2_group_list_page_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -4294,7 +4295,7 @@ pub async fn v2_group_list_page_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
@@ -4303,7 +4304,7 @@ pub async fn v2_group_list_page_size(
 
 // ── v2 shift（5 个） ───────────────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/shift/{id}
+/// GET /api/attendance/assemble/control/v2/shift/{id}
 pub async fn v2_shift_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -4361,7 +4362,7 @@ pub async fn v2_shift_get(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/shift/delete/{id}
+/// GET /api/attendance/assemble/control/v2/shift/delete/{id}
 pub async fn v2_shift_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4370,7 +4371,7 @@ pub async fn v2_shift_delete(
     delete_owned_record(&pool, "x_attendance_v2_shift", &id, &session).await
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/shift/create
+/// POST /api/attendance/assemble/control/v2/shift/create
 pub async fn v2_shift_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4426,7 +4427,7 @@ pub async fn v2_shift_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/shift/list/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/shift/list/{page}/size/{size}
 pub async fn v2_shift_list_page_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -4492,14 +4493,14 @@ pub async fn v2_shift_list_page_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/shift/update
+/// POST /api/attendance/assemble/control/v2/shift/update
 pub async fn v2_shift_update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4578,7 +4579,7 @@ pub async fn v2_shift_update(
 
 // ── v2 leave（5 个） ───────────────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/leave/delete/{id}
+/// GET /api/attendance/assemble/control/v2/leave/delete/{id}
 pub async fn v2_leave_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4587,7 +4588,7 @@ pub async fn v2_leave_delete(
     delete_owned_record(&pool, "x_attendance_v2_leave", &id, &session).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/leave/import/result/flag/{flag}
+/// GET /api/attendance/assemble/control/v2/leave/import/result/flag/{flag}
 pub async fn v2_leave_import_result_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -4614,7 +4615,7 @@ pub async fn v2_leave_import_result_flag(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/leave
+/// POST /api/attendance/assemble/control/v2/leave
 pub async fn v2_leave_create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4661,7 +4662,7 @@ pub async fn v2_leave_create(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/leave/list/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/leave/list/{page}/size/{size}
 pub async fn v2_leave_list_page_size(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4753,14 +4754,14 @@ pub async fn v2_leave_list_page_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/leave/import
+/// POST /api/attendance/assemble/control/v2/leave/import
 pub async fn v2_leave_import(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4849,7 +4850,7 @@ pub async fn v2_leave_import(
 
 // ── v2 config（4 个，复用 x_attendance_config 分类存储） ────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/config
+/// GET /api/attendance/assemble/control/v2/config
 pub async fn v2_config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -4871,7 +4872,7 @@ pub async fn v2_config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
     Ok(Json(ActionResult::success(Value::Object(result))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/config
+/// POST /api/attendance/assemble/control/v2/config
 pub async fn v2_config_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4930,7 +4931,7 @@ pub async fn v2_config_post(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/config/person
+/// GET /api/attendance/assemble/control/v2/config/person
 pub async fn v2_config_person_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -4955,7 +4956,7 @@ pub async fn v2_config_person_get(
     Ok(Json(ActionResult::success(Value::Object(result))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/config/person
+/// POST /api/attendance/assemble/control/v2/config/person
 pub async fn v2_config_person_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5015,7 +5016,7 @@ pub async fn v2_config_person_post(
 
 // ── v2 record / detail / my（4 个） ────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/record/{id}
+/// GET /api/attendance/assemble/control/v2/record/{id}
 pub async fn v2_record_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -5061,7 +5062,7 @@ pub async fn v2_record_get(
     }
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/record/list/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/record/list/{page}/size/{size}
 pub async fn v2_record_list_page_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -5131,14 +5132,14 @@ pub async fn v2_record_list_page_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/detail/list/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/detail/list/{page}/size/{size}
 pub async fn v2_detail_list_page_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -5224,14 +5225,14 @@ pub async fn v2_detail_list_page_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/my/statistic
+/// POST /api/attendance/assemble/control/v2/my/statistic
 pub async fn v2_my_statistic(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5484,7 +5485,7 @@ async fn ddqy_sync_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5514,7 +5515,7 @@ async fn ddqy_attendance_list_next(
         })
         .unwrap_or_default();
 
-    // id 为空串表示从头开始（Java ActionListDDAttendanceDetail 语义）
+    // id 为空串表示从头开始（o2server ActionListDDAttendanceDetail 语义）
     let sql = format!(
         "SELECT id, user_id, time, checkin_type, location_result, source_type \
          FROM {tbl} \
@@ -5567,7 +5568,7 @@ async fn ddqy_attendance_list_next(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5718,7 +5719,7 @@ async fn stat_person_month_query(
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5748,7 +5749,7 @@ async fn stat_unit_month_query(
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5809,7 +5810,7 @@ fn stat_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 
 // ── dingding 端点（8 个） ──────────────────────────────────────────
 
-/// DELETE /jaxrs/attendance/assemble/control/dingding/all
+/// DELETE /api/attendance/assemble/control/dingding/all
 pub async fn dingding_delete_all(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5817,7 +5818,7 @@ pub async fn dingding_delete_all(
     ddqy_delete_all(&pool, "x_attendance_dingding_detail", "dingding", &session).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start
+/// GET /api/attendance/assemble/control/dingding/sync/from/{from}/to/{to}/start
 pub async fn dingding_sync_start(
     pool: Extension<Pool>,
     Path((from, to)): Path<(String, String)>,
@@ -5825,14 +5826,14 @@ pub async fn dingding_sync_start(
     ddqy_sync_start(&pool, "dingding", &from, &to).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingding/sync/list
+/// GET /api/attendance/assemble/control/dingding/sync/list
 pub async fn dingding_sync_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     ddqy_sync_list(&pool, "dingding").await
 }
 
-/// PUT /jaxrs/attendance/assemble/control/dingding/attendance/list/{id}/next/{count}
+/// PUT /api/attendance/assemble/control/dingding/attendance/list/{id}/next/{count}
 pub async fn dingding_attendance_list_next(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -5841,7 +5842,7 @@ pub async fn dingding_attendance_list_next(
     ddqy_attendance_list_next(&pool, "x_attendance_dingding_detail", &id, count, body).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}
+/// GET /api/attendance/assemble/control/dingding/statistic/person/year/{year}/month/{month}
 pub async fn dingding_statistic_person_trigger(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5858,7 +5859,7 @@ pub async fn dingding_statistic_person_trigger(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingding/statistic/unit/year/{year}/month/{month}/day/{day}
+/// GET /api/attendance/assemble/control/dingding/statistic/unit/year/{year}/month/{month}/day/{day}
 pub async fn dingding_statistic_unit_day_trigger(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5876,7 +5877,7 @@ pub async fn dingding_statistic_unit_day_trigger(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}
+/// GET /api/attendance/assemble/control/dingdingstatistic/person/{person}/{year}/{month}
 pub async fn dingdingstatistic_person(
     pool: Extension<Pool>,
     Path((person, year, month)): Path<(String, String, String)>,
@@ -5892,12 +5893,12 @@ pub async fn dingdingstatistic_person(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}
+/// GET /api/attendance/assemble/control/dingdingstatistic/person/unit/{unit}/{year}/{month}
 pub async fn dingdingstatistic_person_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // Java 语义：查该部门下人员月份统计；本 schema 中 person 维度以 o2_unit 过滤实现
+    // o2server 语义：查该部门下人员月份统计；本 schema 中 person 维度以 o2_unit 过滤实现
     stat_person_month_query(
         &pool,
         "x_attendance_statistic_dd_person_month",
@@ -5909,7 +5910,7 @@ pub async fn dingdingstatistic_person_unit(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/dingdingstatistic/unit/{unit}/{year}/{month}
+/// GET /api/attendance/assemble/control/dingdingstatistic/unit/{unit}/{year}/{month}
 pub async fn dingdingstatistic_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
@@ -5939,7 +5940,7 @@ pub async fn dingdingstatistic_unit(
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5948,7 +5949,7 @@ pub async fn dingdingstatistic_unit(
 
 // ── qywx 端点（8 个，与 dingding 同构） ────────────────────────────
 
-/// DELETE /jaxrs/attendance/assemble/control/qywx/all
+/// DELETE /api/attendance/assemble/control/qywx/all
 pub async fn qywx_delete_all(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5956,7 +5957,7 @@ pub async fn qywx_delete_all(
     ddqy_delete_all(&pool, "x_attendance_qywx_detail", "qywx", &session).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start
+/// GET /api/attendance/assemble/control/qywx/sync/from/{from}/to/{to}/start
 pub async fn qywx_sync_start(
     pool: Extension<Pool>,
     Path((from, to)): Path<(String, String)>,
@@ -5964,12 +5965,12 @@ pub async fn qywx_sync_start(
     ddqy_sync_start(&pool, "qywx", &from, &to).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywx/sync/list
+/// GET /api/attendance/assemble/control/qywx/sync/list
 pub async fn qywx_sync_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     ddqy_sync_list(&pool, "qywx").await
 }
 
-/// PUT /jaxrs/attendance/assemble/control/qywx/attendance/list/{id}/next/{count}
+/// PUT /api/attendance/assemble/control/qywx/attendance/list/{id}/next/{count}
 pub async fn qywx_attendance_list_next(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
@@ -5978,7 +5979,7 @@ pub async fn qywx_attendance_list_next(
     ddqy_attendance_list_next(&pool, "x_attendance_qywx_detail", &id, count, body).await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywx/statistic/person/year/{year}/month/{month}
+/// GET /api/attendance/assemble/control/qywx/statistic/person/year/{year}/month/{month}
 pub async fn qywx_statistic_person_trigger(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -5995,7 +5996,7 @@ pub async fn qywx_statistic_person_trigger(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywx/statistic/unit/year/{year}/month/{month}/day/{day}
+/// GET /api/attendance/assemble/control/qywx/statistic/unit/year/{year}/month/{month}/day/{day}
 pub async fn qywx_statistic_unit_day_trigger(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6013,7 +6014,7 @@ pub async fn qywx_statistic_unit_day_trigger(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywxstatistic/person/{person}/{year}/{month}
+/// GET /api/attendance/assemble/control/qywxstatistic/person/{person}/{year}/{month}
 pub async fn qywxstatistic_person(
     pool: Extension<Pool>,
     Path((person, year, month)): Path<(String, String, String)>,
@@ -6029,7 +6030,7 @@ pub async fn qywxstatistic_person(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}
+/// GET /api/attendance/assemble/control/qywxstatistic/person/unit/{unit}/{year}/{month}
 pub async fn qywxstatistic_person_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
@@ -6045,7 +6046,7 @@ pub async fn qywxstatistic_person_unit(
     .await
 }
 
-/// GET /jaxrs/attendance/assemble/control/qywxstatistic/unit/{unit}/{year}/{month}
+/// GET /api/attendance/assemble/control/qywxstatistic/unit/{unit}/{year}/{month}
 pub async fn qywxstatistic_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
@@ -6064,7 +6065,7 @@ pub async fn qywxstatistic_unit(
 // 状态常量对齐 AttendanceV2AppealInfo：0 待处理 / 1 审批中 / 2 通过 /
 // 3 不通过 / 4 管理员已处理。
 
-/// POST /jaxrs/attendance/assemble/control/v2/appeal/list/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/appeal/list/{page}/size/{size}
 pub async fn v2_appeal_list_page_size(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6178,7 +6179,7 @@ fn v2_appeal_row(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     ]))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/appeal/list/manager/{page}/size/{size}
+/// POST /api/attendance/assemble/control/v2/appeal/list/manager/{page}/size/{size}
 pub async fn v2_appeal_manager_list_page_size(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6236,7 +6237,7 @@ pub async fn v2_appeal_manager_list_page_size(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}
+/// GET /api/attendance/assemble/control/v2/appeal/{id}
 pub async fn v2_appeal_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -6282,7 +6283,7 @@ async fn appeal_owner_gate(
     Ok(Some(row))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/manager/status
+/// GET /api/attendance/assemble/control/v2/appeal/{id}/manager/status
 pub async fn v2_appeal_manager_status(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6315,7 +6316,7 @@ pub async fn v2_appeal_manager_status(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/start/check
+/// GET /api/attendance/assemble/control/v2/appeal/{id}/start/check
 pub async fn v2_appeal_start_check(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6335,7 +6336,7 @@ pub async fn v2_appeal_start_check(
         return Ok(Json(ActionResult::error("appeal not found")));
     };
 
-    // Java ExceptionPersonNotEqual：仅本人可发起申诉
+    // o2server ExceptionPersonNotEqual：仅本人可发起申诉
     let owner: String = row.get::<_, Option<String>>("user_id").unwrap_or_default();
     if owner != session.person_unique {
         return Err(AppError::Forbidden);
@@ -6358,7 +6359,7 @@ pub async fn v2_appeal_start_check(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/appeal/{id}/start/process
+/// POST /api/attendance/assemble/control/v2/appeal/{id}/start/process
 pub async fn v2_appeal_start_process(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6400,7 +6401,7 @@ pub async fn v2_appeal_start_process(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/appeal/{id}/reset/status
+/// GET /api/attendance/assemble/control/v2/appeal/{id}/reset/status
 pub async fn v2_appeal_reset_status(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6435,7 +6436,7 @@ pub async fn v2_appeal_reset_status(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/appeal/{id}/end/process
+/// POST /api/attendance/assemble/control/v2/appeal/{id}/end/process
 pub async fn v2_appeal_end_process(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6481,7 +6482,7 @@ pub async fn v2_appeal_end_process(
 
 // ── v2 detail（4 个） ──────────────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/detail/rebuild/person/{person}/date/{date}
+/// GET /api/attendance/assemble/control/v2/detail/rebuild/person/{person}/date/{date}
 pub async fn v2_detail_rebuild_person_date(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6528,7 +6529,7 @@ pub async fn v2_detail_rebuild_person_date(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/detail/statistic/{detailId}/list/record
+/// GET /api/attendance/assemble/control/v2/detail/statistic/{detailId}/list/record
 pub async fn v2_detail_statistic_record_list(
     pool: Extension<Pool>,
     Path(detail_id): Path<String>,
@@ -6594,7 +6595,7 @@ pub async fn v2_detail_statistic_record_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6639,7 +6640,7 @@ async fn detail_statistic_aggregate(
         .collect())
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/detail/statistic/filter
+/// POST /api/attendance/assemble/control/v2/detail/statistic/filter
 pub async fn v2_detail_statistic_filter(
     pool: Extension<Pool>,
     body: Option<Json<Value>>,
@@ -6651,14 +6652,14 @@ pub async fn v2_detail_statistic_filter(
         detail_statistic_aggregate(&pool, &filter_person, &filter_start, &filter_end).await?;
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter
+/// POST /api/attendance/assemble/control/v2/detail/statistic/export/filter
 pub async fn v2_detail_statistic_export_filter(
     pool: Extension<Pool>,
     body: Option<Json<Value>>,
@@ -6696,7 +6697,7 @@ fn extract_stat_filter(body: Option<&Json<Value>>, empty: &String) -> (String, S
 
 // ── v2 group rebuild（1 个）+ groupschedule（4 个） ────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/group/rebuild/detail/group/{groupId}/date/{date}
+/// GET /api/attendance/assemble/control/v2/group/rebuild/detail/group/{groupId}/date/{date}
 pub async fn v2_group_rebuild_detail_group_date(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6725,7 +6726,7 @@ pub async fn v2_group_rebuild_detail_group_date(
         return Ok(Json(ActionResult::error("attendance group not found")));
     };
 
-    // 手动考勤组才允许重算（Java status_auto 校验）
+    // 手动考勤组才允许重算（o2server status_auto 校验）
     let status: i32 = group.get::<_, Option<i32>>("status").unwrap_or(1);
     if status == 999 {
         return Ok(Json(ActionResult::error("auto group cannot be rebuilt")));
@@ -6773,7 +6774,7 @@ pub async fn v2_group_rebuild_detail_group_date(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/groupschedule
+/// POST /api/attendance/assemble/control/v2/groupschedule
 pub async fn v2_groupschedule_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -6852,7 +6853,7 @@ pub async fn v2_groupschedule_post(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/groupschedule/config/group/{groupId}
+/// GET /api/attendance/assemble/control/v2/groupschedule/config/group/{groupId}
 pub async fn v2_groupschedule_config_get(
     pool: Extension<Pool>,
     Path(group_id): Path<String>,
@@ -6896,7 +6897,7 @@ pub async fn v2_groupschedule_config_get(
     }
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/groupschedule/list/group/{groupId}/month/{month}
+/// GET /api/attendance/assemble/control/v2/groupschedule/list/group/{groupId}/month/{month}
 pub async fn v2_groupschedule_list_group_month(
     pool: Extension<Pool>,
     Path((group_id, month)): Path<(String, String)>,
@@ -6943,14 +6944,14 @@ pub async fn v2_groupschedule_list_group_month(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/groupschedule/list/filter
+/// POST /api/attendance/assemble/control/v2/groupschedule/list/filter
 pub async fn v2_groupschedule_list_filter(
     pool: Extension<Pool>,
     body: Option<Json<Value>>,
@@ -7017,7 +7018,7 @@ pub async fn v2_groupschedule_list_filter(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7026,7 +7027,7 @@ pub async fn v2_groupschedule_list_filter(
 
 // ── v2 leave template（1 个） ──────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/leave/template
+/// GET /api/attendance/assemble/control/v2/leave/template
 pub async fn v2_leave_template() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -7057,7 +7058,7 @@ fn now_unix_secs() -> u64 {
         .unwrap_or(0)
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/mobile/check/pre
+/// GET /api/attendance/assemble/control/v2/mobile/check/pre
 pub async fn v2_mobile_pre_check(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7237,7 +7238,7 @@ async fn mobile_check_impl(
     Ok((id, false))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/mobile/check
+/// POST /api/attendance/assemble/control/v2/mobile/check
 pub async fn v2_mobile_check(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7254,7 +7255,7 @@ pub async fn v2_mobile_check(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/mobile/check/ from/out
+/// POST /api/attendance/assemble/control/v2/mobile/check/ from/out
 pub async fn v2_mobile_check_from_out(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7280,14 +7281,14 @@ pub async fn v2_mobile_check_from_out(
 
 // ── v2 my（4 个） ──────────────────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/my/version
+/// GET /api/attendance/assemble/control/v2/my/version
 pub async fn v2_my_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("version".to_string(), Value::String("2".to_string()))]),
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/my/controls
+/// GET /api/attendance/assemble/control/v2/my/controls
 pub async fn v2_my_controls(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7317,7 +7318,7 @@ pub async fn v2_my_controls(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/my/detail/list
+/// POST /api/attendance/assemble/control/v2/my/detail/list
 pub async fn v2_my_detail_list(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7388,14 +7389,14 @@ pub async fn v2_my_detail_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/my/rest/date/check
+/// POST /api/attendance/assemble/control/v2/my/rest/date/check
 pub async fn v2_my_rest_date_check(
     pool: Extension<Pool>,
     body: Option<Json<Value>>,
@@ -7442,7 +7443,7 @@ pub async fn v2_my_rest_date_check(
 
 // ── v2 record（4 个） ──────────────────────────────────────────────
 
-/// GET /jaxrs/attendance/assemble/control/v2/record/delete/people/{people}/date/{date}
+/// GET /api/attendance/assemble/control/v2/record/delete/people/{people}/date/{date}
 pub async fn v2_record_delete_people_date(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7491,7 +7492,7 @@ pub async fn v2_record_delete_people_date(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/record/template
+/// GET /api/attendance/assemble/control/v2/record/template
 pub async fn v2_record_template() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -7595,7 +7596,7 @@ async fn import_checkin_rows(
     Ok((inserted, ids))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/record/import
+/// POST /api/attendance/assemble/control/v2/record/import
 pub async fn v2_record_import(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7629,7 +7630,7 @@ pub async fn v2_record_import(
     ))))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/record/import/daily
+/// POST /api/attendance/assemble/control/v2/record/import/daily
 pub async fn v2_record_import_daily(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7687,7 +7688,7 @@ pub async fn v2_record_import_daily(
 
 // ── v2 workplace（4 个，复用 x_attendance_workplace 表） ───────────
 
-/// POST /jaxrs/attendance/assemble/control/v2/workplace
+/// POST /api/attendance/assemble/control/v2/workplace
 pub async fn v2_workplace_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7764,7 +7765,7 @@ pub async fn v2_workplace_post(
     }
 }
 
-/// DELETE /jaxrs/attendance/assemble/control/v2/workplace/{id}
+/// DELETE /api/attendance/assemble/control/v2/workplace/{id}
 pub async fn v2_workplace_delete(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -7773,7 +7774,7 @@ pub async fn v2_workplace_delete(
     delete_admin_record(&pool, "x_attendance_workplace", &id, &session, "workplace").await
 }
 
-/// GET /jaxrs/attendance/assemble/control/v2/workplace/list/all
+/// GET /api/attendance/assemble/control/v2/workplace/list/all
 pub async fn v2_workplace_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -7790,7 +7791,7 @@ pub async fn v2_workplace_list_all(
     let data: Vec<Value> = rows.iter().map(workplace_row_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7821,7 +7822,7 @@ fn workplace_row_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     ]))
 }
 
-/// POST /jaxrs/attendance/assemble/control/v2/workplace/list/ids
+/// POST /api/attendance/assemble/control/v2/workplace/list/ids
 pub async fn v2_workplace_list_ids(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -7856,7 +7857,7 @@ pub async fn v2_workplace_list_ids(
     let data: Vec<Value> = rows.iter().map(workplace_row_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

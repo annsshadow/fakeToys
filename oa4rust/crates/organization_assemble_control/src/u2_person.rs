@@ -360,7 +360,7 @@ pub async fn person_list_pinyininitial(
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return list_ok_java(rows.iter().map(person_row_json).collect());
+        return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
@@ -370,7 +370,7 @@ pub async fn person_list_pinyininitial(
         .query(&sql, &[&initials])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
@@ -383,7 +383,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return list_ok_java(rows.iter().map(person_row_json).collect());
+        return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("%{key}%");
     let sql = format!(
@@ -393,7 +393,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
         .query(&sql, &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
@@ -409,7 +409,7 @@ pub async fn person_list_like_pinyin(
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return list_ok_java(rows.iter().map(person_row_json).collect());
+        return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("{}%", key.to_lowercase());
     let sql = format!(
@@ -420,7 +420,7 @@ pub async fn person_list_like_pinyin(
         .query(&sql, &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
@@ -755,8 +755,11 @@ pub async fn threemember_list(pool: Extension<Pool>) -> HandlerResult {
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
     );
-    let rows = client.query(&sql, &[]).await.map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    let rows = client
+        .query(&sql, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 // ── threemember 家族 CRUD（x_org_person 022+069，通用参数化写；BIGINT/TIMESTAMP/状态列不映射）──
@@ -778,10 +781,7 @@ fn threemember_spec() -> shared::crud::CrudSpec {
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn threemember_create(
-    pool: Extension<Pool>,
-    body: Json<Value>,
-) -> HandlerResult {
+pub async fn threemember_create(pool: Extension<Pool>, body: Json<Value>) -> HandlerResult {
     let id = shared::crud_create(&pool, &threemember_spec(), &body.0).await?;
     ok(Value::Object(
         vec![

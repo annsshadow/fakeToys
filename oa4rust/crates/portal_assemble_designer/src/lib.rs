@@ -418,304 +418,328 @@ pub async fn design_save(
 pub fn portal_assemble_designer_router() -> Router {
     Router::new()
         .route(
-            "/jaxrs/portal/assemble/designer/page/list/{category}",
+            "/api/portal/assemble/designer/page/list/{category}",
             get(list_pages_by_category),
         )
-        .route("/jaxrs/portal/assemble/designer/page/{id}", get(get_page))
+        .route("/api/portal/assemble/designer/page/{id}", get(get_page))
         .route(
-            "/jaxrs/portal/assemble/designer/page/create",
+            "/api/portal/assemble/designer/page/create",
             post(create_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/save/{id}",
+            "/api/portal/assemble/designer/page/save/{id}",
             post(save_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/delete/{id}",
+            "/api/portal/assemble/designer/page/delete/{id}",
             post(delete_page),
         )
-        .route(
-            "/jaxrs/portal/assemble/designer/create",
-            post(create_design),
-        )
-        .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
-        .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
+        .route("/api/portal/assemble/designer/create", post(create_design))
+        .route("/api/portal/assemble/designer/get/{id}", get(get_design))
+        .route("/api/portal/assemble/designer/list", get(list_designs))
         // 裸根（桌面 PortalDesignerApp 配置串引用）：返回门户设计器列表
-        .route("/jaxrs/portal/assemble/designer", get(list_designs))
+        .route("/api/portal/assemble/designer", get(list_designs))
+        .route("/api/portal/assemble/designer/save/{id}", post(save_design))
+        .route("/api/portal/design/list", get(design_list))
+        .route("/api/portal/design/{id}", get(design_get))
+        .route("/api/portal/design/save", post(design_save))
         .route(
-            "/jaxrs/portal/assemble/designer/save/{id}",
-            post(save_design),
-        )
-        .route("/jaxrs/portal/design/list", get(design_list))
-        .route("/jaxrs/portal/design/{id}", get(design_get))
-        .route("/jaxrs/portal/design/save", post(design_save))
-        .route(
-            "/jaxrs/portal/assemble/designer/dict/{id}",
+            "/api/portal/assemble/designer/dict/{id}",
             get(crate::dict_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}",
+            "/api/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}",
             get(crate::dict_list_paging_page_size_size),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/dict/list/portal/{portalId}",
+            "/api/portal/assemble/designer/dict/list/portal/{portalId}",
             get(crate::dict_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/{flag}",
+            "/api/portal/assemble/designer/file/{flag}",
             get(crate::file_flag),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/download/{id}",
+            "/api/portal/assemble/designer/file/download/{id}",
             get(crate::file_id_download),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/upload/{id}",
+            "/api/portal/assemble/designer/file/upload/{id}",
             post(crate::file_id_upload),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/list/application/{applicationFlag}",
+            "/api/portal/assemble/designer/file/list/application/{applicationFlag}",
             get(crate::file_list_application_applicationFlag),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/list/{id}/{next}/{count}",
+            "/api/portal/assemble/designer/file/list/{id}/{next}/{count}",
             get(crate::file_list_id_next_count),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/{id}/{count}",
+            "/api/portal/assemble/designer/{id}/{count}",
             get(crate::id_count),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/output/select/file/{flag}",
+            "/api/portal/assemble/designer/output/select/file/{flag}",
             get(crate::output_flag_select_file),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/output/select/{portalFlag}",
+            "/api/portal/assemble/designer/output/select/{portalFlag}",
             get(crate::output_portalFlag_select),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/list/portal/{page}/{portalId}",
+            "/api/portal/assemble/designer/list/portal/{page}/{portalId}",
             get(crate::page_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/pageversion/{id}",
+            "/api/portal/assemble/designer/pageversion/{id}",
             get(crate::pageversion_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/pageversion/list/{page}/{pageId}",
+            "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
             get(crate::pageversion_list_page_pageId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}",
+            "/api/portal/assemble/designer/portal/{id}",
             get(crate::portal_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/icon/{id}",
+            "/api/portal/assemble/designer/portal/icon/{id}",
             get(crate::portal_id_icon),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/permission/{id}",
+            "/api/portal/assemble/designer/portal/permission/{id}",
             get(crate::portal_id_permission),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/portalcategory/{portalCategory}",
+            "/api/portal/assemble/designer/portal/list/portalcategory/{portalCategory}",
             get(crate::portal_list_portalcategory_portalCategory),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
+            "/api/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
             get(crate::portal_list_summary_portalcategory_portalCategory),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/{id}",
+            "/api/portal/assemble/designer/script/{id}",
             get(crate::script_id)
                 .put(crate::u2_script::update)
                 .delete(crate::u2_script::delete),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script",
+            "/api/portal/assemble/designer/script",
             post(crate::u2_script::create),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
+            "/api/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
             get(crate::script_list_paging_page_size_size),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/list/portal/{portalId}",
+            "/api/portal/assemble/designer/script/list/portal/{portalId}",
             get(crate::script_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/scriptversion/{id}",
+            "/api/portal/assemble/designer/scriptversion/{id}",
             get(crate::scriptversion_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/scriptversion/list/script/{scriptId}",
+            "/api/portal/assemble/designer/scriptversion/list/script/{scriptId}",
             get(crate::scriptversion_list_script_scriptId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/{id}",
+            "/api/portal/assemble/designer/templatepage/{id}",
             get(crate::templatepage_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/{id}",
+            "/api/portal/assemble/designer/widget/{id}",
             get(crate::widget_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/list/portal/{portalId}",
+            "/api/portal/assemble/designer/widget/list/portal/{portalId}",
             get(crate::widget_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/delete/{id}",
+            "/api/portal/assemble/designer/page/delete/{id}",
             delete(delete_page),
         )
-        .route("/jaxrs/portal/design/save", put(design_save))
+        .route("/api/portal/design/save", put(design_save))
+        .route("/api/portal/assemble/designer/save/{id}", put(save_design))
         .route(
-            "/jaxrs/portal/assemble/designer/save/{id}",
-            put(save_design),
-        )
-        .route(
-            "/jaxrs/portal/assemble/designer/page/save/{id}",
+            "/api/portal/assemble/designer/page/save/{id}",
             put(save_page),
         )
         // ── plan002 U2: page/file/import 族 + 动词差 缺口 (20) ──
         .route(
-            "/jaxrs/portal/assemble/designer/page",
+            "/api/portal/assemble/designer/page",
             post(crate::create_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/list/portal/{portalId}",
+            "/api/portal/assemble/designer/page/list/portal/{portalId}",
             get(crate::page_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/{id}",
+            "/api/portal/assemble/designer/page/{id}",
             delete(crate::delete_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/{id}",
+            "/api/portal/assemble/designer/page/{id}",
             put(crate::save_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/pageversion/list/page/{pageId}",
+            "/api/portal/assemble/designer/pageversion/list/page/{pageId}",
             get(crate::pageversion_list_page_pageId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal",
+            "/api/portal/assemble/designer/portal",
             post(crate::create_portal),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/summary",
+            "/api/portal/assemble/designer/portal/list/summary",
             get(crate::portal_list_summary),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/summary/v2",
+            "/api/portal/assemble/designer/portal/list/summary/v2",
             post(crate::portal_list_summary_v2),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}",
+            "/api/portal/assemble/designer/portal/{id}",
             delete(crate::delete_portal),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}",
+            "/api/portal/assemble/designer/portal/{id}",
             put(crate::update_portal),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}/icon",
+            "/api/portal/assemble/designer/portal/{id}/icon",
             put(crate::update_portal_icon),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}/permission",
+            "/api/portal/assemble/designer/portal/{id}/permission",
             post(crate::portal_id_permission_post),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage",
+            "/api/portal/assemble/designer/templatepage",
             post(crate::create_templatepage),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/list",
+            "/api/portal/assemble/designer/templatepage/list",
             get(crate::templatepage_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+            "/api/portal/assemble/designer/templatepage/list/category",
             get(crate::templatepage_list_category),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+            "/api/portal/assemble/designer/templatepage/list/category",
             put(crate::update_templatepage_category),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/{id}",
+            "/api/portal/assemble/designer/templatepage/{id}",
             delete(crate::delete_templatepage),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget",
+            "/api/portal/assemble/designer/widget",
             post(crate::create_widget),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/{id}",
+            "/api/portal/assemble/designer/widget/{id}",
             delete(crate::delete_widget),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/{id}",
+            "/api/portal/assemble/designer/widget/{id}",
             put(crate::update_widget),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/designer/search",
+            "/api/portal/assemble/designer/designer/search",
             post(crate::designer_search),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/list/{id}/prev/{count}",
+            "/api/portal/assemble/designer/file/list/{id}/prev/{count}",
             get(crate::file_list_id_prev_count),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/compare",
+            "/api/portal/assemble/designer/input/compare",
             put(crate::input_compare),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/cover",
+            "/api/portal/assemble/designer/input/cover",
             put(crate::input_cover),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/create",
+            "/api/portal/assemble/designer/input/create",
             put(crate::input_create),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/prepare/cover",
+            "/api/portal/assemble/designer/input/prepare/cover",
             put(crate::input_prepare_cover),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/prepare/create",
+            "/api/portal/assemble/designer/input/prepare/create",
             put(crate::input_prepare_create),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/output/list",
+            "/api/portal/assemble/designer/output/list",
             get(crate::output_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list",
+            "/api/portal/assemble/designer/portal/list",
             get(crate::portal_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portalcategory/list",
+            "/api/portal/assemble/designer/portalcategory/list",
             get(crate::portalcategory_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/list/manager",
+            "/api/portal/assemble/designer/script/list/manager",
             post(crate::script_list_manager),
         )
         // ── dict / page / widget 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
         // 注：page/create、page/save/{id}、page/delete/{id} 已被 U2 类型化 handler 占用
-        .route("/jaxrs/portal/assemble/designer/dict/list", get(dict_list))
-        .route("/jaxrs/portal/assemble/designer/dict/create", post(dict_create))
-        .route("/jaxrs/portal/assemble/designer/dict/save/{id}", put(dict_save))
-        .route("/jaxrs/portal/assemble/designer/dict/save/{id}", post(dict_save))
-        .route("/jaxrs/portal/assemble/designer/dict/delete/{id}", delete(dict_delete))
-        .route("/jaxrs/portal/assemble/designer/dict/delete/{id}", post(dict_delete))
-        .route("/jaxrs/portal/assemble/designer/page/list", get(page_list))
-        .route("/jaxrs/portal/assemble/designer/widget/list", get(widget_list))
-        .route("/jaxrs/portal/assemble/designer/widget/create", post(widget_create))
-        .route("/jaxrs/portal/assemble/designer/widget/save/{id}", put(widget_save))
-        .route("/jaxrs/portal/assemble/designer/widget/save/{id}", post(widget_save))
-        .route("/jaxrs/portal/assemble/designer/widget/delete/{id}", delete(widget_delete))
-        .route("/jaxrs/portal/assemble/designer/widget/delete/{id}", post(widget_delete))
+        .route("/api/portal/assemble/designer/dict/list", get(dict_list))
+        .route(
+            "/api/portal/assemble/designer/dict/create",
+            post(dict_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/save/{id}",
+            put(dict_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/save/{id}",
+            post(dict_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/delete/{id}",
+            delete(dict_delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/delete/{id}",
+            post(dict_delete),
+        )
+        .route("/api/portal/assemble/designer/page/list", get(page_list))
+        .route(
+            "/api/portal/assemble/designer/widget/list",
+            get(widget_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/create",
+            post(widget_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/save/{id}",
+            put(widget_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/save/{id}",
+            post(widget_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/delete/{id}",
+            delete(widget_delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/delete/{id}",
+            post(widget_delete),
+        )
 }
 
 #[cfg(test)]
@@ -757,11 +781,17 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2999,16 +3029,10 @@ pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "portalId".to_string(),
-                    Value::String(row.get("portal_id")),
-                ),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
                 ("category".to_string(), Value::String(row.get("category"))),
                 ("config".to_string(), Value::String(row.get("config"))),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get("creator")),
-                ),
+                ("creator".to_string(), Value::String(row.get("creator"))),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),

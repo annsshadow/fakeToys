@@ -506,19 +506,19 @@ pub async fn create_version(
 /// 创建思维导图核心实体路由
 pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/mind/core/entity/list", get(list))
-        .route("/jaxrs/mind/core/entity/folder/list", get(folder_list))
+        .route("/api/mind/core/entity/list", get(list))
+        .route("/api/mind/core/entity/folder/list", get(folder_list))
         .route(
-            "/jaxrs/mind/core/entity/version/list/{mindId}",
+            "/api/mind/core/entity/version/list/{mindId}",
             get(version_list),
         )
-        .route("/jaxrs/mind/core/entity/mind", post(create_mind))
-        .route("/jaxrs/mind/core/entity/mind/{id}", post(update_mind))
-        .route("/jaxrs/mind/core/entity/mind/{id}", delete(delete_mind))
-        .route("/jaxrs/mind/core/entity/folder", post(create_folder))
-        .route("/jaxrs/mind/core/entity/folder/{id}", post(update_folder))
-        .route("/jaxrs/mind/core/entity/folder/{id}", delete(delete_folder))
-        .route("/jaxrs/mind/core/entity/version", post(create_version))
+        .route("/api/mind/core/entity/mind", post(create_mind))
+        .route("/api/mind/core/entity/mind/{id}", post(update_mind))
+        .route("/api/mind/core/entity/mind/{id}", delete(delete_mind))
+        .route("/api/mind/core/entity/folder", post(create_folder))
+        .route("/api/mind/core/entity/folder/{id}", post(update_folder))
+        .route("/api/mind/core/entity/folder/{id}", delete(delete_folder))
+        .route("/api/mind/core/entity/version", post(create_version))
 }
 
 #[cfg(test)]

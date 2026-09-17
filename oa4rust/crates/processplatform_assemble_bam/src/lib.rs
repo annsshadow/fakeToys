@@ -112,7 +112,7 @@ pub async fn list_bams(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -178,101 +178,101 @@ pub async fn get_bam_status(
 }
 
 /// OA协同平台BAM配置路由
-/// Route prefix: /jaxrs/processplatform/assemble/bam/*
+/// Route prefix: /api/processplatform/assemble/bam/*
 pub fn processplatform_assemble_bam_router() -> Router {
     Router::new()
-        .route("/jaxrs/processplatform/assemble/bam/get/{id}", get(get_bam_config))
-        .route("/jaxrs/processplatform/assemble/bam/create", post(create_bam))
-        .route("/jaxrs/processplatform/assemble/bam/list/{category}", get(list_bams))
-        .route("/jaxrs/processplatform/assemble/bam/delete/{id}", post(delete_bam))
-        .route("/jaxrs/processplatform/assemble/bam/status/{id}", get(get_bam_status))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application", get(crate::period_list_completed_task_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/{unit}", get(crate::period_list_completed_task_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/application/{work}", get(crate::period_list_completed_work_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/{work}/{unit}", get(crate::period_list_completed_work_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/{count}/{applicationId}/{processId}/{activityId}/{unit}", get(crate::period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application/process/activity/{count}/{applicationId}/{processId}/{activityId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/{count}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/application/by/process/{count}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/by/application/{count}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_unit_unit_person_person_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/application/process/by/{count}/{work}/{applicationId}/{processId}/{unit}", get(crate::period_list_count_completed_work_application_applicationId_process_processId_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/application/process/{count}/{work}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/application/by/process/{count}/{work}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/by/application/{count}/{work}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_work_unit_unit_person_person_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/{count}/{applicationId}/{processId}/{activityId}/{unit}", get(crate::period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application/process/activity/{count}/{applicationId}/{processId}/{activityId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/{count}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application/by/process/{count}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/by/application/{count}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_unit_unit_person_person_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/application/process/by/{count}/{work}/{applicationId}/{processId}/{unit}", get(crate::period_list_count_expired_work_application_applicationId_process_processId_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/application/process/{count}/{work}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/application/by/process/{count}/{work}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/by/application/{count}/{work}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_work_unit_unit_person_person_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/application/process/activity/by/{count}/{start}/{applicationId}/{processId}/{activityId}/{unit}", post(crate::period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/application/process/activity/{count}/{start}/{applicationId}/{processId}/{activityId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/application/process/by/activity/{count}/{start}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/application/by/process/{count}/{start}/{applicationId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/by/application/{count}/{start}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_unit_unit_person_person_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/application/process/by/{count}/{start}/{work}/{applicationId}/{processId}/{unit}", post(crate::period_list_count_start_work_application_applicationId_process_processId_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/application/process/{count}/{start}/{work}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/application/by/process/{count}/{start}/{work}/{applicationId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/by/application/{count}/{start}/{work}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_work_unit_unit_person_person_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/application", get(crate::period_list_expired_task_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/{unit}", get(crate::period_list_expired_task_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/application/{work}", get(crate::period_list_expired_work_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/{work}/{unit}", get(crate::period_list_expired_work_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/application/{start}", post(crate::period_list_start_task_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/task/{start}/{unit}", post(crate::period_list_start_task_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/application/{start}/{work}", post(crate::period_list_start_work_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/{start}/{work}/{unit}", post(crate::period_list_start_work_unit))
-        .route("/jaxrs/processplatform/assemble/bam/state/trigger/{category}", post(crate::state_category_trigger))
-        // *** plan002 U2 — Java exact path alignment (GET, see final_coverage_sweep note) ***
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs", get(bam_stubs_completed_task_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs", get(bam_stubs_completed_task_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs", get(bam_stubs_completed_work_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/completed/work/unitstubs", get(bam_stubs_completed_work_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/applicationstubs", get(bam_stubs_expired_task_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/task/unitstubs", get(bam_stubs_expired_task_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/work/applicationstubs", get(bam_stubs_expired_work_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/expired/work/unitstubs", get(bam_stubs_expired_work_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/start/task/applicationstubs", get(bam_stubs_start_task_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/start/task/unitstubs", get(bam_stubs_start_task_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/start/work/applicationstubs", get(bam_stubs_start_work_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/start/work/unitstubs", get(bam_stubs_start_work_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_completed_task_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_completed_task_total))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_completed_task_by_activity))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_completed_task_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/unit/{unit}/person/{person}/by/application", get(bam_count_completed_task_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_completed_work_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_completed_work_total))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_completed_work_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/completed/work/unit/{unit}/person/{person}/by/application", get(bam_count_completed_work_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_expired_task_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_expired_task_total))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_expired_task_by_activity))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_expired_task_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/task/unit/{unit}/person/{person}/by/application", get(bam_count_expired_task_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_expired_work_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_expired_work_total))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_expired_work_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/expired/work/unit/{unit}/person/{person}/by/application", get(bam_count_expired_work_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_start_task_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_start_task_total))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_start_task_by_activity))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_start_task_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/task/unit/{unit}/person/{person}/by/application", get(bam_count_start_task_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_start_work_by_unit))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_start_work_total))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_start_work_by_process))
-        .route("/jaxrs/processplatform/assemble/bam/period/list/count/start/work/unit/{unit}/person/{person}/by/application", get(bam_count_start_work_by_application))
-        .route("/jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger", get(state_applicationtstubs_trigger))
-        .route("/jaxrs/processplatform/assemble/bam/state/category", get(state_category))
-        .route("/jaxrs/processplatform/assemble/bam/state/category/trigger", get(state_category_trigger_all))
-        .route("/jaxrs/processplatform/assemble/bam/state/summary", get(state_summary))
-        .route("/jaxrs/processplatform/assemble/bam/state/running", get(state_running))
-        .route("/jaxrs/processplatform/assemble/bam/state/organization", get(state_organization))
-        .route("/jaxrs/processplatform/assemble/bam/delete/{id}", delete(delete_bam))
+        .route("/api/processplatform/assemble/bam/get/{id}", get(get_bam_config))
+        .route("/api/processplatform/assemble/bam/create", post(create_bam))
+        .route("/api/processplatform/assemble/bam/list/{category}", get(list_bams))
+        .route("/api/processplatform/assemble/bam/delete/{id}", post(delete_bam))
+        .route("/api/processplatform/assemble/bam/status/{id}", get(get_bam_status))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/application", get(crate::period_list_completed_task_application))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/{unit}", get(crate::period_list_completed_task_unit))
+        .route("/api/processplatform/assemble/bam/period/list/completed/application/{work}", get(crate::period_list_completed_work_application))
+        .route("/api/processplatform/assemble/bam/period/list/completed/{work}/{unit}", get(crate::period_list_completed_work_unit))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/{count}/{applicationId}/{processId}/{activityId}/{unit}", get(crate::period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/{count}/{applicationId}/{processId}/{activityId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/{count}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/{count}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/by/application/{count}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_task_unit_unit_person_person_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/completed/application/process/by/{count}/{work}/{applicationId}/{processId}/{unit}", get(crate::period_list_count_completed_work_application_applicationId_process_processId_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/completed/application/process/{count}/{work}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person))
+        .route("/api/processplatform/assemble/bam/period/list/completed/application/by/process/{count}/{work}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/completed/by/application/{count}/{work}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_completed_work_unit_unit_person_person_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/{count}/{applicationId}/{processId}/{activityId}/{unit}", get(crate::period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/{count}/{applicationId}/{processId}/{activityId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/{count}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/{count}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/by/application/{count}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_task_unit_unit_person_person_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/application/process/by/{count}/{work}/{applicationId}/{processId}/{unit}", get(crate::period_list_count_expired_work_application_applicationId_process_processId_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/expired/application/process/{count}/{work}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person))
+        .route("/api/processplatform/assemble/bam/period/list/expired/application/by/process/{count}/{work}/{applicationId}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/expired/by/application/{count}/{work}/{unit}/{unit}/{person}/{person}", get(crate::period_list_count_expired_work_unit_unit_person_person_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/task/application/process/activity/by/{count}/{start}/{applicationId}/{processId}/{activityId}/{unit}", post(crate::period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/task/application/process/activity/{count}/{start}/{applicationId}/{processId}/{activityId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person))
+        .route("/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/{count}/{start}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity))
+        .route("/api/processplatform/assemble/bam/period/list/task/application/by/process/{count}/{start}/{applicationId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/task/by/application/{count}/{start}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_task_unit_unit_person_person_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/application/process/by/{count}/{start}/{work}/{applicationId}/{processId}/{unit}", post(crate::period_list_count_start_work_application_applicationId_process_processId_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/application/process/{count}/{start}/{work}/{applicationId}/{processId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person))
+        .route("/api/processplatform/assemble/bam/period/list/application/by/process/{count}/{start}/{work}/{applicationId}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/by/application/{count}/{start}/{work}/{unit}/{unit}/{person}/{person}", post(crate::period_list_count_start_work_unit_unit_person_person_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/application", get(crate::period_list_expired_task_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/{unit}", get(crate::period_list_expired_task_unit))
+        .route("/api/processplatform/assemble/bam/period/list/expired/application/{work}", get(crate::period_list_expired_work_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/{work}/{unit}", get(crate::period_list_expired_work_unit))
+        .route("/api/processplatform/assemble/bam/period/list/task/application/{start}", post(crate::period_list_start_task_application))
+        .route("/api/processplatform/assemble/bam/period/list/task/{start}/{unit}", post(crate::period_list_start_task_unit))
+        .route("/api/processplatform/assemble/bam/period/list/application/{start}/{work}", post(crate::period_list_start_work_application))
+        .route("/api/processplatform/assemble/bam/period/list/{start}/{work}/{unit}", post(crate::period_list_start_work_unit))
+        .route("/api/processplatform/assemble/bam/state/trigger/{category}", post(crate::state_category_trigger))
+        // *** plan002 U2 — o2server exact path alignment (GET, see final_coverage_sweep note) ***
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs", get(bam_stubs_completed_task_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/completed/task/unitstubs", get(bam_stubs_completed_task_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs", get(bam_stubs_completed_work_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/completed/work/unitstubs", get(bam_stubs_completed_work_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs", get(bam_stubs_expired_task_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/task/unitstubs", get(bam_stubs_expired_task_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/expired/work/applicationstubs", get(bam_stubs_expired_work_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/expired/work/unitstubs", get(bam_stubs_expired_work_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/start/task/applicationstubs", get(bam_stubs_start_task_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/start/task/unitstubs", get(bam_stubs_start_task_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/start/work/applicationstubs", get(bam_stubs_start_work_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/start/work/unitstubs", get(bam_stubs_start_work_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_completed_task_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_completed_task_total))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_completed_task_by_activity))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_completed_task_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/task/unit/{unit}/person/{person}/by/application", get(bam_count_completed_task_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_completed_work_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_completed_work_total))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_completed_work_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/count/completed/work/unit/{unit}/person/{person}/by/application", get(bam_count_completed_work_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_expired_task_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_expired_task_total))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_expired_task_by_activity))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_expired_task_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/task/unit/{unit}/person/{person}/by/application", get(bam_count_expired_task_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_expired_work_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_expired_work_total))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_expired_work_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/count/expired/work/unit/{unit}/person/{person}/by/application", get(bam_count_expired_work_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit", get(bam_count_start_task_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}", get(bam_count_start_task_total))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity", get(bam_count_start_task_by_activity))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_start_task_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/task/unit/{unit}/person/{person}/by/application", get(bam_count_start_task_by_application))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/by/unit", get(bam_count_start_work_by_unit))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}", get(bam_count_start_work_total))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/unit/{unit}/person/{person}/by/process", get(bam_count_start_work_by_process))
+        .route("/api/processplatform/assemble/bam/period/list/count/start/work/unit/{unit}/person/{person}/by/application", get(bam_count_start_work_by_application))
+        .route("/api/processplatform/assemble/bam/state/applicationtstubs/trigger", get(state_applicationtstubs_trigger))
+        .route("/api/processplatform/assemble/bam/state/category", get(state_category))
+        .route("/api/processplatform/assemble/bam/state/category/trigger", get(state_category_trigger_all))
+        .route("/api/processplatform/assemble/bam/state/summary", get(state_summary))
+        .route("/api/processplatform/assemble/bam/state/running", get(state_running))
+        .route("/api/processplatform/assemble/bam/state/organization", get(state_organization))
+        .route("/api/processplatform/assemble/bam/delete/{id}", delete(delete_bam))
 }
 
 #[cfg(test)]
@@ -330,7 +330,7 @@ pub async fn period_list_completed_task_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -375,7 +375,7 @@ pub async fn period_list_completed_task_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -418,7 +418,7 @@ pub async fn period_list_completed_work_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -462,7 +462,7 @@ pub async fn period_list_completed_work_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -504,7 +504,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -532,7 +532,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -574,7 +574,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -615,7 +615,7 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -655,7 +655,7 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -686,7 +686,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -717,7 +717,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -752,7 +752,7 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -790,7 +790,7 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -835,7 +835,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -865,7 +865,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -906,7 +906,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -943,7 +943,7 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -983,7 +983,7 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1014,7 +1014,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -1045,7 +1045,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -1080,7 +1080,7 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1118,7 +1118,7 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1163,7 +1163,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1193,7 +1193,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -1234,7 +1234,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1271,7 +1271,7 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1311,7 +1311,7 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1342,7 +1342,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -1373,7 +1373,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
         0
     };
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(vec![]),
         cnt,
         0,
@@ -1408,7 +1408,7 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1446,7 +1446,7 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1495,7 +1495,7 @@ pub async fn period_list_expired_task_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1540,7 +1540,7 @@ pub async fn period_list_expired_task_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1583,7 +1583,7 @@ pub async fn period_list_expired_work_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Object(serde_json::Map::new()),
         count,
         0,
@@ -1627,7 +1627,7 @@ pub async fn period_list_expired_work_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1676,7 +1676,7 @@ pub async fn period_list_start_task_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1721,7 +1721,7 @@ pub async fn period_list_start_task_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1764,7 +1764,7 @@ pub async fn period_list_start_work_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1808,7 +1808,7 @@ pub async fn period_list_start_work_unit(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1874,7 +1874,7 @@ pub async fn state_applicationtstubs_trigger(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1932,7 +1932,7 @@ pub async fn state_category(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2296,7 +2296,7 @@ pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 }
 
 // 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-// plan002 U2 路 Java 绮剧‘璺緞闂悎锛?2 涓洃鎺х鐐癸級
+// plan002 U2 路 o2server 绮剧‘璺緞闂悎锛?2 涓洃鎺х鐐癸級
 //
 // 鏁版嵁婧愬叏閮ㄤ负鏃㈡湁琛細x_task / x_work锛坢igration 020锛夈€亁_org_person锛?22锛夈€?
 // pp_e_application锛?32锛夈€傜粺璁″彛寰勶細
@@ -2345,7 +2345,7 @@ async fn period_count_query(
     period_count_query_shaped(pool, kind, period, filter, group, false).await
 }
 
-/// Above: when java_shape=true, follow Java and return wrapped array (data=split array, count=total count)
+/// Above: when legacy_shape=true, follow o2server and return wrapped array (data=split array, count=total count)
 /// Single endpoint for dual-shape listing endpoints; path distinguishes by {count,data} state
 async fn period_count_query_shaped(
     pool: &Pool,
@@ -2353,7 +2353,7 @@ async fn period_count_query_shaped(
     period: &str,
     filter: &PeriodFilter,
     group: Option<&str>,
-    java_shape: bool,
+    legacy_shape: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let pred = period_predicate(kind, period);
@@ -2429,17 +2429,17 @@ async fn period_count_query_shaped(
                 })
                 .collect();
             let count = data.len() as i64;
-            if java_shape {
-                // Java returns LinkedHashMap<String, List<Wo>> (Object with month keys)
-                // When empty DB, return empty Object {} to match Java type
-                return Ok(Json(ActionResult::java_success(
+            if legacy_shape {
+                // o2server returns LinkedHashMap<String, List<Wo>> (Object with month keys)
+                // When empty DB, return empty Object {} to match o2server type
+                return Ok(Json(ActionResult::legacy_success(
                     Value::Object(serde_json::Map::new()),
                     0,
                     0,
                 )));
             }
             let count2 = count;
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(data),
                 count2,
                 0,
@@ -2447,9 +2447,9 @@ async fn period_count_query_shaped(
         }
         None => {
             let total: i64 = rows.first().map(|r| r.get("cnt")).unwrap_or(0);
-            // total 鍨嬬鐐?Java 瀹炴祴杩斿洖瑁告暟缁勶紙绌烘暟鎹椂涓?[]锛夛紝璁℃暟鏀句俊灏?
-            if java_shape {
-                return Ok(Json(ActionResult::java_success(
+            // total 鍨嬬鐐?o2server 瀹炴祴杩斿洖瑁告暟缁勶紙绌烘暟鎹椂涓?[]锛夛紝璁℃暟鏀句俊灏?
+            if legacy_shape {
+                return Ok(Json(ActionResult::legacy_success(
                     Value::Object(serde_json::Map::new()),
                     total,
                     0,
@@ -2593,7 +2593,7 @@ type BamPath3 = axum::extract::Path<(String, String, String)>;
 type BamPath4 = axum::extract::Path<(String, String, String, String)>;
 type BamPath5 = axum::extract::Path<(String, String, String, String, String)>;
 
-/// completed/task stubs — Java path unique alias (no double-count)
+/// completed/task stubs — o2server path unique alias (no double-count)
 #[allow(non_snake_case)]
 pub async fn bam_count_completed_task_by_unit(
     pool: Extension<Pool>,
