@@ -314,3 +314,25 @@ class TestDatasetViewExtended:
         view = DatasetView(sample_dataset)
         tail = view.tail(2)
         assert isinstance(tail, DatasetView)
+
+
+class TestIndexerExtended2:
+    """索引器第二轮扩展测试"""
+
+    def test_indexer_empty_items(self):
+        """空项目索引器"""
+        indexer = DatasetIndexer([])
+        stats = indexer.get_statistics()
+        assert stats["total_items"] == 0
+
+    def test_view_filter_all_items(self):
+        """过滤全部项目"""
+        view = DatasetView([{"a": 1}])
+        filtered = view.filter(lambda x: True)
+        assert len(filtered) == 1
+
+    def test_view_filter_no_items(self):
+        """过滤无项目"""
+        view = DatasetView([{"a": 1}])
+        filtered = view.filter(lambda x: False)
+        assert len(filtered) == 0
