@@ -108,6 +108,84 @@ class TestEndpointConstruction:
         assert backend.api_url == "http://localhost:11434/api/chat"
 
 
+class TestModelBaseExtended:
+    """ModelBackend 基类会话与重试扩展测试"""
+
+    def test_get_session_reuses_instance(self):
+        """会话应复用：二次获取返回同一实例"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        session = backend._get_session()
+        assert backend._get_session() is session
+
+    def test_get_session_concurrent_single_instance(self):
+        """并发获取会话不应创建多个实例（双重检查锁）"""
+        import threading
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        results = []
+        barrier = threading.Barrier(4)
+
+        def fetch():
+            barrier.wait()
+            results.append(backend._get_session())
+
+        threads = [threading.Thread(target=fetch) for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert len(set(id(s) for s in results)) == 1
+
+    def test_get_session_with_preexisting_value(self):
+        """已有会话对象时应直接返回"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        sentinel = object()
+        backend._session = sentinel
+        assert backend._get_session() is sentinel
+
+    def test_generate_retries_then_succeeds(self):
+        """前两次失败后成功，重试机制应返回结果并记录错误"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        calls = {"n": 0}
+
+        def flaky(prompt):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise RuntimeError("transient")
+            return "ok"
+
+        backend._call_api = flaky
+        result = backend.generate("p", max_retries=3, retry_delay=0)
+        assert result == "ok"
+        assert calls["n"] == 3
+        assert backend._error_count == 2
+
+    def test_generate_exhausts_retries_raises(self):
+        """重试耗尽后应抛出最后一次异常"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+
+        def always_fail(prompt):
+            raise RuntimeError("down")
+
+        backend._call_api = always_fail
+        with pytest.raises(RuntimeError, match="down"):
+            backend.generate("p", max_retries=2, retry_delay=0)
+        assert backend._error_count == 2
+
+    def test_counters_track_requests_and_errors(self):
+        """成功与失败应分别计入计数器"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        backend._call_api = lambda prompt: "ok"
+        backend.generate("ok", max_retries=1, retry_delay=0)
+        assert backend._request_count == 1
+        assert backend._error_count == 0
+
+    def test_counters_initial_zero(self):
+        """新建后端计数器应为 0"""
+        backend = OpenAIBackend(ModelConfig(type="openai", api_key="k", model="m"))
+        assert backend._request_count == 0
+        assert backend._error_count == 0
+
+
 class TestJsonExtraction:
     """JSON 提取"""
 
