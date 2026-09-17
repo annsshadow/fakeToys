@@ -26,6 +26,26 @@ class TestScorerInit:
         with pytest.raises(ValueError):
             QualityScorer(weights=[0.5, 0.5, 0.5])
 
+    def test_custom_weights(self):
+        """自定义权重应正确设置"""
+        scorer = QualityScorer(weights=[0.4, 0.3, 0.3])
+        assert scorer.weights == [0.4, 0.3, 0.3]
+
+    def test_custom_threshold(self):
+        """自定义阈值应正确设置"""
+        scorer = QualityScorer(threshold=0.8)
+        assert scorer.threshold == 0.8
+
+    def test_default_diversity_sample_size(self):
+        """默认多样性采样大小应为 30"""
+        scorer = QualityScorer()
+        assert scorer.diversity_sample_size == 30
+
+    def test_custom_diversity_sample_size(self):
+        """自定义多样性采样大小应正确设置"""
+        scorer = QualityScorer(diversity_sample_size=50)
+        assert scorer.diversity_sample_size == 50
+
 
 class TestSimilarityFallback:
     """无模型时的 fallback 行为"""
@@ -44,6 +64,22 @@ class TestSimilarityFallback:
         """空文本不应触发除零错误"""
         scorer = QualityScorer()
         assert scorer._ngram_similarity("", "abc") == 0.0
+
+    def test_ngram_similarity_one_empty(self):
+        """一个空文本相似度应为 0"""
+        scorer = QualityScorer()
+        assert scorer._ngram_similarity("abc", "") == 0.0
+
+    def test_ngram_similarity_both_empty(self):
+        """两个空文本相似度应为 0"""
+        scorer = QualityScorer()
+        assert scorer._ngram_similarity("", "") == 0.0
+
+    def test_ngram_similarity_partial_match(self):
+        """部分匹配的文本相似度应在 0-1 之间"""
+        scorer = QualityScorer()
+        sim = scorer._ngram_similarity("hello world", "hello python")
+        assert 0.0 < sim < 1.0
 
 
 class TestScoring:
@@ -93,6 +129,39 @@ class TestScoring:
         filtered = scorer.filter_by_quality(items)
         assert len(filtered) <= len(items)
 
+    def test_score_returns_quality_score(self):
+        """评分应返回 QualityScore 实例"""
+        scorer = QualityScorer()
+        result = scorer.score("问题", "问题", "回答")
+        
+        assert hasattr(result, 'semantic_similarity')
+        assert hasattr(result, 'relevance')
+        assert hasattr(result, 'diversity')
+        assert hasattr(result, 'total_score')
+        assert hasattr(result, 'passed')
+
+    def test_score_values_in_range(self):
+        """评分值应在 0-1 之间"""
+        scorer = QualityScorer()
+        result = scorer.score("问题", "问题", "回答")
+        
+        assert 0.0 <= result.semantic_similarity <= 1.0
+        assert 0.0 <= result.relevance <= 1.0
+        assert 0.0 <= result.diversity <= 1.0
+        assert 0.0 <= result.total_score <= 1.0
+
+    def test_batch_score_with_existing_generated(self):
+        """批量评分时应考虑已生成的问题"""
+        scorer = QualityScorer()
+        items = [
+            {"original": "问题1", "generated": "问题1", "output": "回答1"},
+            {"original": "问题2", "generated": "问题2", "output": "回答2"},
+        ]
+        existing = ["问题1"]
+        scores = scorer.batch_score(items, existing)
+        
+        assert len(scores) == len(items)
+
 
 class TestReport:
     """质量报告"""
@@ -133,3 +202,62 @@ class TestReport:
         assert scorer._existing_embeddings == []
         assert scorer._existing_texts == []
         assert scorer._existing_texts_hash is None
+
+    def test_report_statistics(self):
+        """报告统计值应正确计算"""
+        scorer = QualityScorer()
+        items = [
+            {"original": "问题1", "generated": "问题1", "output": "回答1"},
+            {"original": "问题2", "generated": "问题2", "output": "回答2"},
+        ]
+        report = scorer.generate_report(items)
+        
+        assert "mean" in report["total_score"]
+        assert "std" in report["total_score"]
+        assert "min" in report["total_score"]
+        assert "max" in report["total_score"]
+
+    def test_report_pass_rate(self):
+        """通过率应正确计算"""
+        scorer = QualityScorer(threshold=0.0)
+        items = [
+            {"original": "问题", "generated": "问题", "output": "回答"},
+        ]
+        report = scorer.generate_report(items)
+        
+        assert report["pass_rate"] == 1.0
+
+
+class TestComputeTextsHash:
+    """文本哈希计算测试"""
+
+    def test_hash_consistent(self):
+        """相同文本应产生相同哈希"""
+        scorer = QualityScorer()
+        texts = ["hello", "world"]
+        
+        hash1 = scorer._compute_texts_hash(texts)
+        hash2 = scorer._compute_texts_hash(texts)
+        
+        assert hash1 == hash2
+
+    def test_hash_different_for_different_texts(self):
+        """不同文本应产生不同哈希"""
+        scorer = QualityScorer()
+        texts1 = ["hello"]
+        texts2 = ["world"]
+        
+        hash1 = scorer._compute_texts_hash(texts1)
+        hash2 = scorer._compute_texts_hash(texts2)
+        
+        assert hash1 != hash2
+
+    def test_hash_uses_first_100_items(self):
+        """哈希应只使用前 100 条文本"""
+        scorer = QualityScorer()
+        texts = [f"item{i}" for i in range(200)]
+        
+        hash1 = scorer._compute_texts_hash(texts)
+        hash2 = scorer._compute_texts_hash(texts[:100])
+        
+        assert hash1 == hash2
