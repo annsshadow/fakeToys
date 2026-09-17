@@ -49,6 +49,7 @@ from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
 from .data_pipeline import DataPipeline, StageResult
+from .aggregator import DataAggregator, AggregationResult, aggregate_datasets
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -217,6 +218,9 @@ __all__ = [
     "auto_recommend",
     "DataPipeline",
     "StageResult",
+    "DataAggregator",
+    "AggregationResult",
+    "aggregate_datasets",
     "AugmentorError",
     "ConfigError",
     "ModelError",
