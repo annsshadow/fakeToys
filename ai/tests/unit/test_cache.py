@@ -230,3 +230,132 @@ class TestConvenienceFunctions:
         cache = create_disk_cache(str(cache_dir))
         assert isinstance(cache, DiskCache)
         assert cache_dir.exists()
+
+
+class TestCacheEntry:
+    """CacheEntry 测试"""
+
+    def test_is_expired_none_ttl(self):
+        """ttl 为 None 时不应过期"""
+        from augmentor.cache import CacheEntry
+        entry = CacheEntry(key="k", value="v", created_at=time.time(), ttl=None)
+        assert entry.is_expired is False
+
+    def test_is_expired_not_yet(self):
+        """未过期条目应返回 False"""
+        from augmentor.cache import CacheEntry
+        entry = CacheEntry(key="k", value="v", created_at=time.time(), ttl=3600)
+        assert entry.is_expired is False
+
+    def test_is_expired_already(self):
+        """已过期条目应返回 True"""
+        from augmentor.cache import CacheEntry
+        entry = CacheEntry(key="k", value="v", created_at=time.time() - 100, ttl=1)
+        assert entry.is_expired is True
+
+    def test_to_dict(self):
+        """to_dict 应返回正确结构"""
+        from augmentor.cache import CacheEntry
+        entry = CacheEntry(key="k", value="v", created_at=1000.0, ttl=60, hit_count=5)
+        d = entry.to_dict()
+        assert d["key"] == "k"
+        assert d["created_at"] == 1000.0
+        assert d["ttl"] == 60
+        assert d["hit_count"] == 5
+        assert "is_expired" in d
+
+
+class TestDiskCacheExtended:
+    """DiskCache 扩展测试"""
+
+    def test_ttl_expiration(self, tmp_path):
+        """磁盘缓存 TTL 过期应删除条目"""
+        cache_dir = tmp_path / "cache"
+        cache = DiskCache(str(cache_dir), default_ttl=0.1)
+        cache.set("key1", "value1")
+        assert cache.get("key1") == "value1"
+        time.sleep(0.2)
+        assert cache.get("key1") is None
+
+    def test_get_cache_path(self, tmp_path):
+        """缓存路径应使用 MD5 哈希"""
+        cache_dir = tmp_path / "cache"
+        cache = DiskCache(str(cache_dir))
+        path = cache._get_cache_path("test_key")
+        assert path.suffix == ".json"
+        assert len(path.stem) == 32  # MD5 hex length
+
+    def test_load_metadata(self, tmp_path):
+        """加载元数据应从文件读取"""
+        cache_dir = tmp_path / "cache"
+        cache = DiskCache(str(cache_dir))
+        cache.set("key1", "value1", ttl=60)
+        
+        # 重新加载
+        meta = cache._load_metadata()
+        assert "key1" in meta
+        assert "created_at" in meta["key1"]
+
+    def test_save_metadata(self, tmp_path):
+        """保存元数据应写入文件"""
+        cache_dir = tmp_path / "cache"
+        cache = DiskCache(str(cache_dir))
+        cache._metadata["test"] = {"value": 123}
+        cache._save_metadata()
+        
+        # 验证文件存在
+        assert cache._metadata_file.exists()
+
+    def test_delete_nonexistent(self, tmp_path):
+        """删除不存在的键应正常返回"""
+        cache_dir = tmp_path / "cache"
+        cache = DiskCache(str(cache_dir))
+        assert cache.delete("nonexistent") is True
+
+    def test_stats_with_entries(self, tmp_path):
+        """统计信息应包含条目数和总大小"""
+        cache_dir = tmp_path / "cache"
+        cache = DiskCache(str(cache_dir))
+        cache.set("key1", "value1")
+        cache.set("key2", {"nested": "data"})
+        
+        stats = cache.stats
+        assert stats["entries"] == 2
+        assert stats["total_size_bytes"] > 0
+
+
+class TestMemoryCacheExtended:
+    """MemoryCache 扩展测试"""
+
+    def test_stats_no_requests(self):
+        """无请求时命中率应为 0"""
+        cache = MemoryCache()
+        stats = cache.stats
+        assert stats["hit_rate"] == 0
+
+    def test_evict_expired_entries(self):
+        """淘汰时应先删除过期条目"""
+        cache = MemoryCache(max_size=2)
+        cache.set("expired", "val", ttl=0.01)
+        time.sleep(0.05)
+        cache.set("key2", "value2")
+        
+        # expired 应被删除
+        assert cache.get("expired") is None
+
+    def test_default_ttl(self):
+        """默认 TTL 应被使用"""
+        cache = MemoryCache(default_ttl=0.1)
+        cache.set("key1", "value1")
+        assert cache.get("key1") == "value1"
+        time.sleep(0.2)
+        assert cache.get("key1") is None
+
+    def test_hit_count_increments(self):
+        """访问应增加 hit_count"""
+        cache = MemoryCache()
+        cache.set("key1", "value1")
+        cache.get("key1")
+        cache.get("key1")
+        
+        assert cache._cache["key1"].hit_count == 2
