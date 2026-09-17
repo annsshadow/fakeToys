@@ -48,7 +48,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/task/count/test_user")
+                    .uri("/api/process/task/count/test_user")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/read/count/test_user")
+                    .uri("/api/process/read/count/test_user")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -106,7 +106,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/application/list")
+                    .uri("/api/process/application/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),

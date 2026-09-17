@@ -9,9 +9,9 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, named_list_response, ok_java_list, string_list, PICK_ANY};
+use crate::endpoints::{capped, named_list_response, ok_legacy_list, string_list, PICK_ANY};
 
-/// POST /jaxrs/unit/list: batch unit lookup (Java UnitAction#list; GET variant is control's).
+/// POST /api/unit/list: batch unit lookup (o2server UnitAction#list; GET variant is control's).
 pub async fn unit_list(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -19,7 +19,7 @@ pub async fn unit_list(
     unit_batch(pool, body).await
 }
 
-/// POST /jaxrs/unit/list/object: batch unit objects.
+/// POST /api/unit/list/object: batch unit objects.
 pub async fn unit_list_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -34,7 +34,7 @@ async fn unit_batch(
     let flags = string_list(&body, "unitList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -49,10 +49,10 @@ async fn unit_batch(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// GET /jaxrs/unit/list/all: all unit ids.
+/// GET /api/unit/list/all: all unit ids.
 pub async fn unit_list_all(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
@@ -68,10 +68,10 @@ pub async fn unit_list_all(
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))
         .collect();
-    ok_java_list(list.len(), list)
+    ok_legacy_list(list.len(), list)
 }
 
-/// GET /jaxrs/unit/list/all/object: all unit objects.
+/// GET /api/unit/list/all/object: all unit objects.
 pub async fn unit_list_all_object(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
@@ -84,7 +84,7 @@ pub async fn unit_list_all_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    crate::endpoints::ok_java_list(data.len(), data)
+    crate::endpoints::ok_legacy_list(data.len(), data)
 }
 
 async fn unit_tree_scope(
@@ -140,7 +140,7 @@ async fn unit_tree_scope(
     let flags = string_list(&body, "unitList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = match (direction, nested, objects) {
         ("sub", false, false) => SUB_DIRECT_SQL,
@@ -159,17 +159,17 @@ async fn unit_tree_scope(
         .map_err(|_| AppError::Internal)?;
     if objects {
         let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<Value> = rows
             .iter()
             .map(|r| Value::String(r.get::<_, String>("id")))
             .collect();
-        ok_java_list(list.len(), list)
+        ok_legacy_list(list.len(), list)
     }
 }
 
-/// POST /jaxrs/unit/list/unit/sub/direct: direct child units.
+/// POST /api/unit/list/unit/sub/direct: direct child units.
 pub async fn unit_list_unit_sub_direct(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -177,7 +177,7 @@ pub async fn unit_list_unit_sub_direct(
     unit_tree_scope(pool, body, "sub", false, false).await
 }
 
-/// POST /jaxrs/unit/list/unit/sub/nested: recursive descendant units.
+/// POST /api/unit/list/unit/sub/nested: recursive descendant units.
 pub async fn unit_list_unit_sub_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -185,7 +185,7 @@ pub async fn unit_list_unit_sub_nested(
     unit_tree_scope(pool, body, "sub", true, false).await
 }
 
-/// POST /jaxrs/unit/list/unit/sup/direct: direct parent units.
+/// POST /api/unit/list/unit/sup/direct: direct parent units.
 pub async fn unit_list_unit_sup_direct(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -193,7 +193,7 @@ pub async fn unit_list_unit_sup_direct(
     unit_tree_scope(pool, body, "sup", false, false).await
 }
 
-/// POST /jaxrs/unit/list/unit/sup/nested: recursive ancestor units.
+/// POST /api/unit/list/unit/sup/nested: recursive ancestor units.
 pub async fn unit_list_unit_sup_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -201,7 +201,7 @@ pub async fn unit_list_unit_sup_nested(
     unit_tree_scope(pool, body, "sup", true, false).await
 }
 
-/// POST /jaxrs/unit/list/unit/sub/direct/object (Java ActionListWithUnitSubDirectObject)。
+/// POST /api/unit/list/unit/sub/direct/object (o2server ActionListWithUnitSubDirectObject)。
 pub async fn unit_list_unit_sub_direct_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -209,7 +209,7 @@ pub async fn unit_list_unit_sub_direct_object(
     unit_tree_scope(pool, body, "sub", false, true).await
 }
 
-/// POST /jaxrs/unit/list/unit/sub/nested/object。
+/// POST /api/unit/list/unit/sub/nested/object。
 pub async fn unit_list_unit_sub_nested_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -217,7 +217,7 @@ pub async fn unit_list_unit_sub_nested_object(
     unit_tree_scope(pool, body, "sub", true, true).await
 }
 
-/// POST /jaxrs/unit/list/unit/sup/direct/object。
+/// POST /api/unit/list/unit/sup/direct/object。
 pub async fn unit_list_unit_sup_direct_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -225,7 +225,7 @@ pub async fn unit_list_unit_sup_direct_object(
     unit_tree_scope(pool, body, "sup", false, true).await
 }
 
-/// POST /jaxrs/unit/list/unit/sup/nested/object。
+/// POST /api/unit/list/unit/sup/nested/object。
 pub async fn unit_list_unit_sup_nested_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -233,8 +233,8 @@ pub async fn unit_list_unit_sup_nested_object(
     unit_tree_scope(pool, body, "sup", true, true).await
 }
 
-/// POST /jaxrs/unit/check/unit/has/person: does the person hold an identity
-/// within the given unit? (Java UnitAction#checkHasPerson → ActionHasPerson)
+/// POST /api/unit/check/unit/has/person: does the person hold an identity
+/// within the given unit? (o2server UnitAction#checkHasPerson → ActionHasPerson)
 ///
 /// Wi = {person, unit, recursive(default true)}; Wo = WrapBoolean →
 /// `data: {value: <bool>}`. person/unit 均可按 id 或名称定位；基础判定 =
@@ -244,9 +244,20 @@ pub async fn unit_check_unit_has_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let person = body.get("person").and_then(Value::as_str).unwrap_or("").trim();
-    let unit = body.get("unit").and_then(Value::as_str).unwrap_or("").trim();
-    let recursive = body.get("recursive").and_then(Value::as_bool).unwrap_or(true);
+    let person = body
+        .get("person")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
+    let unit = body
+        .get("unit")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim();
+    let recursive = body
+        .get("recursive")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
 
     let mut value = false;
     if !person.is_empty() && !unit.is_empty() {
@@ -276,8 +287,10 @@ pub async fn unit_check_unit_has_person(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-            let seeds: Vec<String> =
-                seed_rows.iter().map(|r| r.get::<_, String>("unit_id")).collect();
+            let seeds: Vec<String> = seed_rows
+                .iter()
+                .map(|r| r.get::<_, String>("unit_id"))
+                .collect();
             if !seeds.is_empty() {
                 // 基础判定：身份组织的自身 + 全部子孙组织
                 let sub_rows = client
@@ -291,7 +304,9 @@ pub async fn unit_check_unit_has_person(
                     )
                     .await
                     .map_err(|_| AppError::Internal)?;
-                value = sub_rows.iter().any(|r| r.get::<_, String>("id") == target_id);
+                value = sub_rows
+                    .iter()
+                    .any(|r| r.get::<_, String>("id") == target_id);
                 // recursive 判定：目标组织位于任一身份组织的祖先链（sup-nested）
                 if !value && recursive {
                     let sup_rows = client
@@ -305,7 +320,9 @@ pub async fn unit_check_unit_has_person(
                         )
                         .await
                         .map_err(|_| AppError::Internal)?;
-                    value = sup_rows.iter().any(|r| r.get::<_, String>("id") == target_id);
+                    value = sup_rows
+                        .iter()
+                        .any(|r| r.get::<_, String>("id") == target_id);
                 }
             }
         }
@@ -317,7 +334,7 @@ pub async fn unit_check_unit_has_person(
 
 // ── Group ─────────────────────────────────────────────────────────────────────
 
-/// POST /jaxrs/group/list: batch group lookup.
+/// POST /api/group/list: batch group lookup.
 pub async fn group_list(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -325,7 +342,7 @@ pub async fn group_list(
     let flags = string_list(&body, "groupList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -339,10 +356,10 @@ pub async fn group_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/group/list/object: batch group objects with member lists.
+/// POST /api/group/list/object: batch group objects with member lists.
 pub async fn group_list_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -350,7 +367,7 @@ pub async fn group_list_object(
     let flags = string_list(&body, "groupList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -385,10 +402,10 @@ pub async fn group_list_object(
         }
         data.push(obj);
     }
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/group/list/person: persons contained in the given groups.
+/// POST /api/group/list/person: persons contained in the given groups.
 pub async fn group_list_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -396,7 +413,7 @@ pub async fn group_list_person(
     let flags = string_list(&body, "groupList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -410,12 +427,12 @@ pub async fn group_list_person(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 // ── Role ──────────────────────────────────────────────────────────────────────
 
-/// POST /jaxrs/role/list: batch role lookup.
+/// POST /api/role/list: batch role lookup.
 pub async fn role_list(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -423,7 +440,7 @@ pub async fn role_list(
     let flags = string_list(&body, "roleList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -437,10 +454,10 @@ pub async fn role_list(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/role/list/person: persons holding any of the given roles.
+/// POST /api/role/list/person: persons holding any of the given roles.
 pub async fn role_list_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -448,7 +465,7 @@ pub async fn role_list_person(
     let flags = string_list(&body, "roleList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -463,12 +480,12 @@ pub async fn role_list_person(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 // ── UnitDuty ──────────────────────────────────────────────────────────────────
 
-/// POST /jaxrs/unitduty/list/name: batch duty lookup by duty names (Java Wi nameList).
+/// POST /api/unitduty/list/name: batch duty lookup by duty names (o2server Wi nameList).
 pub async fn unitduty_list_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -476,7 +493,7 @@ pub async fn unitduty_list_name(
     let flags = string_list(&body, "nameList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -491,10 +508,10 @@ pub async fn unitduty_list_name(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/unitduty/list/name/unit: distinct duty names held in units.
+/// POST /api/unitduty/list/name/unit: distinct duty names held in units.
 pub async fn unitduty_list_name_unit(
     pool: Extension<Pool>,
     Json(body): Json<Value>,

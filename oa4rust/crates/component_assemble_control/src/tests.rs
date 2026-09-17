@@ -28,7 +28,7 @@ async fn test_get_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/component_assemble_control/get/control/config")
+                .uri("/api/component_assemble_control/get/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -47,7 +47,7 @@ async fn test_list_control_categories_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/component_assemble_control/list/control/categories")
+                .uri("/api/component_assemble_control/list/control/categories")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -70,7 +70,7 @@ async fn test_update_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/component_assemble_control/update/control/config")
+                .uri("/api/component_assemble_control/update/control/config")
                 .method(Method::GET)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))
@@ -90,7 +90,7 @@ async fn test_u2_post_component_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/component_assemble_control/component")
+                .uri("/api/component_assemble_control/component")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))
@@ -108,7 +108,7 @@ async fn test_u2_delete_component_by_id_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/component_assemble_control/component/test-id")
+                .uri("/api/component_assemble_control/component/test-id")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -126,7 +126,7 @@ async fn test_u2_put_component_by_id_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/component_assemble_control/component/test-id")
+                .uri("/api/component_assemble_control/component/test-id")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))

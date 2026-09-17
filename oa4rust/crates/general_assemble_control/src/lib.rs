@@ -8,7 +8,7 @@ use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
-pub const JAVA_BASE: &str = "/jaxrs/general_assemble_control";
+pub const API_BASE: &str = "/api/general_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -79,16 +79,28 @@ pub async fn general_control_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("systemName".to_string(), Value::String(row.get("system_name"))),
-                ("maintenanceMode".to_string(), Value::Bool(row.get("maintenance_mode"))),
-                ("allowRegistration".to_string(), Value::Bool(row.get("allow_registration"))),
+                (
+                    "systemName".to_string(),
+                    Value::String(row.get("system_name")),
+                ),
+                (
+                    "maintenanceMode".to_string(),
+                    Value::Bool(row.get("maintenance_mode")),
+                ),
+                (
+                    "allowRegistration".to_string(),
+                    Value::Bool(row.get("allow_registration")),
+                ),
                 ("version".to_string(), Value::String(row.get("version"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(row.get("create_time")),
+                ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -227,7 +239,7 @@ pub async fn get_module_permissions(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -287,7 +299,7 @@ pub async fn attendscope_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -462,7 +474,7 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -514,7 +526,7 @@ pub async fn area_list_province_province(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -567,7 +579,7 @@ pub async fn area_list_province_province_city_city(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -621,7 +633,7 @@ pub async fn area_list_province_province_city_city_district_district(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -860,7 +872,7 @@ pub async fn ecnet_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -950,7 +962,7 @@ pub async fn excel_excelName_excelName_sheetList(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1417,7 +1429,7 @@ pub async fn invoice_list_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size as i64,
@@ -1780,7 +1792,7 @@ pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1984,8 +1996,8 @@ pub async fn securityclearance_system(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    // W12 收敛：对齐 Java ActionSystem——Wo extends WrapInteger（仅 value 键）。
-    // Java 值来自 ternary 配置 Config.ternaryManagement().getSystemSecurityClearance()，
+    // W12 收敛：对齐 o2server ActionSystem——Wo extends WrapInteger（仅 value 键）。
+    // o2server 值来自 ternary 配置 Config.ternaryManagement().getSystemSecurityClearance()，
     // 无自定义配置时回 O2OA 默认 400（TernaryManagement.DEFAULT_SYSTEMSECURITYCLEARANCE）。
     // 干净参考种子无 securityclearance 覆盖 → 双侧恒 400，返回默认值即可闭合。
     Ok(Json(ActionResult::success(Value::Object(
@@ -2328,7 +2340,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2377,7 +2389,7 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     }
 
     let count = worktime_records.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(worktime_records),
         count,
         0,
@@ -2619,8 +2631,8 @@ pub async fn worktime_minutesofworkday(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    // W12 收敛：对齐 Java ActionMinutesOfWorkDay——Wo extends WrapInteger（仅 value 键）。
-    // Java 值 = Config.workTime().minutesOfWorkDay()，干净参考默认 420 分钟
+    // W12 收敛：对齐 o2server ActionMinutesOfWorkDay——Wo extends WrapInteger（仅 value 键）。
+    // o2server 值 = Config.workTime().minutesOfWorkDay()，干净参考默认 420 分钟
     // （上午 09:00-11:30=150 + 下午 13:00-17:30=270，O2OA WorkTime 缺省配置）。
     // 种子无 worktime 自定义 → 双侧恒 420，返回缺省值即可闭合。
     Ok(Json(ActionResult::success(Value::Object(

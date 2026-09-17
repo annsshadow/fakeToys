@@ -25,7 +25,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/record/list")
+                        .uri("/api/attendance/core/entity/record/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -48,7 +48,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/rule/list")
+                        .uri("/api/attendance/core/entity/rule/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -71,7 +71,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/rule/create")
+                        .uri("/api/attendance/core/entity/rule/create")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(
@@ -100,7 +100,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/rule/rule-001/update")
+                        .uri("/api/attendance/core/entity/rule/rule-001/update")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"更新后的规则"}"#))
@@ -127,7 +127,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/rule/rule-001/delete")
+                        .uri("/api/attendance/core/entity/rule/rule-001/delete")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -153,7 +153,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/record/create")
+                        .uri("/api/attendance/core/entity/record/create")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(
@@ -182,7 +182,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/record/record-001/update")
+                        .uri("/api/attendance/core/entity/record/record-001/update")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"checkOutTime":"2024-01-01T18:00:00"}"#))
@@ -209,7 +209,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/attendance/core/entity/record/record-001/delete")
+                        .uri("/api/attendance/core/entity/record/record-001/delete")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),

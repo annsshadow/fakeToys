@@ -100,7 +100,7 @@ async fn test_create_flow_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/designer/create")
+                .uri("/api/processplatform/assemble/designer/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -120,7 +120,7 @@ async fn test_get_flow_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/designer/get/flow-1")
+                .uri("/api/processplatform/assemble/designer/get/flow-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -139,7 +139,7 @@ async fn test_list_flows_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/designer/list/processplatform")
+                .uri("/api/processplatform/assemble/designer/list/processplatform")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -164,7 +164,7 @@ async fn test_save_flow_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/designer/save/flow-1")
+                .uri("/api/processplatform/assemble/designer/save/flow-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -184,7 +184,7 @@ async fn test_delete_flow_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/designer/delete/flow-1")
+                .uri("/api/processplatform/assemble/designer/delete/flow-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -203,7 +203,7 @@ async fn test_preview_flow_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/designer/preview/flow-1")
+                .uri("/api/processplatform/assemble/designer/preview/flow-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -215,7 +215,7 @@ async fn test_preview_flow_route_exists() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 新增：Java 端点缺口闭合（51 端点）的测试
+// plan002 U2 新增：o2server 端点缺口闭合（51 端点）的测试
 // 路由存在性用空配置池（pool.get() 必败 → 500），断言"非 404"即证明注册成功；
 // 归一化查重与 IDOR 门禁的关键决策用纯函数单测固化。
 // ──────────────────────────────────────────────────────────────────────────────
@@ -262,10 +262,10 @@ async fn designer_u2_status(method: Method, uri: &str, body: Option<String>) -> 
 
 #[tokio::test]
 async fn test_designer_put_application_registered() {
-    // Java PUT /application/{id}：此前仅有 GET，PUT 属主门禁端点必须可达
+    // o2server PUT /application/{id}：此前仅有 GET，PUT 属主门禁端点必须可达
     let status = designer_u2_status(
         Method::PUT,
-        "/jaxrs/processplatform/assemble/designer/application/app-1",
+        "/api/processplatform/assemble/designer/application/app-1",
         Some("{\"name\":\"x\"}".into()),
     )
     .await;
@@ -278,10 +278,10 @@ async fn test_designer_put_application_registered() {
 
 #[tokio::test]
 async fn test_designer_put_application_icon_exact_shape() {
-    // Java 精确路径 /application/{id}/icon（区别于遗留 /application/icon/{id}）
+    // o2server 精确路径 /application/{id}/icon（区别于遗留 /application/icon/{id}）
     let status = designer_u2_status(
         Method::PUT,
-        "/jaxrs/processplatform/assemble/designer/application/app-1/icon",
+        "/api/processplatform/assemble/designer/application/app-1/icon",
         Some("{\"icon\":\"mood\"}".into()),
     )
     .await;
@@ -292,7 +292,7 @@ async fn test_designer_put_application_icon_exact_shape() {
 async fn test_designer_post_application_permission_registered() {
     let status = designer_u2_status(
         Method::POST,
-        "/jaxrs/processplatform/assemble/designer/application/app-1/permission",
+        "/api/processplatform/assemble/designer/application/app-1/permission",
         Some("{\"view\":[\"xadmin\"]}".into()),
     )
     .await;
@@ -303,7 +303,7 @@ async fn test_designer_post_application_permission_registered() {
 async fn test_designer_applicationcategory_list_registered() {
     let status = designer_u2_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/designer/applicationcategory/list",
+        "/api/processplatform/assemble/designer/applicationcategory/list",
         None,
     )
     .await;
@@ -316,7 +316,7 @@ async fn test_designer_applicationcategory_list_registered() {
 
 #[tokio::test]
 async fn test_designer_item_access_family_registered() {
-    let base = "/jaxrs/processplatform/assemble/designer/item-access";
+    let base = "/api/processplatform/assemble/designer/item-access";
     for (method, uri) in [
         (Method::POST, base.to_string()),
         (Method::POST, format!("{}/bach/save", base)),
@@ -351,18 +351,18 @@ async fn test_designer_item_access_family_registered() {
 async fn test_designer_mapping_verbs_registered() {
     let status_get = designer_u2_status(
         Method::GET,
-        "/jaxrs/processplatform/assemble/designer/mapping/m-1/execute",
+        "/api/processplatform/assemble/designer/mapping/m-1/execute",
         None,
     )
     .await;
     assert_ne!(
         status_get,
         StatusCode::NOT_FOUND,
-        "/mapping/{{flag}}/execute Java 精确形态"
+        "/mapping/{{flag}}/execute o2server 精确形态"
     );
     let status_delete = designer_u2_status(
         Method::DELETE,
-        "/jaxrs/processplatform/assemble/designer/mapping/m-1",
+        "/api/processplatform/assemble/designer/mapping/m-1",
         None,
     )
     .await;
@@ -375,7 +375,7 @@ async fn test_designer_mapping_verbs_registered() {
 
 #[tokio::test]
 async fn test_designer_mergeitemplan_verbs_and_paging() {
-    let base = "/jaxrs/processplatform/assemble/designer";
+    let base = "/api/processplatform/assemble/designer";
     assert_ne!(
         designer_u2_status(Method::GET, &format!("{}/mergeitemplan/mp-1", base), None).await,
         StatusCode::NOT_FOUND
@@ -406,7 +406,7 @@ async fn test_designer_mergeitemplan_verbs_and_paging() {
 
 #[tokio::test]
 async fn test_designer_process_edition_family_registered() {
-    let base = "/jaxrs/processplatform/assemble/designer";
+    let base = "/api/processplatform/assemble/designer";
     for (method, uri) in [
         (
             Method::GET,
@@ -440,7 +440,7 @@ async fn test_designer_process_edition_family_registered() {
 
 #[tokio::test]
 async fn test_designer_script_by_name_and_workcompleted_merge_registered() {
-    let base = "/jaxrs/processplatform/assemble/designer";
+    let base = "/api/processplatform/assemble/designer";
     assert_ne!(
         designer_u2_status(
             Method::GET,
@@ -449,7 +449,7 @@ async fn test_designer_script_by_name_and_workcompleted_merge_registered() {
         )
         .await,
         StatusCode::NOT_FOUND,
-        "script/application/{{id}}/name/{{name}} Java 精确形态"
+        "script/application/{{id}}/name/{{name}} o2server 精确形态"
     );
     assert_ne!(
         designer_u2_status(

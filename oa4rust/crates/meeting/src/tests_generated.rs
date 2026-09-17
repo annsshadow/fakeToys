@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/room/list")
+                    .uri("/api/meeting/room/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/building/list")
+                    .uri("/api/meeting/building/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/openmeeting/list/room")
+                    .uri("/api/meeting/openmeeting/list/room")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/create")
+                    .uri("/api/meeting/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/test-id")
+                    .uri("/api/meeting/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/list")
+                    .uri("/api/meeting/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -141,7 +141,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/schedule/days/test-id")
+                    .uri("/api/meeting/schedule/days/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

@@ -1,4 +1,4 @@
--- plan002 U2: processplatform_service_processing 端点闭合所需增量（对齐 Java jaxrs 契约）
+-- plan002 U2: processplatform_service_processing 端点闭合所需增量（对齐 o2server 契约）
 --   ApplicationDictAction -> x_application_dict（数据字典 JSONB 存储）
 --   DataAction            -> x_data（job/work/workcompleted 业务数据 JSONB，(scope,bundle) 唯一）
 --   ReadAction            -> x_read.scope 区分运行中(work)/已完成(workcompleted)来源

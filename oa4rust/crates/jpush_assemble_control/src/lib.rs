@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use uuid::Uuid;
 
-pub const JAVA_BASE: &str = "/jaxrs/jpush_assemble_control";
+pub const API_BASE: &str = "/api/jpush_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -83,7 +83,7 @@ pub async fn list_control_apps(
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -168,7 +168,7 @@ pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -460,7 +460,7 @@ pub async fn device_list_pushType(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/core/entity/list")
+                    .uri("/api/message/core/entity/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -47,7 +47,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/core/entity/list/by/system")
+                    .uri("/api/message/core/entity/list/by/system")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -70,7 +70,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/core/entity/unread/count/system")
+                    .uri("/api/message/core/entity/unread/count/system")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -94,7 +94,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/core/entity/list")
+                    .uri("/api/message/core/entity/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

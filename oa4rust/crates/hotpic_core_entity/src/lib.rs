@@ -225,27 +225,24 @@ pub async fn delete_by_id(
 
 /// 创建热图核心实体路由
 /// 注册以下路由：
-/// - /jaxrs/hotpic/core/entity/list - 热图列表
-/// - /jaxrs/hotpic/core/entity/list/by/{application}/{infoId} - 按条件查询
-/// - /jaxrs/hotpic/core/entity/exists/check/{application}/{infoId} - 检查存在
-/// - /jaxrs/hotpic/core/entity/create - 创建热图
-/// - /jaxrs/hotpic/core/entity/delete/{id} - 删除热图
+/// - /api/hotpic/core/entity/list - 热图列表
+/// - /api/hotpic/core/entity/list/by/{application}/{infoId} - 按条件查询
+/// - /api/hotpic/core/entity/exists/check/{application}/{infoId} - 检查存在
+/// - /api/hotpic/core/entity/create - 创建热图
+/// - /api/hotpic/core/entity/delete/{id} - 删除热图
 pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/hotpic/core/entity/list", get(list))
+        .route("/api/hotpic/core/entity/list", get(list))
         .route(
-            "/jaxrs/hotpic/core/entity/list/by/{application}/{infoId}",
+            "/api/hotpic/core/entity/list/by/{application}/{infoId}",
             get(list_by_app_and_info),
         )
         .route(
-            "/jaxrs/hotpic/core/entity/exists/check/{application}/{infoId}",
+            "/api/hotpic/core/entity/exists/check/{application}/{infoId}",
             get(exists_check),
         )
-        .route("/jaxrs/hotpic/core/entity/create", post(create))
-        .route(
-            "/jaxrs/hotpic/core/entity/delete/{id}",
-            delete(delete_by_id),
-        )
+        .route("/api/hotpic/core/entity/create", post(create))
+        .route("/api/hotpic/core/entity/delete/{id}", delete(delete_by_id))
 }
 
 #[cfg(test)]

@@ -271,12 +271,12 @@ pub async fn workcompleted_list(
 
 pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/process/work/list", get(work_list))
-        .route("/jaxrs/process/work/{id}", get(work_get))
-        .route("/jaxrs/process/task/list", get(task_list))
-        .route("/jaxrs/process/task/{id}", get(task_get))
-        .route("/jaxrs/process/ticket/list", get(ticket_list))
-        .route("/jaxrs/process/workcompleted/list", get(workcompleted_list))
+        .route("/api/process/work/list", get(work_list))
+        .route("/api/process/work/{id}", get(work_get))
+        .route("/api/process/task/list", get(task_list))
+        .route("/api/process/task/{id}", get(task_get))
+        .route("/api/process/ticket/list", get(ticket_list))
+        .route("/api/process/workcompleted/list", get(workcompleted_list))
 }
 
 #[cfg(test)]

@@ -92,9 +92,14 @@ pub async fn get_flow(
         ),
         (
             "version".to_string(),
-            Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("version").unwrap_or(0))),
+            Value::Number(serde_json::Number::from(
+                row.get::<_, Option<i32>>("version").unwrap_or(0),
+            )),
         ),
-        ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
             Value::String(
@@ -190,7 +195,10 @@ pub async fn list_flows(
                         row.get::<_, Option<i32>>("version").unwrap_or(0),
                     )),
                 ),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -221,7 +229,7 @@ pub async fn list_flows(
     ))))
 }
 
-/// GET /jaxrs/processplatform/assemble/designer（裸根，桌面 ProcessDesigner 配置串引用）：
+/// GET /api/processplatform/assemble/designer（裸根，桌面 ProcessDesigner 配置串引用）：
 /// 返回全部流程定义（等价 category=all，取前 100 条）。
 #[allow(non_snake_case)]
 pub async fn designer_bare_list(
@@ -242,15 +250,30 @@ pub async fn designer_bare_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
-                ("version".to_string(), Value::String(row.get::<_, Option<String>>("version").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -374,7 +397,7 @@ pub async fn preview_flow(
 }
 
 /// 流程平台设计器组装路由
-/// 路由前缀: /jaxrs/processplatform/assemble/designer/*
+/// 路由前缀: /api/processplatform/assemble/designer/*
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     routes::router(pool)
 }
@@ -2297,7 +2320,7 @@ pub async fn process_upgrade_all(
     pool: Extension<Pool>,
     session: Extension<Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // W12 收敛：对齐 Java ActionUpgradeAll——Wo extends WrapBoolean（仅 value 键）。
+    // W12 收敛：对齐 o2server ActionUpgradeAll——Wo extends WrapBoolean（仅 value 键）。
     // 语义 = effectivePerson.isManager()：管理员执行全量流程 edition 升级并回 true，
     // 非管理员跳过升级回 false。比对恒以 testadmin（管理员）发起 → value:true。
     let is_manager = shared::middleware::is_admin(&pool, &session.person_unique).await;
@@ -3342,7 +3365,7 @@ mod tests;
 mod tests_generated;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 · Java 端点缺口闭合（51 个）
+// plan002 U2 · o2server 端点缺口闭合（51 个）
 //
 // 约定（对齐 docs/solutions/security-issues/idor-vulnerability-write-handlers.md）：
 //   - 写端点（PUT/POST/DELETE）先取记录归属（"xcreatorPerson"，回退 creator_person），
@@ -3488,7 +3511,7 @@ pub async fn application_id_update(
     ))))
 }
 
-/// PUT /application/{id}/icon —— 更新应用图标（Java 精确路径形态）。
+/// PUT /application/{id}/icon —— 更新应用图标（o2server 精确路径形态）。
 #[allow(non_snake_case)]
 pub async fn application_id_icon_update(
     pool: Extension<Pool>,
@@ -3604,7 +3627,7 @@ pub async fn applicationdict_create(
     ))))
 }
 
-/// POST /applicationdict/list/paging/{page}/size/{size} —— Java 分页精确形态（POST 动词）。
+/// POST /applicationdict/list/paging/{page}/size/{size} —— o2server 分页精确形态（POST 动词）。
 #[allow(non_snake_case)]
 pub async fn applicationdict_paging_post(
     pool: Extension<Pool>,
@@ -3854,7 +3877,7 @@ pub async fn item_access_bach_save(
     ))))
 }
 
-/// DELETE /item-access/delete/process/{processId}/path/{path} —— Java 精确形态删除。
+/// DELETE /item-access/delete/process/{processId}/path/{path} —— o2server 精确形态删除。
 #[allow(non_snake_case)]
 pub async fn item_access_delete_exact(
     pool: Extension<Pool>,
@@ -4180,7 +4203,7 @@ pub async fn mergeitemplan_create(
     ))))
 }
 
-/// GET /mergeitemplan/list/application/{applicationId}/paging/{page}/size/{size} —— Java 精确形态分页。
+/// GET /mergeitemplan/list/application/{applicationId}/paging/{page}/size/{size} —— o2server 精确形态分页。
 #[allow(non_snake_case)]
 pub async fn mergeitemplan_paging_by_application(
     pool: Extension<Pool>,
@@ -4583,7 +4606,8 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 (
                     "application".to_string(),
                     Value::String(
-                        row.get::<_, Option<String>>("xapplication").unwrap_or_default(),
+                        row.get::<_, Option<String>>("xapplication")
+                            .unwrap_or_default(),
                     ),
                 ),
                 (
@@ -4613,10 +4637,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 fn dict_spec() -> shared::crud::CrudSpec {
     shared::crud::CrudSpec {
         table: "pp_e_applicationdict",
-        columns: &[
-            ("name", "xname"),
-            ("application", "xapplication"),
-        ],
+        columns: &[("name", "xname"), ("application", "xapplication")],
         soft_delete: true,
     }
 }
@@ -4692,7 +4713,8 @@ pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 (
                     "application".to_string(),
                     Value::String(
-                        row.get::<_, Option<String>>("xapplication").unwrap_or_default(),
+                        row.get::<_, Option<String>>("xapplication")
+                            .unwrap_or_default(),
                     ),
                 ),
                 (
@@ -4722,10 +4744,7 @@ pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 fn form_spec() -> shared::crud::CrudSpec {
     shared::crud::CrudSpec {
         table: "pp_e_form",
-        columns: &[
-            ("name", "xname"),
-            ("application", "xapplication"),
-        ],
+        columns: &[("name", "xname"), ("application", "xapplication")],
         soft_delete: true,
     }
 }
@@ -4802,7 +4821,8 @@ pub async fn xform_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
                 (
                     "definition".to_string(),
                     Value::String(
-                        row.get::<_, Option<String>>("definition").unwrap_or_default(),
+                        row.get::<_, Option<String>>("definition")
+                            .unwrap_or_default(),
                     ),
                 ),
                 (
@@ -4815,11 +4835,17 @@ pub async fn xform_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

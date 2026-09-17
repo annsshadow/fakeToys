@@ -24,7 +24,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/person/test-id/icon")
+                    .uri("/api/organization/assemble/authentication/person/test-id/icon")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -46,7 +46,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/identity/test-id")
+                    .uri("/api/organization/assemble/authentication/identity/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

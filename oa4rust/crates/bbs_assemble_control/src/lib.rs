@@ -16,10 +16,10 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
 
-pub const JAVA_BASE: &str = "/jaxrs/bbs_assemble_control";
+pub const API_BASE: &str = "/api/bbs_assemble_control";
 pub mod routes;
 
-/// plan002 U2 — Java 端点全量闭合（106 条对齐）新增实现。
+/// plan002 U2 — o2server 端点全量闭合（106 条对齐）新增实现。
 pub mod u2;
 
 #[cfg(test)]
@@ -204,7 +204,7 @@ pub async fn list_control_sections(
         .collect();
 
     let total_sections = sections.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(sections),
         total_sections as i64,
         0,
@@ -245,7 +245,10 @@ pub async fn section_create(
         .map(str::trim)
         .is_some_and(|s| !s.is_empty())
     {
-        obj.insert("creator".to_string(), Value::String(session.person_unique.clone()));
+        obj.insert(
+            "creator".to_string(),
+            Value::String(session.person_unique.clone()),
+        );
     }
     let id = shared::crud_create(&pool, &section_create_spec(), &Value::Object(obj)).await?;
     Ok(Json(ActionResult::success(Value::Object(
@@ -322,7 +325,7 @@ pub async fn update_control_config(
     ))))
 }
 
-/// GET /jaxrs/bbs/assemble/control/forum/list
+/// GET /api/bbs/assemble/control/forum/list
 #[allow(non_snake_case)]
 pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -341,14 +344,14 @@ pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
     )))
 }
 
-/// GET /jaxrs/bbs/assemble/control/forum/{id}
+/// GET /api/bbs/assemble/control/forum/{id}
 #[allow(non_snake_case)]
 pub async fn get_forum(
     pool: Extension<Pool>,
@@ -371,7 +374,7 @@ pub async fn get_forum(
     }
 }
 
-/// POST /jaxrs/bbs/assemble/control/topic/create
+/// POST /api/bbs/assemble/control/topic/create
 #[allow(non_snake_case)]
 pub async fn create_topic(
     pool: Extension<Pool>,
@@ -410,7 +413,7 @@ pub async fn create_topic(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// GET /jaxrs/bbs/assemble/control/topic/list/{forumId}
+/// GET /api/bbs/assemble/control/topic/list/{forumId}
 #[allow(non_snake_case)]
 pub async fn list_topics_by_forum(
     pool: Extension<Pool>,
@@ -432,14 +435,14 @@ pub async fn list_topics_by_forum(
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
     )))
 }
 
-/// POST /jaxrs/bbs/assemble/control/reply/create
+/// POST /api/bbs/assemble/control/reply/create
 #[allow(non_snake_case)]
 pub async fn create_reply(
     pool: Extension<Pool>,
@@ -505,7 +508,7 @@ pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -552,7 +555,7 @@ pub async fn mobile_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -624,7 +627,7 @@ pub async fn reply_filter_list_page_page_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -653,7 +656,7 @@ pub async fn reply_list_sub_id(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -704,7 +707,7 @@ pub async fn subject_top_sectionId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -789,7 +792,7 @@ pub async fn section_viewforum_forumId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1207,7 +1210,7 @@ pub async fn picture_list(
         None => Vec::new(),
     };
     let total_urls = urls.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(urls),
         total_urls as i64,
         0,
@@ -1539,7 +1542,7 @@ pub async fn topic_recommended_index(
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1631,7 +1634,7 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1710,7 +1713,7 @@ pub async fn user_reply_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .map(|r| serde_json::to_value(r).unwrap())
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1740,7 +1743,7 @@ pub async fn user_role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1778,7 +1781,7 @@ pub async fn user_section_list(
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1824,7 +1827,7 @@ pub async fn user_subject_list(
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1866,7 +1869,7 @@ pub async fn subjectattach_list(
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,

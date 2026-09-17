@@ -13,7 +13,7 @@ pub struct CheckTokenRequest {
     pub token: String,
 }
 
-/// POST /jaxrs/authentication/check/token —— Token 校验
+/// POST /api/authentication/check/token —— Token 校验
 ///
 /// 允许外部系统验证 OA token 有效性。
 /// 权限级别：Admin（需管理员权限才能校验，防止会话枚举）。

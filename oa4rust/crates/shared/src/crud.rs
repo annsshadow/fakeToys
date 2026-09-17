@@ -60,8 +60,7 @@ pub async fn crud_create(
 
     let mut params: Vec<String> = vec![id.clone()];
     params.extend(values);
-    let refs: Vec<&(dyn ToSql + Sync)> =
-        params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
+    let refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
 
     client
         .execute(&sql, &refs)
@@ -100,8 +99,7 @@ pub async fn crud_save(
         id_ph,
         deleted
     );
-    let refs: Vec<&(dyn ToSql + Sync)> =
-        params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
+    let refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
 
     let n = client
         .execute(&sql, &refs)
@@ -111,11 +109,7 @@ pub async fn crud_save(
 }
 
 /// 软删（有 deleted_at 列）或硬删。返回是否命中。
-pub async fn crud_delete(
-    pool: &Pool,
-    spec: &CrudSpec,
-    id: &str,
-) -> Result<bool, AppError> {
+pub async fn crud_delete(pool: &Pool, spec: &CrudSpec, id: &str) -> Result<bool, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
 
@@ -127,10 +121,7 @@ pub async fn crud_delete(
             table = spec.table
         )
     } else {
-        format!(
-            "DELETE FROM {table} WHERE id = $1",
-            table = spec.table
-        )
+        format!("DELETE FROM {table} WHERE id = $1", table = spec.table)
     };
     let n = client
         .execute(&sql, &refs)

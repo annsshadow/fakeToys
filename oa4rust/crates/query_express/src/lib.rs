@@ -89,8 +89,8 @@ pub async fn create_query(
 
 pub fn query_express_router(_pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/query/list", get(query_list))
-        .route("/jaxrs/query/create", post(create_query))
+        .route("/api/query/list", get(query_list))
+        .route("/api/query/create", post(create_query))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

@@ -37,7 +37,7 @@ struct ComplexTopResponse {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/file/folder/list/top",
+    path = "/api/file/folder/list/top",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -87,7 +87,7 @@ pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -96,7 +96,7 @@ pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/file/folder/list/{id}",
+    path = "/api/file/folder/list/{id}",
     params(
         ("id" = String, Path, description = "Folder ID")
     ),
@@ -152,7 +152,7 @@ pub async fn folder_list_with_folder(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -161,7 +161,7 @@ pub async fn folder_list_with_folder(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/file/complex/top",
+    path = "/api/file/complex/top",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -262,7 +262,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/file/upload",
+    path = "/api/file/upload",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -462,7 +462,7 @@ pub(crate) async fn upload_file_record(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/file/download/{id}",
+    path = "/api/file/download/{id}",
     params(
         ("id" = String, Path, description = "File ID")
     ),
@@ -519,7 +519,7 @@ pub async fn file_download(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/file/folder/create",
+    path = "/api/file/folder/create",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -578,7 +578,7 @@ pub async fn folder_create(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/file/folder/update",
+    path = "/api/file/folder/update",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -636,7 +636,7 @@ pub async fn folder_update(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/file/folder/remove",
+    path = "/api/file/folder/remove",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -685,7 +685,7 @@ pub async fn folder_remove(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/file/permission/set",
+    path = "/api/file/permission/set",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),

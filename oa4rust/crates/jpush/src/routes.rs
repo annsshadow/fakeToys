@@ -6,10 +6,10 @@ use crate::{device_create, device_get, device_list, hello, template_get, templat
 pub fn jpush_router(pool: Pool) -> Router {
     Router::new()
         .route("/hello/world", get(hello))
-        .route("/jaxrs/jpush/device/list", get(device_list))
-        .route("/jaxrs/jpush/device/{id}", get(device_get))
-        .route("/jaxrs/jpush/device/create", post(device_create))
-        .route("/jaxrs/jpush/template/list", get(template_list))
-        .route("/jaxrs/jpush/template/{id}", get(template_get))
+        .route("/api/jpush/device/list", get(device_list))
+        .route("/api/jpush/device/{id}", get(device_get))
+        .route("/api/jpush/device/create", post(device_create))
+        .route("/api/jpush/template/list", get(template_list))
+        .route("/api/jpush/template/{id}", get(template_get))
         .layer(Extension(pool))
 }

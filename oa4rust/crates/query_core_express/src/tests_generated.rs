@@ -14,7 +14,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/core/express/history/test-id")
+                    .uri("/api/query/core/express/history/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/core/express/cache/test-id")
+                    .uri("/api/query/core/express/cache/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/core/express/cache/status/test-id")
+                    .uri("/api/query/core/express/cache/status/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/config")
+                    .uri("/api/hotpic/assemble/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/list/control/panels")
+                    .uri("/api/hotpic/assemble/control/list/control/panels")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/update/control/config")
+                    .uri("/api/hotpic/assemble/control/update/control/config")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/list/control/applications")
+                    .uri("/api/hotpic/assemble/control/list/control/applications")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/list/hotpics")
+                    .uri("/api/hotpic/list/hotpics")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/get/hotpic/test-id")
+                    .uri("/api/hotpic/get/hotpic/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/create/hotpic")
+                    .uri("/api/hotpic/create/hotpic")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/save/hotpic")
+                    .uri("/api/hotpic/save/hotpic")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/delete/hotpic")
+                    .uri("/api/hotpic/delete/hotpic")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/test-id")
+                    .uri("/api/hotpic/assemble/control/cipher/hotpic/bbs/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/cipher/hotpic/cms/test-id")
+                    .uri("/api/hotpic/assemble/control/cipher/hotpic/cms/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/test-id/count/test-id")
+                    .uri("/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/test-id/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -265,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/cipher/hotpic/test-id")
+                    .uri("/api/hotpic/assemble/control/cipher/hotpic/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -286,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/changeTitle")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -307,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/exists/check")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/exists/check")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -328,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/test-id/count/test-id")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/filter/list/page/test-id/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -349,7 +349,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/application/test-id")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -370,7 +370,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/test-id")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/application/test-id")
+                    .uri("/api/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -41,7 +41,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/get/control/config")
+                    .uri("/api/cms_assemble_control/get/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -69,7 +69,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/list/control/sections")
+                    .uri("/api/cms_assemble_control/list/control/sections")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/update/control/config")
+                    .uri("/api/cms_assemble_control/update/control/config")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -125,7 +125,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/document/filter/list/test-id/next/test-id")
+                    .uri("/api/anonymous/document/filter/list/test-id/next/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -153,7 +153,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/document/filter/list/test-id/next/test-id/mockputtopost")
+                    .uri("/api/anonymous/document/filter/list/test-id/next/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -179,7 +179,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/document/filter/list/test-id/size/test-id")
+                    .uri("/api/anonymous/document/filter/list/test-id/size/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -207,7 +207,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/document/filter/list/test-id/size/test-id/mockputtopost")
+                    .uri("/api/anonymous/document/filter/list/test-id/size/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -233,7 +233,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/test-id/view")
+                    .uri("/api/document/test-id/view")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -261,7 +261,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/fileinfo/list/document/test-id")
+                    .uri("/api/anonymous/fileinfo/list/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -289,7 +289,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/alias/test-id")
+                    .uri("/api/appinfo/alias/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -317,7 +317,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/erase/app/test-id")
+                    .uri("/api/appinfo/erase/app/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -345,7 +345,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/erase/app/test-id/mockdeletetoget")
+                    .uri("/api/appinfo/erase/app/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -373,7 +373,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/filter/list/test-id/next/test-id")
+                    .uri("/api/appinfo/filter/list/test-id/next/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -401,7 +401,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/filter/list/test-id/next/test-id/mockputtopost")
+                    .uri("/api/appinfo/filter/list/test-id/next/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -429,7 +429,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/filter/list/test-id/prev/test-id")
+                    .uri("/api/appinfo/filter/list/test-id/prev/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -457,7 +457,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/filter/list/test-id/prev/test-id/mockputtopost")
+                    .uri("/api/appinfo/filter/list/test-id/prev/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -485,7 +485,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/get/user/publish/test-id")
+                    .uri("/api/appinfo/get/user/publish/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -513,7 +513,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/all")
+                    .uri("/api/appinfo/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -541,7 +541,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/appType")
+                    .uri("/api/appinfo/list/appType")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -569,7 +569,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/appType/manager")
+                    .uri("/api/appinfo/list/appType/manager")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -597,7 +597,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/has/document")
+                    .uri("/api/appinfo/list/has/document")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -625,7 +625,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/has/document/appType")
+                    .uri("/api/appinfo/list/has/document/appType")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -653,7 +653,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/has/document/type/test-id")
+                    .uri("/api/appinfo/list/has/document/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -681,7 +681,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/manage")
+                    .uri("/api/appinfo/list/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -709,7 +709,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/manage/type/test-id")
+                    .uri("/api/appinfo/list/manage/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -737,7 +737,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/publish")
+                    .uri("/api/appinfo/list/user/publish")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -765,7 +765,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/publish/type/test-id")
+                    .uri("/api/appinfo/list/user/publish/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -793,7 +793,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/publish/with/process")
+                    .uri("/api/appinfo/list/user/publish/with/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -821,7 +821,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/view")
+                    .uri("/api/appinfo/list/user/view")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -849,7 +849,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/view/all")
+                    .uri("/api/appinfo/list/user/view/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -877,7 +877,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/view/all/type/test-id")
+                    .uri("/api/appinfo/list/user/view/all/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -905,7 +905,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/view/article/type/test-id")
+                    .uri("/api/appinfo/list/user/view/article/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -933,7 +933,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/view/data")
+                    .uri("/api/appinfo/list/user/view/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -961,7 +961,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/list/user/view/data/type/test-id")
+                    .uri("/api/appinfo/list/user/view/data/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -989,7 +989,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/test-id/icon/size/test-id")
+                    .uri("/api/appinfo/test-id/icon/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1017,7 +1017,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/flag")
+                    .uri("/api/appinfo/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1042,7 +1042,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/test-id")
+                    .uri("/api/appinfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1067,7 +1067,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/test-id/control")
+                    .uri("/api/appinfo/test-id/control")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1095,7 +1095,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appinfo/test-id/mockdeletetoget")
+                    .uri("/api/appinfo/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1124,7 +1124,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/alias/test-id")
+                    .uri("/api/categoryinfo/alias/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1152,7 +1152,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/bind/test-id/view")
+                    .uri("/api/categoryinfo/bind/test-id/view")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1180,7 +1180,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/bind/test-id/view/mockputtopost")
+                    .uri("/api/categoryinfo/bind/test-id/view/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1208,7 +1208,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/erase/category/test-id")
+                    .uri("/api/categoryinfo/erase/category/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1236,7 +1236,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/erase/category/test-id/mockdeletetoget")
+                    .uri("/api/categoryinfo/erase/category/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1265,7 +1265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/filter/list/test-id/next/test-id/app/test-id")
+                    .uri("/api/categoryinfo/filter/list/test-id/next/test-id/app/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1293,7 +1293,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/filter/list/test-id/next/test-id/app/test-id/mockputtopost")
+                    .uri("/api/categoryinfo/filter/list/test-id/next/test-id/app/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1319,7 +1319,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/filter/list/test-id/prev/test-id/app/test-id")
+                    .uri("/api/categoryinfo/filter/list/test-id/prev/test-id/app/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1347,7 +1347,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/filter/list/test-id/prev/test-id/app/test-id/mockputtopost")
+                    .uri("/api/categoryinfo/filter/list/test-id/prev/test-id/app/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1373,7 +1373,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/filter/list/test-id/size/test-id")
+                    .uri("/api/categoryinfo/filter/list/test-id/size/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1401,7 +1401,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/filter/list/test-id/size/test-id/mockputtopost")
+                    .uri("/api/categoryinfo/filter/list/test-id/size/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1429,7 +1429,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/all")
+                    .uri("/api/categoryinfo/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1457,7 +1457,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/manage/app/test-id")
+                    .uri("/api/categoryinfo/list/manage/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1486,7 +1486,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/publish/app/test-id")
+                    .uri("/api/categoryinfo/list/publish/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1514,7 +1514,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/view/app/test-id")
+                    .uri("/api/categoryinfo/list/view/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1542,7 +1542,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/view/app/test-id/all")
+                    .uri("/api/categoryinfo/list/view/app/test-id/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1570,7 +1570,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/view/app/test-id/data")
+                    .uri("/api/categoryinfo/list/view/app/test-id/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1598,7 +1598,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/flag")
+                    .uri("/api/categoryinfo/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1626,7 +1626,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/test-id")
+                    .uri("/api/categoryinfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1654,7 +1654,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/test-id/control")
+                    .uri("/api/categoryinfo/test-id/control")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1682,7 +1682,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/test-id/execute/projection")
+                    .uri("/api/categoryinfo/test-id/execute/projection")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1710,7 +1710,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/test-id/mockdeletetoget")
+                    .uri("/api/categoryinfo/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1739,7 +1739,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/commend/list/paging/test-id/size/test-id")
+                    .uri("/api/commend/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1767,7 +1767,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/commend/test-id")
+                    .uri("/api/commend/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1792,7 +1792,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/list/test-id/next/test-id")
+                    .uri("/api/comment/list/test-id/next/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1820,7 +1820,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/list/test-id/next/test-id/mockputtopost")
+                    .uri("/api/comment/list/test-id/next/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1848,7 +1848,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/list/test-id/prev/test-id")
+                    .uri("/api/comment/list/test-id/prev/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1876,7 +1876,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/list/test-id/prev/test-id/mockputtopost")
+                    .uri("/api/comment/list/test-id/prev/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1906,7 +1906,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/test-id")
+                    .uri("/api/comment/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1932,7 +1932,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/test-id/mockdeletetoget")
+                    .uri("/api/comment/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1961,7 +1961,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/doc/test-id")
+                    .uri("/api/correlation/doc/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1990,7 +1990,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/list/doc/test-id")
+                    .uri("/api/correlation/list/doc/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2018,7 +2018,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/list/doc/test-id/site/test-id")
+                    .uri("/api/correlation/list/doc/test-id/site/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2047,7 +2047,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/data/document/test-id")
+                    .uri("/api/data/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2078,7 +2078,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/data/document/test-id/array/data")
+                    .uri("/api/data/document/test-id/array/data")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2108,7 +2108,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/data/document/test-id/test-id")
+                    .uri("/api/data/document/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2136,7 +2136,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/design/appdict/list/appInfo/test-id")
+                    .uri("/api/design/appdict/list/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2164,7 +2164,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/design/appdict/list/paging/test-id/size/test-id")
+                    .uri("/api/design/appdict/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2192,7 +2192,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/design/appdict/test-id")
+                    .uri("/api/design/appdict/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2220,7 +2220,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/design/appdict/test-id/mockdeletetoget")
+                    .uri("/api/design/appdict/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2248,7 +2248,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/design/appdict/test-id/mockputtopost")
+                    .uri("/api/design/appdict/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2277,7 +2277,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/cipher/filter/list/test-id/size/test-id")
+                    .uri("/api/document/cipher/filter/list/test-id/size/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2305,7 +2305,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/cipher/filter/list/test-id/size/test-id/mockputtopost")
+                    .uri("/api/document/cipher/filter/list/test-id/size/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2334,7 +2334,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/cipher/test-id/persist/view/record")
+                    .uri("/api/document/cipher/test-id/persist/view/record")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2362,7 +2362,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/appInfo/test-id")
+                    .uri("/api/file/list/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2390,7 +2390,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/test-id/next/test-id")
+                    .uri("/api/file/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2418,7 +2418,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/test-id/prev/test-id")
+                    .uri("/api/file/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2446,7 +2446,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/flag")
+                    .uri("/api/file/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2472,7 +2472,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/appInfo/test-id/content")
+                    .uri("/api/file/test-id/appInfo/test-id/content")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2501,7 +2501,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/mockdeletetoget")
+                    .uri("/api/file/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2529,7 +2529,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id")
+                    .uri("/api/file/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2554,7 +2554,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/content")
+                    .uri("/api/file/test-id/content")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2582,7 +2582,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/download")
+                    .uri("/api/file/test-id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2611,7 +2611,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/upload")
+                    .uri("/api/file/test-id/upload")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2639,7 +2639,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/fileinfo/download/document/test-id")
+                    .uri("/api/anonymous/fileinfo/download/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2667,7 +2667,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/fileinfo/download/document/test-id/stream")
+                    .uri("/api/anonymous/fileinfo/download/document/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2695,7 +2695,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/batch/download/doc/test-id/site/test-id")
+                    .uri("/api/fileinfo/batch/download/doc/test-id/site/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2724,7 +2724,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/download/document/test-id")
+                    .uri("/api/fileinfo/download/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2752,7 +2752,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/download/document/test-id/stream")
+                    .uri("/api/fileinfo/download/document/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2780,7 +2780,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/download/transfer/flag/test-id")
+                    .uri("/api/fileinfo/download/transfer/flag/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2808,7 +2808,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/edit/test-id/doc/test-id")
+                    .uri("/api/fileinfo/edit/test-id/doc/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2836,7 +2836,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/edit/test-id/doc/test-id/mockputtopost")
+                    .uri("/api/fileinfo/edit/test-id/doc/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2864,7 +2864,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/list/all")
+                    .uri("/api/fileinfo/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2892,7 +2892,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/list/document/test-id")
+                    .uri("/api/fileinfo/list/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2922,7 +2922,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/update/document/test-id/attachment/test-id")
+                    .uri("/api/fileinfo/update/document/test-id/attachment/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2950,7 +2950,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/update/document/test-id/attachment/test-id/callback/test-id")
+                    .uri(
+                        "/api/fileinfo/update/document/test-id/attachment/test-id/callback/test-id",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2976,7 +2978,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/update/test-id/content")
+                    .uri("/api/fileinfo/update/test-id/content")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3004,7 +3006,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/upload/doc/test-id/save/as/test-id")
+                    .uri("/api/fileinfo/upload/doc/test-id/save/as/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3032,7 +3034,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/upload/document/test-id")
+                    .uri("/api/fileinfo/upload/document/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3060,7 +3062,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/upload/document/test-id/callback/test-id")
+                    .uri("/api/fileinfo/upload/document/test-id/callback/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3089,7 +3091,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/test-id")
+                    .uri("/api/fileinfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3115,7 +3117,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/test-id/doc/test-id/change/seqnumber/test-id")
+                    .uri("/api/fileinfo/test-id/doc/test-id/change/seqnumber/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3143,7 +3145,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/fileinfo/test-id/document/test-id")
+                    .uri("/api/anonymous/fileinfo/test-id/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3171,7 +3173,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/test-id/mockdeletetoget")
+                    .uri("/api/fileinfo/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3199,7 +3201,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/test-id/online/info")
+                    .uri("/api/fileinfo/test-id/online/info")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3227,7 +3229,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/test-id/preview/pdf")
+                    .uri("/api/fileinfo/test-id/preview/pdf")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3255,7 +3257,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/filter/list/test-id/next/test-id/app/test-id")
+                    .uri("/api/form/filter/list/test-id/next/test-id/app/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3283,7 +3285,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/filter/list/test-id/next/test-id/app/test-id/mockputtopost")
+                    .uri("/api/form/filter/list/test-id/next/test-id/app/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3311,7 +3313,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/filter/list/test-id/prev/test-id/app/test-id")
+                    .uri("/api/form/filter/list/test-id/prev/test-id/app/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3339,7 +3341,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/filter/list/test-id/prev/test-id/app/test-id/mockputtopost")
+                    .uri("/api/form/filter/list/test-id/prev/test-id/app/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3367,7 +3369,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/list/all")
+                    .uri("/api/form/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3395,7 +3397,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/list/app/test-id")
+                    .uri("/api/form/list/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3423,7 +3425,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/list/formfield/appInfo/test-id")
+                    .uri("/api/form/list/formfield/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3451,7 +3453,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/list/test-id/formfield")
+                    .uri("/api/form/list/test-id/formfield")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3479,7 +3481,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/form/v2/lookup/document/test-id")
+                    .uri("/api/anonymous/form/v2/lookup/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3507,7 +3509,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/form/v2/lookup/document/test-id/mobile")
+                    .uri("/api/anonymous/form/v2/lookup/document/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3535,7 +3537,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/form/v2/test-id")
+                    .uri("/api/anonymous/form/v2/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3563,7 +3565,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/form/v2/test-id/mobile")
+                    .uri("/api/anonymous/form/v2/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3591,7 +3593,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/form/test-id")
+                    .uri("/api/anonymous/form/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3620,7 +3622,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/test-id")
+                    .uri("/api/form/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3645,7 +3647,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/test-id/mockdeletetoget")
+                    .uri("/api/form/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3673,7 +3675,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/test-id/mockputtopost")
+                    .uri("/api/form/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3701,7 +3703,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/v2/lookup/document/test-id")
+                    .uri("/api/form/v2/lookup/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3729,7 +3731,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/v2/lookup/document/test-id/mobile")
+                    .uri("/api/form/v2/lookup/document/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3757,7 +3759,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/v2/test-id")
+                    .uri("/api/form/v2/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3782,7 +3784,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/v2/test-id/mobile")
+                    .uri("/api/form/v2/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3810,7 +3812,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/formversion/list/form/test-id")
+                    .uri("/api/formversion/list/form/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3838,7 +3840,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/formversion/test-id")
+                    .uri("/api/formversion/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3866,7 +3868,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/filter/list/test-id/next/test-id")
+                    .uri("/api/log/filter/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3894,7 +3896,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/filter/list/test-id/prev/test-id")
+                    .uri("/api/log/filter/list/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3922,7 +3924,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/list/app/test-id")
+                    .uri("/api/log/list/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3950,7 +3952,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/list/category/test-id")
+                    .uri("/api/log/list/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3978,7 +3980,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/list/document/test-id")
+                    .uri("/api/log/list/document/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4006,7 +4008,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/list/filter/test-id/size/test-id")
+                    .uri("/api/log/list/filter/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4034,7 +4036,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/list/level/test-id")
+                    .uri("/api/log/list/level/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4062,7 +4064,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/log/test-id")
+                    .uri("/api/log/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4087,7 +4089,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/output/list")
+                    .uri("/api/output/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4112,7 +4114,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/output/test-id/select")
+                    .uri("/api/output/test-id/select")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -4140,7 +4142,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/output/test-id/select/mockputtopost")
+                    .uri("/api/output/test-id/select/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4168,7 +4170,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/appInfo/test-id/manageable")
+                    .uri("/api/permission/appInfo/test-id/manageable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4196,7 +4198,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/appInfo/test-id/managers")
+                    .uri("/api/permission/appInfo/test-id/managers")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4224,7 +4226,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/appInfo/test-id/publishers")
+                    .uri("/api/permission/appInfo/test-id/publishers")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4252,7 +4254,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/appInfo/test-id/viewers")
+                    .uri("/api/permission/appInfo/test-id/viewers")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4280,7 +4282,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/category/test-id/managers")
+                    .uri("/api/permission/category/test-id/managers")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4308,7 +4310,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/category/test-id/publishers")
+                    .uri("/api/permission/category/test-id/publishers")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4336,7 +4338,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/category/test-id/viewers")
+                    .uri("/api/permission/category/test-id/viewers")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4364,7 +4366,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/categoryInfo/test-id/manageable")
+                    .uri("/api/permission/categoryInfo/test-id/manageable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4392,7 +4394,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/docpermission")
+                    .uri("/api/docpermission")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4420,7 +4422,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/permission/management/refresh/category/test-id")
+                    .uri("/api/permission/management/refresh/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4455,7 +4457,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/list/app/test-id/name/test-id")
+                    .uri("/api/script/list/app/test-id/name/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4483,7 +4485,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/list/app/test-id")
+                    .uri("/api/script/list/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4512,7 +4514,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/list/paging/test-id/size/test-id")
+                    .uri("/api/script/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4540,7 +4542,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/list/test-id/next/test-id")
+                    .uri("/api/script/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4568,7 +4570,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/list/test-id/prev/test-id")
+                    .uri("/api/script/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4597,7 +4599,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/test-id")
+                    .uri("/api/script/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4622,7 +4624,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/test-id/mockdeletetoget")
+                    .uri("/api/script/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4650,7 +4652,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/test-id/mockputtopost")
+                    .uri("/api/script/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4679,7 +4681,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/test-id/app/test-id/imported")
+                    .uri("/api/script/test-id/app/test-id/imported")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4707,7 +4709,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/scriptversion/list/script/test-id")
+                    .uri("/api/scriptversion/list/script/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4735,7 +4737,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/scriptversion/test-id")
+                    .uri("/api/scriptversion/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4763,7 +4765,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/searchfilter/list/archive/filter/category/test-id")
+                    .uri("/api/searchfilter/list/archive/filter/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4791,7 +4793,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/searchfilter/list/draft/filter/category/test-id")
+                    .uri("/api/searchfilter/list/draft/filter/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4819,7 +4821,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/searchfilter/list/publish/filter/category/test-id")
+                    .uri("/api/searchfilter/list/publish/filter/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4847,7 +4849,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/surface/appdict/test-id/appInfo/test-id")
+                    .uri("/api/anonymous/surface/appdict/test-id/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4873,7 +4875,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/surface/appdict/test-id/appInfo/test-id")
+                    .uri("/api/surface/appdict/test-id/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4901,7 +4903,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/surface/appdict/test-id/appInfo/test-id/data")
+                    .uri("/api/anonymous/surface/appdict/test-id/appInfo/test-id/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4927,7 +4929,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/surface/appdict/test-id/appInfo/test-id/data")
+                    .uri("/api/surface/appdict/test-id/appInfo/test-id/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4956,7 +4958,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/surface/appdict/list/appInfo/test-id")
+                    .uri("/api/anonymous/surface/appdict/list/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4984,7 +4986,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/surface/appdict/list/appInfo/test-id")
+                    .uri("/api/surface/appdict/list/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5012,7 +5014,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/templateform/list")
+                    .uri("/api/templateform/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5040,7 +5042,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/templateform/list/category")
+                    .uri("/api/templateform/list/category")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5068,7 +5070,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/templateform/list/category/mockputtopost")
+                    .uri("/api/templateform/list/category/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5096,7 +5098,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/templateform/test-id")
+                    .uri("/api/templateform/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5124,7 +5126,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/templateform/test-id/mockdeletetoget")
+                    .uri("/api/templateform/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5152,7 +5154,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/uuid/random")
+                    .uri("/api/uuid/random")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5177,7 +5179,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/list/all")
+                    .uri("/api/view/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5205,7 +5207,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/list/app/test-id")
+                    .uri("/api/view/list/app/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5233,7 +5235,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/list/category/test-id")
+                    .uri("/api/view/list/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5261,7 +5263,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/list/form/test-id")
+                    .uri("/api/view/list/form/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5289,7 +5291,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/viewdata/list/test-id/next/test-id")
+                    .uri("/api/view/viewdata/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5317,7 +5319,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/test-id")
+                    .uri("/api/view/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5342,7 +5344,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/test-id/mockdeletetoget")
+                    .uri("/api/view/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5370,7 +5372,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/view/test-id/mockputtopost")
+                    .uri("/api/view/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5398,7 +5400,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewcategory/list/all")
+                    .uri("/api/viewcategory/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5426,7 +5428,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewcategory/list/category/test-id")
+                    .uri("/api/viewcategory/list/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5454,7 +5456,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewcategory/list/view/test-id")
+                    .uri("/api/viewcategory/list/view/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5482,7 +5484,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewcategory/test-id")
+                    .uri("/api/viewcategory/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5510,7 +5512,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewcategory/test-id/mockdeletetoget")
+                    .uri("/api/viewcategory/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5538,7 +5540,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewfieldconfig/list/all")
+                    .uri("/api/viewfieldconfig/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5566,7 +5568,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewfieldconfig/list/view/test-id")
+                    .uri("/api/viewfieldconfig/list/view/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5594,7 +5596,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewfieldconfig/test-id")
+                    .uri("/api/viewfieldconfig/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5622,7 +5624,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewfieldconfig/test-id/mockdeletetoget")
+                    .uri("/api/viewfieldconfig/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5650,7 +5652,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewfieldconfig/test-id/mockputtopost")
+                    .uri("/api/viewfieldconfig/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5678,7 +5680,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewrecord/document/test-id/filter/list/test-id/next/test-id")
+                    .uri("/api/viewrecord/document/test-id/filter/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5706,7 +5708,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewrecord/document/test-id/has/view")
+                    .uri("/api/viewrecord/document/test-id/has/view")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5734,7 +5736,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewrecord/list/install/log/paging/test-id/size/test-id")
+                    .uri("/api/viewrecord/list/install/log/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5762,7 +5764,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/image/encode/base64")
+                    .uri("/api/image/encode/base64")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5790,7 +5792,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/image/encode/base64/size/test-id")
+                    .uri("/api/image/encode/base64/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5818,7 +5820,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/image/resize/id/test-id/width/test-id/height/test-id")
+                    .uri("/api/image/resize/id/test-id/width/test-id/height/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5846,7 +5848,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/export/appInfo/test-id")
+                    .uri("/api/export/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5874,7 +5876,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/import/appInfo/test-id")
+                    .uri("/api/import/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5902,7 +5904,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/compare")
+                    .uri("/api/input/compare")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5930,7 +5932,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/compare/mockputtopost")
+                    .uri("/api/input/compare/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5958,7 +5960,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/cover")
+                    .uri("/api/input/cover")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5983,7 +5985,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/cover/mockputtopost")
+                    .uri("/api/input/cover/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6011,7 +6013,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/create")
+                    .uri("/api/input/create")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -6036,7 +6038,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/create/mockputtopost")
+                    .uri("/api/input/create/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6064,7 +6066,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/prepare/cover")
+                    .uri("/api/input/prepare/cover")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -6092,7 +6094,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/prepare/cover/mockputtopost")
+                    .uri("/api/input/prepare/cover/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6120,7 +6122,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/prepare/create")
+                    .uri("/api/input/prepare/create")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -6148,7 +6150,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/input/prepare/create/mockputtopost")
+                    .uri("/api/input/prepare/create/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6176,7 +6178,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/test-id/view/count")
+                    .uri("/api/document/test-id/view/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6204,7 +6206,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/commend/list/paging/test-id")
+                    .uri("/api/commend/list/paging/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6232,7 +6234,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/document/search")
+                    .uri("/api/cms_assemble_control/document/search")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6260,7 +6262,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/queryview/flag/test-id/definition/test-id")
+                    .uri("/api/queryview/flag/test-id/definition/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6288,7 +6290,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/test-id/mockdeletetoget")
+                    .uri("/api/document/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6326,7 +6328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/test-id/document/data")
+                    .uri("/api/document/test-id/document/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6354,7 +6356,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/list/document")
+                    .uri("/api/document/list/document")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6382,7 +6384,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/document/fields")
+                    .uri("/api/document/document/fields")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6410,7 +6412,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/filter/count/mockputtopost")
+                    .uri("/api/document/filter/count/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6440,7 +6442,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/comment/list/test-id/size/test-id/mockputtopost")
+                    .uri("/api/comment/list/test-id/size/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6472,7 +6474,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/list/filter")
+                    .uri("/api/fileinfo/list/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6526,7 +6528,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/appconfig/test-id")
+                    .uri("/api/appconfig/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6554,7 +6556,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/designer/search")
+                    .uri("/api/designer/search")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6583,7 +6585,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/categoryinfo/list/objects")
+                    .uri("/api/categoryinfo/list/objects")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6614,7 +6616,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/update/doc/test-id")
+                    .uri("/api/correlation/update/doc/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6645,7 +6647,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/review/v2/search")
+                    .uri("/api/review/v2/search")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6676,7 +6678,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/batch/status")
+                    .uri("/api/document/batch/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6704,7 +6706,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/batch/test-id/status")
+                    .uri("/api/document/batch/test-id/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6733,7 +6735,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/batch/test-id/mockdeletetoget")
+                    .uri("/api/document/batch/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6763,7 +6765,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/cipher/publish/content")
+                    .uri("/api/document/cipher/publish/content")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -6791,7 +6793,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/cipher/publish/content/mockputtopost")
+                    .uri("/api/document/cipher/publish/content/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6820,7 +6822,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/draft/list/test-id/next/test-id/mockputtopost")
+                    .uri("/api/document/draft/list/test-id/next/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6848,7 +6850,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/filter/list/test-id/next/test-id/mockputtopost")
+                    .uri("/api/document/filter/list/test-id/next/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6876,7 +6878,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/filter/list/test-id/prev/test-id/mockputtopost")
+                    .uri("/api/document/filter/list/test-id/prev/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6904,7 +6906,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/filter/list/test-id/size/test-id/mockputtopost")
+                    .uri("/api/document/filter/list/test-id/size/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6936,7 +6938,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/test-id/persons")
+                    .uri("/api/document/test-id/persons")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6965,7 +6967,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/list/document/data")
+                    .uri("/api/document/list/document/data")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6995,7 +6997,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/appInfo/test-id")
+                    .uri("/api/file/test-id/appInfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7020,7 +7022,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/appInfo/test-id/download")
+                    .uri("/api/file/test-id/appInfo/test-id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7048,7 +7050,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/test-id/binary/base64/test-id")
+                    .uri("/api/fileinfo/test-id/binary/base64/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7076,7 +7078,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/fileinfo/upload/with/url")
+                    .uri("/api/fileinfo/upload/with/url")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7104,7 +7106,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/form/test-id/appinfo/test-id")
+                    .uri("/api/form/test-id/appinfo/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7133,7 +7135,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/script/test-id/appInfo/test-id")
+                    .uri("/api/script/test-id/appInfo/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7161,7 +7163,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/viewrecord/person/test-id")
+                    .uri("/api/viewrecord/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

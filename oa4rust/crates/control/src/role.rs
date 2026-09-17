@@ -8,7 +8,7 @@ use shared::response::ActionResult;
 
 use crate::pagination::page_result;
 
-/// 创建角色请求体（契约路径 POST /jaxrs/role）
+/// 创建角色请求体（契约路径 POST /api/role）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct RoleCreateRequest {
     /// 角色名称
@@ -17,7 +17,7 @@ pub struct RoleCreateRequest {
     pub description: Option<String>,
 }
 
-/// 更新角色请求体（契约路径 PUT /jaxrs/role/{flag}）
+/// 更新角色请求体（契约路径 PUT /api/role/{flag}）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct RoleUpdateRequest {
     /// 角色名称
@@ -30,7 +30,7 @@ pub struct RoleUpdateRequest {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/role/{flag}",
+    path = "/api/role/{flag}",
     params(
         ("flag" = String, Path, description = "Role flag (id or name)")
     ),
@@ -146,7 +146,7 @@ async fn query_page(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/role/list/{flag}/next/{count}",
+    path = "/api/role/list/{flag}/next/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -170,7 +170,7 @@ pub async fn list_next(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/role/list/{flag}/prev/{count}",
+    path = "/api/role/list/{flag}/prev/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -194,7 +194,7 @@ pub async fn list_prev(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/role",
+    path = "/api/role",
     request_body = RoleCreateRequest,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -250,7 +250,7 @@ pub async fn create(
 
 #[utoipa::path(
     put,
-    path = "/jaxrs/role/{flag}",
+    path = "/api/role/{flag}",
     params(
         ("flag" = String, Path, description = "Role flag (id or name)")
     ),
@@ -315,7 +315,7 @@ pub async fn update(
 
 #[utoipa::path(
     delete,
-    path = "/jaxrs/role/{flag}",
+    path = "/api/role/{flag}",
     params(
         ("flag" = String, Path, description = "Role flag (id or name)")
     ),

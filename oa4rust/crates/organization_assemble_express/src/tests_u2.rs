@@ -34,23 +34,23 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_person_get_endpoints_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/person/auth/info/p1").await,
+            status_of("GET", "/api/person/auth/info/p1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/person/nick/name/p1").await,
+            status_of("GET", "/api/person/nick/name/p1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/person/mobile/p1").await,
+            status_of("GET", "/api/person/mobile/p1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/person/list/all").await,
+            status_of("GET", "/api/person/list/all").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/person/list/all/object").await,
+            status_of("GET", "/api/person/list/all/object").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -58,13 +58,13 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_person_post_endpoints_registered() {
         for uri in [
-            "/jaxrs/person/list",
-            "/jaxrs/person/list/object",
-            "/jaxrs/person/has/role",
-            "/jaxrs/person/list/identity",
-            "/jaxrs/person/list/group",
-            "/jaxrs/person/list/role",
-            "/jaxrs/person/list/filter/1/size/20",
+            "/api/person/list",
+            "/api/person/list/object",
+            "/api/person/has/role",
+            "/api/person/list/identity",
+            "/api/person/list/group",
+            "/api/person/list/role",
+            "/api/person/list/filter/1/size/20",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -77,11 +77,11 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_identity_endpoints_registered() {
         for uri in [
-            "/jaxrs/identity/list",
-            "/jaxrs/identity/list/object",
-            "/jaxrs/identity/list/person",
-            "/jaxrs/identity/list/unit/sub/direct",
-            "/jaxrs/identity/list/unit/sub/nested",
+            "/api/identity/list",
+            "/api/identity/list/object",
+            "/api/identity/list/person",
+            "/api/identity/list/unit/sub/direct",
+            "/api/identity/list/unit/sub/nested",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -94,21 +94,21 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_unit_get_and_post_endpoints_registered() {
         assert_eq!(
-            status_of("GET", "/jaxrs/unit/list/all").await,
+            status_of("GET", "/api/unit/list/all").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/unit/list/all/object").await,
+            status_of("GET", "/api/unit/list/all/object").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         for uri in [
-            "/jaxrs/unit/list",
-            "/jaxrs/unit/list/object",
-            "/jaxrs/unit/list/unit/sub/direct",
-            "/jaxrs/unit/list/unit/sub/nested",
-            "/jaxrs/unit/list/unit/sup/direct",
-            "/jaxrs/unit/list/unit/sup/nested",
-            "/jaxrs/unit/check/unit/has/person",
+            "/api/unit/list",
+            "/api/unit/list/object",
+            "/api/unit/list/unit/sub/direct",
+            "/api/unit/list/unit/sub/nested",
+            "/api/unit/list/unit/sup/direct",
+            "/api/unit/list/unit/sup/nested",
+            "/api/unit/check/unit/has/person",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -121,13 +121,13 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_group_role_unitduty_endpoints_registered() {
         for uri in [
-            "/jaxrs/group/list",
-            "/jaxrs/group/list/object",
-            "/jaxrs/group/list/person",
-            "/jaxrs/role/list",
-            "/jaxrs/role/list/person",
-            "/jaxrs/unitduty/list/name",
-            "/jaxrs/unitduty/list/name/unit",
+            "/api/group/list",
+            "/api/group/list/object",
+            "/api/group/list/person",
+            "/api/role/list",
+            "/api/role/list/person",
+            "/api/unitduty/list/name",
+            "/api/unitduty/list/name/unit",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -138,15 +138,15 @@ mod u2_tests {
     }
 
     #[tokio::test]
-    async fn u2_unregistered_java_path_still_missing() {
+    async fn u2_unregistered_legacy_path_still_missing() {
         // 未实现的路径必须仍是 404；person/detail 已注册为 POST，
         // 其 GET 变体返回 405（方法不匹配）而非 404
         assert_eq!(
-            status_of("GET", "/jaxrs/person/detail/p1").await,
+            status_of("GET", "/api/person/detail/p1").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_eq!(
-            status_of("POST", "/jaxrs/person/no/such/java/action").await,
+            status_of("POST", "/api/person/no/such/legacy/action").await,
             StatusCode::NOT_FOUND
         );
     }

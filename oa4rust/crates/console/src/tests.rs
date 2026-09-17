@@ -83,7 +83,7 @@ async fn test_get_status_route_exists() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/console/status")
+                .uri("/api/console/status")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -103,7 +103,7 @@ async fn test_get_logs_route_exists() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/console/logs/error")
+                .uri("/api/console/logs/error")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -128,7 +128,7 @@ async fn test_send_message_route_exists() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/console/send/message")
+                .uri("/api/console/send/message")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -149,7 +149,7 @@ async fn test_clear_cache_route_exists() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/console/cache/clear/all")
+                .uri("/api/console/cache/clear/all")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -169,7 +169,7 @@ async fn test_get_metric_route_exists() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/console/metric/cpu_usage")
+                .uri("/api/console/metric/cpu_usage")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),

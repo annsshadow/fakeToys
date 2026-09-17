@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/definition/list")
+                    .uri("/api/organization/definition/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/group/list")
+                    .uri("/api/organization/group/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -64,7 +64,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/identity/list")
+                    .uri("/api/organization/identity/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -84,7 +84,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/person/list")
+                    .uri("/api/organization/person/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -104,7 +104,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/custom/list/test-identity-id")
+                    .uri("/api/organization/custom/list/test-identity-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -124,7 +124,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/bind/list")
+                    .uri("/api/organization/bind/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -144,7 +144,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/definition")
+                    .uri("/api/organization/definition")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -172,7 +172,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/person/person-001")
+                    .uri("/api/organization/person/person-001")
                     .method(axum::http::Method::PUT)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -198,7 +198,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/group/group-001")
+                    .uri("/api/organization/group/group-001")
                     .method(axum::http::Method::PUT)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -225,7 +225,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/definition")
+                    .uri("/api/organization/definition")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -252,7 +252,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/person")
+                    .uri("/api/organization/person")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -279,7 +279,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/person/test-id")
+                    .uri("/api/organization/person/test-id")
                     .method(axum::http::Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -299,7 +299,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/group")
+                    .uri("/api/organization/group")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -326,7 +326,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/identity")
+                    .uri("/api/organization/identity")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -354,7 +354,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/bind")
+                    .uri("/api/organization/bind")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -381,7 +381,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/custom")
+                    .uri("/api/organization/custom")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(

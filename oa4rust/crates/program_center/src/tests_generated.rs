@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program/applications")
+                    .uri("/api/program/applications")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program/appstyle/current/style")
+                    .uri("/api/program/appstyle/current/style")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program/datastructure/modules/all")
+                    .uri("/api/program/datastructure/modules/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/list")
+                    .uri("/api/program_center/collect/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/add")
+                    .uri("/api/program_center/collect/add")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/remove")
+                    .uri("/api/program_center/collect/remove")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/get")
+                    .uri("/api/program_center/config/get")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/flag")
+                    .uri("/api/program_center/agent/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/flag/disable")
+                    .uri("/api/program_center/agent/flag/disable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/flag/enable")
+                    .uri("/api/program_center/agent/flag/enable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/flag/execute")
+                    .uri("/api/program_center/agent/flag/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/flag/file")
+                    .uri("/api/program_center/agent/flag/file")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -265,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/andfx/pull/sync")
+                    .uri("/api/program_center/andfx/pull/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -286,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/current/style")
+                    .uri("/api/program_center/appstyle/current/style")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -307,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/current/update")
+                    .uri("/api/program_center/appstyle/current/update")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -328,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/application/top")
+                    .uri("/api/program_center/appstyle/image/application/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -349,7 +349,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/application/top/erase")
+                    .uri("/api/program_center/appstyle/image/application/top/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -370,7 +370,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/launch/logo")
+                    .uri("/api/program_center/appstyle/image/launch/logo")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -391,7 +391,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/launch/logo/erase")
+                    .uri("/api/program_center/appstyle/image/launch/logo/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -412,7 +412,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/login/avatar")
+                    .uri("/api/program_center/appstyle/image/login/avatar")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -433,7 +433,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/login/avatar/erase")
+                    .uri("/api/program_center/appstyle/image/login/avatar/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -454,7 +454,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/menu/logo/blur")
+                    .uri("/api/program_center/appstyle/image/menu/logo/blur")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -475,7 +475,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/menu/logo/blur/erase")
+                    .uri("/api/program_center/appstyle/image/menu/logo/blur/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -496,7 +496,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/menu/logo/focus")
+                    .uri("/api/program_center/appstyle/image/menu/logo/focus")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -517,7 +517,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/menu/logo/focus/erase")
+                    .uri("/api/program_center/appstyle/image/menu/logo/focus/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -538,7 +538,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/process/default")
+                    .uri("/api/program_center/appstyle/image/process/default")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -559,7 +559,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/process/default/erase")
+                    .uri("/api/program_center/appstyle/image/process/default/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -580,7 +580,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/setup/about/logo")
+                    .uri("/api/program_center/appstyle/image/setup/about/logo")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -601,7 +601,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/setup/about/logo/erase")
+                    .uri("/api/program_center/appstyle/image/setup/about/logo/erase")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -622,7 +622,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/index/portal")
+                    .uri("/api/program_center/appstyle/index/portal")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -643,7 +643,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/bar/create/mass/from/count")
+                    .uri("/api/program_center/bar/create/mass/from/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -664,7 +664,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/bar/select1/field/field/value/value/count/count")
+                    .uri("/api/program_center/bar/select1/field/field/value/value/count/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -685,7 +685,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/bar/select2/count/count")
+                    .uri("/api/program_center/bar/select2/count/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -706,7 +706,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/bar/select3/field/field/value/value/count/count")
+                    .uri("/api/program_center/bar/select3/field/field/value/value/count/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -727,7 +727,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/bar/select4/field/field/value/value/count/count")
+                    .uri("/api/program_center/bar/select4/field/field/value/value/count/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -748,7 +748,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/captcha/list")
+                    .uri("/api/program_center/captcha/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -769,7 +769,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/captcha/v2/create/width/width/height/height")
+                    .uri("/api/program_center/captcha/v2/create/width/width/height/height")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -790,7 +790,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/captcha/id/validate/answer/answer")
+                    .uri("/api/program_center/captcha/id/validate/answer/answer")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -811,7 +811,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/center/applications")
+                    .uri("/api/program_center/center/applications")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -832,7 +832,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/center/regist/applications")
+                    .uri("/api/program_center/center/regist/applications")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -853,7 +853,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/center/version")
+                    .uri("/api/program_center/center/version")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -874,7 +874,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/code/create/mobile/mobile")
+                    .uri("/api/program_center/code/create/mobile/mobile")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -895,7 +895,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/code/list")
+                    .uri("/api/program_center/code/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -916,7 +916,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/code/list/paging/page/size/size")
+                    .uri("/api/program_center/code/list/paging/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -937,7 +937,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/code/validate/mobile/mobile/answer/answer")
+                    .uri("/api/program_center/code/validate/mobile/mobile/answer/answer")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -958,7 +958,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/code/validate/mobile/mobile/answer/answer/cascade")
+                    .uri("/api/program_center/code/validate/mobile/mobile/answer/answer/cascade")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -979,7 +979,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/code/mobile/mobile")
+                    .uri("/api/program_center/collect/code/mobile/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1000,7 +1000,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/connect")
+                    .uri("/api/program_center/collect/connect")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1021,7 +1021,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/controllebbs")
+                    .uri("/api/program_center/collect/controllebbs")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1042,7 +1042,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/controllermobile/name/name/mobile/mobile")
+                    .uri("/api/program_center/collect/controllermobile/name/name/mobile/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1063,7 +1063,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/disconnect")
+                    .uri("/api/program_center/collect/disconnect")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1084,7 +1084,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/login")
+                    .uri("/api/program_center/collect/login")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1105,7 +1105,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/mobile/check/connect")
+                    .uri("/api/program_center/collect/mobile/check/connect")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1126,7 +1126,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/name/name/exist")
+                    .uri("/api/program_center/collect/name/name/exist")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1147,7 +1147,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/name/name/mobile/mobile/code/code")
+                    .uri("/api/program_center/collect/name/name/mobile/mobile/code/code")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1168,7 +1168,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/person")
+                    .uri("/api/program_center/collect/person")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1189,7 +1189,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/resetpassword")
+                    .uri("/api/program_center/collect/resetpassword")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1210,7 +1210,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/sync/area")
+                    .uri("/api/program_center/collect/sync/area")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1231,7 +1231,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/updateUnit")
+                    .uri("/api/program_center/collect/updateUnit")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1252,7 +1252,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/urlMapping")
+                    .uri("/api/program_center/collect/urlMapping")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1273,7 +1273,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/validate")
+                    .uri("/api/program_center/collect/validate")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1294,7 +1294,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/validate/codeanswer")
+                    .uri("/api/program_center/collect/validate/codeanswer")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1315,7 +1315,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/validate/direct")
+                    .uri("/api/program_center/collect/validate/direct")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1336,7 +1336,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/collect/validate/password")
+                    .uri("/api/program_center/collect/validate/password")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1357,7 +1357,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/command/execute")
+                    .uri("/api/program_center/command/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1378,7 +1378,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/command/list/node")
+                    .uri("/api/program_center/command/list/node")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1399,7 +1399,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/open/get/disable/export/enable")
+                    .uri("/api/program_center/config/open/get/disable/export/enable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1420,7 +1420,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/centerserver")
+                    .uri("/api/program_center/config/centerserver")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1441,7 +1441,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/change/password")
+                    .uri("/api/program_center/config/change/password")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1462,7 +1462,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/collect")
+                    .uri("/api/program_center/config/collect")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1483,7 +1483,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/license")
+                    .uri("/api/program_center/config/license")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1504,7 +1504,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/list")
+                    .uri("/api/program_center/config/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1525,7 +1525,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/list/application")
+                    .uri("/api/program_center/config/list/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1546,7 +1546,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/list/dump/data")
+                    .uri("/api/program_center/config/list/dump/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1567,7 +1567,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/list/dump/data/current/node")
+                    .uri("/api/program_center/config/list/dump/data/current/node")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1588,7 +1588,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/list/entity")
+                    .uri("/api/program_center/config/list/entity")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1609,7 +1609,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/open")
+                    .uri("/api/program_center/config/open")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1630,7 +1630,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/open/run/time/config")
+                    .uri("/api/program_center/config/open/run/time/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1651,7 +1651,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/person")
+                    .uri("/api/program_center/config/person")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1672,7 +1672,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/portal")
+                    .uri("/api/program_center/config/portal")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1693,7 +1693,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/proxy")
+                    .uri("/api/program_center/config/proxy")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1714,7 +1714,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/save")
+                    .uri("/api/program_center/config/save")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1735,7 +1735,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/ternary/management")
+                    .uri("/api/program_center/config/ternary/management")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1756,7 +1756,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/token")
+                    .uri("/api/program_center/config/token")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1777,7 +1777,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/datastructure/fileds/all")
+                    .uri("/api/program_center/datastructure/fileds/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1798,7 +1798,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/datastructure/modules/all")
+                    .uri("/api/program_center/datastructure/modules/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1819,7 +1819,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/datastructure/tables/all")
+                    .uri("/api/program_center/datastructure/tables/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1840,7 +1840,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/deploy/list/paging/page/size/size")
+                    .uri("/api/program_center/deploy/list/paging/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1861,7 +1861,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/deploy/server/o2")
+                    .uri("/api/program_center/deploy/server/o2")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1882,7 +1882,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/deploy/server/resource")
+                    .uri("/api/program_center/deploy/server/resource")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1903,7 +1903,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/deploy/web/resource/as/new/asNew")
+                    .uri("/api/program_center/deploy/web/resource/as/new/asNew")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1924,7 +1924,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/deploy/id")
+                    .uri("/api/program_center/deploy/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1945,7 +1945,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/designer/search")
+                    .uri("/api/program_center/designer/search")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1966,7 +1966,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/list")
+                    .uri("/api/program_center/dict/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1987,7 +1987,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/list/paging/page/size/size")
+                    .uri("/api/program_center/dict/list/paging/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2008,7 +2008,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/dictFlag/data")
+                    .uri("/api/program_center/dict/dictFlag/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2029,7 +2029,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/dictFlag/path/data")
+                    .uri("/api/program_center/dict/dictFlag/path/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2050,7 +2050,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/dictFlag/path/data/mockdeletetoget")
+                    .uri("/api/program_center/dict/dictFlag/path/data/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -2071,7 +2071,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/dictFlag/path/data/mockputtopost")
+                    .uri("/api/program_center/dict/dictFlag/path/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2092,7 +2092,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dict/id")
+                    .uri("/api/program_center/dict/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2113,7 +2113,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dingding/get/callback/aes")
+                    .uri("/api/program_center/dingding/get/callback/aes")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2134,7 +2134,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dingding/pull/sync")
+                    .uri("/api/program_center/dingding/pull/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2155,7 +2155,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dingding/request/pull/sync")
+                    .uri("/api/program_center/dingding/request/pull/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2176,7 +2176,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/dingding/sync/organization/callback")
+                    .uri("/api/program_center/dingding/sync/organization/callback")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2197,9 +2197,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/program_center/dingding/sync/organization/register/callback/enable",
-                    )
+                    .uri("/api/program_center/dingding/sync/organization/register/callback/enable")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2220,7 +2218,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/distribute/assemble/source/source")
+                    .uri("/api/program_center/distribute/assemble/source/source")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2241,7 +2239,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/distribute/webserver/assemble/source/source")
+                    .uri("/api/program_center/distribute/webserver/assemble/source/source")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2262,7 +2260,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/foo/create/mass/from/count")
+                    .uri("/api/program_center/foo/create/mass/from/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2283,7 +2281,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/input/compare")
+                    .uri("/api/program_center/input/compare")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2304,7 +2302,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/input/cover")
+                    .uri("/api/program_center/input/cover")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2325,7 +2323,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/input/create")
+                    .uri("/api/program_center/input/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2346,7 +2344,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/input/prepare/cover")
+                    .uri("/api/program_center/input/prepare/cover")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2367,7 +2365,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/input/prepare/create")
+                    .uri("/api/program_center/input/prepare/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2388,7 +2386,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/list/category")
+                    .uri("/api/program_center/invoke/list/category")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2409,7 +2407,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/list/with/category/category")
+                    .uri("/api/program_center/invoke/list/with/category/category")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2430,7 +2428,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/token")
+                    .uri("/api/program_center/invoke/token")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2451,7 +2449,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/flag")
+                    .uri("/api/program_center/invoke/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2472,7 +2470,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/flag/client/client/token/token/execute")
+                    .uri("/api/program_center/invoke/flag/client/client/token/token/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2493,7 +2491,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/flag/execute")
+                    .uri("/api/program_center/invoke/flag/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2514,7 +2512,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/flag/execute/get")
+                    .uri("/api/program_center/invoke/flag/execute/get")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2535,7 +2533,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/flag/file")
+                    .uri("/api/program_center/invoke/flag/file")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2557,7 +2555,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/jest/clear/cache/source")
+                    .uri("/api/program_center/jest/clear/cache/source")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2578,7 +2576,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/jest/list")
+                    .uri("/api/program_center/jest/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2599,7 +2597,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/jest/version")
+                    .uri("/api/program_center/jest/version")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2620,7 +2618,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/cloud/unit/is/vip")
+                    .uri("/api/program_center/market/cloud/unit/is/vip")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2641,7 +2639,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/install/offline")
+                    .uri("/api/program_center/market/install/offline")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2662,7 +2660,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/list/category")
+                    .uri("/api/program_center/market/list/category")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2683,7 +2681,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/list/install/log/paging/page/size/size")
+                    .uri("/api/program_center/market/list/install/log/paging/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2704,7 +2702,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/list/paging/page/size/size")
+                    .uri("/api/program_center/market/list/paging/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2725,9 +2723,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/program_center/market/list/paging/page/size/size/category/category",
-                    )
+                    .uri("/api/program_center/market/list/paging/page/size/size/category/category")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2748,7 +2744,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/list/top/three")
+                    .uri("/api/program_center/market/list/top/three")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2769,7 +2765,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/flag")
+                    .uri("/api/program_center/market/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2790,7 +2786,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/flag/cover/pic")
+                    .uri("/api/program_center/market/flag/cover/pic")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2811,7 +2807,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/flag/install/log")
+                    .uri("/api/program_center/market/flag/install/log")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2832,7 +2828,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/flag/install/or/update")
+                    .uri("/api/program_center/market/flag/install/or/update")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2853,7 +2849,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/flag/installed/version")
+                    .uri("/api/program_center/market/flag/installed/version")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2874,7 +2870,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/flag/uninstall")
+                    .uri("/api/program_center/market/flag/uninstall")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2895,7 +2891,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/market/id/download")
+                    .uri("/api/program_center/market/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2916,7 +2912,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/compare/upload")
+                    .uri("/api/program_center/module/compare/upload")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2937,7 +2933,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/list")
+                    .uri("/api/program_center/module/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2958,7 +2954,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/list/category")
+                    .uri("/api/program_center/module/list/category")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2979,7 +2975,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/output")
+                    .uri("/api/program_center/module/output")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3001,7 +2997,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/output/structure")
+                    .uri("/api/program_center/module/output/structure")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3022,7 +3018,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/output/flag/file")
+                    .uri("/api/program_center/module/output/flag/file")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3043,7 +3039,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/remove/structure/id")
+                    .uri("/api/program_center/module/remove/structure/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3064,7 +3060,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/write/flag")
+                    .uri("/api/program_center/module/write/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3085,7 +3081,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/module/id/compare")
+                    .uri("/api/program_center/module/id/compare")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3106,7 +3102,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/check")
+                    .uri("/api/program_center/mpweixin/check")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3127,7 +3123,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/media/add/forever")
+                    .uri("/api/program_center/mpweixin/media/add/forever")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3148,7 +3144,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/menu/add")
+                    .uri("/api/program_center/mpweixin/menu/add")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3169,7 +3165,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/menu/create/to/weixin")
+                    .uri("/api/program_center/mpweixin/menu/create/to/weixin")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3190,7 +3186,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/menu/delete/id")
+                    .uri("/api/program_center/mpweixin/menu/delete/id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -3212,7 +3208,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/menu/subscribe")
+                    .uri("/api/program_center/mpweixin/menu/subscribe")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3233,7 +3229,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/menu/update/id")
+                    .uri("/api/program_center/mpweixin/menu/update/id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3254,7 +3250,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/mpweixin/message/template/send")
+                    .uri("/api/program_center/mpweixin/message/template/send")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3275,7 +3271,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/output/list")
+                    .uri("/api/program_center/output/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3296,7 +3292,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/output/appInfoFlag/select")
+                    .uri("/api/program_center/output/appInfoFlag/select")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3317,7 +3313,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/output/flag/select/file")
+                    .uri("/api/program_center/output/flag/select/file")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3338,7 +3334,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/count/exceptionclass")
+                    .uri("/api/program_center/prompterrorlog/count/exceptionclass")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3359,7 +3355,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/count/loggername")
+                    .uri("/api/program_center/prompterrorlog/count/loggername")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3380,7 +3376,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/next/count")
+                    .uri("/api/program_center/prompterrorlog/list/id/next/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3401,7 +3397,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/next/count/date/date")
+                    .uri("/api/program_center/prompterrorlog/list/id/next/count/date/date")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3422,7 +3418,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass")
+                    .uri("/api/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3440,7 +3436,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/next/count/loggername/loggerName")
+                    .uri("/api/program_center/prompterrorlog/list/id/next/count/loggername/loggerName")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3461,7 +3457,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/prev/count")
+                    .uri("/api/program_center/prompterrorlog/list/id/prev/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3482,7 +3478,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/prev/count/date/date")
+                    .uri("/api/program_center/prompterrorlog/list/id/prev/count/date/date")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3503,7 +3499,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass")
+                    .uri("/api/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3521,7 +3517,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName")
+                    .uri("/api/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3542,7 +3538,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/prompterrorlog/id")
+                    .uri("/api/program_center/prompterrorlog/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3563,7 +3559,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/qiyeweixin/get/callback/aes")
+                    .uri("/api/program_center/qiyeweixin/get/callback/aes")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3584,7 +3580,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/qiyeweixin/pull/sync")
+                    .uri("/api/program_center/qiyeweixin/pull/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3605,7 +3601,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/qiyeweixin/request/pull/sync")
+                    .uri("/api/program_center/qiyeweixin/request/pull/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3626,7 +3622,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/qiyeweixin/send/getprivateinfo/message")
+                    .uri("/api/program_center/qiyeweixin/send/getprivateinfo/message")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3647,7 +3643,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/create")
+                    .uri("/api/program_center/application/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3668,7 +3664,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/save/test-id")
+                    .uri("/api/program_center/application/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3689,7 +3685,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/create")
+                    .uri("/api/program_center/agent/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3710,7 +3706,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/save/test-id")
+                    .uri("/api/program_center/agent/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3731,7 +3727,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/schedule/list/schedule")
+                    .uri("/api/program_center/schedule/list/schedule")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3752,7 +3748,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/schedule/list/schedulelocal")
+                    .uri("/api/program_center/schedule/list/schedulelocal")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3773,7 +3769,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/schedule/list/schedulelog/application/application")
+                    .uri("/api/program_center/schedule/list/schedulelog/application/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3794,7 +3790,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/schedule/report")
+                    .uri("/api/program_center/schedule/report")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3815,7 +3811,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/schedule/schedule/fire")
+                    .uri("/api/program_center/schedule/schedule/fire")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3836,7 +3832,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/list")
+                    .uri("/api/program_center/script/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3857,7 +3853,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/list/paging/page/size/size")
+                    .uri("/api/program_center/script/list/paging/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3878,7 +3874,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/name/name")
+                    .uri("/api/program_center/script/name/name")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3899,7 +3895,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/name/name/imported")
+                    .uri("/api/program_center/script/name/name/imported")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3920,7 +3916,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/flag")
+                    .uri("/api/program_center/script/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3941,7 +3937,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/id")
+                    .uri("/api/program_center/script/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3962,7 +3958,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/tokenthreshold/update")
+                    .uri("/api/program_center/tokenthreshold/update")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3983,7 +3979,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/unexpectederrorlog/list/id/next/count")
+                    .uri("/api/program_center/unexpectederrorlog/list/id/next/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4004,7 +4000,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/unexpectederrorlog/list/id/next/count/date/date")
+                    .uri("/api/program_center/unexpectederrorlog/list/id/next/count/date/date")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4025,7 +4021,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/unexpectederrorlog/list/id/prev/count")
+                    .uri("/api/program_center/unexpectederrorlog/list/id/prev/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4046,7 +4042,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/unexpectederrorlog/list/id/prev/count/date/date")
+                    .uri("/api/program_center/unexpectederrorlog/list/id/prev/count/date/date")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4067,7 +4063,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/unexpectederrorlog/id")
+                    .uri("/api/program_center/unexpectederrorlog/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4088,7 +4084,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/validation/meta")
+                    .uri("/api/program_center/validation/meta")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4109,7 +4105,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/validation/scripting/benchmark")
+                    .uri("/api/program_center/validation/scripting/benchmark")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4130,7 +4126,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/validation/timeout/timeout")
+                    .uri("/api/program_center/validation/timeout/timeout")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4151,7 +4147,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/zhengwudingding/pull/sync")
+                    .uri("/api/program_center/zhengwudingding/pull/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4172,7 +4168,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/zhengwudingding/regist/callback")
+                    .uri("/api/program_center/zhengwudingding/regist/callback")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4193,7 +4189,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/zhengwudingding/sync/organization/callback")
+                    .uri("/api/program_center/zhengwudingding/sync/organization/callback")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4215,7 +4211,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/centerserver")
+                    .uri("/api/program_center/config/centerserver")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -4235,7 +4231,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/person")
+                    .uri("/api/program_center/config/person")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -4255,7 +4251,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/config/token")
+                    .uri("/api/program_center/config/token")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -4275,7 +4271,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke")
+                    .uri("/api/program_center/invoke")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4295,7 +4291,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/some-flag")
+                    .uri("/api/program_center/invoke/some-flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4315,7 +4311,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/some-flag")
+                    .uri("/api/program_center/invoke/some-flag")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -4335,7 +4331,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/some-flag")
+                    .uri("/api/program_center/invoke/some-flag")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -4355,7 +4351,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/login/avatar/erase")
+                    .uri("/api/program_center/appstyle/image/login/avatar/erase")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4375,7 +4371,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/appstyle/image/launch/logo/erase")
+                    .uri("/api/program_center/appstyle/image/launch/logo/erase")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

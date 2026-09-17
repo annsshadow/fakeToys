@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/express/status")
+                    .uri("/api/correlation/core/express/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/express/sync")
+                    .uri("/api/correlation/core/express/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

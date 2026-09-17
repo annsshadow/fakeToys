@@ -86,10 +86,10 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_engine_less_endpoints_return_exact_501() {
         for (method, path) in [
-            ("GET", "/jaxrs/folder2/batch/download"),
-            ("GET", "/jaxrs/folder2/f-1/download"),
-            ("POST", "/jaxrs/config"),
-            ("GET", "/jaxrs/config/system/config"),
+            ("GET", "/api/folder2/batch/download"),
+            ("GET", "/api/folder2/f-1/download"),
+            ("POST", "/api/config"),
+            ("GET", "/api/config/system/config"),
         ] {
             let (status, _) = respond(method, path, &[], Body::empty()).await;
             assert_eq!(
@@ -102,8 +102,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_engine_less_501_body_is_action_result_error() {
-        let (status, json) =
-            respond("GET", "/jaxrs/config/system/config", &[], Body::empty()).await;
+        let (status, json) = respond("GET", "/api/config/system/config", &[], Body::empty()).await;
         assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
         assert_eq!(json["type"], "error");
         assert!(
@@ -185,7 +184,8 @@ mod u2_tests {
         } else {
             StatusCode::NOT_IMPLEMENTED
         };
-        let base = "/jaxrs/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1";
+        let base =
+            "/api/file/assemble/control/file/upload/referencetype/taskReport/reference/w-9/scale/1";
         for (method, headers, body) in [
             ("POST", &[][..], Body::from(vec![1u8, 2, 3])),
             ("PUT", MP, multipart_body("a.txt")),
@@ -210,22 +210,17 @@ mod u2_tests {
             r#"{"shareType":"password"}"#,
             r#"{"fileId":"f-1","shareType":"password"}"#,
         ] {
-            let (status, _) = respond_auth("POST", "/jaxrs/share", JSON, Body::from(body)).await;
+            let (status, _) = respond_auth("POST", "/api/share", JSON, Body::from(body)).await;
             assert_eq!(status, StatusCode::BAD_REQUEST, "body={body}");
         }
     }
 
     #[tokio::test]
     async fn u2_folder_create_validates_name_before_db() {
-        let (status, _) = respond_auth(
-            "POST",
-            "/jaxrs/folder",
-            JSON,
-            Body::from(r#"{"name":"  "}"#),
-        )
-        .await;
+        let (status, _) =
+            respond_auth("POST", "/api/folder", JSON, Body::from(r#"{"name":"  "}"#)).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        let (status, _) = respond_auth("POST", "/jaxrs/folder2", JSON, Body::from("{}")).await;
+        let (status, _) = respond_auth("POST", "/api/folder2", JSON, Body::from("{}")).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
     }
 
@@ -233,7 +228,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_attachment_family_routes_reachable() {
-        let b = "/jaxrs/attachment";
+        let b = "/api/attachment";
         let cases: Vec<(&str, String)> = vec![
             ("GET", format!("{b}/list/top")),
             ("GET", format!("{b}/list/editor/o-1")),
@@ -276,7 +271,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_attachment2_family_routes_reachable() {
-        let b = "/jaxrs/attachment2";
+        let b = "/api/attachment2";
         let cases: Vec<(&str, String)> = vec![
             ("GET", format!("{b}/exist/file/md5-1")),
             ("GET", format!("{b}/list/top")),
@@ -320,7 +315,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_file_family_prefixed_routes_reachable() {
-        let b = "/jaxrs/file/assemble/control/file";
+        let b = "/api/file/assemble/control/file";
         let cases: Vec<(&str, String)> = vec![
             ("GET", format!("{b}/list/referencetype")),
             ("GET", format!("{b}/list/referencetype/cms/reference/r-1")),
@@ -377,18 +372,18 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_folder_folder2_routes_reachable() {
         for (method, path) in [
-            ("POST", "/jaxrs/folder"),
-            ("GET", "/jaxrs/folder/list/top"),
-            ("GET", "/jaxrs/folder/list/f-1"),
-            ("GET", "/jaxrs/folder/f-1"),
-            ("PUT", "/jaxrs/folder/f-1"),
-            ("DELETE", "/jaxrs/folder/f-1"),
-            ("POST", "/jaxrs/folder2"),
-            ("GET", "/jaxrs/folder2/list/top"),
-            ("GET", "/jaxrs/folder2/list/f-1"),
-            ("GET", "/jaxrs/folder2/f-1"),
-            ("PUT", "/jaxrs/folder2/f-1"),
-            ("DELETE", "/jaxrs/folder2/f-1"),
+            ("POST", "/api/folder"),
+            ("GET", "/api/folder/list/top"),
+            ("GET", "/api/folder/list/f-1"),
+            ("GET", "/api/folder/f-1"),
+            ("PUT", "/api/folder/f-1"),
+            ("DELETE", "/api/folder/f-1"),
+            ("POST", "/api/folder2"),
+            ("GET", "/api/folder2/list/top"),
+            ("GET", "/api/folder2/list/f-1"),
+            ("GET", "/api/folder2/f-1"),
+            ("PUT", "/api/folder2/f-1"),
+            ("DELETE", "/api/folder2/f-1"),
         ] {
             let needs_body = matches!(method, "PUT" | "POST");
             let (headers, body): (&[(&str, &str)], Body) = if needs_body {
@@ -408,23 +403,23 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_recycle_share_routes_reachable() {
         for (method, path) in [
-            ("DELETE", "/jaxrs/recycle/empty"),
-            ("GET", "/jaxrs/recycle/list"),
-            ("GET", "/jaxrs/recycle/r-1"),
-            ("DELETE", "/jaxrs/recycle/r-1/delete"),
-            ("POST", "/jaxrs/recycle/r-1/resume"),
-            ("POST", "/jaxrs/share"),
-            ("GET", "/jaxrs/share/download/share/s-1/file/f-1"),
-            ("GET", "/jaxrs/share/list"),
-            ("GET", "/jaxrs/share/list/my"),
-            ("GET", "/jaxrs/share/list/to/me"),
-            ("GET", "/jaxrs/share/list/att/share/s-1/folder/fd-1"),
-            ("GET", "/jaxrs/share/list/folder/share/s-1/folder/fd-1"),
-            ("POST", "/jaxrs/share/share/s-1/file/f-1/folder/fd-1"),
-            ("GET", "/jaxrs/share/shield/s-1"),
-            ("GET", "/jaxrs/share/s-1"),
-            ("DELETE", "/jaxrs/share/s-1"),
-            ("GET", "/jaxrs/share/s-1/password/pw-1"),
+            ("DELETE", "/api/recycle/empty"),
+            ("GET", "/api/recycle/list"),
+            ("GET", "/api/recycle/r-1"),
+            ("DELETE", "/api/recycle/r-1/delete"),
+            ("POST", "/api/recycle/r-1/resume"),
+            ("POST", "/api/share"),
+            ("GET", "/api/share/download/share/s-1/file/f-1"),
+            ("GET", "/api/share/list"),
+            ("GET", "/api/share/list/my"),
+            ("GET", "/api/share/list/to/me"),
+            ("GET", "/api/share/list/att/share/s-1/folder/fd-1"),
+            ("GET", "/api/share/list/folder/share/s-1/folder/fd-1"),
+            ("POST", "/api/share/share/s-1/file/f-1/folder/fd-1"),
+            ("GET", "/api/share/shield/s-1"),
+            ("GET", "/api/share/s-1"),
+            ("DELETE", "/api/share/s-1"),
+            ("GET", "/api/share/s-1/password/pw-1"),
         ] {
             let needs_body = matches!(method, "PUT" | "POST");
             let (headers, body): (&[(&str, &str)], Body) = if needs_body {
@@ -444,13 +439,13 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_complex_editor_anonymous_routes_reachable() {
         for (method, path) in [
-            ("GET", "/jaxrs/complex/folder/c-1"),
-            ("GET", "/jaxrs/complex/top"),
-            ("GET", "/jaxrs/editor/list"),
-            ("GET", "/jaxrs/config/is/file/manager"),
-            ("GET", "/jaxrs/anonymous/file/an-1/download"),
-            ("POST", "/jaxrs/anonymous/file/an-1/download"),
-            ("POST", "/jaxrs/anonymous/file/an-1/download/stream"),
+            ("GET", "/api/complex/folder/c-1"),
+            ("GET", "/api/complex/top"),
+            ("GET", "/api/editor/list"),
+            ("GET", "/api/config/is/file/manager"),
+            ("GET", "/api/anonymous/file/an-1/download"),
+            ("POST", "/api/anonymous/file/an-1/download"),
+            ("POST", "/api/anonymous/file/an-1/download/stream"),
         ] {
             let (status, _) = respond(method, path, &[], Body::empty()).await;
             assert_ne!(
@@ -468,7 +463,7 @@ mod u2_tests {
     async fn u2_legacy_prefixed_list_route_still_matches_after_param_rename() {
         let (status, _) = respond(
             "GET",
-            "/jaxrs/file/assemble/control/file/list/test-id",
+            "/api/file/assemble/control/file/list/test-id",
             &[],
             Body::empty(),
         )
@@ -478,7 +473,7 @@ mod u2_tests {
         // 同路径不同方法共存（GET 元数据 / DELETE 删除）
         let (del, _) = respond(
             "DELETE",
-            "/jaxrs/file/assemble/control/file/test-id",
+            "/api/file/assemble/control/file/test-id",
             &[],
             Body::empty(),
         )
@@ -486,10 +481,10 @@ mod u2_tests {
         assert_ne!(del, StatusCode::NOT_FOUND);
     }
 
-    /// 同一路径的 GET 与 POST 必须都路由到下载 handler（Java download/postDownload 对）。
+    /// 同一路径的 GET 与 POST 必须都路由到下载 handler（o2server download/postDownload 对）。
     #[tokio::test]
     async fn u2_same_path_multi_method_routing() {
-        let path = "/jaxrs/attachment/a-1/download";
+        let path = "/api/attachment/a-1/download";
         for method in ["GET", "POST"] {
             let (status, _) = respond(method, path, &[], Body::empty()).await;
             assert_ne!(status, StatusCode::METHOD_NOT_ALLOWED, "{method} {path}");

@@ -901,36 +901,27 @@ pub async fn invoice_delete(
 
 pub fn general_core_entity_router(_pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/general/dict/list", get(dict_list))
-        .route("/jaxrs/general/dict/create", post(dict_create))
-        .route("/jaxrs/general/dict/{id}", get(dict_get))
-        .route("/jaxrs/general/dict/update/{id}", post(dict_update))
-        .route("/jaxrs/general/dict/delete/{id}", post(dict_delete))
-        .route(
-            "/jaxrs/general/dict/item/list/{dictId}",
-            get(dict_item_list),
-        )
-        .route("/jaxrs/general/dict/item/create", post(dict_item_create))
-        .route("/jaxrs/general/dict/item/{id}", get(dict_item_get))
-        .route(
-            "/jaxrs/general/dict/item/update/{id}",
-            post(dict_item_update),
-        )
-        .route(
-            "/jaxrs/general/dict/item/delete/{id}",
-            post(dict_item_delete),
-        )
-        .route("/jaxrs/general/file/list", get(file_list))
-        .route("/jaxrs/general/file/create", post(file_create))
-        .route("/jaxrs/general/file/{id}", get(file_get))
-        .route("/jaxrs/general/file/update/{id}", post(file_update))
-        .route("/jaxrs/general/file/delete/{id}", post(file_delete))
-        .route("/jaxrs/general/file/download/{id}", get(file_download))
-        .route("/jaxrs/general/invoice/list", get(invoice_list))
-        .route("/jaxrs/general/invoice/create", post(invoice_create))
-        .route("/jaxrs/general/invoice/{id}", get(invoice_get))
-        .route("/jaxrs/general/invoice/update/{id}", post(invoice_update))
-        .route("/jaxrs/general/invoice/delete/{id}", post(invoice_delete))
+        .route("/api/general/dict/list", get(dict_list))
+        .route("/api/general/dict/create", post(dict_create))
+        .route("/api/general/dict/{id}", get(dict_get))
+        .route("/api/general/dict/update/{id}", post(dict_update))
+        .route("/api/general/dict/delete/{id}", post(dict_delete))
+        .route("/api/general/dict/item/list/{dictId}", get(dict_item_list))
+        .route("/api/general/dict/item/create", post(dict_item_create))
+        .route("/api/general/dict/item/{id}", get(dict_item_get))
+        .route("/api/general/dict/item/update/{id}", post(dict_item_update))
+        .route("/api/general/dict/item/delete/{id}", post(dict_item_delete))
+        .route("/api/general/file/list", get(file_list))
+        .route("/api/general/file/create", post(file_create))
+        .route("/api/general/file/{id}", get(file_get))
+        .route("/api/general/file/update/{id}", post(file_update))
+        .route("/api/general/file/delete/{id}", post(file_delete))
+        .route("/api/general/file/download/{id}", get(file_download))
+        .route("/api/general/invoice/list", get(invoice_list))
+        .route("/api/general/invoice/create", post(invoice_create))
+        .route("/api/general/invoice/{id}", get(invoice_get))
+        .route("/api/general/invoice/update/{id}", post(invoice_update))
+        .route("/api/general/invoice/delete/{id}", post(invoice_delete))
 }
 
 #[cfg(test)]

@@ -22,7 +22,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component/core/entity/list/all")
+                    .uri("/api/component/core/entity/list/all")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -42,7 +42,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component/core/entity/test-id")
+                    .uri("/api/component/core/entity/test-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -65,7 +65,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/component/core/entity/nonexistent")
+                    .uri("/api/component/core/entity/nonexistent")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

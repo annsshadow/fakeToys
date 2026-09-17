@@ -612,42 +612,39 @@ pub async fn delete_meeting(
 
 /// 创建会议核心实体路由
 /// 注册以下路由：
-/// - /jaxrs/meeting/core/entity/room/list - 会议室列表
-/// - /jaxrs/meeting/core/entity/meeting/list - 会议列表
-/// - /jaxrs/meeting/core/entity/meeting/list/by/{roomId} - 按会议室查询
-/// - /jaxrs/meeting/core/entity/meeting/create - 创建会议
-/// - /jaxrs/meeting/core/entity/meeting/{id} - 获取单个会议
-/// - /jaxrs/meeting/core/entity/meeting/save/{id} - 更新会议
-/// - /jaxrs/meeting/core/entity/meeting/delete/{id} - 删除会议
+/// - /api/meeting/core/entity/room/list - 会议室列表
+/// - /api/meeting/core/entity/meeting/list - 会议列表
+/// - /api/meeting/core/entity/meeting/list/by/{roomId} - 按会议室查询
+/// - /api/meeting/core/entity/meeting/create - 创建会议
+/// - /api/meeting/core/entity/meeting/{id} - 获取单个会议
+/// - /api/meeting/core/entity/meeting/save/{id} - 更新会议
+/// - /api/meeting/core/entity/meeting/delete/{id} - 删除会议
 pub fn meeting_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/meeting/core/entity/room/list", get(room_list))
-        .route("/jaxrs/meeting/core/entity/room/create", post(create_room))
-        .route("/jaxrs/meeting/core/entity/room/{id}", get(get_room))
+        .route("/api/meeting/core/entity/room/list", get(room_list))
+        .route("/api/meeting/core/entity/room/create", post(create_room))
+        .route("/api/meeting/core/entity/room/{id}", get(get_room))
+        .route("/api/meeting/core/entity/room/save/{id}", post(update_room))
         .route(
-            "/jaxrs/meeting/core/entity/room/save/{id}",
-            post(update_room),
-        )
-        .route(
-            "/jaxrs/meeting/core/entity/room/delete/{id}",
+            "/api/meeting/core/entity/room/delete/{id}",
             post(delete_room),
         )
-        .route("/jaxrs/meeting/core/entity/meeting/list", get(meeting_list))
+        .route("/api/meeting/core/entity/meeting/list", get(meeting_list))
         .route(
-            "/jaxrs/meeting/core/entity/meeting/list/by/{roomId}",
+            "/api/meeting/core/entity/meeting/list/by/{roomId}",
             get(meeting_list_by_room),
         )
         .route(
-            "/jaxrs/meeting/core/entity/meeting/create",
+            "/api/meeting/core/entity/meeting/create",
             post(create_meeting),
         )
-        .route("/jaxrs/meeting/core/entity/meeting/{id}", get(get_meeting))
+        .route("/api/meeting/core/entity/meeting/{id}", get(get_meeting))
         .route(
-            "/jaxrs/meeting/core/entity/meeting/save/{id}",
+            "/api/meeting/core/entity/meeting/save/{id}",
             post(update_meeting),
         )
         .route(
-            "/jaxrs/meeting/core/entity/meeting/delete/{id}",
+            "/api/meeting/core/entity/meeting/delete/{id}",
             post(delete_meeting),
         )
         .with_state(pool)

@@ -46,7 +46,7 @@ pub async fn chat_list_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size,
@@ -105,7 +105,7 @@ pub async fn chat_list_completion_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size,

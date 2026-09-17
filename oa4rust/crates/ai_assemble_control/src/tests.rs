@@ -20,7 +20,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/get/ai/control/config")
+                    .uri("/api/ai_assemble_control/get/ai/control/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -39,7 +39,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/list/ai/models")
+                    .uri("/api/ai_assemble_control/list/ai/models")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/get/usage/stats")
+                    .uri("/api/ai_assemble_control/get/usage/stats")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -79,7 +79,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/update/ai/control/config")
+                    .uri("/api/ai_assemble_control/update/ai/control/config")
                     .method(Method::GET)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -111,7 +111,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/chat/completion")
+                    .uri("/api/ai_assemble_control/chat/completion")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -155,70 +155,64 @@ mod u2_closure_tests {
     use deadpool_postgres::{Manager, Pool};
     use tower::util::ServiceExt;
 
-    /// Java x_ai_assemble_control jaxrs 的 33 个唯一端点（类级+方法级 @Path 拼接、
+    /// o2server x_ai_assemble_control o2server 的 33 个唯一端点（类级+方法级 路径拼接、
     /// 动词精确对应）。路径参数统一以字面量代入。
-    const U2_JAVA_ENDPOINTS: &[(&str, &str)] = &[
+    const U2_LEGACY_ENDPOINTS: &[(&str, &str)] = &[
         // ChatAction（5）
-        ("POST", "/jaxrs/ai_assemble_control/chat/completion"),
+        ("POST", "/api/ai_assemble_control/chat/completion"),
+        ("GET", "/api/ai_assemble_control/chat/list/paging/1/size/20"),
         (
             "GET",
-            "/jaxrs/ai_assemble_control/chat/list/paging/1/size/20",
+            "/api/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20",
         ),
-        (
-            "GET",
-            "/jaxrs/ai_assemble_control/chat/list/completion/u2t/paging/1/size/20",
-        ),
-        ("GET", "/jaxrs/ai_assemble_control/chat/delete/u2t"),
+        ("GET", "/api/ai_assemble_control/chat/delete/u2t"),
         (
             "POST",
-            "/jaxrs/ai_assemble_control/chat/write/completion/extra",
+            "/api/ai_assemble_control/chat/write/completion/extra",
         ),
         // ConfigAction（15）
-        ("GET", "/jaxrs/ai_assemble_control/config/get"),
-        ("GET", "/jaxrs/ai_assemble_control/config/base/config"),
-        ("POST", "/jaxrs/ai_assemble_control/config/save"),
+        ("GET", "/api/ai_assemble_control/config/get"),
+        ("GET", "/api/ai_assemble_control/config/base/config"),
+        ("POST", "/api/ai_assemble_control/config/save"),
         (
             "GET",
-            "/jaxrs/ai_assemble_control/config/list/model/paging/1/size/20",
+            "/api/ai_assemble_control/config/list/model/paging/1/size/20",
         ),
-        ("POST", "/jaxrs/ai_assemble_control/config/create/model"),
-        ("POST", "/jaxrs/ai_assemble_control/config/update/model/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/get/model/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/delete/model/u2t"),
+        ("POST", "/api/ai_assemble_control/config/create/model"),
+        ("POST", "/api/ai_assemble_control/config/update/model/u2t"),
+        ("GET", "/api/ai_assemble_control/config/get/model/u2t"),
+        ("GET", "/api/ai_assemble_control/config/delete/model/u2t"),
         (
             "GET",
-            "/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/20",
+            "/api/ai_assemble_control/config/list/mcp/paging/1/size/20",
         ),
-        ("POST", "/jaxrs/ai_assemble_control/config/create/mcp"),
-        ("POST", "/jaxrs/ai_assemble_control/config/update/mcp/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/get/mcp/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/get/mcp/ext/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/delete/mcp/u2t"),
-        ("GET", "/jaxrs/ai_assemble_control/config/list/enable/model"),
+        ("POST", "/api/ai_assemble_control/config/create/mcp"),
+        ("POST", "/api/ai_assemble_control/config/update/mcp/u2t"),
+        ("GET", "/api/ai_assemble_control/config/get/mcp/u2t"),
+        ("GET", "/api/ai_assemble_control/config/get/mcp/ext/u2t"),
+        ("GET", "/api/ai_assemble_control/config/delete/mcp/u2t"),
+        ("GET", "/api/ai_assemble_control/config/list/enable/model"),
         // FileAction（8）
-        ("GET", "/jaxrs/ai_assemble_control/file/u2t"),
-        ("POST", "/jaxrs/ai_assemble_control/file/upload"),
-        ("POST", "/jaxrs/ai_assemble_control/file/copy/file"),
-        ("GET", "/jaxrs/ai_assemble_control/file/u2t/download"),
-        ("GET", "/jaxrs/ai_assemble_control/file/u2t/download/scale"),
+        ("GET", "/api/ai_assemble_control/file/u2t"),
+        ("POST", "/api/ai_assemble_control/file/upload"),
+        ("POST", "/api/ai_assemble_control/file/copy/file"),
+        ("GET", "/api/ai_assemble_control/file/u2t/download"),
+        ("GET", "/api/ai_assemble_control/file/u2t/download/scale"),
         (
             "POST",
-            "/jaxrs/ai_assemble_control/file/list/paging/1/size/20",
+            "/api/ai_assemble_control/file/list/paging/1/size/20",
         ),
-        ("GET", "/jaxrs/ai_assemble_control/file/delete/u2t"),
-        ("POST", "/jaxrs/ai_assemble_control/file/list"),
+        ("GET", "/api/ai_assemble_control/file/delete/u2t"),
+        ("POST", "/api/ai_assemble_control/file/list"),
         // IndexAction（5）
-        ("GET", "/jaxrs/ai_assemble_control/index/cms/doc/u2t"),
-        (
-            "GET",
-            "/jaxrs/ai_assemble_control/index/cms/doc/with/app/u2t",
-        ),
-        ("GET", "/jaxrs/ai_assemble_control/index/delete/u2t"),
+        ("GET", "/api/ai_assemble_control/index/cms/doc/u2t"),
+        ("GET", "/api/ai_assemble_control/index/cms/doc/with/app/u2t"),
+        ("GET", "/api/ai_assemble_control/index/delete/u2t"),
         (
             "POST",
-            "/jaxrs/ai_assemble_control/index/list/paging/1/size/20",
+            "/api/ai_assemble_control/index/list/paging/1/size/20",
         ),
-        ("GET", "/jaxrs/ai_assemble_control/index/sync/to/knowledge"),
+        ("GET", "/api/ai_assemble_control/index/sync/to/knowledge"),
     ];
 
     fn build_test_pool() -> Pool {
@@ -227,12 +221,12 @@ mod u2_closure_tests {
     }
 
     #[tokio::test]
-    async fn test_u2_java_endpoint_closure_all_33_registered() {
+    async fn test_u2_legacy_endpoint_closure_all_33_registered() {
         let pool = build_test_pool();
         let app = crate::router(pool);
-        assert_eq!(U2_JAVA_ENDPOINTS.len(), 33, "Java 端点全集应为 33 条");
+        assert_eq!(U2_LEGACY_ENDPOINTS.len(), 33, "o2server 端点全集应为 33 条");
 
-        for (method, uri) in U2_JAVA_ENDPOINTS {
+        for (method, uri) in U2_LEGACY_ENDPOINTS {
             let req = match *method {
                 "POST" => Request::builder()
                     .uri(*uri)
@@ -250,12 +244,12 @@ mod u2_closure_tests {
             assert_ne!(
                 response.status(),
                 StatusCode::NOT_FOUND,
-                "Java 端点未注册: {method} {uri}"
+                "o2server 端点未注册: {method} {uri}"
             );
             assert_ne!(
                 response.status(),
                 StatusCode::METHOD_NOT_ALLOWED,
-                "端点动词与 Java 不符: {method} {uri}"
+                "端点动词与 o2server 不符: {method} {uri}"
             );
         }
     }
@@ -266,7 +260,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/chat/list/paging/1/size/20")
+                    .uri("/api/ai_assemble_control/chat/list/paging/1/size/20")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -282,7 +276,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20")
+                    .uri("/api/ai_assemble_control/chat/list/completion/clue-1/paging/1/size/20")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -298,7 +292,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/chat/delete/clue-1")
+                    .uri("/api/ai_assemble_control/chat/delete/clue-1")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -315,7 +309,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/chat/write/completion/extra")
+                    .uri("/api/ai_assemble_control/chat/write/completion/extra")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -323,7 +317,7 @@ mod u2_closure_tests {
             )
             .await
             .unwrap();
-        // Java ExceptionFieldEmpty 等价：缺 id 必须 400，而非假成功
+        // o2server ExceptionFieldEmpty 等价：缺 id 必须 400，而非假成功
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 
@@ -333,7 +327,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/get")
+                    .uri("/api/ai_assemble_control/config/get")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -350,7 +344,7 @@ mod u2_closure_tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/save")
+                    .uri("/api/ai_assemble_control/config/save")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -369,12 +363,12 @@ mod u2_closure_tests {
             "config/save 的 POST 被方法路由拒绝"
         );
 
-        // Java 中该端点只有 POST：旧注册的 GET 已移除。
+        // o2server 中该端点只有 POST：旧注册的 GET 已移除。
         // axum 路径命中但方法不符 → 405（证明该路径下已无 GET 处理器）。
         let get = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/save")
+                    .uri("/api/ai_assemble_control/config/save")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -397,7 +391,7 @@ mod u2_closure_tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/list")
+                    .uri("/api/ai_assemble_control/file/list")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -410,7 +404,7 @@ mod u2_closure_tests {
         let get = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/list")
+                    .uri("/api/ai_assemble_control/file/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -432,7 +426,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/sync/to/knowledge")
+                    .uri("/api/ai_assemble_control/index/sync/to/knowledge")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -450,8 +444,8 @@ mod u2_closure_tests {
     async fn test_u2_parametrized_flag_routes_capture_arbitrary_ids() {
         let app = crate::router(build_test_pool());
         for uri in [
-            "/jaxrs/ai_assemble_control/config/get/mcp/any-id-here",
-            "/jaxrs/ai_assemble_control/file/any-file-flag",
+            "/api/ai_assemble_control/config/get/mcp/any-id-here",
+            "/api/ai_assemble_control/file/any-file-flag",
         ] {
             let response = app
                 .clone()
@@ -480,7 +474,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/upload")
+                    .uri("/api/ai_assemble_control/file/upload")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -502,7 +496,7 @@ mod u2_closure_tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/chat/completion/stream")
+                    .uri("/api/ai_assemble_control/chat/completion/stream")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))

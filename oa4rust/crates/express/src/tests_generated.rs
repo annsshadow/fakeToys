@@ -21,7 +21,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/query")
+                    .uri("/api/express/query")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -42,7 +42,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/companies")
+                    .uri("/api/express/companies")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -63,7 +63,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/subscribe")
+                    .uri("/api/express/subscribe")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

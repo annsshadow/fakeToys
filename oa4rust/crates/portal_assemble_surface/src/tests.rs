@@ -29,7 +29,7 @@ fn test_create_surface_action_result_format() {
 #[test]
 fn test_list_surfaces_action_result_format() {
     let result: ActionResult<serde_json::Value> =
-        ActionResult::java_success(json!([{"id": "surface-1", "category": "default"}]), 1, 0);
+        ActionResult::legacy_success(json!([{"id": "surface-1", "category": "default"}]), 1, 0);
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["count"], 1);
@@ -70,7 +70,7 @@ async fn test_get_surface_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/assemble/surface/get/surface-1")
+                .uri("/api/portal/assemble/surface/get/surface-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -100,7 +100,7 @@ async fn test_create_surface_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/assemble/surface/create")
+                .uri("/api/portal/assemble/surface/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -125,7 +125,7 @@ async fn test_list_surfaces_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/assemble/surface/list/default")
+                .uri("/api/portal/assemble/surface/list/default")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -149,7 +149,7 @@ async fn test_preview_surface_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/assemble/surface/preview/surface-1")
+                .uri("/api/portal/assemble/surface/preview/surface-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -173,7 +173,7 @@ async fn test_publish_surface_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/assemble/surface/publish/surface-1")
+                .uri("/api/portal/assemble/surface/publish/surface-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -197,7 +197,7 @@ async fn test_surface_list_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/surface/list")
+                .uri("/api/portal/surface/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -221,7 +221,7 @@ async fn test_surface_preview_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/surface/surface-1/preview")
+                .uri("/api/portal/surface/surface-1/preview")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -250,7 +250,7 @@ async fn test_surface_publish_returns_error_without_db() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/surface/publish")
+                .uri("/api/portal/surface/publish")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -272,80 +272,71 @@ async fn test_u2_surface_gap_routes_exist() {
     use axum::http::{Method, Request, StatusCode};
 
     let cases: Vec<(&str, &str)> = vec![
-        ("GET", "/jaxrs/portal/assemble/surface/dict/d1/portal/p1"),
-        (
-            "GET",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/data",
-        ),
+        ("GET", "/api/portal/assemble/surface/dict/d1/portal/p1"),
+        ("GET", "/api/portal/assemble/surface/dict/d1/portal/p1/data"),
         (
             "DELETE",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data",
+            "/api/portal/assemble/surface/dict/d1/portal/p1/x/data",
         ),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data",
+            "/api/portal/assemble/surface/dict/d1/portal/p1/x/data",
         ),
         (
             "POST",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data",
+            "/api/portal/assemble/surface/dict/d1/portal/p1/x/data",
         ),
         (
             "PUT",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data",
+            "/api/portal/assemble/surface/dict/d1/portal/p1/x/data",
         ),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockdeletetoget",
+            "/api/portal/assemble/surface/dict/d1/portal/p1/x/data/mockdeletetoget",
         ),
         (
             "POST",
-            "/jaxrs/portal/assemble/surface/dict/d1/portal/p1/x/data/mockputtopost",
+            "/api/portal/assemble/surface/dict/d1/portal/p1/x/data/mockputtopost",
         ),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/file/f1/portal/p1/content",
+            "/api/portal/assemble/surface/file/f1/portal/p1/content",
         ),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/file/f1/portal/p1/download",
+            "/api/portal/assemble/surface/file/f1/portal/p1/download",
         ),
-        ("GET", "/jaxrs/portal/assemble/surface/page/list/portal/p1"),
-        ("GET", "/jaxrs/portal/assemble/surface/page/v2/id1"),
-        ("GET", "/jaxrs/portal/assemble/surface/page/v2/id1/mobile"),
-        ("GET", "/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1"),
+        ("GET", "/api/portal/assemble/surface/page/list/portal/p1"),
+        ("GET", "/api/portal/assemble/surface/page/v2/id1"),
+        ("GET", "/api/portal/assemble/surface/page/v2/id1/mobile"),
+        ("GET", "/api/portal/assemble/surface/page/v2/f1/portal/p1"),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/page/v2/f1/portal/p1/mobile",
+            "/api/portal/assemble/surface/page/v2/f1/portal/p1/mobile",
         ),
-        ("GET", "/jaxrs/portal/assemble/surface/page/id1/mobile"),
-        ("GET", "/jaxrs/portal/assemble/surface/page/f1/portal/p1"),
+        ("GET", "/api/portal/assemble/surface/page/id1/mobile"),
+        ("GET", "/api/portal/assemble/surface/page/f1/portal/p1"),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/page/f1/portal/p1/mobile",
+            "/api/portal/assemble/surface/page/f1/portal/p1/mobile",
         ),
-        ("GET", "/jaxrs/portal/assemble/surface/portal/list/mobile"),
-        (
-            "GET",
-            "/jaxrs/portal/assemble/surface/portal/f1/corner/mark",
-        ),
-        ("GET", "/jaxrs/portal/assemble/surface/portal/id1/icon"),
-        (
-            "GET",
-            "/jaxrs/portal/assemble/surface/portal/id1/icon/base64",
-        ),
+        ("GET", "/api/portal/assemble/surface/portal/list/mobile"),
+        ("GET", "/api/portal/assemble/surface/portal/f1/corner/mark"),
+        ("GET", "/api/portal/assemble/surface/portal/id1/icon"),
+        ("GET", "/api/portal/assemble/surface/portal/id1/icon/base64"),
         (
             "POST",
-            "/jaxrs/portal/assemble/surface/script/portal/p1/name/n1",
+            "/api/portal/assemble/surface/script/portal/p1/name/n1",
         ),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/script/portal/p1/name/n1/imported",
+            "/api/portal/assemble/surface/script/portal/p1/name/n1/imported",
         ),
-        ("GET", "/jaxrs/portal/assemble/surface/widget/w1/mobile"),
-        ("GET", "/jaxrs/portal/assemble/surface/widget/f1/portal/p1"),
+        ("GET", "/api/portal/assemble/surface/widget/w1/mobile"),
+        ("GET", "/api/portal/assemble/surface/widget/f1/portal/p1"),
         (
             "GET",
-            "/jaxrs/portal/assemble/surface/widget/f1/portal/p1/mobile",
+            "/api/portal/assemble/surface/widget/f1/portal/p1/mobile",
         ),
     ];
 

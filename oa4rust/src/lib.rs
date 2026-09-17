@@ -44,7 +44,6 @@ pub use personal;
 pub use portal;
 pub use portal_assemble_designer;
 pub use portal_assemble_surface;
-pub use search;
 pub use processplatform_assemble_bam;
 pub use processplatform_assemble_designer;
 pub use processplatform_assemble_surface;
@@ -60,6 +59,7 @@ pub use query_core_entity;
 pub use query_core_express;
 pub use query_service;
 pub use realtime;
+pub use search;
 
 pub async fn create_app(
     pool: Pool,

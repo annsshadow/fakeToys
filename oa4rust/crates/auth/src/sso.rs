@@ -21,9 +21,9 @@ use crate::password::{des3_decrypt_ede2, des3_encrypt_ede2};
 // 有效期：5 分钟（防止重放攻击）
 //
 // 端点：
-//   GET  /jaxrs/authentication/sso/client/{client}/token/{token}  — 解密 token 并登录
-//   POST /jaxrs/authentication/sso                                 — 从请求体解密 token
-//   POST /jaxrs/authentication/sso/encrypt                         — 加密辅助
+//   GET  /api/authentication/sso/client/{client}/token/{token}  — 解密 token 并登录
+//   POST /api/authentication/sso                                 — 从请求体解密 token
+//   POST /api/authentication/sso/encrypt                         — 加密辅助
 // ──────────────────────────────────────────────────────────────────────────────
 
 const SSO_TOKEN_TTL_MINUTES: i64 = 5;
@@ -52,7 +52,7 @@ pub struct SsoPersonInfo {
     pub name: String,
 }
 
-/// POST /jaxrs/authentication/sso
+/// POST /api/authentication/sso
 pub async fn sso_post_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -71,7 +71,7 @@ pub async fn sso_post_login(
     create_sso_session(&pool, &session_manager, &credential).await
 }
 
-/// GET /jaxrs/authentication/sso/client/{client}/token/{token}
+/// GET /api/authentication/sso/client/{client}/token/{token}
 ///
 /// SSO 浏览器重定向登录：从 URL path 参数提取 client 和 token，
 /// 解密后与 POST 端点流程完全一致。
@@ -93,7 +93,7 @@ pub async fn sso_get_login(
     create_sso_session(&pool, &session_manager, &credential).await
 }
 
-/// POST /jaxrs/authentication/sso/encrypt
+/// POST /api/authentication/sso/encrypt
 pub async fn sso_encrypt(
     Json(req): Json<SsoEncryptRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

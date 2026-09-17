@@ -20,7 +20,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic_assemble_control/get/control/config")
+                    .uri("/api/hotpic_assemble_control/get/control/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -39,7 +39,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic_assemble_control/list/control/panels")
+                    .uri("/api/hotpic_assemble_control/list/control/panels")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic_assemble_control/list/control/applications")
+                    .uri("/api/hotpic_assemble_control/list/control/applications")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -70,14 +70,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_hotpic_list_java_path_route() {
+    async fn test_hotpic_list_legacy_path_route() {
         let pool = build_test_pool();
         let app = crate::router(pool);
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/list/hotpics")
+                    .uri("/api/hotpic/list/hotpics")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -96,7 +96,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/get/hotpic/hotpic-001")
+                    .uri("/api/hotpic/get/hotpic/hotpic-001")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -108,7 +108,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_hotpic_create_java_path_route() {
+    async fn test_hotpic_create_legacy_path_route() {
         let pool = build_test_pool();
         let app = crate::router(pool);
 
@@ -117,7 +117,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/create/hotpic")
+                    .uri("/api/hotpic/create/hotpic")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -130,14 +130,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_hotpic_control_config_java_path_route() {
+    async fn test_hotpic_control_config_legacy_path_route() {
         let pool = build_test_pool();
         let app = crate::router(pool);
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/config")
+                    .uri("/api/hotpic/assemble/control/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -156,7 +156,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/hotpic-001")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -189,7 +189,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic")
+                    .uri("/api/hotpic/assemble/control/user/hotpic")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -207,7 +207,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/test-id")
+                    .uri("/api/hotpic/assemble/control/user/hotpic/test-id")
                     .method(Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -224,7 +224,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/test-id")
+                    .uri("/api/hotpic/assemble/control/cipher/hotpic/bbs/test-id")
                     .method(Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),

@@ -40,12 +40,12 @@ fn validate_dimensions(width: u32, height: u32) -> Result<(), AppError> {
     Ok(())
 }
 
-/// GET /jaxrs/authentication/captcha —— 默认尺寸验证码
+/// GET /api/authentication/captcha —— 默认尺寸验证码
 pub async fn captcha_default() -> Result<Json<ActionResult<Value>>, AppError> {
     generate_captcha(DEFAULT_WIDTH, DEFAULT_HEIGHT)
 }
 
-/// GET /jaxrs/authentication/captcha/width/{width}/height/{height}
+/// GET /api/authentication/captcha/width/{width}/height/{height}
 pub async fn captcha_with_size(
     Path((width, height)): Path<(u32, u32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -72,7 +72,7 @@ pub struct VerifyCaptchaRequest {
     pub answer: String,
 }
 
-/// POST /jaxrs/secret/captcha/verify —— 验证码校验
+/// POST /api/secret/captcha/verify —— 验证码校验
 pub async fn verify(
     Json(req): Json<VerifyCaptchaRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -88,12 +88,12 @@ pub async fn verify(
 
 pub fn captcha_router() -> Router {
     Router::new()
-        .route("/jaxrs/authentication/captcha", get(captcha_default))
+        .route("/api/authentication/captcha", get(captcha_default))
         .route(
-            "/jaxrs/authentication/captcha/width/{width}/height/{height}",
+            "/api/authentication/captcha/width/{width}/height/{height}",
             get(captcha_with_size),
         )
-        .route("/jaxrs/secret/captcha/verify", post(verify))
+        .route("/api/secret/captcha/verify", post(verify))
 }
 
 #[cfg(test)]

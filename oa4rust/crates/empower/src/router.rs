@@ -20,38 +20,35 @@ use auth::SessionManager;
 pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
     Router::new()
         // 普通用户端点（需 owner 验证）
-        .route("/jaxrs/person/empower", post(create))
-        .route("/jaxrs/person/empower/{id}", get(empower_get))
-        .route("/jaxrs/person/empower/{id}", put(update))
-        .route("/jaxrs/person/empower/{id}", delete(empower_delete))
-        // enable/disable 主注册为 POST（防 CSRF），追加 GET 变体对齐 Java 契约
+        .route("/api/person/empower", post(create))
+        .route("/api/person/empower/{id}", get(empower_get))
+        .route("/api/person/empower/{id}", put(update))
+        .route("/api/person/empower/{id}", delete(empower_delete))
+        // enable/disable 主注册为 POST（防 CSRF），追加 GET 变体对齐 o2server 契约
+        .route("/api/person/empower/{id}/enable", post(enable).get(enable))
         .route(
-            "/jaxrs/person/empower/{id}/enable",
-            post(enable).get(enable),
-        )
-        .route(
-            "/jaxrs/person/empower/{id}/disable",
+            "/api/person/empower/{id}/disable",
             post(disable).get(disable),
         )
         // 管理员端点
-        .route("/jaxrs/person/empower/manager", post(manager_create))
-        .route("/jaxrs/person/empower/manager/{id}", put(manager_update))
-        .route("/jaxrs/person/empower/manager/{id}", delete(manager_delete))
+        .route("/api/person/empower/manager", post(manager_create))
+        .route("/api/person/empower/manager/{id}", put(manager_update))
+        .route("/api/person/empower/manager/{id}", delete(manager_delete))
         .route(
-            "/jaxrs/person/empower/manager/list/paging/{page}/size/{size}",
+            "/api/person/empower/manager/list/paging/{page}/size/{size}",
             post(manager_list_paging),
         )
         // 当前用户查询端点
         .route(
-            "/jaxrs/person/empower/list/currentperson",
+            "/api/person/empower/list/currentperson",
             get(list_current_person),
         )
         .route(
-            "/jaxrs/person/empower/list/currentperson/enable",
+            "/api/person/empower/list/currentperson/enable",
             get(list_current_person_enable),
         )
-        .route("/jaxrs/person/empower/list/to", get(list_to))
-        .route("/jaxrs/person/empower/list/to/enable", get(list_to_enable))
+        .route("/api/person/empower/list/to", get(list_to))
+        .route("/api/person/empower/list/to/enable", get(list_to_enable))
         .with_state(pool)
         .with_state(session_manager)
 }

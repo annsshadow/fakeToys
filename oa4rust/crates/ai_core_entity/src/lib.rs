@@ -149,15 +149,15 @@ pub async fn conversation_list(
 
 /// 创建 AI 核心实体路由
 /// 注册以下路由：
-/// - /jaxrs/ai/core/entity/app/list - 应用列表
-/// - /jaxrs/ai/core/entity/model/list - 模型列表
-/// - /jaxrs/ai/core/entity/conversation/list - 对话列表
+/// - /api/ai/core/entity/app/list - 应用列表
+/// - /api/ai/core/entity/model/list - 模型列表
+/// - /api/ai/core/entity/conversation/list - 对话列表
 pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/ai/core/entity/app/list", get(app_list))
-        .route("/jaxrs/ai/core/entity/model/list", get(model_list))
+        .route("/api/ai/core/entity/app/list", get(app_list))
+        .route("/api/ai/core/entity/model/list", get(model_list))
         .route(
-            "/jaxrs/ai/core/entity/conversation/list",
+            "/api/ai/core/entity/conversation/list",
             get(conversation_list),
         )
 }

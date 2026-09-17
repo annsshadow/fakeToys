@@ -48,23 +48,20 @@ mod tests {
             let app = build_app(pool);
 
             let paths = [
-                ("POST", "/jaxrs/person/empower"),
-                ("GET", "/jaxrs/person/empower/some-id"),
-                ("PUT", "/jaxrs/person/empower/some-id"),
-                ("DELETE", "/jaxrs/person/empower/some-id"),
-                ("POST", "/jaxrs/person/empower/some-id/enable"),
-                ("POST", "/jaxrs/person/empower/some-id/disable"),
-                ("POST", "/jaxrs/person/empower/manager"),
-                ("PUT", "/jaxrs/person/empower/manager/some-id"),
-                ("DELETE", "/jaxrs/person/empower/manager/some-id"),
-                (
-                    "POST",
-                    "/jaxrs/person/empower/manager/list/paging/1/size/10",
-                ),
-                ("GET", "/jaxrs/person/empower/list/currentperson"),
-                ("GET", "/jaxrs/person/empower/list/currentperson/enable"),
-                ("GET", "/jaxrs/person/empower/list/to"),
-                ("GET", "/jaxrs/person/empower/list/to/enable"),
+                ("POST", "/api/person/empower"),
+                ("GET", "/api/person/empower/some-id"),
+                ("PUT", "/api/person/empower/some-id"),
+                ("DELETE", "/api/person/empower/some-id"),
+                ("POST", "/api/person/empower/some-id/enable"),
+                ("POST", "/api/person/empower/some-id/disable"),
+                ("POST", "/api/person/empower/manager"),
+                ("PUT", "/api/person/empower/manager/some-id"),
+                ("DELETE", "/api/person/empower/manager/some-id"),
+                ("POST", "/api/person/empower/manager/list/paging/1/size/10"),
+                ("GET", "/api/person/empower/list/currentperson"),
+                ("GET", "/api/person/empower/list/currentperson/enable"),
+                ("GET", "/api/person/empower/list/to"),
+                ("GET", "/api/person/empower/list/to/enable"),
             ];
 
             for (method, path) in &paths {
@@ -129,7 +126,7 @@ mod tests {
     #[test]
     fn test_list_result_serialization() {
         let items = vec![];
-        let result: ActionResult<Vec<EmpowerInfo>> = ActionResult::java_success(items, 2, 0);
+        let result: ActionResult<Vec<EmpowerInfo>> = ActionResult::legacy_success(items, 2, 0);
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
         assert_eq!(result.count, Some(2));

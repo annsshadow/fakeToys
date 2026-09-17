@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/test-id")
+                    .uri("/api/portal/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/list")
+                    .uri("/api/portal/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portalcategory/list")
+                    .uri("/api/portalcategory/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/page/test-id")
+                    .uri("/api/portal/page/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -99,7 +99,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/page/save/test-id")
+                    .uri("/api/portal/page/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -120,7 +120,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/page/delete/test-id")
+                    .uri("/api/portal/page/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -143,7 +143,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/dict/list")
+                    .uri("/api/portal/dict/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

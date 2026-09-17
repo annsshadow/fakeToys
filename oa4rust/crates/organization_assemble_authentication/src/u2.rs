@@ -1,7 +1,7 @@
-//! plan002 U2 收尾：对齐 Java x_organization_assemble_authentication 残余端点。
+//! plan002 U2 收尾：对齐 o2server x_organization_assemble_authentication 残余端点。
 //!
-//! 路径约定：沿用本仓库前缀 `/jaxrs/organization/assemble/authentication/**`，
-//! Java 类路径逐段映射（AuthenticationAction 的 `authentication` 段保留）：
+//! 路径约定：沿用本仓库前缀 `/api/organization/assemble/authentication/**`，
+//! o2server 类路径逐段映射（AuthenticationAction 的 `authentication` 段保留）：
 //!   GET  authentication/mode                          登录模式开关（配置投影）
 //!   POST authentication                               登录（别名，直连 auth::login）
 //!   GET  authentication                               当前用户（别名，直连 auth::whoami）
@@ -52,7 +52,7 @@ pub async fn mode() -> Result<Json<ActionResult<Value>>, AppError> {
 
 // ── mockdeletetoget（GET 版登出）────────────────────────────────────────────
 
-/// GET authentication/mockdeletetoget —— Java MockDeleteToGet 语义：GET 触发登出。
+/// GET authentication/mockdeletetoget —— o2server MockDeleteToGet 语义：GET 触发登出。
 /// 独立实现以避免复用带 JSON body 提取器的 logout 处理器。
 #[allow(non_snake_case)]
 pub async fn logout_get(
@@ -177,8 +177,8 @@ pub async fn captcha_login(
 
 /// GET safe/logout —— 安全注销：当前人全部会话过期 + 注销本次令牌
 ///
-/// Java ActionSafeLogout 通过 TokenThreshold 广播实现；此处等价地按人撤销全部会话。
-/// 未认证时返回成功（对齐 Java 行为）。
+/// o2server ActionSafeLogout 通过 TokenThreshold 广播实现；此处等价地按人撤销全部会话。
+/// 未认证时返回成功（对齐 o2server 行为）。
 #[allow(non_snake_case)]
 pub async fn safe_logout_get(
     pool: Extension<Pool>,
@@ -240,7 +240,7 @@ pub async fn captcha_default_alias() -> Result<Json<ActionResult<Value>>, AppErr
 
 /// GET sso/encrypt/client/{client}/key/{key}/credential/{credential}
 ///
-/// 与 POST /sso/encrypt 同义（Java 提供两种入口），复用 auth crate 的加密逻辑。
+/// 与 POST /sso/encrypt 同义（o2server 提供两种入口），复用 auth crate 的加密逻辑。
 #[allow(non_snake_case)]
 pub async fn sso_encrypt_get(
     Path((client, key, credential)): Path<(String, String, String)>,
@@ -279,7 +279,7 @@ pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         })
         .collect();
     let total_items = items.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(items),
         total_items as i64,
         0,
@@ -296,8 +296,8 @@ pub struct DingdingInfoWi {
 
 /// POST dingding/info —— 钉钉 jsapi 免登配置签名
 ///
-/// 对齐 Java DingdingAction.info：signature = SHA1(jsapi_ticket=..&noncestr=..&timestamp=..&url=..)。
-/// 未配置 DINGDING_CORP_ID/DINGDING_AGENT_ID/DINGDING_JSAPI_TICKET 时显式报错（与 Java 配置缺失行为一致）。
+/// 对齐 o2server DingdingAction.info：signature = SHA1(jsapi_ticket=..&noncestr=..&timestamp=..&url=..)。
+/// 未配置 DINGDING_CORP_ID/DINGDING_AGENT_ID/DINGDING_JSAPI_TICKET 时显式报错（与 o2server 配置缺失行为一致）。
 #[allow(non_snake_case)]
 pub async fn dingding_info(
     Json(wi): Json<DingdingInfoWi>,
@@ -341,7 +341,7 @@ pub async fn dingding_info(
 
 // ── zhengwudingding/info（POST 契约路径）────────────────────────────────────
 
-/// POST zhengwudingding/info —— 政务钉钉配置状态（Java 为 POST；GET 已由 auth crate 提供）
+/// POST zhengwudingding/info —— 政务钉钉配置状态（o2server 为 POST；GET 已由 auth crate 提供）
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_info_post() -> Result<Json<ActionResult<Value>>, AppError> {
     match std::env::var("ZWDINGDING_API_BASE") {

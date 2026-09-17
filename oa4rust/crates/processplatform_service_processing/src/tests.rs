@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/create")
+                    .uri("/api/processplatform/service/processing/create")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(req))
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/get/proc-1")
+                    .uri("/api/processplatform/service/processing/get/proc-1")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -116,7 +116,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/list/default")
+                    .uri("/api/processplatform/service/processing/list/default")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -135,7 +135,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/execute/proc-1")
+                    .uri("/api/processplatform/service/processing/execute/proc-1")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -154,7 +154,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/cancel/proc-1")
+                    .uri("/api/processplatform/service/processing/cancel/proc-1")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -173,7 +173,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/instance/proc-1")
+                    .uri("/api/processplatform/service/processing/instance/proc-1")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -184,13 +184,13 @@ mod tests {
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
     #[tokio::test]
-    async fn test_get_jaxrs_processplatform_service_processing() {
+    async fn test_get_processplatform_service_processing() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/get/test-id")
+                    .uri("/api/processplatform/service/processing/get/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -201,13 +201,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_processplatform_service_processing() {
+    async fn test_post_processplatform_service_processing() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/service/processing/cancel/test-id")
+                    .uri("/api/processplatform/service/processing/cancel/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -218,13 +218,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_work_id_retract() {
+    async fn test_post_work_id_retract() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/work/test-id/retract")
+                    .uri("/api/work/test-id/retract")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -235,13 +235,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_work_id_terminate() {
+    async fn test_post_work_id_terminate() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/work/test-id/terminate")
+                    .uri("/api/work/test-id/terminate")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -252,13 +252,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_put_jaxrs_work_id_processing() {
+    async fn test_put_work_id_processing() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/work/test-id/processing")
+                    .uri("/api/work/test-id/processing")
                     .method(Method::PUT)
                     .body(Body::empty())
                     .unwrap(),
@@ -297,7 +297,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/work/{}/start", work_id))
+                    .uri(format!("/api/work/{}/start", work_id))
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -317,13 +317,13 @@ mod tests {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// plan002 U2：Java jaxrs 契约端点（u2 模块）行为测试
+// plan002 U2：o2server o2server 契约端点（u2 模块）行为测试
 //
 // 这些测试编码业务意图而非仅行为：
 //  1. 归一化查重——同主键/同内容重复创建不产生新行（review/read/record/attachment/documentversion）；
 //  2. IDOR 门禁——跨引用参数不匹配归属时必须拒绝而非静默删除（attachment/taskcompleted）；
 //  3. 状态机事务性——read processing 迁移、snap suspend、task expire、v3 retract 均在事务内迁移状态；
-//  4. JSONB 路径寻址——applicationdict/data 的 create/update/delete 遵循 Java 异常语义。
+//  4. JSONB 路径寻址——applicationdict/data 的 create/update/delete 遵循 o2server 异常语义。
 // ═══════════════════════════════════════════════════════════════════
 
 #[cfg(test)]
@@ -437,7 +437,7 @@ mod u2_contract {
         }
         let pool = test_pool();
         ensure_schema(&pool).await;
-        let base = "/jaxrs/processplatform/service/processing/applicationdict";
+        let base = "/api/processplatform/service/processing/applicationdict";
         let body = json!({"k1": {"k2": "v"}});
         let (_, v) = send(Method::PUT, &format!("{base}/dic-rt/p0/data"), Some(body)).await;
         assert_eq!(v["type"], "success");
@@ -489,11 +489,14 @@ mod u2_contract {
             .await
             .unwrap();
         }
-        let base = "/jaxrs/processplatform/service/processing/data/work/dw-1";
+        let base = "/api/processplatform/service/processing/data/work/dw-1";
         let (_, v) = send(Method::POST, base, Some(json!({"a":1}))).await;
         assert_eq!(v["type"], "success");
         let (_, v) = send(Method::POST, base, Some(json!({"a":2}))).await;
-        assert_eq!(v["type"], "error", "Java ExceptionDataAlreadyExist 语义");
+        assert_eq!(
+            v["type"], "error",
+            "o2server ExceptionDataAlreadyExist 语义"
+        );
         let (_, v) = send(Method::POST, &format!("{base}/b"), Some(json!(true))).await;
         assert_eq!(v["type"], "success", "新键创建应成功");
         let (_, v) = send(Method::PUT, &format!("{base}/a"), Some(json!(9))).await;
@@ -540,7 +543,7 @@ mod u2_contract {
             }
             c.execute("INSERT INTO x_attachment (id, work_id, name) VALUES ('att-src-a','att-src-w','doc.pdf')", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/attachment/copy/work/att-dst-w";
+        let url = "/api/processplatform/service/processing/attachment/copy/work/att-dst-w";
         let body = json!({"attachmentList": ["att-src-a"]});
         let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
         assert_eq!(v1["data"]["successList"][0]["copied"], true);
@@ -592,7 +595,7 @@ mod u2_contract {
             .await
             .unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/attachment/att-x/work/w-other";
+        let url = "/api/processplatform/service/processing/attachment/att-x/work/w-other";
         let (_, v) = send(Method::DELETE, url, None).await;
         assert_eq!(v["type"], "error", "附件不属于该 work 时必须拒绝");
         let n = count(
@@ -634,7 +637,7 @@ mod u2_contract {
             .await
             .unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/review/create/work";
+        let url = "/api/processplatform/service/processing/review/create/work";
         let body = json!({"work": "rev-w", "personList": ["alice@P"]});
         let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
         assert_eq!(v1["data"]["successList"].as_array().unwrap().len(), 1);
@@ -685,7 +688,7 @@ mod u2_contract {
             .await
             .unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/read/read-mv/processing";
+        let url = "/api/processplatform/service/processing/read/read-mv/processing";
         let (_, v) = send(Method::PUT, url, None).await;
         assert_eq!(v["type"], "success");
         assert!(v["data"]["readCompletedId"].as_str().is_some());
@@ -734,7 +737,7 @@ mod u2_contract {
             .await
             .unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/record/job/rec-job";
+        let url = "/api/processplatform/service/processing/record/job/rec-job";
         let body = json!({"recordType": "Info", "content": 424242});
         let (_, v1) = send(Method::POST, url, Some(body.clone())).await;
         assert_ne!(v1["data"]["duplicated"], true);
@@ -778,7 +781,7 @@ mod u2_contract {
             .await
             .unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/documentversion/work/dv-w";
+        let url = "/api/processplatform/service/processing/documentversion/work/dv-w";
         let (_, v1) = send(Method::POST, url, Some(json!({}))).await;
         let (_, v2) = send(Method::POST, url, Some(json!({}))).await;
         let s1 = v1["data"]["version"].as_i64().unwrap();
@@ -819,7 +822,7 @@ mod u2_contract {
                 .unwrap();
             c.execute("INSERT INTO x_work (id,title,process,work_status,creator) VALUES ('sus-w','t','p','processing','system')", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/snap/work/sus-w/type/suspend";
+        let url = "/api/processplatform/service/processing/snap/work/sus-w/type/suspend";
         let (_, v) = send(Method::GET, url, None).await;
         assert_eq!(v["type"], "success");
         let n = count(
@@ -868,7 +871,7 @@ mod u2_contract {
                 .unwrap();
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('tk-exp','t','tk-work','p@P','active')", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/task/tk-exp/expire";
+        let url = "/api/processplatform/service/processing/task/tk-exp/expire";
         let (_, v) = send(Method::GET, url, None).await;
         assert_eq!(v["type"], "success");
         let st: String = {
@@ -914,11 +917,11 @@ mod u2_contract {
             c.execute("INSERT INTO x_readcompleted (id, work_id, person) VALUES ('tc-press','tc-w','p@P')", &[]).await.unwrap();
         }
         let wrong =
-            "/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other";
+            "/api/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-other";
         let (_, v) = send(Method::GET, wrong, None).await;
         assert_eq!(v["type"], "error", "IDOR：记录不属于该 work 时必须拒绝催办");
         let right =
-            "/jaxrs/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w";
+            "/api/processplatform/service/processing/taskcompleted/tc-press/press/work/tc-w";
         let (_, v1) = send(Method::GET, right, None).await;
         assert_ne!(v1["data"]["duplicated"], true);
         let (_, v2) = send(Method::GET, right, None).await;
@@ -961,7 +964,7 @@ mod u2_contract {
             c.execute("INSERT INTO x_record (id, work_id, record_type, content, create_time) VALUES ('ev-old','w','event','x', NOW() - INTERVAL '48 hours')", &[]).await.unwrap();
             c.execute("INSERT INTO x_record (id, work_id, record_type, content) VALUES ('ev-new','w','event','x')", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/touch/cleanevent";
+        let url = "/api/processplatform/service/processing/touch/cleanevent";
         let (_, v) = send(Method::GET, url, None).await;
         assert_eq!(v["type"], "success");
         let old_gone = count(
@@ -1012,7 +1015,7 @@ mod u2_contract {
             .unwrap();
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('ret-t1','t','ret-w','p@P','active')", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/work/v3/retract";
+        let url = "/api/processplatform/service/processing/work/v3/retract";
         let (_, v) = send(Method::POST, url, Some(json!({"work": "ret-w"}))).await;
         assert_eq!(v["type"], "success");
         let cancelled = count(
@@ -1072,7 +1075,7 @@ mod u2_contract {
                 .unwrap();
             }
         }
-        let url = "/jaxrs/processplatform/service/processing/workcompleted/mrg-keep/merge";
+        let url = "/api/processplatform/service/processing/workcompleted/mrg-keep/merge";
         let (_, v) = send(Method::GET, url, None).await;
         assert_eq!(v["type"], "success");
         assert_eq!(v["data"]["merged"], 1);
@@ -1116,7 +1119,7 @@ mod u2_contract {
                 .unwrap();
             c.execute("INSERT INTO x_task (id,title,work,person,task_status) VALUES ('nti-t','t','nti-w','p@P','active')", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/taskcompleted/next/task/identity";
+        let url = "/api/processplatform/service/processing/taskcompleted/next/task/identity";
         let (_, v) = send(
             Method::PUT,
             url,
@@ -1169,7 +1172,7 @@ mod u2_contract {
                 .unwrap();
             c.execute("INSERT INTO x_process_definition (id,name) VALUES ('pd-boot','pd-boot-name') ON CONFLICT (id) DO NOTHING", &[]).await.unwrap();
         }
-        let url = "/jaxrs/processplatform/service/processing/work/process/pd-boot/name/boot/serial";
+        let url = "/api/processplatform/service/processing/work/process/pd-boot/name/boot/serial";
         let (_, v) = send(Method::POST, url, Some(json!({}))).await;
         assert_eq!(v["type"], "success");
         assert!(

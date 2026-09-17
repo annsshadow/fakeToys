@@ -239,9 +239,7 @@ pub async fn search_documents_smart(pool: &Pool, query: &str, limit: i32) -> Vec
 // ── ftsearch/list（桌面 FtSearchApp「全文搜索引擎」配置串引用，查 x_ftsearch_document 096）──
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn ftsearch_list(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn ftsearch_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -257,17 +255,35 @@ pub async fn ftsearch_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
-                ("source".to_string(), Value::String(row.get::<_, Option<String>>("source").unwrap_or_default())),
-                ("score".to_string(), Value::String(row.get::<_, Option<String>>("score").unwrap_or_default())),
-                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
-                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "source".to_string(),
+                    Value::String(row.get::<_, Option<String>>("source").unwrap_or_default()),
+                ),
+                (
+                    "score".to_string(),
+                    Value::String(row.get::<_, Option<String>>("score").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -278,11 +294,7 @@ pub async fn ftsearch_list(
 fn ftsearch_spec() -> shared::crud::CrudSpec {
     shared::crud::CrudSpec {
         table: "x_ftsearch_document",
-        columns: &[
-            ("title", "title"),
-            ("body", "body"),
-            ("source", "source"),
-        ],
+        columns: &[("title", "title"), ("body", "body"), ("source", "source")],
         soft_delete: true,
     }
 }
@@ -336,13 +348,13 @@ pub async fn ftsearch_delete(
 /// 全文检索 HTTP 路由（供 create_app 挂载；此前 search crate 无 HTTP 面）。
 pub fn router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/ftsearch/list", get(ftsearch_list))
+        .route("/api/ftsearch/list", get(ftsearch_list))
         // ── ftsearch 家族 CRUD ──
-        .route("/jaxrs/ftsearch/create", post(ftsearch_create))
-        .route("/jaxrs/ftsearch/save/{id}", put(ftsearch_save))
-        .route("/jaxrs/ftsearch/save/{id}", post(ftsearch_save))
-        .route("/jaxrs/ftsearch/delete/{id}", delete(ftsearch_delete))
-        .route("/jaxrs/ftsearch/delete/{id}", post(ftsearch_delete))
+        .route("/api/ftsearch/create", post(ftsearch_create))
+        .route("/api/ftsearch/save/{id}", put(ftsearch_save))
+        .route("/api/ftsearch/save/{id}", post(ftsearch_save))
+        .route("/api/ftsearch/delete/{id}", delete(ftsearch_delete))
+        .route("/api/ftsearch/delete/{id}", post(ftsearch_delete))
         .layer(Extension(pool))
 }
 

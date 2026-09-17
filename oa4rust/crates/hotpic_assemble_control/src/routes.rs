@@ -16,161 +16,158 @@ use crate::{
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     Router::new()
         .route(
-            "/jaxrs/hotpic_assemble_control/list/hotpics",
+            "/api/hotpic_assemble_control/list/hotpics",
             get(list_hotpics),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/get/hotpic/{id}",
+            "/api/hotpic_assemble_control/get/hotpic/{id}",
             get(get_hotpic),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/create/hotpic",
+            "/api/hotpic_assemble_control/create/hotpic",
             get(create_hotpic),
         )
+        .route("/api/hotpic_assemble_control/save/hotpic", get(save_hotpic))
         .route(
-            "/jaxrs/hotpic_assemble_control/save/hotpic",
-            get(save_hotpic),
-        )
-        .route(
-            "/jaxrs/hotpic_assemble_control/delete/hotpic",
+            "/api/hotpic_assemble_control/delete/hotpic",
             get(delete_hotpic),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/get/control/config",
+            "/api/hotpic_assemble_control/get/control/config",
             get(get_control_config),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/list/control/panels",
+            "/api/hotpic_assemble_control/list/control/panels",
             get(list_control_panels),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/update/control/config",
+            "/api/hotpic_assemble_control/update/control/config",
             get(update_control_config),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/list/control/applications",
+            "/api/hotpic_assemble_control/list/control/applications",
             get(list_control_applications),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/cipher/hotpic/bbs/id",
+            "/api/hotpic_assemble_control/cipher/hotpic/bbs/id",
             get(cipher_hotpic_bbs_id),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/cipher/hotpic/cms/id",
+            "/api/hotpic_assemble_control/cipher/hotpic/cms/id",
             get(cipher_hotpic_cms_id),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count",
+            "/api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count",
             get(cipher_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/cipher/hotpic/id",
+            "/api/hotpic_assemble_control/cipher/hotpic/id",
             get(cipher_hotpic_id),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/user/hotpic/changeTitle",
+            "/api/hotpic_assemble_control/user/hotpic/changeTitle",
             get(user_hotpic_changeTitle),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/user/hotpic/exists/check",
+            "/api/hotpic_assemble_control/user/hotpic/exists/check",
             get(user_hotpic_exists_check),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count",
+            "/api/hotpic_assemble_control/user/hotpic/filter/list/page/page/count/count",
             get(user_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/user/hotpic/application/infoId",
+            "/api/hotpic_assemble_control/user/hotpic/application/infoId",
             get(user_hotpic_application_infoId),
         )
         .route(
-            "/jaxrs/hotpic_assemble_control/user/hotpic/id",
+            "/api/hotpic_assemble_control/user/hotpic/id",
             get(user_hotpic_id),
         )
-        .route("/jaxrs/hotpic/list/hotpics", get(list_hotpics))
-        .route("/jaxrs/hotpic/get/hotpic/{id}", get(get_hotpic))
-        .route("/jaxrs/hotpic/create/hotpic", post(create_hotpic))
-        .route("/jaxrs/hotpic/save/hotpic", post(save_hotpic))
-        .route("/jaxrs/hotpic/delete/hotpic", post(delete_hotpic))
+        .route("/api/hotpic/list/hotpics", get(list_hotpics))
+        .route("/api/hotpic/get/hotpic/{id}", get(get_hotpic))
+        .route("/api/hotpic/create/hotpic", post(create_hotpic))
+        .route("/api/hotpic/save/hotpic", post(save_hotpic))
+        .route("/api/hotpic/delete/hotpic", post(delete_hotpic))
         .route(
-            "/jaxrs/hotpic/assemble/control/config",
+            "/api/hotpic/assemble/control/config",
             get(get_control_config),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/list/control/panels",
+            "/api/hotpic/assemble/control/list/control/panels",
             get(list_control_panels),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/list/control/applications",
+            "/api/hotpic/assemble/control/list/control/applications",
             get(list_control_applications),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/update/control/config",
+            "/api/hotpic/assemble/control/update/control/config",
             post(update_control_config),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}",
+            "/api/hotpic/assemble/control/cipher/hotpic/bbs/{id}",
             get(cipher_hotpic_bbs_id),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}",
+            "/api/hotpic/assemble/control/cipher/hotpic/cms/{id}",
             get(cipher_hotpic_cms_id),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/{id}",
+            "/api/hotpic/assemble/control/cipher/hotpic/{id}",
             get(cipher_hotpic_id),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}",
+            "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}",
             get(cipher_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle",
+            "/api/hotpic/assemble/control/user/hotpic/changeTitle",
             post(user_hotpic_changeTitle),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/exists/check",
+            "/api/hotpic/assemble/control/user/hotpic/exists/check",
             get(user_hotpic_exists_check),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}",
+            "/api/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}",
             get(user_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/application/{infoId}",
+            "/api/hotpic/assemble/control/user/hotpic/application/{infoId}",
             get(user_hotpic_application_infoId),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/{id}",
+            "/api/hotpic/assemble/control/user/hotpic/{id}",
             get(user_hotpic_id),
         )
         // ---- plan002 U2 gaps: verb variants + missing ----
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}",
+            "/api/hotpic/assemble/control/cipher/hotpic/bbs/{id}",
             delete(cipher_hotpic_bbs_id),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}",
+            "/api/hotpic/assemble/control/cipher/hotpic/cms/{id}",
             delete(cipher_hotpic_cms_id),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}",
+            "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}",
             put(cipher_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic",
+            "/api/hotpic/assemble/control/user/hotpic",
             post(create_hotpic),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}",
+            "/api/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}",
             put(user_hotpic_filter_list_page_page_count_count),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/{id}",
+            "/api/hotpic/assemble/control/user/hotpic/{id}",
             delete(user_hotpic_id),
         )
         .route(
-            "/jaxrs/hotpic/assemble/control/user/hotpic/{id}/{id2}",
+            "/api/hotpic/assemble/control/user/hotpic/{id}/{id2}",
             delete(user_hotpic_delete_by_ids),
         )
         .layer(Extension(pool))

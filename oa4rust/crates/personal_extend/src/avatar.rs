@@ -13,7 +13,7 @@ use auth::SessionManager;
 use base64::Engine;
 use uuid::Uuid;
 
-// 允许的 MIME 类型白名单（Java 契约：jpeg/png/webp）
+// 允许的 MIME 类型白名单（o2server 契约：jpeg/png/webp）
 const ALLOWED_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/webp"];
 
 // 最大文件大小（5MB）
@@ -37,7 +37,7 @@ pub fn is_supported_mime(mime: &str) -> bool {
     ALLOWED_MIME_TYPES.contains(&mime)
 }
 
-/// 上传当前登录用户头像（PUT /jaxrs/person/icon）
+/// 上传当前登录用户头像（PUT /api/person/icon）
 ///
 /// 接收 multipart/form-data 文件，校验 MIME 白名单与 5MB 大小上限后写入
 /// 本地目录 `data/avatar/{uuid}.{ext}`，DB `auth_person.icon` 存相对文件名。
@@ -146,7 +146,7 @@ pub async fn upload(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// 获取当前登录用户头像（GET /jaxrs/person/icon）
+/// 获取当前登录用户头像（GET /api/person/icon）
 pub async fn get_current_icon(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -162,7 +162,7 @@ pub async fn get_current_icon(
     load_icon_for_unique(&pool, &session.person_unique).await
 }
 
-/// 获取指定用户头像（GET /jaxrs/icon/{person}，flag 支持 unique_id/name/id）
+/// 获取指定用户头像（GET /api/icon/{person}，flag 支持 unique_id/name/id）
 pub async fn get_icon(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,

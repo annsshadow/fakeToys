@@ -383,7 +383,7 @@ pub async fn statement_manage_list(
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -408,7 +408,7 @@ pub async fn statement_list_with_query(
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1276,14 +1276,14 @@ pub async fn designer_search_v2(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 Java ActionGet）。
+/// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 o2server ActionGet）。
 #[allow(non_snake_case)]
 pub async fn id_generate(Path(count): Path<i64>) -> Result<Json<ActionResult<Value>>, AppError> {
     let n = count.clamp(0, 199);
@@ -1291,7 +1291,7 @@ pub async fn id_generate(Path(count): Path<i64>) -> Result<Json<ActionResult<Val
         .map(|_| Value::String(uuid::Uuid::new_v4().to_string()))
         .collect();
     let count = ids.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(ids),
         count,
         0,
@@ -2107,7 +2107,7 @@ pub async fn view_simulate_put(
     Ok(Json(ActionResult::success(payload_map)))
 }
 
-/// POST /jaxrs/query/assemble/designer/execute
+/// POST /api/query/assemble/designer/execute
 ///
 /// W6 ③ 后端补缺：设计器即时 SQL 执行（QueryStatementDesigner/QueryManagerDeep
 /// 的单条执行与批量执行）。与 statement/table 执行链路同轨：sqlparser 仅放行
@@ -2128,14 +2128,14 @@ pub async fn designer_execute(
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/query/assemble/designer/stat/do
+/// POST /api/query/assemble/designer/stat/do
 ///
 /// W6 ③ 后端补缺：执行统计聚合。数据链路 x_query_stat.query_flag
 /// → x_query_table.table_flag → x_query_table_data.data(JSON 文本行)，

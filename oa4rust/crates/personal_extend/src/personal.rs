@@ -170,7 +170,7 @@ pub async fn get_detail(
 }
 
 // ── person/signature/save + personal/face/list（斜杠路径家族补齐，查/写真实表 095）──
-/// POST /jaxrs/person/signature/save —— 保存当前登录用户签名（upsert x_person_signature）。
+/// POST /api/person/signature/save —— 保存当前登录用户签名（upsert x_person_signature）。
 pub async fn save_signature(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -185,7 +185,11 @@ pub async fn save_signature(
         .ok_or(AppError::Unauthorized)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let signature = payload.get("signature").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let signature = payload
+        .get("signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let mime = payload
         .get("mimeType")
         .and_then(|v| v.as_str())
@@ -234,7 +238,7 @@ pub async fn save_signature(
     }
 }
 
-/// GET /jaxrs/personal/face/list —— 当前登录用户的人脸特征列表（x_person_face）。
+/// GET /api/personal/face/list —— 当前登录用户的人脸特征列表（x_person_face）。
 pub async fn face_list(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -262,16 +266,39 @@ pub async fn face_list(
         .map(|row| {
             serde_json::Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), serde_json::Value::String(row.get("id"))),
-                ("faceName".to_string(), serde_json::Value::String(row.get::<_, Option<String>>("face_name").unwrap_or_default())),
-                ("faceType".to_string(), serde_json::Value::String(row.get::<_, Option<String>>("face_type").unwrap_or_default())),
-                ("status".to_string(), serde_json::Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
-                ("createTime".to_string(), serde_json::Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                (
+                    "faceName".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("face_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "faceType".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("face_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("status").unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         serde_json::Value::Array(data),
         count,
         0,

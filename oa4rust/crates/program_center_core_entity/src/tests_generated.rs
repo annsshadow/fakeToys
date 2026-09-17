@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/list")
+                    .uri("/api/program_center/agent/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -37,7 +37,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/list")
+                    .uri("/api/program_center/application/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -61,7 +61,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/list")
+                    .uri("/api/program_center/invoke/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -85,7 +85,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/list")
+                    .uri("/api/program_center/script/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -109,7 +109,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/structure/list")
+                    .uri("/api/program_center/structure/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

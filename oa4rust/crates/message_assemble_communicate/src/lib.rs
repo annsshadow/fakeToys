@@ -12,9 +12,7 @@ mod tests_u2;
 // ── message/unread/count（裸路径，桌面 Dashboard 引用；统计未读消息）────────────
 // 未读 = x_message_consume 中 read_status 非 'read' 的待消费条目。
 #[allow(non_snake_case)]
-pub async fn unread_count(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn unread_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
@@ -26,8 +24,14 @@ pub async fn unread_count(
     let count: i32 = row.get("c");
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(count as i64))),
-            ("im".to_string(), Value::Number(serde_json::Number::from(count as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+            (
+                "im".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
         ]),
     ))))
 }
@@ -117,7 +121,7 @@ pub async fn receive_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -189,7 +193,7 @@ pub async fn consume_list_consume_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -236,7 +240,7 @@ pub async fn consume_list_consume_currentperson_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -279,7 +283,7 @@ pub async fn consume_list_consume_person_person_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -325,7 +329,7 @@ pub async fn consume_type_type(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -339,12 +343,16 @@ pub async fn consume_type_type_mockputtopost(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // W12 收敛：对齐 Java ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
+    // W12 收敛：对齐 o2server ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
     // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
     let id_list: Vec<String> = body
         .get("idList")
         .and_then(Value::as_array)
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
 
     let found: i64 = if id_list.is_empty() {
@@ -357,15 +365,16 @@ pub async fn consume_type_type_mockputtopost(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        // Java 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
+        // o2server 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
         let _ = msg_type;
         n as i64
     };
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("value".to_string(), Value::Number(serde_json::Number::from(found))),
-        ]),
+        serde_json::Map::from_iter([(
+            "value".to_string(),
+            Value::Number(serde_json::Number::from(found)),
+        )]),
     ))))
 }
 
@@ -507,7 +516,7 @@ pub async fn im_conversation_list_my(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -550,7 +559,7 @@ pub async fn im_conversation_list_with_person(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -655,7 +664,7 @@ pub async fn im_conversation_id_group(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -804,7 +813,7 @@ pub async fn im_conversation_id_group_quit_self(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // Java 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
+    // o2server 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
     let conv_type = conversation_type(&client, &id).await?;
     if conv_type.as_deref() != Some("group") {
         return Ok(Json(ActionResult::error(
@@ -865,7 +874,7 @@ pub async fn im_conversation_id_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // Java ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
+    // o2server ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
     if !is_conversation_member(&client, &id, &session.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1199,7 +1208,7 @@ pub async fn im_msg_collection_list_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1446,7 +1455,7 @@ pub async fn im_msg_list_object(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1497,7 +1506,7 @@ pub async fn im_msg_list_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1574,7 +1583,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     let id = Uuid::new_v4().to_string();
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
     let file_size = data.len().to_string();
-    let file_url = format!("/jaxrs/message/assemble/communicate/im/msg/download/{id}");
+    let file_url = format!("/api/message/assemble/communicate/im/msg/download/{id}");
     let file_mime = file_mime.unwrap_or_else(|| "application/octet-stream".to_string());
 
     let result = client
@@ -1634,7 +1643,7 @@ pub async fn instant_currentperson_consumed(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1675,7 +1684,7 @@ pub async fn instant_currentperson_consumed_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1713,8 +1722,8 @@ pub async fn instant_currentperson_consumed_mockputtopost(
         None
     };
 
-    // W12 收敛：对齐 Java ActionCurrentPersonConsumed——Wo extends WrapBoolean，
-    // 成功路径恒 value=true（与 idList 是否为空无关，Java 总是先 setValue(true)）
+    // W12 收敛：对齐 o2server ActionCurrentPersonConsumed——Wo extends WrapBoolean，
+    // 成功路径恒 value=true（与 idList 是否为空无关，o2server 总是先 setValue(true)）
     let _ = result;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
@@ -1753,7 +1762,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1792,7 +1801,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1834,7 +1843,7 @@ pub async fn instant_list_currentperson_count_count_asc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1876,7 +1885,7 @@ pub async fn instant_list_currentperson_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1918,7 +1927,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1960,7 +1969,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2002,7 +2011,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2044,7 +2053,7 @@ pub async fn instant_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2086,7 +2095,7 @@ pub async fn instant_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2154,7 +2163,7 @@ pub async fn mass_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2196,7 +2205,7 @@ pub async fn mass_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2326,7 +2335,7 @@ pub async fn message_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -2334,11 +2343,11 @@ pub async fn message_list_paging_page_size_size(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// plan002 U2 — Java 对齐缺口端点（connector / ws / mass 家族 + 动词补齐）
+// plan002 U2 — o2server 对齐缺口端点（connector / ws / mass 家族 + 动词补齐）
 //
 // 表：x_message_ws_session / x_message_conversation_ext（migration 063 幂等
 // 补建），其余沿用既有表。写操作按 IDOR 门禁：
-//   - 管理资源（mass 群发创建/删除）一律 require_admin（Java 要求
+//   - 管理资源（mass 群发创建/删除）一律 require_admin（o2server 要求
 //     Manager/MessageManager 角色），is_admin 对不可用 DB fail-closed；
 //   - 会话内个人操作（退群/已读/单聊删除）person_unique 取自会话，
 //     操作前校验成员身份，禁止代他人操作。
@@ -2381,7 +2390,7 @@ async fn conversation_type(
     Ok(row.map(|r| r.get::<_, Option<String>>("type").unwrap_or_default()))
 }
 
-/// POST /connector — Java ActionCreate：先落 Instant(consumed=false)，
+/// POST /connector — o2server ActionCreate：先落 Instant(consumed=false)，
 /// 再为每个启用的 consumer 展开一条 Message 落库。
 #[allow(non_snake_case)]
 pub async fn connector_create(
@@ -2456,7 +2465,7 @@ pub async fn connector_create(
     ))))
 }
 
-/// POST /ws — Java ActionCreate：仅向当前打开的 ws 连接投递；
+/// POST /ws — o2server ActionCreate：仅向当前打开的 ws 连接投递；
 /// 有在线连接时落 ws 消费记录，返回 value=true，否则如实返回 false。
 #[allow(non_snake_case)]
 pub async fn ws_create(
@@ -2554,7 +2563,7 @@ pub async fn ws_list_person_current_node(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2596,7 +2605,7 @@ pub async fn ws_list_person(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2620,7 +2629,7 @@ fn mass_target_list(req: &Value) -> Vec<String> {
     targets
 }
 
-/// POST /mass — Java ActionCreate：需 Manager/MessageManager 角色，
+/// POST /mass — o2server ActionCreate：需 Manager/MessageManager 角色，
 /// 目标人群与 body 必填，落 Mass 记录（creator_person 取自会话）。
 #[allow(non_snake_case)]
 pub async fn mass_create(
@@ -2700,7 +2709,7 @@ pub async fn mass_enable_type_get(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2708,7 +2717,7 @@ pub async fn mass_enable_type_get(
 }
 
 /// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
-/// Java ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
+/// o2server ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
 #[allow(non_snake_case)]
 pub async fn mass_id_mockdeletetoget(
     pool: Extension<Pool>,
@@ -2741,7 +2750,7 @@ pub async fn mass_id_mockdeletetoget(
 }
 
 /// DELETE /im/conversation/{id}/single（及 GET mockdeletetoget）—
-/// Java ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
+/// o2server ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_single_delete_virtual(
     pool: Extension<Pool>,
@@ -2803,7 +2812,7 @@ pub async fn im_conversation_id_single_delete_virtual(
     ))))
 }
 
-/// PUT /instant/currentperson/consumed — Java PUT：将当前人员的 instant 标记已消费。
+/// PUT /instant/currentperson/consumed — o2server PUT：将当前人员的 instant 标记已消费。
 #[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed_put(
     pool: Extension<Pool>,

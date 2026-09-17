@@ -149,7 +149,7 @@ pub async fn unit_mock_delete_to_get(
     unit_delete(pool, session, Path(flag)).await
 }
 
-async fn top_units(pool: &Pool, unit_type: Option<&str>, java_bare: bool) -> HandlerResult {
+async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> HandlerResult {
     let client = client_of(pool).await?;
     let rows = match unit_type {
         Some(t) => {
@@ -171,8 +171,8 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, java_bare: bool) -> Han
                 .map_err(|_| AppError::Internal)?
         }
     };
-    if java_bare {
-        list_ok_java(rows.iter().map(unit_row_json).collect())
+    if legacy_bare {
+        list_ok_legacy(rows.iter().map(unit_row_json).collect())
     } else {
         list_ok(rows.iter().map(unit_row_json).collect())
     }
@@ -382,7 +382,7 @@ async fn units_by_flags(pool: &Pool, flags: &[String]) -> HandlerResult {
             }
         }
     }
-    list_ok_java(data)
+    list_ok_legacy(data)
 }
 
 #[allow(non_snake_case)]

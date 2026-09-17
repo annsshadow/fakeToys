@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/list")
+                    .uri("/api/meeting/core/entity/room/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/create")
+                    .uri("/api/meeting/core/entity/room/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/test-id")
+                    .uri("/api/meeting/core/entity/room/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/core/entity/room/save/test-id")
+                    .uri("/api/meeting/core/entity/room/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

@@ -84,8 +84,16 @@ pub async fn csrf_middleware(
         let origin_url = url::Url::parse(&allowed).ok();
         match origin_url {
             Some(url) => match url.host_str() {
-                Some("localhost") => Some(format!("{}://127.0.0.1{}", url.scheme(), url.port().map(|p| format!(":{p}")).unwrap_or_default())),
-                Some("127.0.0.1") => Some(format!("{}://localhost{}", url.scheme(), url.port().map(|p| format!(":{p}")).unwrap_or_default())),
+                Some("localhost") => Some(format!(
+                    "{}://127.0.0.1{}",
+                    url.scheme(),
+                    url.port().map(|p| format!(":{p}")).unwrap_or_default()
+                )),
+                Some("127.0.0.1") => Some(format!(
+                    "{}://localhost{}",
+                    url.scheme(),
+                    url.port().map(|p| format!(":{p}")).unwrap_or_default()
+                )),
                 _ => None,
             },
             None => None,

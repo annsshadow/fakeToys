@@ -15,7 +15,7 @@ use crate::resolve_current_person_unique;
 
 const MAX_ICON_SIZE: u64 = 5 * 1024 * 1024;
 
-/// GET /jaxrs/person/icon/{person}
+/// GET /api/person/icon/{person}
 ///
 /// 公开接口，无需认证。支持按 unique_id、name 或 id 查询用户头像。
 /// 返回 auth_person.icon 字段（base64 字符串），未设置时 icon 为空字符串、exists 为 false。
@@ -48,7 +48,7 @@ pub async fn get(
     }
 }
 
-/// POST /jaxrs/person/icon/upload
+/// POST /api/person/icon/upload
 ///
 /// 接收 multipart/form-data 图片文件，base64 编码后写入 auth_person.icon 字段。
 /// 需要认证，仅当前登录用户可更新自己的头像。

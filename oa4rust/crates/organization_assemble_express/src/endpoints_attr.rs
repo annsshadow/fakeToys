@@ -9,11 +9,11 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, normalize_flags, ok_java_list, string_field, string_list};
+use crate::endpoints::{capped, normalize_flags, ok_legacy_list, string_field, string_list};
 
 // ── personattribute ───────────────────────────────────────────────────────────
 
-/// POST /jaxrs/personattribute/list/name/person (Java ActionListNameWithPerson，
+/// POST /api/personattribute/list/name/person (o2server ActionListNameWithPerson，
 /// Wi{personList})：人员的属性名集合。
 pub async fn personattr_list_name_person(
     pool: Extension<Pool>,
@@ -26,15 +26,15 @@ pub async fn personattr_list_name_person(
     named_keys(pool, "nameList", SQL, body, "personList").await
 }
 
-/// POST /jaxrs/personattribute/list/attribute/person/name
-/// (Java ActionListAttributeWithPersonWithName，Wi{person, name})：属性值列表。
+/// POST /api/personattribute/list/attribute/person/name
+/// (o2server ActionListAttributeWithPersonWithName，Wi{person, name})：属性值列表。
 pub async fn personattr_list_attribute_person_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let (Some(person), Some(name)) = (string_field(&body, "person"), string_field(&body, "name"))
     else {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 "attributeList".to_string(),
                 Value::Array(vec![]),
@@ -57,7 +57,7 @@ pub async fn personattr_list_attribute_person_name(
         .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
         .collect();
     let count = values.len() as i64;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Object(serde_json::Map::from_iter([(
             "attributeList".to_string(),
             Value::Array(values.into_iter().map(Value::String).collect()),
@@ -67,7 +67,7 @@ pub async fn personattr_list_attribute_person_name(
     )))
 }
 
-/// POST /jaxrs/personattribute/list/person/object (Java ActionListWithPersonObject)：
+/// POST /api/personattribute/list/person/object (o2server ActionListWithPersonObject)：
 /// 人员属性对象（按 person+key 分组，valueList 聚合）。
 pub async fn personattr_list_person_object(
     pool: Extension<Pool>,
@@ -76,7 +76,7 @@ pub async fn personattr_list_person_object(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str = "SELECT a.id, a.person_id, a.attribute_key, a.attribute_value \
          FROM x_org_person_attribute a \
@@ -108,7 +108,7 @@ pub async fn personattr_list_person_object(
             }
         }
     }
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 async fn attr_write_values(
@@ -197,7 +197,7 @@ fn wrap_true() -> Value {
     )]))
 }
 
-/// POST /jaxrs/personattribute/set/person/name (Java ActionSetWithPersonWithName，
+/// POST /api/personattribute/set/person/name (o2server ActionSetWithPersonWithName，
 /// Wi{person, name, attributeList})：全量替换属性值。
 pub async fn personattr_set_person_name(
     pool: Extension<Pool>,
@@ -207,7 +207,7 @@ pub async fn personattr_set_person_name(
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
-/// POST /jaxrs/personattribute/append/person/name (Java ActionAppendWithPersonWithName)：
+/// POST /api/personattribute/append/person/name (o2server ActionAppendWithPersonWithName)：
 /// 追加缺失值（归一化查重后）。
 pub async fn personattr_append_person_name(
     pool: Extension<Pool>,
@@ -227,7 +227,7 @@ async fn named_keys(
     let flags = normalize_flags(string_list(&body, list_field));
     capped(&flags)?;
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 key.to_string(),
                 Value::Array(vec![]),
@@ -243,7 +243,7 @@ async fn named_keys(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     let count = list.len() as i64;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Object(serde_json::Map::from_iter([(
             key.to_string(),
             Value::Array(list.into_iter().map(Value::String).collect()),
@@ -255,7 +255,7 @@ async fn named_keys(
 
 // ── unitattribute（镜像 personattribute，owner 为 unit） ──────────────────────
 
-/// POST /jaxrs/unitattribute/list/name/unit (Wi{unitList})：组织的属性名集合。
+/// POST /api/unitattribute/list/name/unit (Wi{unitList})：组织的属性名集合。
 pub async fn unitattr_list_name_unit(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -267,14 +267,14 @@ pub async fn unitattr_list_name_unit(
     named_keys(pool, "nameList", SQL, body, "unitList").await
 }
 
-/// POST /jaxrs/unitattribute/list/attribute/unit/name (Wi{unit, name})。
+/// POST /api/unitattribute/list/attribute/unit/name (Wi{unit, name})。
 pub async fn unitattr_list_attribute_unit_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let (Some(unit), Some(name)) = (string_field(&body, "unit"), string_field(&body, "name"))
     else {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 "attributeList".to_string(),
                 Value::Array(vec![]),
@@ -297,7 +297,7 @@ pub async fn unitattr_list_attribute_unit_name(
         .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
         .collect();
     let count = values.len() as i64;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Object(serde_json::Map::from_iter([(
             "attributeList".to_string(),
             Value::Array(values.into_iter().map(Value::String).collect()),
@@ -307,7 +307,7 @@ pub async fn unitattr_list_attribute_unit_name(
     )))
 }
 
-/// POST /jaxrs/unitattribute/list/unit/object (Java ActionListWithUnitObject)。
+/// POST /api/unitattribute/list/unit/object (o2server ActionListWithUnitObject)。
 pub async fn unitattr_list_unit_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -315,7 +315,7 @@ pub async fn unitattr_list_unit_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str = "SELECT a.id, a.unit_id, a.attribute_key, a.attribute_value \
          FROM x_org_unit_attribute a \
@@ -347,10 +347,10 @@ pub async fn unitattr_list_unit_object(
             }
         }
     }
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/unitattribute/set/unit/name：全量替换组织属性值。
+/// POST /api/unitattribute/set/unit/name：全量替换组织属性值。
 pub async fn unitattr_set_unit_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -359,7 +359,7 @@ pub async fn unitattr_set_unit_name(
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
-/// POST /jaxrs/unitattribute/append/unit/name：追加缺失的组织属性值。
+/// POST /api/unitattribute/append/unit/name：追加缺失的组织属性值。
 pub async fn unitattr_append_unit_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -370,7 +370,7 @@ pub async fn unitattr_append_unit_name(
 
 // ── empower / empowerlog / distinguishedname ─────────────────────────────────
 
-/// POST /jaxrs/empower/list/identity/object (Java ActionListWithIdentityObject，
+/// POST /api/empower/list/identity/object (o2server ActionListWithIdentityObject，
 /// Wi{identityList})：身份维度的授权对象。x_empower 的 from_identity/to_identity
 /// 由迁移 071 提供；application/process/work 维度在当前表结构中不存在，
 /// 不做过滤（如实返回身份命中的授权行）。
@@ -381,7 +381,7 @@ pub async fn empower_list_identity_object(
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str =
         "SELECT id, from_person, to_person, from_identity, to_identity, role_id, enabled \
@@ -412,10 +412,10 @@ pub async fn empower_list_identity_object(
         );
         data.push(Value::Object(obj));
     }
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/empowerlog (Java EmpowerLogAction#create，Wi extends EmpowerLog)：
+/// POST /api/empowerlog (o2server EmpowerLogAction#create，Wi extends EmpowerLog)：
 /// 校验必填字段后落库 x_org_empower_log。
 pub async fn empowerlog_create(
     pool: Extension<Pool>,
@@ -454,7 +454,7 @@ pub async fn empowerlog_create(
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
-/// POST /jaxrs/distinguishedname/list (Java distinguishedname ActionList，
+/// POST /api/distinguishedname/list (o2server distinguishedname ActionList，
 /// Wi/Wo 均为 {distinguishedNameList})：过滤出在任一组织实体中真实存在的 DN。
 pub async fn distinguishedname_list(
     pool: Extension<Pool>,
@@ -463,7 +463,7 @@ pub async fn distinguishedname_list(
     let flags = normalize_flags(string_list(&body, "distinguishedNameList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 "distinguishedNameList".to_string(),
                 Value::Array(vec![]),
@@ -491,7 +491,7 @@ pub async fn distinguishedname_list(
     let found: HashSet<String> = rows.iter().map(|r| r.get::<_, String>(0)).collect();
     let valid: Vec<String> = flags.into_iter().filter(|f| found.contains(f)).collect();
     let count = valid.len() as i64;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Object(serde_json::Map::from_iter([(
             "distinguishedNameList".to_string(),
             Value::Array(valid.into_iter().map(Value::String).collect()),

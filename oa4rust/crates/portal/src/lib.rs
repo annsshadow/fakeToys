@@ -12,7 +12,7 @@ mod tests_generated;
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/{id}",
+    path = "/api/portal/{id}",
     params(
         ("id" = String, Path, description = "Portal ID")
     ),
@@ -72,7 +72,7 @@ pub async fn portal_id(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/list",
+    path = "/api/portal/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -115,7 +115,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -124,7 +124,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portalcategory/list",
+    path = "/api/portalcategory/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -164,7 +164,7 @@ pub async fn list_portal_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -173,7 +173,7 @@ pub async fn list_portal_category(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/page/list",
+    path = "/api/portal/page/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -218,7 +218,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -227,7 +227,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/page/{id}",
+    path = "/api/portal/page/{id}",
     params(
         ("id" = String, Path, description = "Page ID")
     ),
@@ -281,7 +281,7 @@ pub async fn get_page(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/portal/page/create",
+    path = "/api/portal/page/create",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -334,7 +334,7 @@ pub async fn create_page(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/portal/page/save/{id}",
+    path = "/api/portal/page/save/{id}",
     params(
         ("id" = String, Path, description = "Page ID")
     ),
@@ -381,7 +381,7 @@ pub async fn save_page(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/portal/page/delete/{id}",
+    path = "/api/portal/page/delete/{id}",
     params(
         ("id" = String, Path, description = "Page ID")
     ),
@@ -420,7 +420,7 @@ pub async fn delete_page(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/widget/list",
+    path = "/api/portal/widget/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -454,7 +454,7 @@ pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -463,7 +463,7 @@ pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/script/list",
+    path = "/api/portal/script/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -496,7 +496,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -505,7 +505,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/dict/list",
+    path = "/api/portal/dict/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -543,7 +543,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

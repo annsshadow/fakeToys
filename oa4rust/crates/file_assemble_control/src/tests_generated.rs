@@ -17,7 +17,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/list/test-id")
+                    .uri("/api/file/assemble/control/file/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -38,7 +38,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/test-id")
+                    .uri("/api/file/assemble/control/file/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -61,7 +61,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/delete/test-id")
+                    .uri("/api/file/assemble/control/file/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -82,7 +82,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file/create")
+                    .uri("/api/file/core/entity/file/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -105,7 +105,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/anonymous/file/id/download")
+                    .uri("/api/file/anonymous/file/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -126,7 +126,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/file/test-id/download/stream")
+                    .uri("/api/anonymous/file/test-id/download/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -148,7 +148,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/list/folder/folderId")
+                    .uri("/api/file/attachment/list/folder/folderId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -171,7 +171,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/list/top")
+                    .uri("/api/file/attachment/list/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -194,7 +194,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/id")
+                    .uri("/api/file/attachment/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -215,7 +215,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/id/binary/base64")
+                    .uri("/api/file/attachment/id/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -236,7 +236,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/id/download")
+                    .uri("/api/file/attachment/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -257,7 +257,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attachment/download/test-id/stream")
+                    .uri("/api/attachment/download/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -278,7 +278,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/id/image/scale/scale/binary/base64")
+                    .uri("/api/file/attachment/id/image/scale/scale/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -299,7 +299,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64")
+                    .uri("/api/file/attachment/id/image/width/width/height/height/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -319,7 +319,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/exist/file/fileMd5")
+                    .uri("/api/file/attachment2/exist/file/fileMd5")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -341,7 +341,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/list/filter/name")
+                    .uri("/api/file/attachment2/list/filter/name")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -362,7 +362,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/list/folder/folderId")
+                    .uri("/api/file/attachment2/list/folder/folderId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -385,7 +385,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/list/top")
+                    .uri("/api/file/attachment2/list/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -406,7 +406,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/list/type/page/size/size")
+                    .uri("/api/file/attachment2/list/type/page/size/size")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -429,7 +429,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id")
+                    .uri("/api/file/attachment2/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -450,7 +450,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id/binary/base64")
+                    .uri("/api/file/attachment2/id/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -471,7 +471,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id/download")
+                    .uri("/api/file/attachment2/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -492,7 +492,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id/download/image/width/width/height/height")
+                    .uri("/api/file/attachment2/id/download/image/width/width/height/height")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -513,7 +513,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id/download/stream")
+                    .uri("/api/file/attachment2/id/download/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -534,7 +534,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id/image/scale/scale/binary/base64")
+                    .uri("/api/file/attachment2/id/image/scale/scale/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -555,7 +555,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64")
+                    .uri("/api/file/attachment2/id/image/width/width/height/height/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -574,7 +574,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/complex/folder/id")
+                    .uri("/api/file/complex/folder/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -595,7 +595,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/complex/top")
+                    .uri("/api/file/complex/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -618,7 +618,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/editor/list")
+                    .uri("/api/file/editor/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -639,7 +639,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/clean/unused/referencetype/cmsdocument/manage")
+                    .uri("/api/file/clean/unused/referencetype/cmsdocument/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -661,7 +661,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale")
+                    .uri("/api/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -679,7 +679,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/referencetype")
+                    .uri("/api/file/list/referencetype")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -700,7 +700,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/referencetype/referenceType/reference/reference")
+                    .uri("/api/file/list/referencetype/referenceType/reference/reference")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -721,7 +721,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/unused/referencetype/cmsdocument/manage")
+                    .uri("/api/file/list/unused/referencetype/cmsdocument/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -742,7 +742,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/id/next/count")
+                    .uri("/api/file/list/id/next/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -763,7 +763,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/id/next/count/all")
+                    .uri("/api/file/list/id/next/count/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -784,7 +784,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/id/next/count/referencetype/referenceType")
+                    .uri("/api/file/list/id/next/count/referencetype/referenceType")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -805,7 +805,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/id/prev/count")
+                    .uri("/api/file/list/id/prev/count")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -826,7 +826,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/id/prev/count/all")
+                    .uri("/api/file/list/id/prev/count/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -847,7 +847,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/list/id/prev/count/referencetype/referenceType")
+                    .uri("/api/file/list/id/prev/count/referencetype/referenceType")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -868,7 +868,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/referencetype/referenceType/reference/reference")
+                    .uri("/api/file/referencetype/referenceType/reference/reference")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -892,7 +892,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/id")
+                    .uri("/api/file/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -913,7 +913,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/id/binary/base64")
+                    .uri("/api/file/id/binary/base64")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -934,7 +934,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/id/download")
+                    .uri("/api/file/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -955,7 +955,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/download/stream")
+                    .uri("/api/file/test-id/download/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -976,7 +976,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder/list/top")
+                    .uri("/api/file/folder/list/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -997,7 +997,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder/list/id")
+                    .uri("/api/file/folder/list/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1018,7 +1018,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder/id")
+                    .uri("/api/file/folder/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1039,7 +1039,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder2/batch/download")
+                    .uri("/api/file/folder2/batch/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1060,7 +1060,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder2/list/top")
+                    .uri("/api/file/folder2/list/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1081,7 +1081,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder2/list/id")
+                    .uri("/api/file/folder2/list/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1102,7 +1102,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder2/id")
+                    .uri("/api/file/folder2/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1123,7 +1123,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/folder2/id/download")
+                    .uri("/api/file/folder2/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1146,7 +1146,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/recycle/id")
+                    .uri("/api/file/recycle/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1169,7 +1169,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/download/share/shareId/file/fileId")
+                    .uri("/api/file/share/download/share/shareId/file/fileId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1191,7 +1191,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/list/att/share/shareId/folder/folderId")
+                    .uri("/api/file/share/list/att/share/shareId/folder/folderId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1212,7 +1212,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/list/folder/share/shareId/folder/folderId")
+                    .uri("/api/file/share/list/folder/share/shareId/folder/folderId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1237,7 +1237,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/share/shareId/file/fileId/folder/folderId")
+                    .uri("/api/file/share/share/shareId/file/fileId/folder/folderId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1258,7 +1258,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/shield/id")
+                    .uri("/api/file/share/shield/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1279,7 +1279,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/id")
+                    .uri("/api/file/share/id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1300,7 +1300,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/share/id/password/password")
+                    .uri("/api/file/share/id/password/password")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

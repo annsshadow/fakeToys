@@ -334,14 +334,14 @@ pub async fn script_list(
 
 pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/portal/portal/list", get(portal_list))
-        .route("/jaxrs/portal/widget/list", get(widget_list))
-        .route("/jaxrs/portal/page/list", get(page_list))
-        .route("/jaxrs/portal/page/get/{id}", get(page_get))
-        .route("/jaxrs/portal/page/create", post(page_create))
-        .route("/jaxrs/portal/page/update", post(page_update))
-        .route("/jaxrs/portal/page/remove", post(page_remove))
-        .route("/jaxrs/portal/script/list", get(script_list))
+        .route("/api/portal/portal/list", get(portal_list))
+        .route("/api/portal/widget/list", get(widget_list))
+        .route("/api/portal/page/list", get(page_list))
+        .route("/api/portal/page/get/{id}", get(page_get))
+        .route("/api/portal/page/create", post(page_create))
+        .route("/api/portal/page/update", post(page_update))
+        .route("/api/portal/page/remove", post(page_remove))
+        .route("/api/portal/script/list", get(script_list))
 }
 
 #[cfg(test)]

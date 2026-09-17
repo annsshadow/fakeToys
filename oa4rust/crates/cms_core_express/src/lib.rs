@@ -42,7 +42,7 @@ pub async fn content_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -85,13 +85,13 @@ pub async fn content_detail(
 
 /// 创建 CMS 核心服务路由
 /// 注册以下路由：
-/// - /jaxrs/cms/core/express/content/list - 内容列表
-/// - /jaxrs/cms/core/express/content/detail/{id} - 内容详情
+/// - /api/cms/core/express/content/list - 内容列表
+/// - /api/cms/core/express/content/detail/{id} - 内容详情
 pub fn cms_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/cms/core/express/content/list", get(content_list))
+        .route("/api/cms/core/express/content/list", get(content_list))
         .route(
-            "/jaxrs/cms/core/express/content/detail/{id}",
+            "/api/cms/core/express/content/detail/{id}",
             get(content_detail),
         )
         .layer(Extension(pool))

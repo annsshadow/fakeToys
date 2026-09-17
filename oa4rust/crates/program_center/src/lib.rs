@@ -56,7 +56,7 @@ pub async fn applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -134,7 +134,7 @@ pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -181,7 +181,7 @@ pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1120,7 +1120,7 @@ pub async fn appstyle_index_portal(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1164,7 +1164,7 @@ pub async fn bar_create_mass_from_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1208,7 +1208,7 @@ pub async fn bar_select1_field_field_value_value_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1252,7 +1252,7 @@ pub async fn bar_select2_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1296,7 +1296,7 @@ pub async fn bar_select3_field_field_value_value_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1340,7 +1340,7 @@ pub async fn bar_select4_field_field_value_value_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1382,7 +1382,7 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1462,7 +1462,7 @@ pub async fn center_applications(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1496,7 +1496,7 @@ pub async fn center_regist_applications(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1573,7 +1573,7 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1621,7 +1621,7 @@ pub async fn code_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2341,7 +2341,7 @@ pub async fn collect_validate_password(
 #[allow(non_snake_case)]
 pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -2353,7 +2353,7 @@ pub async fn command_list_node(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -2596,7 +2596,7 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2641,7 +2641,7 @@ pub async fn config_list_application(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2686,7 +2686,7 @@ pub async fn config_list_dump_data(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2731,7 +2731,7 @@ pub async fn config_list_dump_data_current_node(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2776,7 +2776,7 @@ pub async fn config_list_entity(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3055,7 +3055,7 @@ pub async fn config_ternary_management(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3141,7 +3141,7 @@ pub async fn datastructure_fileds_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3185,7 +3185,7 @@ pub async fn datastructure_modules_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3232,7 +3232,7 @@ pub async fn datastructure_tables_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3277,7 +3277,7 @@ pub async fn deploy_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3378,7 +3378,7 @@ pub async fn deploy_server_resource(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3489,7 +3489,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3525,7 +3525,9 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                     Value::String(
                         row.get::<_, Option<String>>("flag")
                             .filter(|f| !f.is_empty())
-                            .unwrap_or_else(|| row.get::<_, Option<String>>("key_name").unwrap_or_default()),
+                            .unwrap_or_else(|| {
+                                row.get::<_, Option<String>>("key_name").unwrap_or_default()
+                            }),
                     ),
                 ),
                 (
@@ -3548,7 +3550,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3600,7 +3602,7 @@ pub async fn dict_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3953,7 +3955,7 @@ pub async fn distribute_assemble_source_source(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3997,7 +3999,7 @@ pub async fn distribute_webserver_assemble_source_source(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4045,7 +4047,7 @@ pub async fn foo_create_mass_from_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4087,7 +4089,7 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4129,7 +4131,7 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4171,7 +4173,7 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4215,7 +4217,7 @@ pub async fn input_prepare_cover(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4259,7 +4261,7 @@ pub async fn input_prepare_create(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4303,7 +4305,7 @@ pub async fn invoke_list_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4347,7 +4349,7 @@ pub async fn invoke_list_with_category_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4566,7 +4568,7 @@ pub async fn invoke_flag_file(
 
 #[allow(non_snake_case)]
 pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -4639,7 +4641,7 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4747,7 +4749,7 @@ pub async fn market_list_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4795,7 +4797,7 @@ pub async fn market_list_install_log_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4839,7 +4841,7 @@ pub async fn market_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4883,7 +4885,7 @@ pub async fn market_list_paging_page_size_size_category_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4927,7 +4929,7 @@ pub async fn market_list_top_three(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5054,7 +5056,7 @@ pub async fn market_flag_install_log(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5238,7 +5240,7 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5279,7 +5281,7 @@ pub async fn module_list_category(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5324,7 +5326,11 @@ pub async fn module_output(
 
 #[allow(non_snake_case)]
 pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(vec![]),
+        0,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -5647,7 +5653,7 @@ pub async fn mpweixin_menu_delete_id(
 
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -5777,7 +5783,7 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5826,7 +5832,7 @@ pub async fn output_appInfoFlag_select(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5895,7 +5901,7 @@ pub async fn prompterrorlog_count_exceptionclass(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5933,7 +5939,7 @@ pub async fn prompterrorlog_count_loggername(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5981,7 +5987,7 @@ pub async fn prompterrorlog_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6029,7 +6035,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6077,7 +6083,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6125,7 +6131,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6173,7 +6179,7 @@ pub async fn prompterrorlog_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6221,7 +6227,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6269,7 +6275,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6317,7 +6323,7 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6607,10 +6613,12 @@ pub async fn application_save(
     ))))
 }
 
-/// GET /jaxrs/program_center/application/list —— 应用列表（list 风格，查 x_applications 032/037/038）
+/// GET /api/program_center/application/list —— 应用列表（list 风格，查 x_applications 032/037/038）
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn application_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
@@ -6630,7 +6638,10 @@ pub async fn application_list(pool: Extension<Pool>) -> Result<Json<ActionResult
                 ("appId".to_string(), Value::String(row.get("app_id"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get::<_, Option<String>>("description").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("disable".to_string(), Value::Bool(row.get("disable"))),
                 (
@@ -6639,14 +6650,17 @@ pub async fn application_list(pool: Extension<Pool>) -> Result<Json<ActionResult
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default()),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6772,7 +6786,7 @@ pub async fn schedule_list_schedule(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6824,7 +6838,7 @@ pub async fn schedule_list_schedulelocal(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6873,7 +6887,7 @@ pub async fn schedule_list_schedulelog_application_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6915,7 +6929,7 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6981,7 +6995,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7030,7 +7044,7 @@ pub async fn script_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7203,7 +7217,7 @@ pub async fn script_id(
 #[allow(non_snake_case)]
 pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7213,7 +7227,7 @@ pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 #[allow(non_snake_case)]
 pub async fn test_test2(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7300,7 +7314,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7348,7 +7362,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7396,7 +7410,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7444,7 +7458,7 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7496,7 +7510,7 @@ pub async fn unexpectederrorlog_id(
 #[allow(non_snake_case)]
 pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7508,7 +7522,7 @@ pub async fn validation_scripting_benchmark(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7632,7 +7646,7 @@ pub async fn zhengwudingding_sync_organization_callback(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// plan002 U2 — Java 对齐缺口端点
+// plan002 U2 — o2server 对齐缺口端点
 //
 // 表：x_program_warn_log / x_program_app_pack（migration 062 幂等补建），
 // 其余沿用既有表。写操作按 IDOR 文档门禁
@@ -7757,7 +7771,7 @@ async fn warnlog_list(
     let data: Vec<Value> = rows.iter().map(warnlog_row_to_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7847,7 +7861,7 @@ pub async fn storagemappings_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7906,7 +7920,11 @@ pub async fn authentication_who(
             );
             map.insert("token".to_string(), Value::String(String::new()));
             map.insert("person".to_string(), Value::String(String::new()));
-            Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)))
+            Ok(Json(ActionResult::legacy_success(
+                Value::Object(map),
+                0,
+                -1,
+            )))
         }
     }
 }
@@ -7963,18 +7981,18 @@ pub async fn center_regist_applications_update(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// plan002 U2 残余闭合（9 条，路径对齐 Java v9 全集）：
+// plan002 U2 残余闭合（9 条，路径对齐 o2server v9 全集）：
 //
 // - config PUT 家族（3 条）：centerserver / person / token 的写回。
-//   Java 侧为 Config 对象保存（ActionEditConfig），Rust 侧以
+//   o2server 侧为 Config 对象保存（ActionEditConfig），Rust 侧以
 //   x_program_config 键值域持久化；管理员门禁（require_admin）。
 // - invoke CRUD（4 条）：POST/GET/PUT/DELETE /invoke[/{flag}]，
-//   表 x_program_invoke（migration 074），flag 语义对齐 Java emc.flag
+//   表 x_program_invoke（migration 074），flag 语义对齐 o2server emc.flag
 //   （id 或 name 或 alias）；写操作 serviceControlAble ≈ 管理员门禁；
 //   name/alias 归一化查重（trim 后比对，排除自身 id）。
-// - appstyle erase GET 家族（2 条）：GET .../erase 为 Java 原生方法，
+// - appstyle erase GET 家族（2 条）：GET .../erase 为 o2server 原生方法，
 //   语义是"清除当前该类图片"（无 id 参数）；补挂在既有 DELETE 注册上，
-//   管理员门禁（对齐 Java ExceptionAccessDenied）。
+//   管理员门禁（对齐 o2server ExceptionAccessDenied）。
 // ══════════════════════════════════════════════════════════════════
 
 /// config PUT 家族的公共实现：按 key 域 upsert 配置 JSON
@@ -8025,7 +8043,7 @@ async fn u2_config_domain_put(
     ))))
 }
 
-/// PUT /jaxrs/program_center/config/centerserver —— 保存中心服务器配置
+/// PUT /api/program_center/config/centerserver —— 保存中心服务器配置
 #[allow(non_snake_case)]
 pub async fn u2_config_centerserver_put(
     pool: Extension<Pool>,
@@ -8035,7 +8053,7 @@ pub async fn u2_config_centerserver_put(
     u2_config_domain_put(&pool, &session, "centerserver", body).await
 }
 
-/// PUT /jaxrs/program_center/config/person —— 人员配置保存
+/// PUT /api/program_center/config/person —— 人员配置保存
 #[allow(non_snake_case)]
 pub async fn u2_config_person_put(
     pool: Extension<Pool>,
@@ -8045,7 +8063,7 @@ pub async fn u2_config_person_put(
     u2_config_domain_put(&pool, &session, "person", body).await
 }
 
-/// PUT /jaxrs/program_center/config/token —— 令牌配置保存
+/// PUT /api/program_center/config/token —— 令牌配置保存
 #[allow(non_snake_case)]
 pub async fn u2_config_token_put(
     pool: Extension<Pool>,
@@ -8102,7 +8120,7 @@ async fn u2_invoke_find_by_flag(
     client: &deadpool_postgres::tokio_postgres::Client,
     flag: &str,
 ) -> Result<Option<String>, AppError> {
-    // 对齐 Java emc.flag：id 或 name 或 alias 命中
+    // 对齐 o2server emc.flag：id 或 name 或 alias 命中
     let row = client
         .query_opt(
             "SELECT id FROM x_program_invoke \
@@ -8117,7 +8135,7 @@ async fn u2_invoke_find_by_flag(
     Ok(row.map(|r| r.get::<_, String>("id")))
 }
 
-/// POST /jaxrs/program_center/invoke —— 创建服务调用
+/// POST /api/program_center/invoke —— 创建服务调用
 #[allow(non_snake_case)]
 pub async fn u2_invoke_create(
     pool: Extension<Pool>,
@@ -8199,7 +8217,7 @@ pub async fn u2_invoke_create(
     ))))
 }
 
-/// GET /jaxrs/program_center/invoke/{flag} —— 按 id/name/alias 查询
+/// GET /api/program_center/invoke/{flag} —— 按 id/name/alias 查询
 #[allow(non_snake_case)]
 pub async fn u2_invoke_get(
     pool: Extension<Pool>,
@@ -8236,7 +8254,7 @@ pub async fn u2_invoke_get(
     }))))
 }
 
-/// PUT /jaxrs/program_center/invoke/{flag} —— 更新服务调用
+/// PUT /api/program_center/invoke/{flag} —— 更新服务调用
 #[allow(non_snake_case)]
 pub async fn u2_invoke_update(
     pool: Extension<Pool>,
@@ -8304,7 +8322,7 @@ pub async fn u2_invoke_update(
     ))))
 }
 
-/// DELETE /jaxrs/program_center/invoke/{flag} —— 删除服务调用
+/// DELETE /api/program_center/invoke/{flag} —— 删除服务调用
 #[allow(non_snake_case)]
 pub async fn u2_invoke_delete(
     pool: Extension<Pool>,
@@ -8326,7 +8344,7 @@ pub async fn u2_invoke_delete(
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-// --- appstyle erase（GET，清除当前类图，对齐 Java 无 id 参数语义）---
+// --- appstyle erase（GET，清除当前类图，对齐 o2server 无 id 参数语义）---
 
 async fn u2_appstyle_erase_current(
     pool: &Pool,
@@ -8356,7 +8374,7 @@ async fn u2_appstyle_erase_current(
     }))))
 }
 
-/// GET /jaxrs/program_center/appstyle/image/login/avatar/erase —— 清除当前登录头像
+/// GET /api/program_center/appstyle/image/login/avatar/erase —— 清除当前登录头像
 #[allow(non_snake_case)]
 pub async fn u2_appstyle_login_avatar_erase_get(
     pool: Extension<Pool>,
@@ -8365,7 +8383,7 @@ pub async fn u2_appstyle_login_avatar_erase_get(
     u2_appstyle_erase_current(&pool, &session, "login_avatar").await
 }
 
-/// GET /jaxrs/program_center/appstyle/image/launch/logo/erase —— 清除当前启动 Logo
+/// GET /api/program_center/appstyle/image/launch/logo/erase —— 清除当前启动 Logo
 #[allow(non_snake_case)]
 pub async fn u2_appstyle_launch_logo_erase_get(
     pool: Extension<Pool>,
@@ -8374,7 +8392,7 @@ pub async fn u2_appstyle_launch_logo_erase_get(
     u2_appstyle_erase_current(&pool, &session, "launch_logo").await
 }
 
-// ── agent list / delete（Java: GET/DELETE /agent）──────────────────────
+// ── agent list / delete（o2server: GET/DELETE /agent）──────────────────────
 
 #[allow(non_snake_case)]
 pub async fn agent_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8407,7 +8425,7 @@ pub async fn agent_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -8444,7 +8462,7 @@ pub async fn agent_delete_flag(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// plan002 U2 终扫闭合（U3 批次，对齐 java-endpoint-inventory.json
+// plan002 U2 终扫闭合（U3 批次，对齐 o2server-endpoint-inventory.json
 // x_program_center 剩余 method+path 缺口）。沿用 U2 约定：
 //   - 真实参数化 SQL（复用 032/037/038/062/074 表 + migration 082 的
 //     x_program_agent.enable）；
@@ -8631,7 +8649,7 @@ fn appstyle_resource_type_of(path: &'static str) -> &'static str {
     path
 }
 
-/// GET /appstyle/current/update —— 读取当前样式配置（Java 该端点为 GET）
+/// GET /appstyle/current/update —— 读取当前样式配置（o2server 该端点为 GET）
 #[allow(non_snake_case)]
 pub async fn u3_appstyle_current_update_get(
     pool: Extension<Pool>,
@@ -8657,7 +8675,7 @@ pub async fn u3_appstyle_current_update_get(
     }
 }
 
-/// PUT /jaxrs/program_center/appstyle —— 保存当前样式（复用 config 键值域，管理员门禁）
+/// PUT /api/program_center/appstyle —— 保存当前样式（复用 config 键值域，管理员门禁）
 #[allow(non_snake_case)]
 pub async fn u3_appstyle_put(
     pool: Extension<Pool>,
@@ -9021,7 +9039,7 @@ pub async fn u3_collect_delete_name_mobile_code(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 对齐 Java emc.flag 语义：三元组任一命中即视为匹配记录
+    // 对齐 o2server emc.flag 语义：三元组任一命中即视为匹配记录
     let n = client
         .execute(
             "DELETE FROM x_program_collect WHERE person_id = $1 OR title = $2 OR creator = $3",
@@ -9067,7 +9085,7 @@ pub async fn u3_collect_controllermobile_get(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9144,7 +9162,7 @@ pub async fn u3_config_dump(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9446,7 +9464,7 @@ pub async fn u3_invoke_list_all(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9481,14 +9499,14 @@ pub async fn u3_invoke_list_by_category(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /jaxrs/program_center/invoke/list —— 服务调用列表（list 风格，查 x_program_invoke 074；与 u3_invoke_list_all 同输出键）
+/// GET /api/program_center/invoke/list —— 服务调用列表（list 风格，查 x_program_invoke 074；与 u3_invoke_list_all 同输出键）
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -9517,7 +9535,7 @@ pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9768,7 +9786,7 @@ pub async fn u3_market_install_log_flag(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(schedule_log_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9830,7 +9848,7 @@ async fn u3_market_list_paged(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9875,14 +9893,14 @@ pub async fn u3_market_install_log_paging_post(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(schedule_log_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /module/output/structure —— 最新模块结构（Java 该端点无参数）
+/// GET /module/output/structure —— 最新模块结构（o2server 该端点无参数）
 #[allow(non_snake_case)]
 pub async fn u3_module_output_structure_latest(
     pool: Extension<Pool>,
@@ -9954,7 +9972,7 @@ pub async fn u3_module_compare_upload_put(
     u3_module_sync_action(&pool, "compare_upload").await
 }
 
-/// GET /mpweixin/menu/create/to/weixin —— 读取最新菜单（Java GET 无参数变体）
+/// GET /mpweixin/menu/create/to/weixin —— 读取最新菜单（o2server GET 无参数变体）
 #[allow(non_snake_case)]
 pub async fn u3_mpweixin_menu_latest(
     pool: Extension<Pool>,
@@ -10300,7 +10318,7 @@ pub async fn u3_welink_request_pull_sync_post(
     )))
 }
 
-// ── apppack 家族（Java AppPackAction / AppPackAnonymousAction，migration 062 建表）──
+// ── apppack 家族（o2server AppPackAction / AppPackAnonymousAction，migration 062 建表）──
 
 #[derive(Debug, Deserialize)]
 pub struct AppPackStartRequest {
@@ -10344,7 +10362,7 @@ pub async fn apppack_info_list(
 
     let data: Vec<Value> = rows.iter().map(apppack_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -10536,7 +10554,7 @@ pub async fn apppack_server_connect(
     ))))
 }
 
-// ── dict 家族写端点（Java DictAction POST "" / PUT|POST|DELETE {dictFlag}/{path}/data / DELETE {id}）──
+// ── dict 家族写端点（o2server DictAction POST "" / PUT|POST|DELETE {dictFlag}/{path}/data / DELETE {id}）──
 
 #[derive(Debug, Deserialize)]
 pub struct DictCreateRequest {

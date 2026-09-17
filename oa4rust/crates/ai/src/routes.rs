@@ -10,44 +10,41 @@ use crate::{
 
 pub fn ai_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/ai/config/get", get(config_get))
-        .route("/jaxrs/ai/config/base/config", get(config_base_config))
+        .route("/api/ai/config/get", get(config_get))
+        .route("/api/ai/config/base/config", get(config_base_config))
         .route(
-            "/jaxrs/ai/config/list/model/paging/{page}/size/{size}",
+            "/api/ai/config/list/model/paging/{page}/size/{size}",
             get(config_list_model_paging),
         )
-        .route("/jaxrs/ai/config/get/model/{flag}", get(config_get_model))
+        .route("/api/ai/config/get/model/{flag}", get(config_get_model))
         .route(
-            "/jaxrs/ai/config/list/mcp/paging/{page}/size/{size}",
+            "/api/ai/config/list/mcp/paging/{page}/size/{size}",
             get(config_list_mcp_paging),
         )
-        .route("/jaxrs/ai/config/get/mcp/{flag}", get(config_get_mcp))
-        .route("/jaxrs/ai/config/list/enable/model", get(list_enable_model))
-        .route("/jaxrs/ai/index/sync/to/knowledge", get(sync_to_knowledge))
-        .route("/jaxrs/ai/app/list", get(app_list))
-        .route("/jaxrs/ai/model/list", get(model_list))
-        .route("/jaxrs/ai/conversation/list", get(conversation_list))
+        .route("/api/ai/config/get/mcp/{flag}", get(config_get_mcp))
+        .route("/api/ai/config/list/enable/model", get(list_enable_model))
+        .route("/api/ai/index/sync/to/knowledge", get(sync_to_knowledge))
+        .route("/api/ai/app/list", get(app_list))
+        .route("/api/ai/model/list", get(model_list))
+        .route("/api/ai/conversation/list", get(conversation_list))
         .route(
-            "/jaxrs/ai/chat/list/paging/{page}/size/{size}",
+            "/api/ai/chat/list/paging/{page}/size/{size}",
             get(chat_list_paging),
         )
         .route(
-            "/jaxrs/ai/chat/list/completion/{clue_id}/paging/{page}/size/{size}",
+            "/api/ai/chat/list/completion/{clue_id}/paging/{page}/size/{size}",
             get(chat_list_completion_paging),
         )
-        .route("/jaxrs/ai/chat/delete/{clue_id}", get(chat_delete))
-        .route("/jaxrs/ai/index/cms/doc/{docId}", get(index_cms_doc))
+        .route("/api/ai/chat/delete/{clue_id}", get(chat_delete))
+        .route("/api/ai/index/cms/doc/{docId}", get(index_cms_doc))
         .route(
-            "/jaxrs/ai/index/cms/doc/with/app/{appId}",
+            "/api/ai/index/cms/doc/with/app/{appId}",
             get(index_cms_doc_with_app),
         )
-        .route("/jaxrs/ai/index/delete/{flag}", get(index_delete))
-        .route("/jaxrs/ai/file/{flag}", get(file_get))
-        .route("/jaxrs/ai/file/{id}/download", get(file_download))
-        .route(
-            "/jaxrs/ai/file/{id}/download/scale",
-            get(file_download_scale),
-        )
-        .route("/jaxrs/ai/file/delete/{flag}", get(file_delete))
+        .route("/api/ai/index/delete/{flag}", get(index_delete))
+        .route("/api/ai/file/{flag}", get(file_get))
+        .route("/api/ai/file/{id}/download", get(file_download))
+        .route("/api/ai/file/{id}/download/scale", get(file_download_scale))
+        .route("/api/ai/file/delete/{flag}", get(file_delete))
         .layer(axum::extract::Extension(pool))
 }

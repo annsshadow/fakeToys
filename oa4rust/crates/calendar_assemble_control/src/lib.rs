@@ -79,7 +79,7 @@ pub async fn list_control_calendars(
     }
 
     let count = calendars.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(calendars),
         count,
         0,
@@ -233,7 +233,7 @@ pub fn calendar_assemble_control_router(pool: Pool) -> Router {
     // plan002 U2 的 7 条新路由注册于 routes::router 内部（Extension 层之前），
     // 确保共享连接池扩展对全部路由可见。
     crate::routes::router(pool).route(
-        "/jaxrs/calendar/assemble/control/calendar/detail/{id}",
+        "/api/calendar/assemble/control/calendar/detail/{id}",
         get(get_calendar_detail),
     )
 }

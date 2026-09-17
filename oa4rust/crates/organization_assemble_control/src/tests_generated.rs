@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/role/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -39,7 +39,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/test-id")
+                    .uri("/api/organization/assemble/control/role/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -67,7 +67,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/unit/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -93,7 +93,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/test-id")
+                    .uri("/api/organization/assemble/control/unit/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -121,7 +121,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-id/sub/nested")
+                    .uri("/api/organization/assemble/control/unit/list/test-id/sub/nested")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -147,7 +147,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-id/sup/nested")
+                    .uri("/api/organization/assemble/control/unit/list/test-id/sup/nested")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -173,7 +173,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-id/sup/nested/type/test-id")
+                    .uri("/api/organization/assemble/control/unit/list/test-id/sup/nested/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -199,7 +199,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/person/list/like")
+                    .uri("/api/organization/assemble/control/person/list/like")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -227,7 +227,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/export/export/all")
+                    .uri("/api/organization/assemble/control/export/export/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -255,7 +255,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/export/result/flag/test-id")
+                    .uri("/api/organization/assemble/control/export/result/flag/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -283,7 +283,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/export/zhengwudingding/person")
+                    .uri("/api/organization/assemble/control/export/zhengwudingding/person")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -311,7 +311,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/like/mockputtopost")
+                    .uri("/api/organization/assemble/control/group/list/like/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -339,7 +339,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/like/pinyin")
+                    .uri("/api/organization/assemble/control/group/list/like/pinyin")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -367,9 +367,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost",
-                    )
+                    .uri("/api/organization/assemble/control/group/list/like/pinyin/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -397,7 +395,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/pinyininitial")
+                    .uri("/api/organization/assemble/control/group/list/pinyininitial")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -425,7 +423,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost")
+                    .uri(
+                        "/api/organization/assemble/control/group/list/pinyininitial/mockputtopost",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -453,7 +453,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/test-id/sub/direct")
+                    .uri("/api/organization/assemble/control/group/list/test-id/sub/direct")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -481,7 +481,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/test-id/sub/nested")
+                    .uri("/api/organization/assemble/control/group/list/test-id/sub/nested")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -509,7 +509,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/test-id/sup/direct")
+                    .uri("/api/organization/assemble/control/group/list/test-id/sup/direct")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -537,7 +537,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/test-id/sup/nested")
+                    .uri("/api/organization/assemble/control/group/list/test-id/sup/nested")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -565,7 +565,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id")
+                    .uri("/api/organization/assemble/control/group/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -590,7 +590,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id/add/member")
+                    .uri("/api/organization/assemble/control/group/test-id/add/member")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -618,7 +618,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id/add/member/mockputtopost")
+                    .uri(
+                        "/api/organization/assemble/control/group/test-id/add/member/mockputtopost",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -646,7 +648,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id/delete/member")
+                    .uri("/api/organization/assemble/control/group/test-id/delete/member")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -674,7 +676,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id/delete/member/mockputtopost")
+                    .uri("/api/organization/assemble/control/group/test-id/delete/member/mockputtopost")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -702,7 +704,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/group/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -730,7 +732,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/group/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -758,7 +760,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/identity/test-id")
+                    .uri("/api/identity/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -783,7 +785,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost")
+                    .uri("/api/organization/assemble/control/identity/list/like/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -811,7 +813,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/like/pinyin")
+                    .uri("/api/organization/assemble/control/identity/list/like/pinyin")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -839,7 +841,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost")
+                    .uri("/api/organization/assemble/control/identity/list/like/pinyin/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -867,7 +869,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/pinyininitial")
+                    .uri("/api/organization/assemble/control/identity/list/pinyininitial")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -895,7 +897,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost")
+                    .uri("/api/organization/assemble/control/identity/list/pinyininitial/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -923,7 +925,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/test-id")
+                    .uri("/api/organization/assemble/control/identity/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -951,7 +953,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/identity/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -979,7 +981,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/identity/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1007,7 +1009,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/inputperson/template")
+                    .uri("/api/organization/assemble/control/inputperson/template")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1035,7 +1037,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/inputperson/wipe")
+                    .uri("/api/organization/assemble/control/inputperson/wipe")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1063,7 +1065,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/permissionsetting/list")
+                    .uri("/api/organization/assemble/control/permissionsetting/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1091,7 +1093,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/permissionsetting/test-id")
+                    .uri("/api/organization/assemble/control/permissionsetting/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1119,7 +1121,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/permissionsetting/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/permissionsetting/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1147,7 +1149,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/permissionsetting/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/permissionsetting/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1175,7 +1177,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/test-id")
+                    .uri("/api/organization/assemble/control/personattribute/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1203,7 +1205,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/personattribute/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1231,7 +1233,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/personattribute/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1259,7 +1261,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listgrouptypes")
+                    .uri("/api/organization/assemble/control/personcard/listgrouptypes")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1287,7 +1289,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listpaging/page/test-id/size/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/personcard/listpaging/page/test-id/size/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1313,7 +1315,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/test-id/size/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/personcard/listpagingwithgroup/page/test-id/size/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1339,7 +1341,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/mylist")
+                    .uri("/api/organization/assemble/control/personcard/mylist")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1367,7 +1369,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/test-id")
+                    .uri("/api/organization/assemble/control/personcard/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1395,7 +1397,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/personcard/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1423,7 +1425,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/like/mockputtopost")
+                    .uri("/api/organization/assemble/control/role/list/like/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1451,7 +1453,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/like/pinyin")
+                    .uri("/api/organization/assemble/control/role/list/like/pinyin")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1479,7 +1481,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost")
+                    .uri("/api/organization/assemble/control/role/list/like/pinyin/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1507,7 +1509,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/pinyininitial")
+                    .uri("/api/organization/assemble/control/role/list/pinyininitial")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1535,7 +1537,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost")
+                    .uri("/api/organization/assemble/control/role/list/pinyininitial/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1563,7 +1565,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/role/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1591,7 +1593,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/role/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1619,7 +1621,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitattribute/test-id")
+                    .uri("/api/organization/assemble/control/unitattribute/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1647,7 +1649,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitattribute/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/unitattribute/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1675,7 +1677,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitattribute/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/unitattribute/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1703,7 +1705,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/distinct/name")
+                    .uri("/api/organization/assemble/control/unitduty/distinct/name")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1731,7 +1733,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/control/unitduty/test-id/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1759,7 +1761,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/test-id/mockdeletetoget")
+                    .uri("/api/organization/assemble/control/unitduty/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1787,7 +1789,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1815,7 +1817,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/update/member")
+                    .uri("/api/organization/assemble/control/unitduty/update/member")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1843,7 +1845,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/list/test-id/prev/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1871,7 +1873,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1899,7 +1901,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/list/unit/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/list/unit/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1927,7 +1929,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/list/name/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/list/name/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1955,7 +1957,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/list/like")
+                    .uri("/api/organization/assemble/control/unitduty/list/like")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1983,7 +1985,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/list/identity/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/list/identity/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2011,7 +2013,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitduty/distinct/name/like/test-id")
+                    .uri("/api/organization/assemble/control/unitduty/distinct/name/like/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2039,7 +2041,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitattribute/list/test-id/prev/test-id")
+                    .uri("/api/organization/assemble/control/unitattribute/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2067,7 +2069,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitattribute/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/unitattribute/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2095,7 +2097,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unitattribute/list/unit/test-id")
+                    .uri("/api/organization/assemble/control/unitattribute/list/unit/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2123,7 +2125,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/test-id/prev/test-id")
+                    .uri("/api/organization/assemble/control/role/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2151,7 +2153,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/person/test-id")
+                    .uri("/api/organization/assemble/control/role/list/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2179,7 +2181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/like")
+                    .uri("/api/organization/assemble/control/role/list/like")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2207,7 +2209,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/group/test-id")
+                    .uri("/api/organization/assemble/control/role/list/group/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2235,7 +2237,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/test-id/size/test-id")
+                    .uri("/api/organization/assemble/control/personcard/listpagingwithgroup/page/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2263,7 +2265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listpaging/page/test-id/size/test-id")
+                    .uri("/api/organization/assemble/control/personcard/listpaging/page/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2291,7 +2293,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listVCf/test-id")
+                    .uri("/api/organization/assemble/control/personcard/listVCf/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2319,7 +2321,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/listPersonalVCf/test-id")
+                    .uri("/api/organization/assemble/control/personcard/listPersonalVCf/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2347,7 +2349,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/createQR/test-id")
+                    .uri("/api/organization/assemble/control/personcard/createQR/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2375,7 +2377,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personcard/createCode/test-id")
+                    .uri("/api/organization/assemble/control/personcard/createCode/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2403,7 +2405,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/list/test-id/prev/test-id")
+                    .uri("/api/organization/assemble/control/personattribute/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2431,7 +2433,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/personattribute/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2459,7 +2461,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/list/person/test-id")
+                    .uri("/api/organization/assemble/control/personattribute/list/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2487,7 +2489,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/loginrecord/test-id")
+                    .uri("/api/organization/assemble/control/loginrecord/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2515,7 +2517,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/inputperson/result/flag/test-id")
+                    .uri("/api/organization/assemble/control/inputperson/result/flag/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2543,7 +2545,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/test-id/order/before/test-id")
+                    .uri("/api/organization/assemble/control/identity/test-id/order/before/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2571,7 +2573,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/test-id/unitduty/name/test-id")
+                    .uri("/api/organization/assemble/control/identity/list/test-id/unitduty/name/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2599,7 +2601,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/test-id/prev/test-id")
+                    .uri("/api/organization/assemble/control/identity/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2627,7 +2629,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/identity/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2655,7 +2657,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/unitduty/name/test-id")
+                    .uri("/api/organization/assemble/control/identity/list/unitduty/name/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2683,7 +2685,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/unit/test-id")
+                    .uri("/api/organization/assemble/control/identity/list/unit/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2711,7 +2713,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/person/test-id")
+                    .uri("/api/organization/assemble/control/identity/list/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2739,7 +2741,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/like")
+                    .uri("/api/organization/assemble/control/identity/list/like")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2767,7 +2769,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/test-id/prev/test-id")
+                    .uri("/api/organization/assemble/control/group/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2795,7 +2797,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/group/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2823,7 +2825,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/role/test-id")
+                    .uri("/api/organization/assemble/control/group/list/role/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2851,9 +2853,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/organization/assemble/control/group/list/person/test-id/sup/nested",
-                    )
+                    .uri("/api/organization/assemble/control/group/list/person/test-id/sup/nested")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2881,9 +2881,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/organization/assemble/control/group/list/person/test-id/sup/direct",
-                    )
+                    .uri("/api/organization/assemble/control/group/list/person/test-id/sup/direct")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

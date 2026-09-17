@@ -131,7 +131,7 @@ pub async fn list_control_sections(
         .collect();
 
     let count = sections.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(sections),
         count,
         0,
@@ -330,17 +330,17 @@ async fn list_from_table(
     ])))
 }
 
-// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+// o2server 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
 #[allow(clippy::too_many_arguments)]
 #[allow(dead_code)]
-async fn list_from_table_java(
+async fn list_from_table_legacy(
     pool: &Pool,
     table: &str,
     where_clause: &str,
     params: &[(&(dyn ToSql + Sync), &str)],
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (count, data) = list_from_table_inner(pool, table, where_clause, params).await?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -406,15 +406,15 @@ async fn list_from_table_filtered(
     ])))
 }
 
-// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
-async fn list_from_table_filtered_java(
+// o2server 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+async fn list_from_table_filtered_legacy(
     pool: &Pool,
     table: &str,
     where_clause: &str,
     params: &[&(dyn ToSql + Sync)],
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (count, data) = list_from_table_filtered_inner(pool, table, where_clause, params).await?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -550,7 +550,7 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
 pub async fn anonymous_document_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -558,7 +558,7 @@ pub async fn anonymous_document_filter_list_id_next_count(
 pub async fn anonymous_document_filter_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -566,7 +566,7 @@ pub async fn anonymous_document_filter_list_id_next_count_mockputtopost(
 pub async fn anonymous_document_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -574,7 +574,7 @@ pub async fn anonymous_document_filter_list_page_size_size(
 pub async fn anonymous_document_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -630,7 +630,7 @@ pub async fn anonymous_document_id_view(
 pub async fn anonymous_fileinfo_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 // ─── appinfo_* stubs ────────────────────────────────────────────────────────
@@ -697,7 +697,7 @@ pub async fn appinfo_erase_app_id_mockdeletetoget(
 pub async fn appinfo_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -705,7 +705,7 @@ pub async fn appinfo_filter_list_id_next_count(
 pub async fn appinfo_filter_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -713,7 +713,7 @@ pub async fn appinfo_filter_list_id_next_count_mockputtopost(
 pub async fn appinfo_filter_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -721,7 +721,7 @@ pub async fn appinfo_filter_list_id_prev_count(
 pub async fn appinfo_filter_list_id_prev_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -762,17 +762,17 @@ pub async fn appinfo_get_user_publish_appId(
 pub async fn appinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
-// ── cms/assemble/control/* 斜杠路径家族（前端按 Java 斜杠口径调用，此处补齐精确路由）──
+// ── cms/assemble/control/* 斜杠路径家族（前端按 o2server 斜杠口径调用，此处补齐精确路由）──
 // dict → x_cms_surface_appdict（应用数据字典）；form / xform → x_cms_form；view → x_cms_view。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn cms_control_dict_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_surface_appdict", "1=1", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_surface_appdict", "1=1", &[]).await
 }
 
 #[axum::debug_handler]
@@ -780,7 +780,7 @@ pub async fn cms_control_dict_list(
 pub async fn cms_control_form_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -788,7 +788,7 @@ pub async fn cms_control_form_list(
 pub async fn cms_control_view_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -796,7 +796,7 @@ pub async fn cms_control_view_list(
 pub async fn cms_control_xform_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form", "deleted_at IS NULL", &[]).await
 }
 
 // ── dict/form/view/xform/templateform 家族 CRUD（通用参数化写，照 ann 参考模式）──
@@ -1096,7 +1096,7 @@ pub async fn templateform_delete(
 pub async fn appinfo_list_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1104,7 +1104,7 @@ pub async fn appinfo_list_appType(
 pub async fn appinfo_list_appType_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1112,7 +1112,7 @@ pub async fn appinfo_list_appType_manager(
 pub async fn appinfo_list_has_document(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1120,7 +1120,7 @@ pub async fn appinfo_list_has_document(
 pub async fn appinfo_list_has_document_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1128,7 +1128,7 @@ pub async fn appinfo_list_has_document_appType(
 pub async fn appinfo_list_has_document_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1136,7 +1136,7 @@ pub async fn appinfo_list_has_document_type_appType(
 pub async fn appinfo_list_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1144,7 +1144,7 @@ pub async fn appinfo_list_manage(
 pub async fn appinfo_list_manage_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1152,7 +1152,7 @@ pub async fn appinfo_list_manage_type_appType(
 pub async fn appinfo_list_user_publish(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1160,7 +1160,7 @@ pub async fn appinfo_list_user_publish(
 pub async fn appinfo_list_user_publish_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1168,7 +1168,7 @@ pub async fn appinfo_list_user_publish_type_appType(
 pub async fn appinfo_list_user_publish_with_process(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1176,7 +1176,7 @@ pub async fn appinfo_list_user_publish_with_process(
 pub async fn appinfo_list_user_view(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1184,7 +1184,7 @@ pub async fn appinfo_list_user_view(
 pub async fn appinfo_list_user_view_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1192,7 +1192,7 @@ pub async fn appinfo_list_user_view_all(
 pub async fn appinfo_list_user_view_all_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1200,7 +1200,7 @@ pub async fn appinfo_list_user_view_all_type_appType(
 pub async fn appinfo_list_user_view_article_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1208,7 +1208,7 @@ pub async fn appinfo_list_user_view_article_type_appType(
 pub async fn appinfo_list_user_view_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1216,7 +1216,7 @@ pub async fn appinfo_list_user_view_data(
 pub async fn appinfo_list_user_view_data_type_appType(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1255,7 +1255,7 @@ pub async fn appinfo_appId_icon_size_size(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn appinfo_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1390,7 +1390,7 @@ pub async fn appinfo_id_permission(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1616,7 +1616,7 @@ pub async fn categoryinfo_extContent(
 pub async fn categoryinfo_filter_list_id_next_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1624,7 +1624,7 @@ pub async fn categoryinfo_filter_list_id_next_count_app_appId(
 pub async fn categoryinfo_filter_list_id_next_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1632,7 +1632,7 @@ pub async fn categoryinfo_filter_list_id_next_count_app_appId_mockputtopost(
 pub async fn categoryinfo_filter_list_id_prev_count_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1640,7 +1640,7 @@ pub async fn categoryinfo_filter_list_id_prev_count_app_appId(
 pub async fn categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1648,7 +1648,7 @@ pub async fn categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost(
 pub async fn categoryinfo_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1656,7 +1656,7 @@ pub async fn categoryinfo_filter_list_page_size_size(
 pub async fn categoryinfo_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1664,7 +1664,7 @@ pub async fn categoryinfo_filter_list_page_size_size_mockputtopost(
 pub async fn categoryinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1672,7 +1672,7 @@ pub async fn categoryinfo_list_all(
 pub async fn categoryinfo_list_manage_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1680,7 +1680,7 @@ pub async fn categoryinfo_list_manage_app_appId(
 pub async fn categoryinfo_list_objects(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1688,7 +1688,7 @@ pub async fn categoryinfo_list_objects(
 pub async fn categoryinfo_list_publish_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1696,7 +1696,7 @@ pub async fn categoryinfo_list_publish_app_appId(
 pub async fn categoryinfo_list_view_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1704,7 +1704,7 @@ pub async fn categoryinfo_list_view_app_appId(
 pub async fn categoryinfo_list_view_app_appId_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1712,7 +1712,7 @@ pub async fn categoryinfo_list_view_app_appId_all(
 pub async fn categoryinfo_list_view_app_appId_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1720,7 +1720,7 @@ pub async fn categoryinfo_list_view_app_appId_data(
 pub async fn categoryinfo_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_categoryinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1922,7 +1922,7 @@ pub async fn categoryinfo_id_permission(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1936,7 +1936,7 @@ pub async fn categoryinfo_id_permission(
 pub async fn commend_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_commend", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_commend", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1984,7 +1984,7 @@ pub async fn commend_id(
 pub async fn comment_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -1992,7 +1992,7 @@ pub async fn comment_list_id_next_count(
 pub async fn comment_list_id_next_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2000,7 +2000,7 @@ pub async fn comment_list_id_next_count_mockputtopost(
 pub async fn comment_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2008,7 +2008,7 @@ pub async fn comment_list_id_prev_count(
 pub async fn comment_list_id_prev_count_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2016,7 +2016,7 @@ pub async fn comment_list_id_prev_count_mockputtopost(
 pub async fn comment_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2024,7 +2024,7 @@ pub async fn comment_list_page_size_size(
 pub async fn comment_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_comment", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2167,7 +2167,7 @@ pub async fn comment_id_uncommend(
 pub async fn correlation_doc_docId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2226,7 +2226,7 @@ pub async fn correlation_doc_docId_delete(
 pub async fn correlation_list_doc_docId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2234,7 +2234,7 @@ pub async fn correlation_list_doc_docId(
 pub async fn correlation_list_doc_docId_site_site(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_correlation", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -2300,12 +2300,12 @@ pub async fn correlation_update_doc_docId(
 pub async fn data_document_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_data_document", "deleted_at IS NULL", &[]).await
 }
 
-// ─── data/document 通配族共享 helpers（Java DataAction 对齐） ────────────────
+// ─── data/document 通配族共享 helpers（o2server DataAction 对齐） ────────────────
 //
-// Java 语义：data/document/{id}/{path0}/.../{pathN} 是文档数据的嵌套路径。
+// o2server 语义：data/document/{id}/{path0}/.../{pathN} 是文档数据的嵌套路径。
 // 本端口用 x_cms_data_document_field 扁平行模型承载：多级路径折叠为
 // field_name = "p0.p1...pn"（一级路径与既有行为一致，无点号）。
 
@@ -2602,7 +2602,7 @@ macro_rules! data_path_read_handler {
             let field_name = compose_field_path(rest);
             let data = query_doc_fields_by_name(&pool, doc_id, &field_name).await?;
             let count = data.len() as i64;
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(data),
                 count,
                 0,
@@ -2749,7 +2749,7 @@ macro_rules! data_path_write_handlers {
 
 // ── 基座层（data/document/{id}，无路径段）写端点 ──
 
-/// POST data/document/{id}：Java ActionCreateWithDocument —— 新增数据，
+/// POST data/document/{id}：o2server ActionCreateWithDocument —— 新增数据，
 /// 仅填充不存在的字段 key（跳过已有）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2762,7 +2762,7 @@ pub async fn data_document_id_create(
     write_doc_fields_base(&pool, &session, &id, &body, FieldWriteMode::Create).await
 }
 
-/// PUT data/document/{id}：Java ActionUpdateWithDocument —— 更新数据
+/// PUT data/document/{id}：o2server ActionUpdateWithDocument —— 更新数据
 /// （顶层 key 全量 upsert）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2775,7 +2775,7 @@ pub async fn data_document_id_update(
     write_doc_fields_base(&pool, &session, &id, &body, FieldWriteMode::Update).await
 }
 
-/// DELETE data/document/{id}：Java ActionDeleteWithDocument —— 删除文档数据。
+/// DELETE data/document/{id}：o2server ActionDeleteWithDocument —— 删除文档数据。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn data_document_id_delete(
@@ -2910,18 +2910,22 @@ pub async fn data_document_id_array_data(
                 ),
             ]))];
             let count = data.len() as i64;
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(data),
                 count,
                 0,
             )))
         }
-        None => Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0))),
+        None => Ok(Json(ActionResult::legacy_success(
+            Value::Array(vec![]),
+            0,
+            0,
+        ))),
     }
 }
 
 /// GET data/document/{id}/mockdeletetoget：DELETE data/document/{id} 的动词别名。
-/// Java ActionDeleteWithDocument 语义：删除文档数据（字段行），而非文档实体本身；
+/// o2server ActionDeleteWithDocument 语义：删除文档数据（字段行），而非文档实体本身；
 /// 需要会话且为文档编辑者（IDOR 门禁）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2934,7 +2938,7 @@ pub async fn data_document_id_mockdeletetoget(
 }
 
 /// POST data/document/{id}/mockputtopost：PUT data/document/{id} 的动词别名
-/// （Java ActionUpdateWithDocument）：顶层 key 全量 upsert 到文档数据字段。
+/// （o2server ActionUpdateWithDocument）：顶层 key 全量 upsert 到文档数据字段。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn data_document_id_mockputtopost(
@@ -2988,7 +2992,7 @@ pub async fn data_document_id_path0(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3002,7 +3006,7 @@ pub async fn data_document_id_path0(
 pub async fn design_appdict_list_appInfo_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3010,7 +3014,7 @@ pub async fn design_appdict_list_appInfo_appId(
 pub async fn design_appdict_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_surface_appdict", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3272,7 +3276,7 @@ pub async fn designer_search(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3284,7 +3288,7 @@ pub async fn designer_search(
 pub async fn document_cipher_filter_list_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3292,7 +3296,7 @@ pub async fn document_cipher_filter_list_page_size_size(
 pub async fn document_cipher_filter_list_page_size_size_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_document_cipher", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3497,7 +3501,7 @@ pub async fn document_cipher_id_persist_view_record(
 pub async fn file_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3505,7 +3509,7 @@ pub async fn file_list_appInfo_appInfoFlag(
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3513,13 +3517,13 @@ pub async fn file_list_id_next_count(
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn file_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3527,7 +3531,7 @@ pub async fn file_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 pub async fn file_flag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_file", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -3964,7 +3968,7 @@ pub async fn anonymous_fileinfo_download_document_id(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4031,7 +4035,7 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4084,7 +4088,7 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4178,7 +4182,7 @@ pub async fn fileinfo_download_document_id(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4231,7 +4235,7 @@ pub async fn fileinfo_download_document_id_stream(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4284,7 +4288,7 @@ pub async fn fileinfo_download_transfer_flag_flag(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4356,7 +4360,7 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
 pub async fn fileinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4364,7 +4368,7 @@ pub async fn fileinfo_list_all(
 pub async fn fileinfo_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -4372,7 +4376,7 @@ pub async fn fileinfo_list_document_documentId(
 pub async fn fileinfo_list_filter(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_fileinfo", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5069,7 +5073,7 @@ async fn form_filter_list(
         .map(form_row_to_json)
         .collect::<Result<Vec<_>, _>>()?;
     let count = forms.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(forms),
         count,
         0,
@@ -5129,7 +5133,7 @@ pub async fn form_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .map(form_row_to_json)
         .collect::<Result<Vec<_>, _>>()?;
     let count = forms.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(forms),
         count,
         0,
@@ -5156,7 +5160,7 @@ pub async fn form_list_app_appId(
         .map(form_row_to_json)
         .collect::<Result<Vec<_>, _>>()?;
     let count = forms.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(forms),
         count,
         0,
@@ -5168,7 +5172,7 @@ pub async fn form_list_app_appId(
 pub async fn form_list_formfield_appInfo_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5176,7 +5180,7 @@ pub async fn form_list_formfield_appInfo_appId(
 pub async fn form_list_id_formfield(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form_field", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5254,7 +5258,7 @@ pub async fn form_formFlag_appinfo_appFlag(
         .map(form_row_to_json)
         .collect::<Result<Vec<_>, _>>()?;
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5371,7 +5375,7 @@ pub async fn formversion_list_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(form_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_form_v2",
         &format!("deleted_at IS NULL AND id = '{}'", form_id),
@@ -5428,7 +5432,7 @@ pub async fn formversion_id(
 pub async fn log_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5436,7 +5440,7 @@ pub async fn log_filter_list_id_next_count(
 pub async fn log_filter_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5444,7 +5448,7 @@ pub async fn log_filter_list_id_prev_count(
 pub async fn log_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5452,7 +5456,7 @@ pub async fn log_list_app_appId(
 pub async fn log_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5460,7 +5464,7 @@ pub async fn log_list_category_categoryId(
 pub async fn log_list_document_documentId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5468,7 +5472,7 @@ pub async fn log_list_document_documentId(
 pub async fn log_list_filter_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5476,21 +5480,21 @@ pub async fn log_list_filter_page_size_size(
 pub async fn log_list_level_operationLevel(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn log_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
-// ── /jaxrs/log/list（桌面 LogViewerApp 直连端点；查真实表 x_cms_log，
+// ── /api/log/list（桌面 LogViewerApp 直连端点；查真实表 x_cms_log，
 //    运行时由 document 操作日志写入，只读家族，不加写端点）──
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn log_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_log", "", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_log", "", &[]).await
 }
 
 // ─── output_* stubs ─────────────────────────────────────────────────────────
@@ -5498,7 +5502,7 @@ pub async fn log_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_output", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_output", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5544,7 +5548,7 @@ pub async fn output_appInfoFlag_select(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5578,7 +5582,7 @@ pub async fn output_appInfoFlag_select_mockputtopost(
 pub async fn permission_appInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'manage'",
@@ -5592,7 +5596,7 @@ pub async fn permission_appInfo_id_manageable(
 pub async fn permission_appInfo_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'manager'",
@@ -5606,7 +5610,7 @@ pub async fn permission_appInfo_id_managers(
 pub async fn permission_appInfo_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'publisher'",
@@ -5620,7 +5624,7 @@ pub async fn permission_appInfo_id_publishers(
 pub async fn permission_appInfo_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'viewer'",
@@ -5634,7 +5638,7 @@ pub async fn permission_appInfo_id_viewers(
 pub async fn permission_category_id_managers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'manager'",
@@ -5648,7 +5652,7 @@ pub async fn permission_category_id_managers(
 pub async fn permission_category_id_publishers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'publisher'",
@@ -5662,7 +5666,7 @@ pub async fn permission_category_id_publishers(
 pub async fn permission_category_id_viewers(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'viewer'",
@@ -5676,7 +5680,7 @@ pub async fn permission_category_id_viewers(
 pub async fn permission_categoryInfo_id_manageable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'manage'",
@@ -5730,7 +5734,7 @@ pub async fn permission_management_refresh_category_categoryId(
 pub async fn permission_manager_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'manager'",
@@ -5744,7 +5748,7 @@ pub async fn permission_manager_appInfo_id(
 pub async fn permission_manager_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'manager'",
@@ -5758,7 +5762,7 @@ pub async fn permission_manager_categoryInfo_id(
 pub async fn permission_publisher_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'publisher'",
@@ -5772,7 +5776,7 @@ pub async fn permission_publisher_appInfo_id(
 pub async fn permission_publisher_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'publisher'",
@@ -5786,7 +5790,7 @@ pub async fn permission_publisher_categoryInfo_id(
 pub async fn permission_viewer_appInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'viewer'",
@@ -5800,7 +5804,7 @@ pub async fn permission_viewer_appInfo_id(
 pub async fn permission_viewer_categoryInfo_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_permission",
         "deleted_at IS NULL AND role_type = 'viewer'",
@@ -5850,7 +5854,7 @@ pub async fn review_v2_search(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5862,7 +5866,7 @@ pub async fn review_v2_search(
 pub async fn script_list_app_appId_name_name(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5870,7 +5874,7 @@ pub async fn script_list_app_appId_name_name(
 pub async fn script_list_app_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5878,7 +5882,7 @@ pub async fn script_list_app_flag(
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5886,7 +5890,7 @@ pub async fn script_list_manager(
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5894,7 +5898,7 @@ pub async fn script_list_paging_page_size_size(
 pub async fn script_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5902,7 +5906,7 @@ pub async fn script_list_id_next_count(
 pub async fn script_list_id_prev_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -5910,7 +5914,7 @@ pub async fn script_list_id_prev_count(
 pub async fn script_flag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6133,7 +6137,7 @@ pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     axum::extract::Path(script_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_script",
         &format!("deleted_at IS NULL AND id = '{}'", script_id),
@@ -6179,7 +6183,7 @@ pub async fn scriptversion_id(
 pub async fn searchfilter_list_archive_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_searchfilter",
         "deleted_at IS NULL AND filter_type = 'archive'",
@@ -6193,7 +6197,7 @@ pub async fn searchfilter_list_archive_filter_category_categoryId(
 pub async fn searchfilter_list_draft_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_searchfilter",
         "deleted_at IS NULL AND filter_type = 'draft'",
@@ -6207,7 +6211,7 @@ pub async fn searchfilter_list_draft_filter_category_categoryId(
 pub async fn searchfilter_list_publish_filter_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_searchfilter",
         "deleted_at IS NULL AND filter_type = 'publish'",
@@ -6216,13 +6220,13 @@ pub async fn searchfilter_list_publish_filter_category_categoryId(
     .await
 }
 
-// ─── surface_appdict 家族（Java AppDictAction / AppDictAnonymousAction 对齐）──
+// ─── surface_appdict 家族（o2server AppDictAction / AppDictAnonymousAction 对齐）──
 //
-// Java 语义：surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}[/{path0}.../]{data}
+// o2server 语义：surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}[/{path0}.../]{data}
 // 是栏目级数据字典 JSON 树的读写。本端口用 x_cms_surface_appdict 行模型承载：
 // 每行 = (app_dict_flag, app_info_flag, path_levels TEXT[], data_value)。
 // 读端点按 path_levels 位置前缀精确匹配（返回子树行）；写端点按整路径精确匹配。
-// 动词别名（mockputtopost/mockdeletetoget）与主动词共用同一 handler，与 Java
+// 动词别名（mockputtopost/mockdeletetoget）与主动词共用同一 handler，与 o2server
 // 复用同一 Action 的做法一致。
 
 fn appdict_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
@@ -6304,7 +6308,7 @@ async fn appdict_data_get(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6583,7 +6587,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6625,8 +6629,8 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
 }
 
 /// PUT surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}：
-/// Java ActionUpdate —— 更新字典根数据；POST .../mockputtopost 为其动词别名，
-/// 与 Java ActionUpdateMockPutToPost 复用 ActionUpdate 一致。
+/// o2server ActionUpdate —— 更新字典根数据；POST .../mockputtopost 为其动词别名，
+/// 与 o2server ActionUpdateMockPutToPost 复用 ActionUpdate 一致。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_update(
@@ -6649,7 +6653,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_update(
 }
 
 /// GET anonymous/surface/appdict/list/appInfo/{appInfoFlag}：
-/// Java ActionListWithAppInfo —— 按栏目过滤字典列表。
+/// o2server ActionListWithAppInfo —— 按栏目过滤字典列表。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
@@ -6666,7 +6670,7 @@ pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6750,7 +6754,7 @@ appdict_depth_family!(10;
 pub async fn templateform_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6758,7 +6762,7 @@ pub async fn templateform_list(
 pub async fn templateform_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6766,7 +6770,7 @@ pub async fn templateform_list_category(
 pub async fn templateform_list_category_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_form_v2", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6839,7 +6843,7 @@ pub async fn uuid_random(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn view_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6847,7 +6851,7 @@ pub async fn view_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 pub async fn view_list_app_appId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6855,7 +6859,7 @@ pub async fn view_list_app_appId(
 pub async fn view_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6863,7 +6867,7 @@ pub async fn view_list_category_categoryId(
 pub async fn view_list_form_formId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6871,13 +6875,13 @@ pub async fn view_list_form_formId(
 pub async fn view_viewdata_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn view_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_view", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6954,7 +6958,7 @@ pub async fn view_id_mockputtopost(
 pub async fn viewcategory_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6962,7 +6966,7 @@ pub async fn viewcategory_list_all(
 pub async fn viewcategory_list_category_categoryId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6970,13 +6974,13 @@ pub async fn viewcategory_list_category_categoryId(
 pub async fn viewcategory_list_view_viewId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn viewcategory_id(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewcategory", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -6996,7 +7000,7 @@ pub async fn viewcategory_id_mockdeletetoget(
 pub async fn viewfieldconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -7004,7 +7008,7 @@ pub async fn viewfieldconfig_list_all(
 pub async fn viewfieldconfig_list_view_viewId(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -7012,7 +7016,7 @@ pub async fn viewfieldconfig_list_view_viewId(
 pub async fn viewfieldconfig_id(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewfieldconfig", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -7092,7 +7096,7 @@ pub async fn viewfieldconfig_id_mockputtopost(
 pub async fn viewrecord_document_docId_filter_list_id_next_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
 }
 
 #[axum::debug_handler]
@@ -7110,8 +7114,8 @@ pub async fn viewrecord_document_docId_has_view(
         .await
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
-    // W12 收敛：对齐 Java ActionQueryHasViewDocument 信封——Wo extends WrapBoolean，
-    // 键名为 `value`（非 `hasView`）。Java 按 viewerName=当前用户 DN 计数；当前
+    // W12 收敛：对齐 o2server ActionQueryHasViewDocument 信封——Wo extends WrapBoolean，
+    // 键名为 `value`（非 `hasView`）。o2server 按 viewerName=当前用户 DN 计数；当前
     // 种子无 x_cms_viewrecord 数据，双侧对任意 docId 均为 value:false，键名对齐即可闭合。
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("value".to_string(), Value::Bool(count > 0))]),
@@ -7123,7 +7127,7 @@ pub async fn viewrecord_document_docId_has_view(
 pub async fn viewrecord_list_install_log_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_viewrecord", "deleted_at IS NULL", &[]).await
 }
 
 // ─── image / input helpers (STUB: no corresponding DB table, business logic unclear) ──
@@ -7227,26 +7231,26 @@ pub async fn image_resize_id_id_width_width_height_height(
     ))))
 }
 
-// STUB: export_app_info_app_info_flag - U2 收尾对齐：Java GET /export/appInfo/{appInfoFlag}
+// STUB: export_app_info_app_info_flag - U2 收尾对齐：o2server GET /export/appInfo/{appInfoFlag}
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn export_app_info_app_info_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
-// STUB: import_app_info_app_info_flag - U2 收尾对齐：Java GET /import/appInfo/{appInfoFlag}
+// STUB: import_app_info_app_info_flag - U2 收尾对齐：o2server GET /import/appInfo/{appInfoFlag}
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn import_app_info_app_info_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_appinfo", "deleted_at IS NULL", &[]).await
 }
 
 // ─── W12：CMS 导入（input）族 ───────────────────────────────────────────────
-// 对齐 Java x_cms_assemble_control jaxrs/input（ActionCompare/Cover/Create/
+// 对齐 o2server x_cms_assemble_control o2server/input（ActionCompare/Cover/Create/
 // PrepareCover/PrepareCreate）。WrapCms 载荷：{id, appName, appAlias, ...}。
 // 说明：x_cms_appinfo 无 appName 列，名称解析按 alias 承载（与既有
 // appinfo 处理器一致）；prepare 族完整导入对账逻辑属 CMS 导入子系统，
@@ -7270,7 +7274,7 @@ fn input_app_alias(body: &Value) -> Option<&str> {
         .filter(|s| !s.is_empty())
 }
 
-/// Java BaseAction.getAppInfo 解析序：id → name → alias
+/// o2server BaseAction.getAppInfo 解析序：id → name → alias
 async fn input_resolve_appinfo(
     client: &deadpool_postgres::Client,
     body: &Value,
@@ -7308,7 +7312,7 @@ async fn input_compare_impl(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let existing = input_resolve_appinfo(&client, body).await?;
 
-    // Java WrapCms 继承 JpaObject：id 缺省时自动生成唯一 token 并回显
+    // o2server WrapCms 继承 JpaObject：id 缺省时自动生成唯一 token 并回显
     let echoed_id = input_app_id(body)
         .map(str::to_string)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -7578,7 +7582,7 @@ pub async fn commend_list_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7627,7 +7631,7 @@ pub async fn document_search(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7679,7 +7683,7 @@ pub async fn queryview_flag_definition(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// plan002 U2 — Java 对齐缺口端点（对照 jaxrs 静态提取全集补齐）
+// plan002 U2 — o2server 对齐缺口端点（对照 o2server 静态提取全集补齐）
 //
 // 表全部沿用既有 CMS 表；migration 064 幂等补两列：
 //   x_cms_data_document.is_top / x_cms_appinfo.config
@@ -8161,7 +8165,7 @@ pub async fn document_u2_list_document(
     if ids.is_empty() {
         return Err(AppError::BadRequest("ids required".to_string()));
     }
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL AND id = ANY($1)",
@@ -8514,7 +8518,7 @@ pub async fn fileinfo_u2_filter(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
@@ -8661,7 +8665,7 @@ pub async fn form_u2_create(
     Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
-/// POST /jaxrs/form/submit
+/// POST /api/form/submit
 ///
 /// W6 ③ 后端补缺：表单预览提交的落地校验。按 formId 加载 definition，
 /// 对 moduleList 中 required 模块做必填校验并返回逐字段错误；只校验不落库，
@@ -8929,7 +8933,7 @@ pub async fn script_u2_list_manager(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    list_from_table_filtered_java(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
+    list_from_table_filtered_legacy(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await
 }
 
 // ─── templateform / view / viewcategory / viewfieldconfig 域 ────────────
@@ -9588,7 +9592,7 @@ pub async fn designer_u2_search(
     ))))
 }
 
-// ═══ plan002 U2 冲刺收尾（重试批次，U3）：Java 对齐缺口端点 ═════════════════
+// ═══ plan002 U2 冲刺收尾（重试批次，U3）：o2server 对齐缺口端点 ═════════════════
 // 覆盖剩余缺口：document 管理面（batch/filter/draft/cipher/control/publish）、
 // file/fileinfo 规范路径、design/appdict CRUD、permission save 家族、review 搜索、
 // viewrecord unread、comment commend、correlation create/update、categoryinfo
@@ -9816,7 +9820,7 @@ pub async fn categoryinfo_list_objects_u3(
     if ids.is_empty() {
         return Err(AppError::BadRequest("ids required".to_string()));
     }
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_categoryinfo",
         "deleted_at IS NULL AND id = ANY($1)",
@@ -10135,7 +10139,7 @@ pub async fn review_v2_search_u3(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -10463,7 +10467,7 @@ pub async fn document_cipher_permission_read_u3(
 pub async fn document_draft_next_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL AND status = 'draft'",
@@ -10477,7 +10481,7 @@ pub async fn document_draft_next_u3(
 pub async fn document_filter_next_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL ORDER BY id DESC LIMIT 200",
@@ -10491,7 +10495,7 @@ pub async fn document_filter_next_u3(
 pub async fn document_filter_prev_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL ORDER BY id ASC LIMIT 200",
@@ -10505,7 +10509,7 @@ pub async fn document_filter_prev_u3(
 pub async fn document_filter_paging_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
         "deleted_at IS NULL ORDER BY create_time DESC LIMIT 200",
@@ -10521,7 +10525,7 @@ pub async fn document_filter_paging_manager_u3(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_data_document",
         "ORDER BY create_time DESC LIMIT 200",
@@ -10770,7 +10774,7 @@ pub async fn document_list_document_data_u3(
         data.push(obj);
     }
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -11133,7 +11137,7 @@ pub async fn viewrecord_by_person_u3(
     pool: Extension<Pool>,
     axum::extract::Path(person): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    list_from_table_filtered_java(
+    list_from_table_filtered_legacy(
         &pool,
         "x_cms_viewrecord",
         "deleted_at IS NULL AND person_id = $1",

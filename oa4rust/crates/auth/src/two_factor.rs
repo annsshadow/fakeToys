@@ -11,7 +11,7 @@ use tracing::warn;
 // ──────────────────────────────────────────────────────────────────────────────
 // two_factor — 双因素登录第一阶段（短信验证码发送）
 //
-// 流程：POST /jaxrs/authentication/two_factor
+// 流程：POST /api/authentication/two_factor
 //   1. 验证第一因子：credential + password
 //   2. 发送短信验证码
 //   3. 签发临时 token（绑定到 credential，防止凭证交换攻击）
@@ -33,7 +33,7 @@ pub struct TwoFactorPhase1Response {
     pub temp_token: String,
 }
 
-/// POST /jaxrs/authentication/two_factor —— 双因素登录第一阶段
+/// POST /api/authentication/two_factor —— 双因素登录第一阶段
 ///
 /// 验证 credential + password，发送短信验证码，签发临时 token（阶段绑定）
 pub async fn two_factor_login(

@@ -28,7 +28,7 @@ async fn test_get_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush_assemble_control/get/control/config")
+                .uri("/api/jpush_assemble_control/get/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -47,7 +47,7 @@ async fn test_list_control_apps_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush_assemble_control/list/control/apps")
+                .uri("/api/jpush_assemble_control/list/control/apps")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -68,7 +68,7 @@ async fn test_update_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush_assemble_control/update/control/config")
+                .uri("/api/jpush_assemble_control/update/control/config")
                 .method(Method::GET)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))
@@ -81,14 +81,14 @@ async fn test_update_control_config_route() {
 }
 
 #[tokio::test]
-async fn test_jpush_get_by_id_java_path() {
+async fn test_jpush_get_by_id_legacy_path() {
     let pool = build_test_pool();
     let app = crate::router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush/get/jpush-001")
+                .uri("/api/jpush/get/jpush-001")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -100,7 +100,7 @@ async fn test_jpush_get_by_id_java_path() {
 }
 
 #[tokio::test]
-async fn test_jpush_create_java_path() {
+async fn test_jpush_create_legacy_path() {
     let pool = build_test_pool();
     let app = crate::router(pool);
 
@@ -109,7 +109,7 @@ async fn test_jpush_create_java_path() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush/create")
+                .uri("/api/jpush/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -122,14 +122,14 @@ async fn test_jpush_create_java_path() {
 }
 
 #[tokio::test]
-async fn test_jpush_control_config_java_path() {
+async fn test_jpush_control_config_legacy_path() {
     let pool = build_test_pool();
     let app = crate::router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush/assemble/control/config")
+                .uri("/api/jpush/assemble/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -141,7 +141,7 @@ async fn test_jpush_control_config_java_path() {
 }
 
 #[tokio::test]
-async fn test_device_bind_java_path() {
+async fn test_device_bind_legacy_path() {
     let pool = build_test_pool();
     let app = crate::router(pool);
 
@@ -150,7 +150,7 @@ async fn test_device_bind_java_path() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush/assemble/control/device/bind")
+                .uri("/api/jpush/assemble/control/device/bind")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -171,7 +171,7 @@ async fn test_u2_post_message_send_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush_assemble_control/message/send")
+                .uri("/api/jpush_assemble_control/message/send")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -189,7 +189,7 @@ async fn test_u2_post_device_admin_unbind_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush_assemble_control/device/admin/unbind/all/person")
+                .uri("/api/jpush_assemble_control/device/admin/unbind/all/person")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -206,7 +206,7 @@ async fn test_u2_delete_device_unbind_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/jpush_assemble_control/device/unbind/a/b")
+                .uri("/api/jpush_assemble_control/device/unbind/a/b")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),

@@ -120,7 +120,7 @@ pub async fn application_list(pool: Extension<Pool>) -> Json<ActionResult<Value>
     let client = match pool.get().await {
         Ok(client) => client,
         Err(_) => {
-            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
+            return Json(ActionResult::legacy_success(Value::Array(vec![]), 0, 0));
         }
     };
 
@@ -130,7 +130,7 @@ pub async fn application_list(pool: Extension<Pool>) -> Json<ActionResult<Value>
     {
         Ok(rows) => rows,
         Err(_) => {
-            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
+            return Json(ActionResult::legacy_success(Value::Array(vec![]), 0, 0));
         }
     };
 
@@ -145,7 +145,7 @@ pub async fn application_list(pool: Extension<Pool>) -> Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Json(ActionResult::java_success(Value::Array(data), count, 0))
+    Json(ActionResult::legacy_success(Value::Array(data), count, 0))
 }
 
 #[cfg(test)]

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/get/test-id")
+                    .uri("/api/processplatform/assemble/surface/get/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -38,7 +38,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/create")
+                    .uri("/api/processplatform/assemble/surface/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -66,7 +66,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/list/test-id")
+                    .uri("/api/processplatform/assemble/surface/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -94,7 +94,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/preview/test-id")
+                    .uri("/api/processplatform/assemble/surface/preview/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -122,7 +122,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/publish/test-id")
+                    .uri("/api/processplatform/assemble/surface/publish/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -150,7 +150,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/delete/test-id")
+                    .uri("/api/processplatform/assemble/surface/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -178,7 +178,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/save/test-id")
+                    .uri("/api/processplatform/assemble/surface/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -203,7 +203,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/anonymous/read/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/anonymous/read/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -231,7 +231,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/anonymous/task/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/anonymous/task/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -259,7 +259,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/list")
+                    .uri("/api/processplatform/assemble/surface/application/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -287,7 +287,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/list/complex")
+                    .uri("/api/processplatform/assemble/surface/application/list/complex")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -315,7 +315,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/list/complex/manage/test-id")
+                    .uri("/api/processplatform/assemble/surface/application/list/complex/manage/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -343,7 +343,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/list/key/test-id")
+                    .uri("/api/processplatform/assemble/surface/application/list/key/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -371,7 +371,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/list/range")
+                    .uri("/api/processplatform/assemble/surface/application/list/range")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -399,9 +399,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/application/list/terminal/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/application/list/terminal/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -429,7 +427,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -457,7 +455,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/test-id/icon")
+                    .uri("/api/processplatform/assemble/surface/application/test-id/icon")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -485,7 +483,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/test-id/is/manager")
+                    .uri("/api/processplatform/assemble/surface/application/test-id/is/manager")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -513,7 +511,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/application/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/application/test-id/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -541,7 +539,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/list/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/list/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -569,7 +567,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -595,7 +593,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -621,7 +619,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -648,7 +646,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -675,7 +673,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -702,7 +700,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -729,7 +727,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -756,7 +754,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -783,7 +781,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -810,7 +808,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -837,7 +835,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -864,7 +862,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -891,7 +889,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -918,7 +916,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -945,7 +943,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -972,7 +970,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -999,7 +997,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1026,7 +1024,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1053,7 +1051,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1080,7 +1078,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1107,7 +1105,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1134,7 +1132,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1161,7 +1159,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1188,7 +1186,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1215,7 +1213,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1242,7 +1240,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/applicationdict/test-id/application/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/data/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1268,7 +1266,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/control/workorworkcompleted/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/control/workorworkcompleted/test-id",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1296,7 +1296,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/correlation/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/correlation/job/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1324,7 +1324,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/correlation/job/test-id/delete")
+                    .uri("/api/processplatform/assemble/surface/correlation/job/test-id/delete")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1352,7 +1352,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/correlation/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/correlation/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1380,7 +1380,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/correlation/list/job/test-id/site/test-id")
+                    .uri("/api/processplatform/assemble/surface/correlation/list/job/test-id/site/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1408,7 +1408,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/correlation/update/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/correlation/update/job/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1436,7 +1436,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/fetch/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/fetch/job/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1464,7 +1464,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1489,7 +1489,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/array/data")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/array/data")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1517,7 +1517,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1545,7 +1545,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1573,7 +1573,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1601,7 +1601,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1629,7 +1629,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1657,7 +1657,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1685,7 +1685,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1713,7 +1713,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1741,7 +1741,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1769,7 +1769,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1797,7 +1797,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1823,7 +1823,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1851,7 +1851,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1877,7 +1877,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1905,7 +1905,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1931,7 +1931,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -1957,7 +1957,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/job/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1983,7 +1983,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -2008,9 +2008,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/data/work/test-id/mockdeletetoget",
-                    )
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2038,7 +2036,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2066,7 +2064,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2094,7 +2092,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2122,7 +2120,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2150,9 +2148,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2180,7 +2176,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2208,7 +2204,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2236,7 +2232,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2264,7 +2260,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2292,7 +2288,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2320,7 +2316,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2348,7 +2344,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2376,7 +2372,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2404,7 +2400,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2432,7 +2428,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2458,7 +2454,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2484,7 +2480,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2512,7 +2508,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2538,7 +2534,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2564,7 +2560,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2592,7 +2588,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2618,7 +2614,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2644,7 +2640,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2670,7 +2666,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2696,7 +2692,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/work/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2722,7 +2718,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2750,7 +2746,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/from/data")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/from/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2778,7 +2774,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/from/item")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/from/item")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2806,7 +2802,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -2834,7 +2830,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2862,7 +2858,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2890,7 +2886,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2918,7 +2914,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -2946,7 +2942,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -2974,7 +2970,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3002,7 +2998,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3030,7 +3026,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3056,7 +3052,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3084,7 +3080,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3110,7 +3106,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3136,7 +3132,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3162,7 +3158,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3188,7 +3184,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3214,7 +3210,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3241,7 +3237,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/data/workcompleted/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -3267,7 +3263,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/datarecord/get/job/test-id/path/test-id")
+                    .uri("/api/processplatform/assemble/surface/datarecord/get/job/test-id/path/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3295,7 +3291,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/datarecord/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/datarecord/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3323,7 +3319,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/documentversion/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/documentversion/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3351,7 +3347,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/documentversion/list/job/test-id/category/test-id")
+                    .uri("/api/processplatform/assemble/surface/documentversion/list/job/test-id/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3379,7 +3375,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/documentversion/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3405,7 +3401,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/documentversion/list/workorworkcompleted/test-id/category/test-id")
+                    .uri("/api/processplatform/assemble/surface/documentversion/list/workorworkcompleted/test-id/category/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3431,7 +3427,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/documentversion/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/documentversion/work/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3459,7 +3455,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/documentversion/test-id")
+                    .uri("/api/processplatform/assemble/surface/documentversion/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3487,7 +3483,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/draft/list/my/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3515,7 +3511,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/draft/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3543,7 +3539,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/draft/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3571,7 +3567,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/draft/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3599,7 +3595,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/draft/process/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -3627,7 +3623,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/test-id")
+                    .uri("/api/processplatform/assemble/surface/draft/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -3652,7 +3648,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/draft/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3680,7 +3676,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/draft/test-id/start")
+                    .uri("/api/processplatform/assemble/surface/draft/test-id/start")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3708,7 +3704,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/file/list/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/file/list/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3736,7 +3732,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/file/test-id/application/test-id/content")
+                    .uri("/api/processplatform/assemble/surface/file/test-id/application/test-id/content")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3764,7 +3760,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/file/test-id/application/test-id/download")
+                    .uri("/api/processplatform/assemble/surface/file/test-id/application/test-id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3792,7 +3788,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/v2/lookup/taskcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3820,7 +3816,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/v2/lookup/taskcompleted/test-id/mobile")
+                    .uri("/api/processplatform/assemble/surface/form/v2/lookup/taskcompleted/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3848,7 +3844,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3876,7 +3872,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/test-id/mobile")
+                    .uri("/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3902,7 +3898,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/v2/test-id")
+                    .uri("/api/processplatform/assemble/surface/form/v2/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3927,7 +3923,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/v2/test-id/mobile")
+                    .uri("/api/processplatform/assemble/surface/form/v2/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3955,7 +3951,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/test-id")
+                    .uri("/api/processplatform/assemble/surface/form/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -3980,7 +3976,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/form/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4008,7 +4004,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/test-id/application/test-id/mobile")
+                    .uri("/api/processplatform/assemble/surface/form/test-id/application/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4036,7 +4032,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/form/test-id/mobile")
+                    .uri("/api/processplatform/assemble/surface/form/test-id/mobile")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4064,7 +4060,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/handover/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/handover/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4092,7 +4088,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/handover/test-id")
+                    .uri("/api/processplatform/assemble/surface/handover/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4117,7 +4113,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/handover/test-id/cancel")
+                    .uri("/api/processplatform/assemble/surface/handover/test-id/cancel")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4145,7 +4141,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/handover/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/handover/test-id/process")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4173,7 +4169,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/job/latest/work/workcompleted/serial/test-id")
+                    .uri("/api/processplatform/assemble/surface/job/latest/work/workcompleted/serial/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4201,7 +4197,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/job/v2/test-id/projection")
+                    .uri("/api/processplatform/assemble/surface/job/v2/test-id/projection")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4229,7 +4225,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/job/test-id/allow/visit/person/test-id")
+                    .uri("/api/processplatform/assemble/surface/job/test-id/allow/visit/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4257,7 +4253,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/job/test-id/find/work/workcompleted")
+                    .uri(
+                        "/api/processplatform/assemble/surface/job/test-id/find/work/workcompleted",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4285,7 +4283,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/keylock/lock")
+                    .uri("/api/processplatform/assemble/surface/keylock/lock")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4310,7 +4308,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/keylock/lock/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/keylock/lock/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4338,9 +4336,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/mode/clear/person/test-id/manager",
-                    )
+                    .uri("/api/processplatform/assemble/surface/mode/clear/person/test-id/manager")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4368,7 +4364,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/mode/list")
+                    .uri("/api/processplatform/assemble/surface/mode/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4393,7 +4389,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/mode/save")
+                    .uri("/api/processplatform/assemble/surface/mode/save")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4418,7 +4414,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/mode/test-id/delete")
+                    .uri("/api/processplatform/assemble/surface/mode/test-id/delete")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4446,7 +4442,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/activity/test-id/activityType/test-id")
+                    .uri("/api/processplatform/assemble/surface/process/activity/test-id/activityType/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4474,7 +4470,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/list/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/process/list/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4502,7 +4498,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/list/application/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/process/list/application/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4530,7 +4526,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/list/available/identity/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/process/list/available/identity/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4558,7 +4554,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/list/controllable/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/process/list/controllable/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4586,7 +4582,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/list/ids")
+                    .uri("/api/processplatform/assemble/surface/process/list/ids")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4614,7 +4610,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4639,7 +4635,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/test-id/allowrerouteto")
+                    .uri("/api/processplatform/assemble/surface/process/test-id/allowrerouteto")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4667,7 +4663,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/test-id/application/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/process/test-id/application/test-id",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4695,7 +4693,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/test-id/complex")
+                    .uri("/api/processplatform/assemble/surface/process/test-id/complex")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4723,7 +4721,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/process/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/process/test-id/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -4751,7 +4749,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/count/filter")
+                    .uri("/api/processplatform/assemble/surface/read/count/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4779,7 +4777,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4807,7 +4805,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/filter/attribute")
+                    .uri("/api/processplatform/assemble/surface/read/filter/attribute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4835,7 +4833,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/filter/attribute/filter")
+                    .uri("/api/processplatform/assemble/surface/read/filter/attribute/filter")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4863,7 +4861,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/count/application")
+                    .uri("/api/processplatform/assemble/surface/read/list/count/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4891,7 +4889,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/count/application/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/read/list/count/application/test-id/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4919,7 +4917,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/date/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/read/list/date/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4947,7 +4945,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/filter/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/read/list/filter/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -4975,7 +4973,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5003,7 +5001,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/my/filter/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/my/filter/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5031,7 +5029,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/my/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5059,7 +5057,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/person/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/read/list/person/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5087,7 +5085,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5115,7 +5113,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5143,7 +5141,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5171,7 +5169,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5199,7 +5197,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/next/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/next/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5227,7 +5225,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/next/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/next/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5255,7 +5253,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5283,7 +5281,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5311,7 +5309,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/prev/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/prev/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5339,7 +5337,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/list/test-id/prev/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/list/test-id/prev/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5367,7 +5365,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/v2/count")
+                    .uri("/api/processplatform/assemble/surface/read/v2/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5395,7 +5393,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/v2/list")
+                    .uri("/api/processplatform/assemble/surface/read/v2/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5420,7 +5418,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/v2/list/create/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/v2/list/create/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5448,7 +5446,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/v2/list/create/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/v2/list/create/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5476,7 +5474,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/v2/list/create/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/v2/list/create/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5504,7 +5502,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/v2/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/v2/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5532,9 +5530,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/read/v2/list/test-id/next/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/read/v2/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5562,9 +5558,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/read/v2/list/test-id/prev/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/read/v2/list/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5592,7 +5586,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/work/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5620,7 +5614,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/workcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/workcompleted/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5648,7 +5642,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id")
+                    .uri("/api/processplatform/assemble/surface/read/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5673,7 +5667,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -5701,7 +5695,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/manage/mockdeletetoget")
+                    .uri(
+                        "/api/processplatform/assemble/surface/read/test-id/manage/mockdeletetoget",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5729,7 +5725,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5757,7 +5753,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/opinion/manage")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/opinion/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5785,7 +5781,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/opinion/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/opinion/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5813,7 +5809,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/processing")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/processing")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5841,7 +5837,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/processing/manage")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/processing/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5869,7 +5865,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/processing/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/processing/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5897,7 +5893,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/reference")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/reference")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -5925,7 +5921,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/reset/manage")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/reset/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -5953,7 +5949,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/read/test-id/reset/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/read/test-id/reset/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -5981,7 +5977,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6009,7 +6005,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/filter/attribute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6037,7 +6033,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/filter/attribute/filter")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/filter/attribute/filter")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6065,7 +6061,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/count/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6093,7 +6089,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/count/application/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/count/application/test-id/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6119,7 +6115,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/date/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/date/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6147,7 +6143,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/filter/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/filter/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6175,7 +6171,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6203,7 +6199,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/my/filter/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/my/filter/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6231,7 +6227,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/my/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6259,7 +6255,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6287,7 +6283,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6313,7 +6309,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6341,7 +6337,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6367,7 +6363,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6395,7 +6391,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/next/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6423,7 +6419,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6451,7 +6447,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6477,7 +6473,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6505,7 +6501,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/list/test-id/prev/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6533,7 +6529,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/count")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6561,7 +6557,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6589,7 +6585,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list/create/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6617,7 +6613,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list/create/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6645,7 +6641,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/create/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list/create/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6673,7 +6669,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6701,7 +6697,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6729,7 +6725,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/v2/list/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6757,7 +6753,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6785,7 +6781,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/test-id/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -6813,7 +6809,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/test-id/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/test-id/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6841,7 +6837,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/test-id/opinion/manage")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/test-id/opinion/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6869,7 +6865,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readcompleted/test-id/reference")
+                    .uri("/api/processplatform/assemble/surface/readcompleted/test-id/reference")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6897,7 +6893,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readrecord/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/readrecord/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6925,7 +6921,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/readrecord/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -6951,7 +6947,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/job/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/record/job/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -6979,7 +6975,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/record/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7007,7 +7003,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/list/job/test-id/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/record/list/job/test-id/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7035,7 +7031,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/record/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7063,7 +7059,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/list/workorworkcompleted/test-id/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/record/list/workorworkcompleted/test-id/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7089,7 +7085,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/record/test-id/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -7117,7 +7113,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/test-id/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/record/test-id/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7145,7 +7141,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/record/test-id/manage/mockputtopost")
+                    .uri(
+                        "/api/processplatform/assemble/surface/record/test-id/manage/mockputtopost",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7173,7 +7171,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/count/application")
+                    .uri("/api/processplatform/assemble/surface/review/count/application")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7201,7 +7199,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/count/person/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/count/person/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7229,7 +7227,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/create/work")
+                    .uri("/api/processplatform/assemble/surface/review/create/work")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7257,7 +7255,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/create/workcompleted")
+                    .uri("/api/processplatform/assemble/surface/review/create/workcompleted")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7285,7 +7283,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/filter/attribute")
+                    .uri("/api/processplatform/assemble/surface/review/filter/attribute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7313,7 +7311,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/filter/create/entry")
+                    .uri("/api/processplatform/assemble/surface/review/filter/create/entry")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7341,7 +7339,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/filter/entry")
+                    .uri("/api/processplatform/assemble/surface/review/filter/entry")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7369,7 +7367,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7397,7 +7395,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/count")
+                    .uri("/api/processplatform/assemble/surface/review/v2/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7425,7 +7423,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list")
+                    .uri("/api/processplatform/assemble/surface/review/v2/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7453,7 +7451,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/create/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/v2/list/create/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7481,7 +7479,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/create/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/v2/list/create/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7509,7 +7507,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/create/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/v2/list/create/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7537,7 +7535,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/v2/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7565,7 +7563,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/paging/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/review/v2/list/paging/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7593,7 +7591,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/test-id/next/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/review/v2/list/test-id/next/test-id",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7621,7 +7621,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/list/test-id/prev/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/review/v2/list/test-id/prev/test-id",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7649,7 +7651,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/v2/search")
+                    .uri("/api/processplatform/assemble/surface/review/v2/search")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7677,7 +7679,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7705,7 +7707,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/test-id")
+                    .uri("/api/processplatform/assemble/surface/review/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7730,7 +7732,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/test-id/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/review/test-id/application/test-id/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -7758,7 +7760,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/review/test-id/application/test-id/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/review/test-id/application/test-id/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7784,7 +7786,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/route/list")
+                    .uri("/api/processplatform/assemble/surface/route/list")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -7809,7 +7811,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/route/list/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/route/list/mockputtopost")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7837,7 +7839,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/route/test-id")
+                    .uri("/api/processplatform/assemble/surface/route/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7862,7 +7864,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/route/test-id/selectconfig")
+                    .uri("/api/processplatform/assemble/surface/route/test-id/selectconfig")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7890,7 +7892,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/script/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/script/test-id/application/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -7918,7 +7920,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/script/test-id/application/test-id/imported")
+                    .uri("/api/processplatform/assemble/surface/script/test-id/application/test-id/imported")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7946,7 +7948,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/serialnumber/generate/process/name/name/serial/test-id")
+                    .uri("/api/processplatform/assemble/surface/serialnumber/generate/process/name/name/serial/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -7972,7 +7974,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/serialnumber/list/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/serialnumber/list/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8000,7 +8002,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/serialnumber/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/serialnumber/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8028,7 +8030,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/serialnumber/test-id")
+                    .uri("/api/processplatform/assemble/surface/serialnumber/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -8056,7 +8058,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/serialnumber/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/serialnumber/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8084,7 +8086,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/serialnumber/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/serialnumber/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8112,7 +8114,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/service/work/test-id/touch")
+                    .uri("/api/processplatform/assemble/surface/service/work/test-id/touch")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -8140,7 +8142,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/service/work/test-id/touch/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/service/work/test-id/touch/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8168,7 +8170,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/sign/download/test-id")
+                    .uri("/api/processplatform/assemble/surface/sign/download/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8196,7 +8198,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/sign/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/sign/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8224,7 +8226,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/sign/save/task/test-id")
+                    .uri("/api/processplatform/assemble/surface/sign/save/task/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8252,7 +8254,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/sign/task/test-id")
+                    .uri("/api/processplatform/assemble/surface/sign/task/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -8280,9 +8282,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/sign/task/test-id/mockdeletetoget",
-                    )
+                    .uri("/api/processplatform/assemble/surface/sign/task/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8310,7 +8310,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/sign/test-id")
+                    .uri("/api/processplatform/assemble/surface/sign/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -8335,7 +8335,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/sign/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/sign/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8363,7 +8363,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/count/filter")
+                    .uri("/api/processplatform/assemble/surface/task/count/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8391,7 +8391,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8419,7 +8419,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/filter/attribute")
+                    .uri("/api/processplatform/assemble/surface/task/filter/attribute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8447,7 +8447,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/filter/attribute/filter")
+                    .uri("/api/processplatform/assemble/surface/task/filter/attribute/filter")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8475,7 +8475,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/count/application")
+                    .uri("/api/processplatform/assemble/surface/task/list/count/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8503,7 +8503,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/count/application/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/task/list/count/application/test-id/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8531,7 +8531,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/date/date/hour/hour/exclude/draft/manage/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8557,7 +8557,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/filter/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/filter/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8585,7 +8585,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8613,7 +8613,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/my/filter/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/my/filter/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8641,7 +8641,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/my/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8669,7 +8669,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/person/person/exclude/draft/manage/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8695,7 +8695,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8723,7 +8723,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8751,7 +8751,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8779,7 +8779,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/next/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/next/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8807,7 +8807,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/next/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/next/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8835,7 +8835,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/next/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/next/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8863,7 +8863,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/next/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/next/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8891,7 +8891,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8919,7 +8919,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -8947,7 +8947,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/prev/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/prev/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -8975,7 +8975,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/prev/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/prev/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9003,7 +9003,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/prev/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/prev/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9031,7 +9031,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/test-id/prev/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/list/test-id/prev/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9059,7 +9059,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/count")
+                    .uri("/api/processplatform/assemble/surface/task/v2/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9087,7 +9087,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/list")
+                    .uri("/api/processplatform/assemble/surface/task/v2/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9112,7 +9112,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/list/create/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/v2/list/create/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9140,7 +9140,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/list/create/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/v2/list/create/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9168,7 +9168,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/list/create/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/v2/list/create/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9196,7 +9196,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/v2/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9224,9 +9224,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/task/v2/list/test-id/next/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/task/v2/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9254,9 +9252,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/task/v2/list/test-id/prev/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/task/v2/list/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9284,7 +9280,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/test-id/pause")
+                    .uri("/api/processplatform/assemble/surface/task/v2/test-id/pause")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9312,7 +9308,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/test-id/reset")
+                    .uri("/api/processplatform/assemble/surface/task/v2/test-id/reset")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -9340,7 +9336,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/test-id/reset/mockputtopost")
+                    .uri(
+                        "/api/processplatform/assemble/surface/task/v2/test-id/reset/mockputtopost",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9368,7 +9366,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/test-id/resume")
+                    .uri("/api/processplatform/assemble/surface/task/v2/test-id/resume")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9396,7 +9394,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v2/test-id/trigger/processing")
+                    .uri("/api/processplatform/assemble/surface/task/v2/test-id/trigger/processing")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9424,7 +9422,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v3/test-id/add")
+                    .uri("/api/processplatform/assemble/surface/task/v3/test-id/add")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9452,7 +9450,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/v3/test-id/pin")
+                    .uri("/api/processplatform/assemble/surface/task/v3/test-id/pin")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9480,7 +9478,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id")
+                    .uri("/api/processplatform/assemble/surface/task/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -9505,7 +9503,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -9533,7 +9531,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/manage/mockdeletetoget")
+                    .uri(
+                        "/api/processplatform/assemble/surface/task/test-id/manage/mockdeletetoget",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9561,7 +9561,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9589,7 +9589,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/opinion/manage")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/opinion/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -9617,7 +9617,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/opinion/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/opinion/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9645,7 +9645,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/press/manage")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/press/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9673,7 +9673,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/processing")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/processing")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9701,7 +9701,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/processing/manage")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/processing/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -9729,7 +9729,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/processing/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/processing/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9757,7 +9757,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/processing/neural")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/processing/neural")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9785,7 +9785,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/reference")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/reference")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9813,7 +9813,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/reset/manage")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/reset/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -9841,7 +9841,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/reset/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/reset/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -9869,7 +9869,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/test-id/will")
+                    .uri("/api/processplatform/assemble/surface/task/test-id/will")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9894,7 +9894,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9922,7 +9922,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/filter/attribute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9950,7 +9950,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/filter/attribute/filter")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/filter/attribute/filter")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -9978,7 +9978,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/count/application")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/count/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10006,7 +10006,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/count/application/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/count/application/test-id/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10032,7 +10032,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/date/test-id/hour/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/date/test-id/hour/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10060,7 +10060,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/filter/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/filter/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10088,7 +10088,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10116,7 +10116,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/filter/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/my/filter/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10144,7 +10144,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/my/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10172,7 +10172,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/prev/manual/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/prev/manual/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10200,7 +10200,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10228,7 +10228,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10254,7 +10254,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10282,7 +10282,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10308,7 +10308,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10336,7 +10336,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/next/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10364,7 +10364,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10392,7 +10392,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10418,7 +10418,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10446,7 +10446,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/list/test-id/prev/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10474,7 +10474,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/press/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/press/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10502,7 +10502,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/count")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10530,7 +10530,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10558,7 +10558,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10586,7 +10586,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10614,7 +10614,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/create/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list/create/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10642,7 +10642,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10670,7 +10670,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10698,7 +10698,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/v2/list/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10726,7 +10726,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10754,7 +10754,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -10782,7 +10782,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10810,7 +10810,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id/opinion/manage")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id/opinion/manage")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -10838,7 +10838,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id/opinion/manage/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id/opinion/manage/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -10866,7 +10866,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id/reference")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id/reference")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10894,7 +10894,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/taskcompleted/test-id/reference/control")
+                    .uri("/api/processplatform/assemble/surface/taskcompleted/test-id/reference/control")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10922,7 +10922,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/touch/expire")
+                    .uri("/api/processplatform/assemble/surface/touch/expire")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10947,7 +10947,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/touch/passexpired")
+                    .uri("/api/processplatform/assemble/surface/touch/passexpired")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -10975,7 +10975,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/touch/touchdetained")
+                    .uri("/api/processplatform/assemble/surface/touch/touchdetained")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11003,7 +11003,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/application/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/application/test-id/process/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11031,7 +11031,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/count/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11059,7 +11059,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/application/test-id/test-id/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/application/test-id/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11087,7 +11087,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/count/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/count/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11115,7 +11115,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/filter/attribute/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/filter/attribute/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11143,7 +11143,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/filter/attribute/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/work/filter/attribute/application/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11169,7 +11169,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/count/application")
+                    .uri("/api/processplatform/assemble/surface/work/list/count/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11197,7 +11197,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/count/application/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/work/list/count/application/test-id/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11225,7 +11225,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/count/application/test-id/process/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/count/application/test-id/process/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11251,7 +11251,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/filter/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/filter/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11279,7 +11279,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/list/my/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11307,7 +11307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/paging/test-id/size/test-id/application/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/paging/test-id/size/test-id/application/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11333,7 +11333,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11361,7 +11361,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11387,7 +11387,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11413,7 +11413,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/application/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11439,7 +11439,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/creator/current")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/creator/current")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11467,7 +11467,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/creator/current/filter")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/creator/current/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11495,7 +11495,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/next/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/next/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11523,7 +11523,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11551,7 +11551,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11577,7 +11577,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11603,7 +11603,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/application/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11629,7 +11629,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/creator/current")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/creator/current")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11657,7 +11657,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/creator/current/filter")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/creator/current/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11685,7 +11685,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/list/test-id/prev/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/list/test-id/prev/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11713,7 +11713,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/process/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11741,7 +11741,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/process/test-id/force")
+                    .uri("/api/processplatform/assemble/surface/work/process/test-id/force")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11769,7 +11769,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/list")
+                    .uri("/api/processplatform/assemble/surface/work/v2/list")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11794,7 +11794,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/list/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/v2/list/paging/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11822,7 +11822,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/list/test-id/activity/goback")
+                    .uri("/api/processplatform/assemble/surface/work/v2/list/test-id/activity/goback")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11850,9 +11850,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/work/v2/list/test-id/next/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/work/v2/list/test-id/next/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11880,9 +11878,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/work/v2/list/test-id/prev/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/work/v2/list/test-id/prev/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11910,7 +11906,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/workorworkcompleted/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/work/v2/workorworkcompleted/test-id",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -11938,7 +11936,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/add/split")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/add/split")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -11966,7 +11964,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/add/split/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/add/split/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -11994,7 +11992,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/reroute")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/reroute")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -12022,7 +12020,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/reroute/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/reroute/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12050,7 +12048,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/retract")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/retract")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -12078,7 +12076,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/retract/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/retract/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12106,7 +12104,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/rollback")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/rollback")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -12134,7 +12132,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/rollback/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/rollback/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12162,7 +12160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/terminate")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/terminate")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12190,7 +12188,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/terminate/manage")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/terminate/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12218,7 +12216,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v2/test-id/trigger/processing")
+                    .uri("/api/processplatform/assemble/surface/work/v2/test-id/trigger/processing")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12246,7 +12244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v3/retract")
+                    .uri("/api/processplatform/assemble/surface/work/v3/retract")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12274,9 +12272,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/processplatform/assemble/surface/work/v3/retract/stage/job/test-id",
-                    )
+                    .uri("/api/processplatform/assemble/surface/work/v3/retract/stage/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12304,7 +12300,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/v3/workorworkcompleted/test-id/permission")
+                    .uri("/api/processplatform/assemble/surface/work/v3/workorworkcompleted/test-id/permission")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12330,7 +12326,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12358,7 +12354,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/work/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -12383,7 +12379,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/assignment/manage")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/assignment/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12411,7 +12407,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/close/check")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/close/check")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12439,7 +12435,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12467,7 +12463,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12495,7 +12491,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/processing")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/processing")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -12523,7 +12519,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/processing/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/processing/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12551,7 +12547,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/projection")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/projection")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12579,7 +12575,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/refer")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/refer")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12607,7 +12603,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/relative/manage")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/relative/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -12635,7 +12631,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/relative/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/relative/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12663,7 +12659,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/single/manage")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/single/manage")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -12691,7 +12687,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/work/test-id/single/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/work/test-id/single/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12719,7 +12715,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/filter/attribute/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12745,7 +12741,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/filter/attribute/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/filter/attribute/application/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12771,7 +12767,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/filter/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/filter/list/test-id/prev/test-id/application/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12797,7 +12793,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/count/application")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12825,7 +12821,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application/test-id/process")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/count/application/test-id/process")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12851,7 +12847,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application/test-id/process/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/count/application/test-id/process/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12877,7 +12873,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/filter/test-id/size/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/filter/test-id/size/test-id/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12906,7 +12902,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/paging/test-id/size/test-id/application/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/paging/test-id/size/test-id/application/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12932,7 +12928,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -12958,7 +12954,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -12984,7 +12980,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id/filter/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id/filter/manage")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -13010,7 +13006,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/next/test-id/application/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13036,7 +13032,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13062,7 +13058,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/prev/test-id/application/test-id/filter")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/prev/test-id/application/test-id/filter")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -13088,7 +13084,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/list/test-id/prev/test-id/application/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/list/test-id/prev/test-id/application/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13114,7 +13110,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/process/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -13142,7 +13138,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/shift/time")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/shift/time")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13170,7 +13166,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id/rollback")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/test-id/rollback")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -13198,7 +13194,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id/rollback/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/test-id/rollback/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -13226,7 +13222,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13254,7 +13250,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id/assignment/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/test-id/assignment/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13282,7 +13278,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id/delete/manage")
+                    .uri(
+                        "/api/processplatform/assemble/surface/workcompleted/test-id/delete/manage",
+                    )
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -13310,7 +13308,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id/delete/manage/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/test-id/delete/manage/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13338,7 +13336,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/workcompleted/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/workcompleted/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13366,7 +13364,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/worklog/list/add/split/work/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/worklog/list/add/split/work/test-id",
+                    )
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13394,7 +13394,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/worklog/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/worklog/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13422,7 +13422,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/worklog/list/rollback/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/worklog/list/rollback/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13448,7 +13448,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/worklog/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/worklog/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13476,7 +13476,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13503,7 +13503,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/test-id/next/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13531,7 +13531,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/test-id/prev/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13561,7 +13561,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/work/test-id/type/snap")
+                    .uri("/api/processplatform/assemble/surface/snap/work/test-id/type/snap")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13589,7 +13589,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/work/test-id/type/abandoned")
+                    .uri("/api/processplatform/assemble/surface/snap/work/test-id/type/abandoned")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13617,7 +13617,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/work/test-id/type/suspend")
+                    .uri("/api/processplatform/assemble/surface/snap/work/test-id/type/suspend")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13645,7 +13645,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/workcompleted/test-id/type/snapworkcompleted")
+                    .uri("/api/processplatform/assemble/surface/snap/workcompleted/test-id/type/snapworkcompleted")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13673,7 +13673,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/workcompleted/test-id/type/abandonedworkcompleted")
+                    .uri("/api/processplatform/assemble/surface/snap/workcompleted/test-id/type/abandonedworkcompleted")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13701,7 +13701,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/list/job/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/list/job/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13729,7 +13729,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/list/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/list/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13757,7 +13757,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/list/workcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/list/workcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13785,7 +13785,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/list/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/list/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13813,7 +13813,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/available")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/available")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13841,7 +13841,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13870,7 +13870,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/work/test-id/text")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/work/test-id/text")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13898,7 +13898,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/workcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/workcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13926,7 +13926,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/snap/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13954,7 +13954,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/my/paging/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/my/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -13982,7 +13982,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/my/filter/test-id/size/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/my/filter/test-id/size/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14010,7 +14010,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/test-id/next/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/test-id/next/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14038,7 +14038,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/test-id/prev/test-id/application/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/test-id/prev/test-id/application/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14066,7 +14066,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/test-id/next/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/test-id/next/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14094,7 +14094,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/snap/list/test-id/prev/test-id/process/test-id")
+                    .uri("/api/processplatform/assemble/surface/snap/list/test-id/prev/test-id/process/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14122,7 +14122,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/workorworkcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14150,7 +14150,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14179,7 +14179,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14207,7 +14207,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/test-id/stream")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14237,7 +14237,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/test-id/work/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/test-id/work/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14265,7 +14265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/test-id/work/test-id/stream")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/test-id/work/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14293,7 +14293,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/test-id/workcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/test-id/workcompleted/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14321,7 +14321,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/test-id/workcompleted/test-id/stream")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/test-id/workcompleted/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14349,7 +14349,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/work/test-id/att/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/work/test-id/att/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14377,7 +14377,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/transfer/flag/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/transfer/flag/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14413,7 +14413,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/doc/to/word/work/test-id")
+                    .uri(
+                        "/api/processplatform/assemble/surface/attachment/doc/to/word/work/test-id",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14441,7 +14443,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14469,7 +14471,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf")
+                    .uri("/api/processplatform/assemble/surface/attachment/html/to/pdf")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14497,7 +14499,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/html/to/image")
+                    .uri("/api/processplatform/assemble/surface/attachment/html/to/image")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14525,7 +14527,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/preview/pdf")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/preview/pdf")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14553,7 +14555,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/preview/image/page/test-id")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/preview/image/page/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14581,7 +14583,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/preview/pdf/test-id/result")
+                    .uri("/api/processplatform/assemble/surface/attachment/preview/pdf/test-id/result")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14609,7 +14611,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/preview/image/test-id/result")
+                    .uri("/api/processplatform/assemble/surface/attachment/preview/image/test-id/result")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14639,7 +14641,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/upload/with/url")
+                    .uri("/api/processplatform/assemble/surface/attachment/upload/with/url")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14667,7 +14669,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/batch/download/work/test-id/site/test-id/stream")
+                    .uri("/api/processplatform/assemble/surface/attachment/batch/download/work/test-id/site/test-id/stream")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14711,7 +14713,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/online/info")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/online/info")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14742,7 +14744,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/work/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/work/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14770,7 +14772,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/test-id/workcompleted/test-id/mockdeletetoget")
+                    .uri("/api/processplatform/assemble/surface/attachment/test-id/workcompleted/test-id/mockdeletetoget")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14810,7 +14812,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/openapi")
+                    .uri("/api/processplatform/assemble/surface/openapi")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14840,7 +14842,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/route/list/mockputtopost")
+                    .uri("/api/processplatform/assemble/surface/route/list/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -14868,7 +14870,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/date/test-id/hour/test-id/exclude/draft/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/date/test-id/hour/test-id/exclude/draft/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -14896,7 +14898,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/person/test-id/exclude/draft/test-id/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/person/test-id/exclude/draft/test-id/manage")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

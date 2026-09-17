@@ -279,7 +279,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/list/folder-1")
+                    .uri("/api/file/assemble/control/file/list/folder-1")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -298,7 +298,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/file-1")
+                    .uri("/api/file/assemble/control/file/file-1")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -320,7 +320,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/upload")
+                    .uri("/api/file/assemble/control/file/upload")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -343,7 +343,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/create")
+                    .uri("/api/file/assemble/control/file/create")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -362,7 +362,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/delete/file-1")
+                    .uri("/api/file/assemble/control/file/delete/file-1")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -380,7 +380,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/unknown/path")
+                    .uri("/api/file/assemble/control/unknown/path")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -401,7 +401,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/create")
+                    .uri("/api/file/assemble/control/file/create")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -423,7 +423,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/upload")
+                    .uri("/api/file/assemble/control/file/upload")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -442,7 +442,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/delete/")
+                    .uri("/api/file/assemble/control/file/delete/")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -460,9 +460,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri(
-                        "/jaxrs/file/assemble/control/attachment2/some-id/office/preview/type/docx",
-                    )
+                    .uri("/api/file/assemble/control/attachment2/some-id/office/preview/type/docx")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -522,13 +520,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_anonymous_file_id_download_stream() {
+    async fn test_get_anonymous_file_id_download_stream() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/anonymous/file/test-id/download/stream")
+                    .uri("/api/anonymous/file/test-id/download/stream")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -540,13 +538,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_attachment_download_attid_stream() {
+    async fn test_get_attachment_download_attid_stream() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attachment/download/test-id/stream")
+                    .uri("/api/attachment/download/test-id/stream")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -558,13 +556,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_file_assemble_control_attachment2_() {
+    async fn test_get_file_assemble_control_attachment2_() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/attachment2/test-id/office/preview/type/test-id")
+                    .uri("/api/file/assemble/control/attachment2/test-id/office/preview/type/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -576,13 +574,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_file_assemble_control_file_list_fo() {
+    async fn test_get_file_assemble_control_file_list_fo() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/list/test-id")
+                    .uri("/api/file/assemble/control/file/list/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -594,13 +592,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_file_assemble_control_file_id() {
+    async fn test_get_file_assemble_control_file_id() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/test-id")
+                    .uri("/api/file/assemble/control/file/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -612,13 +610,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_file_id_download_stream() {
+    async fn test_get_file_id_download_stream() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/test-id/download/stream")
+                    .uri("/api/file/test-id/download/stream")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -630,13 +628,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_file_assemble_control_file_create() {
+    async fn test_post_file_assemble_control_file_create() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/create")
+                    .uri("/api/file/assemble/control/file/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -648,13 +646,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_file_assemble_control_file_delete_() {
+    async fn test_post_file_assemble_control_file_delete_() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/delete/test-id")
+                    .uri("/api/file/assemble/control/file/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -666,13 +664,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_file_assemble_control_file_upload() {
+    async fn test_post_file_assemble_control_file_upload() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/assemble/control/file/upload")
+                    .uri("/api/file/assemble/control/file/upload")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -684,13 +682,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_file_core_entity_file_create() {
+    async fn test_post_file_core_entity_file_create() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file/create")
+                    .uri("/api/file/core/entity/file/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -702,13 +700,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_file_core_entity_file_delete_id() {
+    async fn test_post_file_core_entity_file_delete_id() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file/delete/test-id")
+                    .uri("/api/file/core/entity/file/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -720,13 +718,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_file_core_entity_file_update_id() {
+    async fn test_post_file_core_entity_file_update_id() {
         let pool = test_pool();
         let app = crate::file_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file/update/test-id")
+                    .uri("/api/file/core/entity/file/update/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),

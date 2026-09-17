@@ -4,13 +4,13 @@ use deadpool_postgres::Pool;
 
 pub fn general_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/general/area/list", axum::routing::get(area_list))
+        .route("/api/general/area/list", axum::routing::get(area_list))
         .route(
-            "/jaxrs/general/securityclearance/enable",
+            "/api/general/securityclearance/enable",
             axum::routing::get(security_clearance_enable),
         )
         .route(
-            "/jaxrs/general/worktime/isworkday/{date}",
+            "/api/general/worktime/isworkday/{date}",
             axum::routing::get(is_workday),
         )
         .layer(Extension(pool))

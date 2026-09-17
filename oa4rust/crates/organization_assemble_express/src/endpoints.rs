@@ -1,6 +1,6 @@
 //! plan002 U2: organization_assemble_express endpoint completion.
 //!
-//! Aligns with Java `x_organization_assemble_express` (132 endpoints) for the
+//! Aligns with o2server `x_organization_assemble_express` (132 endpoints) for the
 //! high-value person/unit/identity/group/role/unitduty batch query endpoints.
 //! Conventions follow crates/express/src/batch_query.rs precedent:
 //! - no auth gate (intranet direct-call contract, do not add auth)
@@ -19,7 +19,7 @@ use shared::{error::AppError, response::ActionResult};
 pub const ID_COUNT_LIMIT: usize = 100;
 
 /// Extract a string-array field from the request body
-/// (loose equivalent of the Java Wi xxxList Gson contract).
+/// (loose equivalent of the o2server Wi xxxList Gson contract).
 pub fn string_list(body: &Value, key: &str) -> Vec<String> {
     body.get(key)
         .and_then(|v| v.as_array())
@@ -61,12 +61,12 @@ pub(crate) fn count_data(count: usize, data: Vec<Value>) -> Value {
     ]))
 }
 
-/// Java 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
-pub(crate) fn ok_java_list(
+/// o2server 裸数组契约（行为对齐）：data 为数组、count 入信封、size 恒 0。
+pub(crate) fn ok_legacy_list(
     count: usize,
     data: Vec<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Array(data),
         count as i64,
         0,
@@ -80,7 +80,7 @@ pub(crate) fn named_list(key: &str, items: &[String]) -> Value {
     )]))
 }
 
-/// Java WrapBoolean Wo 序列化形态：{"value": true|false}。
+/// o2server WrapBoolean Wo 序列化形态：{"value": true|false}。
 pub(crate) fn wrap_bool(v: bool) -> Value {
     Value::Object(serde_json::Map::from_iter([(
         "value".to_string(),
@@ -96,7 +96,7 @@ pub(crate) fn string_field(body: &Value, key: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-/// 布尔字段，默认 default（Java BooleanUtils.isNotFalse / isNotTrue 语义的 loose 版）。
+/// 布尔字段，默认 default（o2server BooleanUtils.isNotFalse / isNotTrue 语义的 loose 版）。
 pub(crate) fn bool_field(body: &Value, key: &str, default: bool) -> bool {
     body.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
 }
@@ -140,7 +140,7 @@ pub(crate) async fn named_list_response(
         .await
         .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         named_list(key, &list),
         list.len() as i64,
         0,
@@ -213,8 +213,8 @@ pub(crate) async fn resolve_person_ids(
     Ok(rows.iter().map(|r| r.get("id")).collect())
 }
 
-/// GET /jaxrs/person/auth/info/{flag}
-/// Person plus identity/group/role lists (Java ActionGetAuthInfo).
+/// GET /api/person/auth/info/{flag}
+/// Person plus identity/group/role lists (o2server ActionGetAuthInfo).
 pub async fn person_auth_info_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -283,7 +283,7 @@ pub async fn person_auth_info_flag(
     ok_json(data)
 }
 
-/// GET /jaxrs/person/nick/name/{flag}: nick name (no dedicated column; returns name).
+/// GET /api/person/nick/name/{flag}: nick name (no dedicated column; returns name).
 pub async fn person_nick_name_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -297,7 +297,7 @@ pub async fn person_nick_name_flag(
         .await
         .map_err(|_| AppError::Internal)?;
     match rows.first() {
-        // W12 收敛：对齐 Java ActionGetNickName——查无 person 时回退 value=flag
+        // W12 收敛：对齐 o2server ActionGetNickName——查无 person 时回退 value=flag
         // （Wo extends WrapString，恒有 value 键）
         None => {
             let mut map = serde_json::Map::new();
@@ -305,7 +305,7 @@ pub async fn person_nick_name_flag(
             ok_json(Value::Object(map))
         }
         Some(row) => {
-            // W12 收敛：对齐 Java ActionNickName 信封——value 键恒在（昵称缺省取 name）
+            // W12 收敛：对齐 o2server ActionNickName 信封——value 键恒在（昵称缺省取 name）
             let name = row.get::<_, Option<String>>("name").unwrap_or_default();
             let mut map = serde_json::Map::new();
             map.insert("value".to_string(), Value::String(name));
@@ -314,7 +314,7 @@ pub async fn person_nick_name_flag(
     }
 }
 
-/// GET /jaxrs/person/mobile/{flag}: explicit single PII lookup (Java ActionGetMobile).
+/// GET /api/person/mobile/{flag}: explicit single PII lookup (o2server ActionGetMobile).
 pub async fn person_mobile_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -340,7 +340,7 @@ async fn person_batch(
     let flags = string_list(&body, "personList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let pii = include_pii(&body);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -356,10 +356,10 @@ async fn person_batch(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/person/list: batch person flag lookup (Java ActionList).
+/// POST /api/person/list: batch person flag lookup (o2server ActionList).
 pub async fn person_list(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -367,7 +367,7 @@ pub async fn person_list(
     person_batch(pool, body).await
 }
 
-/// POST /jaxrs/person/list/object: batch person objects (Java ActionListObject);
+/// POST /api/person/list/object: batch person objects (o2server ActionListObject);
 /// mobile/email excluded by default, enabled explicitly via includePii=true.
 pub async fn person_list_object(
     pool: Extension<Pool>,
@@ -376,7 +376,7 @@ pub async fn person_list_object(
     person_batch(pool, body).await
 }
 
-/// GET /jaxrs/person/list/all: all person ids (PII-free).
+/// GET /api/person/list/all: all person ids (PII-free).
 pub async fn person_list_all(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
@@ -392,10 +392,10 @@ pub async fn person_list_all(
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))
         .collect();
-    ok_java_list(list.len(), list)
+    ok_legacy_list(list.len(), list)
 }
 
-/// GET /jaxrs/person/list/all/object: all person objects (PII-free).
+/// GET /api/person/list/all/object: all person objects (PII-free).
 pub async fn person_list_all_object(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
@@ -408,10 +408,10 @@ pub async fn person_list_all_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/person/has/role: does a person hold any of the given roles
+/// POST /api/person/has/role: does a person hold any of the given roles
 /// (via the group-member/group-role join chain).
 pub async fn person_has_role(
     pool: Extension<Pool>,
@@ -422,7 +422,7 @@ pub async fn person_has_role(
     capped(&persons)?;
     capped(&roles)?;
     if persons.is_empty() || roles.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -441,7 +441,7 @@ pub async fn person_has_role(
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))
         .collect();
-    ok_java_list(list.len(), list)
+    ok_legacy_list(list.len(), list)
 }
 
 async fn identities_of_persons(pool: &Pool, flags: &[String]) -> Result<Vec<String>, AppError> {
@@ -461,7 +461,7 @@ async fn identities_of_persons(pool: &Pool, flags: &[String]) -> Result<Vec<Stri
     Ok(rows.iter().map(|r| r.get("id")).collect())
 }
 
-/// POST /jaxrs/person/list/identity: identities of persons -> {identityList}.
+/// POST /api/person/list/identity: identities of persons -> {identityList}.
 pub async fn person_list_identity(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -469,14 +469,14 @@ pub async fn person_list_identity(
     let flags = string_list(&body, "personList");
     capped(&flags)?;
     let list = identities_of_persons(&pool, &flags).await?;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         named_list("identityList", &list),
         list.len() as i64,
         0,
     )))
 }
 
-/// POST /jaxrs/person/list/group: groups containing persons -> {groupList}.
+/// POST /api/person/list/group: groups containing persons -> {groupList}.
 pub async fn person_list_group(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -490,7 +490,7 @@ pub async fn person_list_group(
     named_list_response(&pool, "groupList", SQL, &flags).await
 }
 
-/// POST /jaxrs/person/list/role: roles held by persons -> {roleList}.
+/// POST /api/person/list/role: roles held by persons -> {roleList}.
 pub async fn person_list_role(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -505,7 +505,7 @@ pub async fn person_list_role(
     named_list_response(&pool, "roleList", SQL, &flags).await
 }
 
-/// POST /jaxrs/person/list/filter/{page}/size/{size}: filtered paging (PII-free).
+/// POST /api/person/list/filter/{page}/size/{size}: filtered paging (PII-free).
 pub async fn person_list_filter_page_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
@@ -567,7 +567,7 @@ async fn identity_batch(
     let flags = string_list(&body, "identityList");
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -582,10 +582,10 @@ async fn identity_batch(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/identity/list: batch identity lookup (Java IdentityAction#list).
+/// POST /api/identity/list: batch identity lookup (o2server IdentityAction#list).
 pub async fn identity_list(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -593,7 +593,7 @@ pub async fn identity_list(
     identity_batch(pool, body).await
 }
 
-/// POST /jaxrs/identity/list/object: batch identity objects.
+/// POST /api/identity/list/object: batch identity objects.
 pub async fn identity_list_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -601,7 +601,7 @@ pub async fn identity_list_object(
     identity_batch(pool, body).await
 }
 
-/// POST /jaxrs/identity/list/person: identities of persons -> {identityList}.
+/// POST /api/identity/list/person: identities of persons -> {identityList}.
 pub async fn identity_list_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -609,7 +609,7 @@ pub async fn identity_list_person(
     let flags = string_list(&body, "personList");
     capped(&flags)?;
     let list = identities_of_persons(&pool, &flags).await?;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         named_list("identityList", &list),
         list.len() as i64,
         0,
@@ -636,7 +636,7 @@ async fn identity_list_with_units(
     named_list_response(&pool, "identityList", sql, &flags).await
 }
 
-/// POST /jaxrs/identity/list/unit/sub/direct: identities directly under units.
+/// POST /api/identity/list/unit/sub/direct: identities directly under units.
 pub async fn identity_list_unit_sub_direct(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -644,7 +644,7 @@ pub async fn identity_list_unit_sub_direct(
     identity_list_with_units(pool, body, false).await
 }
 
-/// POST /jaxrs/identity/list/unit/sub/nested: identities under nested units (recursive CTE).
+/// POST /api/identity/list/unit/sub/nested: identities under nested units (recursive CTE).
 pub async fn identity_list_unit_sub_nested(
     pool: Extension<Pool>,
     Json(body): Json<Value>,

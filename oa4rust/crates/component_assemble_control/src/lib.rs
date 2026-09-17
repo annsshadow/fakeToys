@@ -4,7 +4,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/component_assemble_control";
+pub const API_BASE: &str = "/api/component_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -91,7 +91,7 @@ pub async fn list_control_categories(
     }
 
     let total_categories = categories.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(categories),
         total_categories as i64,
         0,
@@ -199,7 +199,7 @@ pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/folder/list/top")
+                    .uri("/api/file/core/entity/folder/list/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file/list")
+                    .uri("/api/file/core/entity/file/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/complex/top")
+                    .uri("/api/file/core/entity/complex/top")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -79,7 +79,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file")
+                    .uri("/api/file/core/entity/file")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

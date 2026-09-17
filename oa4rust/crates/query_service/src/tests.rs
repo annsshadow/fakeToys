@@ -38,7 +38,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/service/neural/generate/test-model")
+                    .uri("/api/query/service/neural/generate/test-model")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/service/neural/list")
+                    .uri("/api/query/service/neural/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),

@@ -28,7 +28,7 @@ mod u2_legacy_tests {
         .status()
     }
 
-    const BASE: &str = "/jaxrs/attendance/assemble/control";
+    const BASE: &str = "/api/attendance/assemble/control";
 
     // ── dingding / qywx 路由可达 ───────────────────────────────
 
@@ -169,11 +169,11 @@ mod u2_legacy_tests {
         }
     }
 
-    // ── v2 mobile（含 Java 空格路径）路由可达 ──────────────────
+    // ── v2 mobile（含 o2server 空格路径）路由可达 ──────────────────
 
     #[tokio::test]
     async fn u2l_v2_mobile_check_space_path_both_encodings_routed() {
-        // Java @Path("check/ from/out")：线上请求以 %20 编码传输（裸空格是非法 Uri 字符），
+        // o2server 路径注解("check/ from/out")：线上请求以 %20 编码传输（裸空格是非法 Uri 字符），
         // %20 形态注册必须可达；handler 因缺 Session 扩展返回 500 而非 404
         assert_eq!(
             status_of("POST", &format!("{}/v2/mobile/check/%20from/out", BASE)).await,
@@ -270,7 +270,7 @@ mod u2_legacy_tests {
 
     #[tokio::test]
     async fn u2l_legacy_verb_chains_now_routed() {
-        // 上轮缺口：Java GET mobile/my、GET mobilepreview、PUT mobile filter
+        // 上轮缺口：o2server GET mobile/my、GET mobilepreview、PUT mobile filter
         // my/mobilepreview 要求 JSON body：GET 无 content-type → 415（≠404 证明路由命中）
         assert_eq!(
             status_of("GET", &format!("{}/attendancedetail/mobile/my", BASE)).await,
@@ -324,7 +324,7 @@ mod u2_legacy_tests {
     }
 
     #[test]
-    fn u2l_leave_template_shape_matches_java_columns() {
+    fn u2l_leave_template_shape_matches_legacy_columns() {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/forum/list")
+                    .uri("/api/bbs/core/entity/forum/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -37,7 +37,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/forum")
+                    .uri("/api/bbs/core/entity/forum")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/forum/test-id")
+                    .uri("/api/bbs/core/entity/forum/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -79,7 +79,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/forum/test-id")
+                    .uri("/api/bbs/core/entity/forum/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -100,7 +100,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/section")
+                    .uri("/api/bbs/core/entity/section")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -121,7 +121,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/section/test-id")
+                    .uri("/api/bbs/core/entity/section/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -142,7 +142,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/section/test-id")
+                    .uri("/api/bbs/core/entity/section/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -163,7 +163,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/subject")
+                    .uri("/api/bbs/core/entity/subject")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -184,7 +184,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/subject/test-id")
+                    .uri("/api/bbs/core/entity/subject/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -205,7 +205,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/subject/test-id")
+                    .uri("/api/bbs/core/entity/subject/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -226,7 +226,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/core/entity/reply")
+                    .uri("/api/bbs/core/entity/reply")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

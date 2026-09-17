@@ -1,6 +1,6 @@
 // ════════════ plan002 U2：meeting 模块端点全量闭合回归测试 ════════════
 // 覆盖：blob key 规范化、归一化查重键、db 占位后端上传 fail-loud（501 非假成功）、
-// 各族新路由可达性、Java 动词修正、IDOR 门禁（缺会话拒绝 / 非 owner 拒绝）、
+// 各族新路由可达性、o2server 动词修正、IDOR 门禁（缺会话拒绝 / 非 owner 拒绝）、
 // 归一化查重落库冲突、config upsert 往返、room photo 落库、附件引用生命周期。
 #[cfg(test)]
 mod u2_tests {
@@ -180,7 +180,7 @@ mod u2_tests {
         let fs_env = std::env::var("STORAGE_BACKEND")
             .map(|v| v.eq_ignore_ascii_case("fs"))
             .unwrap_or(false);
-        let path = format!("/jaxrs/meeting/assemble/control/attachment/meeting/{mid}/upload/false");
+        let path = format!("/api/meeting/assemble/control/attachment/meeting/{mid}/upload/false");
         let (status, json) =
             respond_db("POST", &path, MP, multipart_body("a.txt"), NON_ADMIN).await;
 
@@ -220,7 +220,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_attachment_family_routes_reachable() {
-        let b = "/jaxrs/meeting/assemble/control/attachment";
+        let b = "/api/meeting/assemble/control/attachment";
         let cases: Vec<(&str, String)> = vec![
             ("GET", format!("{b}/list/meeting/m-1")),
             ("GET", format!("{b}/a-1")),
@@ -254,11 +254,11 @@ mod u2_tests {
         }
     }
 
-    /// Java 动词修正族：GET 动作端点（accept/reject/checkin 等）与 PUT 端点
-    /// 必须接受 Java 原生动词，同时旧错位动词不被误认为缺口已闭。
+    /// o2server 动词修正族：GET 动作端点（accept/reject/checkin 等）与 PUT 端点
+    /// 必须接受 o2server 原生动词，同时旧错位动词不被误认为缺口已闭。
     #[tokio::test]
-    async fn u2_verb_corrected_routes_accept_java_verbs() {
-        let b = "/jaxrs/meeting/assemble/control/meeting";
+    async fn u2_verb_corrected_routes_accept_legacy_verbs() {
+        let b = "/api/meeting/assemble/control/meeting";
         let cases: Vec<(&str, String)> = vec![
             ("GET", format!("{b}/m-1/accept")),
             ("PUT", format!("{b}/m-1/add/invite")),
@@ -292,7 +292,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_building_config_room_openmeeting_new_routes_reachable() {
-        let b = "/jaxrs/meeting/assemble/control";
+        let b = "/api/meeting/assemble/control";
         let cases: Vec<(&str, String)> = vec![
             ("POST", format!("{b}/building")),
             ("PUT", format!("{b}/building/b-1")),
@@ -349,7 +349,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_idor_guarded_writes_reject_without_session() {
-        let b = "/jaxrs/meeting/assemble/control";
+        let b = "/api/meeting/assemble/control";
         let cases: Vec<(&str, String)> = vec![
             ("DELETE", format!("{b}/meeting/m-1")),
             ("POST", format!("{b}/meeting/m-1")),
@@ -408,7 +408,7 @@ mod u2_tests {
             .unwrap();
 
         let _app = crate::router(pool.clone());
-        let path = format!("/jaxrs/meeting/assemble/control/meeting/{mid}");
+        let path = format!("/api/meeting/assemble/control/meeting/{mid}");
         // 非 owner（且非管理员）→ 403
         let (st, _) = respond_db("DELETE", &path, &[], Body::empty(), NON_ADMIN).await;
         assert_eq!(st, StatusCode::FORBIDDEN, "non-owner delete must be 403");
@@ -432,9 +432,9 @@ mod u2_tests {
         let pool = shared::testing::test_pool();
         let client = pool.get().await.unwrap();
         let name = format!("U2 Room {}", &uuid::Uuid::new_v4().to_string()[..8]);
-        let path = "/jaxrs/meeting/assemble/control/room";
+        let path = "/api/meeting/assemble/control/room";
 
-        // 非 admin → 403（Java buildingEditAvailable ≈ manager/MeetingManager ≈ is_admin）
+        // 非 admin → 403（o2server buildingEditAvailable ≈ manager/MeetingManager ≈ is_admin）
         let (st, _) = respond_db(
             "POST",
             path,
@@ -493,7 +493,7 @@ mod u2_tests {
         let pool = shared::testing::test_pool();
         let client = pool.get().await.unwrap();
         let key = format!("u2.test.{}", &uuid::Uuid::new_v4().to_string()[..8]);
-        let path = "/jaxrs/meeting/assemble/control/config";
+        let path = "/api/meeting/assemble/control/config";
 
         let (st, json) = respond_db(
             "POST",
@@ -576,7 +576,7 @@ mod u2_tests {
             .await
             .unwrap();
 
-        let path = format!("/jaxrs/meeting/assemble/control/room/{rid}/photo");
+        let path = format!("/api/meeting/assemble/control/room/{rid}/photo");
         let (st, json) = respond_db("POST", &path, MP, multipart_body("pic.png"), ADMIN).await;
         assert_eq!(st, StatusCode::OK, "photo upload should succeed: {json}");
 
@@ -633,7 +633,7 @@ mod u2_tests {
             .await
             .unwrap();
 
-        let b = "/jaxrs/meeting/assemble/control/attachment";
+        let b = "/api/meeting/assemble/control/attachment";
         let (st, json) = respond_db(
             "POST",
             &format!("{b}/create/from/processplatform"),
@@ -657,7 +657,7 @@ mod u2_tests {
         )
         .await;
         assert_eq!(st, StatusCode::OK);
-        // java_success format: data is directly an array
+        // legacy_success format: data is directly an array
         assert!(
             json["data"]
                 .as_array()

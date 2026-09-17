@@ -1,4 +1,4 @@
-//! plan002 U2 收尾重试批次（U3，Java canonical 对齐缺口）的测试。
+//! plan002 U2 收尾重试批次（U3，o2server canonical 对齐缺口）的测试。
 //!
 //! 三层（与 tests_u2 一致）：
 //!   1. 路由可达性：mock_pool 无法建连，命中路由后断言 ≠404/405，
@@ -61,17 +61,17 @@ mod u3_tests {
     async fn u3_document_management_routes_reachable() {
         // 管理面 GET：无会话在提取器前被拒（500）或 DB 失败（500），均 ≠404/405
         for uri in [
-            "/jaxrs/document/achive/d-1",
-            "/jaxrs/document/batch/status",
-            "/jaxrs/document/batch/b-1/status",
-            "/jaxrs/document/batch/b-1/mockdeletetoget",
-            "/jaxrs/document/cipher/c-1/permission/read/person/p-1",
-            "/jaxrs/document/d-1/control",
-            "/jaxrs/document/d-1/mockdeletetoget",
-            "/jaxrs/document/d-1/permission/read",
-            "/jaxrs/document/d-1/persons",
-            "/jaxrs/document/d-1/view",
-            "/jaxrs/document/d-1/view/count",
+            "/api/document/achive/d-1",
+            "/api/document/batch/status",
+            "/api/document/batch/b-1/status",
+            "/api/document/batch/b-1/mockdeletetoget",
+            "/api/document/cipher/c-1/permission/read/person/p-1",
+            "/api/document/d-1/control",
+            "/api/document/d-1/mockdeletetoget",
+            "/api/document/d-1/permission/read",
+            "/api/document/d-1/persons",
+            "/api/document/d-1/view",
+            "/api/document/d-1/view/count",
         ] {
             assert_ne!(
                 status_of("GET", uri).await,
@@ -86,35 +86,35 @@ mod u3_tests {
         }
         // 带 Json 提取器的写端点：空 body → 415，仍 ≠404/405
         assert_ne!(
-            status_of("PUT", "/jaxrs/document/filter/list/i-1/next/10").await,
+            status_of("PUT", "/api/document/filter/list/i-1/next/10").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
             status_of(
                 "POST",
-                "/jaxrs/document/filter/list/i-1/next/10/mockputtopost"
+                "/api/document/filter/list/i-1/next/10/mockputtopost"
             )
             .await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/filter/list/i-1/size/10/manager").await,
+            status_of("POST", "/api/document/filter/list/i-1/size/10/manager").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/document/publish/content").await,
+            status_of("PUT", "/api/document/publish/content").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/document/cipher/publish/content").await,
+            status_of("PUT", "/api/document/cipher/publish/content").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/list/document/data").await,
+            status_of("POST", "/api/document/list/document/data").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/document/batch/b-1").await,
+            status_of("DELETE", "/api/document/batch/b-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -122,26 +122,26 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_file_fileinfo_canonical_routes_reachable() {
         assert_eq!(
-            status_of("PUT", "/jaxrs/file/f-1").await,
+            status_of("PUT", "/api/file/f-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/file/f-1").await,
+            status_of("DELETE", "/api/file/f-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         for uri in [
-            "/jaxrs/file/f-1/mockdeletetoget",
-            "/jaxrs/file/f-1/content",
-            "/jaxrs/file/f-1/download",
-            "/jaxrs/file/f-1/appInfo/app-1",
-            "/jaxrs/file/f-1/appInfo/app-1/content",
-            "/jaxrs/file/f-1/appInfo/app-1/download",
-            "/jaxrs/file/list/i-1/next/10",
-            "/jaxrs/fileinfo/fi-1/online/info",
-            "/jaxrs/fileinfo/fi-1/preview/pdf",
-            "/jaxrs/fileinfo/fi-1/binary/base64/64",
-            "/jaxrs/fileinfo/download/transfer/flag/x",
-            "/jaxrs/fileinfo/download/document/d-1/stream",
+            "/api/file/f-1/mockdeletetoget",
+            "/api/file/f-1/content",
+            "/api/file/f-1/download",
+            "/api/file/f-1/appInfo/app-1",
+            "/api/file/f-1/appInfo/app-1/content",
+            "/api/file/f-1/appInfo/app-1/download",
+            "/api/file/list/i-1/next/10",
+            "/api/fileinfo/fi-1/online/info",
+            "/api/fileinfo/fi-1/preview/pdf",
+            "/api/fileinfo/fi-1/binary/base64/64",
+            "/api/fileinfo/download/transfer/flag/x",
+            "/api/fileinfo/download/document/d-1/stream",
         ] {
             assert_ne!(
                 status_of("GET", uri).await,
@@ -150,19 +150,19 @@ mod u3_tests {
             );
         }
         assert_ne!(
-            status_of("POST", "/jaxrs/file/f-1/upload").await,
+            status_of("POST", "/api/file/f-1/upload").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/fileinfo/upload/with/url").await,
+            status_of("POST", "/api/fileinfo/upload/with/url").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/fileinfo/update/c-1/content").await,
+            status_of("POST", "/api/fileinfo/update/c-1/content").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/fileinfo/edit/e-1/doc/d-1").await,
+            status_of("PUT", "/api/fileinfo/edit/e-1/doc/d-1").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -170,25 +170,25 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_design_permission_review_routes_reachable() {
         for uri in [
-            "/jaxrs/design/appdict",
-            "/jaxrs/design/appdict/da-1/mockputtopost",
-            "/jaxrs/design/appdict/list/paging/1/size/10",
-            "/jaxrs/review/v2/search",
-            "/jaxrs/docpermission",
-            "/jaxrs/comment/c-1/commend",
-            "/jaxrs/comment/c-1/uncommend",
-            "/jaxrs/correlation/doc/d-1",
-            "/jaxrs/correlation/update/doc/d-1",
-            "/jaxrs/categoryinfo/extContent",
-            "/jaxrs/categoryinfo/list/objects",
-            "/jaxrs/categoryinfo/c-1/execute/projection",
-            "/jaxrs/script/s-1/app/app-1",
-            "/jaxrs/script/s-1/appInfo/app-1",
-            "/jaxrs/view/viewdata/list/v-1/next/10",
-            "/jaxrs/viewrecord/unread/mockputtopost",
-            "/jaxrs/output/o-1/select/mockputtopost",
-            "/jaxrs/log/list/filter/1/size/10",
-            "/jaxrs/image/encode/base64",
+            "/api/design/appdict",
+            "/api/design/appdict/da-1/mockputtopost",
+            "/api/design/appdict/list/paging/1/size/10",
+            "/api/review/v2/search",
+            "/api/docpermission",
+            "/api/comment/c-1/commend",
+            "/api/comment/c-1/uncommend",
+            "/api/correlation/doc/d-1",
+            "/api/correlation/update/doc/d-1",
+            "/api/categoryinfo/extContent",
+            "/api/categoryinfo/list/objects",
+            "/api/categoryinfo/c-1/execute/projection",
+            "/api/script/s-1/app/app-1",
+            "/api/script/s-1/appInfo/app-1",
+            "/api/view/viewdata/list/v-1/next/10",
+            "/api/viewrecord/unread/mockputtopost",
+            "/api/output/o-1/select/mockputtopost",
+            "/api/log/list/filter/1/size/10",
+            "/api/image/encode/base64",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -197,12 +197,12 @@ mod u3_tests {
             );
         }
         for (method, uri) in [
-            ("PUT", "/jaxrs/design/appdict/da-1"),
-            ("DELETE", "/jaxrs/design/appdict/da-1"),
-            ("PUT", "/jaxrs/viewrecord/unread"),
-            ("PUT", "/jaxrs/output/o-1/select"),
-            ("PUT", "/jaxrs/templateform/list/category"),
-            ("PUT", "/jaxrs/categoryinfo/bind/c-1/view"),
+            ("PUT", "/api/design/appdict/da-1"),
+            ("DELETE", "/api/design/appdict/da-1"),
+            ("PUT", "/api/viewrecord/unread"),
+            ("PUT", "/api/output/o-1/select"),
+            ("PUT", "/api/templateform/list/category"),
+            ("PUT", "/api/categoryinfo/bind/c-1/view"),
         ] {
             assert_ne!(
                 status_of(method, uri).await,
@@ -212,12 +212,12 @@ mod u3_tests {
         }
         // permission save 家族 ×6
         for uri in [
-            "/jaxrs/permission/manager/appInfo/a-1",
-            "/jaxrs/permission/publisher/appInfo/a-1",
-            "/jaxrs/permission/viewer/appInfo/a-1",
-            "/jaxrs/permission/manager/categoryInfo/c-1",
-            "/jaxrs/permission/publisher/categoryInfo/c-1",
-            "/jaxrs/permission/viewer/categoryInfo/c-1",
+            "/api/permission/manager/appInfo/a-1",
+            "/api/permission/publisher/appInfo/a-1",
+            "/api/permission/viewer/appInfo/a-1",
+            "/api/permission/manager/categoryInfo/c-1",
+            "/api/permission/publisher/categoryInfo/c-1",
+            "/api/permission/viewer/categoryInfo/c-1",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -230,39 +230,39 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_anonymous_and_designer_readonly_routes_reachable() {
         for (method, uri) in [
-            ("GET", "/jaxrs/anonymous/form/f-1"),
-            ("GET", "/jaxrs/anonymous/form/v2/f-1"),
-            ("GET", "/jaxrs/anonymous/form/v2/f-1/mobile"),
-            ("GET", "/jaxrs/anonymous/form/v2/lookup/document/d-1"),
-            ("GET", "/jaxrs/anonymous/form/v2/lookup/document/d-1/mobile"),
-            ("GET", "/jaxrs/anonymous/fileinfo/list/document/d-1"),
-            ("GET", "/jaxrs/anonymous/fileinfo/fi-1/document/d-1"),
+            ("GET", "/api/anonymous/form/f-1"),
+            ("GET", "/api/anonymous/form/v2/f-1"),
+            ("GET", "/api/anonymous/form/v2/f-1/mobile"),
+            ("GET", "/api/anonymous/form/v2/lookup/document/d-1"),
+            ("GET", "/api/anonymous/form/v2/lookup/document/d-1/mobile"),
+            ("GET", "/api/anonymous/fileinfo/list/document/d-1"),
+            ("GET", "/api/anonymous/fileinfo/fi-1/document/d-1"),
             (
                 "GET",
-                "/jaxrs/anonymous/fileinfo/download/document/d-1/stream",
+                "/api/anonymous/fileinfo/download/document/d-1/stream",
             ),
-            ("GET", "/jaxrs/formversion/fv-1"),
-            ("GET", "/jaxrs/formversion/list/form/f-1"),
-            ("GET", "/jaxrs/scriptversion/sv-1"),
-            ("GET", "/jaxrs/scriptversion/list/script/s-1"),
-            ("GET", "/jaxrs/templateform/tf-1"),
-            ("GET", "/jaxrs/templateform/tf-1/mockdeletetoget"),
-            ("GET", "/jaxrs/view/v-1/mockdeletetoget"),
-            ("GET", "/jaxrs/viewcategory/vc-1/mockdeletetoget"),
-            ("GET", "/jaxrs/viewfieldconfig/vfc-1/mockdeletetoget"),
-            ("GET", "/jaxrs/script/s-1/app/app-1/imported"),
-            ("GET", "/jaxrs/script/list/i-1/next/10"),
-            ("GET", "/jaxrs/viewrecord/person/p-1"),
-            ("GET", "/jaxrs/viewrecord/document/d-1/has/view"),
-            ("GET", "/jaxrs/appinfo/a-1/control"),
-            ("GET", "/jaxrs/appinfo/a-1/mockdeletetoget"),
-            ("GET", "/jaxrs/appinfo/get/user/publish/app-1"),
-            ("GET", "/jaxrs/appinfo/alias/alpha"),
-            ("GET", "/jaxrs/categoryinfo/c-1/control"),
-            ("GET", "/jaxrs/categoryinfo/alias/alpha"),
-            ("GET", "/jaxrs/form/f-1/appinfo/app-1"),
-            ("GET", "/jaxrs/form/f-1/mockdeletetoget"),
-            ("GET", "/jaxrs/form/v2/f-1/mobile"),
+            ("GET", "/api/formversion/fv-1"),
+            ("GET", "/api/formversion/list/form/f-1"),
+            ("GET", "/api/scriptversion/sv-1"),
+            ("GET", "/api/scriptversion/list/script/s-1"),
+            ("GET", "/api/templateform/tf-1"),
+            ("GET", "/api/templateform/tf-1/mockdeletetoget"),
+            ("GET", "/api/view/v-1/mockdeletetoget"),
+            ("GET", "/api/viewcategory/vc-1/mockdeletetoget"),
+            ("GET", "/api/viewfieldconfig/vfc-1/mockdeletetoget"),
+            ("GET", "/api/script/s-1/app/app-1/imported"),
+            ("GET", "/api/script/list/i-1/next/10"),
+            ("GET", "/api/viewrecord/person/p-1"),
+            ("GET", "/api/viewrecord/document/d-1/has/view"),
+            ("GET", "/api/appinfo/a-1/control"),
+            ("GET", "/api/appinfo/a-1/mockdeletetoget"),
+            ("GET", "/api/appinfo/get/user/publish/app-1"),
+            ("GET", "/api/appinfo/alias/alpha"),
+            ("GET", "/api/categoryinfo/c-1/control"),
+            ("GET", "/api/categoryinfo/alias/alpha"),
+            ("GET", "/api/form/f-1/appinfo/app-1"),
+            ("GET", "/api/form/f-1/mockdeletetoget"),
+            ("GET", "/api/form/v2/f-1/mobile"),
         ] {
             assert_ne!(
                 status_of(method, uri).await,
@@ -271,15 +271,15 @@ mod u3_tests {
             );
         }
         for (method, uri) in [
-            ("PUT", "/jaxrs/comment/list/i-1/next/10"),
-            ("PUT", "/jaxrs/comment/list/i-1/prev/10"),
-            ("PUT", "/jaxrs/anonymous/document/filter/list/i-1/next/10"),
-            ("PUT", "/jaxrs/anonymous/document/filter/list/p-1/size/10"),
-            ("PUT", "/jaxrs/appinfo/filter/list/i-1/next/10"),
-            ("PUT", "/jaxrs/categoryinfo/filter/list/p-1/size/10"),
-            ("PUT", "/jaxrs/document/cipher/filter/list/p-1/size/10"),
-            ("PUT", "/jaxrs/document/draft/list/i-1/next/10"),
-            ("POST", "/jaxrs/log/filter/list/i-1/next/10"),
+            ("PUT", "/api/comment/list/i-1/next/10"),
+            ("PUT", "/api/comment/list/i-1/prev/10"),
+            ("PUT", "/api/anonymous/document/filter/list/i-1/next/10"),
+            ("PUT", "/api/anonymous/document/filter/list/p-1/size/10"),
+            ("PUT", "/api/appinfo/filter/list/i-1/next/10"),
+            ("PUT", "/api/categoryinfo/filter/list/p-1/size/10"),
+            ("PUT", "/api/document/cipher/filter/list/p-1/size/10"),
+            ("PUT", "/api/document/draft/list/i-1/next/10"),
+            ("POST", "/api/log/filter/list/i-1/next/10"),
         ] {
             assert_ne!(
                 status_of(method, uri).await,
@@ -288,7 +288,7 @@ mod u3_tests {
             );
         }
         assert_ne!(
-            status_of("POST", "/jaxrs/appinfo/a-1/icon/size/64").await,
+            status_of("POST", "/api/appinfo/a-1/icon/size/64").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -482,15 +482,14 @@ mod u3_tests {
                 .unwrap();
         }
 
-        let (status, body) =
-            call("GET", "/jaxrs/document/batch/u3-batch-x/status", None, None).await;
+        let (status, body) = call("GET", "/api/document/batch/u3-batch-x/status", None, None).await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["data"]["count"], serde_json::json!(2));
 
         // 非管理员删除批次 → 403（IDOR 门禁）
         let (status, _) = call(
             "DELETE",
-            "/jaxrs/document/batch/u3-batch-x",
+            "/api/document/batch/u3-batch-x",
             None,
             Some(session(STRANGER)),
         )
@@ -500,7 +499,7 @@ mod u3_tests {
         // mockdeletetoget 只预览不删除
         let (status, body) = call(
             "GET",
-            "/jaxrs/document/batch/u3-batch-x/mockdeletetoget",
+            "/api/document/batch/u3-batch-x/mockdeletetoget",
             None,
             None,
         )
@@ -519,7 +518,7 @@ mod u3_tests {
         };
         let (status, body) = call(
             "DELETE",
-            "/jaxrs/document/batch/u3-batch-x",
+            "/api/document/batch/u3-batch-x",
             None,
             Some(admin),
         )
@@ -551,7 +550,7 @@ mod u3_tests {
         };
         let _ = call(
             "DELETE",
-            "/jaxrs/design/appdict/u3-dedup-target",
+            "/api/design/appdict/u3-dedup-target",
             None,
             Some(admin.clone()),
         )
@@ -565,7 +564,7 @@ mod u3_tests {
         });
         let (status, body) = call(
             "POST",
-            "/jaxrs/design/appdict",
+            "/api/design/appdict",
             Some(payload),
             Some(admin.clone()),
         )
@@ -582,7 +581,7 @@ mod u3_tests {
         });
         let (status, body) = call(
             "POST",
-            "/jaxrs/design/appdict",
+            "/api/design/appdict",
             Some(dup_payload),
             Some(admin),
         )
@@ -622,7 +621,7 @@ mod u3_tests {
 
         let (status, body) = call(
             "GET",
-            "/jaxrs/comment/u3-cmt/commend",
+            "/api/comment/u3-cmt/commend",
             None,
             Some(session(OWNER)),
         )
@@ -632,7 +631,7 @@ mod u3_tests {
 
         let (status, body) = call(
             "GET",
-            "/jaxrs/comment/u3-cmt/uncommend",
+            "/api/comment/u3-cmt/uncommend",
             None,
             Some(session(OWNER)),
         )
@@ -680,13 +679,13 @@ mod u3_tests {
 
         let (status, body) = call(
             "POST",
-            "/jaxrs/review/v2/search",
+            "/api/review/v2/search",
             Some(json!({"keyword": "needle"})),
             None,
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
-        // java_success format: {"count":N,"data":[...]}
+        // legacy_success format: {"count":N,"data":[...]}
         let ids: Vec<&str> = body["data"]
             .as_array()
             .map(|a| a.iter().filter_map(|d| d["id"].as_str()).collect())
@@ -718,7 +717,7 @@ mod u3_tests {
 
         let (status, body) = call(
             "POST",
-            "/jaxrs/correlation/update/doc/u3-cor-doc",
+            "/api/correlation/update/doc/u3-cor-doc",
             Some(json!({"relatedDocId": "u3-cor-target", "correlationType": "reference"})),
             None,
         )

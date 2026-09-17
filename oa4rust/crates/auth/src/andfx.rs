@@ -17,7 +17,7 @@ use crate::password::des3_decrypt_ede2;
 // 有效期：5 分钟（与 SSO 保持一致）
 //
 // 端点：
-//   GET /jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}
+//   GET /api/andfx/moa/sso/token/{token}/enter/{enterId}
 // ──────────────────────────────────────────────────────────────────────────────
 
 const ANDFX_TOKEN_TTL_MINUTES: i64 = 5;
@@ -36,7 +36,7 @@ pub struct AndfxPersonInfo {
     pub icon: Option<String>,
 }
 
-/// GET /jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}
+/// GET /api/andfx/moa/sso/token/{token}/enter/{enterId}
 pub async fn andfx_moa_sso(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,

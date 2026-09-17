@@ -67,7 +67,7 @@ pub async fn list_control_sections(
         .collect();
 
     let total_sections = sections.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(sections),
         total_sections as i64,
         0,

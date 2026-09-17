@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/get/ai/control/config")
+                    .uri("/api/ai_assemble_control/get/ai/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/list/ai/models")
+                    .uri("/api/ai_assemble_control/list/ai/models")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/update/ai/control/config")
+                    .uri("/api/ai_assemble_control/update/ai/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/get/usage/stats")
+                    .uri("/api/ai_assemble_control/get/usage/stats")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/base/config")
+                    .uri("/api/ai_assemble_control/config/base/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/assemble/control/config/create/mcp")
+                    .uri("/api/ai/assemble/control/config/create/mcp")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/create/model")
+                    .uri("/api/ai_assemble_control/config/create/model")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/assemble/control/config/delete/mcp/test-id")
+                    .uri("/api/ai/assemble/control/config/delete/mcp/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/delete/model/flag")
+                    .uri("/api/ai_assemble_control/config/delete/model/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/get/mcp/ext/flag")
+                    .uri("/api/ai_assemble_control/config/get/mcp/ext/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/assemble/control/config/get/mcp/test-id")
+                    .uri("/api/ai/assemble/control/config/get/mcp/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/get/model/flag")
+                    .uri("/api/ai_assemble_control/config/get/model/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -265,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/list/enable/model")
+                    .uri("/api/ai_assemble_control/config/list/enable/model")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -286,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/assemble/control/config/list/mcp/paging/test-id/size/test-id")
+                    .uri("/api/ai/assemble/control/config/list/mcp/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -307,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/list/model/paging/test-id/size/test-id")
+                    .uri("/api/ai_assemble_control/config/list/model/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -328,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/save")
+                    .uri("/api/ai_assemble_control/config/save")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -349,7 +349,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/assemble/control/config/update/mcp/test-id")
+                    .uri("/api/ai/assemble/control/config/update/mcp/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -370,7 +370,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/update/model/flag")
+                    .uri("/api/ai_assemble_control/config/update/model/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -391,7 +391,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/copy/file")
+                    .uri("/api/ai_assemble_control/file/copy/file")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -412,7 +412,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/delete/flag")
+                    .uri("/api/ai_assemble_control/file/delete/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -433,7 +433,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/list")
+                    .uri("/api/ai_assemble_control/file/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -454,7 +454,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/list/paging/test-id/size/test-id")
+                    .uri("/api/ai_assemble_control/file/list/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -475,7 +475,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/upload")
+                    .uri("/api/ai_assemble_control/file/upload")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -496,7 +496,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/flag")
+                    .uri("/api/ai_assemble_control/file/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -517,7 +517,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/id/download")
+                    .uri("/api/ai_assemble_control/file/id/download")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -538,7 +538,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/id/download/scale")
+                    .uri("/api/ai_assemble_control/file/id/download/scale")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -559,7 +559,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId")
+                    .uri("/api/ai_assemble_control/index/cms/doc/with/app/appId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -580,7 +580,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/cms/doc/docId")
+                    .uri("/api/ai_assemble_control/index/cms/doc/docId")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -601,7 +601,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/delete/flag")
+                    .uri("/api/ai_assemble_control/index/delete/flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -622,7 +622,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/list/paging/test-id/size/test-id")
+                    .uri("/api/ai_assemble_control/index/list/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -643,7 +643,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/sync/to/knowledge")
+                    .uri("/api/ai_assemble_control/index/sync/to/knowledge")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

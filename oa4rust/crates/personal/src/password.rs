@@ -16,7 +16,7 @@ pub struct ChangePasswordRequest {
     pub new_password: String,
 }
 
-/// 修改当前登录用户密码（PUT /jaxrs/person/password，Java PasswordAction 契约）
+/// 修改当前登录用户密码（PUT /api/person/password，o2server PasswordAction 契约）
 ///
 /// 按会话唯一标识解析当前用户，校验旧密码（verify_password 支持 bcrypt 前缀
 /// 及既有 MD5/DES 旧哈希），新密码使用 hash_password 写入（统一 bcrypt 前缀）。

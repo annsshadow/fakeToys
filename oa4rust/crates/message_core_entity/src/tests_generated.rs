@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/core/entity/list")
+                    .uri("/api/message/core/entity/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
