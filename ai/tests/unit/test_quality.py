@@ -438,3 +438,48 @@ class TestQualityExtended:
         assert "total_samples" in report
         assert "passed_samples" in report
         assert report["total_samples"] == 2
+
+    def test_batch_score_multiple_items(self):
+        """多条数据批量评分"""
+        scorer = QualityScorer()
+        items = [
+            {"original": "q1", "generated": "q1", "output": "a1"},
+            {"original": "q2", "generated": "q2", "output": "a2"},
+            {"original": "q3", "generated": "q3", "output": "a3"},
+        ]
+        scores = scorer.batch_score(items)
+        assert len(scores) == 3
+
+    def test_batch_score_with_existing(self):
+        """带已有生成的批量评分"""
+        scorer = QualityScorer()
+        items = [
+            {"original": "q1", "generated": "q1", "output": "a1"},
+        ]
+        scores = scorer.batch_score(items, existing_generated=["existing"])
+        assert len(scores) == 1
+
+    def test_ngram_similarity(self):
+        """n-gram 相似度计算"""
+        scorer = QualityScorer()
+        sim = scorer._ngram_similarity("hello world", "hello world")
+        assert sim == 1.0
+
+    def test_ngram_similarity_different(self):
+        """不同文本 n-gram 相似度"""
+        scorer = QualityScorer()
+        sim = scorer._ngram_similarity("hello", "world")
+        assert sim < 1.0
+
+    def test_calculate_diversity_empty(self):
+        """空已有文本多样性"""
+        scorer = QualityScorer()
+        diversity = scorer._calculate_diversity("text", [])
+        assert diversity == 1.0
+
+    def test_calculate_diversity_identical(self):
+        """相同文本多样性（fallback 模式）"""
+        scorer = QualityScorer()
+        scorer._model = "fallback"
+        diversity = scorer._calculate_diversity("text", ["text"])
+        assert diversity == 0.0
