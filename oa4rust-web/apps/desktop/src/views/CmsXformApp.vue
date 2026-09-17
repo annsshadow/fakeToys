@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>CMS XForm</h1>
-        <p class="subtitle">/jaxrs/cms/assemble/control/xform/*（x_cms_form）</p>
+        <p class="subtitle">/api/cms/assemble/control/xform/*（x_cms_form）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -59,8 +59,8 @@ interface Item {
   status?: string
 }
 
-const listEp = '/jaxrs/cms/assemble/control/xform/list'
-const createEp = '/jaxrs/cms/assemble/control/xform/create'
+const listEp = '/api/cms/assemble/control/xform/list'
+const createEp = '/api/cms/assemble/control/xform/create'
 const qk = ['CmsXform', 'list']
 
 const search = ref(''),
@@ -116,7 +116,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.post(`/jaxrs/cms/assemble/control/xform/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/cms/assemble/control/xform/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -131,7 +131,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/cms/assemble/control/xform/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/cms/assemble/control/xform/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

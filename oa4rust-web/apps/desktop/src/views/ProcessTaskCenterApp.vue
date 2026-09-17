@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>流程任务中心</h1>
-        <p class="subtitle">/jaxrs/processplatform/service/processing/task/*（x_task）</p>
+        <p class="subtitle">/api/processplatform/service/processing/task/*（x_task）</p>
       </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
@@ -51,7 +51,7 @@ interface Item {
   endTime?: string
 }
 
-const listEp = '/jaxrs/processplatform/service/processing/task/list'
+const listEp = '/api/processplatform/service/processing/task/list'
 const qk = ['ProcessTaskCenter', 'list']
 
 const search = ref(''),
@@ -86,7 +86,7 @@ const filtered = computed(() =>
 )
 
 const startM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/processplatform/service/processing/task/processing/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/processplatform/service/processing/task/processing/${id}`),
   onMutate: (id) => (processingId.value = id),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
   onSettled: () => (processingId.value = null),
@@ -95,14 +95,14 @@ function startProcessing(item: Item) {
   startM.mutate(item.id)
 }
 const urgeM = useMutation({
-  mutationFn: async (id: string) => api.get(`/jaxrs/processplatform/service/processing/task/urge/${id}`),
+  mutationFn: async (id: string) => api.get(`/api/processplatform/service/processing/task/urge/${id}`),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
 })
 function urge(item: Item) {
   urgeM.mutate(item.id)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.delete(`/jaxrs/processplatform/service/processing/task/${id}`),
+  mutationFn: async (id: string) => api.delete(`/api/processplatform/service/processing/task/${id}`),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
 })
 async function deleteTask(item: Item) {

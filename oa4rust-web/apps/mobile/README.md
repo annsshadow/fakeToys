@@ -26,14 +26,14 @@ monorepo 的一个 workspace 成员（`apps/mobile`），与桌面端 `apps/desk
 - **精选端点**（`src/services/index.ts`）：只暴露适合移动端的高频模块
   （auth / process / message / file / org / general），端点全部对齐 `oa4rust`
   后端**已注册的 axum 路由**（与各 crate 的 `routes.rs` / `u2_router.rs` 一致，
-  含桌面 E2E 实跑通过的 `/jaxrs/task/{id}/complete|reject` 审批与
+  含桌面 E2E 实跑通过的 `/api/task/{id}/complete|reject` 审批与
   `message im` 会话收发族），不把 3892 条路由全量打进移动包。
 
 ## 鉴权模型（重要）
 
 `oa4rust` 后端采用 **HttpOnly Cookie** 会话：
 
-- **H5 目标**：同源部署或经 dev-server 代理（`/jaxrs` → `http://localhost:3000`），
+- **H5 目标**：同源部署或经 dev-server 代理（`/api` → `http://localhost:3000`），
   请求携带 `withCredentials`，Cookie 鉴权直接可用。
 - **原生 / 小程序目标**：需 `setApiBase` 指向后端绝对地址（`import.meta.env.VITE_OA_API_BASE`）。
   Cookie 会话在原生容器 / 小程序中不会自动跨域携带，须由后端提供配套的

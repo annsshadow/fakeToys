@@ -13,7 +13,7 @@ const uni = (
 ).default
 
 // OA4Rust 移动端（uni-app）构建配置。
-// H5 目标经本地 dev server 代理 /jaxrs、/ws 到 oa4rust 后端（默认 :3000）。
+// H5 目标经本地 dev server 代理 /api、/ws 到 oa4rust 后端（默认 :3000）。
 // 原生 App / 小程序目标通过 setApiBase 指向后端绝对地址（见 src/main.ts）。
 export default defineConfig({
   plugins: uni(),
@@ -21,7 +21,7 @@ export default defineConfig({
     port: 5174,
     host: true,
     proxy: {
-      '/jaxrs': { target: 'http://localhost:3000', changeOrigin: true },
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
       '/ws': { target: 'ws://localhost:3000', ws: true },
     },
   },

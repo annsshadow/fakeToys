@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>流程 XForm</h1>
-        <p class="subtitle">/jaxrs/processplatform/assemble/designer/xform/*（x_pp_xform，迁移 097）</p>
+        <p class="subtitle">/api/processplatform/assemble/designer/xform/*（x_pp_xform，迁移 097）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -60,8 +60,8 @@ interface Item {
   updateTime?: string
 }
 
-const listEp = '/jaxrs/processplatform/assemble/designer/xform/list'
-const createEp = '/jaxrs/processplatform/assemble/designer/xform/create'
+const listEp = '/api/processplatform/assemble/designer/xform/list'
+const createEp = '/api/processplatform/assemble/designer/xform/create'
 const qk = ['ProcessXform', 'list']
 
 const search = ref(''),
@@ -118,7 +118,7 @@ const saveM = useMutation({
     saving.value = true
     try {
       if (editingId.value)
-        return api.post(`/jaxrs/processplatform/assemble/designer/xform/save/${editingId.value}`, payload)
+        return api.post(`/api/processplatform/assemble/designer/xform/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -133,7 +133,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/processplatform/assemble/designer/xform/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/processplatform/assemble/designer/xform/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>查询浏览器</h1>
-        <p class="subtitle">/jaxrs/query/assemble/surface/explorer/list（x_query_view，只读）</p>
+        <p class="subtitle">/api/query/assemble/surface/explorer/list（x_query_view，只读）</p>
       </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
@@ -39,7 +39,7 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/query/assemble/surface/explorer/list'
+const listEp = '/api/query/assemble/surface/explorer/list'
 const qk = ['QueryExplorer', 'list']
 
 const search = ref('')

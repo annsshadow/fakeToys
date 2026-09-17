@@ -22,7 +22,7 @@ export function auditApiResponses(page: Page): ResponseAudit {
   const failures: string[] = []
   page.on('response', (response) => {
     const url = new URL(response.url())
-    if (!url.pathname.startsWith('/jaxrs/')) return
+    if (!url.pathname.startsWith('/api/')) return
     if (response.status() === 404 || response.status() >= 500) failures.push(`${response.status()} ${url.pathname}`)
   })
 
@@ -44,7 +44,7 @@ export async function expectSuccessfulWrite(response: Response): Promise<unknown
 }
 
 export async function assertNo404OrServerErrors(audit: ResponseAudit): Promise<void> {
-  expect(audit.failures, 'Every exercised /jaxrs route must exist and avoid server errors').toEqual([])
+  expect(audit.failures, 'Every exercised /api route must exist and avoid server errors').toEqual([])
 }
 
 export function uniqueFlag(prefix: string): string {

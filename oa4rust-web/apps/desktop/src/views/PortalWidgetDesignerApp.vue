@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>门户组件设计器</h1>
-        <p class="subtitle">/jaxrs/portal/assemble/designer/widget/*（x_portal_widget）</p>
+        <p class="subtitle">/api/portal/assemble/designer/widget/*（x_portal_widget）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -61,8 +61,8 @@ interface Item {
   createTime?: string
 }
 
-const listEp = '/jaxrs/portal/assemble/designer/widget/list'
-const createEp = '/jaxrs/portal/assemble/designer/widget/create'
+const listEp = '/api/portal/assemble/designer/widget/list'
+const createEp = '/api/portal/assemble/designer/widget/create'
 const qk = ['PortalWidgetDesigner', 'list']
 
 const search = ref(''),
@@ -119,7 +119,7 @@ const saveM = useMutation({
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
-      if (editingId.value) return api.post(`/jaxrs/portal/assemble/designer/widget/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/portal/assemble/designer/widget/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -134,7 +134,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/portal/assemble/designer/widget/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/portal/assemble/designer/widget/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

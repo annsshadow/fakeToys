@@ -2,7 +2,7 @@
  * 移动端「发起流程」表单解析（简版渲染 + 复杂控件）。
  *
  * 桌面 XformRuntime 依赖 DOM（DOMParser）与完整控件集，不适配 uni-app 跨端。
- * 这里做"容错解析 + 移动端可渲染"：从 `GET /jaxrs/form/{flag}` 返回的表单定义
+ * 这里做"容错解析 + 移动端可渲染"：从 `GET /api/form/{flag}` 返回的表单定义
  * 中提取字段，字段 key/label/必填/选项/默认值均取自后端 moduleList，不做虚构。
  * 与桌面 contracts/xform.ts 的 moduleList 契约保持一致（type 归一化到小写匹配）。
  *

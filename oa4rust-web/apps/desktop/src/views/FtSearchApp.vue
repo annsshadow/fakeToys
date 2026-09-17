@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>全文搜索引擎</h1>
-        <p class="subtitle">/jaxrs/ftsearch/*（x_ftsearch_document）</p>
+        <p class="subtitle">/api/ftsearch/*（x_ftsearch_document）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -64,8 +64,8 @@ interface FtForm {
   body?: string
 }
 
-const listEp = '/jaxrs/ftsearch/list'
-const createEp = '/jaxrs/ftsearch/create'
+const listEp = '/api/ftsearch/list'
+const createEp = '/api/ftsearch/create'
 const qk = ['FtSearch', 'list']
 
 const search = ref(''),
@@ -126,7 +126,7 @@ const saveM = useMutation({
         source: form.value.source ?? '',
         body: form.value.body ?? '',
       }
-      if (editingId.value) return api.post(`/jaxrs/ftsearch/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/ftsearch/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -141,7 +141,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/ftsearch/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/ftsearch/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

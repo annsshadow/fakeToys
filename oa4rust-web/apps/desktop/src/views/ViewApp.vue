@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>视图管理</h1>
-      <p class="subtitle">/jaxrs/view/*</p>
+      <p class="subtitle">/api/view/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -67,7 +67,7 @@ const cols = ref<string[]>([])
 async function loadViews() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/view/list')
+    const r = await api.get('/api/view/list')
     views.value = r.data ?? []
   } catch {
     views.value = []
@@ -82,7 +82,7 @@ async function viewData(v: ViewItem) {
   dataResult.value = []
   cols.value = []
   try {
-    const r = await api.post(`/jaxrs/view/viewdata/${v.id}`, {})
+    const r = await api.post(`/api/view/viewdata/${v.id}`, {})
     const list = r.data?.list ?? r.data ?? []
     dataResult.value = Array.isArray(list) ? list : []
     if (dataResult.value.length > 0) cols.value = Object.keys(dataResult.value[0])

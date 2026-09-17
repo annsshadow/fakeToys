@@ -196,7 +196,7 @@ import { confirmMsg, toast } from '../utils/toast'
 const session = useSession()
 const qc = useQueryClient()
 
-/** 后端分页端点回 {data:{data:rows,total}}（Java ActionResult 信封），
+/** 后端分页端点回 {data:{data:rows,total}}（o2server ActionResult 信封），
  *  部分端点直接回数组；统一解包为行数组（与 ProcessWork 的 paged-aware 解包同型）。 */
 function listRows(resp: { data?: unknown }): unknown[] {
   const p = resp.data
@@ -262,7 +262,7 @@ const pageSize = 20
 const { data: sectionsData, isLoading: sectionsLoading } = useQuery({
   queryKey: ['bbs', 'sections'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/bbs/assemble/control/section/list')
+    const resp = await api.get('/api/bbs/assemble/control/section/list')
     return ((resp as any)?.data ?? []) as Section[]
   },
   staleTime: 60 * 1000,
@@ -318,10 +318,10 @@ async function saveSection(): Promise<void> {
   try {
     if (sectionModalMode.value === 'edit' && sectionModalTarget.value?.id) {
       // POST 别名（后端 put+post 双注册）
-      await api.post(`/jaxrs/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`, { name })
+      await api.post(`/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}`, { name })
       toast.success('版块已重命名')
     } else {
-      await api.post('/jaxrs/bbs/assemble/control/section/create', { name })
+      await api.post('/api/bbs/assemble/control/section/create', { name })
       toast.success('版块已创建')
     }
     closeSectionModal()
@@ -338,7 +338,7 @@ async function deleteSection(sec: Section): Promise<void> {
   if (!ok) return
   sectionBusy.value = true
   try {
-    await api.post(`/jaxrs/bbs/assemble/control/section/delete/${sec.id}`)
+    await api.post(`/api/bbs/assemble/control/section/delete/${sec.id}`)
     if (selectedSection.value?.id === sec.id) {
       selectedSection.value = null
     }
@@ -358,7 +358,7 @@ async function deleteSection(sec: Section): Promise<void> {
 //  · 全部/推荐/精华 → PUT subject/{index,recommended,creamed}/list/page/{p}/count/{n}
 //  · 我的 → POST subject/filter/listsubjectinfo/page/{p}/count/{n} body.creator=本人
 //  · 关键词 → PUT subject/search/list/page/1/count/{n} body.keyword
-//  · 版块筛选 → GET /jaxrs/bbs/subject/list/{sectionId}（bbs crate 已注册）
+//  · 版块筛选 → GET /api/bbs/subject/list/{sectionId}（bbs crate 已注册）
 const {
   data: topicsData,
   isLoading: topicsLoading,
@@ -368,25 +368,25 @@ const {
   queryFn: async () => {
     let resp: { data?: unknown }
     if (searchQuery.value) {
-      resp = (await api.put(`/jaxrs/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`, {
+      resp = (await api.put(`/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}`, {
         keyword: searchQuery.value,
       })) as { data?: unknown }
     } else if (selectedSection.value) {
-      resp = (await api.get(`/jaxrs/bbs/subject/list/${selectedSection.value.id}`)) as { data?: unknown }
+      resp = (await api.get(`/api/bbs/subject/list/${selectedSection.value.id}`)) as { data?: unknown }
     } else if (activeTab.value === 'recommended') {
       resp = (await api.put(
-        `/jaxrs/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}`,
+        `/api/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}`,
         {},
       )) as { data?: unknown }
     } else if (activeTab.value === 'cream') {
       resp = (await api.put(
-        `/jaxrs/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`,
+        `/api/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}`,
         {},
       )) as { data?: unknown }
     } else if (activeTab.value === 'my' && mySub.value === 'replies') {
       // 我的回复（论坛个人主页）：PUT 参数化路由（x_bbs_reply，creator/author_id = 登录人）
       resp = (await api.put(
-        `/jaxrs/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}`,
+        `/api/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}`,
         {},
       )) as { data?: unknown }
       const replyRows = listRows(resp) as Array<Record<string, unknown>>
@@ -403,12 +403,12 @@ const {
       return { rows: replyTopics, more: replyTopics.length >= pageSize }
     } else if (activeTab.value === 'my') {
       resp = (await api.post(
-        `/jaxrs/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`,
+        `/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}`,
         { creator: session.user?.unique ?? '' },
       )) as { data?: unknown }
     } else {
       resp = (await api.put(
-        `/jaxrs/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`,
+        `/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}`,
         {},
       )) as { data?: unknown }
     }
@@ -438,7 +438,7 @@ const { data: repliesData } = useQuery({
     if (!viewingTopic.value) return []
     // 我的回复卡片打开时按源主题（topicRef）拉回复
     const subjectId = viewingTopic.value.topicRef || viewingTopic.value.id
-    const resp = await api.put('/jaxrs/bbs/assemble/control/reply/filter/list/page/1/count/50', {
+    const resp = await api.put('/api/bbs/assemble/control/reply/filter/list/page/1/count/50', {
       subjectId,
     })
     return ((resp as any)?.data ?? []) as Reply[]
@@ -450,11 +450,11 @@ watch(repliesData, (d) => {
   if (d) replies.value = d
 })
 
-// 创建帖子（后端已注册路由为 /jaxrs/bbs/subject/create，非 assemble/control 旧面）
+// 创建帖子（后端已注册路由为 /api/bbs/subject/create，非 assemble/control 旧面）
 // authorId 取登录人 unique：后端 subject/create 不回落会话，缺省则「我的主题」过滤不到本人帖。
 const createMutation = useMutation({
   mutationFn: (data: { sectionId: string; title: string; content: string }) =>
-    api.post('/jaxrs/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
+    api.post('/api/bbs/subject/create', { ...data, authorId: session.user?.unique ?? '' }),
   onSuccess: () => {
     showNewTopic.value = false
     refetch()
@@ -494,7 +494,7 @@ function createTopic(): void {
 // 发布回复
 const replyMutation = useMutation({
   mutationFn: (content: string) =>
-    api.post('/jaxrs/bbs/assemble/control/reply/create', {
+    api.post('/api/bbs/assemble/control/reply/create', {
       subjectId: viewingTopic.value?.topicRef || viewingTopic.value?.id,
       content,
     }),
@@ -528,14 +528,14 @@ function handleSearch(): void {
   page.value = 1
 }
 
-/** 打开详情：列表行只有摘要字段，补拉 /jaxrs/bbs/subject/view/{id} 全量（含正文）；
+/** 打开详情：列表行只有摘要字段，补拉 /api/bbs/subject/view/{id} 全量（含正文）；
  *  我的回复卡片按 topicRef 点开源主题。 */
 async function openTopic(topic: Topic): Promise<void> {
   viewingTopic.value = topic
   replies.value = []
   const targetId = topic.topicRef || topic.id
   try {
-    const resp = (await api.get(`/jaxrs/bbs/subject/view/${targetId}`)) as { data?: unknown }
+    const resp = (await api.get(`/api/bbs/subject/view/${targetId}`)) as { data?: unknown }
     const full = resp.data as Topic | null
     if (full && full.id) {
       viewingTopic.value = { ...topic, ...full, author: (full.author as string | undefined) ?? full.authorId }

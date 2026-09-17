@@ -2,7 +2,7 @@
   <div class="attendance-view">
     <div class="view-header glass-card">
       <h1>考勤管理</h1>
-      <p class="subtitle">/jaxrs/attendance/assemble/control/*</p>
+      <p class="subtitle">/api/attendance/assemble/control/*</p>
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
         <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
@@ -95,7 +95,7 @@ const { data } = useQuery({
   queryKey: ['att', 'recs', month, page],
   queryFn: () =>
     api
-      .get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`)
+      .get(`/api/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`)
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
@@ -104,7 +104,7 @@ const { data } = useQuery({
 })
 useQuery({
   queryKey: ['att', 'apps'],
-  queryFn: () => api.get('/jaxrs/attendance/appeal/list').then((r: any) => (appeals.value = (r.data ?? []) as A[])),
+  queryFn: () => api.get('/api/attendance/appeal/list').then((r: any) => (appeals.value = (r.data ?? []) as A[])),
   staleTime: 120000,
 })
 function loadData() {
@@ -132,7 +132,7 @@ function appealStatus(s?: string) {
 }
 const am = useMutation({
   mutationFn: ({ id, status }: { id: string; status: string }) =>
-    api.post('/jaxrs/attendance/appeal/audit', { id, status }),
+    api.post('/api/attendance/appeal/audit', { id, status }),
   onSuccess: () => qc.invalidateQueries({ queryKey: ['att', 'apps'] }),
 })
 function audit(a: A, action: string) {
@@ -148,7 +148,7 @@ async function exportData() {
     const ym = month.value || new Date().toISOString().slice(0, 7)
     const [y, m] = ym.split('-')
     const endDate = new Date(Number(y), Number(m), 0).toISOString().slice(0, 10)
-    const r: any = await api.post('/jaxrs/attendance/assemble/control/v2/detail/statistic/export/filter', {
+    const r: any = await api.post('/api/attendance/assemble/control/v2/detail/statistic/export/filter', {
       startDate: `${ym}-01`,
       endDate,
       person: '',
@@ -176,7 +176,7 @@ onMounted(loadData)
 const ruleList = ref<Array<{ id: string; name?: string; type?: string; config?: string }>>([])
 async function loadRules() {
   try {
-    const r = await api.get('/jaxrs/attendance/assemble/control/rule/list')
+    const r = await api.get('/api/attendance/assemble/control/rule/list')
     ruleList.value = (r.data ?? []) as any[]
   } catch {
     ruleList.value = []
@@ -186,7 +186,7 @@ async function createRule() {
   const name = prompt('规则名称:')
   if (!name) return
   try {
-    await api.post('/jaxrs/attendance/assemble/control/rule/create', { name })
+    await api.post('/api/attendance/assemble/control/rule/create', { name })
     loadRules()
   } catch (e: any) {
     toast.error('创建失败: ' + (e?.message ?? ''))
@@ -195,7 +195,7 @@ async function createRule() {
 async function deleteRule(rule: any) {
   if (!(await confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？'))) return
   try {
-    await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
+    await api.delete('/api/attendance/assemble/control/rule/' + rule.id)
     loadRules()
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))
@@ -209,7 +209,7 @@ async function submitAppeal() {
   if (!start || !end) return
   try {
     // 后端 appeal/submit 契约：personId + appealDate + reason（单日期，无结束日字段）
-    await api.post('/jaxrs/attendance/appeal/submit', {
+    await api.post('/api/attendance/appeal/submit', {
       personId: session.state.user?.unique ?? '',
       appealDate: start,
       reason: type,
@@ -221,7 +221,7 @@ async function submitAppeal() {
 }
 async function loadAppeals() {
   try {
-    const r = await api.get('/jaxrs/attendance/appeal/list')
+    const r = await api.get('/api/attendance/appeal/list')
     appeals.value = (r.data ?? []) as A[]
   } catch {
     appeals.value = []
@@ -231,7 +231,7 @@ loadRules()
 
 async function loadStatistics() {
   try {
-    const r = await api.get('/jaxrs/attendance/assemble/control/statistics/list?month=' + month.value)
+    const r = await api.get('/api/attendance/assemble/control/statistics/list?month=' + month.value)
     attStats.value = r.data ?? []
   } catch {
     attStats.value = []

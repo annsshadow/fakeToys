@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>流程实例管理</h1>
-        <p class="subtitle">/jaxrs/processplatform/assemble/surface/process_manager/list（x_process_definition，只读）</p>
+        <p class="subtitle">/api/processplatform/assemble/surface/process_manager/list（x_process_definition，只读）</p>
       </div>
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
@@ -45,7 +45,7 @@ interface Item {
   updateTime?: string
 }
 
-const listEp = '/jaxrs/processplatform/assemble/surface/process_manager/list'
+const listEp = '/api/processplatform/assemble/surface/process_manager/list'
 const qk = ['ProcessManager', 'list']
 
 const search = ref('')

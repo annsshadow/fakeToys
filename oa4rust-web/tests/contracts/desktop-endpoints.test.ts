@@ -6,7 +6,7 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
 /**
  * Desktop endpoint contract guard.
  *
- * Every /jaxrs literal in apps/desktop/src is OK when ANY holds:
+ * Every /api literal in apps/desktop/src is OK when ANY holds:
  *   (a) it matches a route the oa4rust backend registers (REGISTERED_BACKEND_ROUTES),
  *   (b) it is an explicitly acknowledged backend parity gap (KNOWN_BACKEND_GAPS), or
  *   (c) it is a bare base prefix (trailing /) used by a dynamic request helper.
@@ -18,7 +18,8 @@ import { REGISTERED_BACKEND_ROUTES } from './backend-registered-routes.fixture'
 // 2026-09-15：原 27 条缺口家族已在 oa4rust 各 crate 实装（handler + 迁移 093-096），
 // 并登记进 backend-registered-routes.fixture.ts，故此处清空。若日后新增未实现端点，
 // 在此显式声明（不虚构），并在 fixture 之外由本守卫拦下。
-const KNOWN_BACKEND_GAPS: string[] = []
+// 2026-09-17：表单设计器数据源示例默认值指向的两条端点（后端未注册），显式声明。
+const KNOWN_BACKEND_GAPS: string[] = ['/api/users/list', '/api/departments/tree']
 
 const desktopSrcRoot = resolve(import.meta.dirname, '../../apps/desktop/src')
 
@@ -36,7 +37,7 @@ function collectPaths(): string[] {
   const paths = new Set<string>()
   for (const file of files) {
     const text = readFileSync(file, 'utf8')
-    for (const m of text.matchAll(/\/jaxrs\/[A-Za-z0-9_\-/{}$.]+/g)) paths.add(m[0])
+    for (const m of text.matchAll(/\/api\/[A-Za-z0-9_\-/{}$.]+/g)) paths.add(m[0])
   }
   return [...paths]
 }
@@ -76,7 +77,7 @@ function isKnownGap(path: string): boolean {
 }
 
 describe('desktop endpoints are registered or acknowledged gaps', () => {
-  it('no unregistered, non-bare /jaxrs endpoint outside KNOWN_BACKEND_GAPS', () => {
+  it('no unregistered, non-bare /api endpoint outside KNOWN_BACKEND_GAPS', () => {
     const flagged = collectPaths().filter((p) => {
       if (p.endsWith('/')) return false // bare dynamic base prefix
       const dyn = p.includes('${')

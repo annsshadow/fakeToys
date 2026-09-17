@@ -3,7 +3,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>公共组件库</h1>
-        <p class="subtitle">/jaxrs/general/assemble/control/*（x_general_assemble_control_config）</p>
+        <p class="subtitle">/api/general/assemble/control/*（x_general_assemble_control_config）</p>
       </div>
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
@@ -71,8 +71,8 @@ interface GeneralForm {
   allowRegistration?: boolean
 }
 
-const listEp = '/jaxrs/general/assemble/control/list'
-const createEp = '/jaxrs/general/assemble/control/create'
+const listEp = '/api/general/assemble/control/list'
+const createEp = '/api/general/assemble/control/create'
 const qk = ['Common', 'list']
 
 const search = ref(''),
@@ -140,7 +140,7 @@ const saveM = useMutation({
         maintenanceMode: String(Boolean(form.value.maintenanceMode)),
         allowRegistration: String(Boolean(form.value.allowRegistration)),
       }
-      if (editingId.value) return api.post(`/jaxrs/general/assemble/control/save/${editingId.value}`, payload)
+      if (editingId.value) return api.post(`/api/general/assemble/control/save/${editingId.value}`, payload)
       return api.post(createEp, payload)
     } finally {
       saving.value = false
@@ -155,7 +155,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.post(`/jaxrs/general/assemble/control/delete/${id}`),
+  mutationFn: async (id: string) => api.post(`/api/general/assemble/control/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },

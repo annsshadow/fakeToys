@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>查询视图</h1>
-      <p class="subtitle">/jaxrs/queryview/* — 执行查询视图、导出Excel</p>
+      <p class="subtitle">/api/queryview/* — 执行查询视图、导出Excel</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -74,7 +74,7 @@ const execResult = ref<Record<string, unknown>[]>([])
 async function doSearch() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/queryview/search', { params: { keyword: keyword.value } })
+    const r = await api.get('/api/queryview/search', { params: { keyword: keyword.value } })
     views.value = r.data ?? []
   } catch {
     views.value = []
@@ -86,7 +86,7 @@ async function doSearch() {
 async function loadViews() {
   loading.value = true
   try {
-    const r = await api.post('/jaxrs/queryview/view/list/paging/1/20', {})
+    const r = await api.post('/api/queryview/view/list/paging/1/20', {})
     views.value = r.data?.list ?? r.data ?? []
   } catch {
     views.value = []
@@ -100,7 +100,7 @@ async function executeView(v: ViewItem) {
   execLoading.value = true
   execResult.value = []
   try {
-    const r = await api.post(`/jaxrs/queryview/execute/${v.flag || v.id}`, {})
+    const r = await api.post(`/api/queryview/execute/${v.flag || v.id}`, {})
     execResult.value = r.data?.list ?? r.data ?? []
   } catch (e: any) {
     toast.error('执行失败: : ' + (e?.message ?? '未知错误'))
@@ -111,7 +111,7 @@ async function executeView(v: ViewItem) {
 
 async function exportExcel(v: ViewItem) {
   try {
-    const r = await api.get(`/jaxrs/queryview/excel/${v.flag || v.id}`)
+    const r = await api.get(`/api/queryview/excel/${v.flag || v.id}`)
     if (r.data?.url) {
       window.open(r.data.url, '_blank')
     } else {
@@ -157,12 +157,12 @@ const api_viewfiel_260_data = ref<any[]>([])
 const api_viewreco_372_data = ref<any[]>([])
 const api_viewrecord_person_p_1_data = ref<any[]>([])
 const api_document_d_1_has_view_data = ref<any[]>([])
-const api_jaxrs_queryview__77_data = ref<any[]>([])
-const api_jaxrs_queryview__469_data = ref<any[]>([])
-const api_jaxrs_queryview__994_data = ref<any[]>([])
-const api_jaxrs_queryview__229_data = ref<any[]>([])
-const api_jaxrs_queryview__320_data = ref<any[]>([])
-const api_jaxrs_queryview__430_data = ref<any[]>([])
+const api_queryview__77_data = ref<any[]>([])
+const api_queryview__469_data = ref<any[]>([])
+const api_queryview__994_data = ref<any[]>([])
+const api_queryview__229_data = ref<any[]>([])
+const api_queryview__320_data = ref<any[]>([])
+const api_queryview__430_data = ref<any[]>([])
 </script>
 
 <style scoped>
