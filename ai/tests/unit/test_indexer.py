@@ -37,8 +37,7 @@ class TestDatasetIndexer:
         """测试精确搜索"""
         indexer = DatasetIndexer(sample_dataset)
         results = indexer.search_exact("instruction", "如何申请租房？")
-        assert len(results) == 2  # 原始值和小写版本
-        assert 0 in results
+        assert results == [0]  # 中文值小写不变，去重后每个索引只记录一次
     
     def test_search_contains(self, sample_dataset):
         """测试包含搜索"""
