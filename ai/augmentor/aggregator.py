@@ -110,8 +110,6 @@ class DataAggregator:
             return AggregationResult(aggregated=[], source_counts={})
 
         source_lists = list(datasets.values())
-        if not source_lists:
-            return AggregationResult(aggregated=[], source_counts={})
 
         key_sets = [
             {self._key_of(item) for item in items}
