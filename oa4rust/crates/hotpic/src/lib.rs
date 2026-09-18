@@ -72,8 +72,14 @@ pub async fn get_by_id(
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
+                    // create_time 可为 NULL（migrations/053 的 seed 行即未提供该列），
+                    // 故必须按 Option 读取；用非 Option 的 String 会在 NULL 上 panic
+                    // （error deserializing column create_time）。与上方 image_url 同惯例。
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -108,8 +114,12 @@ pub async fn list_by_application_and_info_id(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
+                    // 同上：create_time 可为 NULL，必须按 Option 读取。
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
