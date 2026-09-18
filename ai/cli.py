@@ -270,6 +270,14 @@ def build_parser() -> argparse.ArgumentParser:
     sanitize_parser.add_argument("--extra", action="store_true",
                                  help="启用额外模式（信用卡号/URL，误伤面较大）")
 
+    # 泄漏检测命令
+    leak_parser = subparsers.add_parser("check-leakage", help="训练/测试集泄漏检测")
+    leak_parser.add_argument("--train", type=str, required=True, help="训练集文件路径")
+    leak_parser.add_argument("--test", type=str, required=True, help="测试集文件路径")
+    leak_parser.add_argument("--fields", type=str, nargs="+", default=["instruction"], help="比较字段")
+    leak_parser.add_argument("--fuzzy-threshold", type=float, default=0.8, help="近似匹配阈值")
+    leak_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
+
     # 增强搜索命令
     search_enhanced_parser = subparsers.add_parser("search-enhanced", help="增强搜索")
     search_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
@@ -963,6 +971,28 @@ def main():
             _print(report.to_dict())
             print(f"已脱敏 {report.touched_items}/{report.total_items} 条，"
                   f"命中 {report.total_matches} 处，输出到 {args.output}")
+
+        # ============ 泄漏检测 ============
+        elif args.command == "check-leakage":
+            from augmentor.leakage import detect_leakage
+
+            train_items = _load_items(args.train)
+            test_items = _load_items(args.test)
+            report = detect_leakage(
+                train_items,
+                test_items,
+                fields=args.fields,
+                fuzzy_threshold=args.fuzzy_threshold,
+            )
+            _print(report.to_dict())
+            if report.is_clean:
+                print("未检测到训练/测试集泄漏")
+            else:
+                print(f"检测到 {report.total_leaks} 条泄漏（精确 {report.exact_leaks} / "
+                      f"近似 {report.fuzzy_leaks}），泄漏率 {report.leak_rate:.2%}")
+            if args.output:
+                _dump_json(report.to_dict(), args.output)
+                print(f"泄漏报告已保存到 {args.output}")
 
         # ============ 增强搜索 ============
         elif args.command == "search-enhanced":
