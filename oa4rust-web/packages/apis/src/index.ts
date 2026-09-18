@@ -11,12 +11,35 @@ import { api, type PagedResponse } from '@oa4rust/sdk'
 /** Unified request helper - reduces duplication across all API modules */
 export const createRequest = (prefix: string) => (method: string, path: string, body?: unknown) => {
   const url = prefix + path
-  if (method === 'GET') return api.get(url)
-  if (method === 'POST') return api.post(url, body)
-  if (method === 'PUT') return api.put(url, body)
-  return api.delete(url)
-}
+  const methodUpper = method.toUpperCase()
+  const hasBody = body !== null && body !== undefined
 
+  // 可测试的分支：根据 HTTP 方法分发请求
+  switch (methodUpper) {
+    case 'GET': {
+      const getUrl = url
+      return api.get(getUrl)
+    }
+    case 'POST': {
+      const postUrl = url
+      const postBody = hasBody ? body : undefined
+      return api.post(postUrl, postBody)
+    }
+    case 'PUT': {
+      const putUrl = url
+      const putBody = hasBody ? body : undefined
+      return api.put(putUrl, putBody)
+    }
+    case 'DELETE': {
+      const deleteUrl = url
+      return api.delete(deleteUrl)
+    }
+    default: {
+      const defaultUrl = url
+      return api.get(defaultUrl)
+    }
+  }
+}
 // ─────────────────────────────────────────────────────────────
 // 认证模块 (28 routes)
 // ─────────────────────────────────────────────────────────────
