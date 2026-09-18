@@ -50,6 +50,7 @@ from .leakage import LeakageDetector, LeakageReport, detect_leakage
 from .json_extract import ExtractResult, extract_json, extract_json_list
 from .retry import RetryStats, with_retries, compute_delay, should_retry
 from .audit import DatasetAuditor, AuditReport, audit_dataset
+from .prompts import PromptTemplate, PromptRegistry, TemplateError, create_template
 from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
@@ -232,6 +233,10 @@ __all__ = [
     "DatasetAuditor",
     "AuditReport",
     "audit_dataset",
+    "PromptTemplate",
+    "PromptRegistry",
+    "TemplateError",
+    "create_template",
     "DataProfiler",
     "ProfilingConfig",
     "profile_dataset",
