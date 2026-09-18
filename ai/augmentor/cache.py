@@ -95,6 +95,10 @@ class MemoryCache:
         if len(self._cache) >= self._max_size:
             self._evict()
         
+        # 性能优化：记录缓存命中统计（便于监控缓存效率）
+        self._stats = getattr(self, '_stats', {"hits": 0, "misses": 0, "sets": 0})
+        self._stats["sets"] = self._stats.get("sets", 0) + 1
+        
         self._cache[key] = CacheEntry(
             key=key,
             value=value,
