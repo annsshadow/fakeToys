@@ -25,12 +25,16 @@ class Exporter:
     """数据导出器 - 优化版"""
     
     def __init__(self, default_format: str = "jsonl", max_workers: int = 4):
-        """初始化导出器
+        """初始化导出器（带格式转换缓存优化）
         
         Args:
             default_format: 默认导出格式
             max_workers: 最大并发数
         """
+        self.default_format = default_format
+        self.max_workers = max_workers
+        # 导出格式转换缓存：避免重复转换相同数据到相同格式
+        self._export_cache: Dict[str, List[Dict]] = {}
         self.default_format = ExportFormat(default_format)
         self.max_workers = max_workers
     
