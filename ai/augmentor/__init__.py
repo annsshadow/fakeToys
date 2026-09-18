@@ -48,6 +48,7 @@ from .outlier import OutlierDetector, OutlierReport, detect_outliers
 from .privacy import PiiSanitizer, SanitizeReport, sanitize_pii
 from .leakage import LeakageDetector, LeakageReport, detect_leakage
 from .json_extract import ExtractResult, extract_json, extract_json_list
+from .retry import RetryStats, with_retries, compute_delay, should_retry
 from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
@@ -223,6 +224,10 @@ __all__ = [
     "ExtractResult",
     "extract_json",
     "extract_json_list",
+    "RetryStats",
+    "with_retries",
+    "compute_delay",
+    "should_retry",
     "DataProfiler",
     "ProfilingConfig",
     "profile_dataset",
