@@ -353,5 +353,5 @@ def verify_backup_integrity(backup_dir: str = ".backups", backup_id: Optional[st
             "item_count": backup.get("item_count", 0),
             "timestamp": backup.get("timestamp", "")
         }
-    
-        return results
+
+    return results
