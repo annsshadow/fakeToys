@@ -200,20 +200,25 @@ def identity(items: List[Dict], context: Dict[str, Any]) -> List[Dict]:
     return items
 
 
-def report_stage(items: List[Dict],
-                 report_key: str,
-                 report_value: Any) -> List[Dict]:
-    """将任意报告值写入上下文后透传
+def report_stage(report_key: str, report_value: Any):
+    """创建「写入报告值后透传」的阶段工厂
+
+    返回的 stage 函数签名为 (items, context) -> items，会把
+    report_value 写入 context[report_key] 供后续阶段与 get_report 使用。
 
     Args:
-        items: 数据
         report_key: 上下文键
-        report_value: 报告值
+        report_value: 要写入的报告值
 
     Returns:
-        原数据
+        可作为 add_stage 注册的阶段函数
     """
-    return items
+    def stage(items: List[Dict], context: Dict[str, Any]) -> List[Dict]:
+        context[report_key] = report_value
+        return items
+
+    stage.__name__ = f"report_stage:{report_key}"
+    return stage
 
 
 __all__ = [
