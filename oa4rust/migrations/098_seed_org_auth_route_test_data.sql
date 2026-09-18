@@ -25,7 +25,16 @@ VALUES
      'http://example.com/icon.png', FALSE, NULL)
 ON CONFLICT (id) DO UPDATE SET icon_url = EXCLUDED.icon_url;
 
-INSERT INTO x_org_identity (id, name, unit_id, person_id, type, major, deleted_at)
+-- identity_id / creator 同样是可空列，且被 organization_assemble_control 的
+-- identity_list_* 系列 handler 以**非 Option** 方式读取
+-- （lib.rs 的 `row.get("identity_id")` / `row.get("creator")`）。
+-- 该系列的 route-presence 探针测试不做任何 seed，只是打一发请求；一旦本表存在
+-- 任意一行且这些列为 NULL，探针就会在 handler 里 panic 而非返回 200/404，
+-- 从而把一个正常的"路由已注册"结果变成失败。故此处必须一并给值。
+INSERT INTO x_org_identity (id, name, unit_id, identity_id, creator, person_id, type, major, deleted_at)
 VALUES
-    ('test-identity-id', 'Test Identity', 'test-unit-id', 'test-person-id', 'person', FALSE, NULL)
-ON CONFLICT (id) DO UPDATE SET unit_id = EXCLUDED.unit_id;
+    ('test-identity-id', 'Test Identity', 'test-unit-id', 'test-identity-id', 'system', 'test-person-id', 'person', FALSE, NULL)
+ON CONFLICT (id) DO UPDATE SET
+    unit_id     = EXCLUDED.unit_id,
+    identity_id = EXCLUDED.identity_id,
+    creator     = EXCLUDED.creator;
