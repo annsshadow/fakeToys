@@ -95,8 +95,10 @@ class DatasetIndexer:
             if isinstance(value, str):
                 # 使用精确值作为key
                 index[value].append(idx)
-                # 也添加小写版本
-                index[value.lower()].append(idx)
+                # 也添加小写版本（去重：值本身已全小写时跳过，避免同一索引被记录两次）
+                lowered = value.lower()
+                if lowered != value:
+                    index[lowered].append(idx)
         
         self._field_indexes[field] = dict(index)
     
