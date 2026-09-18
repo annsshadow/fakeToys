@@ -18,6 +18,7 @@ class IndexType(Enum):
     """索引类型"""
     HASH = "hash"
     INVERTED = "inverted"
+    ENHANCED = "enhanced"  # 增强索引类型（优化：支持混合索引策略）
     NGRAM = "ngram"
 
 
