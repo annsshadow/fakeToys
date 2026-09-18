@@ -114,3 +114,63 @@ def import_dataset(file_path: Union[str, Path], format: Optional[str] = None) ->
         return import_from_excel(path)
     else:
         raise ValueError(f"不支持的导入格式: {format}")
+
+
+def export_to_csv(items: List[Dict],
+                  file_path: Union[str, Path],
+                  columns: Optional[List[str]] = None) -> int:
+    """导出数据集到 CSV 文件
+
+    Args:
+        items: 数据列表
+        file_path: 输出 CSV 路径
+        columns: 指定列顺序，缺省为所有字段的并集
+
+    Returns:
+        写入的行数
+    """
+    if not HAS_PANDAS:
+        raise ImportError("需要安装 pandas 才能导出 CSV: pip install pandas")
+
+    df = pd.DataFrame(items)
+    if columns:
+        missing = [c for c in columns if c not in df.columns]
+        if missing:
+            raise ValueError(f"以下列不存在: {missing}")
+        df = df[columns]
+    out = Path(file_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out, index=False, encoding="utf-8-sig")
+    logger.info(f"导出 {len(df)} 条数据到 CSV: {file_path}")
+    return len(df)
+
+
+def export_to_excel(items: List[Dict],
+                    file_path: Union[str, Path],
+                    sheet_name: str = "data",
+                    columns: Optional[List[str]] = None) -> int:
+    """导出数据集到 Excel 文件
+
+    Args:
+        items: 数据列表
+        file_path: 输出 Excel 路径
+        sheet_name: 工作表名称
+        columns: 指定列顺序
+
+    Returns:
+        写入的行数
+    """
+    if not HAS_PANDAS:
+        raise ImportError("需要安装 pandas 才能导出 Excel: pip install pandas openpyxl")
+
+    df = pd.DataFrame(items)
+    if columns:
+        missing = [c for c in columns if c not in df.columns]
+        if missing:
+            raise ValueError(f"以下列不存在: {missing}")
+        df = df[columns]
+    out = Path(file_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_excel(out, sheet_name=sheet_name, index=False)
+    logger.info(f"导出 {len(df)} 条数据到 Excel: {file_path}")
+    return len(df)
