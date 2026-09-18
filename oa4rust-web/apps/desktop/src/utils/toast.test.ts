@@ -18,10 +18,19 @@ interface El {
   onmouseout: ((...args: unknown[]) => void) | null
   appendChild: (c: unknown) => unknown
   remove: () => void
+  parent: El | null
   addEventListener: (t: string, fn: (e: unknown) => void) => unknown
-  removeEventListener: (t: string, fn: (e: unknown) => void) => void
+  removeEventListener: (t: string, fn: (e: unknown) => void) => unknown
+  querySelectorAll: (sel: string) => unknown[]
+  querySelector: (sel: string) => unknown
   _fire: (t: string, e: unknown) => void
   [key: string]: unknown
+}
+
+/** 按 '.class' 选择器在本 el 的直接子节点中筛选（showToast 的容器统计只需要这一层）。 */
+function byClass(el: El, sel: string): El[] {
+  const cls = sel.replace(/^\./, '')
+  return el.children.filter((c): c is El => c !== null && (c as El).className === cls)
 }
 
 function makeEl(all: El[], tag = 'div'): El {
@@ -35,13 +44,19 @@ function makeEl(all: El[], tag = 'div'): El {
     onclick: null,
     onmouseover: null,
     onmouseout: null,
+    parent: null,
     appendChild: (c: unknown) => {
       el.children.push(c)
+      if (c && typeof c === 'object') (c as El).parent = el
       return el
     },
     remove: () => {
       const i = all.indexOf(el)
       if (i >= 0) all.splice(i, 1)
+      if (el.parent) {
+        const pi = el.parent.children.indexOf(el)
+        if (pi >= 0) el.parent.children.splice(pi, 1)
+      }
     },
     addEventListener: (t: string, fn: (e: unknown) => void) => {
       if (!listeners[t]) listeners[t] = []
@@ -51,6 +66,8 @@ function makeEl(all: El[], tag = 'div'): El {
     removeEventListener: (t: string, fn: (e: unknown) => void) => {
       listeners[t] = (listeners[t] ?? []).filter((f) => f !== fn)
     },
+    querySelectorAll: (sel: string) => byClass(el, sel),
+    querySelector: (sel: string) => byClass(el, sel)[0] ?? null,
     _fire: (t: string, e: unknown) => (listeners[t] ?? []).forEach((f) => f(e)),
   }
   all.push(el)
@@ -76,8 +93,9 @@ function installDom() {
     },
   }
   vi.stubGlobal('document', doc)
-  vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn() } })
-  return { doc, keydownListeners }
+  const navigator = { clipboard: { writeText: vi.fn() } }
+  vi.stubGlobal('navigator', navigator)
+  return { doc, keydownListeners, navigator }
 }
 
 let toast: typeof import('./toast')
@@ -162,5 +180,132 @@ describe('confirmMsg', () => {
     ok2.onclick!()
     await expect(p2).resolves.toBe(true)
     expect(dom.doc.getElementById('oa4-confirm-overlay')).toBeNull()
+  })
+})
+
+/** 取出当前 stub body 下的 toast 容器及其 toast 子节点。 */
+function toastContainer(): { container: El; toasts: El[] } {
+  const container = dom.doc.body.children.find(
+    (c): c is El => c !== null && (c as El).className === 'oa4-toast-container',
+  ) as El
+  return {
+    container,
+    toasts: (container?.children ?? []) as El[],
+  }
+}
+
+/** toast 节点的三段文本：[图标, 消息, 状态标签]。 */
+function toastTexts(t: El): string[] {
+  return (t.children as El[]).map((c) => c.textContent)
+}
+
+describe('toast notifications (showToast pipeline)', () => {
+  it('renders a success toast and auto-hides it after the given duration', () => {
+    vi.useFakeTimers()
+    try {
+      toast.toast.success('已保存', 500)
+      const { container, toasts } = toastContainer()
+      expect(container.tagName).toBe('DIV')
+      expect(toasts).toHaveLength(1)
+      const [t] = toasts
+      expect(t.className).toBe('oa4-toast')
+      expect(toastTexts(t)).toEqual(['✓', '已保存', 'auto-hide'])
+
+      const removeSpy = vi.spyOn(t, 'remove')
+      vi.advanceTimersByTime(499)
+      expect(removeSpy).not.toHaveBeenCalled()
+      // 到期先走 200ms 的退场动画，再真正从 DOM 摘除
+      vi.advanceTimersByTime(1)
+      expect(t.style.animation).toBe('oa4ToastOut 0.2s ease forwards')
+      vi.advanceTimersByTime(200)
+      expect(removeSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('evicts the oldest toast once MAX_VISIBLE is reached', () => {
+    vi.useFakeTimers()
+    try {
+      const long = 60_000
+      for (let i = 0; i < 4; i++) toast.toast.info(`t${i}`, long)
+      const [, toastsBefore] = (() => {
+        const { container, toasts } = toastContainer()
+        return [container, toasts]
+      })()
+      expect(toastsBefore).toHaveLength(4)
+
+      const evictSpy = vi.spyOn(toastsBefore[0], 'remove')
+      toast.toast.info('t4', long) // 第 5 条：最旧一条被立即摘除
+      expect(evictSpy).toHaveBeenCalledTimes(1)
+      const { toasts } = toastContainer()
+      expect(toastTexts(toasts[0])).toEqual(['ℹ', 't1', 'auto-hide'])
+      expect(toasts).toHaveLength(4)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('pauses auto-hide on hover and resumes on mouse leave', () => {
+    vi.useFakeTimers()
+    try {
+      toast.toast.warning('慢一点', 1000)
+      const [t] = toastContainer().toasts
+      const removeSpy = vi.spyOn(t, 'remove')
+
+      t._fire('mouseenter', undefined)
+      vi.advanceTimersByTime(5000)
+      expect(removeSpy).not.toHaveBeenCalled()
+
+      t._fire('mouseleave', undefined)
+      vi.advanceTimersByTime(500) // duration/2
+      expect(t.style.animation).toBe('oa4ToastOut 0.2s ease forwards')
+      vi.advanceTimersByTime(200)
+      expect(removeSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('dismisses a toast on click', () => {
+    vi.useFakeTimers()
+    try {
+      toast.toast.error('出错', 30_000)
+      const [t] = toastContainer().toasts
+      const removeSpy = vi.spyOn(t, 'remove')
+      t._fire('click', undefined)
+      vi.advanceTimersByTime(200)
+      expect(removeSpy).toHaveBeenCalledTimes(1)
+      expect(toastTexts(t)[1]).toBe('出错')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('copyText reports success via a success toast and returns true', async () => {
+    dom.navigator.clipboard.writeText.mockResolvedValue(undefined)
+    vi.useFakeTimers()
+    const ok = await toast.copyText('abc')
+    vi.useRealTimers()
+    expect(ok).toBe(true)
+    expect(dom.navigator.clipboard.writeText).toHaveBeenCalledWith('abc')
+    const [t] = toastContainer().toasts
+    expect(toastTexts(t)).toEqual(['✓', '已复制到剪贴板', 'auto-hide'])
+  })
+
+  it('copyText falls back to an error toast when the clipboard rejects', async () => {
+    dom.navigator.clipboard.writeText.mockRejectedValueOnce(new Error('denied'))
+    vi.useFakeTimers()
+    const ok = await toast.copyText('abc')
+    vi.useRealTimers()
+    expect(ok).toBe(false)
+    const [t] = toastContainer().toasts
+    expect(toastTexts(t)).toEqual(['✗', '复制失败，请检查剪贴板权限', 'auto-hide'])
+  })
+})
+
+describe('useToast', () => {
+  it('returns the same toast object so call sites can grab any helper', () => {
+    expect(toast.useToast()).toBe(toast.toast)
   })
 })

@@ -17,3 +17,21 @@ where
 {
     Ok((0, Vec::new(), "next".to_string()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn cursor_list_is_a_db_free_placeholder_returning_empty_page() {
+        // 契约钉死：占位实现返回 (0, [], "next") 且完全不使用 db/cursor/limit 入参。
+        // 用断开的连接做守卫：任何试图真实读库的"实现"都会在此暴露。
+        let conn = sea_orm::DatabaseConnection::Disconnected;
+        let (total, items, cursor) = cursor_list::<i32>(&conn, "abc", 20, false)
+            .await
+            .expect("placeholder must not fail");
+        assert_eq!(total, 0);
+        assert!(items.is_empty());
+        assert_eq!(cursor, "next");
+    }
+}
