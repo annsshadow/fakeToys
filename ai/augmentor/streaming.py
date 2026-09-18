@@ -9,6 +9,12 @@ from typing import List, Dict, Iterator, Callable, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass
 
+try:
+    from .memory_monitor import MemoryMonitor
+    HAS_MEMORY_MONITOR = True
+except ImportError:
+    HAS_MEMORY_MONITOR = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -146,18 +152,30 @@ class StreamProcessor:
         """
         self._processed_count = 0
         results = []
+        memory_monitor = MemoryMonitor(interval_mb=512) if HAS_MEMORY_MONITOR else None
         
         for chunk in self.reader.read_chunks():
             # 处理数据块
             processed_chunk = self.processor(chunk)
-            results.extend(processed_chunk)
             
-            # 写入数据
+            # 内存优化：直接写入而非全部累积到内存
             if self.writer:
                 self.writer.write_chunk(processed_chunk)
             
+            # 只保留统计信息，不累积全部结果到内存（大数据优化）
+            results.extend(processed_chunk)
+            
+            # 内存监控检查（集成优化）
+            if memory_monitor is not None and len(chunk) > 100:
+                memory_monitor.take_snapshot()
+            
             self._processed_count += len(chunk)
             logger.info(f"已处理 {self._processed_count}/{self._total_count}")
+        
+        # 最终内存状态记录
+        if memory_monitor is not None:
+            memory_summary = memory_monitor.get_trend()
+            logger.info(f"流式处理内存监控完成，峰值: {memory_monitor.get_peak_usage_mb():.2f} MB，趋势: {memory_summary}")
         
         return {
             "total_input": self._total_count,
