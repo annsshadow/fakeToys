@@ -401,3 +401,37 @@ def sanitize_dataset(items: List[Dict], remove_duplicates: bool = True) -> List[
         result = sanitizer.remove_duplicates(result)
     
     return result
+
+
+def generate_validation_report(items: List[Dict], preset: str = "basic") -> Dict:
+    """生成批量验证报告（增强功能）
+    
+    Args:
+        items: 数据列表
+        preset: 验证预设
+    
+    Returns:
+        包含验证结果、统计信息和建议的完整报告
+    """
+    validator = DatasetValidator(preset=preset)
+    result = validator.validate(items)
+    
+    issues_by_severity = {}
+    for issue in result.issues:
+        severity_name = issue.severity.value
+        issues_by_severity.setdefault(severity_name, 0)
+        issues_by_severity[severity_name] += 1
+    
+    return {
+        "summary": result.to_dict(),
+        "issues_by_severity": issues_by_severity,
+        "total_items": len(items),
+        "passed_items": result.valid_items,
+        "failed_items": len(items) - result.valid_items,
+        "pass_rate": result.valid_items / len(items) if items else 0.0,
+        "suggestions": [
+            f"发现 {issues_by_severity.get('error', 0)} 个严重错误",
+            f"发现 {issues_by_severity.get('warning', 0)} 个警告",
+            "建议根据严重程度优先修复错误"
+        ]
+    }
