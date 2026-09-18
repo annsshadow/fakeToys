@@ -170,10 +170,7 @@ def compute_rouge_l(generated: str, reference: str) -> float:
 
     precision = lcs / len(gen_tokens)
     recall = lcs / len(ref_tokens)
-
-    if precision + recall == 0:
-        return 0.0
-
+    # lcs > 0 时 precision 与 recall 均严格为正，分母不会为 0
     f1 = 2 * precision * recall / (precision + recall)
     return float(max(0.0, min(1.0, f1)))
 
