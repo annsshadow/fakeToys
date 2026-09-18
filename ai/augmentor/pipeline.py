@@ -19,6 +19,7 @@ from .dedup import Deduplicator
 from .export import Exporter
 from .context import ContextAugmentor
 from .checkpoint import CheckpointManager
+from .memory_monitor import MemoryMonitor, get_memory_summary
 from .versioning import VersionManager
 from .sampler import ActiveSampler
 from .expander import DomainExpander
@@ -199,6 +200,16 @@ class AugmentorPipeline:
             
         except Exception as e:
             logger.error(f"处理第 {idx} 条数据失败: {e}")
+            # 错误恢复增强：记录详细错误信息以便后续分析和重试
+            error_info = {
+                "index": idx,
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "item_preview": str(item)[:100] if item else ""
+            }
+            if not hasattr(self, '_process_errors'):
+                self._process_errors = []
+            self._process_errors.append(error_info)
             result_queue.put((idx, False, []))
     
     def augment_dataset(self,
@@ -243,6 +254,10 @@ class AugmentorPipeline:
                 logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
         else:
             remaining_indices = list(range(len(items)))
+        
+        # 初始化内存监控（集成到增强流程）
+        memory_monitor = MemoryMonitor(interval_mb=50)
+        memory_monitor.take_snapshot()
         
         # 处理数据
         all_results = []
@@ -349,6 +364,11 @@ class AugmentorPipeline:
         
         logger.info(f"保存 {len(all_results)} 条数据到 {output_file}")
         
+        # 记录最终内存状态（集成监控）
+        memory_monitor.take_snapshot()
+        memory_summary = get_memory_summary()
+        logger.info(f"增强流程内存监控完成，峰值: {memory_monitor.get_peak_usage_mb():.2f} MB，趋势: {memory_monitor.get_trend()}")
+        
         # 创建版本快照
         if self.config.versioning.auto_snapshot:
             self.version_manager.create_version(
@@ -367,7 +387,13 @@ class AugmentorPipeline:
             "quality_check": use_quality_check,
             "dedup": use_dedup,
             "parallel": use_parallel,
-            "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None
+            "progress": self.checkpoint_manager.get_progress() if use_checkpoint else None,
+            "memory_monitor": {
+                "peak_usage_mb": memory_monitor.get_peak_usage_mb(),
+                "trend": memory_monitor.get_trend(),
+                "final_usage_mb": memory_summary.get("current_usage_mb", 0.0),
+                "monitor_available": memory_summary.get("monitor_available", False)
+            }
         }
     
     def augment_seed(self, 
