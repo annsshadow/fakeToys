@@ -1014,7 +1014,13 @@ mod tests {
                     &"person-it-login",
                     &"it-login",
                     &"IT Login User",
-                    &format!("{}{}", crate::password::BCRYPT_PREFIX, bcrypt::hash("testpass123", bcrypt::DEFAULT_COST).unwrap().as_str()),
+                    &format!(
+                        "{}{}",
+                        crate::password::BCRYPT_PREFIX,
+                        bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                            .unwrap()
+                            .as_str()
+                    ),
                 ],
             )
             .await
