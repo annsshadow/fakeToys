@@ -1080,7 +1080,10 @@ pub async fn identity_list_like_mockputtopost(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -1118,7 +1121,10 @@ pub async fn identity_list_like_pinyin(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -1156,7 +1162,10 @@ pub async fn identity_list_like_pinyin_mockputtopost(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -1195,7 +1204,10 @@ pub async fn identity_list_pinyininitial(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -1233,7 +1245,10 @@ pub async fn identity_list_pinyininitial_mockputtopost(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -1275,7 +1290,10 @@ pub async fn identity_flag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -1319,7 +1337,10 @@ pub async fn identity_flag_mockdeletetoget(
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
             (
                 "identityId".to_string(),
-                Value::String(row.get("identity_id")),
+                Value::String(
+                    row.get::<_, Option<String>>("identity_id")
+                        .unwrap_or_default(),
+                ),
             ),
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
@@ -1356,7 +1377,10 @@ pub async fn identity_flag_mockputtopost(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2419,7 +2443,10 @@ pub async fn unitduty_flag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2453,7 +2480,10 @@ pub async fn unitduty_update_member(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2501,7 +2531,10 @@ pub async fn unitduty_list_flag_prev_count(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2549,7 +2582,10 @@ pub async fn unitduty_list_flag_next_count(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2589,7 +2625,10 @@ pub async fn unitduty_list_unit_unitFlag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2630,7 +2669,10 @@ pub async fn unitduty_list_name_name(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2672,7 +2714,10 @@ pub async fn unitduty_list_like(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -2712,7 +2757,10 @@ pub async fn unitduty_list_identity_identityFlag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3630,7 +3678,10 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3678,7 +3729,10 @@ pub async fn identity_list_flag_prev_count(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3726,7 +3780,10 @@ pub async fn identity_list_flag_next_count(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3766,7 +3823,10 @@ pub async fn identity_list_unitduty_name_unitDutyName(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3806,7 +3866,10 @@ pub async fn identity_list_unit_unitFlag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3846,7 +3909,10 @@ pub async fn identity_list_person_personFlag(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
@@ -3888,7 +3954,10 @@ pub async fn identity_list_like(
                 ("unitId".to_string(), Value::String(row.get("unit_id"))),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 (
