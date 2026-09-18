@@ -1,6 +1,6 @@
 """API 路由模块"""
 
-from . import data, augment, quality, export, version, config, multimodal
+from . import data, augment, quality, export, version, config, multimodal, privacy
 
 __all__ = [
     "data",
@@ -9,5 +9,6 @@ __all__ = [
     "export",
     "version",
     "config",
-    "multimodal"
+    "multimodal",
+    "privacy"
 ]
