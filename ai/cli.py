@@ -266,6 +266,7 @@ def build_parser() -> argparse.ArgumentParser:
     search_enhanced_parser.add_argument("--method", type=str, default="contains", choices=["exact", "contains", "fuzzy", "regex"], help="搜索方法")
     search_enhanced_parser.add_argument("--limit", type=int, default=100, help="返回数量")
     search_enhanced_parser.add_argument("--offset", type=int, default=0, help="偏移量")
+    search_enhanced_parser.add_argument("--output", type=str, help="结果输出路径（.json）")
 
     # 统计命令
     stats_enhanced_parser = subparsers.add_parser("stats-enhanced", help="增强统计")
