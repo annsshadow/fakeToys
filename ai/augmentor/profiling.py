@@ -290,9 +290,39 @@ def profile_dataset(items: List[Dict],
     return profiler.profile(items)
 
 
+def estimate_memory(items: List[Dict]) -> Dict[str, Any]:
+    import sys
+    total_bytes = sys.getsizeof(items)
+    for item in items:
+        total_bytes += sys.getsizeof(item)
+        for k, v in item.items():
+            total_bytes += sys.getsizeof(k) + sys.getsizeof(v)
+    return {
+        "total_items": len(items),
+        "estimated_bytes": total_bytes,
+        "estimated_mb": round(total_bytes / (1024 * 1024), 2),
+        "avg_bytes_per_item": total_bytes // max(len(items), 1),
+    }
+
+
+def field_completeness(items: List[Dict], fields: Optional[List[str]] = None) -> Dict[str, float]:
+    if not items:
+        return {}
+    if fields is None:
+        fields = list(items[0].keys()) if items else []
+    result = {}
+    total = len(items)
+    for field in fields:
+        filled = sum(1 for item in items if item.get(field))
+        result[field] = round(filled / total, 4)
+    return result
+
+
 __all__ = [
     "DataProfiler",
     "ProfilingConfig",
     "profile_dataset",
+    "estimate_memory",
+    "field_completeness",
     "_detect_language",
 ]
