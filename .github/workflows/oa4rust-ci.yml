@@ -50,6 +50,24 @@ jobs:
     strategy:
       matrix:
         dialect: [postgres, mysql]
+    services:
+      # crates/shared/src/testing.rs 的 test_pool() 硬编码
+      # postgres://o2server:password@localhost:5432/oa4rust，且 parity 的
+      # behavior 契约测试（list_returns_array 断言 HTTP 200）会真实查库。
+      # 因此两个方言矩阵都需要这个 PostgreSQL 实例与库名。
+      postgres:
+        image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+        env:
+          POSTGRES_USER: o2server
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: oa4rust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
@@ -59,10 +77,22 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
+      # 空库无表时 handler 查库报错返回 500，会让 parity behavior 契约测试失败。
+      # 复用项目内置迁移运行器（--migrate-only 在 src/main.rs 中实现），
+      # 与生产启动路径一致，无需额外依赖外部迁移工具。
+      # 注意：此处固定 DATABASE_DIALECT=postgres。services 提供的实例是
+      # PostgreSQL，若沿用矩阵的 mysql 方言，迁移 SQL 会被重写为 MySQL 语法
+      # 再发给 PostgreSQL，必然报错。矩阵方言只影响 cargo test 的用例选择。
+      - name: Apply migrations
+        run: cargo run --bin oa4rust -- --migrate-only
+        env:
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+          DATABASE_DIALECT: postgres
       - name: Run unit tests (DATABASE_DIALECT=${{ matrix.dialect }})
         run: cargo test --workspace --lib
         env:
           DATABASE_DIALECT: ${{ matrix.dialect }}
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
 
   integration-tests:
     runs-on: ubuntu-24.04
@@ -244,6 +274,11 @@ jobs:
         with:
           python-version: "3.x"
       - name: Seed Java side (full-seed dual-stack baseline)
+        # 本 job 的 defaults.run.working-directory 为 oa4rust，而播种脚本在
+        # 仓库根 scripts/ 下；写死相对路径会在 CI 报 "can't open file
+        # '.../oa4rust/scripts/seed_java.py'"（main 上即为此状态）。
+        # 因此这里显式回到仓库根再执行。
+        working-directory: ${{ github.workspace }}
         run: python scripts/seed_java.py --process-form
 
       # ── U1: 应用 Rust 侧共享种子 ───────────────────────────────────────────
