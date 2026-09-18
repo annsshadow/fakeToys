@@ -212,4 +212,45 @@ describe('ApiClient', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 500)))
     await expect(new ApiClient().upload('/api/u', new FormData())).rejects.toBeInstanceOf(ApiError)
   })
+
+  it('put() sends a JSON body and delete() sends none, on the correct verbs', async () => {
+    // 每次调用返回全新 Response：同一 Response 的 body 只能被读一次。
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse({ success: true, data: {} })))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new ApiClient()
+    await client.put('/api/item/1', { name: 'x' })
+    await client.delete('/api/item/1')
+    const inits = fetchMock.mock.calls.map((c) => c[1] as RequestInit)
+    expect(inits[0].method).toBe('PUT')
+    expect(inits[0].body).toBe(JSON.stringify({ name: 'x' }))
+    expect(inits[1].method).toBe('DELETE')
+    expect(inits[1].body).toBeUndefined()
+  })
+
+  it('aborts an upload once its own timeoutMs elapses', async () => {
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((resolve) => {
+          // upload() 成功路径总走 resp.json()（不像 request() 特判 204），
+          // 故 abort 后必须用带 JSON 体的响应收尾，否则 body 为空会抛错。
+          init.signal?.addEventListener('abort', () => resolve(jsonResponse({ success: true, data: { sent: true } })))
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const resp = await new ApiClient().upload('/api/attachment/upload/folder/1', new FormData(), {
+      timeoutMs: 30,
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(resp.success).toBe(true)
+  })
+
+  it('rejects the upload with AuthenticationError when the 401-triggered refresh fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({}, 401)) // upload 首次 401
+      .mockResolvedValue(jsonResponse({}, 500)) // refresh 失败
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(new ApiClient().upload('/api/u', new FormData())).rejects.toBeInstanceOf(AuthenticationError)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 })

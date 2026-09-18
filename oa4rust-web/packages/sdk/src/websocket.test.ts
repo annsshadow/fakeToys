@@ -235,4 +235,41 @@ describe('socket lifecycle (error / close / heartbeat / reconnect)', () => {
     expect(ws.sent[ws.sent.length - 1]).toBe(JSON.stringify({ type: 'ping' }))
     vi.useRealTimers()
   })
+
+  it('keeps retrying when a reconnection attempt fails (error → reschedule loop)', async () => {
+    vi.useFakeTimers()
+    const p = client.connect()
+    const ws = FakeWebSocket.instances[0]
+    ws.simulateOpen()
+    await p
+
+    ws.readyState = 3
+    ws.onclose?.() // 意外断开 → 3s 后重连
+
+    await vi.advanceTimersByTimeAsync(3000) // 第一次重连开 ws2
+    const ws2 = FakeWebSocket.instances[1]
+    // ws2 的 connect() 是 Promise，onerror 触发 reject → .catch 是微任务，
+    // 必须用 async 版 advance 冲掉微任务，第二次重连定时器才会被排上。
+    ws2.onerror?.(new Error('still down'))
+    await vi.advanceTimersByTimeAsync(3000)
+
+    expect(FakeWebSocket.instances).toHaveLength(3)
+    vi.useRealTimers()
+  })
+
+  it('a duplicate close event does not schedule a second reconnect (timer guard)', async () => {
+    vi.useFakeTimers()
+    const p = client.connect()
+    const ws = FakeWebSocket.instances[0]
+    ws.simulateOpen()
+    await p
+
+    ws.readyState = 3
+    ws.onclose?.()
+    ws.onclose?.() // 同一 socket 重复 close 事件：必须不产生双重重连
+
+    vi.advanceTimersByTime(3000)
+    expect(FakeWebSocket.instances).toHaveLength(2)
+    vi.useRealTimers()
+  })
 })

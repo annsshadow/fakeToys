@@ -330,3 +330,49 @@ describe('mobile form fields — options, grouping, defaults', () => {
     expect(parseSimpleForm(def({ t: { id: 't', type: 'text', name: 'n', label: 'N' } }))).toEqual(form.fields)
   })
 })
+
+describe('mobile form parser — remaining branches', () => {
+  it('maps the oo-prefixed module type variants to their mobile field types', () => {
+    const form = parseMobileForm(
+      def({
+        a: { id: 'a', type: 'ootextarea', name: 'a', label: 'A' },
+        b: { id: 'b', type: 'oodatetime', name: 'b', label: 'B' },
+        c: { id: 'c', type: 'ooradiogroup', name: 'c', label: 'C' },
+        d: { id: 'd', type: 'oohtml', name: 'd', label: 'D' },
+      }),
+    )
+    expect(Object.fromEntries(form.fields.map((f) => [f.key, f.type]))).toEqual({
+      a: 'textarea',
+      b: 'date',
+      c: 'checkbox',
+      d: 'richtext',
+    })
+  })
+
+  it('drops modules that resolve to no key instead of rendering a nameless field', () => {
+    const form = parseMobileForm(
+      def({
+        '': { id: '', type: 'text' }, // name/key/id 全空 → 无 key，必须跳过
+        t: { id: 't', type: 'text', name: 'n', label: 'N' },
+      }),
+    )
+    expect(form.fields.map((f) => f.key)).toEqual(['n'])
+  })
+
+  it('treats null-ish and broken top-level JSON strings as an empty form', () => {
+    expect(parseMobileForm('null')).toEqual({ fields: [], groups: [] })
+    expect(parseMobileForm('{broken json')).toEqual({ fields: [], groups: [] })
+  })
+
+  it('omits the default group when every field belongs to a named container', () => {
+    const form = parseMobileForm(
+      def({
+        c1: { id: 'c1', type: 'form', label: '组一' },
+        f1: { id: 'f1', type: 'text', name: 'a', label: 'A', pid: 'c1' },
+      }),
+    )
+    expect(form.fields.map((f) => [f.groupId, f.groupLabel])).toEqual([['c1', '组一']])
+    // 无默认组字段 → 空 id 的默认组不应出现在 groups 中
+    expect(form.groups).toEqual([{ id: 'c1', label: '组一' }])
+  })
+})

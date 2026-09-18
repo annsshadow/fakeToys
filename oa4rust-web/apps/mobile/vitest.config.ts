@@ -23,6 +23,10 @@ export default defineConfig({
       reporter: ['text', 'html', 'json'],
       reportsDirectory: './coverage-mobile',
       include: ['src/**/*.ts'],
+      // 结构豁免（2026-09-18 审计）：main.ts 是 uni-app 应用入口，模块顶层即
+      // createApp/挂载，node 环境无法执行；其行为由 H5 E2E 实跑覆盖（见
+      // oa4rust-mobile-gui-verified 记忆条目）。其余文件不设豁免。
+      exclude: ['src/main.ts'],
     },
   },
 })

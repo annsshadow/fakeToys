@@ -146,6 +146,15 @@ describe('URL building and param filtering', () => {
     expect(await lastUrl()).toBe('/api/thing')
   })
 
+  it('omits the query string when params exist but every value is undefined/null', async () => {
+    // 运行时过滤后 entries 为空 → 不能留下裸 "?" 尾巴。
+    uni.respondRequest((o) => uni.ok(o, undefined))
+    await mapi.get('/api/thing', {
+      params: { a: undefined, b: null } as unknown as Record<string, string>,
+    })
+    expect(uni.requests[0].url).toBe('/api/thing')
+  })
+
   it('URL-encodes keys and values', async () => {
     uni.respondRequest((o) => uni.ok(o, undefined))
     await mapi.get('/api/thing', { params: { q: 'a b&c' } })
@@ -371,6 +380,20 @@ describe('file upload (uni.uploadFile)', () => {
     const err = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
     expect(err).toBeInstanceOf(PermissionError)
     expect(uni.requests).toHaveLength(0)
+  })
+
+  it('rejects with AuthenticationError and does NOT retry when the 401-triggered refresh itself fails', async () => {
+    // upload 收到 401 → 触发 refreshSession；若 refresh 也失败（如 500），
+    // 必须走 authenticationFailed() 分支直接 reject，不能无限重试上传。
+    uni.respondUpload((o) => uni.ok(o, undefined, 401))
+    uni.respondRequest((o) => {
+      if (o.url === '/api/authentication/refresh') uni.ok(o, undefined, 500)
+      else uni.ok(o, undefined)
+    })
+    const err = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
+    expect(err).toBeInstanceOf(AuthenticationError)
+    expect(uni.uploads).toHaveLength(1) // 上传只发生一次，refresh 失败后不再重试
+    expect(uni.requests.filter((r) => r.url === '/api/authentication/refresh')).toHaveLength(1)
   })
 
   it('requireAuth:false suppresses the refresh-and-retry path', async () => {

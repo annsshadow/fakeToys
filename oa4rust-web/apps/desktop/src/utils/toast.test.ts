@@ -181,6 +181,28 @@ describe('confirmMsg', () => {
     await expect(p2).resolves.toBe(true)
     expect(dom.doc.getElementById('oa4-confirm-overlay')).toBeNull()
   })
+
+  it('toggles hover styling on both buttons (mouseover brightens, mouseout restores)', () => {
+    const p = toast.confirmMsg('删除？')
+    const [cancel, ok] = buttons()
+
+    cancel.onmouseover!()
+    expect(cancel.style.borderColor).toBe('#94a3b8')
+    expect(cancel.style.color).toBe('#e2e8f0')
+    cancel.onmouseout!()
+    expect(cancel.style.borderColor).toBe('#475569')
+    expect(cancel.style.color).toBe('#94a3b8')
+
+    ok.onmouseover!()
+    expect(ok.style.background).toBe('#2563eb')
+    expect(ok.style.boxShadow).toBe('0 0 15px rgba(37,99,235,0.5)')
+    ok.onmouseout!()
+    expect(ok.style.background).toBe('#3b82f6')
+    expect(ok.style.boxShadow).toBe('0 0 10px rgba(59,130,246,0.3)')
+
+    ok.onclick!()
+    void p
+  })
 })
 
 /** 取出当前 stub body 下的 toast 容器及其 toast 子节点。 */
