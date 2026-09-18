@@ -3,4 +3,4 @@ from augmentor.indexer import IndexType
 
 class TestIndexerEnhancement:
     def test_enhanced_index_type_exists(self):
-        assert IndexType.ENHANCED == "enhanced"
+        assert IndexType.ENHANCED.value == "enhanced"
