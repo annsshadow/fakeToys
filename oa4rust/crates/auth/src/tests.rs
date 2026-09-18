@@ -1003,28 +1003,30 @@ mod tests {
         let client = pool.get().await.ok();
 
         // Seed a test user with a known bcrypt password hash
+        // 注意：此处不可吞掉 execute 的错误。若 seed 静默失败，后续登录必然 401，
+        // 而失败现场不会留下任何线索（曾因此耗费大量排查时间）。
         if let Some(c) = &client {
-            let _ = c
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
-                     VALUES ($1, $2, $3, $4, false, NULL) \
-                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-                    &[
-                        &"person-it-login",
-                        &"it-login",
-                        &"IT Login User",
-                        &format!("{}{}", crate::password::BCRYPT_PREFIX, bcrypt::hash("testpass123", bcrypt::DEFAULT_COST).unwrap().as_str()),
-                    ],
-                )
-                .await;
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                 VALUES ($1, $2, $3, $4, false, NULL) \
+                 ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                &[
+                    &"person-it-login",
+                    &"it-login",
+                    &"IT Login User",
+                    &format!("{}{}", crate::password::BCRYPT_PREFIX, bcrypt::hash("testpass123", bcrypt::DEFAULT_COST).unwrap().as_str()),
+                ],
+            )
+            .await
+            .expect("seed auth_person for it-login failed");
 
             // 清理 auth_token_threshold 中可能残留的测试数据，避免阈值拦截登录
-            let _ = c
-                .execute(
-                    "DELETE FROM auth_token_threshold WHERE person_unique = $1",
-                    &[&"it-login"],
-                )
-                .await;
+            c.execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique = $1",
+                &[&"it-login"],
+            )
+            .await
+            .expect("cleanup auth_token_threshold for it-login failed");
         }
 
         let rate_limiter = RateLimiter::new();
@@ -1148,25 +1150,25 @@ mod tests {
         let client = pool.get().await.ok();
 
         if let Some(c) = &client {
-            let _ = c
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
-                     VALUES ($1, $2, $3, $4, false, NULL) \
-                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-                    &[
-                        &"person-2fa-phase1",
-                        &"2fa-phase1-user",
-                        &"2FA Phase1 User",
-                        &format!(
-                            "{}{}",
-                            crate::password::BCRYPT_PREFIX,
-                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
-                                .unwrap()
-                                .as_str()
-                        ),
-                    ],
-                )
-                .await;
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                 VALUES ($1, $2, $3, $4, false, NULL) \
+                 ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                &[
+                    &"person-2fa-phase1",
+                    &"2fa-phase1-user",
+                    &"2FA Phase1 User",
+                    &format!(
+                        "{}{}",
+                        crate::password::BCRYPT_PREFIX,
+                        bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                            .unwrap()
+                            .as_str()
+                    ),
+                ],
+            )
+            .await
+            .expect("seed auth_person for 2fa-phase1-user failed");
         }
 
         let rate_limiter = RateLimiter::new();
@@ -1215,25 +1217,25 @@ mod tests {
         let client = pool.get().await.ok();
 
         if let Some(c) = &client {
-            let _ = c
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
-                     VALUES ($1, $2, $3, $4, false, NULL) \
-                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-                    &[
-                        &"person-2fa-full",
-                        &"2fa-full-user",
-                        &"2FA Full User",
-                        &format!(
-                            "{}{}",
-                            crate::password::BCRYPT_PREFIX,
-                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
-                                .unwrap()
-                                .as_str()
-                        ),
-                    ],
-                )
-                .await;
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                 VALUES ($1, $2, $3, $4, false, NULL) \
+                 ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                &[
+                    &"person-2fa-full",
+                    &"2fa-full-user",
+                    &"2FA Full User",
+                    &format!(
+                        "{}{}",
+                        crate::password::BCRYPT_PREFIX,
+                        bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                            .unwrap()
+                            .as_str()
+                    ),
+                ],
+            )
+            .await
+            .expect("seed auth_person for 2fa-full-user failed");
         }
 
         let rate_limiter = RateLimiter::new();

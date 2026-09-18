@@ -47,14 +47,10 @@ jobs:
     defaults:
       run:
         working-directory: oa4rust
-    strategy:
-      matrix:
-        dialect: [postgres, mysql]
     services:
       # crates/shared/src/testing.rs 的 test_pool() 硬编码
       # postgres://o2server:password@localhost:5432/oa4rust，且 parity 的
       # behavior 契约测试（list_returns_array 断言 HTTP 200）会真实查库。
-      # 因此两个方言矩阵都需要这个 PostgreSQL 实例与库名。
       postgres:
         image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
         env:
@@ -80,18 +76,19 @@ jobs:
       # 空库无表时 handler 查库报错返回 500，会让 parity behavior 契约测试失败。
       # 复用项目内置迁移运行器（--migrate-only 在 src/main.rs 中实现），
       # 与生产启动路径一致，无需额外依赖外部迁移工具。
-      # 注意：此处固定 DATABASE_DIALECT=postgres。services 提供的实例是
-      # PostgreSQL，若沿用矩阵的 mysql 方言，迁移 SQL 会被重写为 MySQL 语法
-      # 再发给 PostgreSQL，必然报错。矩阵方言只影响 cargo test 的用例选择。
       - name: Apply migrations
         run: cargo run --bin oa4rust -- --migrate-only
         env:
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
           DATABASE_DIALECT: postgres
-      - name: Run unit tests (DATABASE_DIALECT=${{ matrix.dialect }})
+      # 方言必须固定 postgres：本 job 的数据库依赖全部是 PostgreSQL
+      # （test_pool()/test_sea_orm_pool() 硬编码 PG；运行时 create_pool() 也只用
+      # deadpool_postgres）。此前这里传入 matrix 的 mysql 会让 handler 生成 `?`
+      # 占位符发给 PostgreSQL → 语法错误 → 登录类用例返回 401。
+      - name: Run unit tests
         run: cargo test --workspace --lib
         env:
-          DATABASE_DIALECT: ${{ matrix.dialect }}
+          DATABASE_DIALECT: postgres
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
 
   integration-tests:
@@ -100,9 +97,6 @@ jobs:
     defaults:
       run:
         working-directory: oa4rust
-    strategy:
-      matrix:
-        dialect: [postgres, mysql]
     services:
       postgres:
         image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
@@ -117,20 +111,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      mysql:
-        image: mysql@sha256:3466ba4a4828aa8d46fb7c3bc16b67b781c98413cf4ea0fac6feaa6e881faa26
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: oa4rust
-          MYSQL_USER: o2server
-          MYSQL_PASSWORD: password
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd "mysqladmin ping -h localhost -u root -ppassword"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Rust
@@ -140,18 +120,9 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/Cargo.lock') }}
-      - name: Set DATABASE_URL for ${{ matrix.dialect }}
-        run: |
-          if [ "${{ matrix.dialect }}" = "postgres" ]; then
-            echo "DATABASE_URL=postgres://o2server:password@localhost:5432/postgres" >> $GITHUB_ENV
-          elif [ "${{ matrix.dialect }}" = "mysql" ]; then
-            echo "DATABASE_URL=mysql://o2server:password@localhost:3306/oa4rust" >> $GITHUB_ENV
-          fi
       # 与 unit-tests 同理：cargo test -p parity --lib 的 behavior 契约测试
       # 会真实查库（test_pool() 硬编码 localhost:5432/oa4rust），空库无表时
       # handler 报错返回 500 → 41 个 parity 用例失败。此处先建表。
-      # 固定 postgres 方言：services 里只有 PostgreSQL 承载 parity 所需结构，
-      # 若用矩阵的 mysql 方言会把迁移 SQL 重写为 MySQL 语法再发给 PG。
       - name: Apply migrations
         run: cargo run --bin oa4rust -- --migrate-only
         env:
@@ -163,10 +134,11 @@ jobs:
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
       - name: Run route-conflict probe (u2_probe)
         run: cargo test --test u2_probe
-      - name: Run integration tests (${{ matrix.dialect }})
+      - name: Run integration tests
         run: cargo test --test integration_runner
         env:
-          DATABASE_DIALECT: ${{ matrix.dialect }}
+          DATABASE_DIALECT: postgres
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
 
   # ── plan002 U9: Java-Rust 行为对比接入 CI ──────────────────────────────────
   # 该 job 依赖外部 Java 容器（o2server），冷启动约 10 分钟，且对比结果可能因
