@@ -254,10 +254,22 @@ class QualityScorer:
         generateds = [item.get("generated", "") for item in items]
         outputs = [item.get("output", "") for item in items]
         
-        # 批量编码原始文本
+        # 批量编码优化：缓存已编码文本（避免重复计算相同文本嵌入）
+        if not hasattr(self, '_embedding_cache'):
+            self._embedding_cache = {}
+        
+        def cached_encode(texts, batch_key):
+            cache_key = hash(tuple(texts)) if isinstance(texts, tuple) else hash(str(texts)[:200])
+            if cache_key in self._embedding_cache:
+                return self._embedding_cache[cache_key]
+            embeddings = self._model.encode(texts, show_progress_bar=False, batch_size=32)
+            self._embedding_cache[cache_key] = embeddings
+            return embeddings
+        
+        # 批量编码原始文本（使用缓存优化）
         if self._model != "fallback":
-            original_embeddings = self._model.encode(originals, show_progress_bar=False, batch_size=32)
-            generated_embeddings = self._model.encode(generateds, show_progress_bar=False, batch_size=32)
+            original_embeddings = cached_encode(originals, "orig")
+            generated_embeddings = cached_encode(generateds, "gen")
             
             # 计算语义相似度
             semantic_sims = np.array([
