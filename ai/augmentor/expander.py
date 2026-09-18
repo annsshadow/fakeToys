@@ -356,6 +356,78 @@ class DomainExpander:
         
         return []
     
+    def generate_adaptive_expansion(self,
+                                     items: List[Dict],
+                                     target_domain: Optional[str] = None) -> ExpansionResult:
+        """领域自适应增强（根据数据内容自动适配领域）
+        
+        Args:
+            items: 数据列表
+            target_domain: 目标领域（可选），为 None 时自动识别
+        
+        Returns:
+            适配后的扩展结果
+        """
+        original_topics = self._extract_topics(items)
+        
+        # 自动识别领域（简化实现）
+        detected_domain = target_domain or self._detect_domain(items)
+        
+        # 根据领域调整策略
+        if detected_domain == "租房服务":
+            strategy = "scenario"
+            num_topics = 8
+        elif detected_domain == "合同法律":
+            strategy = "related"
+            num_topics = 6
+        else:
+            strategy = "similar"
+            num_topics = 5
+        
+        expanded_topics = self._generate_similar_topics(original_topics, num_topics)
+        
+        # 添加领域适配建议
+        suggestions = [
+            f"检测到领域: {detected_domain}",
+            f"自动选择策略: {strategy}",
+            f"生成 {len(expanded_topics)} 个扩展主题"
+        ]
+        
+        return ExpansionResult(
+            original_topics=original_topics,
+            expanded_topics=[{"topic": t, "strategy": strategy, "adapted_domain": detected_domain} for t in expanded_topics],
+            strategy=strategy,
+            suggestions=suggestions
+        )
+    
+    def _detect_domain(self, items: List[Dict]) -> str:
+        """自动检测领域类型（简化实现）
+        
+        Args:
+            items: 数据列表
+        
+        Returns:
+            检测到的领域名称
+        """
+        all_text = " ".join(str(item.get("instruction", "")) for item in items)
+        domain_keywords = {
+            "租房服务": ["租房", "房源", "看房", "签约"],
+            "合同法律": ["合同", "法律", "条款", "维权", "投诉"],
+            "维修服务": ["维修", "保养", "设备", "故障"],
+            "费用相关": ["租金", "押金", "费用", "账单"]
+        }
+        
+        best_domain = "通用领域"
+        best_score = 0
+        
+        for domain, keywords in domain_keywords.items():
+            score = sum(1 for kw in keywords if kw in all_text)
+            if score > best_score:
+                best_score = score
+                best_domain = domain
+        
+        return best_domain
+    
     def generate_report(self, items: List[Dict]) -> Dict:
         """生成扩展报告
         
