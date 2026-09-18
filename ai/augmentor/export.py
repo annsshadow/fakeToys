@@ -245,9 +245,7 @@ class Exporter:
                     writer.writeheader()
                     writer.writerows(data)
         
-        else:
-            raise ValueError(f"不支持的导出格式: {export_format}")
-        
+        # ExportFormat 六个成员均已在上方分支处理，无其他可能值
         logger.info(f"导出 {len(items)} 条数据到 {output_path}，格式: {export_format.value}")
         return export_format.value
     

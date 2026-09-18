@@ -54,9 +54,8 @@ def _detect_language(text: str) -> str:
         return "zh"
     if cjk_ratio <= 0.2:
         return "en"
-    if cjk_ratio > 0:
-        return "mixed"
-    return "unknown"
+    # total>0 且 0.2 < cjk_ratio < 0.8 时 cjk 必然 > 0，直接判 mixed
+    return "mixed"
 
 
 @dataclass
