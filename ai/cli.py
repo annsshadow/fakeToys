@@ -1084,7 +1084,7 @@ def main():
 
         # ============ 自动化测试 ============
         elif args.command == "auto-test":
-            from augmentor.auto_test import run_dataset_tests
+            from augmentor.auto_test import DatasetTestRunner, run_dataset_tests
 
             items = _load_items(args.input)
             suite = run_dataset_tests(items, args.suite)
