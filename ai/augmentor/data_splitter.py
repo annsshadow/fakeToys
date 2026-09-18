@@ -1,6 +1,14 @@
 """数据集分割模块"""
 
 from typing import List, Dict
+from dataclasses import dataclass
+
+
+@dataclass
+class SplitResult:
+    train: List[Dict]
+    test: List[Dict]
+    split_ratio: float = 0.8
 
 
 class DataSplitter:
