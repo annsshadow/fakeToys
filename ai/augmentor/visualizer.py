@@ -322,7 +322,15 @@ class DataVisualizer:
             "min_length": min(lengths) if lengths else 0,
             "max_length": max(lengths) if lengths else 0,
             "unique_words": len(word_freq),
-            "top_words": dict(word_freq.most_common(20))
+            "top_words": dict(word_freq.most_common(10))
         }
-,{3 9 nÿïSÆ‰SŸRý€žX:_	ÿÿûm R€{USOS 
- 
+
+    def output_dir(self) -> Path:
+        return Path("visualizations")
+
+
+__all__ = [
+    "DataVisualizer",
+    "DataVisualizationConfig",
+    "generate_statistics",
+]
