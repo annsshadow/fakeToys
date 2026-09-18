@@ -53,6 +53,12 @@ from .audit import DatasetAuditor, AuditReport, audit_dataset
 from .prompts import PromptTemplate, PromptRegistry, TemplateError, create_template
 from .schema import DatasetSchema, FieldRule, SchemaValidationResult, validate_schema
 from .diagnostics import DiagnosticsReport, check_dependencies, require_dependency, summary_line
+from .report_md import (
+    sanitize_report_to_markdown,
+    leakage_report_to_markdown,
+    audit_report_to_markdown,
+    generic_report_to_markdown,
+)
 from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
@@ -247,6 +253,10 @@ __all__ = [
     "check_dependencies",
     "require_dependency",
     "summary_line",
+    "sanitize_report_to_markdown",
+    "leakage_report_to_markdown",
+    "audit_report_to_markdown",
+    "generic_report_to_markdown",
     "DataProfiler",
     "ProfilingConfig",
     "profile_dataset",
