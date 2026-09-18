@@ -208,6 +208,44 @@ class AppConfig:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
 
+def _resolve_env(value: Any) -> Any:
+    """解析环境变量占位符
+    
+    Args:
+        value: 配置值，可能是 ${ENV_VAR} 格式的环境变量占位符
+    
+    Returns:
+        解析后的值
+    """
+    if isinstance(value, str) and value.startswith('${') and value.endswith('}'):
+        env_var = value[2:-1]
+        return os.environ.get(env_var, '')
+    return value
+
+
+def _load_section(raw_config: Dict, key: str, config_class: type, defaults: Dict) -> Any:
+    """加载配置节
+    
+    Args:
+        raw_config: 原始配置字典
+        key: 配置节名称
+        config_class: 配置类
+        defaults: 默认值字典
+    
+    Returns:
+        配置实例
+    """
+    if key not in raw_config:
+        return config_class(**defaults)
+    
+    conf = raw_config[key]
+    kwargs = {}
+    for param_name, default_value in defaults.items():
+        kwargs[param_name] = conf.get(param_name, default_value)
+    
+    return config_class(**kwargs)
+
+
 def load_config(config_path: Optional[str] = None) -> AppConfig:
     """加载配置文件
     
@@ -225,10 +263,7 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
         
         # 解析环境变量
         def resolve_env(value):
-            if isinstance(value, str) and value.startswith('${') and value.endswith('}'):
-                env_var = value[2:-1]
-                return os.environ.get(env_var, '')
-            return value
+            return _resolve_env(value)
         
         # 优化配置加载：缓存解析结果（避免重复解析相同配置）
         config_cache_key = config_path or "default"
@@ -253,165 +288,82 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                     max_output_tokens=model_conf.get('max_output_tokens', 2048)
                 )
         
-        # 加载其他配置
-        if 'augmentation' in raw_config:
-            conf = raw_config['augmentation']
-            config.augmentation = AugmentationConfig(
-                variants_per_seed=conf.get('variants_per_seed', 5),
-                num_threads=conf.get('num_threads', 40),
-                auto_save_interval=conf.get('auto_save_interval', 10),
-                max_retries=conf.get('max_retries', 3),
-                retry_delay=conf.get('retry_delay', 1.0)
-            )
+        # 使用映射表加载其他配置（减少重复代码）
+        config_sections = [
+            ('augmentation', AugmentationConfig, {
+                'variants_per_seed': 5, 'num_threads': 40, 'auto_save_interval': 10,
+                'max_retries': 3, 'retry_delay': 1.0
+            }),
+            ('quality', QualityConfig, {
+                'enabled': True, 'threshold': 0.6, 'weights': [0.3, 0.4, 0.3]
+            }),
+            ('dedup', DedupConfig, {'enabled': True, 'threshold': 0.9}),
+            ('export', ExportConfig, {
+                'default_format': 'jsonl',
+                'formats': ['jsonl', 'llama_factory', 'alpaca', 'sharegpt', 'chatml']
+            }),
+            ('context', ContextConfig, {'enabled': False, 'num_turns': 3}),
+            ('versioning', VersioningConfig, {
+                'enabled': True, 'storage_dir': 'data/versions', 'auto_snapshot': True
+            }),
+            ('sampler', SamplerConfig, {
+                'enabled': False,
+                'dimensions': ['topic', 'question_type', 'length', 'complexity']
+            }),
+            ('expander', ExpanderConfig, {
+                'enabled': False, 'strategies': ['similar', 'related', 'scenario']
+            }),
+            ('tracker', TrackerConfig, {
+                'enabled': False,
+                'metrics': ['train_loss', 'eval_accuracy', 'perplexity']
+            }),
+            ('visualization', VisualizationConfig, {
+                'enabled': True,
+                'types': ['wordcloud', 'length_distribution', 'topic_cluster', 'timeline', 'quality_distribution']
+            }),
+            ('multilingual', MultilingualConfig, {
+                'enabled': False, 'default_target_lang': 'en',
+                'supported_langs': ['zh', 'en'], 'translate_batch_size': 10
+            }),
+            ('rag', RAGConfig, {
+                'enabled': False, 'default_format': 'llamaindex',
+                'chunk_size': 512, 'chunk_overlap': 64
+            }),
+            ('evaluation', EvaluationConfig, {
+                'enabled': False, 'metrics': ['bleu', 'rouge_l', 'similarity'],
+                'reference_field': 'output'
+            }),
+            ('vector', VectorConfig, {
+                'enabled': False, 'backend': 'faiss', 'dimension': 384,
+                'storage_dir': 'data/vectors', 'collection': 'default'
+            }),
+            ('multimodal', MultimodalConfig, {
+                'enabled': False,
+                'image_extensions': ['.jpg', '.jpeg', '.png', '.bmp', '.webp'],
+                'audio_extensions': ['.wav', '.mp3', '.flac', '.ogg', '.m4a']
+            }),
+            ('benchmark', BenchmarkConfig, {
+                'enabled': False, 'baseline_file': 'data/benchmark_baseline.json',
+                'metrics': ['pass_rate', 'avg_total_score', 'diversity', 'duplication_rate']
+            }),
+            ('active_learning', ActiveLearningConfig, {
+                'enabled': False, 'strategy': 'uncertainty',
+                'batch_size': 50, 'max_iterations': 10
+            }),
+            ('frameworks', FrameworkConfig, {
+                'enabled': False, 'frameworks': ['langchain', 'llamaindex']
+            }),
+            ('web', WebConfig, {
+                'port': 8000, 'host': '0.0.0.0', 'static_dir': 'web/dist'
+            }),
+            ('logging', LoggingConfig, {
+                'level': 'INFO', 'file': 'app.log',
+                'format': '%(asctime)s - %(levelname)s - %(message)s'
+            }),
+        ]
         
-        if 'quality' in raw_config:
-            conf = raw_config['quality']
-            config.quality = QualityConfig(
-                enabled=conf.get('enabled', True),
-                threshold=conf.get('threshold', 0.6),
-                weights=conf.get('weights', [0.3, 0.4, 0.3])
-            )
-        
-        if 'dedup' in raw_config:
-            conf = raw_config['dedup']
-            config.dedup = DedupConfig(
-                enabled=conf.get('enabled', True),
-                threshold=conf.get('threshold', 0.9)
-            )
-        
-        if 'export' in raw_config:
-            conf = raw_config['export']
-            config.export = ExportConfig(
-                default_format=conf.get('default_format', 'jsonl'),
-                formats=conf.get('formats', ['jsonl', 'llama_factory', 'alpaca', 'sharegpt', 'chatml'])
-            )
-        
-        if 'context' in raw_config:
-            conf = raw_config['context']
-            config.context = ContextConfig(
-                enabled=conf.get('enabled', False),
-                num_turns=conf.get('num_turns', 3)
-            )
-        
-        if 'versioning' in raw_config:
-            conf = raw_config['versioning']
-            config.versioning = VersioningConfig(
-                enabled=conf.get('enabled', True),
-                storage_dir=conf.get('storage_dir', 'data/versions'),
-                auto_snapshot=conf.get('auto_snapshot', True)
-            )
-        
-        if 'sampler' in raw_config:
-            conf = raw_config['sampler']
-            config.sampler = SamplerConfig(
-                enabled=conf.get('enabled', False),
-                dimensions=conf.get('dimensions', ['topic', 'question_type', 'length', 'complexity'])
-            )
-        
-        if 'expander' in raw_config:
-            conf = raw_config['expander']
-            config.expander = ExpanderConfig(
-                enabled=conf.get('enabled', False),
-                strategies=conf.get('strategies', ['similar', 'related', 'scenario'])
-            )
-        
-        if 'tracker' in raw_config:
-            conf = raw_config['tracker']
-            config.tracker = TrackerConfig(
-                enabled=conf.get('enabled', False),
-                metrics=conf.get('metrics', ['train_loss', 'eval_accuracy', 'perplexity'])
-            )
-        
-        if 'visualization' in raw_config:
-            conf = raw_config['visualization']
-            config.visualization = VisualizationConfig(
-                enabled=conf.get('enabled', True),
-                types=conf.get('types', ['wordcloud', 'length_distribution', 'topic_cluster', 'timeline', 'quality_distribution'])
-            )
-        
-        if 'multilingual' in raw_config:
-            conf = raw_config['multilingual']
-            config.multilingual = MultilingualConfig(
-                enabled=conf.get('enabled', False),
-                default_target_lang=conf.get('default_target_lang', 'en'),
-                supported_langs=conf.get('supported_langs', ['zh', 'en']),
-                translate_batch_size=conf.get('translate_batch_size', 10)
-            )
-        
-        if 'rag' in raw_config:
-            conf = raw_config['rag']
-            config.rag = RAGConfig(
-                enabled=conf.get('enabled', False),
-                default_format=conf.get('default_format', 'llamaindex'),
-                chunk_size=conf.get('chunk_size', 512),
-                chunk_overlap=conf.get('chunk_overlap', 64)
-            )
-        
-        if 'evaluation' in raw_config:
-            conf = raw_config['evaluation']
-            config.evaluation = EvaluationConfig(
-                enabled=conf.get('enabled', False),
-                metrics=conf.get('metrics', ['bleu', 'rouge_l', 'similarity']),
-                reference_field=conf.get('reference_field', 'output')
-            )
-        
-        if 'vector' in raw_config:
-            conf = raw_config['vector']
-            config.vector = VectorConfig(
-                enabled=conf.get('enabled', False),
-                backend=conf.get('backend', 'faiss'),
-                dimension=conf.get('dimension', 384),
-                storage_dir=conf.get('storage_dir', 'data/vectors'),
-                collection=conf.get('collection', 'default')
-            )
-        
-        if 'multimodal' in raw_config:
-            conf = raw_config['multimodal']
-            config.multimodal = MultimodalConfig(
-                enabled=conf.get('enabled', False),
-                image_extensions=conf.get('image_extensions', ['.jpg', '.jpeg', '.png', '.bmp', '.webp']),
-                audio_extensions=conf.get('audio_extensions', ['.wav', '.mp3', '.flac', '.ogg', '.m4a'])
-            )
-        
-        if 'benchmark' in raw_config:
-            conf = raw_config['benchmark']
-            config.benchmark = BenchmarkConfig(
-                enabled=conf.get('enabled', False),
-                baseline_file=conf.get('baseline_file', 'data/benchmark_baseline.json'),
-                metrics=conf.get('metrics', ['pass_rate', 'avg_total_score', 'diversity', 'duplication_rate'])
-            )
-        
-        if 'active_learning' in raw_config:
-            conf = raw_config['active_learning']
-            config.active_learning = ActiveLearningConfig(
-                enabled=conf.get('enabled', False),
-                strategy=conf.get('strategy', 'uncertainty'),
-                batch_size=conf.get('batch_size', 50),
-                max_iterations=conf.get('max_iterations', 10)
-            )
-        
-        if 'frameworks' in raw_config:
-            conf = raw_config['frameworks']
-            config.frameworks = FrameworkConfig(
-                enabled=conf.get('enabled', False),
-                frameworks=conf.get('frameworks', ['langchain', 'llamaindex'])
-            )
-        
-        if 'web' in raw_config:
-            conf = raw_config['web']
-            config.web = WebConfig(
-                port=conf.get('port', 8000),
-                host=conf.get('host', '0.0.0.0'),
-                static_dir=conf.get('static_dir', 'web/dist')
-            )
-        
-        if 'logging' in raw_config:
-            conf = raw_config['logging']
-            config.logging = LoggingConfig(
-                level=conf.get('level', 'INFO'),
-                file=conf.get('file', 'app.log'),
-                format=conf.get('format', '%(asctime)s - %(levelname)s - %(message)s')
-            )
+        for key, config_class, defaults in config_sections:
+            setattr(config, key, _load_section(raw_config, key, config_class, defaults))
     
     return config
 
