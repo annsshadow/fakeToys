@@ -21,7 +21,7 @@ for (const line of lines) {
   }
 
   if (currentModule) {
-    const funcMatch = line.match(/^  (\w+): \(/)
+    const funcMatch = line.match(/^ {2}(\w+): \(/)
     if (funcMatch) {
       modules[currentModule].push(funcMatch[1])
     }
@@ -32,10 +32,7 @@ for (const line of lines) {
   }
 }
 
-const skipModules = [
-  'createRequest', 'apis', 'oa4rustApis', 'additionalApis',
-  'extraApis', 'processplatformSurfaceApi'
-]
+const skipModules = ['createRequest', 'apis', 'oa4rustApis', 'additionalApis', 'extraApis', 'processplatformSurfaceApi']
 
 // Generate test file with ACTUAL function calls
 const testOutput: string[] = []
@@ -76,11 +73,11 @@ for (const [moduleName, functions] of Object.entries(modules)) {
   if (functions.length === 0) continue
 
   testOutput.push('')
-  testOutput.push(\`describe('${moduleName} actual calls', () => {
+  testOutput.push(`describe('${moduleName} actual calls', () => {
 `)
 
   for (const funcName of functions) {
-    testOutput.push(\`  test('${moduleName}.${funcName}', async () => {
+    testOutput.push(`  test('${moduleName}.${funcName}', async () => {
     const mod = await import('./index.ts')
     const api = (mod as any).${moduleName}
     expect(api).toBeDefined()
@@ -103,7 +100,7 @@ for (const [moduleName, functions] of Object.entries(modules)) {
       // Expected with mock
     }
   })
-\`)
+`)
   }
 
   testOutput.push('})')

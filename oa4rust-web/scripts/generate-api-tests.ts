@@ -19,7 +19,7 @@ for (const line of lines) {
   }
 
   if (currentModule) {
-    const funcMatch = line.match(/^  (\w+): \(/)
+    const funcMatch = line.match(/^ {2}(\w+): \(/)
     if (funcMatch) {
       modules[currentModule].push(funcMatch[1])
     }
@@ -31,10 +31,7 @@ for (const line of lines) {
 }
 
 // Skip wrapper modules (not real API modules)
-const skipModules = [
-  'createRequest', 'apis', 'oa4rustApis', 'additionalApis', 
-  'extraApis', 'processplatformSurfaceApi'
-]
+const skipModules = ['createRequest', 'apis', 'oa4rustApis', 'additionalApis', 'extraApis', 'processplatformSurfaceApi']
 
 const testFile: string[] = []
 testFile.push(`import { describe, expect, it, vi, beforeEach } from 'vitest'
@@ -94,5 +91,6 @@ fs.writeFileSync(outputPath, testFile.join('\n'))
 
 const totalFunctions = Object.values(modules).flat().length
 const skippedCount = skipModules.length
-const msg = 'Generated tests for ' + (Object.keys(modules).length - skippedCount) + ' modules, ' + totalFunctions + ' functions'
+const msg =
+  'Generated tests for ' + (Object.keys(modules).length - skippedCount) + ' modules, ' + totalFunctions + ' functions'
 console.log(msg)

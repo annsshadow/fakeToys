@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiClient, AuthenticationError, PermissionError } from './api'
+import { ApiClient, ApiError, AuthenticationError, PermissionError } from './api'
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -151,5 +151,65 @@ describe('ApiClient', () => {
         headers: {},
       }),
     )
+  })
+
+  it('passes an absolute URL path through without base joining', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true, data: {} }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await new ApiClient('/api').get('https://remote.example.test/data')
+
+    expect(fetchMock).toHaveBeenCalledWith('https://remote.example.test/data', expect.any(Object))
+  })
+
+  it('aborts a slow request once timeoutMs elapses', async () => {
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((resolve) => {
+          init.signal?.addEventListener('abort', () => resolve(new Response(null, { status: 204 })))
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const resp = await new ApiClient().get('/slow', { timeoutMs: 30 })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(resp.success).toBe(true)
+  })
+
+  it('retries an upload exactly once after a 401 refresh, replaying the same URL', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({}, 401))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, data: { sent: true } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const resp = await new ApiClient().upload('/api/attachment/upload/folder/1', new FormData())
+
+    expect(resp.success).toBe(true)
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]))
+    expect(urls).toEqual([
+      'https://web.example.test/api/attachment/upload/folder/1',
+      'https://web.example.test/api/authentication/refresh',
+      'https://web.example.test/api/attachment/upload/folder/1',
+    ])
+  })
+
+  it('surfaces AuthenticationError without a refresh attempt when the upload is public', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}, 401))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      new ApiClient().upload('/api/pub-upload', new FormData(), { requireAuth: false }),
+    ).rejects.toBeInstanceOf(AuthenticationError)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('maps upload 403 to PermissionError and other statuses to ApiError', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 403)))
+    await expect(new ApiClient().upload('/api/u', new FormData())).rejects.toBeInstanceOf(PermissionError)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 500)))
+    await expect(new ApiClient().upload('/api/u', new FormData())).rejects.toBeInstanceOf(ApiError)
   })
 })

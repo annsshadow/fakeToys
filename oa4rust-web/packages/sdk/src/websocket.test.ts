@@ -179,3 +179,60 @@ describe('useWebSocket', () => {
     shared.close()
   })
 })
+
+describe('socket lifecycle (error / close / heartbeat / reconnect)', () => {
+  it('connect() rejects with the socket error when the socket fails before opening', async () => {
+    const p = client.connect()
+    const ws = FakeWebSocket.instances[0]
+    const err = new Error('boom')
+    ws.onerror?.(err)
+    await expect(p).rejects.toBe(err)
+  })
+
+  it('reopens a new socket 3s after an unexpected close', async () => {
+    vi.useFakeTimers()
+    const p = client.connect()
+    const ws = FakeWebSocket.instances[0]
+    ws.simulateOpen()
+    await p
+
+    ws.readyState = 3
+    ws.onclose?.()
+    expect(client.connected).toBe(false)
+
+    vi.advanceTimersByTime(3000)
+    expect(FakeWebSocket.instances).toHaveLength(2) // 重连开了新 socket
+    const ws2 = FakeWebSocket.instances[1]
+    ws2.simulateOpen()
+    expect(client.connected).toBe(true)
+    vi.useRealTimers()
+  })
+
+  it('close() cancels a pending reconnect (no new socket after 3s)', async () => {
+    vi.useFakeTimers()
+    const p = client.connect()
+    const ws = FakeWebSocket.instances[0]
+    ws.simulateOpen()
+    await p
+
+    ws.readyState = 3
+    ws.onclose?.()
+    client.close() // 用户主动断开：必须取消自动重连
+
+    vi.advanceTimersByTime(3000)
+    expect(FakeWebSocket.instances).toHaveLength(1)
+    vi.useRealTimers()
+  })
+
+  it('sends a ping heartbeat every 30s while the socket stays open', async () => {
+    vi.useFakeTimers()
+    const p = client.connect()
+    const ws = FakeWebSocket.instances[0]
+    ws.simulateOpen()
+    await p
+
+    vi.advanceTimersByTime(30_000)
+    expect(ws.sent[ws.sent.length - 1]).toBe(JSON.stringify({ type: 'ping' }))
+    vi.useRealTimers()
+  })
+})

@@ -1,11 +1,11 @@
 /**
  * createRequest 分支覆盖测试
- * 
+ *
  * 策略：mock SDK api 对象（它是真实的 I/O 外部依赖，不在本层覆盖范围内），
  * 但让 createRequest 的函数体真正执行，从而获得 V8 语句和分支覆盖。
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // 在 import index.ts 之前注入 mock，避免触发真实 fetch
 const mockApi = {

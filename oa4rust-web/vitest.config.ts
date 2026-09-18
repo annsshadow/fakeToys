@@ -85,21 +85,21 @@ export default defineConfig({
 
 /**
  * Coverage strategy notes:
- * 
+ *
  * 1. UNIT TEST COVERAGE (this config):
  *    - SDK modules: 75-100% (achieved)
  *    - Views: 62-100% (achieved for testable ones)
  *    - API declarations: ~20% (requires browser E2E for full coverage)
- * 
+ *
  * 2. PLAYWRIGHT E2E COVERAGE (requires live backend):
  *    - 启用 COLLECT_COVERAGE=true
  *    - 当前E2E测试覆盖关键API路径（BBS、IM、工作流）
  *    - 通过 /app/ 路由覆盖大量前端代码
- * 
+ *
  * 3. To enable Playwright coverage:
  *    COLLECT_COVERAGE=true npx playwright test --project=coverage-chromium
  *    输出到 coverage-e2e/lcov.info
- * 
+ *
  * 4. RUST COVERAGE:
  *    - Run: cargo tarpaulin --workspace --out Lcov
  *    - Output: coverage-rust/lcov.info

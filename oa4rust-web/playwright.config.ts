@@ -12,17 +12,13 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   globalSetup: './e2e/global-setup.ts',
-  reporter: process.env.COLLECT_COVERAGE 
+  reporter: process.env.COLLECT_COVERAGE
     ? [
         ['list'],
         ['html', { open: 'never', outputFolder: 'playwright-coverage/html' }],
         ['json', { outputFile: 'playwright-coverage/results.json' }],
       ]
-    : [
-        ['list'],
-        ['html', { open: 'never' }],
-        ['json', { outputFile: 'test-results/results.json' }],
-      ],
+    : [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/results.json' }]],
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
@@ -36,18 +32,18 @@ export default defineConfig({
   projects: [
     {
       name: 'live-chromium',
-      use: { 
-        ...devices['Desktop Chrome'], 
+      use: {
+        ...devices['Desktop Chrome'],
         collectCoverage: process.env.COLLECT_COVERAGE === 'true',
-        baseURL: BASE_URL
+        baseURL: BASE_URL,
       },
     },
     {
       name: 'coverage-chromium',
-      use: { 
-        ...devices['Desktop Chrome'], 
+      use: {
+        ...devices['Desktop Chrome'],
         collectCoverage: true,
-        baseURL: BASE_URL
+        baseURL: BASE_URL,
       },
     },
   ],
@@ -57,7 +53,7 @@ export default defineConfig({
 /**
  * To run coverage-enabled E2E tests:
  * COLLECT_COVERAGE=true E2E_USERNAME=admin E2E_PASSWORD=admin123 npx playwright test
- * 
+ *
  * Requires:
  * 1. Live backend server running at BASE_URL (default: http://localhost:3000)
  * 2. Database accessible

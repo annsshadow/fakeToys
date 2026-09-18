@@ -18,3 +18,35 @@ where
     // 占位函数 - 实际使用时需要在调用方传入具体的 Entity 和 Column 类型
     Ok(0)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sea_orm::entity::prelude::*;
+
+    // 探针实体：仅为满足泛型约束而生，不参与任何真实查询。
+    // DeriveEntityModel 要求结构体名必须为 Model（与 *_core_entity 实体同形）。
+    #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+    #[sea_orm(table_name = "orm_probe")]
+    pub struct Model {
+        #[sea_orm(primary_key)]
+        pub id: i32,
+    }
+
+    #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+    pub enum Relation {}
+
+    impl ActiveModelBehavior for ActiveModel {}
+
+    #[tokio::test]
+    async fn count_active_is_a_db_free_placeholder_returning_zero() {
+        // 契约钉死：count_active 是文档化的占位实现，不触库、不读表。
+        // 用已断开的连接做守卫——若将来有人"实现"它并真的发起查询，
+        // 此测试会失败，提醒维护者占位契约已被破坏。
+        let conn = sea_orm::DatabaseConnection::Disconnected;
+        let n = count_active::<Entity>(&conn)
+            .await
+            .expect("placeholder must not fail");
+        assert_eq!(n, 0);
+    }
+}

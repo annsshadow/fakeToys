@@ -1,14 +1,14 @@
 /**
  * Executable tests for main.ts
  * These tests attempt to mock Vue 3 and browser APIs to execute main.ts
- * 
+ *
  * Note: Full coverage requires a live backend with Playwright.
  * These tests verify the structure and provide partial coverage.
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mainPath = path.resolve(__dirname, './main.ts')
 const mainSource = fs.readFileSync(mainPath, 'utf-8')
@@ -25,7 +25,7 @@ describe('main.ts executable verification', () => {
     })
 
     vi.stubGlobal('document', {
-      createElement: vi.fn(() => ({ 
+      createElement: vi.fn(() => ({
         setAttribute: vi.fn(),
         appendChild: vi.fn(),
       })),
@@ -52,13 +52,8 @@ describe('main.ts executable verification', () => {
 
     test('Source contains route definitions', () => {
       // Verify all major route groups
-      const appRoutes = [
-        "'/login'",
-        "'/app'",
-        "'/oauth/callback/:platform'",
-        "'/sso'",
-      ]
-      
+      const appRoutes = ["'/login'", "'/app'", "'/oauth/callback/:platform'", "'/sso'"]
+
       for (const route of appRoutes) {
         expect(mainSource).toContain(`path: ${route}`)
       }
@@ -76,14 +71,14 @@ describe('main.ts executable verification', () => {
     })
 
     test('Source redirects unauthenticated users to login', () => {
-      expect(mainSource).toContain("to.meta.requiresAuth")
+      expect(mainSource).toContain('to.meta.requiresAuth')
       expect(mainSource).toContain("return { name: 'Login'")
     })
   })
 
   describe('i18n initialization', () => {
     test('Creates i18n with Chinese locale', () => {
-      expect(mainSource).toContain("createI18n({")
+      expect(mainSource).toContain('createI18n({')
       expect(mainSource).toContain("locale: 'zh-cn'")
       expect(mainSource).toContain("'zh-cn': {")
     })
@@ -126,18 +121,18 @@ describe('main.ts executable verification', () => {
 
   describe('Theme provider setup', () => {
     test('Imports theme provider', () => {
-      expect(mainSource).toContain("createThemeProvider, useSession")
+      expect(mainSource).toContain('createThemeProvider, useSession')
     })
 
     test('Creates and initializes theme provider', () => {
-      expect(mainSource).toContain("createThemeProvider()")
+      expect(mainSource).toContain('createThemeProvider()')
       expect(mainSource).toContain('themeProvider.init()')
     })
   })
 
   describe('Pinia store setup', () => {
     test('Imports and creates Pinia', () => {
-      expect(mainSource).toContain("createPinia")
+      expect(mainSource).toContain('createPinia')
       expect(mainSource).toContain('app.use(createPinia())')
     })
   })
@@ -150,7 +145,7 @@ describe('main.ts executable verification', () => {
 
     test('Wraps app with NConfigProvider', () => {
       expect(mainSource).toContain('NConfigProvider')
-      expect(mainSource).toContain("h(NConfigProvider, null")
+      expect(mainSource).toContain('h(NConfigProvider, null')
     })
 
     test('Mounts to #o2-app-root', () => {
@@ -234,7 +229,7 @@ describe('main.ts executable verification', () => {
     test('Has OAuth callback route', () => {
       expect(mainSource).toContain("path: '/oauth/callback/:platform'")
       expect(mainSource).toContain("name: 'OAuthCallback'")
-      expect(mainSource).toContain("meta: { requiresAuth: false }")
+      expect(mainSource).toContain('meta: { requiresAuth: false }')
     })
   })
 
@@ -242,7 +237,7 @@ describe('main.ts executable verification', () => {
     test('Has SSO route', () => {
       expect(mainSource).toContain("path: '/sso'")
       expect(mainSource).toContain("name: 'SSO'")
-      expect(mainSource).toContain("meta: { requiresAuth: false }")
+      expect(mainSource).toContain('meta: { requiresAuth: false }')
     })
   })
 
