@@ -57,20 +57,29 @@ def client(pipeline, monkeypatch):
 
 
 @pytest.fixture
-def data_file(tmp_path, sample_items):
-    """写入临时数据文件
+def data_file(sample_items):
+    """在当前工作目录写入临时数据文件，返回可直接拼入 URL 的文件名。
+
+    `/api/data/load/{filename}` 的 `{filename}` 只匹配单个路径段，且路由内部
+    按 `Path(filename).resolve()`（基于进程 CWD）解析。因此不能传入绝对路径：
+    在 POSIX 上绝对路径会引入额外 `/` 使路由不匹配（404 Not Found），
+    而跨盘符（如 Windows 上临时目录在 C:、仓库在 D:）时也无法用相对路径表达。
+    此处直接在 CWD 下建同名文件，Windows 与 POSIX 行为完全一致。
 
     Args:
-        tmp_path: 临时目录
         sample_items: 样本数据
 
-    Returns:
-        文件路径字符串
+    Yields:
+        可拼入 URL 的文件名
     """
-    path = tmp_path / "train_data_api.json"
+    name = "train_data_api.json"
+    path = Path(name)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(sample_items, f, ensure_ascii=False)
-    return str(path)
+    try:
+        yield name
+    finally:
+        path.unlink(missing_ok=True)
 
 
 class TestHealth:
