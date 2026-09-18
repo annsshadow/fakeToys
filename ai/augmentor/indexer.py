@@ -465,6 +465,4 @@ def create_view(items: List[Dict], name: str = "default") -> DatasetView:
     Returns:
         è§†å›¾å®ä¾‹
     """
-    return DatasetView(items, name)
-,{4 5 nÿ"}_ågâ‹'`ı€OS	ÿÿûm R€{US'`ı€OSèlÊ‘ 
- 
+    return DatasetView
