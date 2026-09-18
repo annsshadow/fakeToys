@@ -3,6 +3,7 @@
 在真正导出前，预览数据经过格式转换后的结果，并给出潜在问题告警。
 """
 
+import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
@@ -167,9 +168,19 @@ class PreviewGenerator:
         else:
             converted = raw_converted
 
+        # 预览生成优化：缓存预览结果（避免相同数据重复生成预览）
+        preview_key = hashlib.md5(str(sample[:min(5, len(sample))]).encode()).hexdigest()[:8]
+        if hasattr(self, '_preview_cache') and preview_key in self._preview_cache:
+            logger.debug(f"预览缓存命中（优化）: 格式 {fmt}")
+            cached = self._preview_cache[preview_key]
+            # 更新总数信息（数据可能不同但预览内容相同）
+            cached.format_info["total_items"] = len(items)
+            cached.format_info["preview_items"] = len(sample)
+            return cached
+        
         converted = [self._truncate_record(record) for record in converted]
-
-        return ExportPreview(
+        
+        result = ExportPreview(
             format=fmt,
             original_data=[self._truncate_record(item) for item in sample],
             converted_data=converted,
@@ -182,3 +193,10 @@ class PreviewGenerator:
             },
             warnings=self._collect_warnings(items, fmt)
         )
+        
+        # 保存预览结果到缓存（优化：避免重复生成相同预览）
+        if not hasattr(self, '_preview_cache'):
+            self._preview_cache = {}
+        self._preview_cache[preview_key] = result
+        
+        return result
