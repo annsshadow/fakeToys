@@ -68,4 +68,27 @@ mod tests {
 
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    #[test]
+    fn test_validate_query_rejects_dangerous_sql_keywords_case_insensitively() {
+        // 意图：neural query 服务会把用户原文直接用于取数，validate_query 是
+        // 防注入的第一道闸——8 个危险关键词任一出现（大小写不敏感、子串匹配）
+        // 都必须拒绝，否则恶意用户可借自然语言夹带 DDL/DML。
+        assert!(!crate::validate_query("SELECT * FROM t"));
+        assert!(!crate::validate_query("drop database oa4rust"));
+        assert!(!crate::validate_query("please update the report")); // 子串命中 UPDATE
+        assert!(!crate::validate_query("DELETE me"));
+        assert!(!crate::validate_query("truncate x"));
+        assert!(!crate::validate_query("alter system"));
+        assert!(!crate::validate_query("create table x"));
+        assert!(!crate::validate_query("insert into x"));
+    }
+
+    #[test]
+    fn test_validate_query_allows_plain_natural_language() {
+        // 合法的自然语言取数（含中文）必须放行，否则功能不可用。
+        assert!(crate::validate_query("show me monthly sales"));
+        assert!(crate::validate_query("统计上个月订单数量"));
+        assert!(crate::validate_query("  ")); // 空白串本身合法，trim 校验由调用方负责
+    }
 }
