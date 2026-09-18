@@ -47,9 +47,9 @@ class AugmentorPipeline:
     
     def _init_components(self):
         """初始化各组件"""
-        # 模型后端（可选：未配置 API 密钥时降级，避免阻断断点续传等只读能力）
-        model_config = get_model_config(self.config, self.config.default_model)
+        # 模型后端（可选：未配置模型/密钥时降级，避免阻断断点续传等只读能力）
         try:
+            model_config = get_model_config(self.config, self.config.default_model)
             self.model_backend = create_model_backend(model_config)
         except Exception as exc:
             logger.warning("模型后端初始化失败，增强功能将不可用：%s", exc)
