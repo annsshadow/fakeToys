@@ -182,6 +182,25 @@ describe('confirmMsg', () => {
     expect(dom.doc.getElementById('oa4-confirm-overlay')).toBeNull()
   })
 
+  it('closing protection: calling confirmMsg while an overlay is still open removes the old one first', async () => {
+    // 语义钉死（第 144 行）：重复打开必须先把残留在 DOM 的旧 overlay 摘掉，
+    // 否则两个遮罩叠加会挡住旧弹窗的按钮，用户只能靠 Esc 逃生。
+    const p1 = toast.confirmMsg('first')
+    const firstOverlay = dom.doc.getElementById('oa4-confirm-overlay') as El
+    expect(firstOverlay).not.toBeNull()
+    expect(dom.doc.body.children).toContain(firstOverlay)
+
+    const p2 = toast.confirmMsg('second')
+    expect(dom.doc.getElementById('oa4-confirm-overlay')).not.toBe(firstOverlay)
+    expect(dom.doc.body.children).not.toContain(firstOverlay)
+
+    const [, ok2] = buttons()
+    ok2.onclick!()
+    await expect(p2).resolves.toBe(true)
+    expect(dom.doc.getElementById('oa4-confirm-overlay')).toBeNull()
+    void p1 // 旧弹窗已被新调用抢占移除，允许其永久挂起
+  })
+
   it('toggles hover styling on both buttons (mouseover brightens, mouseout restores)', () => {
     const p = toast.confirmMsg('删除？')
     const [cancel, ok] = buttons()
