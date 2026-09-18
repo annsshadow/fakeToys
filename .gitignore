@@ -90,3 +90,9 @@ scripts/.java-seed-ids.json
 coverage.xml
 htmlcov/
 
+
+# OpenCode
+.backups/
+.opencode/
+opencode.json
+test_output.json
