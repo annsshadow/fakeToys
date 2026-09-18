@@ -510,3 +510,16 @@ def split_dataset(input_path: str, output_dir: str, **kwargs) -> Dict:
     ops = DatasetOperations()
     config = SplitConfig(**kwargs)
     return ops.split_file(input_path, output_dir, config)
+
+
+def batch_merge(datasets: List[List[Dict]], deduplicate: bool = True) -> List[Dict]:
+    ops = DatasetOperations()
+    config = MergeConfig(deduplicate=deduplicate)
+    return ops.merge(datasets, config)
+
+
+def shuffle_dataset(items: List[Dict], seed: Optional[int] = None) -> List[Dict]:
+    result = list(items)
+    random.seed(seed)
+    random.shuffle(result)
+    return result
