@@ -325,9 +325,6 @@ class DataVisualizer:
             "top_words": dict(word_freq.most_common(10))
         }
 
-    def output_dir(self) -> Path:
-        return Path("visualizations")
-
 
 __all__ = [
     "DataVisualizer",
