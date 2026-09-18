@@ -3,6 +3,7 @@
 优先使用 faiss-cpu 加速检索，未安装时退化为 numpy 精确检索，接口保持一致。
 """
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -124,7 +125,20 @@ class FAISSDB(VectorDB):
 
         normalized_query = normalize_vectors(query_array)
         k = min(top_k, len(self._ids))
-
+        
+        # 向量查询优化：缓存查询结果（基于查询向量内容的简单缓存）
+        query_key = hashlib.md5(query_array.tobytes()).hexdigest()[:12]
+        if hasattr(self, '_query_cache') and query_key in self._query_cache:
+            cached_results = self._query_cache[query_key]
+            # 根据当前索引状态过滤有效结果
+            valid_results = [
+                r for r in cached_results
+                if r["id"] in self._ids
+            ]
+            if valid_results:
+                logger.debug(f"查询缓存命中（优化）：返回缓存结果")
+                return [{"id": r["id"], "score": r["score"], "metadata": self.get_metadata(r["id"])} for r in valid_results[:k]]
+        
         if self._index is not None:
             distances, indices = self._index.search(normalized_query, k)
             pairs = list(zip(indices[0], distances[0]))
@@ -152,8 +166,13 @@ class FAISSDB(VectorDB):
                 "metadata": self._metadata[index]
             })
 
+        # 保存搜索结果到缓存（查询优化：避免重复计算相同查询）
+        if not hasattr(self, '_query_cache'):
+            self._query_cache = {}
+        self._query_cache[query_key] = results
+        
         return results
-
+    
     def delete(self, ids: List[str]) -> int:
         """删除向量
 
