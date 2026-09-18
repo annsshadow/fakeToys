@@ -819,7 +819,6 @@ def main():
                     print(f"    建议: {insight.recommendation}")
             
             if args.output:
-                import json
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
@@ -959,7 +958,6 @@ def main():
                     print(f"  {i}. {item.get('instruction', '')[:50]}...")
             
             if args.output:
-                import json
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
@@ -992,7 +990,6 @@ def main():
                     print(f"  {metric_name}: {metric_value:.2f}")
             
             if args.output:
-                import json
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
@@ -1025,7 +1022,6 @@ def main():
                     print(f"  - {rec}")
             
             if args.output:
-                import json
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
@@ -1098,7 +1094,6 @@ def main():
             print(report)
             
             if args.output:
-                import json
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
@@ -1125,7 +1120,6 @@ def main():
                     print(f"    - {alert.message}")
             
             if args.output:
-                import json
                 output_path = Path(args.output)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
@@ -1165,7 +1159,6 @@ def main():
                 print(f"  边数: {len(graph['edges'])}")
                 
                 if args.output:
-                    import json
                     output_path = Path(args.output)
                     output_path.parent.mkdir(parents=True, exist_ok=True)
                     with open(output_path, 'w', encoding='utf-8') as f:
