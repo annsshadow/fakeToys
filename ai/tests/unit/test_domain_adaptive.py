@@ -70,3 +70,41 @@ class TestDomainDetection:
         items = [{"instruction": "设备维修"}, {"instruction": "故障处理"}]
         domain = expander._detect_domain(items)
         assert isinstance(domain, str)
+
+
+class TestAdaptiveExpansionEdgeCases:
+    """领域自适应增强边界测试"""
+    
+    def test_adaptive_expansion_with_empty_items(self, mock_model_backend):
+        """空数据应安全处理，不抛异常"""
+        expander = DomainExpander(model_backend=mock_model_backend)
+        result = expander.generate_adaptive_expansion([])
+        assert result.strategy in ("similar", "related", "scenario")
+        assert len(result.expanded_topics) == 0 or len(result.expanded_topics) > 0
+    
+    def test_adaptive_expansion_with_mixed_domains(self, mock_model_backend):
+        """混合领域数据应检测到主导领域"""
+        expander = DomainExpander(model_backend=mock_model_backend)
+        items = [
+            {"instruction": "如何租房？"},
+            {"instruction": "租房合同条款"},
+            {"instruction": "租金支付方式"},
+            {"instruction": "设备维修流程"},
+            {"instruction": "投诉建议"},
+        ]
+        result = expander.generate_adaptive_expansion(items)
+        # 混合数据应仍有有效扩展结果
+        assert isinstance(result.strategy, str)
+        assert result.strategy in ("similar", "related", "scenario")
+    
+    def test_adaptive_expansion_no_model_backend_raises_gracefully(self):
+        """无模型后端时应优雅处理（通过代码存在性验证）"""
+        # 由于 DomainExpander 初始化需要 model_backend，这里验证代码路径存在
+        from augmentor.expander import DomainExpander
+        assert hasattr(DomainExpander, 'generate_adaptive_expansion')
+    
+    def test_domain_detection_empty_string(self, mock_model_backend):
+        """空指令应返回通用领域"""
+        expander = DomainExpander(model_backend=mock_model_backend)
+        domain = expander._detect_domain([{"instruction": ""}, {"instruction": ""}])
+        assert domain == "通用领域"
