@@ -53,6 +53,7 @@ from .aggregator import DataAggregator, AggregationResult, aggregate_datasets
 from .impact import ImpactEvaluator, AugmentationImpact, evaluate_augmentation
 from .data_splitter import DataSplitter, split_dataset
 from .quality_gate import QualityGate, GateRule, GateReport, build_default_gate
+from .health_score import DatasetHealthScore
 from .exceptions import (
     AugmentorError,
     ConfigError,
@@ -233,6 +234,7 @@ __all__ = [
     "GateRule",
     "GateReport",
     "build_default_gate",
+    "DatasetHealthScore",
     "AugmentorError",
     "ConfigError",
     "ModelError",

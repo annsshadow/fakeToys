@@ -7,6 +7,7 @@ import hashlib
 import threading
 from typing import List, Dict, Optional
 from pathlib import Path
+import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
 
@@ -482,3 +483,74 @@ class AugmentorPipeline:
         
         self.visualizer.output_dir = Path(output_dir)
         return self.visualizer.generate_all_visualizations(items)
+    
+    async def augment_async(self,
+                            input_file: str,
+                            output_file: str,
+                            use_checkpoint: bool = True,
+                            use_quality_check: bool = True,
+                            use_dedup: bool = True,
+                            max_workers: int = 4) -> Dict:
+        """异步增强数据集 - 性能优化版，使用 asyncio 并行处理
+        
+        Args:
+            input_file: 输入文件路径
+            output_file: 输出文件路径
+            use_checkpoint: 是否使用断点续传
+            use_quality_check: 是否使用质量检查
+            use_dedup: 是否使用去重
+            max_workers: 最大并发工作线程数
+        
+        Returns:
+            处理报告
+        """
+        loop = asyncio.get_running_loop()
+        with open(input_file, 'r', encoding='utf-8') as f:
+            items = json.load(f)
+        
+        logger.info(f"异步增强启动: {len(items)} 条种子数据")
+        
+        # 使用线程池执行同步增强逻辑，避免阻塞事件循环
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            tasks = []
+            for idx, item in enumerate(items):
+                # 提交到线程池
+                future = loop.run_in_executor(
+                    executor,
+                    self.augment_seed,
+                    item,
+                    use_quality_check,
+                    []
+                )
+                tasks.append(future)
+            
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        all_results = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"异步处理单条数据失败: {result}")
+                continue
+            all_results.extend(result)
+        
+        # 去重
+        if use_dedup and all_results:
+            logger.info(f"异步去重前: {len(all_results)} 条")
+            all_results = self.deduplicator.deduplicate_and_filter(all_results)
+            logger.info(f"异步去重后: {len(all_results)} 条")
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(all_results, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"异步保存 {len(all_results)} 条数据到 {output_file}")
+        
+        return {
+            "task_id": f"async_{hashlib.md5(str(input_file).encode()).hexdigest()[:8]}",
+            "input_file": input_file,
+            "output_file": output_file,
+            "input_count": len(items),
+            "output_count": len(all_results),
+            "async_mode": True,
+            "quality_check": use_quality_check,
+            "dedup": use_dedup
+        }
