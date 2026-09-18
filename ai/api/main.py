@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from augmentor.config import load_config
-from api.middleware import RequestLoggingMiddleware
+from api.middleware import RequestLoggingMiddleware, RequestTraceMiddleware
 from api.routes import augment, audit, config, data, export, leakage, multimodal, privacy, quality, version
 
 logging.basicConfig(
@@ -33,6 +33,8 @@ app.add_middleware(
 
 # 请求日志与耗时统计
 app.add_middleware(RequestLoggingMiddleware)
+# 请求追踪 ID（透传或生成 X-Request-ID）
+app.add_middleware(RequestTraceMiddleware)
 
 # ============ 路由注册 ============
 app.include_router(data.router)
