@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import time
 import hashlib
 import threading
@@ -259,12 +260,14 @@ class AugmentorPipeline:
                 logger.warning(f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
         
         if use_parallel and len(remaining_indices) > 1:
-            # 并行处理
+            # 优化线程池：根据任务规模动态调整线程数，避免过度并发
+            available_cores = max(1, (os.cpu_count() or 1) - 1)
             num_threads = min(
                 self.config.augmentation.num_threads,
-                len(remaining_indices)
+                len(remaining_indices),
+                available_cores * 2  # 限制为核心数的2倍，避免过度上下文切换
             )
-            logger.info(f"使用 {num_threads} 个线程并行处理")
+            logger.info(f"优化线程池: 使用 {num_threads} 个线程 (核心: {available_cores}, 任务: {len(remaining_indices)})")
             
             result_queue = Queue()
             
