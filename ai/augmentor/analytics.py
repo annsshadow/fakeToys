@@ -492,3 +492,36 @@ def get_dataset_insights(items: List[Dict]) -> List[DataInsight]:
     analyzer = DatasetAnalyzer(items)
     report = analyzer.analyze()
     return report.insights
+
+
+def analyze_dataset_fast(items: List[Dict], top_k: int = 5) -> Dict:
+    """快速数据分析（增强功能：优化分析性能，适用于大数据集预览）
+    
+    Args:
+        items: 数据列表
+        top_k: 返回前k个关键词
+    
+    Returns:
+        快速分析结果（包含基本统计、关键词、趋势简要信息）
+    """
+    from collections import Counter
+    
+    # 快速提取基础信息（避免完整分析的计算开销）
+    instructions = [str(item.get("instruction", "")) for item in items if item.get("instruction")]
+    outputs = [str(item.get("output", "")) for item in items if item.get("output")]
+    
+    # 简单词频统计（优化：只计算前100条数据避免大数据集开销）
+    sample_size = min(100, len(instructions))
+    sample_text = " ".join(instructions[:sample_size])
+    words = [w for w in sample_text.split() if len(w) > 1]
+    word_freq = Counter(words)
+    
+    return {
+        "fast_analysis": True,
+        "sample_size": len(items),
+        "analyzed_sample": sample_size,
+        "top_words": [word for word, _ in word_freq.most_common(top_k)],
+        "avg_instruction_length": sum(len(s) for s in instructions) / max(len(instructions), 1) if instructions else 0,
+        "avg_output_length": sum(len(s) for s in outputs) / max(len(outputs), 1) if outputs else 0,
+        "has_empty_fields": any(not item.get("instruction") or not item.get("output") for item in items)
+    }
