@@ -66,7 +66,7 @@ async def update_config(request: ConfigUpdateRequest):
         from augmentor.config import save_config
         
         p = get_pipeline()
-        updates = request.dict(exclude_none=True)
+        updates = request.model_dump(exclude_none=True)
         
         if "default_model" in updates:
             p.config.default_model = updates["default_model"]
