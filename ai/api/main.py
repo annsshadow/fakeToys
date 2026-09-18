@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from augmentor.config import load_config
 from api.middleware import RequestLoggingMiddleware
-from api.routes import augment, config, data, export, multimodal, quality, version
+from api.routes import augment, config, data, export, multimodal, privacy, quality, version
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,6 +42,7 @@ app.include_router(export.router)
 app.include_router(version.router)
 app.include_router(config.router)
 app.include_router(multimodal.router)
+app.include_router(privacy.router)
 
 
 # ============ 健康检查 ============
