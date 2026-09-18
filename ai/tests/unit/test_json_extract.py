@@ -90,6 +90,46 @@ class TestExtractJsonList:
         assert result.value == [{"i": 1}]
 
 
+class TestBalancedEscapes:
+    def test_escaped_quote_inside_string(self):
+        """字符串内转义引号不应提前终止平衡扫描"""
+        # 实际数据含反斜杠转义的引号（raw 字符串保留 \\）
+        text = r'结果 {"msg": "含 \" 引号", "n": 2} 完'
+        result = extract_json(text)
+        assert result.ok is True
+        assert result.value == {"msg": '含 " 引号', "n": 2}
+
+    def test_backslash_in_string(self):
+        text = r'前 {"path": "a\\b"} 后'
+        result = extract_json(text)
+        assert result.ok is True
+        assert result.value["path"] == "a\\b"
+
+
+class TestFenceRepair:
+    def test_fence_with_trailing_comma(self):
+        text = '```json\n{"a": 1, "b": [1,],}\n```'
+        result = extract_json(text)
+        assert result.ok is True
+        assert result.method == "fence"
+        assert result.value == {"a": 1, "b": [1]}
+
+    def test_fence_json_keyword(self):
+        text = '```json\n[{"x": 1}]\n```'
+        result = extract_json(text)
+        assert result.ok is True
+        assert result.value == [{"x": 1}]
+
+
+class TestNoStructure:
+    def test_plain_prose_none(self):
+        assert extract_json("就一句话，没有任何结构").ok is False
+
+    def test_partial_object_unclosed(self):
+        assert extract_json('{"a": 1').ok is False
+        assert extract_json('[1, 2').ok is False
+
+
 class TestHelpers:
     def test_balanced_span_missing(self):
         assert _balanced_span("没有括号") is None

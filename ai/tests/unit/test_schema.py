@@ -117,6 +117,32 @@ class TestValidateDataset:
         assert result.total_items == 0
 
 
+class TestSchemaBoundaries:
+    def test_null_required_field_error(self):
+        schema = DatasetSchema.from_spec({"a": {"type": int, "required": True}})
+        assert any("为空" in e for e in schema.validate_item({"a": None}))
+
+    def test_null_optional_field_ok(self):
+        schema = DatasetSchema.from_spec({"a": {"type": int, "required": False}})
+        assert schema.validate_item({"a": None}) == []
+
+    def test_max_length_violation(self):
+        schema = DatasetSchema.from_spec({"s": {"type": str, "max_length": 2}})
+        assert any("长度" in e and "大于" in e for e in schema.validate_item({"s": "abc"}))
+
+    def test_min_value_violation(self):
+        schema = DatasetSchema.from_spec({"n": {"type": int, "min_value": 0}})
+        assert any("小于" in e for e in schema.validate_item({"n": -5}))
+
+    def test_list_min_max_length(self):
+        schema = DatasetSchema.from_spec(
+            {"tags": {"type": list, "min_length": 1, "max_length": 3}}
+        )
+        assert schema.validate_item({"tags": ["a", "b"]}) == []
+        assert schema.validate_item({"tags": []})
+        assert schema.validate_item({"tags": [1, 2, 3, 4]})
+
+
 class TestFieldRuleDirect:
     def test_rule_defaults(self):
         rule = FieldRule()
