@@ -1,5 +1,11 @@
 # AI 训练数据增强工具配置文件
 
+# 应用配置
+app:
+  name: ai-augmentor
+  version: "1.0"
+  debug: false
+
 # 模型配置
 models:
   # 默认使用的模型
