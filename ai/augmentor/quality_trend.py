@@ -109,11 +109,10 @@ class QualityTrendTracker:
         values = [t["value"] for t in self.get_trend_for_metric(metric_name, dataset_name)]
         if len(values) < 2:
             return "insufficient_data"
-        
+
+        # values 长度已保证 ≥2，最近窗口长度随之 ≥2，无需二次检查
         recent_values = values[-min(5, len(values)):]
-        if len(recent_values) < 2:
-            return "insufficient_data"
-        
+
         first = recent_values[0]
         last = recent_values[-1]
         
