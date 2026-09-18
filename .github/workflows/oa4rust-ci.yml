@@ -147,8 +147,20 @@ jobs:
           elif [ "${{ matrix.dialect }}" = "mysql" ]; then
             echo "DATABASE_URL=mysql://o2server:password@localhost:3306/oa4rust" >> $GITHUB_ENV
           fi
+      # 与 unit-tests 同理：cargo test -p parity --lib 的 behavior 契约测试
+      # 会真实查库（test_pool() 硬编码 localhost:5432/oa4rust），空库无表时
+      # handler 报错返回 500 → 41 个 parity 用例失败。此处先建表。
+      # 固定 postgres 方言：services 里只有 PostgreSQL 承载 parity 所需结构，
+      # 若用矩阵的 mysql 方言会把迁移 SQL 重写为 MySQL 语法再发给 PG。
+      - name: Apply migrations
+        run: cargo run --bin oa4rust -- --migrate-only
+        env:
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+          DATABASE_DIALECT: postgres
       - name: Run parity tests (unit-only)
         run: cargo test -p parity --lib
+        env:
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
       - name: Run route-conflict probe (u2_probe)
         run: cargo test --test u2_probe
       - name: Run integration tests (${{ matrix.dialect }})
