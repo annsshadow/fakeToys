@@ -140,7 +140,8 @@ class DataCleaner:
             return "en"
         if cjk_ratio > 0.1 and latin_ratio > 0.1:
             return "mixed"
-        return "other"
+        # 各比例区间已被上方分支穷尽，此处仅为类型完整性的兜底
+        return "unknown"
 
     def clean_text(self, text: str) -> str:
         """组合执行去噪与格式标准化
