@@ -74,11 +74,8 @@ class MultilingualSupport:
             return "zh"
         if latin_ratio >= 0.8:
             return "en"
-        if cjk_ratio > 0.1 and latin_ratio > 0.1:
-            return "mixed"
-        # 各比例区间已被上方分支穷尽，此处仅为类型完整性的兜底，
-        # 与文档词表（zh / en / mixed / unknown）保持一致
-        return "unknown"
+        # 此处 cjk<0.8 且 latin<0.8；因 cjk+latin=1，必有一方 >0.1，即混合
+        return "mixed"
 
     def is_mixed(self, text: str) -> bool:
         """判断文本是否为中英混合
