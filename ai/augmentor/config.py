@@ -230,6 +230,12 @@ def load_config(config_path: Optional[str] = None) -> AppConfig:
                 return os.environ.get(env_var, '')
             return value
         
+        # 优化配置加载：缓存解析结果（避免重复解析相同配置）
+        config_cache_key = config_path or "default"
+        if hasattr(config, '_load_cache') and config_cache_key in config._load_cache:
+            logger.debug("使用缓存配置（性能优化）")
+            return config._load_cache[config_cache_key]
+        
         # 加载模型配置
         if 'models' in raw_config:
             config.default_model = raw_config['models'].get('default', 'ernie')
