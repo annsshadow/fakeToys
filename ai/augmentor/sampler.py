@@ -46,12 +46,12 @@ class ActiveSampler:
         Returns:
             问题类型
         """
-        if "什么" in text or "是" in text:
+        if "为什么" in text:
+            return "why"
+        elif "什么" in text or "是" in text:
             return "what"
         elif "怎么" in text or "如何" in text:
             return "how"
-        elif "为什么" in text:
-            return "why"
         elif "能不能" in text or "可以" in text:
             return "can"
         elif "多少" in text or "几" in text:
