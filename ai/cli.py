@@ -801,7 +801,7 @@ def main():
                     print(f"  - {w.path}: {w.message}")
 
         # ============ 数据分析 ============
-        elif args.command == "analyze":
+        elif args.command == "analyze-data":
             from augmentor.analytics import analyze_dataset
 
             items = _load_items(args.input)
@@ -886,7 +886,7 @@ def main():
                 print(f"\n报告已保存到 {args.output}")
 
         # ============ 数据可视化 ============
-        elif args.command == "visualize":
+        elif args.command == "visualize-data":
             from augmentor.visualize_enhanced import visualize_dataset
 
             items = _load_items(args.input)
