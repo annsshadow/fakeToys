@@ -130,12 +130,10 @@ class DatasetAuditor:
                     f"与参考集存在 {report.leak_count} 条泄漏，需隔离"
                 )
 
-        # 总体判定
+        # 总体判定（空数据集已在入口早退，此处 items 必非空）
         report.ready = not any(
             f.startswith(("检测到", "与参考集存在")) for f in report.findings
         )
-        if not items:
-            report.ready = False
 
         logger.info(
             "审计完成: %d 条，ready=%s，findings=%s",

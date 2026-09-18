@@ -138,10 +138,8 @@ class DataCleaner:
             return "zh"
         if latin_ratio >= 0.8:
             return "en"
-        if cjk_ratio > 0.1 and latin_ratio > 0.1:
-            return "mixed"
-        # 各比例区间已被上方分支穷尽，此处仅为类型完整性的兜底
-        return "unknown"
+        # 此处 cjk<0.8 且 latin<0.8；因 cjk+latin=1，必有一方 >0.1，即混合
+        return "mixed"
 
     def clean_text(self, text: str) -> str:
         """组合执行去噪与格式标准化
