@@ -324,3 +324,5 @@ class DataVisualizer:
             "unique_words": len(word_freq),
             "top_words": dict(word_freq.most_common(20))
         }
+,{3 9 nÿïSÆ‰SŸRı€X:_	ÿÿûm R€{USOS 
+ 
