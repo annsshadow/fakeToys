@@ -362,5 +362,3 @@ def list_versions(versions_dir: str = ".versions") -> List[Dict]:
     """
     manager = DatasetVersionManager(versions_dir)
     return manager.list_versions()
-,{3 8 nÿHr,g§c6RŸRı€X:_	ÿÿûm R€{USOSèlÊ‘ 
- 

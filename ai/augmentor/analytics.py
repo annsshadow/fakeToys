@@ -525,4 +525,3 @@ def analyze_dataset_fast(items: List[Dict], top_k: int = 5) -> Dict:
         "avg_output_length": sum(len(s) for s in outputs) / max(len(outputs), 1) if outputs else 0,
         "has_empty_fields": any(not item.get("instruction") or not item.get("output") for item in items)
     }
-,{4
