@@ -430,3 +430,41 @@ def extract_keywords(text: str, top_k: int = 10) -> List[str]:
     """
     normalizer = TextNormalizer()
     return normalizer.extract_keywords(text, top_k)
+
+
+def clean_batch_optimized(items: List[Dict],
+                           fields: List[str] = None,
+                           rules: List[str] = None,
+                           batch_size: int = 100) -> tuple:
+    """批量清洗优化（增强功能：分批处理大数据集，减少内存峰值）
+    
+    Args:
+        items: 数据列表
+        fields: 要清洗的字段列表
+        rules: 要应用的规则列表
+        batch_size: 批处理大小
+    
+    Returns:
+        (清洗后的数据, 清洗结果汇总)
+    """
+    cleaner = DatasetCleaner()
+    cleaned_items = []
+    total_modified = 0
+    total_removed = 0
+    
+    # 批量处理优化：分批清洗避免一次性处理大数据集
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        cleaned_batch, result = cleaner.clean(batch, fields, rules)
+        cleaned_items.extend(cleaned_batch)
+        total_modified += result.modified_count
+        total_removed += result.removed_count
+    
+    final_result = CleaningResult(
+        original_count=len(items),
+        cleaned_count=len(cleaned_items),
+        removed_count=total_removed,
+        modified_count=total_modified,
+        rules_applied=rules or []
+    )
+    return cleaned_items, final_result
