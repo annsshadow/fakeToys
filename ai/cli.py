@@ -286,6 +286,10 @@ def build_parser() -> argparse.ArgumentParser:
                               default=["instruction", "input", "output"], help="统计字段")
     audit_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
 
+    # 依赖诊断命令
+    doctor_parser = subparsers.add_parser("doctor", help="运行时依赖诊断")
+    doctor_parser.add_argument("--json", action="store_true", help="输出 JSON 报告")
+
     # 增强搜索命令
     search_enhanced_parser = subparsers.add_parser("search-enhanced", help="增强搜索")
     search_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
@@ -1020,6 +1024,22 @@ def main():
             if args.output:
                 _dump_json(report.to_dict(), args.output)
                 print(f"审计报告已保存到 {args.output}")
+
+        # ============ 依赖诊断 ============
+        elif args.command == "doctor":
+            from augmentor.diagnostics import check_dependencies
+
+            report = check_dependencies()
+            if args.json:
+                _print(report.to_dict())
+            else:
+                print(f"可选依赖: {report.available_count}/{len(report.installed)} 可用")
+                if report.missing:
+                    print(f"缺失: {', '.join(report.missing)}")
+                if report.degraded_features:
+                    print("降级特性:")
+                    for feature in report.degraded_features:
+                        print(f"  - {feature}")
 
         # ============ 增强搜索 ============
         elif args.command == "search-enhanced":
