@@ -29,12 +29,9 @@ class TestQuestionType:
     def test_classifies_question_type(self, sampler, text, expected):
         assert sampler._analyze_question_type(text) == expected
 
-    def test_why_question_matches_earlier_what_branch(self, sampler):
-        """已知行为：包含"什么"的分支先于"为什么"命中，故 why 分支实际不可达。
-
-        这里固化当前行为，避免后续误改而无人察觉；如需修正需同时调整分支顺序。
-        """
-        assert sampler._analyze_question_type("为什么申请被拒绝") == "what"
+    def test_why_question_now_reachable(self, sampler):
+        """修复后："为什么" 优先判定，why 分支可达（此前被 "什么" 分支误吞）"""
+        assert sampler._analyze_question_type("为什么申请被拒绝") == "why"
 
 
 class TestLengthDistribution:
