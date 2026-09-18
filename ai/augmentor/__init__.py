@@ -52,6 +52,7 @@ from .retry import RetryStats, with_retries, compute_delay, should_retry
 from .audit import DatasetAuditor, AuditReport, audit_dataset
 from .prompts import PromptTemplate, PromptRegistry, TemplateError, create_template
 from .schema import DatasetSchema, FieldRule, SchemaValidationResult, validate_schema
+from .diagnostics import DiagnosticsReport, check_dependencies, require_dependency, summary_line
 from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
@@ -242,6 +243,10 @@ __all__ = [
     "FieldRule",
     "SchemaValidationResult",
     "validate_schema",
+    "DiagnosticsReport",
+    "check_dependencies",
+    "require_dependency",
+    "summary_line",
     "DataProfiler",
     "ProfilingConfig",
     "profile_dataset",
