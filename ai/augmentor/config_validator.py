@@ -17,6 +17,10 @@ class ValidationResult:
         self.errors = []
 
 
+ValidationSeverity = ValidationResult
+Severity = ValidationResult
+
+
 class ConfigValidator:
     def __init__(self):
         pass
