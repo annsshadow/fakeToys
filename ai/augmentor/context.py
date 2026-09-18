@@ -230,3 +230,76 @@ class ContextAugmentor:
             results.append(result)
         
         return results
+    
+    def analyze_context_intent(self, history: List[Dict], current_instruction: str) -> Dict:
+        """分析上下文中的用户意图变化（上下文感知增强）
+        
+        Args:
+            history: 历史对话列表
+            current_instruction: 当前指令
+        
+        Returns:
+            意图分析结果，包含主题一致性、意图变化趋势等
+        """
+        if not history:
+            return {
+                "context_depth": 0,
+                "intent_shift": "none",
+                "theme_consistency": 1.0,
+                "suggested_follow_up": True
+            }
+        
+        # 提取历史问题关键词（简化实现）
+        history_questions = [
+            turn.get("content", "") for turn in history
+            if turn.get("role") == "user"
+        ]
+        
+        current_words = set(str(current_instruction).lower().split())
+        history_words = set()
+        for q in history_questions:
+            history_words.update(str(q).lower().split())
+        
+        overlap = len(current_words & history_words) / (len(current_words) + 1e-6)
+        
+        intent_shift = "continued" if overlap > 0.3 else "shifted"
+        
+        return {
+            "context_depth": len(history) // 2,
+            "intent_shift": intent_shift,
+            "theme_consistency": float(overlap),
+            "suggested_follow_up": overlap < 0.7
+        }
+    
+    def enhance_with_context_awareness(self,
+                                       seed_qa: Dict,
+                                       history: Optional[List[Dict]] = None) -> Dict:
+        """基于上下文感知的增强生成（上下文感知增强功能）
+        
+        Args:
+            seed_qa: 种子问答对
+            history: 对话历史（可选）
+        
+        Returns:
+            增强后的数据，包含上下文分析结果
+        """
+        instruction = seed_qa.get("instruction", "")
+        output = seed_qa.get("output", "")
+        
+        context_analysis = self.analyze_context_intent(history or [], instruction)
+        
+        enhanced = {
+            "instruction": instruction,
+            "input": seed_qa.get("input", ""),
+            "output": output,
+            "history": history or [],
+            "system": seed_qa.get("system", "你是安居乐寓的智能客服"),
+            "context_awareness": {
+                "intent_shift": context_analysis["intent_shift"],
+                "theme_consistency": context_analysis["theme_consistency"],
+                "context_depth": context_analysis["context_depth"],
+                "suggested_follow_up": context_analysis["suggested_follow_up"]
+            }
+        }
+        
+        return enhanced
