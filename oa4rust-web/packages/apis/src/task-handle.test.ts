@@ -1,11 +1,11 @@
 /**
  * taskHandle 分支覆盖测试
- * 
+ *
  * 策略：mock SDK api 对象（真实的 I/O 外部依赖，不在本层覆盖范围内），
  * 但让 taskHandle 的函数体真正执行，覆盖 approve / reject 两条分支。
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockPost = vi.fn(() => Promise.resolve({ data: 'task-result' }))
 

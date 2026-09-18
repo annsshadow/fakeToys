@@ -2,20 +2,20 @@
  * API SDK Integration Tests
  * 这些测试实际调用 @oa4rust/sdk 的 API 函数
  * 目标：通过实际HTTP调用，为 index.ts 中的 API函数提供覆盖
- * 
+ *
  * 注意：由于 SDK 使用 window 全局变量，需要正确的测试环境
  */
 
-import { describe, expect, it, beforeAll, vi, beforeEach } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // 检查后端是否可用
-let backendAvailable = false
+const backendAvailable = false
 
 // 在 Node 环境中模拟浏览器全局
 beforeAll(() => {
   // 模拟 window 对象
   vi.stubGlobal('window', {
-    location: { origin: 'http://localhost:3000' }
+    location: { origin: 'http://localhost:3000' },
   })
 })
 
@@ -154,7 +154,7 @@ describe('SDK API Integration Tests', () => {
       const result = await messageApi.msgSend({
         conversationId: 'test-conv',
         content: 'test message',
-        type: 'text'
+        type: 'text',
       })
       expect(result.success !== undefined || result.data !== undefined).toBe(true)
     } catch (e) {

@@ -3,8 +3,82 @@
  * （端点路径本身由 tests/contracts/mobile-endpoints.test.ts 的契约守卫覆盖，
  * 这里不重复钉 URL，只钉数据解析与请求体形状。）
  */
-import { describe, expect, it } from 'vitest'
-import { messageConversationId } from './index'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { getApiBase, setApiBase } from './http'
+import { fileApi, messageApi, messageConversationId, processApi } from './index'
+
+/** 捕获 uni.request 的最小 stub（服务方法本身只关心 method/url/data/options）。 */
+function installRequestCapture() {
+  const calls: Array<{ method: string; url: string; data?: unknown }> = []
+  vi.stubGlobal('uni', {
+    request: (opts: { method: string; url: string; data?: unknown; success: (r: unknown) => void }) => {
+      calls.push({ method: opts.method, url: opts.url, data: opts.data })
+      opts.success({ statusCode: 200, data: { success: true } })
+    },
+    uploadFile: () => {},
+  })
+  return calls
+}
+
+describe('processApi approval bodies (真实审批引擎 /api/task/{id}/complete|reject)', () => {
+  it('completeTask sends the engine-required action "approve" with data/opinion defaults', async () => {
+    // 引擎缺 action 会 400；data 缺省 {} 也是引擎约定。
+    const calls = installRequestCapture()
+    await processApi.completeTask('t-1', { opinion: '同意', data: { x: 1 } })
+    const call = calls[0]
+    expect(call.method).toBe('POST')
+    expect(call.url).toBe('/api/task/t-1/complete')
+    expect(call.data).toEqual({ data: { x: 1 }, opinion: '同意', action: 'approve' })
+  })
+
+  it('completeTask without payload sends the full default body', async () => {
+    const calls = installRequestCapture()
+    await processApi.completeTask('t-2')
+    expect(calls[0].data).toEqual({ data: {}, opinion: '', action: 'approve' })
+  })
+
+  it('rejectTask pins action "reject" on the reject endpoint', async () => {
+    const calls = installRequestCapture()
+    await processApi.rejectTask('t-3', { opinion: '材料不全' })
+    expect(calls[0].url).toBe('/api/task/t-3/reject')
+    expect(calls[0].data).toEqual({ data: {}, opinion: '材料不全', action: 'reject' })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('messageApi.send (IM 双键下发)', () => {
+  it('emits both the quoted legacy key and the plain key so any reader can attribute the message', async () => {
+    // 后端生成 handler 按带引号键读取会话归属；只发一种键会让另一端解析不到会话。
+    const calls = installRequestCapture()
+    await messageApi.send('conv-9', 'hi', 'alice')
+    expect(calls[0].url).toBe('/api/message/assemble/communicate/im/msg')
+    expect(calls[0].data).toMatchObject({
+      '"conversationId"': 'conv-9',
+      conversationId: 'conv-9',
+      content: 'hi',
+      sender: 'alice',
+      type: 'text',
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+})
+
+describe('fileApi download URLs (原生 App / 小程序绝对地址)', () => {
+  it('joins the configured apiBase so offline targets reach the backend', () => {
+    setApiBase('http://10.0.0.8:5432/')
+    expect(fileApi.fileDownloadUrl('f-1')).toBe('http://10.0.0.8:5432/api/file/assemble/control/file/f-1/download')
+    expect(fileApi.attachmentDownloadUrl('a-1')).toBe('http://10.0.0.8:5432/api/attachment/a-1/download')
+    setApiBase('')
+    expect(fileApi.fileDownloadUrl('f-2')).toBe('/api/file/assemble/control/file/f-2/download')
+    expect(getApiBase()).toBe('')
+  })
+})
 
 describe('messageConversationId (IM 会话键解析)', () => {
   it('prefers the quoted "conversationId" key emitted by the legacy generator', () => {
