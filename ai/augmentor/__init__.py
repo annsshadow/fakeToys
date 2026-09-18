@@ -46,6 +46,7 @@ from .dependency import DependencyManager, Dependency, DatasetInfo, register_dat
 from .migration import DatasetMigrator, MigrationRule, MigrationResult, migrate_dataset, migrate_file
 from .outlier import OutlierDetector, OutlierReport, detect_outliers
 from .privacy import PiiSanitizer, SanitizeReport, sanitize_pii
+from .leakage import LeakageDetector, LeakageReport, detect_leakage
 from .profiling import DataProfiler, ProfilingConfig, profile_dataset
 from .feature_detect import FeatureDetector, FeatureInfo, detect_features
 from .auto_config import AutoConfig, AutoConfigRecommendation, auto_recommend
@@ -215,6 +216,9 @@ __all__ = [
     "PiiSanitizer",
     "SanitizeReport",
     "sanitize_pii",
+    "LeakageDetector",
+    "LeakageReport",
+    "detect_leakage",
     "DataProfiler",
     "ProfilingConfig",
     "profile_dataset",
