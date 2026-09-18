@@ -261,6 +261,15 @@ def build_parser() -> argparse.ArgumentParser:
     backup_parser.add_argument("--name", type=str, help="备份名称")
     backup_parser.add_argument("--backup-dir", type=str, default=".backups", help="备份目录")
 
+    # PII 脱敏命令
+    sanitize_parser = subparsers.add_parser("sanitize", help="PII 脱敏")
+    sanitize_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
+    sanitize_parser.add_argument("--output", type=str, required=True, help="脱敏结果输出路径")
+    sanitize_parser.add_argument("--fields", type=str, nargs="+",
+                                 default=["instruction", "input", "output"], help="脱敏字段")
+    sanitize_parser.add_argument("--extra", action="store_true",
+                                 help="启用额外模式（信用卡号/URL，误伤面较大）")
+
     # 增强搜索命令
     search_enhanced_parser = subparsers.add_parser("search-enhanced", help="增强搜索")
     search_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
@@ -939,6 +948,21 @@ def main():
                     print(f"删除成功: {args.name}")
                 else:
                     print(f"删除失败: 备份不存在 {args.name}")
+
+        # ============ PII 脱敏 ============
+        elif args.command == "sanitize":
+            from augmentor.privacy import PiiSanitizer, DEFAULT_PATTERNS, EXTRA_PATTERNS
+
+            items = _load_items(args.input)
+            patterns = dict(DEFAULT_PATTERNS)
+            if args.extra:
+                patterns.update(EXTRA_PATTERNS)
+            sanitizer = PiiSanitizer(fields=args.fields, patterns=patterns)
+            sanitized, report = sanitizer.sanitize_dataset(items)
+            _save_items(sanitized, args.output)
+            _print(report.to_dict())
+            print(f"已脱敏 {report.touched_items}/{report.total_items} 条，"
+                  f"命中 {report.total_matches} 处，输出到 {args.output}")
 
         # ============ 增强搜索 ============
         elif args.command == "search-enhanced":
