@@ -32,12 +32,13 @@ class ModelManager:
         self._initialized = True
     
     def get_sentence_model(self):
-        """获取 sentence-transformers 模型（线程安全）
+        """获取 sentence-transformers 模型（线程安全，带缓存复用优化）
         
         Returns:
             SentenceTransformer 模型实例或 None
         """
         if self._sentence_model is not None:
+            # 模型缓存复用：直接返回已加载实例，避免重复初始化
             return self._sentence_model
         
         with self._model_lock:
