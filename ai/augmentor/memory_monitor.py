@@ -1,4 +1,18 @@
-"""内存使用监控模块 - 性能优化"""
+"""内存使用监控模块
+
+功能：提供内存快照、峰值检测、趋势分析和警告机制，
+支持装饰器方式监控函数执行期间的内存变化。
+
+使用示例：
+    from augmentor.memory_monitor import MemoryMonitor, monitor_memory_usage
+    
+    @monitor_memory_usage
+    def process_large_dataset():
+        return {"status": "ok"}
+    
+    monitor = MemoryMonitor()
+    snapshot = monitor.take_snapshot()
+"""
 
 import logging
 import sys

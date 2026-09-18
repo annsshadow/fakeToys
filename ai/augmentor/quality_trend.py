@@ -1,6 +1,13 @@
-"""数据质量趋势追踪模块 - 功能完善
+"""数据质量趋势追踪模块
 
-记录数据集质量随时间的变化，支持趋势分析、预测和报告生成。
+功能：记录数据集质量指标随时间变化，支持趋势方向分析、
+报告生成和数据集间趋势比较，支持持久化到 JSON 文件。
+
+使用示例：
+    from augmentor.quality_trend import QualityTrendTracker
+    tracker = QualityTrendTracker(storage_path="trends.json")
+    tracker.record_quality_metrics("v1", {"completeness": 0.85})
+    report = tracker.generate_trend_report()
 """
 
 import logging

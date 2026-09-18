@@ -1,4 +1,14 @@
-"""数据集健康度评分模块 - 新增功能"""
+"""数据集健康度评分模块
+
+功能：计算数据集的完整性、多样性、质量分布均衡性和覆盖率，
+生成综合健康评分并提供等级判断（healthy / moderate / poor）。
+
+使用示例：
+    from augmentor import DatasetHealthScore
+    scorer = DatasetHealthScore()
+    result = scorer.score(dataset_items)
+    print(result["health_score"], result["level"])
+"""
 
 import logging
 from typing import List, Dict, Optional

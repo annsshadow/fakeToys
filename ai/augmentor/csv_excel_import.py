@@ -1,6 +1,13 @@
-"""CSV/Excel 数据导入模块 - 功能完善
+"""CSV/Excel 数据导入模块
 
-支持从 CSV 和 Excel 文件导入数据集，并自动转换为标准 JSON 格式。
+功能：支持从 CSV 和 Excel 文件导入数据集，
+自动识别格式并标准化为 JSON 数据格式（instruction / output 字段）。
+
+使用示例：
+    from augmentor.csv_excel_import import import_dataset
+    data = import_dataset("data.csv")
+    # 或指定格式
+    data = import_dataset("data.xlsx", format="excel")
 """
 
 import logging
