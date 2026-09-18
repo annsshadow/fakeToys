@@ -208,7 +208,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     # 配置验证命令
     validate_config_parser = subparsers.add_parser("validate-config", help="验证配置文件")
-    validate_config_parser.add_argument("--config", type=str, help="配置文件路径")
+    # SUPPRESS：仅当子命令后显式传 --config 才写入，避免默认 None 覆盖全局 --config 的值
+    validate_config_parser.add_argument(
+        "--config", type=str, default=argparse.SUPPRESS, help="配置文件路径"
+    )
 
     # 数据分析命令（合并到 analyze 子命令）
     analyze_parser = subparsers.add_parser("analyze-data", help="数据分析")
