@@ -126,12 +126,24 @@ class ModelBackend(ABC):
         retries = max_retries if max_retries is not None else 3
         delay = retry_delay if retry_delay is not None else 1.0
         
+        # 模型缓存复用优化：基于提示内容的简单缓存（避免重复生成相同内容）
+        prompt_hash = hash(prompt)
+        if hasattr(self, '_generation_cache') and prompt_hash in self._generation_cache:
+            logger.debug(f"缓存命中，直接返回结果（提示hash: {prompt_hash})")
+            with self._lock:
+                self._request_count += 1  # 仍计入请求统计
+            return self._generation_cache[prompt_hash]
+        
         last_error = None
         for attempt in range(retries):
             try:
                 with self._lock:
                     self._request_count += 1
                 result = self._call_api(prompt)
+                # 缓存生成结果（优化：避免重复生成）
+                if not hasattr(self, '_generation_cache'):
+                    self._generation_cache = {}
+                self._generation_cache[prompt_hash] = result
                 return result
             except Exception as e:
                 with self._lock:
