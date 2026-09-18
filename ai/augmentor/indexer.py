@@ -465,4 +465,4 @@ def create_view(items: List[Dict], name: str = "default") -> DatasetView:
     Returns:
         视图实例
     """
-    return DatasetView
+    return DatasetView(items, name)
