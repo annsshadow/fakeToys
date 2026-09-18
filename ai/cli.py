@@ -278,6 +278,14 @@ def build_parser() -> argparse.ArgumentParser:
     leak_parser.add_argument("--fuzzy-threshold", type=float, default=0.8, help="近似匹配阈值")
     leak_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
 
+    # 数据集就绪审计命令
+    audit_parser = subparsers.add_parser("audit", help="数据集就绪审计")
+    audit_parser.add_argument("--input", type=str, required=True, help="数据集文件路径")
+    audit_parser.add_argument("--reference", type=str, help="参考集（如测试集）路径")
+    audit_parser.add_argument("--fields", type=str, nargs="+",
+                              default=["instruction", "input", "output"], help="统计字段")
+    audit_parser.add_argument("--output", type=str, help="报告输出路径（.json）")
+
     # 增强搜索命令
     search_enhanced_parser = subparsers.add_parser("search-enhanced", help="增强搜索")
     search_enhanced_parser.add_argument("--input", type=str, required=True, help="输入文件路径")
@@ -993,6 +1001,25 @@ def main():
             if args.output:
                 _dump_json(report.to_dict(), args.output)
                 print(f"泄漏报告已保存到 {args.output}")
+
+        # ============ 数据集就绪审计 ============
+        elif args.command == "audit":
+            from augmentor.audit import DatasetAuditor
+
+            items = _load_items(args.input)
+            reference = _load_items(args.reference) if args.reference else None
+            auditor = DatasetAuditor(fields=args.fields)
+            report = auditor.audit(items, reference)
+            _print(report.to_dict())
+            if report.ready:
+                print("数据集就绪，可进入增强/交付流程")
+            else:
+                print(f"数据集未就绪（{len(report.findings)} 项发现）：")
+                for finding in report.findings:
+                    print(f"  - {finding}")
+            if args.output:
+                _dump_json(report.to_dict(), args.output)
+                print(f"审计报告已保存到 {args.output}")
 
         # ============ 增强搜索 ============
         elif args.command == "search-enhanced":
