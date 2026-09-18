@@ -96,3 +96,6 @@ htmlcov/
 .opencode/
 opencode.json
 test_output.json
+
+# PR 描述草稿（内容已提交至 PR，不入库）
+PR_DESCRIPTION.md
