@@ -351,8 +351,3 @@ def get_field_summary(items: List[Dict], field_name: str) -> Dict:
     calculator = DatasetStatisticsCalculator(items)
     stats = calculator._calculate_field_statistics(field_name)
     return stats.to_dict()
-
-
-def calculate_statistics(items: List[Dict]) -> Dict:
-    calculator = DatasetStatisticsCalculator(items)
-    return calculator.calculate_statistics()
