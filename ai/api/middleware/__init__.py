@@ -46,4 +46,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-__all__ = ["RequestLoggingMiddleware"]
+from api.middleware.trace import RequestTraceMiddleware
+
+__all__ = ["RequestLoggingMiddleware", "RequestTraceMiddleware"]
