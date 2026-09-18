@@ -294,3 +294,64 @@ def delete_backup(backup_id: str, backup_dir: str = ".backups") -> bool:
     """
     manager = DatasetBackup(backup_dir)
     return manager.delete_backup(backup_id)
+
+
+def clean_old_backups(backup_dir: str = ".backups", max_backups: int = 10) -> int:
+    """清理旧备份（增强功能：自动维护备份数量限制）
+    
+    Args:
+        backup_dir: 备份目录
+        max_backups: 最大保留备份数
+    
+    Returns:
+        删除的备份数量
+    """
+    manager = DatasetBackup(backup_dir)
+    backups = manager.list_backups()
+    if len(backups) <= max_backups:
+        return 0
+    
+    # 按时间戳排序，删除最旧的备份
+    sorted_backups = sorted(backups, key=lambda b: b.get("timestamp", ""))
+    to_delete = sorted_backups[:len(sorted_backups) - max_backups]
+    deleted_count = 0
+    
+    for backup in to_delete:
+        if manager.delete_backup(backup["backup_id"]):
+            deleted_count += 1
+    
+    logger.info(f"自动清理旧备份完成: 删除 {deleted_count} 个，保留最新 {max_backups} 个")
+    return deleted_count
+
+
+def verify_backup_integrity(backup_dir: str = ".backups", backup_id: Optional[str] = None) -> Dict:
+    """验证备份完整性（增强功能：批量校验备份文件）
+    
+    Args:
+        backup_dir: 备份目录
+        backup_id: 指定备份ID，为 None 时验证所有备份
+    
+    Returns:
+        验证结果（包含每个备份的校验状态）
+    """
+    manager = DatasetBackup(backup_dir)
+    backups = manager.list_backups()
+    results = {}
+    
+    for backup in backups:
+        if backup_id is not None and backup["backup_id"] != backup_id:
+            continue
+        
+        backup_path = Path(backup["backup_path"])
+        is_valid = backup_path.exists() and backup_path.stat().st_size > 0
+        current_checksum = manager._calculate_checksum(str(backup_path)) if is_valid else None
+        checksum_match = current_checksum == backup.get("checksum") if is_valid and current_checksum else False
+        
+        results[backup["backup_id"]] = {
+            "exists": is_valid,
+            "checksum_match": checksum_match,
+            "item_count": backup.get("item_count", 0),
+            "timestamp": backup.get("timestamp", "")
+        }
+    
+    return results
