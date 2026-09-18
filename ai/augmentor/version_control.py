@@ -283,6 +283,13 @@ class DatasetVersionManager:
         Returns:
             比较结果
         """
+        # 版本比较优化：缓存比较结果（避免重复比较相同版本对）
+        compare_key = f"{version_id_a}:{version_id_b}"
+        if hasattr(self, '_compare_cache') and compare_key in self._compare_cache:
+            logger.debug(f"版本比较缓存命中: {compare_key}")
+            cached = self._compare_cache[compare_key]
+            return cached.copy() if isinstance(cached, dict) else cached
+        
         items_a = self.load_version(version_id_a)
         items_b = self.load_version(version_id_b)
         
@@ -290,7 +297,7 @@ class DatasetVersionManager:
         keys_a = set(item.get("instruction", "") for item in items_a)
         keys_b = set(item.get("instruction", "") for item in items_b)
         
-        return {
+        result = {
             "version_a": version_id_a,
             "version_b": version_id_b,
             "size_a": len(items_a),
@@ -304,6 +311,13 @@ class DatasetVersionManager:
                 "in_both_count": len(keys_a & keys_b)
             }
         }
+        
+        # 保存比较结果到缓存
+        if not hasattr(self, '_compare_cache'):
+            self._compare_cache = {}
+        self._compare_cache[compare_key] = result
+        
+        return result
 
 
 def create_version(items: List[Dict], versions_dir: str = ".versions",
