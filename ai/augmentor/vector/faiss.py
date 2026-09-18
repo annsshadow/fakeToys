@@ -129,9 +129,18 @@ class FAISSDB(VectorDB):
             distances, indices = self._index.search(normalized_query, k)
             pairs = list(zip(indices[0], distances[0]))
         else:
-            similarities = (self._vectors @ normalized_query[0])
-            order = np.argsort(-similarities)[:k]
-            pairs = [(int(i), float(similarities[i])) for i in order]
+            # 分块计算：避免大矩阵直接计算导致内存峰值
+            chunk_size = max(1000, len(self._vectors) // 4 + 1)
+            best_pairs = []
+            for chunk_start in range(0, len(self._vectors), chunk_size):
+                chunk_end = min(chunk_start + chunk_size, len(self._vectors))
+                chunk_vectors = self._vectors[chunk_start:chunk_end]
+                similarities = (chunk_vectors @ normalized_query[0])
+                top_in_chunk = np.argsort(-similarities)[:k]
+                for idx in top_in_chunk:
+                    best_pairs.append((chunk_start + int(idx), float(similarities[idx])))
+            best_pairs.sort(key=lambda x: x[1], reverse=True)
+            pairs = best_pairs[:k]
 
         results = []
         for index, score in pairs:
