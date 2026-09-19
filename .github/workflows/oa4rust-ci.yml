@@ -90,6 +90,12 @@ jobs:
         env:
           DATABASE_DIALECT: postgres
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+          # 兜底：oa4rust/.cargo/config.toml 的 64MB 栈只对 Windows 主线程生效
+          # （[target.x86_64-pc-windows-msvc] /STACK），Linux runner 上的测试线程
+          # 走默认栈。构造巨型合并 Router 的用例已在源码中改用显式 64MB 栈线程，
+          # 这里再抬高一档运行期默认值，避免其他用例触发同类栈溢出
+          # （表现为 panic -> cargo test exit code 101）。
+          RUST_MIN_STACK: "67108864"
 
   integration-tests:
     runs-on: ubuntu-24.04
