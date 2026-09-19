@@ -80,12 +80,19 @@ class TestVersioningRmtree:
     def test_rollback_replaces_plain_dir_current(self, tmp_path):
         manager = VersionManager(storage_dir=str(tmp_path / "vm"))
         info = manager.create_version([{"instruction": "q"}])
-        # current 指向一个普通目录（非符号链接），触发 rmtree 分支
+        # create_version 会把 current 建成符号链接；先删掉再建普通目录，
+        # 才能确保回滚时 current 是「非符号链接的目录」从而命中 rmtree 分支
         current = tmp_path / "vm" / "current"
+        if current.is_symlink() or current.is_file():
+            current.unlink()
+        elif current.is_dir():
+            shutil.rmtree(current)
         current.mkdir(parents=True, exist_ok=True)
         (current / "junk.txt").write_text("x", encoding="utf-8")
+        assert not current.is_symlink()
         assert manager.rollback(info.version_id) is True
-        assert not current.is_dir() or current.is_symlink()
+        # rmtree 删除旧目录后重建为指向版本目录的符号链接
+        assert current.is_symlink()
 
 
 class TestValidationNonDict:
