@@ -6,7 +6,11 @@ pyyaml>=6.0,<7.0.0
 numpy>=1.21.0,<3.0.0
 
 # ============ 模型相关 ============
-sentence-transformers>=2.2.0,<4.0.0
+# sentence-transformers 6.x 依赖 transformers>=5.0.0；
+# transformers 4.x 存在多个已知漏洞（PYSEC-2026-2288/2289/2290/3929 等），
+# 5.0+ 才修复，因此这里必须 >=6.0.0。
+# 使用的 API（SentenceTransformer() / .encode() / CrossEncoder）跨版本稳定。
+sentence-transformers>=6.0.0,<7.0.0
 scikit-learn>=1.0.0,<2.0.0
 
 # ============ 可视化 ============
