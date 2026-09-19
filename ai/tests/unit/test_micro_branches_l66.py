@@ -10,6 +10,7 @@
 
 import json
 import sys
+import types
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -24,8 +25,42 @@ from augmentor.vector.chromadb import ChromaDB
 from augmentor.vector.faiss import FAISSDB
 
 
+class _FakeCollection:
+    def __init__(self, name, metadata=None):
+        self.name = name
+        self.metadata = metadata
+
+    def count(self):
+        return 0
+
+
+class _FakeClient:
+    def __init__(self, path=None):
+        self.path = path
+        self.collections = {}
+
+    def get_or_create_collection(self, name, metadata=None):
+        if name not in self.collections:
+            self.collections[name] = _FakeCollection(name, metadata)
+        return self.collections[name]
+
+
+class _FakeChromaModule(types.ModuleType):
+    def __init__(self):
+        super().__init__("chromadb")
+
+    def PersistentClient(self, path):
+        return _FakeClient(path)
+
+    def Client(self):
+        return _FakeClient()
+
+
 class TestVectorFactory:
-    def test_create_chromadb_backend(self):
+    def test_create_chromadb_backend(self, monkeypatch):
+        """工厂必须能构造 chromadb 后端（依赖以假模块注入，与
+        test_chromadb_backend.py 的做法一致，避免依赖真实 chromadb）。"""
+        monkeypatch.setitem(sys.modules, "chromadb", _FakeChromaModule())
         db = create_vector_db(backend="chromadb", dimension=4)
         assert db is not None
         assert db.dimension == 4
