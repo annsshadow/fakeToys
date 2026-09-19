@@ -20,3 +20,10 @@ echo "[rust-env] LIB  = $LIB"
 # target/*/build/*/out/ 目录，Windows 上会报
 #   fatal error C1083: Cannot open compiler generated file: ... Permission denied
 # cargo check 不受影响（不编译 C、不链接）。
+#
+# 建议同时设 CARGO_INCREMENTAL=0。
+# 沙箱环境下增量编译目录（target/debug/incremental/）会因文件权限报
+#   error: failed to remove ...rcgu.o: 拒绝访问。 (os error 5)
+# 或让 rustc 直接 panic（exit code 101，"query stack during panic"）。
+# 禁用增量可稳定规避；代价是重编译稍慢。
+export CARGO_INCREMENTAL=0
