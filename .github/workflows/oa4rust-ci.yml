@@ -88,7 +88,13 @@ jobs:
       - name: Run unit tests
         # --no-fail-fast：默认遇到第一个 panic 就整包中止，日志里看不到是哪个目标挂的；
         # 带上它可让 cargo 继续跑完其余测试目标，便于定位真正的失败点。
-        run: cargo test --workspace --lib --no-fail-fast
+        # tee 到文件：job 日志需要 admin 权限才能拉取，落盘后用 artifact 上传，
+        # 便于在本地下载完整输出定位失败用例。
+        # shell: bash + pipefail：确保 cargo 的非零退出码不会被 tee 吞掉。
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test --workspace --lib --no-fail-fast 2>&1 | tee /tmp/unit-tests.log
         env:
           DATABASE_DIALECT: postgres
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
@@ -102,6 +108,14 @@ jobs:
           # runner 上会等 TCP 超时 60s+（历史上该目标单次 98s）。缩短连接超时，
           # 避免无谓地逼近 job 时间上限。
           RUST_LOG: warn
+
+      - name: Upload unit-test output
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: oa4rust-unit-test-log
+          path: /tmp/unit-tests.log
+          if-no-files-found: warn
 
   integration-tests:
     runs-on: ubuntu-24.04
