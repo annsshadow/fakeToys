@@ -61,13 +61,18 @@ pub async fn get_ai_control_config(
                 ),
                 (
                     "defaultModel".to_string(),
-                    Value::String(row.get("default_model")),
+                    Value::String(
+                        row.get::<_, Option<String>>("default_model")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "temperature".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(row.get::<_, f64>("temperature"))
-                            .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
+                        serde_json::Number::from_f64(
+                            row.get::<_, Option<f64>>("temperature").unwrap_or(0.0),
+                        )
+                        .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
                     ),
                 ),
                 (
@@ -75,7 +80,10 @@ pub async fn get_ai_control_config(
                     Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens"))),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 ("o2AiFileList".to_string(), Value::Array(vec![])),
                 (
                     "deepSeekApiUrl".to_string(),
@@ -177,12 +185,18 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
                 (
                     "contextWindow".to_string(),
                     Value::Number(serde_json::Number::from(8192i64)),
@@ -479,13 +493,18 @@ pub async fn config_base_config(
                 ),
                 (
                     "defaultModel".to_string(),
-                    Value::String(row.get("default_model")),
+                    Value::String(
+                        row.get::<_, Option<String>>("default_model")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "temperature".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(row.get::<_, f64>("temperature"))
-                            .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
+                        serde_json::Number::from_f64(
+                            row.get::<_, Option<f64>>("temperature").unwrap_or(0.0),
+                        )
+                        .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
                     ),
                 ),
                 (
@@ -493,7 +512,10 @@ pub async fn config_base_config(
                     Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens"))),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -694,7 +716,10 @@ pub async fn config_get_mcp_ext_flag(
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -745,7 +770,10 @@ pub async fn config_get_mcp_flag(
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -785,7 +813,10 @@ pub async fn config_get_model_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -794,8 +825,14 @@ pub async fn config_get_model_flag(
                     "url".to_string(),
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -835,7 +872,10 @@ pub async fn config_list_enable_model(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -844,8 +884,14 @@ pub async fn config_list_enable_model(
                     "url".to_string(),
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -908,7 +954,10 @@ pub async fn config_list_mcp_paging_page_size_size(
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -958,7 +1007,10 @@ pub async fn config_list_model_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -967,8 +1019,14 @@ pub async fn config_list_model_paging_page_size_size(
                     "url".to_string(),
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -1291,19 +1349,42 @@ pub async fn file_list_with_ids(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1336,18 +1417,38 @@ pub async fn file_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -1450,19 +1551,42 @@ pub async fn file_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1488,18 +1612,26 @@ pub async fn file_id_download(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
                     "url".to_string(),
-                    Value::String(format!("/download/{}", row.get::<_, String>("id"))),
+                    Value::String(format!(
+                        "/download/{}",
+                        row.get::<_, Option<String>>("id").unwrap_or_default()
+                    )),
                 ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1561,9 +1693,18 @@ pub async fn index_cms_doc_with_app_appId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1594,10 +1735,22 @@ pub async fn index_cms_doc_docId(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1649,11 +1802,26 @@ pub async fn index_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -1762,7 +1930,7 @@ pub async fn chat_completion(
 
     let owners: Vec<String> = owner_rows
         .iter()
-        .map(|r| r.get::<_, String>("creator"))
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default())
         .collect();
 
     let is_owned_by_others = !owners.is_empty()
@@ -1896,7 +2064,7 @@ async fn process_chat_request(
 
     let owners: Vec<String> = owner_rows
         .iter()
-        .map(|r| r.get::<_, String>("creator"))
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default())
         .collect();
 
     let is_owned_by_others = !owners.is_empty()
@@ -2215,7 +2383,10 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
                 ("clueId".to_string(), Value::String(clue_id.clone())),
                 ("role".to_string(), Value::String(row.get("role"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(

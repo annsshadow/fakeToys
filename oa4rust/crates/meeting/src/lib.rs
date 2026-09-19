@@ -332,7 +332,10 @@ pub async fn get_meeting(
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("roomId".to_string(), Value::String(row.get("room_id"))),
+                (
+                    "roomId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+                ),
                 (
                     "\"startTime\"".to_string(),
                     Value::String(row.get("start_time")),
@@ -341,7 +344,10 @@ pub async fn get_meeting(
                     "\"endTime\"".to_string(),
                     Value::String(row.get("end_time")),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -502,7 +508,10 @@ pub async fn list_participants(
                     Value::String(row.get("meeting_id")),
                 ),
                 ("invitee".to_string(), Value::String(row.get("invitee"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -557,7 +566,10 @@ pub async fn list_schedule(
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("roomId".to_string(), Value::String(row.get("room_id"))),
+                (
+                    "roomId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+                ),
                 (
                     "\"startTime\"".to_string(),
                     Value::String(row.get("start_time")),
@@ -566,7 +578,10 @@ pub async fn list_schedule(
                     "\"endTime\"".to_string(),
                     Value::String(row.get("end_time")),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),

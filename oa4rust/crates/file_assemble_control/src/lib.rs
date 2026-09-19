@@ -240,7 +240,9 @@ pub async fn list_files(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "creator".to_string(),
@@ -253,7 +255,13 @@ pub async fn list_files(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("folderId".to_string(), Value::String(row.get("folder_id"))),
+                (
+                    "folderId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("folder_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -297,7 +305,9 @@ pub async fn get_file(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "creator".to_string(),
@@ -310,7 +320,13 @@ pub async fn get_file(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("folderId".to_string(), Value::String(row.get("folder_id"))),
+                (
+                    "folderId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("folder_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -763,7 +779,9 @@ pub async fn attachment_list_editor_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -834,7 +852,9 @@ pub async fn attachment_list_folder_folderId(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -905,7 +925,9 @@ pub async fn attachment_list_share_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -975,7 +997,9 @@ pub async fn attachment_list_top(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1133,7 +1157,9 @@ pub async fn attachment_id(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1386,7 +1412,9 @@ pub async fn attachment2_list_editor_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1456,7 +1484,9 @@ pub async fn attachment2_list_filter_name(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1526,7 +1556,9 @@ pub async fn attachment2_list_folder_folderId(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1596,7 +1628,9 @@ pub async fn attachment2_list_share_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1665,7 +1699,9 @@ pub async fn attachment2_list_top(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1737,7 +1773,9 @@ pub async fn attachment2_list_type_page_size_size(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1904,7 +1942,9 @@ pub async fn attachment2_id(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -2475,7 +2515,9 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -2645,7 +2687,9 @@ pub async fn file_list_referencetype(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -2715,7 +2759,9 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -2780,7 +2826,9 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -2832,7 +2880,9 @@ pub async fn file_list_id_next_count(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -2897,7 +2947,9 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -2949,7 +3001,9 @@ pub async fn file_list_id_prev_count(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -3014,7 +3068,9 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -3248,7 +3304,9 @@ pub async fn file_id(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -3611,7 +3669,9 @@ pub async fn recycle_list(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -3828,7 +3888,9 @@ pub async fn share_list(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -3891,7 +3953,9 @@ pub async fn share_list_att_share_shareId_folder_folderId(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -3957,7 +4021,9 @@ pub async fn share_list_my(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -4020,7 +4086,9 @@ pub async fn share_list_my2_shareType_fileType(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })

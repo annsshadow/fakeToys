@@ -103,7 +103,7 @@ async fn unit_pick_on_identity_chain(
             if objects {
                 ok_json(row_to_map(row))
             } else {
-                let id: String = row.get("id");
+                let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
                 Ok(AxumJson(ActionResult::success(Value::Object(
                     serde_json::Map::from_iter([("unit".to_string(), Value::String(id))]),
                 ))))

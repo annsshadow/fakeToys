@@ -289,7 +289,7 @@ pub async fn group_list_group_tree(
     let mut root_ids: Vec<String> = Vec::new();
     let mut all_ids: Vec<String> = Vec::new();
     for row in &rows {
-        let id: String = row.get("id");
+        let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         let mut obj = row_to_map(row);
         if let Value::Object(ref mut m) = obj {
             m.insert("subGroups".to_string(), Value::Array(vec![]));
@@ -305,7 +305,7 @@ pub async fn group_list_group_tree(
     }
     // 第二遍分类：parent 在集合内 → 子节点；否则为根
     for row in &rows {
-        let id: String = row.get("id");
+        let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         let parent: Option<String> = row.get("parent_id");
         match parent.as_deref() {
             Some(pid) if pid != id.as_str() && base.contains_key(pid) => {

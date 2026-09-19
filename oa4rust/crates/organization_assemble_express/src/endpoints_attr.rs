@@ -330,7 +330,7 @@ pub async fn unitattr_list_unit_object(
     let mut data: Vec<Value> = Vec::new();
     let mut cur: Option<(String, String)> = None;
     for row in &rows {
-        let uid: String = row.get("unit_id");
+        let uid: String = row.get::<_, Option<String>>("unit_id").unwrap_or_default();
         let key: String = row.get("attribute_key");
         let value: Option<String> = row.get("attribute_value");
         if cur.as_ref() != Some(&(uid.clone(), key.clone())) {

@@ -36,8 +36,14 @@ pub async fn list_ids(pool: Extension<Pool>) -> Json<ActionResult<Value>> {
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -84,12 +90,24 @@ pub async fn get_by_flag(
 
     Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("flag".to_string(), Value::String(row.get("flag"))),
-            ("name".to_string(), Value::String(row.get("name"))),
+            (
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            ),
+            (
+                "flag".to_string(),
+                Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+            ),
+            (
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            ),
             (
                 "description".to_string(),
-                Value::String(row.get("description")),
+                Value::String(
+                    row.get::<_, Option<String>>("description")
+                        .unwrap_or_default(),
+                ),
             ),
         ]),
     )))
@@ -120,15 +138,27 @@ pub async fn record_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "workOrWorkCompleted".to_string(),
-                    Value::String(row.get("work_or_work_completed")),
+                    Value::String(
+                        row.get::<_, Option<String>>("work_or_work_completed")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("title".to_string(), Value::String(row.get("title"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

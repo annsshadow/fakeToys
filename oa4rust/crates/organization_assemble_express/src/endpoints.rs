@@ -439,7 +439,7 @@ pub async fn person_has_role(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows
         .iter()
-        .map(|r| Value::String(r.get::<_, String>("id")))
+        .map(|r| Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()))
         .collect();
     ok_legacy_list(list.len(), list)
 }

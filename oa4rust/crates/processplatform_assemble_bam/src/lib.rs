@@ -41,11 +41,20 @@ pub async fn get_bam_config(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("name".to_string(), Value::String(row.get("xname"))),
-            ("enabled".to_string(), Value::Bool(row.get("xenabled"))),
+            (
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+            ),
+            (
+                "enabled".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("xenabled").unwrap_or(false)),
+            ),
             (
                 "definition".to_string(),
-                Value::String(row.get("xdefinition")),
+                Value::String(
+                    row.get::<_, Option<String>>("xdefinition")
+                        .unwrap_or_default(),
+                ),
             ),
         ]),
     ))))
@@ -104,9 +113,21 @@ pub async fn list_bams(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
-                ("category".to_string(), Value::String(row.get("xcategory"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcategory")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -310,11 +331,20 @@ pub async fn period_list_completed_task_application(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "taskStatus".to_string(),
-                    Value::String(r.get("task_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
@@ -323,7 +353,10 @@ pub async fn period_list_completed_task_application(
                 ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -359,17 +392,29 @@ pub async fn period_list_completed_task_unit(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "taskStatus".to_string(),
-                    Value::String(r.get("task_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
+                    Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -406,7 +451,10 @@ pub async fn period_list_completed_work_application(
                 ("title".to_string(), Value::String(r.get("title"))),
                 (
                     "workStatus".to_string(),
-                    Value::String(r.get("work_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
@@ -447,16 +495,25 @@ pub async fn period_list_completed_work_unit(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
                 (
                     "workStatus".to_string(),
-                    Value::String(r.get("work_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
+                    Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -564,7 +621,10 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("activity".to_string(), Value::String(r.get("activity"))),
+                (
+                    "activity".to_string(),
+                    Value::String(r.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -605,7 +665,10 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "process".to_string(),
+                    Value::String(r.get::<_, Option<String>>("process").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -644,7 +707,10 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -779,7 +845,10 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -825,7 +894,10 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -896,7 +968,10 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("activity".to_string(), Value::String(r.get("activity"))),
+                (
+                    "activity".to_string(),
+                    Value::String(r.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -933,7 +1008,10 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "process".to_string(),
+                    Value::String(r.get::<_, Option<String>>("process").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -972,7 +1050,10 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -1107,7 +1188,10 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -1153,7 +1237,10 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -1224,7 +1311,10 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("activity".to_string(), Value::String(r.get("activity"))),
+                (
+                    "activity".to_string(),
+                    Value::String(r.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -1261,7 +1351,10 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("process".to_string(), Value::String(r.get("process"))),
+                (
+                    "process".to_string(),
+                    Value::String(r.get::<_, Option<String>>("process").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),
@@ -1300,7 +1393,10 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -1435,7 +1531,10 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -1479,11 +1578,20 @@ pub async fn period_list_expired_task_application(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "taskStatus".to_string(),
-                    Value::String(r.get("task_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
@@ -1524,17 +1632,29 @@ pub async fn period_list_expired_task_unit(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "taskStatus".to_string(),
-                    Value::String(r.get("task_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
+                    Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1571,7 +1691,10 @@ pub async fn period_list_expired_work_application(
                 ("title".to_string(), Value::String(r.get("title"))),
                 (
                     "workStatus".to_string(),
-                    Value::String(r.get("work_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
@@ -1612,16 +1735,25 @@ pub async fn period_list_expired_work_unit(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
                 (
                     "workStatus".to_string(),
-                    Value::String(r.get("work_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
+                    Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1660,11 +1792,20 @@ pub async fn period_list_start_task_application(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "taskStatus".to_string(),
-                    Value::String(r.get("task_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
@@ -1705,17 +1846,29 @@ pub async fn period_list_start_task_unit(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
-                ("person".to_string(), Value::String(r.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(r.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "taskStatus".to_string(),
-                    Value::String(r.get("task_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
+                    Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1752,7 +1905,10 @@ pub async fn period_list_start_work_application(
                 ("title".to_string(), Value::String(r.get("title"))),
                 (
                     "workStatus".to_string(),
-                    Value::String(r.get("work_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
@@ -1793,16 +1949,25 @@ pub async fn period_list_start_work_unit(
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(r.get("id"))),
-                ("title".to_string(), Value::String(r.get("title"))),
+                (
+                    "title".to_string(),
+                    Value::String(r.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
                 (
                     "workStatus".to_string(),
-                    Value::String(r.get("work_status")),
+                    Value::String(
+                        r.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
+                    Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                (
+                    "\"endTime\"".to_string(),
+                    Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1859,7 +2024,10 @@ pub async fn state_applicationtstubs_trigger(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(r.get("application")),
+                    Value::String(
+                        r.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "totalWorks".to_string(),
@@ -1909,19 +2077,27 @@ pub async fn state_category(pool: Extension<Pool>) -> Result<Json<ActionResult<V
                 ("category".to_string(), Value::String(r.get("category"))),
                 (
                     "total".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("total"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("total").unwrap_or(0),
+                    )),
                 ),
                 (
                     "pending".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("pending"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("pending").unwrap_or(0),
+                    )),
                 ),
                 (
                     "processing".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("processing"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("processing").unwrap_or(0),
+                    )),
                 ),
                 (
                     "completed".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("completed"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("completed").unwrap_or(0),
+                    )),
                 ),
                 (
                     "expired".to_string(),
@@ -1992,19 +2168,27 @@ pub async fn state_category_trigger(
             ("category".to_string(), Value::String(category)),
             (
                 "total".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i64>("total"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i64>>("total").unwrap_or(0),
+                )),
             ),
             (
                 "pending".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i64>("pending"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i64>>("pending").unwrap_or(0),
+                )),
             ),
             (
                 "processing".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i64>("processing"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i64>>("processing").unwrap_or(0),
+                )),
             ),
             (
                 "completed".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i64>("completed"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i64>>("completed").unwrap_or(0),
+                )),
             ),
         ]),
     ))))
@@ -3181,19 +3365,27 @@ pub async fn state_category_trigger_all(
                 ("category".to_string(), Value::String(r.get("category"))),
                 (
                     "total".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("total"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("total").unwrap_or(0),
+                    )),
                 ),
                 (
                     "pending".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("pending"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("pending").unwrap_or(0),
+                    )),
                 ),
                 (
                     "processing".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("processing"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("processing").unwrap_or(0),
+                    )),
                 ),
                 (
                     "completed".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i64>("completed"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i64>>("completed").unwrap_or(0),
+                    )),
                 ),
                 (
                     "expired".to_string(),

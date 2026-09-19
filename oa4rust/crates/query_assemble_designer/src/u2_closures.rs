@@ -1268,9 +1268,18 @@ pub async fn designer_search_v2(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1318,11 +1327,20 @@ pub async fn importmodel_get_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
@@ -1335,10 +1353,16 @@ pub async fn importmodel_get_flag(
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -2000,7 +2024,10 @@ pub async fn stat_simulate_put(
     let (calculated, mut payload_map) = execute_configured_sql(&client, &config_raw).await?;
 
     if let Some(payload) = payload_map.as_object_mut() {
-        payload.insert("id".to_string(), Value::String(row.get("id")));
+        payload.insert(
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        );
         payload.insert(
             "name".to_string(),
             Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -2163,7 +2190,9 @@ pub async fn stat_do(
         .await
         .map_err(|_| AppError::Internal)?
         .ok_or_else(|| AppError::BadRequest("stat not found".to_string()))?;
-    let query_flag: String = stat.get("query_flag");
+    let query_flag: String = stat
+        .get::<_, Option<String>>("query_flag")
+        .unwrap_or_default();
     let table = client
         .query_opt(
             "SELECT table_flag FROM x_query_table WHERE query_flag = $1 AND deleted_at IS NULL \
@@ -2173,7 +2202,9 @@ pub async fn stat_do(
         .await
         .map_err(|_| AppError::Internal)?
         .ok_or_else(|| AppError::BadRequest("no query table bound to this stat".to_string()))?;
-    let table_flag: String = table.get("table_flag");
+    let table_flag: String = table
+        .get::<_, Option<String>>("table_flag")
+        .unwrap_or_default();
 
     // 维度/指标均为数据键名，走绑定参数，无拼接注入面
     let rows = client

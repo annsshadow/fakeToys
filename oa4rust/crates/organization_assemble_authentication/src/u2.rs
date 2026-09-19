@@ -274,7 +274,7 @@ pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             json!({
                 "id": r.get::<_, String>("id"),
                 "name": r.get::<_, String>("name"),
-                "message": r.get::<_, String>("message"),
+                "message": r.get::<_, Option<String>>("message").unwrap_or_default(),
             })
         })
         .collect();

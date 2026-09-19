@@ -1153,7 +1153,7 @@ pub async fn person_id_icon(
         .query_one("SELECT icon_url FROM auth_person WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::NotFound)?;
-    let icon_url: String = row.get("icon_url");
+    let icon_url: String = row.get::<_, Option<String>>("icon_url").unwrap_or_default();
     let data = Value::Object(serde_json::Map::from_iter([
         ("iconUrl".to_string(), Value::String(icon_url)),
         ("id".to_string(), Value::String(id)),
@@ -1178,7 +1178,10 @@ pub async fn identity_id(
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("unit_id".to_string(), Value::String(row.get("unit_id"))),
+        (
+            "unit_id".to_string(),
+            Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+        ),
     ]));
     Ok(Json(ActionResult::success(data)))
 }
@@ -1297,9 +1300,9 @@ pub async fn oauth_token_get(
         Some(r) => {
             let data = serde_json::json!({
                 "access_token": r.get::<_, String>("id"),
-                "client": r.get::<_, String>("client"),
+                "client": r.get::<_, Option<String>>("client").unwrap_or_default(),
                 "personId": r.get::<_, Option<String>>("person_id"),
-                "scope": r.get::<_, String>("scope"),
+                "scope": r.get::<_, Option<String>>("scope").unwrap_or_default(),
             });
             ActionResult::success(data)
         }

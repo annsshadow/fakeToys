@@ -427,11 +427,15 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
                 ("completed".to_string(), Value::Bool(r.get("completed"))),
                 (
                     "viewCount".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i32>("view_count"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i32>>("view_count").unwrap_or(0),
+                    )),
                 ),
                 (
                     "replyCount".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i32>("reply_count"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i32>>("reply_count").unwrap_or(0),
+                    )),
                 ),
             ]);
             Ok(Json(ActionResult::success(Value::Object(map))))
@@ -2395,7 +2399,10 @@ pub async fn u2_shutup_get_mine(
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(r.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "person".to_string(),
                     r.get::<_, Option<String>>("person")
@@ -2408,7 +2415,10 @@ pub async fn u2_shutup_get_mine(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(r.get("create_time")),
+                    Value::String(
+                        r.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

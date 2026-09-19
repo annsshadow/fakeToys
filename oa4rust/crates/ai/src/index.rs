@@ -42,7 +42,10 @@ pub async fn index_cms_doc_with_app(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let doc_ids: Vec<String> = rows.iter().map(|row| row.get("xid")).collect();
+    let doc_ids: Vec<String> = rows
+        .iter()
+        .filter_map(|row| row.get::<_, Option<String>>("xid"))
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

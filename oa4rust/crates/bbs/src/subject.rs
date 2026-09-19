@@ -46,11 +46,23 @@ pub async fn top(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("authorId".to_string(), Value::String(row.get("author_id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "authorId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("author_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "replyCount".to_string(),
@@ -108,11 +120,23 @@ pub async fn list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("authorId".to_string(), Value::String(row.get("author_id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "authorId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("author_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "sectionId".to_string(),
-                    Value::String(row.get("section_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("section_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "replyCount".to_string(),
@@ -125,7 +149,10 @@ pub async fn list(
                 ("isTop".to_string(), Value::Bool(row.get("is_top"))),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -172,13 +199,28 @@ pub async fn view(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("authorId".to_string(), Value::String(row.get("author_id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "authorId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("author_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "sectionId".to_string(),
-                    Value::String(row.get("section_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("section_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "replyCount".to_string(),
                     Value::Number(serde_json::Number::from(row.get::<_, i32>("reply_count"))),
@@ -190,7 +232,10 @@ pub async fn view(
                 ("isTop".to_string(), Value::Bool(row.get("is_top"))),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -293,11 +338,23 @@ pub async fn search(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("authorId".to_string(), Value::String(row.get("author_id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "authorId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("author_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "sectionId".to_string(),
-                    Value::String(row.get("section_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("section_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "replyCount".to_string(),
@@ -310,7 +367,10 @@ pub async fn search(
                 ("isTop".to_string(), Value::Bool(row.get("is_top"))),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

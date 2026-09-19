@@ -19,9 +19,18 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             let mut district_map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("level".to_string(), Value::String(row.get("level"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                ),
             ]);
             if let Some(parent_id) = row.get::<_, Option<String>>("parent_id") {
                 district_map.insert("\"parentId\"".to_string(), Value::String(parent_id));

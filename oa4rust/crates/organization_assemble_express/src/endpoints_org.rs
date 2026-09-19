@@ -163,7 +163,7 @@ async fn unit_tree_scope(
     } else {
         let list: Vec<Value> = rows
             .iter()
-            .map(|r| Value::String(r.get::<_, String>("id")))
+            .map(|r| Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()))
             .collect();
         ok_legacy_list(list.len(), list)
     }
@@ -289,7 +289,7 @@ pub async fn unit_check_unit_has_person(
                 .map_err(|_| AppError::Internal)?;
             let seeds: Vec<String> = seed_rows
                 .iter()
-                .map(|r| r.get::<_, String>("unit_id"))
+                .map(|r| r.get::<_, Option<String>>("unit_id").unwrap_or_default())
                 .collect();
             if !seeds.is_empty() {
                 // 基础判定：身份组织的自身 + 全部子孙组织
@@ -306,7 +306,7 @@ pub async fn unit_check_unit_has_person(
                     .map_err(|_| AppError::Internal)?;
                 value = sub_rows
                     .iter()
-                    .any(|r| r.get::<_, String>("id") == target_id);
+                    .any(|r| r.get::<_, Option<String>>("id").unwrap_or_default() == target_id);
                 // recursive 判定：目标组织位于任一身份组织的祖先链（sup-nested）
                 if !value && recursive {
                     let sup_rows = client
@@ -322,7 +322,7 @@ pub async fn unit_check_unit_has_person(
                         .map_err(|_| AppError::Internal)?;
                     value = sup_rows
                         .iter()
-                        .any(|r| r.get::<_, String>("id") == target_id);
+                        .any(|r| r.get::<_, Option<String>>("id").unwrap_or_default() == target_id);
                 }
             }
         }
@@ -385,7 +385,7 @@ pub async fn group_list_object(
     let mut data: Vec<Value> = Vec::new();
     for row in &rows {
         let mut obj = crate::endpoints::row_to_map(row);
-        let gid: String = row.get("id");
+        let gid: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         let member_rows = client
             .query(
                 "SELECT person_id FROM x_org_group_member WHERE group_id = $1 ORDER BY person_id",

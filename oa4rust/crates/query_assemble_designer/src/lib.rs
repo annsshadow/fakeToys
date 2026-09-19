@@ -363,21 +363,42 @@ pub async fn get_designer(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "query".to_string(),
-                    Value::String(row.get("query_definition")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_definition")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -438,16 +459,31 @@ pub async fn list_designers(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -550,9 +586,18 @@ pub async fn list_designers_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -870,16 +915,31 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -943,20 +1003,38 @@ pub async fn importmodel_list_query_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -988,21 +1066,42 @@ pub async fn importmodel_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1029,10 +1128,16 @@ pub async fn importmodel_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -1297,14 +1402,32 @@ pub async fn neural_list_model(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1375,14 +1498,32 @@ pub async fn neural_model_modelFlag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1499,14 +1640,32 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1538,12 +1697,24 @@ pub async fn output_flag_select_file(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "selectFile".to_string(),
-                    Value::String(row.get("select_file")),
+                    Value::String(
+                        row.get::<_, Option<String>>("select_file")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1571,14 +1742,32 @@ pub async fn output_queryFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1613,15 +1802,24 @@ pub async fn query_entity_entity_category_entityCategory_properties(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "fieldName".to_string(),
-                    Value::String(row.get("field_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldLabel".to_string(),
-                    Value::String(row.get("field_label")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_label")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldType".to_string(),
-                    Value::String(row.get("field_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1648,13 +1846,28 @@ pub async fn query_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1687,13 +1900,28 @@ pub async fn query_list_querycategory_queryCategory(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1725,9 +1953,18 @@ pub async fn query_list_summary(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1759,9 +1996,18 @@ pub async fn query_list_summary_querycategory_queryCategory(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1793,7 +2039,7 @@ pub async fn query_querycategory_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([(
                 "category".to_string(),
-                Value::String(row.get("category")),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
             )]))
         })
         .collect();
@@ -1824,17 +2070,35 @@ pub async fn query_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "query".to_string(),
-                    Value::String(row.get("query_definition")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_definition")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1861,8 +2125,14 @@ pub async fn query_flag_icon(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("icon".to_string(), Value::String(row.get("icon"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("query not found"))),
@@ -1887,10 +2157,16 @@ pub async fn query_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -1917,17 +2193,38 @@ pub async fn stat_list_query_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1960,13 +2257,28 @@ pub async fn stat_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -1998,13 +2310,28 @@ pub async fn stat_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -2035,18 +2362,42 @@ pub async fn stat_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
-                ("config".to_string(), Value::String(row.get("config"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2073,10 +2424,16 @@ pub async fn stat_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -2102,9 +2459,18 @@ pub async fn stat_id_simulate(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("config".to_string(), Value::String(row.get("config"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2131,12 +2497,21 @@ pub async fn table_export_tableFlag_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -2167,11 +2542,20 @@ pub async fn table_list_manage(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
@@ -2191,10 +2575,16 @@ pub async fn table_list_manage(
                     "status".to_string(),
                     Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
@@ -2234,20 +2624,38 @@ pub async fn table_list_query_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2280,12 +2688,21 @@ pub async fn table_list_tableFlag_row_select_where_where(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -2317,12 +2734,21 @@ pub async fn table_list_tableFlag_row_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -2354,12 +2780,21 @@ pub async fn table_list_tableFlag_row_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -2444,11 +2879,20 @@ pub async fn table_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
@@ -2468,10 +2912,16 @@ pub async fn table_flag(
                     "status".to_string(),
                     Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
@@ -2587,10 +3037,16 @@ pub async fn table_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -2643,12 +3099,21 @@ pub async fn table_tableFlag_row(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -2768,12 +3233,21 @@ pub async fn table_tableFlag_row_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2802,12 +3276,24 @@ pub async fn view_list_query_flag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2845,8 +3331,17 @@ pub async fn view_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2884,8 +3379,17 @@ pub async fn view_list_id_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2922,13 +3426,28 @@ pub async fn view_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2959,8 +3478,20 @@ pub async fn view_id_bundle(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("bundle".to_string(), Value::String(row.get("bundle_data"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "bundle".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("bundle_data")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("view not found"))),
@@ -2988,7 +3519,10 @@ pub async fn view_id_permission(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -3016,7 +3550,10 @@ pub async fn view_id_simulate(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3046,20 +3583,38 @@ pub async fn importer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3152,17 +3707,38 @@ pub async fn stat_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

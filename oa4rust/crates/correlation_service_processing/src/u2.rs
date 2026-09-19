@@ -417,7 +417,9 @@ async fn readable_impl(
         let ft: String = row
             .get::<_, Option<String>>("from_type")
             .unwrap_or_default();
-        let fb: String = row.get("from_bundle");
+        let fb: String = row
+            .get::<_, Option<String>>("from_bundle")
+            .unwrap_or_default();
         match ft.to_lowercase().as_str() {
             TYPE_PROCESSPLATFORM => pp_bundles.push(fb),
             TYPE_CMS => cms_bundles.push(fb),

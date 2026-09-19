@@ -30,13 +30,25 @@ pub async fn content_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
                 (
                     "categoryId".to_string(),
-                    Value::String(row.get("category_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("category_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -65,13 +77,25 @@ pub async fn content_detail(
         .map_err(|_| AppError::NotFound)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("id"))),
-        ("title".to_string(), Value::String(row.get("title"))),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        ),
+        (
+            "title".to_string(),
+            Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+        ),
         (
             "categoryId".to_string(),
-            Value::String(row.get("category_id")),
+            Value::String(
+                row.get::<_, Option<String>>("category_id")
+                    .unwrap_or_default(),
+            ),
         ),
-        ("status".to_string(), Value::String(row.get("status"))),
+        (
+            "status".to_string(),
+            Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+        ),
         (
             "content".to_string(),
             row.get::<_, Option<String>>("content")

@@ -66,7 +66,7 @@ pub async fn list_control_panels(
         .iter()
         .enumerate()
         .map(|(i, row)| {
-            let creator: String = row.get("creator");
+            let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(format!("panel-{}", i))),
                 ("name".to_string(), Value::String(creator.clone())),
@@ -187,7 +187,13 @@ pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -228,7 +234,13 @@ pub async fn get_hotpic(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -354,7 +366,13 @@ pub async fn cipher_hotpic_bbs_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -389,7 +407,13 @@ pub async fn cipher_hotpic_cms_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -426,7 +450,13 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -466,7 +496,13 @@ pub async fn cipher_hotpic_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -573,7 +609,13 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -613,7 +655,13 @@ pub async fn user_hotpic_application_infoId(
             let mut result = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -667,7 +715,13 @@ pub async fn user_hotpic_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),

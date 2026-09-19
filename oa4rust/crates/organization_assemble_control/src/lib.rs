@@ -52,9 +52,15 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -93,9 +99,15 @@ pub async fn organization_assemble_control_role_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -141,9 +153,18 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("level".to_string(), Value::String(row.get("level"))),
-                    ("sort".to_string(), Value::String(row.get("sort"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "level".to_string(),
+                        Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                    ),
+                    (
+                        "sort".to_string(),
+                        Value::String(row.get::<_, Option<String>>("sort").unwrap_or_default()),
+                    ),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
                         Value::String(row.get("create_time")),
@@ -185,9 +206,18 @@ pub async fn organization_assemble_control_unit_flag(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("level".to_string(), Value::String(row.get("level"))),
-                    ("sort".to_string(), Value::String(row.get("sort"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "level".to_string(),
+                        Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                    ),
+                    (
+                        "sort".to_string(),
+                        Value::String(row.get::<_, Option<String>>("sort").unwrap_or_default()),
+                    ),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
                         Value::String(row.get("create_time")),
@@ -232,8 +262,14 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
             let sort: i32 = row.get("sort");
             Value::Object(serde_json::Map::from_iter(
                 [
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     (
                         "level".to_string(),
                         Value::Number(serde_json::Number::from(level)),
@@ -242,10 +278,16 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
                         "sort".to_string(),
                         Value::Number(serde_json::Number::from(sort)),
                     ),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     ),
                 ]
                 .into_iter()
@@ -292,8 +334,14 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
             let sort: i32 = row.get("sort");
             Value::Object(serde_json::Map::from_iter(
                 [
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     (
                         "level".to_string(),
                         Value::Number(serde_json::Number::from(level)),
@@ -302,10 +350,16 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
                         "sort".to_string(),
                         Value::Number(serde_json::Number::from(sort)),
                     ),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     ),
                 ]
                 .into_iter()
@@ -355,10 +409,22 @@ pub async fn organization_assemble_control_person_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -399,8 +465,14 @@ pub async fn export_export_all(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -433,11 +505,17 @@ pub async fn export_result_flag_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "\"fileUrl\"".to_string(),
-                    Value::String(row.get("file_url")),
+                    Value::String(row.get::<_, Option<String>>("file_url").unwrap_or_default()),
                 ),
                 (
                     "createTime".to_string(),
@@ -474,8 +552,14 @@ pub async fn export_zhengwudingding_person(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -506,9 +590,18 @@ pub async fn group_list_like_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -541,9 +634,18 @@ pub async fn group_list_like_pinyin(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -576,9 +678,18 @@ pub async fn group_list_like_pinyin_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -612,9 +723,18 @@ pub async fn group_list_pinyininitial(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -647,9 +767,18 @@ pub async fn group_list_pinyininitial_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -687,9 +816,18 @@ pub async fn group_list_flag_sub_direct(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -725,14 +863,32 @@ pub async fn group_list_flag_sub_nested(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -773,9 +929,18 @@ pub async fn group_list_flag_sup_direct(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -819,14 +984,32 @@ pub async fn group_list_flag_sup_nested(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -860,9 +1043,18 @@ pub async fn group_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1019,9 +1211,18 @@ pub async fn group_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1052,7 +1253,10 @@ pub async fn identity_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1077,7 +1281,10 @@ pub async fn identity_list_like_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1085,7 +1292,10 @@ pub async fn identity_list_like_mockputtopost(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1118,7 +1328,10 @@ pub async fn identity_list_like_pinyin(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1126,7 +1339,10 @@ pub async fn identity_list_like_pinyin(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1159,7 +1375,10 @@ pub async fn identity_list_like_pinyin_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1167,7 +1386,10 @@ pub async fn identity_list_like_pinyin_mockputtopost(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1201,7 +1423,10 @@ pub async fn identity_list_pinyininitial(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1209,7 +1434,10 @@ pub async fn identity_list_pinyininitial(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1242,7 +1470,10 @@ pub async fn identity_list_pinyininitial_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1250,7 +1481,10 @@ pub async fn identity_list_pinyininitial_mockputtopost(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1287,7 +1521,10 @@ pub async fn identity_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1295,7 +1532,10 @@ pub async fn identity_flag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1374,7 +1614,10 @@ pub async fn identity_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -1382,7 +1625,10 @@ pub async fn identity_flag_mockputtopost(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1410,9 +1656,21 @@ pub async fn inputperson_template(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1444,9 +1702,21 @@ pub async fn inputperson_wipe(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1479,8 +1749,14 @@ pub async fn permissionsetting_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1515,9 +1791,18 @@ pub async fn permissionsetting_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1585,9 +1870,18 @@ pub async fn permissionsetting_flag_mockputtopost(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1625,9 +1919,15 @@ pub async fn personattribute_flag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1709,9 +2009,15 @@ pub async fn personattribute_flag_mockputtopost(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1785,10 +2091,22 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1826,10 +2144,22 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1907,10 +2237,22 @@ pub async fn personcard_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1983,9 +2325,15 @@ pub async fn role_list_like_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2020,9 +2368,15 @@ pub async fn role_list_like_pinyin(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2057,9 +2411,15 @@ pub async fn role_list_like_pinyin_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2095,9 +2455,15 @@ pub async fn role_list_pinyininitial(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2132,9 +2498,15 @@ pub async fn role_list_pinyininitial_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2216,9 +2588,15 @@ pub async fn role_flag_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2256,9 +2634,15 @@ pub async fn unitattribute_flag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2340,9 +2724,15 @@ pub async fn unitattribute_flag_mockputtopost(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2440,7 +2830,10 @@ pub async fn unitduty_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2448,7 +2841,10 @@ pub async fn unitduty_flag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2477,7 +2873,10 @@ pub async fn unitduty_update_member(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2485,7 +2884,10 @@ pub async fn unitduty_update_member(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2528,7 +2930,10 @@ pub async fn unitduty_list_flag_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2536,7 +2941,10 @@ pub async fn unitduty_list_flag_prev_count(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2579,7 +2987,10 @@ pub async fn unitduty_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2587,7 +2998,10 @@ pub async fn unitduty_list_flag_next_count(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2622,7 +3036,10 @@ pub async fn unitduty_list_unit_unitFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2630,7 +3047,10 @@ pub async fn unitduty_list_unit_unitFlag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2666,7 +3086,10 @@ pub async fn unitduty_list_name_name(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2674,7 +3097,10 @@ pub async fn unitduty_list_name_name(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2711,7 +3137,10 @@ pub async fn unitduty_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2719,7 +3148,10 @@ pub async fn unitduty_list_like(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2754,7 +3186,10 @@ pub async fn unitduty_list_identity_identityFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -2762,7 +3197,10 @@ pub async fn unitduty_list_identity_identityFlag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2845,9 +3283,15 @@ pub async fn unitattribute_list_flag_prev_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2896,9 +3340,15 @@ pub async fn unitattribute_list_flag_next_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2939,9 +3389,15 @@ pub async fn unitattribute_list_unit_flag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2986,9 +3442,15 @@ pub async fn role_list_flag_prev_count(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3025,9 +3487,15 @@ pub async fn role_list_person_personFlag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3066,9 +3534,15 @@ pub async fn role_list_like(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3101,13 +3575,25 @@ pub async fn role_list_group_groupFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3145,10 +3631,22 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3186,10 +3684,22 @@ pub async fn personcard_listpaging_page_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3225,9 +3735,18 @@ pub async fn personcard_listVCf_idList(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -3259,9 +3778,18 @@ pub async fn personcard_listPersonalVCf_idList(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -3303,10 +3831,22 @@ pub async fn personcard_createQR_cardId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3347,10 +3887,22 @@ pub async fn personcard_createCode_cardId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3394,9 +3946,15 @@ pub async fn personattribute_list_flag_prev_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3445,9 +4003,15 @@ pub async fn personattribute_list_flag_next_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3488,9 +4052,15 @@ pub async fn personattribute_list_person_personFlag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3524,13 +4094,25 @@ pub async fn loginrecord_stream(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "loginTime".to_string(),
                     Value::String(row.get("login_time")),
                 ),
-                ("ip".to_string(), Value::String(row.get("ip"))),
-                ("device".to_string(), Value::String(row.get("device"))),
+                (
+                    "ip".to_string(),
+                    Value::String(row.get::<_, Option<String>>("ip").unwrap_or_default()),
+                ),
+                (
+                    "device".to_string(),
+                    Value::String(row.get::<_, Option<String>>("device").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -3560,9 +4142,21 @@ pub async fn inputperson_result_flag_flag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3599,7 +4193,9 @@ pub async fn identity_flag_order_before_followFlag(
         None => return Ok(Json(ActionResult::error("identity not found"))),
     };
 
-    let unit_id: String = identity_row.get("unit_id");
+    let unit_id: String = identity_row
+        .get::<_, Option<String>>("unit_id")
+        .unwrap_or_default();
 
     let follow_identity = if follow_flag != "(0)" {
         client
@@ -3675,7 +4271,10 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3683,7 +4282,10 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3726,7 +4328,10 @@ pub async fn identity_list_flag_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3734,7 +4339,10 @@ pub async fn identity_list_flag_prev_count(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3777,7 +4385,10 @@ pub async fn identity_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3785,7 +4396,10 @@ pub async fn identity_list_flag_next_count(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3820,7 +4434,10 @@ pub async fn identity_list_unitduty_name_unitDutyName(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3828,7 +4445,10 @@ pub async fn identity_list_unitduty_name_unitDutyName(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3863,7 +4483,10 @@ pub async fn identity_list_unit_unitFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3871,7 +4494,10 @@ pub async fn identity_list_unit_unitFlag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3906,7 +4532,10 @@ pub async fn identity_list_person_personFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3914,7 +4543,10 @@ pub async fn identity_list_person_personFlag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3951,7 +4583,10 @@ pub async fn identity_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
                     Value::String(
@@ -3959,7 +4594,10 @@ pub async fn identity_list_like(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4002,9 +4640,18 @@ pub async fn group_list_flag_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4047,9 +4694,18 @@ pub async fn group_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4082,11 +4738,26 @@ pub async fn group_list_role_roleFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4119,14 +4790,32 @@ pub async fn group_list_person_personFlag_sup_nested(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4156,11 +4845,26 @@ pub async fn group_list_person_personFlag_sup_direct(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4197,9 +4901,18 @@ pub async fn group_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),

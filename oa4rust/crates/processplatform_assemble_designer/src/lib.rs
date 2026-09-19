@@ -618,7 +618,10 @@ pub async fn application_id_icon(
             let icon: Option<String> = row.get("xicon");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("icon".to_string(), Value::String(icon.unwrap_or_default())),
                 ]),
             ))))
@@ -650,7 +653,10 @@ pub async fn application_id_permission(
                 .unwrap_or(Value::Object(serde_json::Map::new()));
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("permissions".to_string(), permissions),
                 ]),
             ))))
@@ -928,7 +934,10 @@ pub async fn file_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1009,7 +1018,10 @@ pub async fn file_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1041,7 +1053,10 @@ pub async fn file_flag_application_applicationFlag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1073,7 +1088,10 @@ pub async fn file_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1107,7 +1125,10 @@ pub async fn file_id_content(
             let content: Option<String> = row.get("xcontent");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "content".to_string(),
                         Value::String(content.unwrap_or_default()),
@@ -1138,7 +1159,10 @@ pub async fn file_id_download(
             let content: Option<String> = row.get("xcontent");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "downloadUrl".to_string(),
                         Value::String(format!("/file/download/{}", id)),
@@ -1343,15 +1367,23 @@ pub async fn formversion_list_form_formId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("form".to_string(), Value::String(row.get("xform"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "form".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xform").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -1394,15 +1426,23 @@ pub async fn formversion_id(
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("form".to_string(), Value::String(row.get("xform"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "form".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xform").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -1562,13 +1602,22 @@ pub async fn item_access_path_path(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1610,13 +1659,22 @@ pub async fn item_access_process_processId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1659,13 +1717,22 @@ pub async fn item_access_process_processId_path_path(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1706,13 +1773,22 @@ pub async fn item_access_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1749,7 +1825,10 @@ pub async fn mapping_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -1841,7 +1920,10 @@ pub async fn mapping_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -1892,11 +1974,14 @@ pub async fn mapping_flag_execute(
     let found = row.is_some();
     match row {
         Some(row) => {
-            let source: String = row.get("xsource");
-            let target: String = row.get("xtarget");
+            let source: String = row.get::<_, Option<String>>("xsource").unwrap_or_default();
+            let target: String = row.get::<_, Option<String>>("xtarget").unwrap_or_default();
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("execute".to_string(), Value::Bool(found)),
                     ("source".to_string(), Value::String(source)),
                     ("target".to_string(), Value::String(target)),
@@ -2048,12 +2133,18 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "output".to_string(),
                     Value::String(row.get::<_, Option<String>>("xoutput").unwrap_or_default()),
@@ -2099,12 +2190,18 @@ pub async fn output_applicationFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "output".to_string(),
                     Value::String(row.get::<_, Option<String>>("xoutput").unwrap_or_default()),
@@ -2146,8 +2243,14 @@ pub async fn process_activity_flag_activityType_activityType(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "activityType".to_string(),
                     Value::String(row.get("\"xactivityType\"")),
@@ -2224,8 +2327,14 @@ pub async fn process_application_applicationId_disable_edition(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 ("edition".to_string(), Value::String("disabled".to_string())),
                 (
                     "createTime".to_string(),
@@ -2269,8 +2378,14 @@ pub async fn process_application_applicationId_edition_edition(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 ("edition".to_string(), Value::String(edition.clone())),
                 (
                     "createTime".to_string(),
@@ -2427,8 +2542,14 @@ pub async fn process_id_enabled(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "enabled".to_string(),
                     Value::Bool(
@@ -2469,7 +2590,10 @@ pub async fn process_id_execute_projection(
             let phase: Option<String> = row.get("\"xserialPhase\"");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "projection".to_string(),
                         Value::Object(serde_json::Map::from_iter([
@@ -2513,12 +2637,18 @@ pub async fn process_id_lead_out(
             let _process_def: Option<String> = row.get("xname");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "exportUrl".to_string(),
                         Value::String(format!("/export/process/{}", id)),
                     ),
-                    ("name".to_string(), Value::String(row.get("xname"))),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                    ),
                 ]),
             ))))
         }
@@ -2544,8 +2674,14 @@ pub async fn process_id_list_element(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "processId".to_string(),
                     Value::String(row.get("\"xprocessId\"")),
@@ -2603,7 +2739,10 @@ pub async fn process_id_permission(
                 .unwrap_or(Value::Object(serde_json::Map::new()));
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("permissions".to_string(), permissions),
                 ]),
             ))))
@@ -2696,8 +2835,14 @@ pub async fn process_id_onlyRemoveNotCompleted_edition(
             let edition: Option<String> = row.get("xedition");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("name".to_string(), Value::String(row.get("xname"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                    ),
                     (
                         "edition".to_string(),
                         Value::String(edition.unwrap_or_default()),
@@ -2731,15 +2876,23 @@ pub async fn processversion_list_process_processId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -2782,15 +2935,23 @@ pub async fn processversion_id(
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -3030,8 +3191,14 @@ pub async fn scriptversion_list_script_scriptId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("script".to_string(), Value::String(row.get("xscript"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "script".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xscript").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -3043,7 +3210,9 @@ pub async fn scriptversion_list_script_scriptId(
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -3087,15 +3256,23 @@ pub async fn scriptversion_id(
             let code: Option<String> = row.get("xcode");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("script".to_string(), Value::String(row.get("xscript"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
+                    (
+                        "script".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xscript").unwrap_or_default()),
+                    ),
                     (
                         "name".to_string(),
                         Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                     ),
                     (
                         "version".to_string(),
-                        Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                        Value::Number(serde_json::Number::from(
+                            row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        )),
                     ),
                     ("code".to_string(), Value::String(code.unwrap_or_default())),
                     (
@@ -3134,8 +3311,14 @@ pub async fn templateform_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(
@@ -3184,8 +3367,14 @@ pub async fn templateform_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(
@@ -3234,8 +3423,14 @@ pub async fn templateform_id(
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(
@@ -3283,7 +3478,10 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 ("workId".to_string(), Value::String(row.get("\"xworkId\""))),
                 (
                     "\"completedTime\"".to_string(),
@@ -3330,7 +3528,10 @@ pub async fn workcompleted_process_processFlag_merge_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 ("workId".to_string(), Value::String(row.get("\"xworkId\""))),
                 (
                     "\"completedTime\"".to_string(),
@@ -3958,13 +4159,22 @@ pub async fn item_access_process_path_list(
 
 fn row_to_item_access_data(row: &Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("xid"))),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+        ),
         (
             "name".to_string(),
             Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
         ),
-        ("process".to_string(), Value::String(row.get("xprocess"))),
-        ("path".to_string(), Value::String(row.get("xpath"))),
+        (
+            "process".to_string(),
+            Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+        ),
+        (
+            "path".to_string(),
+            Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
             Value::String(
@@ -4384,7 +4594,10 @@ pub async fn process_disable_edition_list(
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(r.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(r.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(r.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -4598,7 +4811,10 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -4612,11 +4828,17 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4705,7 +4927,10 @@ pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -4719,11 +4944,17 @@ pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

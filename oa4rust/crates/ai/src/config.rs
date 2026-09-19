@@ -55,9 +55,15 @@ pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
     } else {
         let row = &rows[0];
         Value::Object(serde_json::Map::from_iter([
-            ("config".to_string(), Value::String(row.get("xname"))),
+            (
+                "config".to_string(),
+                Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+            ),
             ("version".to_string(), Value::String("1.0.0".to_string())),
-            ("enabled".to_string(), Value::Bool(row.get("xenable"))),
+            (
+                "enabled".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("xenable").unwrap_or(false)),
+            ),
             (
                 "appIconUrl".to_string(),
                 Value::String(std::env::var("APP_ICON_URL").unwrap_or_default()),
@@ -83,7 +89,10 @@ pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
                 "appName".to_string(),
                 Value::String(std::env::var("APP_NAME").unwrap_or_else(|_| "O2OA".to_string())),
             ),
-            ("o2AiEnable".to_string(), Value::Bool(row.get("xenable"))),
+            (
+                "o2AiEnable".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("xenable").unwrap_or(false)),
+            ),
             (
                 "title".to_string(),
                 Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -124,7 +133,10 @@ pub async fn config_base_config(
             ("appIconUrl".to_string(), Value::String("".to_string())),
             ("title".to_string(), Value::String("".to_string())),
             ("desc".to_string(), Value::String("".to_string())),
-            ("o2AiEnable".to_string(), Value::Bool(row.get("xenable"))),
+            (
+                "o2AiEnable".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("xenable").unwrap_or(false)),
+            ),
         ]))
     };
 
@@ -174,18 +186,30 @@ pub async fn config_list_model_paging(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("type".to_string(), Value::String(row.get("type"))),
-                    ("model".to_string(), Value::String(row.get("model"))),
+                    (
+                        "type".to_string(),
+                        Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                    ),
+                    (
+                        "model".to_string(),
+                        Value::String(row.get::<_, Option<String>>("model").unwrap_or_default()),
+                    ),
                     (
                         "\"completionUrl\"".to_string(),
                         Value::String(row.get("\"completionUrl\"")),
                     ),
-                    ("enable".to_string(), Value::Bool(row.get("enable"))),
+                    (
+                        "enable".to_string(),
+                        Value::Bool(row.get::<_, Option<bool>>("enable").unwrap_or(false)),
+                    ),
                     (
                         "\"asDefault\"".to_string(),
                         Value::Bool(row.get("\"asDefault\"")),
                     ),
-                    ("desc".to_string(), Value::String(row.get("desc"))),
+                    (
+                        "desc".to_string(),
+                        Value::String(row.get::<_, Option<String>>("desc").unwrap_or_default()),
+                    ),
                 ]
                 .into_iter()
                 .chain(
@@ -237,18 +261,30 @@ pub async fn config_get_model(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("type".to_string(), Value::String(row.get("type"))),
-                    ("model".to_string(), Value::String(row.get("model"))),
+                    (
+                        "type".to_string(),
+                        Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                    ),
+                    (
+                        "model".to_string(),
+                        Value::String(row.get::<_, Option<String>>("model").unwrap_or_default()),
+                    ),
                     (
                         "\"completionUrl\"".to_string(),
                         Value::String(row.get("\"completionUrl\"")),
                     ),
-                    ("enable".to_string(), Value::Bool(row.get("enable"))),
+                    (
+                        "enable".to_string(),
+                        Value::Bool(row.get::<_, Option<bool>>("enable").unwrap_or(false)),
+                    ),
                     (
                         "\"asDefault\"".to_string(),
                         Value::Bool(row.get("\"asDefault\"")),
                     ),
-                    ("desc".to_string(), Value::String(row.get("desc"))),
+                    (
+                        "desc".to_string(),
+                        Value::String(row.get::<_, Option<String>>("desc").unwrap_or_default()),
+                    ),
                 ]
                 .into_iter()
                 .chain(
@@ -312,7 +348,10 @@ pub async fn list_enable_model(
             Value::Object(serde_json::Map::from_iter([
                 ("flag".to_string(), Value::String(row.get("name"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("enable".to_string(), Value::Bool(row.get("xenable"))),
+                (
+                    "enable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("xenable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();

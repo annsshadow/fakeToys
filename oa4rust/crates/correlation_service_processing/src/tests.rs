@@ -961,7 +961,10 @@ mod u2_contract {
             .unwrap();
         let bundles: Vec<String> = rows
             .iter()
-            .map(|r| r.get::<_, String>("target_bundle"))
+            .map(|r| {
+                r.get::<_, Option<String>>("target_bundle")
+                    .unwrap_or_default()
+            })
             .collect();
         assert!(!bundles.contains(&"t-old".to_string()), "旧目标应被替换");
         assert!(bundles.contains(&"t-new".to_string()), "新目标应写入");

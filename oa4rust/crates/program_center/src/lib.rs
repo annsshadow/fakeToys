@@ -47,10 +47,22 @@ pub async fn applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -79,8 +91,14 @@ pub async fn current_style(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .take(3)
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -114,7 +132,7 @@ pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let entity: String = row.get("entity");
+            let entity: String = row.get::<_, Option<String>>("entity").unwrap_or_default();
             let class_name = if entity == "Process" {
                 format!("com.x.process.core.entity.{}", entity)
             } else {
@@ -123,7 +141,10 @@ pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             let field_count: i64 = row.get("field_count");
 
             Value::Object(serde_json::Map::from_iter([
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 ("className".to_string(), Value::String(class_name)),
                 (
                     "entityCount".to_string(),
@@ -161,10 +182,25 @@ pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -317,9 +353,18 @@ pub async fn config_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -364,8 +409,14 @@ pub async fn agent_flag(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -400,8 +451,14 @@ pub async fn agent_flag_disable(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -436,8 +493,14 @@ pub async fn agent_flag_enable(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -472,8 +535,14 @@ pub async fn agent_flag_execute(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -508,8 +577,14 @@ pub async fn agent_flag_file(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -566,10 +641,22 @@ pub async fn appstyle_current_style(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::success(Value::Object(
@@ -600,10 +687,22 @@ pub async fn appstyle_current_update(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::success(Value::Object(
@@ -634,16 +733,28 @@ pub async fn appstyle_image_application_top(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -702,16 +813,28 @@ pub async fn appstyle_image_launch_logo(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -770,16 +893,28 @@ pub async fn appstyle_image_login_avatar(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -838,16 +973,28 @@ pub async fn appstyle_image_menu_logo_blur(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -906,16 +1053,28 @@ pub async fn appstyle_image_menu_logo_focus(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -974,16 +1133,28 @@ pub async fn appstyle_image_process_default(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1042,16 +1213,28 @@ pub async fn appstyle_image_setup_about_logo(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1111,10 +1294,22 @@ pub async fn appstyle_index_portal(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -1145,9 +1340,18 @@ pub async fn bar_create_mass_from_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1189,9 +1393,18 @@ pub async fn bar_select1_field_field_value_value_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1233,9 +1446,18 @@ pub async fn bar_select2_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1277,9 +1499,18 @@ pub async fn bar_select3_field_field_value_value_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1321,9 +1552,18 @@ pub async fn bar_select4_field_field_value_value_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1363,9 +1603,18 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1423,10 +1672,13 @@ pub async fn captcha_id_validate_answer_answer(
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
-            let valid = row.get::<_, String>("flag") == answer;
+            let valid = row.get::<_, Option<String>>("flag").unwrap_or_default() == answer;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
                     ("valid".to_string(), Value::Bool(valid)),
                 ]),
             ))))
@@ -1453,10 +1705,22 @@ pub async fn center_applications(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -1487,10 +1751,22 @@ pub async fn center_regist_applications(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -1550,9 +1826,18 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -1598,9 +1883,18 @@ pub async fn code_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -1642,7 +1936,7 @@ pub async fn code_validate_mobile_mobile_answer_answer(
         .await
         .map_err(|_| AppError::Internal)?;
     let valid = match row {
-        Some(row) => row.get::<_, String>("flag") == answer,
+        Some(row) => row.get::<_, Option<String>>("flag").unwrap_or_default() == answer,
         None => false,
     };
     Ok(Json(ActionResult::success(Value::Object(
@@ -1664,7 +1958,7 @@ pub async fn code_validate_mobile_mobile_answer_answer_cascade(
         .await
         .map_err(|_| AppError::Internal)?;
     let valid = match row {
-        Some(row) => row.get::<_, String>("flag") == answer,
+        Some(row) => row.get::<_, Option<String>>("flag").unwrap_or_default() == answer,
         None => false,
     };
     Ok(Json(ActionResult::success(Value::Object(
@@ -1688,10 +1982,25 @@ pub async fn collect_code_mobile_mobile(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1725,10 +2034,25 @@ pub async fn collect_connect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1762,10 +2086,25 @@ pub async fn collect_controllebbs(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1799,10 +2138,25 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1836,10 +2190,25 @@ pub async fn collect_disconnect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1873,10 +2242,25 @@ pub async fn collect_login(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1910,10 +2294,25 @@ pub async fn collect_mobile_check_connect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1947,10 +2346,25 @@ pub async fn collect_name_name_exist(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1984,10 +2398,25 @@ pub async fn collect_name_name_mobile_mobile_code_code(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2021,10 +2450,25 @@ pub async fn collect_person(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2058,10 +2502,25 @@ pub async fn collect_resetpassword(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2095,10 +2554,25 @@ pub async fn collect_sync_area(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2132,10 +2606,25 @@ pub async fn collect_updateUnit(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2169,10 +2658,25 @@ pub async fn collect_urlMapping(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2206,10 +2710,25 @@ pub async fn collect_validate(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2243,10 +2762,25 @@ pub async fn collect_validate_codeanswer(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2280,10 +2814,25 @@ pub async fn collect_validate_direct(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2317,10 +2866,25 @@ pub async fn collect_validate_password(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2376,9 +2940,18 @@ pub async fn config_open_get_disable_export_enable(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2416,9 +2989,18 @@ pub async fn config_centerserver(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2456,9 +3038,18 @@ pub async fn config_change_password(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2496,9 +3087,18 @@ pub async fn config_collect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2536,9 +3136,18 @@ pub async fn config_license(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2574,9 +3183,18 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2619,9 +3237,18 @@ pub async fn config_list_application(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2664,9 +3291,18 @@ pub async fn config_list_dump_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2709,9 +3345,18 @@ pub async fn config_list_dump_data_current_node(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2754,9 +3399,18 @@ pub async fn config_list_entity(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2799,9 +3453,18 @@ pub async fn config_open(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2839,9 +3502,18 @@ pub async fn config_open_run_time_config(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2879,9 +3551,18 @@ pub async fn config_person(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2919,9 +3600,18 @@ pub async fn config_portal(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2959,9 +3649,18 @@ pub async fn config_proxy(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -3032,9 +3731,18 @@ pub async fn config_ternary_management(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -3077,9 +3785,18 @@ pub async fn config_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3115,19 +3832,34 @@ pub async fn datastructure_fileds_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "fieldName".to_string(),
-                    Value::String(row.get("field_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldLabel".to_string(),
-                    Value::String(row.get("field_label")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_label")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldType".to_string(),
-                    Value::String(row.get("field_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -3166,9 +3898,18 @@ pub async fn datastructure_modules_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3210,12 +3951,21 @@ pub async fn datastructure_tables_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableName".to_string(),
-                    Value::String(row.get("table_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3258,9 +4008,18 @@ pub async fn deploy_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3304,9 +4063,15 @@ pub async fn deploy_server_o2(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "serverUrl".to_string(),
-                    Value::String(row.get("server_url")),
+                    Value::String(
+                        row.get::<_, Option<String>>("server_url")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3429,9 +4194,18 @@ pub async fn deploy_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
                 (
                     "creator".to_string(),
@@ -3467,8 +4241,14 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -3512,8 +4292,14 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
@@ -3576,8 +4362,14 @@ pub async fn dict_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
@@ -3627,8 +4419,14 @@ pub async fn dict_dictFlag_data(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("data".to_string(), Value::String(row.get("app_data"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("dict not found"))),
@@ -3653,9 +4451,15 @@ pub async fn dict_dictFlag_path_data(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 ("path".to_string(), Value::String(_path)),
-                ("data".to_string(), Value::String(row.get("app_data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("dict not found"))),
@@ -3681,7 +4485,10 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "data".to_string(),
                     Value::String({
@@ -3752,8 +4559,14 @@ pub async fn dict_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
@@ -3762,7 +4575,10 @@ pub async fn dict_id(
                     "appName".to_string(),
                     Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
                 ),
-                ("appData".to_string(), Value::String(row.get("app_data"))),
+                (
+                    "appData".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3936,9 +4752,18 @@ pub async fn distribute_assemble_source_source(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3980,9 +4805,18 @@ pub async fn distribute_webserver_assemble_source_source(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4024,13 +4858,25 @@ pub async fn foo_create_mass_from_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "cronExpression".to_string(),
-                    Value::String(row.get("cron_expression")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cron_expression")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4070,9 +4916,18 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4112,9 +4967,18 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4154,9 +5018,18 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4198,9 +5071,18 @@ pub async fn input_prepare_cover(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4242,9 +5124,18 @@ pub async fn input_prepare_create(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4286,9 +5177,18 @@ pub async fn invoke_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4330,9 +5230,18 @@ pub async fn invoke_list_with_category_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4371,9 +5280,18 @@ pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4407,11 +5325,20 @@ pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "creator".to_string(),
@@ -4546,9 +5473,18 @@ pub async fn invoke_flag_file(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4618,9 +5554,18 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -4673,9 +5618,18 @@ pub async fn market_cloud_unit_is_vip(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 ("vip".to_string(), Value::Bool(row.get("vip"))),
                 (
                     "creator".to_string(),
@@ -4730,9 +5684,18 @@ pub async fn market_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4774,17 +5737,32 @@ pub async fn market_list_install_log_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -4822,9 +5800,18 @@ pub async fn market_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4866,9 +5853,18 @@ pub async fn market_list_paging_page_size_size_category_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4910,9 +5906,18 @@ pub async fn market_list_top_three(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4951,9 +5956,18 @@ pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4988,16 +6002,28 @@ pub async fn market_flag_cover_pic(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5033,17 +6059,32 @@ pub async fn market_flag_install_log(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -5105,9 +6146,18 @@ pub async fn market_flag_installed_version(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
                 (
                     "creator".to_string(),
@@ -5164,8 +6214,14 @@ pub async fn market_id_download(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("module not found"))),
@@ -5188,9 +6244,18 @@ pub async fn module_compare_upload(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5222,9 +6287,18 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5263,9 +6337,18 @@ pub async fn module_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5304,9 +6387,18 @@ pub async fn module_output(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5349,9 +6441,18 @@ pub async fn module_output_structure(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5385,9 +6486,18 @@ pub async fn module_output_flag_file(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5421,9 +6531,18 @@ pub async fn module_remove_structure_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5457,9 +6576,18 @@ pub async fn module_write_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5493,9 +6621,18 @@ pub async fn module_id_compare(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5760,9 +6897,18 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "appName".to_string(),
                     Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
@@ -5809,9 +6955,18 @@ pub async fn output_appInfoFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "appName".to_string(),
                     Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
@@ -5857,9 +7012,18 @@ pub async fn output_flag_select_file(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "selectFile".to_string(),
                     Value::String(row.get("select_file")),
@@ -5890,7 +7054,10 @@ pub async fn prompterrorlog_count_exceptionclass(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("count".to_string(), {
                     let __val: i64 = row.get("cnt");
@@ -5928,7 +7095,10 @@ pub async fn prompterrorlog_count_loggername(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("count".to_string(), {
                     let __val: i64 = row.get("cnt");
@@ -5965,16 +7135,28 @@ pub async fn prompterrorlog_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6013,16 +7195,28 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6061,16 +7255,28 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6109,16 +7315,28 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6157,16 +7375,28 @@ pub async fn prompterrorlog_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6205,16 +7435,28 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6253,16 +7495,28 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6301,16 +7555,28 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6348,16 +7614,28 @@ pub async fn prompterrorlog_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6550,9 +7828,18 @@ pub async fn application_get_by_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 ("description".to_string(), Value::Null),
             ]),
         )))),
@@ -6633,9 +7920,18 @@ pub async fn application_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
                     Value::String(
@@ -6643,7 +7939,10 @@ pub async fn application_list(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6763,13 +8062,25 @@ pub async fn schedule_list_schedule(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "cronExpression".to_string(),
-                    Value::String(row.get("cron_expression")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cron_expression")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6811,17 +8122,32 @@ pub async fn schedule_list_schedulelocal(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "cronExpression".to_string(),
-                    Value::String(row.get("cron_expression")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cron_expression")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "serverNode".to_string(),
-                    Value::String(row.get("server_node")),
+                    Value::String(
+                        row.get::<_, Option<String>>("server_node")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6864,17 +8190,32 @@ pub async fn schedule_list_schedulelog_application_application(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6910,13 +8251,25 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6972,9 +8325,18 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -7021,9 +8383,18 @@ pub async fn script_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -7069,10 +8440,22 @@ pub async fn script_name_name(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -7109,9 +8492,18 @@ pub async fn script_name_name_imported(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "importedContent".to_string(),
                     Value::String(row.get("imported_content")),
@@ -7152,10 +8544,22 @@ pub async fn script_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -7192,10 +8596,22 @@ pub async fn script_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -7292,15 +8708,27 @@ pub async fn unexpectederrorlog_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7340,15 +8768,27 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7388,15 +8828,27 @@ pub async fn unexpectederrorlog_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7436,15 +8888,27 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7483,15 +8947,27 @@ pub async fn unexpectederrorlog_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),

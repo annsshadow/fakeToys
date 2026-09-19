@@ -1200,7 +1200,7 @@ pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
     let mut created = Vec::new();
     for row in &rows {
         let work: String = row.get("work");
-        let person: String = row.get("person");
+        let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
         let id = Uuid::new_v4().to_string();
         client
             .execute(
@@ -1546,7 +1546,7 @@ pub async fn touch_delay(pool: Extension<Pool>) -> H {
         .map_err(|_| AppError::Internal)?;
     let mut touched: Vec<String> = Vec::new();
     for row in &rows {
-        let work: String = row.get("work");
+        let work: String = row.get::<_, Option<String>>("work").unwrap_or_default();
         record_insert(&client, &work, "touch_delay", "delay touched", "system")
             .await
             .ok();

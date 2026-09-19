@@ -115,7 +115,10 @@ pub async fn get(
             "email".to_string(),
             Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
         ),
-        ("locked".to_string(), Value::Bool(row.get("locked"))),
+        (
+            "locked".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("locked").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -186,7 +189,10 @@ async fn query_page(
                     "email".to_string(),
                     Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
                 ),
-                ("locked".to_string(), Value::Bool(row.get("locked"))),
+                (
+                    "locked".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("locked").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -379,7 +385,10 @@ pub async fn update(
             "email".to_string(),
             Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
         ),
-        ("locked".to_string(), Value::Bool(row.get("locked"))),
+        (
+            "locked".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("locked").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))

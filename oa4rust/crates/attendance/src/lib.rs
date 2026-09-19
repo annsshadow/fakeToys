@@ -72,17 +72,38 @@ pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("unitName".to_string(), Value::String(row.get("unit_name"))),
-                ("unitOu".to_string(), Value::String(row.get("unit_ou"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "unitName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unit_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "unitOu".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_ou").unwrap_or_default()),
+                ),
                 (
                     "adminName".to_string(),
-                    Value::String(row.get("admin_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("admin_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("admin".to_string(), Value::String(row.get("admin"))),
+                (
+                    "admin".to_string(),
+                    Value::String(row.get::<_, Option<String>>("admin").unwrap_or_default()),
+                ),
                 (
                     "adminLevel".to_string(),
-                    Value::String(row.get("admin_level")),
+                    Value::String(
+                        row.get::<_, Option<String>>("admin_level")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -114,32 +135,62 @@ pub async fn list_employee_configs(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "topUnitName".to_string(),
-                    Value::String(row.get("top_unit_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("top_unit_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "topUnitOu".to_string(),
-                    Value::String(row.get("top_unit_ou")),
+                    Value::String(
+                        row.get::<_, Option<String>>("top_unit_ou")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("unitName".to_string(), Value::String(row.get("unit_name"))),
-                ("unitOu".to_string(), Value::String(row.get("unit_ou"))),
+                (
+                    "unitName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unit_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "unitOu".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_ou").unwrap_or_default()),
+                ),
                 (
                     "employeeName".to_string(),
-                    Value::String(row.get("employee_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("employee_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "employeeNumber".to_string(),
-                    Value::String(row.get("employee_number")),
+                    Value::String(
+                        row.get::<_, Option<String>>("employee_number")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "configType".to_string(),
-                    Value::String(row.get("config_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "empInTopUnitTime".to_string(),
-                    Value::String(row.get("emp_in_top_unit_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("emp_in_top_unit_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -171,31 +222,58 @@ pub async fn list_statistical_cycles(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "topUnitName".to_string(),
-                    Value::String(row.get("top_unit_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("top_unit_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("unitName".to_string(), Value::String(row.get("unit_name"))),
+                (
+                    "unitName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("unit_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "cycleYear".to_string(),
-                    Value::String(row.get("cycle_year")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cycle_year")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "cycleMonth".to_string(),
-                    Value::String(row.get("cycle_month")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cycle_month")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "cycleStartDateString".to_string(),
-                    Value::String(row.get("cycle_start_date_string")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cycle_start_date_string")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "cycleEndDateString".to_string(),
-                    Value::String(row.get("cycle_end_date_string")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cycle_end_date_string")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -321,16 +399,34 @@ pub async fn list_appeal_records(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "status".to_string(),
-                    Value::String(row.get("appeal_status")),
+                    Value::String(
+                        row.get::<_, Option<String>>("appeal_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

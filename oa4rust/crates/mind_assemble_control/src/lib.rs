@@ -31,15 +31,27 @@ pub async fn get_control_config(
 
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
+            (
+                "id".to_string(),
+                Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()),
+            ),
             (
                 "configData".to_string(),
-                Value::String(r.get("config_data")),
+                Value::String(
+                    r.get::<_, Option<String>>("config_data")
+                        .unwrap_or_default(),
+                ),
             ),
-            ("creator".to_string(), Value::String(r.get("creator"))),
+            (
+                "creator".to_string(),
+                Value::String(r.get::<_, Option<String>>("creator").unwrap_or_default()),
+            ),
             (
                 "createTime".to_string(),
-                Value::String(r.get("create_time")),
+                Value::String(
+                    r.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]),
         Err(_) => serde_json::Map::from_iter([
@@ -122,7 +134,10 @@ pub async fn list_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -173,7 +188,10 @@ pub async fn get_folder(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -357,7 +375,10 @@ pub async fn folder_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),

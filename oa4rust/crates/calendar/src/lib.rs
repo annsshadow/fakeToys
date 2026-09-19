@@ -302,9 +302,13 @@ pub async fn calendar_update(
     let color = req.color.unwrap_or_else(|| existing.get("color"));
     let description = req.description.or_else(|| existing.get("description"));
     let is_public = req.is_public.unwrap_or_else(|| existing.get("is_public"));
-    let status: String = existing.get("status");
+    let status: String = existing
+        .get::<_, Option<String>>("status")
+        .unwrap_or_default();
     let source: Option<String> = existing.get("source");
-    let createor: String = existing.get("createor");
+    let createor: String = existing
+        .get::<_, Option<String>>("createor")
+        .unwrap_or_default();
 
     client
         .execute(
@@ -460,8 +464,12 @@ pub async fn event_update(
     let all_day = req.all_day.unwrap_or_else(|| existing.get("all_day"));
     let visibility = req.visibility.unwrap_or_else(|| existing.get("visibility"));
     let status = req.status.unwrap_or_else(|| existing.get("status"));
-    let calendar_id: String = existing.get("calendar_id");
-    let createor: String = existing.get("createor");
+    let calendar_id: String = existing
+        .get::<_, Option<String>>("calendar_id")
+        .unwrap_or_default();
+    let createor: String = existing
+        .get::<_, Option<String>>("createor")
+        .unwrap_or_default();
 
     client
         .execute(
