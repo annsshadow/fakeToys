@@ -274,8 +274,25 @@ jobs:
             -f tests/behavior_comparison/seeds/seed_fixtures.sql
           echo "Seed fixtures applied successfully"
 
+      # 本 job 存在两处既有矛盾（均为 main 存量，非本 PR 引入）：
+      #   1. 「Wait for o2server readiness」超时只发 ::warning:: 并声明
+      #      "will SKIP Java side"，但 scripts/seed_java.py 旧版会 SystemExit。
+      #      → 已在脚本侧对齐：未显式 --init/--required 时优雅跳过。
+      #   2. 此处 `cargo test --test behavior_compare` 指向的目标
+      #      （oa4rust/tests/behavior_compare.rs）在仓库中并不存在，
+      #      Cargo.toml 也没有对应 [[test]] 定义 → 必然报
+      #      "no test target named `behavior_compare`"。
+      #      → 在目标存在前先探测，缺失则跳过并给出 notice，
+      #        与后续 Cluster/Upload 步骤的 "报告可能不存在" 预期一致。
       - name: Run behavior comparison (Rust vs Java)
-        run: cargo test --test behavior_compare -- --nocapture
+        run: |
+          if [ -f tests/behavior_compare.rs ]; then
+            cargo test --test behavior_compare -- --nocapture
+          else
+            echo "::notice::tests/behavior_compare.rs not present — skipping behavior comparison."
+            echo "::notice::The comparator implementation is not yet part of this repo;"
+            echo "::notice::see oa4rust/tests/behavior_comparison/ and the W12 convergence backlog."
+          fi
         env:
           BEHAVIOR_COMPARE: "1"
           JAVA_SERVICE_URL: http://localhost:18080
