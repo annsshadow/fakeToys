@@ -67,20 +67,35 @@ pub async fn view_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .map(|row| {
             Value::Object(serde_json::Map::from_iter(
                 [
-                    Some(("id".to_string(), Value::String(row.get("id")))),
-                    Some(("name".to_string(), Value::String(row.get("name")))),
+                    Some((
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    )),
+                    Some((
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    )),
                     row.get::<_, Option<String>>("description")
                         .map(|v| ("description".to_string(), Value::String(v))),
                     row.get::<_, Option<String>>("query_sql")
                         .map(|v| ("querySql".to_string(), Value::String(v))),
                     Some((
                         "creatorId".to_string(),
-                        Value::String(row.get("creator_id")),
+                        Value::String(
+                            row.get::<_, Option<String>>("creator_id")
+                                .unwrap_or_default(),
+                        ),
                     )),
-                    Some(("status".to_string(), Value::String(row.get("status")))),
+                    Some((
+                        "status".to_string(),
+                        Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                    )),
                     Some((
                         "createTime".to_string(),
-                        Value::String(row.get::<_, String>("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     )),
                 ]
                 .into_iter()
@@ -115,20 +130,35 @@ pub async fn view_get(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter(
                 [
-                    Some(("id".to_string(), Value::String(row.get("id")))),
-                    Some(("name".to_string(), Value::String(row.get("name")))),
+                    Some((
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    )),
+                    Some((
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    )),
                     row.get::<_, Option<String>>("description")
                         .map(|v| ("description".to_string(), Value::String(v))),
                     row.get::<_, Option<String>>("query_sql")
                         .map(|v| ("querySql".to_string(), Value::String(v))),
                     Some((
                         "creatorId".to_string(),
-                        Value::String(row.get("creator_id")),
+                        Value::String(
+                            row.get::<_, Option<String>>("creator_id")
+                                .unwrap_or_default(),
+                        ),
                     )),
-                    Some(("status".to_string(), Value::String(row.get("status")))),
+                    Some((
+                        "status".to_string(),
+                        Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                    )),
                     Some((
                         "createTime".to_string(),
-                        Value::String(row.get::<_, String>("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     )),
                 ]
                 .into_iter()
@@ -202,17 +232,38 @@ pub async fn item_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("viewId".to_string(), Value::String(row.get("view_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "viewId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("view_id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "fieldName".to_string(),
-                    Value::String(row.get("field_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("dataType".to_string(), Value::String(row.get("data_type"))),
+                (
+                    "dataType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("data_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -241,18 +292,33 @@ pub async fn import_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .map(|row| {
             Value::Object(serde_json::Map::from_iter(
                 [
-                    Some(("id".to_string(), Value::String(row.get("id")))),
-                    Some(("viewId".to_string(), Value::String(row.get("view_id")))),
+                    Some((
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    )),
+                    Some((
+                        "viewId".to_string(),
+                        Value::String(row.get::<_, Option<String>>("view_id").unwrap_or_default()),
+                    )),
                     Some((
                         "\"fileName\"".to_string(),
-                        Value::String(row.get("file_name")),
+                        Value::String(
+                            row.get::<_, Option<String>>("file_name")
+                                .unwrap_or_default(),
+                        ),
                     )),
-                    Some(("status".to_string(), Value::String(row.get("status")))),
+                    Some((
+                        "status".to_string(),
+                        Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                    )),
                     row.get::<_, Option<String>>("import_time")
                         .map(|v| ("importTime".to_string(), Value::String(v))),
                     Some((
                         "createTime".to_string(),
-                        Value::String(row.get::<_, String>("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     )),
                 ]
                 .into_iter()

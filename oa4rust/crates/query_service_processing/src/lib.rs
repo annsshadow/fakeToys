@@ -52,11 +52,20 @@ pub async fn process_query(
                 .unwrap_or(1);
             let processed = count > 0;
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryType".to_string(),
-                    Value::String(row.get("query_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -120,11 +129,20 @@ pub async fn batch_process(
                     .unwrap_or(1);
                 let processed = count > 0;
                 results.push(Value::Object(serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     (
                         "queryType".to_string(),
-                        Value::String(row.get("query_type")),
+                        Value::String(
+                            row.get::<_, Option<String>>("query_type")
+                                .unwrap_or_default(),
+                        ),
                     ),
                     (
                         "count".to_string(),

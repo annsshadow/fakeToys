@@ -95,11 +95,19 @@ pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
     } else {
         let row = &rows[0];
         Value::Object(serde_json::Map::from_iter([
-            ("status".to_string(), Value::String(row.get("xstatus"))),
-            ("version".to_string(), Value::String(row.get("xversion"))),
+            (
+                "status".to_string(),
+                Value::String(row.get::<_, Option<String>>("xstatus").unwrap_or_default()),
+            ),
+            (
+                "version".to_string(),
+                Value::String(row.get::<_, Option<String>>("xversion").unwrap_or_default()),
+            ),
             (
                 "uptime".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i64>("xuptime"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i64>>("xuptime").unwrap_or(0),
+                )),
             ),
         ]))
     };
@@ -125,8 +133,14 @@ pub async fn get_logs(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("level".to_string(), Value::String(row.get("xlevel"))),
-                ("message".to_string(), Value::String(row.get("xmessage"))),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xlevel").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xmessage").unwrap_or_default()),
+                ),
                 (
                     "timestamp".to_string(),
                     Value::String(row.get("xtimestamp")),

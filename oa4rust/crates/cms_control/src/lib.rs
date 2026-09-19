@@ -25,7 +25,10 @@ pub async fn get_control_config(
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+        (
+            "enabled".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+        ),
         (
             "maxCategoryCount".to_string(),
             Value::Number(serde_json::Number::from(
@@ -34,7 +37,10 @@ pub async fn get_control_config(
         ),
         (
             "allowAnonymous".to_string(),
-            Value::Bool(row.get("allow_anonymous")),
+            Value::Bool(
+                row.get::<_, Option<bool>>("allow_anonymous")
+                    .unwrap_or(false),
+            ),
         ),
     ]));
 
@@ -59,9 +65,18 @@ pub async fn list_control_sections(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();

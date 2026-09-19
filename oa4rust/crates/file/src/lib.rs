@@ -234,7 +234,10 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ),
                 (
                     "extension".to_string(),
-                    Value::String(row.get::<_, String>("extension")),
+                    Value::String(
+                        row.get::<_, Option<String>>("extension")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "length".to_string(),
@@ -498,14 +501,31 @@ pub async fn file_download(
                 ("person".to_string(), Value::String(row.get("person"))),
                 (
                     "referenceType".to_string(),
-                    Value::String(row.get("reference_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("reference_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("extension".to_string(), Value::String(row.get("extension"))),
+                (
+                    "extension".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("extension")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+                (
+                    "mimeType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("mime_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),

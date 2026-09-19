@@ -161,7 +161,10 @@ pub async fn get_control_config(
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+        (
+            "enabled".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+        ),
         (
             "maxForumCount".to_string(),
             Value::Number(serde_json::Number::from(
@@ -170,7 +173,10 @@ pub async fn get_control_config(
         ),
         (
             "allowAnonymous".to_string(),
-            Value::Bool(row.get("allow_anonymous")),
+            Value::Bool(
+                row.get::<_, Option<bool>>("allow_anonymous")
+                    .unwrap_or(false),
+            ),
         ),
     ]));
 
@@ -198,7 +204,10 @@ pub async fn list_control_sections(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -782,7 +791,9 @@ pub async fn section_viewforum_forumId(
             map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
             map.insert(
                 "sort".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                )),
             );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
@@ -1192,7 +1203,7 @@ pub async fn picture_list(
         .map_err(|_| AppError::Internal)?;
     let urls: Vec<Value> = match row {
         Some(r) => {
-            let content: String = r.get("content");
+            let content: String = r.get::<_, Option<String>>("content").unwrap_or_default();
             content
                 .split_whitespace()
                 .filter(|s| {
@@ -1281,8 +1292,14 @@ pub async fn shutup_list(
         .iter()
         .map(|row| {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("person".to_string(), Value::String(row.get("person")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "person".to_string(),
+                Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+            );
             if let Some(val) = row_opt_json::<String>(row, "reason") {
                 map.insert("reason".to_string(), val);
             }
@@ -1616,13 +1633,21 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "sort".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                    )),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -1772,7 +1797,9 @@ pub async fn user_section_list(
             map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
             map.insert(
                 "sort".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                )),
             );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
@@ -1861,7 +1888,10 @@ pub async fn subjectattach_list(
         .map(|row| {
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("url".to_string(), Value::String(row.get("url")));
+            map.insert(
+                "url".to_string(),
+                Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+            );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
             }

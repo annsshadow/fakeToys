@@ -459,7 +459,10 @@ async fn execute_stat_by_id(
         .map(|s| s.to_string());
 
     let mut payload = serde_json::Map::new();
-    payload.insert("id".to_string(), Value::String(row.get("id")));
+    payload.insert(
+        "id".to_string(),
+        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+    );
     payload.insert(
         "name".to_string(),
         Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -1024,7 +1027,7 @@ async fn stat_execute_scoped(
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("stat not found"))),
     };
-    let id: String = row.get("id");
+    let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
 
     let result = execute_stat_by_id(&client, &id).await?;
     Ok(Json(ActionResult::success(result)))

@@ -34,9 +34,21 @@ pub async fn get_mind_with_id(
         .map_err(|_| AppError::NotFound)?;
 
     let result = ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), Value::String(row.get("name"))),
-        ("folderId".to_string(), Value::String(row.get("folder_id"))),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        ),
+        (
+            "name".to_string(),
+            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+        ),
+        (
+            "folderId".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("folder_id")
+                    .unwrap_or_default(),
+            ),
+        ),
         (
             "icon".to_string(),
             Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
@@ -48,15 +60,26 @@ pub async fn get_mind_with_id(
                     .unwrap_or_default(),
             ),
         ),
-        ("creator".to_string(), Value::String(row.get("creator"))),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
         (
             "creatorUnit".to_string(),
-            Value::String(row.get("creator_unit")),
+            Value::String(
+                row.get::<_, Option<String>>("creator_unit")
+                    .unwrap_or_default(),
+            ),
         ),
-        ("shared".to_string(), Value::Bool(row.get("shared"))),
+        (
+            "shared".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("shared").unwrap_or(false)),
+        ),
         (
             "fileVersion".to_string(),
-            Value::Number(serde_json::Number::from(row.get::<_, i32>("file_version"))),
+            Value::Number(serde_json::Number::from(
+                row.get::<_, Option<i32>>("file_version").unwrap_or(0),
+            )),
         ),
     ])));
 
@@ -79,15 +102,26 @@ pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "\"parentId\"".to_string(),
-                    Value::String(row.get("parent_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "orderNumber".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("order_number"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("order_number").unwrap_or(0),
+                    )),
                 ),
                 (
                     "description".to_string(),
@@ -96,10 +130,16 @@ pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "creatorUnit".to_string(),
-                    Value::String(row.get("creator_unit")),
+                    Value::String(
+                        row.get::<_, Option<String>>("creator_unit")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -132,10 +172,25 @@ pub async fn list_versions_with_mind_id(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("mindId".to_string(), Value::String(row.get("mind_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("folderId".to_string(), Value::String(row.get("folder_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "mindId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mind_id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "folderId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("folder_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "description".to_string(),
                     Value::String(
@@ -143,23 +198,40 @@ pub async fn list_versions_with_mind_id(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "creatorUnit".to_string(),
-                    Value::String(row.get("creator_unit")),
+                    Value::String(
+                        row.get::<_, Option<String>>("creator_unit")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fileVersion".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("file_version"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("file_version").unwrap_or(0),
+                    )),
                 ),
-                ("shared".to_string(), Value::Bool(row.get("shared"))),
+                (
+                    "shared".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("shared").unwrap_or(false)),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get::<_, String>("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

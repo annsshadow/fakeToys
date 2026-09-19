@@ -123,7 +123,7 @@ pub async fn list(
                 "id": row.get::<_, String>("id"),
                 "name": row.get::<_, String>("name"),
                 "person": row.get::<_, String>("person"),
-                "value": row.get::<_, String>("value"),
+                "value": row.get::<_, Option<String>>("value").unwrap_or_default(),
                 "created_at": row.get::<_, Option<String>>("created_at").map(|s| {
                     chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
                         .ok()
@@ -200,7 +200,7 @@ pub async fn manager_list(
                 "id": row.get::<_, String>("id"),
                 "name": row.get::<_, String>("name"),
                 "person": row.get::<_, String>("person"),
-                "value": row.get::<_, String>("value"),
+                "value": row.get::<_, Option<String>>("value").unwrap_or_default(),
                 "created_at": row.get::<_, Option<String>>("created_at").map(|s| {
                     chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
                         .ok()

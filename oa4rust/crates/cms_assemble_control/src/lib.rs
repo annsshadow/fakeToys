@@ -40,7 +40,10 @@ pub async fn application_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
+                (
+                    "alias".to_string(),
+                    Value::String(row.get::<_, Option<String>>("alias").unwrap_or_default()),
+                ),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
                 (
                     "icon".to_string(),
@@ -78,7 +81,10 @@ pub async fn get_control_config(
 
     let data = if let Some(row) = rows.first() {
         Value::Object(serde_json::Map::from_iter([
-            ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+            (
+                "enabled".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+            ),
             (
                 "maxCategoryCount".to_string(),
                 Value::Number(serde_json::Number::from(
@@ -87,7 +93,10 @@ pub async fn get_control_config(
             ),
             (
                 "allowAnonymous".to_string(),
-                Value::Bool(row.get("allow_anonymous")),
+                Value::Bool(
+                    row.get::<_, Option<bool>>("allow_anonymous")
+                        .unwrap_or(false),
+                ),
             ),
         ]))
     } else {
@@ -123,9 +132,18 @@ pub async fn list_control_sections(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -653,14 +671,23 @@ pub async fn appinfo_alias_alias(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
+                (
+                    "alias".to_string(),
+                    Value::String(row.get::<_, Option<String>>("alias").unwrap_or_default()),
+                ),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
                 (
                     "icon".to_string(),
                     Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("manager".to_string(), Value::String(row.get("manager"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "manager".to_string(),
+                    Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -742,14 +769,23 @@ pub async fn appinfo_get_user_publish_appId(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
+                (
+                    "alias".to_string(),
+                    Value::String(row.get::<_, Option<String>>("alias").unwrap_or_default()),
+                ),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
                 (
                     "icon".to_string(),
                     Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("manager".to_string(), Value::String(row.get("manager"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "manager".to_string(),
+                    Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1237,14 +1273,23 @@ pub async fn appinfo_appId_icon_size_size(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
+                (
+                    "alias".to_string(),
+                    Value::String(row.get::<_, Option<String>>("alias").unwrap_or_default()),
+                ),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
                 (
                     "icon".to_string(),
                     Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("manager".to_string(), Value::String(row.get("manager"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "manager".to_string(),
+                    Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1276,7 +1321,10 @@ pub async fn appinfo_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
+                (
+                    "alias".to_string(),
+                    Value::String(row.get::<_, Option<String>>("alias").unwrap_or_default()),
+                ),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
                 (
                     "icon".to_string(),
@@ -1315,10 +1363,19 @@ pub async fn appinfo_id_control(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
+                (
+                    "alias".to_string(),
+                    Value::String(row.get::<_, Option<String>>("alias").unwrap_or_default()),
+                ),
                 ("appType".to_string(), Value::String(row.get("app_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("manager".to_string(), Value::String(row.get("manager"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "manager".to_string(),
+                    Value::String(row.get::<_, Option<String>>("manager").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1357,7 +1414,10 @@ pub async fn appinfo_id_permission(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "categoryId".to_string(),
                     Value::String(
@@ -1892,10 +1952,16 @@ pub async fn categoryinfo_id_permission(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "categoryId".to_string(),
-                    Value::String(row.get("category_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("category_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "personId".to_string(),
@@ -3037,7 +3103,10 @@ pub async fn design_appdict_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "appInfoFlag".to_string(),
-                    Value::String(row.get("app_info_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_info_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "appDictFlag".to_string(),
@@ -3105,7 +3174,10 @@ pub async fn design_appdict_id_mockdeletetoget(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "appInfoFlag".to_string(),
-                    Value::String(row.get("app_info_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_info_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "appDictFlag".to_string(),
@@ -3175,7 +3247,10 @@ pub async fn design_appdict_id_mockputtopost(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "appInfoFlag".to_string(),
-                    Value::String(row.get("app_info_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_info_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "appDictFlag".to_string(),
@@ -3238,7 +3313,10 @@ pub async fn designer_search(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "appInfoFlag".to_string(),
-                    Value::String(row.get("app_info_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("app_info_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "appDictFlag".to_string(),
@@ -3338,7 +3416,13 @@ pub async fn document_cipher_publish_content(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -3392,7 +3476,13 @@ pub async fn document_cipher_publish_content_mockputtopost(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -3433,7 +3523,13 @@ pub async fn document_cipher_id_permission_read_person_person(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -3486,7 +3582,13 @@ pub async fn document_cipher_id_persist_view_record(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -3552,14 +3654,19 @@ pub async fn file_flag_appInfo_appInfoFlag_content(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -3611,14 +3718,19 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -3680,7 +3792,9 @@ pub async fn file_flag_mockdeletetoget(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -3732,14 +3846,19 @@ pub async fn file_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -3829,7 +3948,9 @@ pub async fn file_id_download(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -3927,7 +4048,10 @@ pub async fn anonymous_fileinfo_download_document_id(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -3941,7 +4065,9 @@ pub async fn anonymous_fileinfo_download_document_id(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -3994,7 +4120,10 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4008,7 +4137,9 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4061,7 +4192,10 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4075,7 +4209,9 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4141,7 +4277,10 @@ pub async fn fileinfo_download_document_id(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4155,7 +4294,9 @@ pub async fn fileinfo_download_document_id(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4208,7 +4349,10 @@ pub async fn fileinfo_download_document_id_stream(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4222,7 +4366,9 @@ pub async fn fileinfo_download_document_id_stream(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4261,7 +4407,10 @@ pub async fn fileinfo_download_transfer_flag_flag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4275,7 +4424,9 @@ pub async fn fileinfo_download_transfer_flag_flag(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4629,7 +4780,10 @@ pub async fn fileinfo_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4643,7 +4797,9 @@ pub async fn fileinfo_id(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4691,7 +4847,10 @@ pub async fn fileinfo_id_binary_base64_size(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "originalName".to_string(),
                     Value::String(
@@ -4701,7 +4860,9 @@ pub async fn fileinfo_id_binary_base64_size(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4759,7 +4920,10 @@ pub async fn fileinfo_id_document_documentId(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4773,7 +4937,9 @@ pub async fn fileinfo_id_document_documentId(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4827,7 +4993,10 @@ pub async fn fileinfo_id_online_info(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4841,7 +5010,9 @@ pub async fn fileinfo_id_online_info(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -4889,7 +5060,10 @@ pub async fn fileinfo_id_preview_pdf(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
                 (
                     "fileId".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_id").unwrap_or_default()),
@@ -4903,7 +5077,9 @@ pub async fn fileinfo_id_preview_pdf(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "contentType".to_string(),
@@ -5524,7 +5700,10 @@ pub async fn output_appInfoFlag_select(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -6067,7 +6246,10 @@ pub async fn script_uniqueName_app_flag(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("imported".to_string(), Value::Bool(row.get("imported"))),
+                (
+                    "imported".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("imported").unwrap_or(false)),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6123,7 +6305,10 @@ pub async fn script_uniqueName_app_flag_imported(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("imported".to_string(), Value::Bool(row.get("imported"))),
+                (
+                    "imported".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("imported").unwrap_or(false)),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -7573,7 +7758,13 @@ pub async fn commend_list_paging(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -10253,7 +10444,10 @@ pub async fn document_batch_status_u3(
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("batchName".to_string(), Value::String(r.get("batch_name"))),
+                (
+                    "batchName".to_string(),
+                    Value::String(r.get::<_, Option<String>>("batch_name").unwrap_or_default()),
+                ),
                 (
                     "count".to_string(),
                     Value::Number(serde_json::Number::from(r.get::<_, i64>("cnt"))),

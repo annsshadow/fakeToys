@@ -70,7 +70,10 @@ pub async fn get_by_id(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     // create_time 可为 NULL（migrations/053 的 seed 行即未提供该列），
                     // 故必须按 Option 读取；用非 Option 的 String 会在 NULL 上 panic
@@ -112,7 +115,10 @@ pub async fn list_by_application_and_info_id(
                 ),
                 ("infoId".to_string(), Value::String(info_id.clone())),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     // 同上：create_time 可为 NULL，必须按 Option 读取。
                     "createTime".to_string(),

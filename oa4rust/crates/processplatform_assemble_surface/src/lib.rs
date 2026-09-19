@@ -32,23 +32,41 @@ pub async fn get_surface(
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), Value::String(row.get("name"))),
-        ("category".to_string(), Value::String(row.get("category"))),
+        (
+            "name".to_string(),
+            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+        ),
+        (
+            "category".to_string(),
+            Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+        ),
         ("content".to_string(), {
             let content_str: Option<String> = row.get("content");
             content_str
                 .and_then(|s| serde_json::from_str(&s).ok())
                 .unwrap_or(Value::Null)
         }),
-        ("version".to_string(), Value::String(row.get("version"))),
-        ("creator".to_string(), Value::String(row.get("creator"))),
+        (
+            "version".to_string(),
+            Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+        ),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
-            Value::String(row.get("create_time")),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "updateTime".to_string(),
-            Value::String(row.get("update_time")),
+            Value::String(
+                row.get::<_, Option<String>>("update_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]));
 
@@ -117,17 +135,35 @@ pub async fn list_surfaces(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -281,23 +317,41 @@ pub async fn publish_surface(
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), Value::String(row.get("name"))),
-        ("category".to_string(), Value::String(row.get("category"))),
+        (
+            "name".to_string(),
+            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+        ),
+        (
+            "category".to_string(),
+            Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+        ),
         ("content".to_string(), {
             let content_str: Option<String> = row.get("content");
             content_str
                 .and_then(|s| serde_json::from_str(&s).ok())
                 .unwrap_or(Value::Null)
         }),
-        ("version".to_string(), Value::String(row.get("version"))),
-        ("creator".to_string(), Value::String(row.get("creator"))),
+        (
+            "version".to_string(),
+            Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+        ),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
-            Value::String(row.get("create_time")),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "updateTime".to_string(),
-            Value::String(row.get("update_time")),
+            Value::String(
+                row.get::<_, Option<String>>("update_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]));
 
@@ -331,17 +385,35 @@ pub async fn delete_surface(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -382,23 +454,41 @@ pub async fn save_surface(
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), Value::String(row.get("name"))),
-        ("category".to_string(), Value::String(row.get("category"))),
+        (
+            "name".to_string(),
+            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+        ),
+        (
+            "category".to_string(),
+            Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+        ),
         ("content".to_string(), {
             let content_str: Option<String> = row.get("content");
             content_str
                 .and_then(|s| serde_json::from_str(&s).ok())
                 .unwrap_or(Value::Null)
         }),
-        ("version".to_string(), Value::String(row.get("version"))),
-        ("creator".to_string(), Value::String(row.get("creator"))),
+        (
+            "version".to_string(),
+            Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+        ),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
-            Value::String(row.get("create_time")),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "updateTime".to_string(),
-            Value::String(row.get("update_time")),
+            Value::String(
+                row.get::<_, Option<String>>("update_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]));
 
@@ -472,7 +562,10 @@ pub async fn application_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     row.get::<_, Option<String>>("xname")
@@ -493,11 +586,17 @@ pub async fn application_list(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -528,14 +627,23 @@ pub async fn application_list_complex(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -578,14 +686,23 @@ pub async fn application_list_complex_manage_person(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -655,14 +772,23 @@ pub async fn application_list_range(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -734,14 +860,23 @@ pub async fn application_flag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -767,14 +902,23 @@ pub async fn application_flag_icon(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -800,14 +944,23 @@ pub async fn application_flag_is_manager(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -833,14 +986,23 @@ pub async fn application_flag_onlyRemoveNotCompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -867,14 +1029,23 @@ pub async fn applicationdict_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -910,14 +1081,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -946,14 +1126,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_dat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -983,14 +1172,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1044,14 +1242,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1093,14 +1300,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1126,14 +1342,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1183,14 +1408,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1228,14 +1462,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1261,14 +1504,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1318,14 +1570,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1363,14 +1624,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1396,14 +1666,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1453,14 +1732,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1498,14 +1786,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1539,14 +1836,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1604,14 +1910,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1657,14 +1972,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1708,14 +2032,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1783,14 +2116,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1846,14 +2188,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1899,14 +2250,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -1976,14 +2336,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2041,14 +2410,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2096,14 +2474,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2175,14 +2562,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2242,14 +2638,23 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2308,14 +2713,23 @@ pub async fn correlation_job_job(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2359,14 +2773,23 @@ pub async fn correlation_job_job_delete(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2393,14 +2816,23 @@ pub async fn correlation_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2434,14 +2866,23 @@ pub async fn correlation_list_job_job_site_site(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2474,14 +2915,23 @@ pub async fn correlation_update_job_job(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2508,14 +2958,23 @@ pub async fn data_fetch_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2549,14 +3008,23 @@ pub async fn data_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2590,14 +3058,23 @@ pub async fn data_job_job_array_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2642,14 +3119,23 @@ pub async fn data_job_job_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2676,14 +3162,23 @@ pub async fn data_job_job_path0(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2728,14 +3223,23 @@ pub async fn data_job_job_path0_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2762,14 +3266,23 @@ pub async fn data_job_job_path0_path1(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2814,14 +3327,23 @@ pub async fn data_job_job_path0_path1_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2853,14 +3375,23 @@ pub async fn data_job_job_path0_path1_path2(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2910,14 +3441,23 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -2950,14 +3490,23 @@ pub async fn data_job_job_path0_path1_path2_path3(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3008,14 +3557,23 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3049,14 +3607,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3108,14 +3675,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3144,14 +3720,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3198,14 +3783,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3232,14 +3826,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3284,14 +3887,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopos
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3318,14 +3930,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3370,14 +3991,23 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3453,14 +4083,23 @@ pub async fn data_work_id_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3498,14 +4137,23 @@ pub async fn data_work_id_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3532,14 +4180,23 @@ pub async fn data_work_id_path0(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3590,14 +4247,23 @@ pub async fn data_work_id_path0_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3635,14 +4301,23 @@ pub async fn data_work_id_path0_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3669,14 +4344,23 @@ pub async fn data_work_id_path0_path1(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3727,14 +4411,23 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3772,14 +4465,23 @@ pub async fn data_work_id_path0_path1_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3811,14 +4513,23 @@ pub async fn data_work_id_path0_path1_path2(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3874,14 +4585,23 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3924,14 +4644,23 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -3964,14 +4693,23 @@ pub async fn data_work_id_path0_path1_path2_path3(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4028,14 +4766,23 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4079,14 +4826,23 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4120,14 +4876,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4185,14 +4950,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4237,14 +5011,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4273,14 +5056,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4333,14 +5125,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4380,14 +5181,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4414,14 +5224,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4472,14 +5291,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4517,14 +5345,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4551,14 +5388,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4609,14 +5455,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4654,14 +5509,23 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4688,14 +5552,23 @@ pub async fn data_workcompleted_id(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4729,14 +5602,23 @@ pub async fn data_workcompleted_id_from_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4770,14 +5652,23 @@ pub async fn data_workcompleted_id_from_item(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4822,14 +5713,23 @@ pub async fn data_workcompleted_id_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4856,14 +5756,23 @@ pub async fn data_workcompleted_id_path0(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4908,14 +5817,23 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -4942,14 +5860,23 @@ pub async fn data_workcompleted_id_path0_path1(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4994,14 +5921,23 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5033,14 +5969,23 @@ pub async fn data_workcompleted_id_path0_path1_path2(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5090,14 +6035,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5130,14 +6084,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5188,14 +6151,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5229,14 +6201,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5288,14 +6269,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5324,14 +6314,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5378,14 +6377,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5412,14 +6420,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5464,14 +6481,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5498,14 +6524,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5550,14 +6585,23 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5583,14 +6627,23 @@ pub async fn datarecord_get_job_job_path_path(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5617,14 +6670,23 @@ pub async fn datarecord_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5656,14 +6718,23 @@ pub async fn documentversion_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5697,14 +6768,23 @@ pub async fn documentversion_list_job_job_category_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5738,14 +6818,23 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5779,14 +6868,23 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_catego
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5819,14 +6917,23 @@ pub async fn documentversion_work_work(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5852,14 +6959,23 @@ pub async fn documentversion_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -5886,14 +7002,23 @@ pub async fn draft_list_my_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5927,14 +7052,23 @@ pub async fn draft_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5968,14 +7102,23 @@ pub async fn draft_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -6020,14 +7163,23 @@ pub async fn draft_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6053,14 +7205,23 @@ pub async fn draft_process_processFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6086,14 +7247,23 @@ pub async fn draft_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6137,14 +7307,23 @@ pub async fn draft_id_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6182,14 +7361,23 @@ pub async fn draft_id_start(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6216,14 +7404,23 @@ pub async fn file_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -6256,14 +7453,23 @@ pub async fn file_flag_application_applicationFlag_content(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6289,14 +7495,23 @@ pub async fn file_flag_application_applicationFlag_download(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6322,14 +7537,23 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6355,14 +7579,23 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted_mobile(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6443,14 +7676,23 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6476,14 +7718,23 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6509,14 +7760,23 @@ pub async fn form_v2_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6542,14 +7802,23 @@ pub async fn form_v2_id_mobile(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6575,14 +7844,23 @@ pub async fn form_flag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6608,14 +7886,23 @@ pub async fn form_flag_application_applicationFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6641,14 +7928,23 @@ pub async fn form_flag_application_applicationFlag_mobile(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6674,14 +7970,23 @@ pub async fn form_flag_mobile(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6708,14 +8013,23 @@ pub async fn handover_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -6748,14 +8062,23 @@ pub async fn handover_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6793,14 +8116,23 @@ pub async fn handover_id_cancel(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6838,14 +8170,23 @@ pub async fn handover_id_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6871,14 +8212,23 @@ pub async fn job_latest_work_workcompleted_serial_serial(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6904,14 +8254,23 @@ pub async fn job_v2_job_projection(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6937,14 +8296,23 @@ pub async fn job_job_allow_visit_person_person(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -6970,14 +8338,23 @@ pub async fn job_job_find_work_workcompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7081,14 +8458,23 @@ pub async fn mode_clear_person_person_manager(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7112,14 +8498,23 @@ pub async fn mode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7164,14 +8559,23 @@ pub async fn mode_save(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7206,14 +8610,23 @@ pub async fn mode_id_delete(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7239,14 +8652,23 @@ pub async fn process_activity_activity_activityType_activityType(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7273,14 +8695,23 @@ pub async fn process_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7314,14 +8745,23 @@ pub async fn process_list_application_applicationFlag_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7355,14 +8795,23 @@ pub async fn process_list_available_identity_process_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7396,14 +8845,23 @@ pub async fn process_list_controllable_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7436,14 +8894,23 @@ pub async fn process_list_ids(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7474,14 +8941,23 @@ pub async fn process_flag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7507,14 +8983,23 @@ pub async fn process_flag_allowrerouteto(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7540,14 +9025,23 @@ pub async fn process_flag_application_applicationFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7573,14 +9067,23 @@ pub async fn process_flag_complex(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7606,14 +9109,23 @@ pub async fn process_flag_onlyRemoveNotCompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7681,14 +9193,23 @@ pub async fn read_filter_attribute(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7714,14 +9235,23 @@ pub async fn read_filter_attribute_filter(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7777,14 +9307,23 @@ pub async fn read_list_count_application_applicationFlag_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7810,14 +9349,23 @@ pub async fn read_list_date_date_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7843,14 +9391,23 @@ pub async fn read_list_filter_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -7877,14 +9434,23 @@ pub async fn read_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7918,14 +9484,23 @@ pub async fn read_list_my_filter_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7959,14 +9534,23 @@ pub async fn read_list_my_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -7999,14 +9583,23 @@ pub async fn read_list_person_person_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8033,14 +9626,23 @@ pub async fn read_list_work_work(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8074,14 +9676,23 @@ pub async fn read_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8115,14 +9726,23 @@ pub async fn read_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8156,14 +9776,23 @@ pub async fn read_list_id_next_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8197,14 +9826,23 @@ pub async fn read_list_id_next_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8238,14 +9876,23 @@ pub async fn read_list_id_next_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8279,14 +9926,23 @@ pub async fn read_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8320,14 +9976,23 @@ pub async fn read_list_id_prev_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8361,14 +10026,23 @@ pub async fn read_list_id_prev_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8402,14 +10076,23 @@ pub async fn read_list_id_prev_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8457,14 +10140,23 @@ pub async fn read_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8496,14 +10188,23 @@ pub async fn read_v2_list_create_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8537,14 +10238,23 @@ pub async fn read_v2_list_create_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8578,14 +10288,23 @@ pub async fn read_v2_list_create_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8619,14 +10338,23 @@ pub async fn read_v2_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8660,14 +10388,23 @@ pub async fn read_v2_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8701,14 +10438,23 @@ pub async fn read_v2_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -8741,14 +10487,23 @@ pub async fn read_work_workId(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8774,14 +10529,23 @@ pub async fn read_workcompleted_workCompletedId(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8807,14 +10571,23 @@ pub async fn read_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8840,14 +10613,23 @@ pub async fn read_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8891,14 +10673,23 @@ pub async fn read_id_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8936,14 +10727,23 @@ pub async fn read_id_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -8969,14 +10769,23 @@ pub async fn read_id_opinion_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9014,14 +10823,23 @@ pub async fn read_id_opinion_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9047,14 +10865,23 @@ pub async fn read_id_processing(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9080,14 +10907,23 @@ pub async fn read_id_processing_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9125,14 +10961,23 @@ pub async fn read_id_processing_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9158,14 +11003,23 @@ pub async fn read_id_reference(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9191,14 +11045,23 @@ pub async fn read_id_reset_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9236,14 +11099,23 @@ pub async fn read_id_reset_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9292,14 +11164,23 @@ pub async fn readcompleted_filter_attribute(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9325,14 +11206,23 @@ pub async fn readcompleted_filter_attribute_filter(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9388,14 +11278,23 @@ pub async fn readcompleted_list_count_application_applicationFlag_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9421,14 +11320,23 @@ pub async fn readcompleted_list_date_date_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9454,14 +11362,23 @@ pub async fn readcompleted_list_filter_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -9488,14 +11405,23 @@ pub async fn readcompleted_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9529,14 +11455,23 @@ pub async fn readcompleted_list_my_filter_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9570,14 +11505,23 @@ pub async fn readcompleted_list_my_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9611,14 +11555,23 @@ pub async fn readcompleted_list_work_work(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9652,14 +11605,23 @@ pub async fn readcompleted_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9693,14 +11655,23 @@ pub async fn readcompleted_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9734,14 +11705,23 @@ pub async fn readcompleted_list_id_next_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9775,14 +11755,23 @@ pub async fn readcompleted_list_id_next_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9816,14 +11805,23 @@ pub async fn readcompleted_list_id_next_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9857,14 +11855,23 @@ pub async fn readcompleted_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9898,14 +11905,23 @@ pub async fn readcompleted_list_id_prev_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9939,14 +11955,23 @@ pub async fn readcompleted_list_id_prev_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -9980,14 +12005,23 @@ pub async fn readcompleted_list_id_prev_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10039,14 +12073,23 @@ pub async fn readcompleted_v2_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10078,14 +12121,23 @@ pub async fn readcompleted_v2_list_create_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10119,14 +12171,23 @@ pub async fn readcompleted_v2_list_create_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10160,14 +12221,23 @@ pub async fn readcompleted_v2_list_create_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10201,14 +12271,23 @@ pub async fn readcompleted_v2_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10242,14 +12321,23 @@ pub async fn readcompleted_v2_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10283,14 +12371,23 @@ pub async fn readcompleted_v2_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10323,14 +12420,23 @@ pub async fn readcompleted_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10356,14 +12462,23 @@ pub async fn readcompleted_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10407,14 +12522,23 @@ pub async fn readcompleted_id_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10440,14 +12564,23 @@ pub async fn readcompleted_id_opinion_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10473,14 +12606,23 @@ pub async fn readcompleted_id_reference(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10507,14 +12649,23 @@ pub async fn readrecord_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10548,14 +12699,23 @@ pub async fn readrecord_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10588,14 +12748,23 @@ pub async fn record_job_job_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10622,14 +12791,23 @@ pub async fn record_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10663,14 +12841,23 @@ pub async fn record_list_job_job_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10704,14 +12891,23 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10745,14 +12941,23 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_siz
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -10785,14 +12990,23 @@ pub async fn record_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10836,14 +13050,23 @@ pub async fn record_id_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10881,14 +13104,23 @@ pub async fn record_id_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10956,14 +13188,23 @@ pub async fn review_create_work(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -10989,14 +13230,23 @@ pub async fn review_create_workcompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11022,14 +13272,23 @@ pub async fn review_filter_attribute(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11055,14 +13314,23 @@ pub async fn review_filter_create_entry(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11088,14 +13356,23 @@ pub async fn review_filter_entry(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11122,14 +13399,23 @@ pub async fn review_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11177,14 +13463,23 @@ pub async fn review_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11216,14 +13511,23 @@ pub async fn review_v2_list_create_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11257,14 +13561,23 @@ pub async fn review_v2_list_create_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11298,14 +13611,23 @@ pub async fn review_v2_list_create_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11339,14 +13661,23 @@ pub async fn review_v2_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11379,14 +13710,23 @@ pub async fn review_v2_list_paging_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11413,14 +13753,23 @@ pub async fn review_v2_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11454,14 +13803,23 @@ pub async fn review_v2_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11494,14 +13852,23 @@ pub async fn review_v2_search(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11527,14 +13894,23 @@ pub async fn review_workorworkcompleted_workOrWorkCompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11560,14 +13936,23 @@ pub async fn review_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11593,14 +13978,23 @@ pub async fn review_id_application_applicationFlag_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11644,14 +14038,23 @@ pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11675,14 +14078,23 @@ pub async fn route_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11725,14 +14137,23 @@ pub async fn route_list_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11758,14 +14179,23 @@ pub async fn route_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11791,14 +14221,23 @@ pub async fn route_id_selectconfig(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11824,14 +14263,23 @@ pub async fn script_flag_application_applicationFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11857,14 +14305,23 @@ pub async fn script_flag_application_applicationFlag_imported(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11890,14 +14347,23 @@ pub async fn serialnumber_generate_process_processId_name_name_serial(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -11924,14 +14390,23 @@ pub async fn serialnumber_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -11965,14 +14440,23 @@ pub async fn serialnumber_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -12005,14 +14489,23 @@ pub async fn serialnumber_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12056,14 +14549,23 @@ pub async fn serialnumber_id_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12101,14 +14603,23 @@ pub async fn serialnumber_id_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12146,14 +14657,23 @@ pub async fn service_work_id_touch(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12191,14 +14711,23 @@ pub async fn service_work_id_touch_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12224,14 +14753,23 @@ pub async fn sign_download_scrawlId(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12258,14 +14796,23 @@ pub async fn sign_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -12298,14 +14845,23 @@ pub async fn sign_save_task_taskId(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12331,14 +14887,23 @@ pub async fn sign_task_taskId(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12382,14 +14947,23 @@ pub async fn sign_task_taskId_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12415,14 +14989,23 @@ pub async fn sign_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12466,14 +15049,23 @@ pub async fn sign_id_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12541,14 +15133,23 @@ pub async fn task_filter_attribute(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12574,14 +15175,23 @@ pub async fn task_filter_attribute_filter(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12637,14 +15247,23 @@ pub async fn task_list_count_application_applicationFlag_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12670,14 +15289,23 @@ pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12703,14 +15331,23 @@ pub async fn task_list_filter_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12737,14 +15374,23 @@ pub async fn task_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -12778,14 +15424,23 @@ pub async fn task_list_my_filter_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -12884,14 +15539,23 @@ pub async fn task_list_person_person_exclude_draft_isExcludeDraft_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -12918,14 +15582,23 @@ pub async fn task_list_work_work(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -12959,14 +15632,23 @@ pub async fn task_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13000,14 +15682,23 @@ pub async fn task_list_id_next_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13041,14 +15732,23 @@ pub async fn task_list_id_next_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13081,14 +15781,23 @@ pub async fn task_list_id_next_count_filter_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13114,14 +15823,23 @@ pub async fn task_list_id_next_count_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13148,14 +15866,23 @@ pub async fn task_list_id_next_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13189,14 +15916,23 @@ pub async fn task_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13230,14 +15966,23 @@ pub async fn task_list_id_prev_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13271,14 +16016,23 @@ pub async fn task_list_id_prev_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13311,14 +16065,23 @@ pub async fn task_list_id_prev_count_filter_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13344,14 +16107,23 @@ pub async fn task_list_id_prev_count_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13378,14 +16150,23 @@ pub async fn task_list_id_prev_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13433,14 +16214,23 @@ pub async fn task_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13472,14 +16262,23 @@ pub async fn task_v2_list_create_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13513,14 +16312,23 @@ pub async fn task_v2_list_create_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13554,14 +16362,23 @@ pub async fn task_v2_list_create_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13595,14 +16412,23 @@ pub async fn task_v2_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13636,14 +16462,23 @@ pub async fn task_v2_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13677,14 +16512,23 @@ pub async fn task_v2_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -13717,14 +16561,23 @@ pub async fn task_v2_id_pause(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13762,14 +16615,23 @@ pub async fn task_v2_id_reset(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13807,14 +16669,23 @@ pub async fn task_v2_id_reset_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13840,14 +16711,23 @@ pub async fn task_v2_id_resume(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13873,14 +16753,23 @@ pub async fn task_v2_id_trigger_processing(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13906,14 +16795,23 @@ pub async fn task_v3_id_add(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13939,14 +16837,23 @@ pub async fn task_v3_id_pin(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -13972,14 +16879,23 @@ pub async fn task_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14005,14 +16921,23 @@ pub async fn task_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14056,14 +16981,23 @@ pub async fn task_id_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14101,14 +17035,23 @@ pub async fn task_id_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14134,14 +17077,23 @@ pub async fn task_id_opinion_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14179,14 +17131,23 @@ pub async fn task_id_opinion_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14212,14 +17173,23 @@ pub async fn task_id_press_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14245,14 +17215,23 @@ pub async fn task_id_processing(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14278,14 +17257,23 @@ pub async fn task_id_processing_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14323,14 +17311,23 @@ pub async fn task_id_processing_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14356,14 +17353,23 @@ pub async fn task_id_processing_neural(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14389,14 +17395,23 @@ pub async fn task_id_reference(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14422,14 +17437,23 @@ pub async fn task_id_reset_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14467,14 +17491,23 @@ pub async fn task_id_reset_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14500,14 +17533,23 @@ pub async fn task_id_will(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14556,14 +17598,23 @@ pub async fn taskcompleted_filter_attribute(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14589,14 +17640,23 @@ pub async fn taskcompleted_filter_attribute_filter(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14652,14 +17712,23 @@ pub async fn taskcompleted_list_count_application_applicationFlag_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14685,14 +17754,23 @@ pub async fn taskcompleted_list_date_date_hour_hour_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14718,14 +17796,23 @@ pub async fn taskcompleted_list_filter_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -14752,14 +17839,23 @@ pub async fn taskcompleted_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -14793,14 +17889,23 @@ pub async fn taskcompleted_list_my_filter_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -14834,14 +17939,23 @@ pub async fn taskcompleted_list_my_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -14875,14 +17989,23 @@ pub async fn taskcompleted_list_prev_manual_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -14916,14 +18039,23 @@ pub async fn taskcompleted_list_work_work(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -14957,14 +18089,23 @@ pub async fn taskcompleted_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -14998,14 +18139,23 @@ pub async fn taskcompleted_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15039,14 +18189,23 @@ pub async fn taskcompleted_list_id_next_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15080,14 +18239,23 @@ pub async fn taskcompleted_list_id_next_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15121,14 +18289,23 @@ pub async fn taskcompleted_list_id_next_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15162,14 +18339,23 @@ pub async fn taskcompleted_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15203,14 +18389,23 @@ pub async fn taskcompleted_list_id_prev_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15244,14 +18439,23 @@ pub async fn taskcompleted_list_id_prev_count_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15285,14 +18489,23 @@ pub async fn taskcompleted_list_id_prev_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15325,14 +18538,23 @@ pub async fn taskcompleted_press_work_work(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15377,14 +18599,23 @@ pub async fn taskcompleted_v2_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15416,14 +18647,23 @@ pub async fn taskcompleted_v2_list_create_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15457,14 +18697,23 @@ pub async fn taskcompleted_v2_list_create_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15498,14 +18747,23 @@ pub async fn taskcompleted_v2_list_create_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15539,14 +18797,23 @@ pub async fn taskcompleted_v2_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15580,14 +18847,23 @@ pub async fn taskcompleted_v2_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15621,14 +18897,23 @@ pub async fn taskcompleted_v2_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -15661,14 +18946,23 @@ pub async fn taskcompleted_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15694,14 +18988,23 @@ pub async fn taskcompleted_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15745,14 +19048,23 @@ pub async fn taskcompleted_id_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15778,14 +19090,23 @@ pub async fn taskcompleted_id_opinion_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15823,14 +19144,23 @@ pub async fn taskcompleted_id_opinion_manage_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15856,14 +19186,23 @@ pub async fn taskcompleted_id_reference(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15889,14 +19228,23 @@ pub async fn taskcompleted_id_reference_control(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -15974,14 +19322,23 @@ pub async fn work_application_applicationFlag_process_processFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16076,14 +19433,23 @@ pub async fn work_filter_attribute_application_applicationFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16109,14 +19475,23 @@ pub async fn work_filter_attribute_application_applicationFlag_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16172,14 +19547,23 @@ pub async fn work_list_count_application_applicationFlag_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16205,14 +19589,23 @@ pub async fn work_list_count_application_applicationFlag_process_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16238,14 +19631,23 @@ pub async fn work_list_filter_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16332,14 +19734,23 @@ pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16366,14 +19777,23 @@ pub async fn work_list_id_next_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16407,14 +19827,23 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16447,14 +19876,23 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16480,14 +19918,23 @@ pub async fn work_list_id_next_count_application_applicationFlag_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16514,14 +19961,23 @@ pub async fn work_list_id_next_count_creator_current(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16555,14 +20011,23 @@ pub async fn work_list_id_next_count_creator_current_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16596,14 +20061,23 @@ pub async fn work_list_id_next_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16637,14 +20111,23 @@ pub async fn work_list_id_prev_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16678,14 +20161,23 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16718,14 +20210,23 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16751,14 +20252,23 @@ pub async fn work_list_id_prev_count_application_applicationFlag_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16785,14 +20295,23 @@ pub async fn work_list_id_prev_count_creator_current(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16826,14 +20345,23 @@ pub async fn work_list_id_prev_count_creator_current_filter(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16867,14 +20395,23 @@ pub async fn work_list_id_prev_count_process_processFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -16907,14 +20444,23 @@ pub async fn work_process_processFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16940,14 +20486,23 @@ pub async fn work_process_processFlag_force(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -16971,14 +20526,23 @@ pub async fn work_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -17010,14 +20574,23 @@ pub async fn work_v2_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -17051,14 +20624,23 @@ pub async fn work_v2_list_id_activity_goback(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -17092,14 +20674,23 @@ pub async fn work_v2_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -17133,14 +20724,23 @@ pub async fn work_v2_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -17173,14 +20773,23 @@ pub async fn work_v2_workorworkcompleted_workOrWorkCompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17206,14 +20815,23 @@ pub async fn work_v2_id_add_split(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17251,14 +20869,23 @@ pub async fn work_v2_id_add_split_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17284,14 +20911,23 @@ pub async fn work_v2_id_reroute(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17329,14 +20965,23 @@ pub async fn work_v2_id_reroute_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17362,14 +21007,23 @@ pub async fn work_v2_id_retract(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17407,14 +21061,23 @@ pub async fn work_v2_id_retract_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17440,14 +21103,23 @@ pub async fn work_v2_id_rollback(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17485,14 +21157,23 @@ pub async fn work_v2_id_rollback_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17518,14 +21199,23 @@ pub async fn work_v2_id_terminate(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17551,14 +21241,23 @@ pub async fn work_v2_id_terminate_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17584,14 +21283,23 @@ pub async fn work_v2_id_trigger_processing(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17617,14 +21325,23 @@ pub async fn work_v3_retract(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17650,14 +21367,23 @@ pub async fn work_v3_retract_stage_job_job(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17683,14 +21409,23 @@ pub async fn work_v3_workorworkcompleted_workOrWorkCompleted_permission(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17716,14 +21451,23 @@ pub async fn work_workorworkcompleted_workOrWorkCompleted(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17749,14 +21493,23 @@ pub async fn work_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17782,14 +21535,23 @@ pub async fn work_id_assignment_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17815,14 +21577,23 @@ pub async fn work_id_close_check(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17848,14 +21619,23 @@ pub async fn work_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17899,14 +21679,23 @@ pub async fn work_id_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17932,14 +21721,23 @@ pub async fn work_id_processing(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -17977,14 +21775,23 @@ pub async fn work_id_processing_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18010,14 +21817,23 @@ pub async fn work_id_projection(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18043,14 +21859,23 @@ pub async fn work_id_refer(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18076,14 +21901,23 @@ pub async fn work_id_relative_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18127,14 +21961,23 @@ pub async fn work_id_relative_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18160,14 +22003,23 @@ pub async fn work_id_single_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18211,14 +22063,23 @@ pub async fn work_id_single_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18244,14 +22105,23 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18277,14 +22147,23 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18311,14 +22190,23 @@ pub async fn workcompleted_filter_list_id_prev_count_application_applicationFlag
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -18381,14 +22269,23 @@ pub async fn workcompleted_list_count_application_applicationFlag_process(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18414,14 +22311,23 @@ pub async fn workcompleted_list_count_application_applicationFlag_process_manage
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18447,14 +22353,23 @@ pub async fn workcompleted_list_filter_page_size_size_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18480,14 +22395,23 @@ pub async fn workcompleted_list_paging_page_size_size_application_applicationFla
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18514,14 +22438,23 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -18555,14 +22488,23 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -18595,14 +22537,23 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18628,14 +22579,23 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_manage
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18662,14 +22622,23 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -18703,14 +22672,23 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -18743,14 +22721,23 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_manage
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18776,14 +22763,23 @@ pub async fn workcompleted_process_processFlag(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18809,14 +22805,23 @@ pub async fn workcompleted_shift_time(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18842,14 +22847,23 @@ pub async fn workcompleted_flag_rollback(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18887,14 +22901,23 @@ pub async fn workcompleted_flag_rollback_mockputtopost(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18920,14 +22943,23 @@ pub async fn workcompleted_id(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18953,14 +22985,23 @@ pub async fn workcompleted_id_assignment_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -18986,14 +23027,23 @@ pub async fn workcompleted_id_delete_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -19037,14 +23087,23 @@ pub async fn workcompleted_id_delete_manage_mockdeletetoget(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -19070,14 +23129,23 @@ pub async fn workcompleted_id_manage(
     match row {
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(data)))
@@ -19104,14 +23172,23 @@ pub async fn worklog_list_add_split_work_workId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -19145,14 +23222,23 @@ pub async fn worklog_list_job_job(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -19186,14 +23272,23 @@ pub async fn worklog_list_rollback_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -19227,14 +23322,23 @@ pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("xcreateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("xupdateTime")),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -22886,9 +26990,18 @@ pub async fn task_list_date_hour_exclude_draft_manage(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("title".to_string(), Value::String(row.get("xtitle"))),
-                ("person".to_string(), Value::String(row.get("xperson"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xtitle").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xperson").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -22915,9 +27028,18 @@ pub async fn task_list_person_exclude_draft_manage(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("title".to_string(), Value::String(row.get("xtitle"))),
-                ("person".to_string(), Value::String(row.get("xperson"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xtitle").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xperson").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
