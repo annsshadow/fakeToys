@@ -88,9 +88,15 @@ pub async fn work_processing(
             ("title".to_string(), Value::String(row.get("title"))),
             (
                 "workStatus".to_string(),
-                Value::String(row.get("work_status")),
+                Value::String(
+                    row.get::<_, Option<String>>("work_status")
+                        .unwrap_or_default(),
+                ),
             ),
-            ("activity".to_string(), Value::String(row.get("activity"))),
+            (
+                "activity".to_string(),
+                Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+            ),
         ]),
     ))))
 }
@@ -112,9 +118,18 @@ pub async fn task_processing(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("title".to_string(), Value::String(row.get("title"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("activity".to_string(), Value::String(row.get("activity"))),
+            (
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+            ),
+            (
+                "person".to_string(),
+                Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+            ),
+            (
+                "activity".to_string(),
+                Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+            ),
         ]),
     ))))
 }

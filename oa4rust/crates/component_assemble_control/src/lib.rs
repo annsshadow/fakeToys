@@ -67,7 +67,7 @@ pub async fn list_control_categories(
 
     let mut categories = Vec::new();
     for row in rows.iter() {
-        let comp_type: String = row.get("type");
+        let comp_type: String = row.get::<_, Option<String>>("type").unwrap_or_default();
         let cnt_row = client
             .query_one(
                 "SELECT COUNT(*) as cnt FROM CPT_COMPONENT WHERE type = $1 AND deleted_at IS NULL",
@@ -183,9 +183,18 @@ pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -225,9 +234,18 @@ pub async fn get_component(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),

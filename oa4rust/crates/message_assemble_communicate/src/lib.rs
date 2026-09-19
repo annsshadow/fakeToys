@@ -102,9 +102,18 @@ pub async fn receive_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -174,9 +183,18 @@ pub async fn consume_list_consume_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -217,16 +235,28 @@ pub async fn consume_list_consume_currentperson_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
                 ),
                 (
                     "readStatus".to_string(),
-                    Value::String(row.get("read_status")),
+                    Value::String(
+                        row.get::<_, Option<String>>("read_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -264,9 +294,18 @@ pub async fn consume_list_consume_person_person_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -306,9 +345,18 @@ pub async fn consume_type_type(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "type".to_string(),
                     Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
@@ -446,7 +494,10 @@ pub async fn im_conversation_business_businessId(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -488,7 +539,10 @@ pub async fn im_conversation_list_my(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -538,7 +592,10 @@ pub async fn im_conversation_list_with_person(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -605,7 +662,10 @@ pub async fn im_conversation_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -651,14 +711,35 @@ pub async fn im_conversation_id_group(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("role".to_string(), Value::String(row.get("role"))),
-                ("joinTime".to_string(), Value::String(row.get("join_time"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "role".to_string(),
+                    Value::String(row.get::<_, Option<String>>("role").unwrap_or_default()),
+                ),
+                (
+                    "joinTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("join_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
@@ -711,11 +792,17 @@ pub async fn im_manager_config_post(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "configKey".to_string(),
-                    Value::String(row.get("config_key")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_key")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "configValue".to_string(),
-                    Value::String(row.get("config_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -762,7 +849,10 @@ pub async fn im_conversation_update(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -850,8 +940,17 @@ pub async fn im_conversation_id_icon(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("\"conversationId\"".to_string(), Value::String(id)),
-                ("iconUrl".to_string(), Value::String(row.get("icon_url"))),
-                ("iconName".to_string(), Value::String(row.get("icon_name"))),
+                (
+                    "iconUrl".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon_url").unwrap_or_default()),
+                ),
+                (
+                    "iconName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("icon_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -921,7 +1020,10 @@ pub async fn im_conversation_id_single(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -1067,11 +1169,17 @@ pub async fn im_manager_config(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "\"configKey\"".to_string(),
-                    Value::String(row.get("config_key")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_key")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"configValue\"".to_string(),
-                    Value::String(row.get("config_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -1191,10 +1299,16 @@ pub async fn im_msg_collection_list_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"messageId\"".to_string(),
-                    Value::String(row.get("message_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("message_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -1383,14 +1497,17 @@ pub async fn im_msg_download_id_image_width_width_height_height(
 
     match row {
         Some(row) => {
-            let file_url: String = row.get("file_url");
+            let file_url: String = row.get::<_, Option<String>>("file_url").unwrap_or_default();
             let resized_url = format!("{}?w={}&h={}", file_url, width, height);
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("\"fileUrl\"".to_string(), Value::String(resized_url)),
                 (
                     "\"fileName\"".to_string(),
-                    Value::String(row.get("file_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "width".to_string(),
@@ -1429,12 +1546,21 @@ pub async fn im_msg_list_object(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1480,12 +1606,21 @@ pub async fn im_msg_list_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1624,9 +1759,18 @@ pub async fn instant_currentperson_consumed(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1665,9 +1809,18 @@ pub async fn instant_currentperson_consumed_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1746,16 +1899,28 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
                 ),
                 (
                     "consumeTime".to_string(),
-                    Value::String(row.get("consume_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1785,16 +1950,28 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
                 ),
                 (
                     "consumeTime".to_string(),
-                    Value::String(row.get("consume_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1824,9 +2001,18 @@ pub async fn instant_list_currentperson_count_count_asc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1866,9 +2052,18 @@ pub async fn instant_list_currentperson_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1908,9 +2103,18 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1950,9 +2154,18 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1992,9 +2205,18 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2034,9 +2256,18 @@ pub async fn instant_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2076,9 +2307,18 @@ pub async fn instant_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2144,9 +2384,18 @@ pub async fn mass_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("massId".to_string(), Value::String(row.get("mass_id"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "massId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mass_id").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2186,9 +2435,18 @@ pub async fn mass_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("massId".to_string(), Value::String(row.get("mass_id"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "massId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mass_id").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2231,8 +2489,14 @@ pub async fn mass_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2309,12 +2573,21 @@ pub async fn message_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),

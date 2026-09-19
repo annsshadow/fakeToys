@@ -143,7 +143,10 @@ pub async fn calendar_list_my(
     let mut unit_calendars = Vec::new();
     for r in rows.iter() {
         let v = calendar_row_to_value(r);
-        let is_unit = r.get::<_, String>("type").eq_ignore_ascii_case("UNIT");
+        let is_unit = r
+            .get::<_, Option<String>>("type")
+            .unwrap_or_default()
+            .eq_ignore_ascii_case("UNIT");
         if is_unit {
             unit_calendars.push(v);
         } else {
@@ -437,8 +440,8 @@ pub async fn calendar_manager_list_with_person(
         .map_err(|_| AppError::Internal)?;
     let managers: Vec<Value> = match row {
         Some(r) => vec![json!({
-            "calendarId": r.get::<_, String>("id"),
-            "calendarName": r.get::<_, String>("name"),
+            "calendarId": r.get::<_, Option<String>>("id").unwrap_or_default(),
+            "calendarName": r.get::<_, Option<String>>("name").unwrap_or_default(),
             "person": r.get::<_, Option<String>>("createor").unwrap_or_default(),
             "creatorPerson": r.get::<_, Option<String>>("creator_person").unwrap_or_default(),
         })],

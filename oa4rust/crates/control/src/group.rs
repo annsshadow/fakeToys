@@ -71,7 +71,10 @@ pub async fn get(
                     .unwrap_or_default(),
             ),
         ),
-        ("disable".to_string(), Value::Bool(row.get("disable"))),
+        (
+            "disable".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -132,7 +135,10 @@ async fn query_page(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -307,7 +313,10 @@ pub async fn update(
                     .unwrap_or_default(),
             ),
         ),
-        ("disable".to_string(), Value::Bool(row.get("disable"))),
+        (
+            "disable".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))

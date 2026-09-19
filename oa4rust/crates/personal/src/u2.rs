@@ -197,7 +197,12 @@ async fn custom_find(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(row.map(|r| (r.get::<_, String>("id"), r.get::<_, String>("value"))))
+    Ok(row.map(|r| {
+        (
+            r.get::<_, Option<String>>("id").unwrap_or_default(),
+            r.get::<_, Option<String>>("value").unwrap_or_default(),
+        )
+    }))
 }
 
 /// GET /api/person/custom/{name} —— 当前用户指定名称数据
@@ -729,8 +734,8 @@ fn log_row_json(r: &deadpool_postgres::tokio_postgres::Row) -> Value {
         "id": r.get::<_, String>("id"),
         "fromPerson": r.get::<_, String>("from_person"),
         "toPerson": r.get::<_, String>("to_person"),
-        "fromIdentity": r.get::<_, String>("from_identity"),
-        "toIdentity": r.get::<_, String>("to_identity"),
+        "fromIdentity": r.get::<_, Option<String>>("from_identity").unwrap_or_default(),
+        "toIdentity": r.get::<_, Option<String>>("to_identity").unwrap_or_default(),
         "application": r.get::<_, String>("application"),
         "title": r.get::<_, String>("title"),
     })
@@ -1310,7 +1315,7 @@ pub async fn signature_list_person(
                 "id": row.get::<_, String>("id"),
                 "name": row.get::<_, String>("name"),
                 "person": row.get::<_, String>("person"),
-                "value": row.get::<_, String>("value"),
+                "value": row.get::<_, Option<String>>("value").unwrap_or_default(),
             })
         })
         .collect();

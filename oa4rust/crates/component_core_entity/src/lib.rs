@@ -40,13 +40,37 @@ pub async fn component_list_all(
             });
             Value::Object(serde_json::Map::from_iter(
                 [
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
-                    ("title".to_string(), Value::String(row.get("title"))),
-                    ("type".to_string(), Value::String(row.get("type"))),
-                    ("visible".to_string(), Value::Bool(row.get("visible"))),
-                    ("path".to_string(), Value::String(row.get("path"))),
-                    ("iconPath".to_string(), Value::String(row.get("icon_path"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
+                    (
+                        "title".to_string(),
+                        Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                    ),
+                    (
+                        "type".to_string(),
+                        Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                    ),
+                    (
+                        "visible".to_string(),
+                        Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
+                    ),
+                    (
+                        "path".to_string(),
+                        Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                    ),
+                    (
+                        "iconPath".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("icon_path")
+                                .unwrap_or_default(),
+                        ),
+                    ),
                 ]
                 .into_iter()
                 .chain(order_number),
@@ -86,13 +110,39 @@ pub async fn component_get(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter(
                     [
-                        ("id".to_string(), Value::String(row.get("id"))),
-                        ("name".to_string(), Value::String(row.get("name"))),
-                        ("title".to_string(), Value::String(row.get("title"))),
-                        ("type".to_string(), Value::String(row.get("type"))),
-                        ("visible".to_string(), Value::Bool(row.get("visible"))),
-                        ("path".to_string(), Value::String(row.get("path"))),
-                        ("iconPath".to_string(), Value::String(row.get("icon_path"))),
+                        (
+                            "id".to_string(),
+                            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                        ),
+                        (
+                            "name".to_string(),
+                            Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                        ),
+                        (
+                            "title".to_string(),
+                            Value::String(
+                                row.get::<_, Option<String>>("title").unwrap_or_default(),
+                            ),
+                        ),
+                        (
+                            "type".to_string(),
+                            Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                        ),
+                        (
+                            "visible".to_string(),
+                            Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
+                        ),
+                        (
+                            "path".to_string(),
+                            Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                        ),
+                        (
+                            "iconPath".to_string(),
+                            Value::String(
+                                row.get::<_, Option<String>>("icon_path")
+                                    .unwrap_or_default(),
+                            ),
+                        ),
                     ]
                     .into_iter()
                     .chain(order_number),

@@ -88,8 +88,17 @@ pub async fn get_link(
             serde_json::Map::from_iter([
                 ("sourceType".to_string(), Value::String(source_type)),
                 ("sourceId".to_string(), Value::String(source_id)),
-                ("targetType".to_string(), Value::String(row.get("type"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
+                (
+                    "targetType".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "targetId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("target_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("link not found"))),
@@ -116,13 +125,34 @@ pub async fn list_correlations(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "targetId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("target_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -155,13 +185,34 @@ pub async fn get_correlation(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "targetId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("target_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))

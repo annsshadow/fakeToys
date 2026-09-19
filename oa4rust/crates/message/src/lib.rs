@@ -37,12 +37,33 @@ pub async fn consume_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("title".to_string(), Value::String(row.get("xtitle"))),
-                ("body".to_string(), Value::String(row.get("xbody"))),
-                ("type".to_string(), Value::String(row.get("xtype"))),
-                ("consumer".to_string(), Value::String(row.get("xconsumer"))),
-                ("person".to_string(), Value::String(row.get("xperson"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xtitle").unwrap_or_default()),
+                ),
+                (
+                    "body".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xbody").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xtype").unwrap_or_default()),
+                ),
+                (
+                    "consumer".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xconsumer")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xperson").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),

@@ -463,7 +463,7 @@ pub async fn table_update_with_bundle(
 
     let row_id = match existing {
         Some(row) => {
-            let id: String = row.get("id");
+            let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
             client
                 .execute(
                     "UPDATE x_query_table_data SET data = $1, update_time = NOW() \
