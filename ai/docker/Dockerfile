@@ -3,7 +3,7 @@
 # ============================================================
 # Stage 1 — 构建 Web UI
 # ============================================================
-FROM node:20-alpine AS web-builder
+FROM node:22-alpine AS web-builder
 
 WORKDIR /web
 
