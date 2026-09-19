@@ -203,14 +203,43 @@ pub async fn create_app(
 mod cors_guard {
     use super::*;
 
+    /// `create_app` 将 80 个 crate 的路由链式 `.merge()` 成一个巨型 axum Router，
+    /// 构造过程需要约 64MB 栈（见 `.cargo/config.toml` 的说明）。
+    ///
+    /// 该文件的 `[target.x86_64-pc-windows-msvc]` 链接参数只对 **Windows 主线程**
+    /// 生效；在 Linux/CI 上，`#[tokio::test]` 的 worker 线程走默认栈（约 2MB），
+    /// 于是本用例必然栈溢出 -> panic -> `cargo test` 以 exit code 101 结束，
+    /// 使 `cargo test --workspace --lib` 这个 job 在任何平台上都无法通过
+    /// （CI 历史：该 job 从未成功过一次）。
+    ///
+    /// 因此这里不再依赖平台链接参数，而是在显式指定栈大小的线程上构造 Router，
+    /// 让测试行为与平台无关。
+    const CREATE_APP_STACK_SIZE: usize = 64 * 1024 * 1024;
+
     #[tokio::test]
     async fn create_app_builds_without_panic() {
         let pool = shared::testing::test_pool();
         let session_manager = shared::session::SessionManager::with_pool(pool.clone());
         let rate_limiter = shared::rate_limit::RateLimiter::new();
+
         // Build asserts: panics on route conflicts would surface here.
-        let _app = create_app(pool, session_manager, rate_limiter)
-            .await
-            .expect("unified create_app must build without panic");
+        // 在专用的大栈线程上构造，避免依赖平台特定的链接器 /STACK 参数。
+        let handle = std::thread::Builder::new()
+            .name("create_app_build".to_string())
+            .stack_size(CREATE_APP_STACK_SIZE)
+            .spawn(move || {
+                tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .expect("build tokio runtime for create_app")
+                    .block_on(async move {
+                        create_app(pool, session_manager, rate_limiter)
+                            .await
+                            .expect("unified create_app must build without panic")
+                    })
+            })
+            .expect("spawn create_app build thread");
+
+        let _app = handle.join().expect("create_app must build without panic");
     }
 }
