@@ -17,7 +17,7 @@ async fn test_query_list_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/list")
+                .uri("/api/query/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -34,7 +34,7 @@ async fn test_unknown_route_returns_404() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/nonexistent")
+                .uri("/api/query/nonexistent")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -74,7 +74,7 @@ fn test_action_result_error_serialization() {
 fn test_action_result_success_with_null_message() {
     let result: ActionResult<i32> = ActionResult::success(0);
     assert_eq!(result.r#type, Some("success".to_string()));
-    // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+    // o2server 成功信封 message 恒为空串（2026-08-25 行为对比结论）
     assert_eq!(result.message, Some(String::new()));
     assert_eq!(result.data, Some(0));
 }
@@ -86,7 +86,7 @@ async fn test_create_query_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/create")
+                .uri("/api/query/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"name":"测试查询","queryType":"simple"}"#))

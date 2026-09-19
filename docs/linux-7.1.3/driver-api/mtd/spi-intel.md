@@ -1,3 +1,5 @@
+# spi-intel
+
 ﻿## 使用 spi-intel 升级 BIOS
 
 
@@ -52,7 +54,7 @@ spi-intel 驱动使得在特定的保护位未被设置并锁定的情况下，�
     SHA1 校验和应当匹配
  10) 现在你可以重启开发板，观察新BIOS 正常启动
 ```
-### 参考文
+## 参考文
 
 [^1^] https://firmware.intel.com/sites/default/files/MinnowBoard%2EMAX_%2EX64%2E92%2ER01%2Ezip
 

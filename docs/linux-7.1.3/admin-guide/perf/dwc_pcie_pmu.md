@@ -1,3 +1,5 @@
+# dwc_pcie_pmu
+
 ﻿## Synopsys DesignWare Cores (DWC) PCIe 性能监控单元（PMU
 
 
@@ -26,7 +28,7 @@ PMU 是由每个 PCIe Root Port 在名RAS D.E.S（Debug、Error injection、Stat
 
 使用该特性，你可以获得控制器在特定通道上的错误与非错误信息。PMU 事件由以下全部选择
 
-- 缁?i
+- 统?i
 - i 中的事件 j
 - 通道 k
 

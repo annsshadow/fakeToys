@@ -1,5 +1,7 @@
+# v4l2-subdev
+
 ﻿
-### V4L2 子设备（sub-devices
+## V4L2 子设备（sub-devices
 
 
 许多驱动需要与其子设备（sub-devices）通信。这些设备可以完成各
@@ -131,7 +133,7 @@ sink 端的宽度、高度和 media 总线像素码相等。子设备驱动也�
 在它们自己的检查之外再执行上述检查
 
 
-#### 子设备注册（Subdev registration
+### 子设备注册（Subdev registration
 
 
 目前有两种方式向 V4L2 核心注册子设备。第一种（传统）方式是让桥驱动
@@ -369,6 +371,7 @@ Device nodes named `v4l-subdev`\ **X** can be created in `/dev` to access
 `VIDIOC_S_EXT_CTRLS` and
 `VIDIOC_TRY_EXT_CTRLS`:
 
+
 	这些 controls ioctl V4L2 中定义的完全相同。它们的行为也相同，唯一的例外是
 	它们只处理由子设备生成的事件。取决于驱动，这些事件也可以由一个（或多个）
 	V4L2 设备节点访问
@@ -428,6 +431,7 @@ Device nodes named `v4l-subdev`\ **X** can be created in `/dev` to access
 `VIDIOC_SUBDEV_S_CROP`,
 `VIDIOC_SUBDEV_S_SELECTION`:
 
+
 	这些 ioctl 仅在只读子设备设备节点上被允许用
 	V4L2_SUBDEV_FORMAT_TRY <v4l2-subdev-format-whence> 的格式和选择矩形
 	
@@ -435,6 +439,7 @@ Device nodes named `v4l-subdev`\ **X** can be created in `/dev` to access
 `VIDIOC_SUBDEV_S_FRAME_INTERVAL`,
 `VIDIOC_SUBDEV_S_DV_TIMINGS`,
 `VIDIOC_SUBDEV_S_STD`:
+
 
 	这些 ioctl 在只读子设备节点上不被允许
 

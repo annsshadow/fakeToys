@@ -68,18 +68,24 @@ pub async fn list_control_calendars(
 
     let mut calendars = Vec::new();
     for row in rows.iter() {
-        let cal_type: String = row.get("type");
+        let cal_type: String = row.get::<_, Option<String>>("type").unwrap_or_default();
         let is_public: bool = row.get("is_public");
         calendars.push(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
+            (
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            ),
+            (
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            ),
             ("type".to_string(), Value::String(cal_type)),
             ("enabled".to_string(), Value::Bool(is_public)),
         ])));
     }
 
     let count = calendars.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(calendars),
         count,
         0,
@@ -168,9 +174,15 @@ pub async fn get_calendar_detail(
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert(
                 "calendarId".to_string(),
-                Value::String(row.get("calendar_id")),
+                Value::String(
+                    row.get::<_, Option<String>>("calendar_id")
+                        .unwrap_or_default(),
+                ),
             );
-            map.insert("title".to_string(), Value::String(row.get("title")));
+            map.insert(
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+            );
             if let Some(content) = row.get::<_, Option<String>>("content") {
                 map.insert("content".to_string(), Value::String(content));
             }
@@ -179,15 +191,27 @@ pub async fn get_calendar_detail(
             }
             map.insert(
                 "startTime".to_string(),
-                Value::String(row.get("start_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("start_time")
+                        .unwrap_or_default(),
+                ),
             );
-            map.insert("endTime".to_string(), Value::String(row.get("end_time")));
+            map.insert(
+                "endTime".to_string(),
+                Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+            );
             map.insert("allDay".to_string(), Value::Bool(row.get("all_day")));
             map.insert(
                 "visibility".to_string(),
-                Value::String(row.get("visibility")),
+                Value::String(
+                    row.get::<_, Option<String>>("visibility")
+                        .unwrap_or_default(),
+                ),
             );
-            map.insert("status".to_string(), Value::String(row.get("status")));
+            map.insert(
+                "status".to_string(),
+                Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+            );
             Value::Object(map)
         })
         .collect();
@@ -209,7 +233,11 @@ pub async fn get_calendar_detail(
     }
     data_map.insert(
         "createor".to_string(),
-        Value::String(calendar_row.get("createor")),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("createor")
+                .unwrap_or_default(),
+        ),
     );
     data_map.insert(
         "isPublic".to_string(),
@@ -217,7 +245,11 @@ pub async fn get_calendar_detail(
     );
     data_map.insert(
         "status".to_string(),
-        Value::String(calendar_row.get("status")),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("status")
+                .unwrap_or_default(),
+        ),
     );
     data_map.insert(
         "eventCount".to_string(),
@@ -233,7 +265,7 @@ pub fn calendar_assemble_control_router(pool: Pool) -> Router {
     // plan002 U2 的 7 条新路由注册于 routes::router 内部（Extension 层之前），
     // 确保共享连接池扩展对全部路由可见。
     crate::routes::router(pool).route(
-        "/jaxrs/calendar/assemble/control/calendar/detail/{id}",
+        "/api/calendar/assemble/control/calendar/detail/{id}",
         get(get_calendar_detail),
     )
 }

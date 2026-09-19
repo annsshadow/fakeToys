@@ -1,3 +1,5 @@
+# gadget_serial
+
 ﻿## Linux Gadget 串行驱动 v2.0
 
 
@@ -5,7 +7,7 @@
 
 008-05-08 更新v2.3
 
-### 许可证与免责声明
+## 许可证与免责声明
 
 本程序是自由软件；你可以在自由软件基金会发布GNU 通用公共许可证条款下重新分发或修改它；可以是许可证的2 版，或者（由你选择）任何更晚的版本
 本程序分发的目的是希望它有用，但没有任何担保；甚至没有对适销性或特定用途适用性的默示担保。详GNU 通用公共许可证
@@ -78,7 +80,7 @@ gadget 串行驱动只提供简单的不可靠数据通信。它还未能处理�
 
 如果 gadget 串行作为 ACM 设备加载，你会在主机侧使Windows Linux ACM 驱动。如gadget 串行作为 bulk in/out 设备加载，你会在主机侧使Linux 通用串行驱动。请按照下面相应的说明来安装主机侧驱动
 
-### 安装 Windows 主机 ACM 驱动
+## 安装 Windows 主机 ACM 驱动
 
 要使Windows ACM 驱动，你必须拥有 “linux-cdc-acm.inf文件（随本文档一起提供），它支持所有近期版本的 Windows
 gadget 串行驱动已加载、并USB 设备通过 USB 电缆连接Windows 主机时，Windows 应当识别 gadget 串行设备并请求驱动。告Windows 在包“linux-cdc-acm.inf文件的文件夹中查找驱动

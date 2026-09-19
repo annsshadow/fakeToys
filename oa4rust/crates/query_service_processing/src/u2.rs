@@ -1,6 +1,6 @@
-//! plan002 U2 收尾：对齐 Java x_query_service_processing jaxrs 契约（24 端点）。
+//! plan002 U2 收尾：对齐 o2server x_query_service_processing o2server 契约（24 端点）。
 //!
-//! Java 契约（{war}/jaxrs/**）：
+//! o2server 契约（{war}/api/**）：
 //!   POST design/search                                  设计元素搜索（按模块分组）
 //!   POST index/directory/document/count                 索引目录文档计数
 //!   POST index/update/extra/document                    更新索引附加文档
@@ -150,7 +150,7 @@ pub async fn design_search(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let pattern = like_pattern(&keyword);
 
-    // 未指定模块时等价于全模块（Java 对无权限模块会过滤；此处模块集合由请求方给定）
+    // 未指定模块时等价于全模块（o2server 对无权限模块会过滤；此处模块集合由请求方给定）
     let mut requested: Vec<String> = wi
         .module_list
         .iter()
@@ -193,7 +193,7 @@ pub struct IndexCountWi {
 /// POST index/directory/document/count
 ///
 /// 返回 {category,key,exists,count}；count 为 CMS 文档库真实行数，
-/// category/key 为空时对应 Java 的 CATEGORY_SEARCH + KEY_ENTIRE 全量口径。
+/// category/key 为空时对应 o2server 的 CATEGORY_SEARCH + KEY_ENTIRE 全量口径。
 #[allow(non_snake_case)]
 pub async fn index_directory_document_count(
     pool: Extension<Pool>,
@@ -242,7 +242,7 @@ pub struct UpdateExtraDocumentWi {
 
 /// POST index/update/extra/document
 ///
-/// 校验 Java ActionUpdateExtraDocument 要求的非空字段后，将附加文档 UPSERT 进
+/// 校验 o2server ActionUpdateExtraDocument 要求的非空字段后，将附加文档 UPSERT 进
 /// x_query_index_extra（type+key+doc_id 唯一）。
 #[allow(non_snake_case)]
 pub async fn index_update_extra_document(
@@ -463,7 +463,7 @@ pub async fn table_update_with_bundle(
 
     let row_id = match existing {
         Some(row) => {
-            let id: String = row.get("id");
+            let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
             client
                 .execute(
                     "UPDATE x_query_table_data SET data = $1, update_time = NOW() \
@@ -567,7 +567,7 @@ async fn neural_stop(
         .map_err(|_| AppError::Internal)?;
 
     if n == 0 {
-        // 对齐 Java ExceptionModelNotReady：无可停止的运行中任务
+        // 对齐 o2server ExceptionModelNotReady：无可停止的运行中任务
         return Ok(Json(ActionResult::error(format!(
             "{}: no running {}",
             NEURAL_NOT_READY, action
@@ -618,7 +618,7 @@ pub async fn neural_stop_learning(
 
 /// GET neural/list/calculate/model/{modelFlag}/work/{workId}
 ///
-/// 仅当该模型存在已完成的学习任务时才具备推算能力；否则对齐 Java 抛出
+/// 仅当该模型存在已完成的学习任务时才具备推算能力；否则对齐 o2server 抛出
 /// ExceptionModelNotReady。模型就绪但无已落盘推算结果时返回空列表。
 #[allow(non_snake_case)]
 pub async fn neural_list_calculate_with_work(

@@ -1,7 +1,9 @@
+# vidioc-querystd
+
 ﻿
 
 
-######## ioctl VIDIOC_QUERYSTD, VIDIOC_SUBDEV_QUERYSTD
+## ioctl VIDIOC_QUERYSTD, VIDIOC_SUBDEV_QUERYSTD
 
 
 ## 名称

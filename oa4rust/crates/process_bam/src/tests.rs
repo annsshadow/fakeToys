@@ -41,7 +41,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/state/summary")
+                    .uri("/api/process/state/summary")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -60,7 +60,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/state/running")
+                    .uri("/api/process/state/running")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -79,7 +79,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/state/organization")
+                    .uri("/api/process/state/organization")
                     .body(Body::empty())
                     .unwrap(),
             )

@@ -1,6 +1,8 @@
+# mc-core
+
 ﻿
-### 媒体控制器设
-#### 濯掍綋鎺у埗鍣。
+## 媒体控制器设
+### 濯掍綋鎺у埗鍣。
 媒体控制器用户空API 记录Media Controller uAPI book <media_controller> 中。本文档关注媒体框架的内核侧实现
 ##### 抽象媒体设备模型
 

@@ -1,11 +1,15 @@
 
+# usage-model
+
 :Original: Documentation/devicetree/usage-model.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## Linux 和 Devicetree
@@ -75,6 +79,7 @@ Powerpc平台上要求DT支持，无论它们是否使用Open Firmware。为了�
 镜像支持各种硬件。
 
 Linux使用DT数据有三个主要目的:
+
 
 1) 平台识别。
 2) 运行时配置，以及
@@ -314,7 +319,7 @@ of_platform_populate()的第二个参数是一个of_device_id表，任何与该�
 
 [需要添加关于添加i2c/spi/etc子设备的讨论] 。
 
-### 附录A：AMBA设备
+## 附录A：AMBA设备
 
 
 ARM Primecell是连接到ARM AMBA总线的某种设备，它包括对硬件检测和电源管理

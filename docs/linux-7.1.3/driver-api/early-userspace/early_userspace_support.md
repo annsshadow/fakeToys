@@ -1,3 +1,5 @@
+# early_userspace_support
+
 ﻿## 早期用户空间支持
 
 
@@ -12,7 +14,7 @@ Linux 内核启动过程中就需要可用，但不需要在内核本身内部�
 initramfs 使用cpio 文件格式"newc"（即 "cpio -H newc"）格式，并在文件
 "buffer-format.txt" 中有文档说明。有两种方式添加早期用户空间映像：指定一个现有的
 cpio 归档用作映像，或者让内核构建过程根据规格说明构建映像
-### CPIO 归档方法
+## CPIO 归档方法
 
 
 你可以创建一个包含早期用户空间映像的 cpio 归档。你cpio 归档应在

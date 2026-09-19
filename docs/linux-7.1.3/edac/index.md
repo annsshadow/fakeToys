@@ -1,5 +1,5 @@
 
-## EDAC 子系统
+# EDAC 子系统
 
 
 - [特性](features)

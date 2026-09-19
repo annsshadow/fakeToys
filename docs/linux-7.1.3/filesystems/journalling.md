@@ -1,10 +1,12 @@
+# journalling
+
 ﻿## Linux 日志（Journalling）API
 
 
-### 概述
+## 概述
 
 
-#### 细节
+### 细节
 
 
 日志层使用起来很简单。首先，你需要创建一journal_t 数据结构。根你决定在何处分配日志所在物理介质的不同，有两种调用来完成这件事jbd2_journal_init_inode() 用于存储在文件系inode 中的日志；jbd2_journal_init_dev() 可用于存储在裸设备（一段连续的块区间）上的日志journal_t 是一个指向结构体的指针的 typedef，所以当你最终结束时，务对其调用 jbd2_journal_destroy() 以释放任何已使用的内核内存
@@ -81,6 +83,7 @@ fs/ext4/fast_commit.c 顶部的注释
 
    :internal:
 
+
 ### 函数
 
 
@@ -89,7 +92,9 @@ fs/ext4/fast_commit.c 顶部的注释
 
    :export:
 
+
    :internal:
+
 
 #### 事务级别（Transaction Level
 

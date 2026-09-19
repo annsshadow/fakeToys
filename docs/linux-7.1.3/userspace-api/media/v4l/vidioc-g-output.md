@@ -1,5 +1,7 @@
+# vidioc-g-output
+
 ﻿
-######## ioctl VIDIOC_G_OUTPUT, VIDIOC_S_OUTPUT
+## ioctl VIDIOC_G_OUTPUT, VIDIOC_S_OUTPUT
 
 
 ## Name

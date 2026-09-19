@@ -1,3 +1,5 @@
+# inode_table
+
 ﻿### 索引节点表（Inode Table
 
 

@@ -1,9 +1,11 @@
+# hwmon-kernel-api
+
 ﻿## Linux 硬件监控内核 API
 
 
 Guenter Roeck
 
-### 简
+## 简
 
 本文档描述了希望使用硬件监控框架的硬件监控驱动所能使用的 API
 本文档并不描述什么是硬件监控（hwmon）驱动或设备，也不描述用户空间可用于与硬件监控设通信API。如果你想知道这些，请阅读以下文件：Documentation/hwmon/sysfs-interface.rst

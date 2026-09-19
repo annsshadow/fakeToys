@@ -1,7 +1,7 @@
 use axum::response::IntoResponse;
 use thiserror::Error;
 
-use super::response::{java_date_now, java_exception_for};
+use super::response::{legacy_date_now, legacy_exception_for};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // AppError
@@ -55,9 +55,9 @@ pub enum AppError {
 //   - Forbidden            → 403 Forbidden
 //   - NotFound             → 404 Not Found
 //
-// 错误体与 Java 错误信封实测形状一致（2026-08-25 行为对比实跑结论）：
+// 错误体与 o2server 错误信封实测形状一致（2026-08-25 行为对比实跑结论）：
 // 无 data 字段，date/spent/size/count/position 恒填充，
-// prompt 承载 Java 异常类名风格字符串。
+// prompt 承载 o2server 异常类名风格字符串。
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let (status, prompt_kind) = match &self {
@@ -91,16 +91,16 @@ impl IntoResponse for AppError {
         };
 
         // 恒填 prompt：O2OA ResponseFactory 多数 war 的错误路径填充异常类名
-        // （个别模块省略，见 allowlist 留档「java-error-prompt-inconsistent」）。
+        // （个别模块省略，见 allowlist 留档「legacy-error-prompt-inconsistent」）。
         let body = axum::Json(serde_json::json!({
             "type": "error",
             "message": self.to_string(),
-            "date": java_date_now(),
+            "date": legacy_date_now(),
             "spent": 0,
             "size": -1,
             "count": 0,
             "position": 0,
-            "prompt": java_exception_for(prompt_kind),
+            "prompt": legacy_exception_for(prompt_kind),
         }));
 
         (status, body).into_response()

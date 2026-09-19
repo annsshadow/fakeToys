@@ -1,5 +1,7 @@
 
 
+# irq-chip-model
+
 :Original: Documentation/arch/loongarch/irq-chip-model.rst
 :Translator: Huacai Chen <chenhuacai@loongson.cn>
 

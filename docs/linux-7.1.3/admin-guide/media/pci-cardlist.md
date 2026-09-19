@@ -1,3 +1,5 @@
+# pci-cardlist
+
 ﻿
 ## PCI 驱动
 
@@ -69,7 +71,7 @@ hexium_orion      Hexium HV-PCI6 Orion 帧抓取卡
 hopper            基于 HOPPER 的卡
 ipu3-cio2         Intel ipu3-cio2 驱动
 ivtv              Conexant cx23416/cx23415 MPEG 编码/解码
-ivtvfb            Conexant cx23415 甯х紦鍐。
+ivtvfb            Conexant cx23415 甯х紦内。
 mantis            基于 MANTIS 的卡
 mgb4              Digiteq Automotive MGB4 帧抓取卡
 mxb               Siemens-Nixdorf 多媒体扩展板（MXB

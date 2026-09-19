@@ -1,3 +1,5 @@
+# watchdog-pm
+
 ﻿## Linux 看门狗定时器电源管理指南
 
 
@@ -5,7 +7,7 @@ Last reviewed: 17-Dec-2018
 
 Wolfram Sang <wsa+renesas@sang-engineering.com>
 
-### 简
+## 简
 
 
 本文档规定了关于看门狗设备及其电源管理处理的相关规则，以确保 Linux 系统行为的一致性

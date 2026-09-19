@@ -10,7 +10,7 @@ use shared::response::ActionResult;
 use shared::session::SessionManager;
 use tracing;
 
-/// POST /jaxrs/authentication/switchuser — 用户切换（管理员）
+/// POST /api/authentication/switchuser — 用户切换（管理员）
 ///
 /// 管理员临时切换为其他用户身份操作。
 /// 原管理员 session 保持有效，新 session 通过 HttpOnly Cookie 返回。

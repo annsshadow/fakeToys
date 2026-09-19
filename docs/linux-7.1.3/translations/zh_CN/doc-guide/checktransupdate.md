@@ -1,5 +1,7 @@
 
 
+# checktransupdate
+
 :Original: Documentation/doc-guide/checktransupdate.rst
 
 :译者: 慕冬亮 Dongliang Mu <dzm91@hust.edu.cn>
@@ -8,7 +10,7 @@
 
 这个脚本帮助跟踪不同语言的文档翻译状态，即文档是否与对应的英文版本保持更新。
 
-### 工作原理
+## 工作原理
 
 
 它使用 `git log` 命令来跟踪翻译提交的最新英文提交（按作者日期排序）和英文文档的

@@ -1,10 +1,12 @@
+# index
+
 ﻿
 ## drm/amd/display - 显示核心（DC
 
 AMD 显示引擎与其他操作系统部分共享；因此，我们的显示核心驱动分为两部分：
 
 #. **显示核心（DC* 包含与操作系统无关的组件。硬件编程与资源管理在此处理#. **显示管理器（DM* 包含与操作系统相关的组件。与 amdgpu 基础驱动DRM 的钩   在此实现。例如，可以查看 display/amdgpu_dm/ 目录
-### DC 代码验证
+## DC 代码验证
 
 
 在多个操作系统间维护同一套代码库，需要在各仓库间进行大量同步工作，并进行详尽验证。在 DC 的案例中，我们维护一棵树来集中来自不同部分的代码。共享仓库与我们的内Linux CI 集群有集成测试，并在多种 AMD GPU/APU（主要是较新dGPU APU）上运行一全面IGT 测试。我们的 CI 还会检查开启与关闭 DCN ARM64/32、PPC64/32 x86_64/32
@@ -23,7 +25,7 @@ AMD 显示引擎与其他操作系统部分共享；因此，我们的显示核�
 CI 与手动测试的环境搭建方面，我们通常使用
 #. 最新的 Ubuntu LTS#. 在用户空间方面，我们只使用发行版官方包管理器提供的、完全更新的开源组件#. 关于 IGT，我们使用上游的最新代码#. 大多数手动测试在 GNome 下进行，但我们也使用 KDE
 注意，我们测试团队的某位成员总会以测试报告回复封面信（cover letter）
-### DC 信息
+## DC 信息
 
 
 显示流水线（display pipe）负责将渲染好的帧从 GPU 内存（也称为 VRAM、FrameBuffer 等）
@@ -32,11 +34,11 @@ CI 与手动测试的环境搭建方面，我们通常使用
 #. 将像素数据发送给接收端设备
 如果你想进一步了解我们的驱动细节，请查看下面的目录：
 
-- [display-manager.rst](display-manager.rst)
-- [dcn-overview.rst](dcn-overview.rst)
-- [dcn-blocks.rst](dcn-blocks.rst)
-- [programming-model-dcn.rst](programming-model-dcn.rst)
-- [mpo-overview.rst](mpo-overview.rst)
-- [dc-debug.rst](dc-debug.rst)
-- [display-contributing.rst](display-contributing.rst)
-- [dc-glossary.rst](dc-glossary.rst)
+- [display-manager.rst](display-manager.md)
+- [dcn-overview.rst](dcn-overview.md)
+- [dcn-blocks.rst](dcn-blocks.md)
+- [programming-model-dcn.rst](programming-model-dcn.md)
+- [mpo-overview.rst](mpo-overview.md)
+- [dc-debug.rst](dc-debug.md)
+- [display-contributing.rst](display-contributing.md)
+- [dc-glossary.rst](dc-glossary.md)

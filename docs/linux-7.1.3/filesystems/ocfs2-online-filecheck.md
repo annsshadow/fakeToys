@@ -1,3 +1,5 @@
+# ocfs2-online-filecheck
+
 ﻿
 ## OCFS2 文件系统 - 在线文件检
 
@@ -33,6 +35,7 @@ OCFS2 文件系统中出现错误时，通常伴有导致该错误的 inode 号�
 
    输出类似:
 
+
     INO		DONE	ERROR
     39502		1	GENERATION
 
@@ -44,6 +47,7 @@ OCFS2 文件系统中出现错误时，通常伴有导致该错误的 inode 号�
     # cat /sys/fs/ocfs2/<devname>/filecheck/fix
 
    输出类似:
+
 
     INO		DONE	ERROR
     39502		1	SUCCESS

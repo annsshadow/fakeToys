@@ -2,5 +2,5 @@
 
 ## Endpoints
 
-- `GET /jaxrs/online/person/{person}` — personOnline
-- `GET /jaxrs/talk/list` — listChat
+- `GET /api/online/person/{person}` — personOnline
+- `GET /api/talk/list` — listChat

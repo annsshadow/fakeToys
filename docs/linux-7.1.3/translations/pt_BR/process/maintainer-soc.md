@@ -1,12 +1,13 @@
 
-## Subsistema SoC
+# Subsistema SoC
 
 
-### Visão Geral
+## Visão Geral
 
 
 O subsistema SoC é um local de agregação para códigos específicos de SoC
 System on Chip). Os principais componentes do subsistema são:
+
 
 - Devicetrees (DTS) para ARM de 32 e 64 bits e RISC-V.
 - Arquivos de placa (board files) ARM de 32 bits (arch/arm/mach*).
@@ -69,6 +70,7 @@ de CC baseada no arquivo `MAINTAINERS` ou use algo como
 Os mantenedores principais de SoC podem ser contatados via o alias
 soc@kernel.org apenas nos seguintes casos:
 
+
 1. Não existem mantenedores específicos para a plataforma.
 
 2. Os mantenedores específicos da plataforma não respondem.
@@ -125,6 +127,7 @@ devicetree depender de adições ausentes em um arquivo de cabeçalho em
 `include/dt-bindings/`, ela falhará na etapa `make dtbs` e não será mesclada.
 
 Existem várias maneiras de lidar com isso:
+
 
 - Evite definir macros personalizadas em `include/dt-bindings/` para constantes
   de hardware que podem ser derivadas de um datasheet -- macros de binding em

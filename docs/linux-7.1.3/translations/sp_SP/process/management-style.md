@@ -1,4 +1,6 @@
 
+# management-style
+
 :Original: Documentation/process/management-style.rst
 :Translator: Avadhut Naik <avadhut.naik@amd.com>
 
@@ -33,6 +35,7 @@ People” y NO leerlo. Quemarlo, es un gran gesto simbólico.
   de cuál es la respuesta.
 
 De todos modos, aquí va:
+
 
 
 ### 1) Decisiones
@@ -90,6 +93,7 @@ fácilmente.
 
 Resulta que algunas personas tienen problemas con este enfoque, por dos
 razones:
+
 
  - admitir que eras un idiota es más difícil de lo que parece. A todos
    nos gusta mantener las apariencias, y salir en público a decir que te
@@ -157,6 +161,7 @@ convierte en un no-no según decisiones.
 
 Aquí solo hay algunas reglas simples:
 
+
  (1) No llames a la gente pen*ejos (al menos no en público)
  (2) Aprende a disculparte cuando olvidaste la regla (1)
 
@@ -170,6 +175,7 @@ puedes llamar a casi **cualquiera** un pen*ejo, y a menudo **tendrás**
 razón), más difícil termina siendo disculparse después.
 
 Para resolver este problema, realmente solo tienes dos opciones:
+
 
  - Se muy buenos en las disculpas.
  - Difunde el “amor” de manera tan uniforme que nadie termina sintiendo

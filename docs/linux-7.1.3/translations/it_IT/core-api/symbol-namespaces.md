@@ -1,4 +1,6 @@
 
+# symbol-namespaces
+
 :Original: Documentation/core-api/symbol-namespaces.rst
 
 ## Spazio dei nomi dei simboli

@@ -1,3 +1,5 @@
+# slab
+
 ﻿## slab 分配器简明用户指
 
 slab 分配器包含完整的调试支持（在构建时启CONFIG_SLUB_DEBUG=y），但默认关闭（除非
@@ -10,7 +12,7 @@ slab 分配器包含完整的调试支持（在构建时启CONFIG_SLUB_DEBUG=y�
 
 ```
 `slabinfo` 的某些操作模式要求在内核命令行上启用 slub 调试。例如，在未开启调试时不会跟踪信息可用，并且如果未开启调试，验证只能部分执行
-### slab_debug 的一些更高级用法
+## slab_debug 的一些更高级用法
 
 可以`slab_debug` 提供参数。如果未指定任何参数，则启用完整调试。格式：
 
@@ -300,6 +302,7 @@ c) '-t' 模式下执`slabinfo-gnuplot.sh`，传入所有的
    can go unnoticed. To deal with that, ``slabinfo-gnuplot.sh`` has two
    options to 'zoom-in'/'zoom-out':
 
+
    a) ``-s %d,%d`` -- 覆盖默认的图像宽度和高度
    b) ``-r %d,%d`` -- 指定要使用的样本范围（例如，``slabinfo -X >> FOO_STATS; sleep 1;``
       的情况下，使``-r 40,60`` 范围将只绘制在第 40 到第 60 秒之间收集的样本）
@@ -324,6 +327,7 @@ c) '-t' 模式下执`slabinfo-gnuplot.sh`，传入所有的
     allocating cpus, numa node mask of origins of memory, and stack trace.
 
     Example:::
+
 
     338 pci_alloc_dev+0x2c/0xa0 waste=521872/1544 age=290837/291891/293509 pid=1 cpus=106 nodes=0-1
         __kmem_cache_alloc_node+0x11f/0x4e0
@@ -356,6 +360,7 @@ c) '-t' 模式下执`slabinfo-gnuplot.sh`，传入所有的
     pid range of the freeing processes, cpu mask of freeing cpus, and stack trace.
 
     Example:::
+
 
     1980 <not-available> age=4294912290 pid=0 cpus=0
     51 acpi_ut_update_ref_count+0x6a6/0x782 age=236886/237027/237772 pid=1 cpus=1

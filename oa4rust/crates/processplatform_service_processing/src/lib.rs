@@ -196,14 +196,17 @@ pub async fn list_processes(
                 ("name".to_string(), Value::String(row.get("title"))),
                 (
                     "category".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -273,13 +276,25 @@ pub async fn get_process_instance(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("activity".to_string(), Value::String(row.get("activity"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "activity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
                 (
                     "activityToken".to_string(),
-                    Value::String(row.get("activity_token")),
+                    Value::String(
+                        row.get::<_, Option<String>>("activity_token")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("person".to_string(), Value::String(row.get("person"))),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "startTime".to_string(),
                     Value::String(row.get("start_time")),
@@ -292,17 +307,32 @@ pub async fn get_process_instance(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("title".to_string(), Value::String(row.get("title"))),
-            ("process".to_string(), Value::String(row.get("process"))),
+            (
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+            ),
+            (
+                "process".to_string(),
+                Value::String(row.get::<_, Option<String>>("process").unwrap_or_default()),
+            ),
             (
                 "application".to_string(),
-                Value::String(row.get("application")),
+                Value::String(
+                    row.get::<_, Option<String>>("application")
+                        .unwrap_or_default(),
+                ),
             ),
             (
                 "workStatus".to_string(),
-                Value::String(row.get("work_status")),
+                Value::String(
+                    row.get::<_, Option<String>>("work_status")
+                        .unwrap_or_default(),
+                ),
             ),
-            ("creator".to_string(), Value::String(row.get("creator"))),
+            (
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            ),
             (
                 "createTime".to_string(),
                 Value::String(row.get("create_time")),
@@ -622,7 +652,7 @@ pub async fn work_id_projection(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -718,6 +748,68 @@ pub async fn work_manual_after_processing(
 // Task operations
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn task_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, title, work, activity, person, task_status, start_time::text AS start_time, end_time::text AS end_time \
+             FROM x_task ORDER BY start_time DESC NULLS LAST LIMIT 200",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "work".to_string(),
+                    Value::String(row.get::<_, Option<String>>("work").unwrap_or_default()),
+                ),
+                (
+                    "activity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
+                (
+                    "taskStatus".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("task_status")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "startTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("start_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "endTime".to_string(),
+                    Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
 #[allow(non_snake_case)]
 pub async fn task_id_processing(
     pool: Extension<Pool>,
@@ -787,7 +879,7 @@ pub async fn task_id_replace(
         .await
         .map_err(|_| AppError::Internal)?;
     let work: String = row.get("work");
-    let person: String = row.get("person");
+    let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE id = $2",
         &[&"replaced", &id],
@@ -1040,7 +1132,9 @@ pub async fn taskcompleted_next_task_identity(
         .await
         .map_err(|_| AppError::Internal)?;
     let work: String = row.get("work");
-    let activity_token: String = row.get("activity_token");
+    let activity_token: String = row
+        .get::<_, Option<String>>("activity_token")
+        .unwrap_or_default();
     let next_row = client
         .query_opt(
             "SELECT id, title, activity, activity_token, person, task_status FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1",
@@ -1370,7 +1464,7 @@ pub async fn touch_loglongdetained(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -1713,7 +1807,7 @@ pub async fn data_work_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1729,7 +1823,7 @@ pub async fn data_work_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1745,7 +1839,7 @@ pub async fn data_work_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1789,7 +1883,7 @@ pub async fn work_list(
 
     let rows = client
         .query(
-            "SELECT id, title, process, COALESCE(application, '') as application, work_status, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') as create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2::int OFFSET $3::int",
+            "SELECT id, title, process, COALESCE(application, '') as application, work_status, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') as create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2 OFFSET $3",
             &[&application, &(size as i64), &(offset as i64)],
         )
         .await
@@ -1804,13 +1898,22 @@ pub async fn work_list(
                 ("process".to_string(), Value::String(row.get("process"))),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "workStatus".to_string(),
-                    Value::String(row.get("work_status")),
+                    Value::String(
+                        row.get::<_, Option<String>>("work_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1819,7 +1922,7 @@ pub async fn work_list(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         0,
@@ -1857,13 +1960,25 @@ pub async fn process_id_complex(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("activity".to_string(), Value::String(row.get("activity"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "activity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+                ),
                 (
                     "activityToken".to_string(),
-                    Value::String(row.get("activity_token")),
+                    Value::String(
+                        row.get::<_, Option<String>>("activity_token")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("person".to_string(), Value::String(row.get("person"))),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "startTime".to_string(),
                     Value::String(row.get("start_time")),
@@ -1979,7 +2094,7 @@ pub async fn data_workcompleted_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -1995,7 +2110,7 @@ pub async fn data_workcompleted_id_path(
                 .map_err(|_| AppError::Internal)?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
-            Ok(Json(ActionResult::java_success(
+            Ok(Json(ActionResult::legacy_success(
                 Value::Array(list),
                 total_list as i64,
                 0,
@@ -2020,7 +2135,7 @@ pub async fn documentversion_work_work(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2081,7 +2196,7 @@ pub async fn form_suitable_activity_activityId(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2149,7 +2264,7 @@ pub async fn job_job(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2187,7 +2302,7 @@ pub async fn record_job_job(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2209,7 +2324,7 @@ pub async fn record_task_processing(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2231,7 +2346,7 @@ pub async fn record_work_processing(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2253,7 +2368,7 @@ pub async fn record_work_terminate(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2314,9 +2429,9 @@ pub async fn attachment_copy_work_workId(
         .await
         .map_err(|_| AppError::Internal)?;
     let new_id = Uuid::new_v4().to_string();
-    let name: String = row.get("name");
-    let content: String = row.get("content");
-    let creator: String = row.get("creator");
+    let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
+    let content: String = row.get::<_, Option<String>>("content").unwrap_or_default();
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
     client
         .execute(
             "INSERT INTO x_attachment (id, work_id, workcompleted_id, name, content, creator, create_time) VALUES ($1, $2, NULL, $3, $4, $5, NOW())",
@@ -2346,9 +2461,9 @@ pub async fn attachment_copy_workcompleted_workCompletedId(
         .await
         .map_err(|_| AppError::Internal)?;
     let new_id = Uuid::new_v4().to_string();
-    let name: String = row.get("name");
-    let content: String = row.get("content");
-    let creator: String = row.get("creator");
+    let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
+    let content: String = row.get::<_, Option<String>>("content").unwrap_or_default();
+    let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
     client
         .execute(
             "INSERT INTO x_attachment (id, work_id, workcompleted_id, name, content, creator, create_time) VALUES ($1, NULL, $2, $3, $4, $5, NOW())",
@@ -2414,7 +2529,7 @@ pub async fn attachment_id_work_workId(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2436,7 +2551,7 @@ pub async fn attachment_id_workcompleted_workCompletedId(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2529,7 +2644,7 @@ pub async fn applicationdict_id_path0_path1_path2_data(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2557,7 +2672,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_data(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2610,7 +2725,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_data(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2667,7 +2782,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2689,7 +2804,7 @@ pub async fn workcompleted_process_processFlag(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(list),
         total_list as i64,
         0,
@@ -2838,7 +2953,9 @@ pub async fn work_start(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let status: String = row.get("work_status");
+    let status: String = row
+        .get::<_, Option<String>>("work_status")
+        .unwrap_or_default();
     if status != "pending" {
         tx.commit().await.map_err(|_| AppError::Internal)?;
         return Err(AppError::BadRequest(format!(
@@ -2886,7 +3003,9 @@ pub async fn work_complete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let status: String = row.get("work_status");
+    let status: String = row
+        .get::<_, Option<String>>("work_status")
+        .unwrap_or_default();
     if status != "processing" {
         tx.commit().await.map_err(|_| AppError::Internal)?;
         return Err(AppError::BadRequest(format!(
@@ -2937,7 +3056,9 @@ pub async fn task_claim(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let task_status: String = row.get("task_status");
+    let task_status: String = row
+        .get::<_, Option<String>>("task_status")
+        .unwrap_or_default();
     if task_status != "pending" {
         tx.commit().await.map_err(|_| AppError::Internal)?;
         return Err(AppError::BadRequest(format!(
@@ -2984,7 +3105,9 @@ pub async fn task_complete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let task_status: String = row.get("task_status");
+    let task_status: String = row
+        .get::<_, Option<String>>("task_status")
+        .unwrap_or_default();
     if task_status != "active" && task_status != "processing" {
         tx.commit().await.map_err(|_| AppError::Internal)?;
         return Err(AppError::BadRequest(format!(
@@ -3070,7 +3193,9 @@ pub async fn task_reject(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let task_status: String = row.get("task_status");
+    let task_status: String = row
+        .get::<_, Option<String>>("task_status")
+        .unwrap_or_default();
     if task_status != "active" && task_status != "processing" {
         tx.commit().await.map_err(|_| AppError::Internal)?;
         return Err(AppError::BadRequest(format!(
@@ -3135,7 +3260,9 @@ pub async fn task_transfer(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let task_status: String = row.get("task_status");
+    let task_status: String = row
+        .get::<_, Option<String>>("task_status")
+        .unwrap_or_default();
     if task_status != "active" && task_status != "pending" && task_status != "processing" {
         tx.commit().await.map_err(|_| AppError::Internal)?;
         return Err(AppError::BadRequest(format!(
@@ -3143,7 +3270,7 @@ pub async fn task_transfer(
             task_status
         )));
     }
-    let old_person: String = row.get("person");
+    let old_person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     tx.execute(
         "UPDATE x_task SET person = $1 WHERE id = $2",
         &[&new_person, &id],
@@ -3187,7 +3314,9 @@ pub async fn gateway_join(
         return Err(AppError::NotFound);
     }
     let all_completed = rows.iter().all(|r| {
-        let status: String = r.get("task_status");
+        let status: String = r
+            .get::<_, Option<String>>("task_status")
+            .unwrap_or_default();
         status == "completed"
     });
     if !all_completed {
@@ -3247,7 +3376,7 @@ pub async fn gateway_fork(
     }
 
     let total_created_tasks = created_tasks.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(created_tasks),
         total_created_tasks as i64,
         0,

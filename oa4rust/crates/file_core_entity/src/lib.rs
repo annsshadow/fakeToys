@@ -411,20 +411,20 @@ pub fn file_core_entity_router(_pool: Pool) -> Router {
     Router::new()
         // folder
         .route(
-            "/jaxrs/file/core/entity/folder/list/top",
+            "/api/file/core/entity/folder/list/top",
             get(folder_list_top),
         )
         .route(
-            "/jaxrs/file/core/entity/folder/list/{id}",
+            "/api/file/core/entity/folder/list/{id}",
             get(folder_list_with_folder),
         )
-        .route("/jaxrs/file/core/entity/folder", post(folder_create))
-        .route("/jaxrs/file/core/entity/folder/{id}", delete(folder_delete))
+        .route("/api/file/core/entity/folder", post(folder_create))
+        .route("/api/file/core/entity/folder/{id}", delete(folder_delete))
         // file
-        .route("/jaxrs/file/core/entity/file/list", get(file_list))
-        .route("/jaxrs/file/core/entity/file", post(file_create))
+        .route("/api/file/core/entity/file/list", get(file_list))
+        .route("/api/file/core/entity/file", post(file_create))
         // complex
-        .route("/jaxrs/file/core/entity/complex/top", get(complex_top))
+        .route("/api/file/core/entity/complex/top", get(complex_top))
 }
 
 #[cfg(test)]

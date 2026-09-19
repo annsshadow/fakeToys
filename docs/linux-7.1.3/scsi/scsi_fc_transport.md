@@ -1,3 +1,5 @@
+# scsi_fc_transport
+
 ﻿## SCSI FC 传输（Transport
 
 Date:  11/18/2008
@@ -93,21 +95,28 @@ Date:  11/18/2008
 
    and it has the typical descendant tree::
 
+
      /sys/devices/.../host17/rport-17:0-0/target17:0:0/17:0:0:0:
 
+
    and then the vport is created on the Physical Port::
+
 
      /sys/devices/.../host17/vport-17:0-0
 
    and the vport's Scsi_Host is then created::
 
+
      /sys/devices/.../host17/vport-17:0-0/host18
 
    and then the rest of the tree progresses, such as::
 
+
      /sys/devices/.../host17/vport-17:0-0/host18/rport-18:0-0/target18:0:0/18:0:0:0:
 
+
   Here's what to expect in the sysfs tree::
+
 
    scsi_hosts:
      /sys/class/scsi_host/host17                physical port's scsi_host
@@ -263,6 +272,7 @@ Vport 创建（Vport Creation）：
 
   where:
 
+
       =======   ===========================================================
       vport     Is the newly allocated vport object
       disable   If "true", the vport is to be created in a disabled stated.
@@ -278,6 +288,7 @@ Vport 创建（Vport Creation）：
 
   As mentioned above, vport creation is divided into two parts:
 
+
     - Creation with the kernel and LLDD. This means all transport and
       driver data structures are built up, and device objects created.
       This is equivalent to a driver "attach" on an adapter, which is
@@ -291,6 +302,7 @@ Vport 创建（Vport Creation）：
   vport creation (data structure build up) before returning.  We do not
   hinge vport_create() on the link-side operation mainly because:
 
+
     - The link may be down. It is not a failure if it is. It simply
       means the vport is in an inoperable state until the link comes up.
       This is consistent with the link bouncing post vport creation.
@@ -301,12 +313,15 @@ Vport 创建（Vport Creation）：
 
   .. Note::
 
+
       special error codes have been defined to delineate infrastructure
       failure cases for quicker resolution.
 
   The expected behavior for the LLDD's vport_create() function is:
 
+
     - Validate Infrastructure:
+
 
         - If the driver or adapter cannot support another vport, whether
             due to improper firmware, (a lie about) max_npiv, or a lack of
@@ -320,6 +335,7 @@ Vport 创建（Vport Creation）：
         of memory conditions, return the respective negative Exxx error code.
     - If the role is FCP Initiator, the LLDD is to :
 
+
         - Call scsi_host_alloc() to allocate a scsi_host for the vport.
         - Call scsi_add_host(new_shost, &vport->dev) to start the scsi_host
           and bind it as a child of the vport device.
@@ -329,6 +345,7 @@ Vport 创建（Vport Creation）：
         link state - and return success (zero).
 
   LLDD Implementers Notes:
+
 
   - It is suggested that there be a different fc_function_templates for
     the physical port and the virtual port.  The physical port's template
@@ -350,6 +367,7 @@ Vport 禁用/启用（Vport Disable/Enable）：
       int vport_disable(struct fc_vport *vport, bool disable)
 
   where:
+
 
       =======   =======================================
       vport     Is vport to be enabled or disabled
@@ -383,6 +401,7 @@ Vport 删除（Vport Deletion）：
       int vport_delete(struct fc_vport *vport)
 
   where:
+
 
       vport:    Is vport to delete
 
@@ -461,6 +480,7 @@ The following functions are supplied by the FC-transport for use by LLDs.
 
 
 The following people have contributed to this document:
+
 
 
 

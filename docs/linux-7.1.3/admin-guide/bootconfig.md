@@ -1,3 +1,5 @@
+# bootconfig
+
 ﻿
 
 ## Boot Configuration
@@ -192,7 +194,7 @@ Linux 内核会解码内存中 initrd 镜像的最后一部分以获取引导配
 ```
 然后在正常的内核命令行上添加 "bootconfig"，以告知内核initrd 文件末尾查找引导配置。或者，在编译内核时选中 `CONFIG_BOOT_CONFIG_FORCE` Kconfig 选项
 
-### Embedding a Boot Config into Kernel
+## Embedding a Boot Config into Kernel
 
 
 如果无法使用 initrd，你也可以通过 Kconfig 选项将引导配置文件内嵌到内核中。在这种情况下，你需要重新编译内

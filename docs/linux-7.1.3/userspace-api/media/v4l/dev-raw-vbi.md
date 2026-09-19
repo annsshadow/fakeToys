@@ -1,7 +1,9 @@
+# dev-raw-vbi
+
 ﻿
 
 
-######## Raw VBI 数据接口
+## Raw VBI 数据接口
 
 
 VBI Vertical Blanking Interval（场消隐间隔）的缩写，是模拟视频信号行序列中的一个间隙。在 VBI 期间不传输图像信息，为阴极射线管电视的电子束返回屏幕顶部留出一些时间。使用示波器，你会在这里发现垂直同步脉冲以及 ASK 调制 [#f1]_ 到视频信号上的短数据包。这些是 Teletext Closed Caption 等服务的传输

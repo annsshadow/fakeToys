@@ -4,6 +4,7 @@
       <h1>系统设置</h1>
       <p class="subtitle">系统参数配置与管理</p>
     </div>
+    <div class="backend-off">ℹ️ 系统参数读/写后端暂未启用（返回 501，配置表已具备、读写端点契约预留），保存操作暂不生效，页面为功能预览态</div>
 
     <!-- 侧边导航 -->
     <div class="settings-layout">
@@ -69,9 +70,8 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
-import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const activeSection = ref('basic')
 
@@ -100,19 +100,20 @@ const toggles = ref([
   { key: 'twoFactor', label: '双重认证', on: false },
 ])
 
-const { data } = useQuery({
-  queryKey: ['settings'],
-  queryFn: () => api.get('/jaxrs/systemconfig/list').then((r: any) => r.data ?? {}),
-  staleTime: 300_000,
-})
-if (data.value) Object.assign(cfg.value, data.value)
-
-function saveCfg(_section: string) {}
-function saveToggles() {}
+// 系统参数读/写在 oa4rust 后端为 fail-loud 的 501 契约（u2_capability_unavailable，
+// 被 file_assemble_control 契约测试钉死），配置写入不可用。保存按钮给出明确提示，
+// 而不是静默空操作；表单项仍可作为前端预览态调整。
+function saveCfg(_section: string) {
+  toast.warning('系统参数保存暂未启用（后端 501），当前修改仅本地预览')
+}
+function saveToggles() {
+  toast.warning('系统参数保存暂未启用（后端 501），当前修改仅本地预览')
+}
 </script>
 
 <style scoped>
 .settings-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.backend-off{margin:0 0 16px;padding:10px 16px;border-radius:var(--radius-md);border:1px dashed var(--border-subtle);color:var(--text-muted);font-size:12px}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0}

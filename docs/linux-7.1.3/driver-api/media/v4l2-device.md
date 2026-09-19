@@ -1,5 +1,7 @@
+# v4l2-device
+
 ﻿
-### V4L2 设备实例
+## V4L2 设备实例
 
 
 每个设备实例由一struct v4l2_device 表示。非常简单的设备可以直接分配这个结构体，
@@ -77,4 +79,4 @@ V4L2 设备通过调用以下函数注销
 	(`v4l2_dev <v4l2_device>`)銆。
 由于初始引用计数1，你还需要在 `disconnect()` 回调（对USB 设备）或 `remove()`
 回调（例如对PCI 设备）中调用 `v4l2_device_put`，否则引用计数永远不会归零
-##### v4l2_device 函数与数据结
+### v4l2_device 函数与数据结

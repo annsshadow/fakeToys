@@ -1,6 +1,8 @@
+# power_allocator
+
 ﻿## power allocator 璋冭妭鍣ㄥ彲璋冨弬鏁。
 
-### 触发点（Trip points
+## 触发点（Trip points
 
 该调节器在具有以下两个被动触发点时工作最佳：
 

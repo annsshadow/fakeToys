@@ -1,3 +1,5 @@
+# cdrom
+
 ﻿## CDROM ioctl 调用摘要
 
 
@@ -480,6 +482,7 @@ CDROMREADRAW
 
 		- MSF values are converted to LBA values via this formula::
 
+
 		    lba = (((m * CD_SECS) + s) * CD_FRAMES + f) - CD_MSF_OFFSET;
 
 
@@ -610,6 +613,7 @@ CDROM_GET_MCN
 
 	notes:
 		- Source code comments state::
+
 
 		    The following function is implemented, although very few
 		    audio discs give Universal Product Code information, which
@@ -790,6 +794,7 @@ CDROM_SET_OPTIONS
 	inputs:
 		New values for drive options.  The logical 'or' of:
 
+
 	    ==============      ==================================
 	    CDO_AUTO_CLOSE	close tray on first open(2)
 	    CDO_AUTO_EJECT	open tray on last release
@@ -913,6 +918,7 @@ CDROM_DRIVE_STATUS
 
 	  from <linux/cdrom.h>:
 
+
 	    =================== ==========================
 	    CDS_NO_INFO		Information not available.
 	    CDS_NO_DISC
@@ -949,6 +955,7 @@ CDROM_DISC_STATUS
 
 	  from <linux/cdrom.h>:
 
+
 	    - CDS_NO_INFO
 	    - CDS_AUDIO
 	    - CDS_MIXED
@@ -961,6 +968,7 @@ CDROM_DISC_STATUS
 
 	notes:
 	    - Source code comments state::
+
 
 
 		Ok, this is where problems start.  The current interface for
@@ -1130,6 +1138,7 @@ DVD_READ_STRUCT			读取结构
 	inputs:
 		dvd_struct structure, containing:
 
+
 	    =================== ==========================================
 	    type		specifies the information desired, one of
 				DVD_STRUCT_PHYSICAL, DVD_STRUCT_COPYRIGHT,
@@ -1142,6 +1151,7 @@ DVD_READ_STRUCT			读取结构
 
 	outputs:
 		dvd_struct structure, containing:
+
 
 	    =================== ================================
 	    physical		for type == DVD_STRUCT_PHYSICAL

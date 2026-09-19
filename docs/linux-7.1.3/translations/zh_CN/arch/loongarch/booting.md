@@ -1,8 +1,11 @@
 
 
+# booting
+
 :Original: Documentation/arch/loongarch/booting.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -19,6 +22,7 @@ LoongArch支持ACPI和FDT启动，需要传递给内核的信息包括memmap、i
 选的ACPI/FDT表等。
 
 内核在 `kernel_entry` 入口处被传递以下参数:
+
 
       - a0 = efi_boot: `efi_boot` 是一个标志，表示这个启动环境是否完全符合UEFI
         的要求。

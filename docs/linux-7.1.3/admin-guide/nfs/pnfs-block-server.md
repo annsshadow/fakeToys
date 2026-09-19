@@ -1,3 +1,5 @@
+# pnfs-block-server
+
 ﻿## pNFS 块布局（block layout）服务器端用户指
 
 Linux NFS 服务器现在支pNFS 块布局扩展。在此情况下，NFS 服务器充pNFS 元数据服务器（MDS），除了处理NFS 导出（export）的所有元数据访问外，它还向客户端分发布局，让客户端直接访问与客户端共享的底层块设备

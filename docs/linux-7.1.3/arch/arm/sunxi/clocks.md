@@ -1,3 +1,5 @@
+# clocks
+
 ﻿## 关于 sunxi 时钟系统的常见问
 
 
@@ -20,6 +22,7 @@
    When you are about to suspend, you switch the CPU Mux to the 32kHz
    oscillator::
 
+
       24Mhz         32kHz
        |              |
       PLL1            |
@@ -29,6 +32,7 @@
            [CPU]
 
     Finally you can gate the main oscillator::
+
 
                     32kHz
                       |

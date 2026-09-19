@@ -1,6 +1,6 @@
 -- 027: create x_ai_model table.
 -- Migration 011 renamed X_AI_MODEL -> x_ai_model, but X_AI_MODEL was never
--- created by any migration, so the rename was a no-op and /jaxrs/ai/core/entity/model/list
+-- created by any migration, so the rename was a no-op and /api/ai/core/entity/model/list
 -- 500'd on a missing table. Create it here to match the ai_model SeaORM entity.
 
 CREATE TABLE IF NOT EXISTS "x_ai_model" (

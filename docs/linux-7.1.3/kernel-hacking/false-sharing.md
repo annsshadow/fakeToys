@@ -1,3 +1,5 @@
+# false-sharing
+
 ﻿
 ## 伪共享（False Sharing
 

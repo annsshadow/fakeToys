@@ -1,12 +1,14 @@
+# bus
+
 ﻿## 总线类型（Bus Types
 
-#### 定义
+## 定义
 
 参见 struct bus_type 的内核文档（kerneldoc）
 int bus_register(struct bus_type * bus);
 
 
-#### 声明
+### 声明
 
 
 内核中的每种总线类型（PCI、USB 等）都应声明一个该类型的静态对象。它们必须初始化 name 字段，并且可```

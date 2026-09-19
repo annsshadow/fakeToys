@@ -1,3 +1,5 @@
+# ultravisor
+
 ﻿
 ## 受保护执行设施（Protected Execution Facility
 
@@ -181,11 +183,11 @@
     #. Ultravisor 安全内存不足，需要换出（page-out）一LRU 页时。此Ultravisor
        会向 Hypervisor 发出 `H_SVM_PAGE_OUT` hypercall。然Hypervisor 将分配一个普       页，并发`UV_PAGE_OUT` ultracall，Ultravisor 则将该安全页的内容加密并移动       普通页中
     #. Hypervisor 访问 SVM 数据时，Hypervisor 请求 Ultravisor 将相应的页传输到一       非安全页，Hypervisor 可以访问该页。不过普通页中的数据将是加密的
-### UV_PAGE_IN
+## UV_PAGE_IN
 
 
     将一页内容从普通内存移动到安全内存
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_PAGE_IN,
@@ -228,11 +230,11 @@
     #. SVM 请求Hypervisor 共享一页时，Hypervisor 分配一页并告知 Ultravisor
     #. SVM 访问已被换出（page-out）的安全页时，Ultravisor 调用 Hypervisor 来定位该
        页。定位到该页后，Hypervisor 使用 UV_PAGE_IN 使该页对 Ultravisor 可用
-### UV_PAGE_INVAL
+## UV_PAGE_INVAL
 
 
     Ultravisor 对一页的映射失效
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_PAGE_INVAL,
@@ -262,11 +264,11 @@
 
     #. 当共享页QEMU 的页表中取消映射（可能是因为它被换出到磁盘）时，Ultravisor 需       知道该页也不应从它这一侧被访问
 
-### UV_WRITE_PATE
+## UV_WRITE_PATE
 
 
     验证并写入给定分区的分区表项（PATE）
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_WRITE_PATE,
@@ -302,12 +304,12 @@
     #. 如果现有分区（VM）的 PATE 值发生变化，该分区的 TLB 缓存会被刷新
     #. Hypervisor 负责分配 LPID。LPID 与其 PATE 项一起注册。Hypervisor 管理普VM        PATE 项，并可以随时更改。Ultravisor 管理 SVM PATE 项，不允Hypervisor 修改
        它们
-### UV_RETURN
+## UV_RETURN
 
 
     在处理完被转发（又称 **reflected**，反射）Hypervisor hypercall 或中断后，将
     控制权从 Hypervisor 交还Ultravisor
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_RETURN)
@@ -331,11 +333,11 @@
     #. Ultravisor 依赖 Hypervisor SVM 提供若干服务，例如处hypercall 与其他异常       处理完异常后，Hypervisor 使用 UV_RETURN 将控制权交还Ultravisor
     #. Hypervisor 必须使用ultracall 将控制权交还SVM
 
-### UV_REGISTER_MEM_SLOT
+## UV_REGISTER_MEM_SLOT
 
 
     以指定属性注册一SVM 地址范围
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_REGISTER_MEM_SLOT,
@@ -371,11 +373,11 @@
        每个内存槽，并向 Ultravisor 注册该槽。Hypervisor 可能会丢弃某些槽，例如用于固       （SLOF）的槽
     #. 当热插拔（hot-plug）新内存时，会注册一个新的内存槽
 
-### UV_UNREGISTER_MEM_SLOT
+## UV_UNREGISTER_MEM_SLOT
 
 
     注销先前使用 UV_REGISTER_MEM_SLOT 注册SVM 地址范围
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_UNREGISTER_MEM_SLOT,
@@ -401,11 +403,11 @@
 
     #. 内存热移除（hot-remove）
 
-### UV_SVM_TERMINATE
+## UV_SVM_TERMINATE
 
 
     终止一SVM 并释放其资源
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_SVM_TERMINATE,
@@ -468,11 +470,11 @@
        Ultravisor 请求能与 Hypervisor 共享的页
     #. SVM 中需要共享页来支virtio Virtual Processor Area（VPA，虚拟处理器区）
 
-### UV_UNSHARE_PAGE
+## UV_UNSHARE_PAGE
 
 
     将共享的 SVM 页恢复到其初始状态
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_UNSHARE_PAGE,
@@ -501,11 +503,11 @@
 
     #. SVM 可能决定取消Hypervisor 共享某个页
 
-### UV_UNSHARE_ALL_PAGES
+## UV_UNSHARE_ALL_PAGES
 
 
     取消 SVM Hypervisor 共享的所有页
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_UNSHARE_ALL_PAGES)
@@ -529,11 +531,11 @@
 
 
     #. 当使`kexec` 引导不同的内核时需要此调用。在 SVM 重置期间也可能需要
-### UV_ESM
+## UV_ESM
 
 
     保护虚拟机（**进入安全模式**）
-#### Syntax
+### Syntax
 
 
 	uint64_t ultracall(const uint64_t UV_ESM,
@@ -601,11 +603,11 @@
 
      #. Ultravisor 使用hypercall 告知 Hypervisor 某个 VM 已启动切换到安全模式的过程
 
-### H_SVM_INIT_DONE
+## H_SVM_INIT_DONE
 
 
     完成保护 SVM 的过程
-#### Syntax
+### Syntax
 
 
 	uint64_t hypercall(const uint64_t H_SVM_INIT_DONE)
@@ -705,11 +707,11 @@
     #. Ultravisor 使用hypercall 换入（page-in）一个被换出的页。这可在 SVM 触碰一       被换出的页时发生
     #. 如果 SVM 想禁止与 Hypervisor 共享页，它可以告Ultravisor 这样做。Ultravisor
        随后将使用此 hypercall 并告Hypervisor 它已释放对该普通页的访问
-### H_SVM_PAGE_OUT
+## H_SVM_PAGE_OUT
 
 
     将页的内容移动到普通内存
-#### Syntax
+### Syntax
 
 
 	uint64_t hypercall(const uint64_t H_SVM_PAGE_OUT,

@@ -1,3 +1,5 @@
+# _w2_test_copy
+
 ﻿# Linux 内核项目概览
 
 > 由源码树 `D:\WORKSPACE\linux-7.1.3` 生成
@@ -10,73 +12,73 @@
 
 特定于体系结构的代码（arm64、x86、riscv、m68k、powerpc 等）以及引导基础设施
 
-- `alpha/` 鈥?# alpha/Makefile #
-- `arc/` 鈥?SPDX-License-Identifier: GPL-2.0-only # # Copyright (C) 2004, 2007-2010, 2011-2012 Synopsys, Inc. (www.synopsys.com)
-- `arm/` 鈥?# arch/arm/Makefile #
-- `arm64/` 鈥?# arch/arm64/Makefile #
-- `csky/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `alpha/` # alpha/Makefile #
+- `arc/` SPDX-License-Identifier: GPL-2.0-only # # Copyright (C) 2004, 2007-2010, 2011-2012 Synopsys, Inc. (www.synopsys.com)
+- `arm/` # arch/arm/Makefile #
+- `arm64/` # arch/arm64/Makefile #
+- `csky/` SPDX-License-Identifier: GPL-2.0-only
 - `hexagon/` SPDX-License-Identifier: GPL-2.0#  用于Hexagon arch Makefile# Do not use GP-relative jumps
-- `loongarch/` 鈥?SPDX-License-Identifier: GPL-2.0 # # Author: Huacai Chen <chenhuacai@loongson.cn>
-- `m68k/` 鈥?# m68k/Makefile #
+- `loongarch/` SPDX-License-Identifier: GPL-2.0 # # Author: Huacai Chen <chenhuacai@loongson.cn>
+- `m68k/` # m68k/Makefile #
 - `microblaze/` SPDX-License-Identifier: GPL-2.0# 我们正在为哪CPU 版本构建，并拆解# 形式major.minor.rev
-- `mips/` 鈥?# This file is subject to the terms and conditions of the GNU General Public # License.  See the file "COPYING" in the main directory of this archive
-- `nios2/` 鈥?# This file is subject to the terms and conditions of the GNU General Public # License.  See the file "COPYING" in the main directory of this archive
-- `openrisc/` 鈥?BK Id: %F% %I% %G% %U% %#% # # This file is included by the global makefile so that you can add your own
-- `parisc/` 鈥?# parisc/Makefile #
+- `mips/` # This file is subject to the terms and conditions of the GNU General Public # License.  See the file "COPYING" in the main directory of this archive
+- `nios2/` # This file is subject to the terms and conditions of the GNU General Public # License.  See the file "COPYING" in the main directory of this archive
+- `openrisc/` BK Id: %F% %I% %G% %U% %#% # # This file is included by the global makefile so that you can add your own
+- `parisc/` # parisc/Makefile #
 - `powerpc/` 本文件由全局 makefile 包含，以便你可以添加自己# 体系结构特定标志和依赖项
 - `riscv/` 本文件由全局 makefile 包含，以便你可以添加自己# 体系结构特定标志和依赖项
-- `s390/` 鈥?SPDX-License-Identifier: GPL-2.0# # s390/Makefile
-- `sh/` 鈥?# arch/sh/Makefile #
-- `sparc/` 鈥?SPDX-License-Identifier: GPL-2.0# # sparc/Makefile
+- `s390/` SPDX-License-Identifier: GPL-2.0# # s390/Makefile
+- `sh/` # arch/sh/Makefile #
+- `sparc/` SPDX-License-Identifier: GPL-2.0# # sparc/Makefile
 - `um/` # 本文件由全局 makefile 包含，以便你可以添加自己# 体系结构特定标志和依赖项
 - `x86/` SPDX-License-Identifier: GPL-2.0# 用于 i386 x86_64 的统一 Makefile # 根据实际架构选择 defconfig
-- `xtensa/` 鈥?# This file is subject to the terms and conditions of the GNU General Public # License.  See the file "COPYING" in the main directory of this archive
+- `xtensa/` # This file is subject to the terms and conditions of the GNU General Public # License.  See the file "COPYING" in the main directory of this archive
 
 ## crypto/
 
 加密 API 与算法实现
 
 - `asymmetric_keys/` SPDX-License-Identifier: GPL-2.0# # 用于非对称加密密Makefile
-- `async_tx/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `async_tx/` SPDX-License-Identifier: GPL-2.0
 - `krb5/` SPDX-License-Identifier: GPL-2.0# # 用于非对称加密密Makefile
 
 ## drivers/
 
 设备驱动（网络、块设备、字符设备、声卡、GPU、USB、PCI、infiniband 等）以及驱动核心
 
-- `accel/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `accessibility/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `accel/` SPDX-License-Identifier: GPL-2.0-only
+- `accessibility/` SPDX-License-Identifier: GPL-2.0-only
 - `acpi/` SPDX-License-Identifier: GPL-2.0# # 用于Linux ACPI 解释Makefile
-- `amba/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `android/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `amba/` SPDX-License-Identifier: GPL-2.0-only
+- `android/` SPDX-License-Identifier: GPL-2.0-only
 - `ata/` SPDX-License-Identifier: GPL-2.0# SFF 接口
-- `atm/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `atm/` SPDX-License-Identifier: GPL-2.0
 - `auxdisplay/` SPDX-License-Identifier: GPL-2.0# # 用于内核辅助显示设备驱动程序 Makefile.
 - `base/` SPDX-License-Identifier: GPL-2.0# 用于Linux 设备Makefile
 - `bcma/` Broadcom 推出了一种新的总线来替代较旧的 SSB。它基于 AMBA，但从编程角度看，我们并没有使用任何 AMBA 特定的内容。标准的 AMBA 驱动是平台特定的，具有硬编码地址，并使用诸如 CID PID 之类AMBA 标准字段。在 Broadcom 的网卡中，每个设备由以下部分组成) Broadcom 特定AMBA 设备。它被放AMBA 总线上，但不能作为标AMBA 设备处理。读取其 CID PID 可能导致机器死锁) AMBA s...
 - `block/` SPDX-License-Identifier: GPL-2.0# # 用于内核块设备驱动程Makefile.
 - `bluetooth/` SPDX-License-Identifier: GPL-2.0# # 用于Linux Bluetooth HCI 设备驱动程序 Makefile.
 - `bus/` SPDX-License-Identifier: GPL-2.0# # 用于总线驱动程序 Makefile.
-- `cache/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `cdrom/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `cache/` SPDX-License-Identifier: GPL-2.0
+- `cdrom/` SPDX-License-Identifier: GPL-2.0
 - `cdx/` SPDX-License-Identifier: GPL-2.0# # 用于CDX Makefile
 - `char/` SPDX-License-Identifier: GPL-2.0# # 用于内核字符设备驱动程序 Makefile.
 - `clk/` SPDX-License-Identifier: GPL-2.0# 通用时钟类型
-- `clocksource/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `comedi/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `connector/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `clocksource/` SPDX-License-Identifier: GPL-2.0
+- `comedi/` SPDX-License-Identifier: GPL-2.0
+- `connector/` SPDX-License-Identifier: GPL-2.0-only
 - `counter/` SPDX-License-Identifier: GPL-2.0-only# # 用于计数器设Makefile
 - `cpufreq/` SPDX-License-Identifier: GPL-2.0# CPUfreq 核心 # CPUfreq 统计
 - `cpuidle/` SPDX-License-Identifier: GPL-2.0# # 用于cpuidle Makefile.
-- `crypto/` 鈥?SPDX-License-Identifier: GPL-2.0# __init ordering requires atmel-i2c being before atmel-ecc and atmel-sha204a.
-- `cxl/` 鈥?SPDX-License-Identifier: GPL-2.0# Order is important here for the built-in case: # - 'core' first for fundamental init
-- `dax/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `dca/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `crypto/` SPDX-License-Identifier: GPL-2.0# __init ordering requires atmel-i2c being before atmel-ecc and atmel-sha204a.
+- `cxl/` SPDX-License-Identifier: GPL-2.0# Order is important here for the built-in case: # - 'core' first for fundamental init
+- `dax/` SPDX-License-Identifier: GPL-2.0
+- `dca/` SPDX-License-Identifier: GPL-2.0-only
 - `devfreq/` SPDX-License-Identifier: GPL-2.0# DEVFREQ 驱动 # DEVFREQ 事件驱动
-- `dibs/` 鈥?SPDX-License-Identifier: GPL-2.0# # DIBS class module
+- `dibs/` SPDX-License-Identifier: GPL-2.0# # DIBS class module
 - `dio/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux 内核 Makefile.
-- `dma/` 鈥?SPDX-License-Identifier: GPL-2.0#dmaengine 璋冭瘯鏍囧織 #core
-- `dma-buf/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `dma/` SPDX-License-Identifier: GPL-2.0#dmaengine 璋冭瘯鏍囧織 #core
+- `dma-buf/` SPDX-License-Identifier: GPL-2.0-only
 - `dpll/` SPDX-License-Identifier: GPL-2.0# # 用于DPLL drivers Makefile.
 - `edac/` # 用于 Linux 内核 EDAC 驱动程序Makefile
 - `eisa/` SPDX-License-Identifier: GPL-2.0# 用于Linux 设备Makefile# virtual_root.o should be the last EISA root device to initialize,
@@ -84,34 +86,34 @@
 - `firewire/` SPDX-License-Identifier: GPL-2.0# # 用于Linux IEEE 1394 实现 Makefile
 - `firmware/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 内核 Makefile.
 - `fpga/` SPDX-License-Identifier: GPL-2.0# # 用于fpga 框架fpga 管理器驱动程Makefile.
-- `fsi/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `fwctl/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `fsi/` SPDX-License-Identifier: GPL-2.0-only
+- `fwctl/` SPDX-License-Identifier: GPL-2.0
 - `gnss/` SPDX-License-Identifier: GPL-2.0# # 用于GNSS 子系Makefile.
 - `gpib/`
 - `gpio/` SPDX-License-Identifier: GPL-2.0# 通用 gpio 支持：平台驱动、专用扩展器芯片# 设备驱动。通常保持列表按字母排
-- `gpu/` 鈥?SPDX-License-Identifier: GPL-2.0-only# drm/tegra depends on host1x, so if both drivers are built-in care must be # taken to initialize them in the correct order. Link order is the only way
+- `gpu/` SPDX-License-Identifier: GPL-2.0-only# drm/tegra depends on host1x, so if both drivers are built-in care must be # taken to initialize them in the correct order. Link order is the only way
 - `greybus/` SPDX-License-Identifier: GPL-2.0# Greybus 核心 # 跟踪事件所需
 - `hid/` SPDX-License-Identifier: GPL-2.0# # 用于HID 驱动 Makefile
 - `hsi/` SPDX-License-Identifier: GPL-2.0# # 用于HSI Makefile
 - `hte/`
-- `hv/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `hv/` SPDX-License-Identifier: GPL-2.0
 - `hwmon/` SPDX-License-Identifier: GPL-2.0# # 用于sensor chip drivers Makefile.
-- `hwspinlock/` 鈥?SPDX-License-Identifier: GPL-2.0# # Generic Hardware Spinlock framework
+- `hwspinlock/` SPDX-License-Identifier: GPL-2.0# # Generic Hardware Spinlock framework
 - `hwtracing/`
 - `i2c/` SPDX-License-Identifier: GPL-2.0# # 用于i2c 核心 Makefile.
-- `i3c/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `idle/` 鈥?SPDX-License-Identifier: GPL-2.0-only# Branch profiling isn't noinstr-safe
+- `i3c/` SPDX-License-Identifier: GPL-2.0
+- `idle/` SPDX-License-Identifier: GPL-2.0-only# Branch profiling isn't noinstr-safe
 - `iio/` SPDX-License-Identifier: GPL-2.0# # 用于工业 I/O 核心 Makefile.
-- `infiniband/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `infiniband/` SPDX-License-Identifier: GPL-2.0-only
 - `input/` SPDX-License-Identifier: GPL-2.0# # 用于输入核心驱动 Makefile.
-- `interconnect/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `iommu/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `interconnect/` SPDX-License-Identifier: GPL-2.0
+- `iommu/` SPDX-License-Identifier: GPL-2.0
 - `ipack/` SPDX-License-Identifier: GPL-2.0-only# # 用于IPACK 桥接设备驱动程序 Makefile.
-- `irqchip/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `irqchip/` SPDX-License-Identifier: GPL-2.0
 - `leds/` SPDX-License-Identifier: GPL-2.0# LED 核心 # LED 平台驱动（保持排序，M-| sort
 - `macintosh/` SPDX-License-Identifier: GPL-2.0# # 用于Macintosh 特定设备驱动程序 Makefile.
-- `mailbox/` 鈥?SPDX-License-Identifier: GPL-2.0# 閫氱敤 MAILBOX API
-- `mcb/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `mailbox/` SPDX-License-Identifier: GPL-2.0# 閫氱敤 MAILBOX API
+- `mcb/` SPDX-License-Identifier: GPL-2.0
 - `md/` SPDX-License-Identifier: GPL-2.0# # 用于内核软件 RAID LVM 驱动程序 Makefile.
 - `media/` SPDX-License-Identifier: GPL-2.0# # 用于内核多媒体设备驱动程Makefile.
 - `memory/` SPDX-License-Identifier: GPL-2.0# # 用于内存设备 Makefile
@@ -120,48 +122,48 @@
 - `mfd/` SPDX-License-Identifier: GPL-2.0# # 用于多功能杂项设Makefile
 - `misc/` SPDX-License-Identifier: GPL-2.0# # 用于确实无处安放的杂项设Makefile.
 - `mmc/` SPDX-License-Identifier: GPL-2.0-only# # 用于内核 mmc 设备驱动程序 Makefile.
-- `most/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `most/` SPDX-License-Identifier: GPL-2.0
 - `mtd/` SPDX-License-Identifier: GPL-2.0# # 用于存储器技术设备驱动程Makefile.
 - `mux/` SPDX-License-Identifier: GPL-2.0# # 用于多路复用器设Makefile.
 - `net/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 网络设备驱动程序 Makefile.
 - `nfc/` SPDX-License-Identifier: GPL-2.0# # 用于nfc 设备 Makefile
-- `ntb/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `ntb/` SPDX-License-Identifier: GPL-2.0-only
 - `nubus/` SPDX-License-Identifier: GPL-2.0-only# # 用于nubus 特定驱动程序 Makefile.
-- `nvdimm/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `nvme/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `nvdimm/` SPDX-License-Identifier: GPL-2.0
+- `nvme/` SPDX-License-Identifier: GPL-2.0-only
 - `nvmem/` SPDX-License-Identifier: GPL-2.0# # 用于nvmem drivers Makefile.
-- `of/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `opp/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `of/` SPDX-License-Identifier: GPL-2.0
+- `opp/` SPDX-License-Identifier: GPL-2.0-only
 - `parisc/` /* ** HP VISUALIZE 工作PCI 总线缺陷 ** ** “HP 发现了一个潜在的系统缺陷，可能影** 五款 HP VISUALIZE 工作站机型在配备 ** 第三方或客户自行安装PCI I/O 扩展卡时的行为** 该缺陷仅限于 HP C180、C160、C160L、B160L ** B132L VISUALIZE 工作站，且只会在 ** 通过 PCI 总线上的 PCI I/O 扩展卡传输数据时出现** HP 提供的显卡如..
 - `parport/` SPDX-License-Identifier: GPL-2.0# # 用于内核并行端口设备驱动程序 Makefile.
 - `pci/` SPDX-License-Identifier: GPL-2.0# # 用于PCI 总线特定驱动程序 Makefile.
 - `pcmcia/` SPDX-License-Identifier: GPL-2.0# # 用于内核 pcmcia 子系统（David Hinds 维护Makefile
-- `peci/` 鈥?SPDX-License-Identifier: GPL-2.0-only# Core functionality # Hardware specific bus drivers
-- `perf/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `peci/` SPDX-License-Identifier: GPL-2.0-only# Core functionality # Hardware specific bus drivers
+- `perf/` SPDX-License-Identifier: GPL-2.0
 - `phy/` SPDX-License-Identifier: GPL-2.0# # 用于phy 驱动 Makefile.
 - `pinctrl/` SPDX-License-Identifier: GPL-2.0# 通用 pinmux 支持
 - `platform/` SPDX-License-Identifier: GPL-2.0# # 用于linux/drivers/platform Makefile
-- `pmdomain/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `pmdomain/` SPDX-License-Identifier: GPL-2.0-only
 - `pnp/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 即插即用支持 Makefile.
-- `power/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `powercap/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `power/` SPDX-License-Identifier: GPL-2.0-only
+- `powercap/` SPDX-License-Identifier: GPL-2.0-only
 - `pps/` SPDX-License-Identifier: GPL-2.0-only# # 用于PPS 核心 Makefile.
-- `ps3/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `ps3/` SPDX-License-Identifier: GPL-2.0-only
 - `ptp/` SPDX-License-Identifier: GPL-2.0# # 用于PTP 1588 时钟支持 Makefile.
-- `pwm/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `pwm/` SPDX-License-Identifier: GPL-2.0
 - `rapidio/` SPDX-License-Identifier: GPL-2.0# # 用于RapidIO interconnect services Makefile
-- `ras/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `ras/` SPDX-License-Identifier: GPL-2.0-only
 - `regulator/` SPDX-License-Identifier: GPL-2.0# # 用于调节器驱动程Makefile.
-- `remoteproc/` 鈥?SPDX-License-Identifier: GPL-2.0# # Generic framework for controlling remote processors
+- `remoteproc/` SPDX-License-Identifier: GPL-2.0# # Generic framework for controlling remote processors
 - `resctrl/`
-- `reset/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `rpmsg/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `reset/` SPDX-License-Identifier: GPL-2.0
+- `rpmsg/` SPDX-License-Identifier: GPL-2.0
 - `rtc/` SPDX-License-Identifier: GPL-2.0# # 用于RTC 驱动程序 Makefile.
 - `s390/` SPDX-License-Identifier: GPL-2.0# # 用于S/390 特定设备驱动程序 Makefile
 - `sbus/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux 内核 Makefile.
 - `scsi/` SPDX-License-Identifier: GPL-2.0# # 用于linux/drivers/scsi Makefile
 - `sh/` SPDX-License-Identifier: GPL-2.0# # 用于SuperH 特定驱动程序 Makefile.
-- `siox/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `siox/` SPDX-License-Identifier: GPL-2.0-only
 - `slimbus/` SPDX-License-Identifier: GPL-2.0# # 用于内核 SLIMbus 框架 Makefile.
 - `soc/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 内核 SOC 特定设备驱动程序 Makefile.
 - `soundwire/` SPDX-License-Identifier: GPL-2.0-only# # 用于soundwire 核心 Makefile
@@ -169,31 +171,31 @@
 - `spmi/` SPDX-License-Identifier: GPL-2.0-only# # 用于内核 SPMI 框架 Makefile.
 - `ssb/` SPDX-License-Identifier: GPL-2.0# 核心 # 主机支持
 - `staging/` SPDX-License-Identifier: GPL-2.0# 用于staging directory Makefile
-- `target/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `target/` SPDX-License-Identifier: GPL-2.0
 - `tc/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux 内核 Makefile.
-- `tee/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `tee/` SPDX-License-Identifier: GPL-2.0
 - `thermal/` SPDX-License-Identifier: GPL-2.0# # 用于sensor chip drivers Makefile.
-- `thunderbolt/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `tty/` 鈥?SPDX-License-Identifier: GPL-2.0# tty 椹卞姩
-- `ufs/` 鈥?SPDX-License-Identifier: GPL-2.0# The link order is important here. ufshcd-core must initialize # before vendor drivers.
-- `uio/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `thunderbolt/` SPDX-License-Identifier: GPL-2.0-only
+- `tty/` SPDX-License-Identifier: GPL-2.0# tty 椹卞姩
+- `ufs/` SPDX-License-Identifier: GPL-2.0# The link order is important here. ufshcd-core must initialize # before vendor drivers.
+- `uio/` SPDX-License-Identifier: GPL-2.0
 - `usb/` SPDX-License-Identifier: GPL-2.0# # 用于内核 USB 设备驱动程序 Makefile.
-- `vdpa/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `vfio/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `vhost/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `video/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `vdpa/` SPDX-License-Identifier: GPL-2.0
+- `vfio/` SPDX-License-Identifier: GPL-2.0
+- `vhost/` SPDX-License-Identifier: GPL-2.0
+- `video/` SPDX-License-Identifier: GPL-2.0
 - `virt/` SPDX-License-Identifier: GPL-2.0-only# # 用于支持虚拟化的驱动程序 Makefile
-- `virtio/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `virtio/` SPDX-License-Identifier: GPL-2.0
 - `w1/` SPDX-License-Identifier: GPL-2.0-only# # 用于Dallas 1-wire 总线 Makefile.
 - `watchdog/` SPDX-License-Identifier: GPL-2.0# # 用于WatchDog 设备驱动程序 Makefile.
-- `xen/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `xen/` SPDX-License-Identifier: GPL-2.0
 - `zorro/` SPDX-License-Identifier: GPL-2.0# # 用于Zorro 总线特定驱动程序 Makefile.
 
 ## fs/
 
 文件系统（ext4、btrfs、xfs、fuse、overlayfs、nfs、jffs2、cramfs 等）
 
-- `9p/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `9p/` SPDX-License-Identifier: GPL-2.0
 - `adfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux adfs 文件系统例程 Makefile.
 - `affs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux affs 文件系统例程 Makefile.
 - `afs/` SPDX-License-Identifier: GPL-2.0# # 用于Red Hat Linux AFS client Makefile.
@@ -206,29 +208,29 @@
 - `coda/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux Coda 文件系统例程 Makefile.
 - `configfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于configfs 虚拟文件系统 Makefile
 - `cramfs/` 文件系统布局说明 --------------------------  这些说明描述mkcramfs 生成的内容。内核的要求稍微宽松一些，例如它不关心 <file_data> 项是否被交换了位置（但它确实要求给定目录中的目录项（inode）是连续的，因为 readdir 会用到这一点）。目前所有数据都采用主机字节序格式；mkcramfs 和内核都不会进行字节交换。（详见下文“Block Size小节。）
-- `crypto/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `debugfs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `crypto/` SPDX-License-Identifier: GPL-2.0-only
+- `debugfs/` SPDX-License-Identifier: GPL-2.0-only
 - `devpts/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux /dev/pts 虚拟文件系统 Makefile.
-- `dlm/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `dlm/` SPDX-License-Identifier: GPL-2.0
 - `ecryptfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux eCryptfs Makefile
 - `efivarfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于efivarfs 文件系统 Makefile
 - `efs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux efs 文件系统例程 Makefile.
-- `erofs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `erofs/` SPDX-License-Identifier: GPL-2.0-only
 - `exfat/` SPDX-License-Identifier: GPL-2.0-or-later# # 用于linux exFAT filesystem support Makefile.
 - `exportfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于文件系统导出支持例程 Makefile.
 - `ext2/` SPDX-License-Identifier: GPL-2.0# # 用于Linux ext2 文件系统例程 Makefile.
 - `ext4/` SPDX-License-Identifier: GPL-2.0# # 用于Linux ext4 文件系统例程 Makefile.
-- `f2fs/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `f2fs/` SPDX-License-Identifier: GPL-2.0
 - `fat/` SPDX-License-Identifier: GPL-2.0# # 用于Linux fat 文件系统支持 Makefile.
-- `freevxfs/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # VxFS Makefile
+- `freevxfs/` SPDX-License-Identifier: GPL-2.0-only# # VxFS Makefile
 - `fuse/` SPDX-License-Identifier: GPL-2.0-only# # 用于FUSE filesystem Makefile.
-- `gfs2/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `gfs2/` SPDX-License-Identifier: GPL-2.0
 - `hfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux hfs 文件系统例程 Makefile.
 - `hfsplus/` SPDX-License-Identifier: GPL-2.0# ## 用于linux hfsplus filesystem routines Makefile.
-- `hostfs/` 鈥?# Copyright (C) 2000 Jeff Dike (jdike@karaya.com) # Licensed under the GPL
+- `hostfs/` # Copyright (C) 2000 Jeff Dike (jdike@karaya.com) # Licensed under the GPL
 - `hpfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux hpfs 文件系统例程 Makefile.
 - `hugetlbfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux ramfs 例程 Makefile.
-- `iomap/` 鈥?SPDX-License-Identifier: GPL-2.0-or-later # # Copyright (c) 2019 Oracle.
+- `iomap/` SPDX-License-Identifier: GPL-2.0-or-later # # Copyright (c) 2019 Oracle.
 - `isofs/` SPDX-License-Identifier: GPL-2.0# # 用于Linux isofs 文件系统例程 Makefile.
 - `jbd2/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux 日志例程 Makefile.
 - `jffs2/` JFFS2 加锁文档 	---------------------------  本文档试图描JFFS2 现有的加锁规则。它并不保证始终完全最新，但应当相当接近  	alloc_sem
@@ -236,17 +238,17 @@
 - `kernfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于kernfs 伪文件系Makefile
 - `lockd/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 锁管理器相关内容 Makefile
 - `minix/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux minix 文件系统例程 Makefile.
-- `netfs/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `netfs/` SPDX-License-Identifier: GPL-2.0
 - `nfs/` SPDX-License-Identifier: GPL-2.0# # 用于Linux nfs 文件系统例程 Makefile.
 - `nfs_common/` SPDX-License-Identifier: GPL-2.0-only# # 用于客户端与服务器共享的 Linux 文件系统例程 Makefile.
 - `nfsd/` SPDX-License-Identifier: GPL-2.0# # 用于Linux nfs 服务Makefile
-- `nilfs2/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `nilfs2/` SPDX-License-Identifier: GPL-2.0
 - `nls/` SPDX-License-Identifier: GPL-2.0# # 用于本地语言支持 Makefile
-- `notify/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `ntfs/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `notify/` SPDX-License-Identifier: GPL-2.0
+- `ntfs/` SPDX-License-Identifier: GPL-2.0
 - `ntfs3/` SPDX-License-Identifier: GPL-2.0# # 用于ntfs3 文件系统支持 Makefile.
-- `ocfs2/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `omfs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `ocfs2/` SPDX-License-Identifier: GPL-2.0
+- `omfs/` SPDX-License-Identifier: GPL-2.0-only
 - `openpromfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux Sun Openprom 文件系统例程 Makefile.
 - `orangefs/` SPDX-License-Identifier: GPL-2.0# # 用于ORANGEFS 文件系统 Makefile.
 - `overlayfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于overlay 文件系统 Makefile.
@@ -254,23 +256,23 @@
 - `pstore/` SPDX-License-Identifier: GPL-2.0# # 用于Linux pstorefs 例程 Makefile.
 - `qnx4/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux qnx4 文件系统例程 Makefile.
 - `qnx6/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux qnx4 文件系统例程 Makefile.
-- `quota/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `quota/` SPDX-License-Identifier: GPL-2.0
 - `ramfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux ramfs 例程 Makefile.
-- `resctrl/` 鈥?SPDX-License-Identifier: GPL-2.0# To allow define_trace.h's recursive include:
+- `resctrl/` SPDX-License-Identifier: GPL-2.0# To allow define_trace.h's recursive include:
 - `romfs/` SPDX-License-Identifier: GPL-2.0# # 用于Linux RomFS 文件系统例程 Makefile.
-- `smb/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `smb/` SPDX-License-Identifier: GPL-2.0
 - `squashfs/` SPDX-License-Identifier: GPL-2.0# # 用于Linux squashfs 例程 Makefile.
 - `sysfs/` SPDX-License-Identifier: GPL-2.0-only# # 用于sysfs 虚拟文件系统 Makefile
 - `tests/`
-- `tracefs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `ubifs/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `tracefs/` SPDX-License-Identifier: GPL-2.0-only
+- `ubifs/` SPDX-License-Identifier: GPL-2.0
 - `udf/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux udf 文件系统例程 Makefile.
 - `ufs/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux ufs 文件系统例程 Makefile.
 - `unicode/` 本目录中utf8data.c 文件Unicode 字符数据库生成，对应 Unicode 标准12.1.0 版本。完整的文件集可在此处找到：    http://www.unicode.org/Public/12.1.0/ucd/  各个源文件链接：    https://www.unicode.org/Public/12.1.0/ucd/CaseFolding.txt
-- `vboxsf/` 鈥?SPDX-License-Identifier: MIT
-- `verity/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `xfs/` 鈥?SPDX-License-Identifier: GPL-2.0 # # Copyright (c) 2000-2005 Silicon Graphics, Inc.
-- `zonefs/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `vboxsf/` SPDX-License-Identifier: MIT
+- `verity/` SPDX-License-Identifier: GPL-2.0
+- `xfs/` SPDX-License-Identifier: GPL-2.0 # # Copyright (c) 2000-2005 Silicon Graphics, Inc.
+- `zonefs/` SPDX-License-Identifier: GPL-2.0
 
 ## include/
 
@@ -281,7 +283,7 @@
 - `clocksource/`
 - `crypto/` 加密 API 与算法实现
 - `cxl/`
-- `drm/` 鈥?SPDX-License-Identifier: GPL-2.0# Ensure drm headers are self-contained and pass kernel-doc # Include the header twice to detect missing include guard.
+- `drm/` SPDX-License-Identifier: GPL-2.0# Ensure drm headers are self-contained and pass kernel-doc # Include the header twice to detect missing include guard.
 - `dt-bindings/`
 - `hyperv/`
 - `keys/`
@@ -322,62 +324,62 @@ io_uring 异步 I/O 子系统
 
 核心内核子系统（调度器、printk、irq、时间、加锁、RCU、BPF 等）
 
-- `bpf/` 鈥?SPDX-License-Identifier: GPL-2.0# ___bpf_prog_run() needs GCSE disabled on x86; see 3193c0836f203 for details
-- `cgroup/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `bpf/` SPDX-License-Identifier: GPL-2.0# ___bpf_prog_run() needs GCSE disabled on x86; see 3193c0836f203 for details
+- `cgroup/` SPDX-License-Identifier: GPL-2.0
 - `configs/`
 - `debug/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux 内核调试Makefile
-- `dma/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `entry/` 鈥?SPDX-License-Identifier: GPL-2.0# Prevent the noinstr section from being pestered by sanitizer and other goodies # as long as these things cannot be disabled per function.
-- `events/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `futex/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `gcov/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `irq/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `kcsan/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `livepatch/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `liveupdate/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `locking/` 鈥?SPDX-License-Identifier: GPL-2.0# Any varying coverage in these files is non-deterministic # and is generally not a function of system call inputs.
+- `dma/` SPDX-License-Identifier: GPL-2.0
+- `entry/` SPDX-License-Identifier: GPL-2.0# Prevent the noinstr section from being pestered by sanitizer and other goodies # as long as these things cannot be disabled per function.
+- `events/` SPDX-License-Identifier: GPL-2.0
+- `futex/` SPDX-License-Identifier: GPL-2.0
+- `gcov/` SPDX-License-Identifier: GPL-2.0
+- `irq/` SPDX-License-Identifier: GPL-2.0
+- `kcsan/` SPDX-License-Identifier: GPL-2.0
+- `livepatch/` SPDX-License-Identifier: GPL-2.0-only
+- `liveupdate/` SPDX-License-Identifier: GPL-2.0
+- `locking/` SPDX-License-Identifier: GPL-2.0# Any varying coverage in these files is non-deterministic # and is generally not a function of system call inputs.
 - `module/` SPDX-License-Identifier: GPL-2.0-only# # 用于linux kernel module support Makefile
-- `power/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `printk/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `rcu/` 鈥?SPDX-License-Identifier: GPL-2.0# Any varying coverage in these files is non-deterministic # and is generally not a function of system call inputs.
-- `sched/` 鈥?SPDX-License-Identifier: GPL-2.0# The compilers are complaining about unused variables inside an if(0) scope # block. This is daft, shut them up.
-- `time/` 鈥?SPDX-License-Identifier: GPL-2.0# Branch profiling isn't noinstr-safe
-- `trace/` 鈥?SPDX-License-Identifier: GPL-2.0# Do not instrument the tracer itself: # Avoid recursion due to instrumentation.
+- `power/` SPDX-License-Identifier: GPL-2.0
+- `printk/` SPDX-License-Identifier: GPL-2.0-only
+- `rcu/` SPDX-License-Identifier: GPL-2.0# Any varying coverage in these files is non-deterministic # and is generally not a function of system call inputs.
+- `sched/` SPDX-License-Identifier: GPL-2.0# The compilers are complaining about unused variables inside an if(0) scope # block. This is daft, shut them up.
+- `time/` SPDX-License-Identifier: GPL-2.0# Branch profiling isn't noinstr-safe
+- `trace/` SPDX-License-Identifier: GPL-2.0# Do not instrument the tracer itself: # Avoid recursion due to instrumentation.
 - `unwind/`
 
 ## lib/
 
 内核通用库（位图、rbtree、radix-tree、crc、kunit 等）
 
-- `842/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `842/` SPDX-License-Identifier: GPL-2.0-only
 - `crc/` SPDX-License-Identifier: GPL-2.0-only# 用于内核循环冗余校验（CRC）库代码 Makefile
-- `crypto/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `crypto/` SPDX-License-Identifier: GPL-2.0
 - `dim/` # DIM 动态中断调节库 #
 - `fonts/` SPDX-License-Identifier: GPL-2.0# 字体处理 # 内建字体；按 Family-Size 升序排序
 - `kunit/` KUnit “hooks即便KUnit 作为模块构建时也是内建的
-- `lz4/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `lzo/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `math/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `pldmfw/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `raid/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `raid6/` 鈥?SPDX-License-Identifier: GPL-2.0# Enable <altivec.h>
-- `reed_solomon/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of reed solomon lib,
-- `test_fortify/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `lz4/` SPDX-License-Identifier: GPL-2.0-only
+- `lzo/` SPDX-License-Identifier: GPL-2.0-only
+- `math/` SPDX-License-Identifier: GPL-2.0-only
+- `pldmfw/` SPDX-License-Identifier: GPL-2.0-only
+- `raid/` SPDX-License-Identifier: GPL-2.0
+- `raid6/` SPDX-License-Identifier: GPL-2.0# Enable <altivec.h>
+- `reed_solomon/` SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of reed solomon lib,
+- `test_fortify/` SPDX-License-Identifier: GPL-2.0
 - `tests/` SPDX-License-Identifier: GPL-2.0# # 用于tests of kernel library functions Makefile.
-- `vdso/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `xz/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `zlib_deflate/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of zlib, which does all memory
-- `zlib_dfltcc/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of zlib, which does all memory
-- `zlib_inflate/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of zlib, which does all memory
-- `zstd/` 鈥?SPDX-License-Identifier: GPL-2.0+ OR BSD-3-Clause # ################################################################ # Copyright (c) Meta Platforms, Inc. and affiliates.
+- `vdso/` SPDX-License-Identifier: GPL-2.0-only
+- `xz/` SPDX-License-Identifier: GPL-2.0-only
+- `zlib_deflate/` SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of zlib, which does all memory
+- `zlib_dfltcc/` SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of zlib, which does all memory
+- `zlib_inflate/` SPDX-License-Identifier: GPL-2.0-only# # This is a modified version of zlib, which does all memory
+- `zstd/` SPDX-License-Identifier: GPL-2.0+ OR BSD-3-Clause # ################################################################ # Copyright (c) Meta Platforms, Inc. and affiliates.
 
 ## mm/
 
 内存管理（页分配器、slab、vmalloc、hugetlb、swap、mmap 等）
 
-- `damon/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `kasan/` 鈥?SPDX-License-Identifier: GPL-2.0# Disable ftrace to avoid recursion. # Function splitter causes unnecessary splits in __asan_load1/__asan_store1
-- `kfence/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `damon/` SPDX-License-Identifier: GPL-2.0
+- `kasan/` SPDX-License-Identifier: GPL-2.0# Disable ftrace to avoid recursion. # Function splitter causes unnecessary splits in __asan_load1/__asan_store1
+- `kfence/` SPDX-License-Identifier: GPL-2.0
 - `kmsan/` SPDX-License-Identifier: GPL-2.0# # 用于KernelMemorySanitizer (KMSAN) Makefile.
 - `tests/`
 
@@ -385,72 +387,72 @@ io_uring 异步 I/O 子系统
 
 网络协议栈（ipv4、ipv6、netfilter、BPF、核心、以太网、无线等）
 
-- `6lowpan/` 鈥?SPDX-License-Identifier: GPL-2.0#rfc6282 nhcs #rfc7400 ghcs
+- `6lowpan/` SPDX-License-Identifier: GPL-2.0#rfc6282 nhcs #rfc7400 ghcs
 - `802/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 802 Makefile.x protocol layers.
 - `8021q/` SPDX-License-Identifier: GPL-2.0# # 用于Linux VLAN Makefile.
-- `9p/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `9p/` SPDX-License-Identifier: GPL-2.0
 - `appletalk/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux AppleTalk Makefile.
 - `atm/` SPDX-License-Identifier: GPL-2.0# # 用于ATM 协议Makefile.
-- `batman-adv/` 鈥?SPDX-License-Identifier: GPL-2.0 # Copyright (C) B.A.T.M.A.N. contributors: #
+- `batman-adv/` SPDX-License-Identifier: GPL-2.0 # Copyright (C) B.A.T.M.A.N. contributors: #
 - `bluetooth/` SPDX-License-Identifier: GPL-2.0# # 用于Linux Bluetooth subsystem Makefile.
-- `bpf/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `bpf/` SPDX-License-Identifier: GPL-2.0-only
 - `bridge/` SPDX-License-Identifier: GPL-2.0# # 用于IEEE 802 Makefile.1d ethernet bridging layer.
 - `can/` SPDX-License-Identifier: GPL-2.0# #  用于Linux Controller Area Network core Makefile.
 - `ceph/` SPDX-License-Identifier: GPL-2.0# # 用于CEPH filesystem Makefile.
 - `core/` SPDX-License-Identifier: GPL-2.0# # 用于Linux networking core Makefile.
-- `dcb/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `devlink/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `dcb/` SPDX-License-Identifier: GPL-2.0-only
+- `devlink/` SPDX-License-Identifier: GPL-2.0
 - `dns_resolver/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux DNS 解析Makefile.
 - `dsa/` SPDX-License-Identifier: GPL-2.0# 只要 DSA 内建或作为模块构建，这些桩就是内建的 # 核心
 - `ethernet/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux 以太网层 Makefile.
-- `ethtool/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `ethtool/` SPDX-License-Identifier: GPL-2.0-only
 - `handshake/` SPDX-License-Identifier: GPL-2.0-only# # 用于通用 HANDSHAKE 服务 Makefile
 - `hsr/` SPDX-License-Identifier: GPL-2.0-only# # 用于HSR Makefile
-- `ieee802154/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `ieee802154/` SPDX-License-Identifier: GPL-2.0
 - `ife/` SPDX-License-Identifier: GPL-2.0-only# # 用于IFE 封装协议 Makefile
 - `ipv4/` SPDX-License-Identifier: GPL-2.0# # 用于Linux TCP/IP (INET) layer Makefile.
 - `ipv6/` SPDX-License-Identifier: GPL-2.0# # 用于Linux TCP/IP (INET6) layer Makefile.
 - `iucv/` SPDX-License-Identifier: GPL-2.0-only# # 用于IUCV Makefile
-- `kcm/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `kcm/` SPDX-License-Identifier: GPL-2.0-only
 - `key/` SPDX-License-Identifier: GPL-2.0-only# # 用于key AF Makefile.
 - `l2tp/` SPDX-License-Identifier: GPL-2.0# # 用于L2TP Makefile.
 - `l3mdev/` SPDX-License-Identifier: GPL-2.0-only# # 用于L3 设备 API Makefile
 - `lapb/` SPDX-License-Identifier: GPL-2.0-only# # 用于Linux LAPB Makefile.
 - `llc/` # 用于 Linux 802.2 LLC（功能完整）层的 Makefile
-- `mac80211/` 鈥?SPDX-License-Identifier: GPL-2.0# mac80211 瀵硅薄
-- `mac802154/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `mac80211/` SPDX-License-Identifier: GPL-2.0# mac80211 瀵硅薄
+- `mac802154/` SPDX-License-Identifier: GPL-2.0-only
 - `mctp/` SPDX-License-Identifier: GPL-2.0# 测试
 - `mpls/` SPDX-License-Identifier: GPL-2.0-only# # 用于MPLS Makefile.
-- `mptcp/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `mptcp/` SPDX-License-Identifier: GPL-2.0
 - `ncsi/` SPDX-License-Identifier: GPL-2.0-only# # 用于NCSI API Makefile
-- `netfilter/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `netfilter/` SPDX-License-Identifier: GPL-2.0
 - `netlabel/` SPDX-License-Identifier: GPL-2.0# # 用于NetLabel 子系Makefile.
 - `netlink/` SPDX-License-Identifier: GPL-2.0-only# # 用于netlink 驱动 Makefile.
 - `nfc/` SPDX-License-Identifier: GPL-2.0# # 用于Linux NFC subsystem Makefile.
-- `nsh/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `nsh/` SPDX-License-Identifier: GPL-2.0-only
 - `openvswitch/` SPDX-License-Identifier: GPL-2.0# # 用于Open vSwitch Makefile.
 - `packet/` SPDX-License-Identifier: GPL-2.0-only# # 用于packet AF Makefile.
-- `phonet/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `phonet/` SPDX-License-Identifier: GPL-2.0
 - `psample/` SPDX-License-Identifier: GPL-2.0-only# # 用于psample netlink 通道 Makefile
-- `psp/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `qrtr/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `psp/` SPDX-License-Identifier: GPL-2.0-only
+- `qrtr/` SPDX-License-Identifier: GPL-2.0-only
 - `rds/` SPDX-License-Identifier: GPL-2.0# 用于 GCOV 覆盖率分
 - `rfkill/` SPDX-License-Identifier: GPL-2.0-only# # 用于RF 开关子系统 Makefile.
 - `rxrpc/` SPDX-License-Identifier: GPL-2.0# # 用于Linux kernel RxRPC Makefile
 - `sched/` SPDX-License-Identifier: GPL-2.0# # 用于Linux 流量控制单元 Makefile.
 - `sctp/` SPDX-License-Identifier: GPL-2.0# # 用于SCTP support code Makefile.
 - `shaper/` SPDX-License-Identifier: GPL-2.0-only# # 用于网络整形基础设施 Makefile.
-- `smc/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `strparser/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `smc/` SPDX-License-Identifier: GPL-2.0-only
+- `strparser/` SPDX-License-Identifier: GPL-2.0-only
 - `sunrpc/` SPDX-License-Identifier: GPL-2.0# # 用于Linux kernel SUN RPC Makefile
 - `switchdev/` SPDX-License-Identifier: GPL-2.0-only# # 用于Switch 设备 API Makefile
 - `tipc/` SPDX-License-Identifier: GPL-2.0# # 用于Linux TIPC Makefile
 - `tls/` SPDX-License-Identifier: GPL-2.0-only# # 用于TLS 子系Makefile.
 - `unix/` SPDX-License-Identifier: GPL-2.0# # 用于Linux unix 域套接字Makefile.
-- `vmw_vsock/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `wireless/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `vmw_vsock/` SPDX-License-Identifier: GPL-2.0
+- `wireless/` SPDX-License-Identifier: GPL-2.0
 - `x25/` SPDX-License-Identifier: GPL-2.0# # 用于Linux X Makefile.25 Packet layer.
-- `xdp/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `xdp/` SPDX-License-Identifier: GPL-2.0-only
 - `xfrm/` SPDX-License-Identifier: GPL-2.0# # 用于XFRM subsystem Makefile.
 
 ## rust/
@@ -461,7 +463,7 @@ Rust 内核支持（bindings、核心、helpers、vendored crates）
 - `helpers/`
 - `kernel/` 核心内核子系统（调度器、printk、irq、时间、加锁、RCU、BPF 等）
 - `macros/`
-- `pin-init/` 鈥?[![Crates.io](https://img.shields.io/crates/v/pin-init.svg)](https://crates.io/crates/pin-init) [![Documentation](https://docs.rs/pin-init/badge.svg)](https://docs.rs/pin-init/) [![Dependency status](https://deps.rs/repo/github/Rust-for-Linux/pin-init/status.svg)](https://deps.rs/repo/github/Rust-for-Linux/pin-init) ![License](https://img.shields.io/crates/l/pin-init) [![Toolchain](https://img.shields.io/badge/toolchain-nightly-red)](#nightly-only) ![GitHub Workflow Status](https://img.shield...
+- `pin-init/` [![Crates.io](https://img.shields.io/crates/v/pin-init.svg)](https://crates.io/crates/pin-init) [![Documentation](https://docs.rs/pin-init/badge.svg)](https://docs.rs/pin-init/) [![Dependency status](https://deps.rs/repo/github/Rust-for-Linux/pin-init/status.svg)](https://deps.rs/repo/github/Rust-for-Linux/pin-init) ![License](https://img.shields.io/crates/l/pin-init) [![Toolchain](https://img.shields.io/badge/toolchain-nightly-red)](#nightly-only) ![GitHub Workflow Status](https://img.shield...
 - `proc-macro2/` # `proc-macro2`  这些源文件来Rust `proc-macro2` crate，版1.0.101（发布于 2025-08-16），托管<https://github.com/dtolnay/proc-macro2> 仓库，采“Apache-2.0 OR MIT许可，仅做了修改以添SPDX 许可证标识符并移`unicode-ident` 依赖 版权详情请参阅：
 - `quote/` # `quote`  这些源文件来Rust `quote` crate，版1.0.40（发布于 2025-03-12），托管<https://github.com/dtolnay/quote> 仓库，采“Apache-2.0 OR MIT许可，仅做了修改以添SPDX 许可证标识符 版权详情请参阅：      https://github.com/dtolnay/quote/blob/1.0.40/README.md#license
 - `syn/` # `syn`  这些源文件来Rust `syn` crate，版2.0.106（发布于 2025-08-16），托管<https://github.com/dtolnay/syn> 仓库，采“Apache-2.0 OR MIT许可，仅做了修改以添SPDX 许可证标识符并移`unicode-ident` 依赖 版权详情请参阅：
@@ -471,50 +473,50 @@ Rust 内核支持（bindings、核心、helpers、vendored crates）
 
 示例与教程代码（BPF、vfio-mdev、pktgen）
 
-- `acrn/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `auxdisplay/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `binderfs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `acrn/` SPDX-License-Identifier: GPL-2.0
+- `auxdisplay/` SPDX-License-Identifier: GPL-2.0
+- `binderfs/` SPDX-License-Identifier: GPL-2.0-only
 - `bpf/` eBPF 示例程序 ====================  本目录包含使eBPF 的测试桩、验证器测试套件和示例。示例使用了来自 tools/lib/bpf libbpf。请注意，特定于 XDP 的示例已从本目录移除，并移至 xdp-tools 仓库https://github.com/xdp-project/xdp-tools 有关如何将旧示例中的特定命令调用转换为新工具的说明，请参阅从本目录移除每个工具的提交信息
-- `cgroup/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `check-exec/` 鈥?SPDX-License-Identifier: BSD-3-Clause
-- `configfs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `connector/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `coresight/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `damon/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `fanotify/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `fprobe/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `ftrace/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `cgroup/` SPDX-License-Identifier: GPL-2.0
+- `check-exec/` SPDX-License-Identifier: BSD-3-Clause
+- `configfs/` SPDX-License-Identifier: GPL-2.0-only
+- `connector/` SPDX-License-Identifier: GPL-2.0
+- `coresight/` SPDX-License-Identifier: GPL-2.0-only
+- `damon/` SPDX-License-Identifier: GPL-2.0
+- `fanotify/` SPDX-License-Identifier: GPL-2.0-only
+- `fprobe/` SPDX-License-Identifier: GPL-2.0-only
+- `ftrace/` SPDX-License-Identifier: GPL-2.0-only
 - `hid/` SPDX-License-Identifier: GPL-2.0# 要构建的程序列表 # Libbpf 依赖
-- `hidraw/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `hung_task/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `hw_breakpoint/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `kdb/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `kfifo/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `kmemleak/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `kobject/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `kprobes/` 鈥?SPDX-License-Identifier: GPL-2.0-only# builds the kprobes example kernel modules; # then to use one (as root):  insmod <module_name.ko>
-- `landlock/` 鈥?SPDX-License-Identifier: BSD-3-Clause
-- `livepatch/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `mei/` 鈥?SPDX-License-Identifier: GPL-2.0 # Copyright (c) 2012-2019, Intel Corporation. All rights reserved.
-- `nitro_enclaves/` 鈥?SPDX-License-Identifier: GPL-2.0 # # Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-- `pfsm/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `pidfd/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `hidraw/` SPDX-License-Identifier: GPL-2.0
+- `hung_task/` SPDX-License-Identifier: GPL-2.0-only
+- `hw_breakpoint/` SPDX-License-Identifier: GPL-2.0-only
+- `kdb/` SPDX-License-Identifier: GPL-2.0-only
+- `kfifo/` SPDX-License-Identifier: GPL-2.0-only
+- `kmemleak/` SPDX-License-Identifier: GPL-2.0-only
+- `kobject/` SPDX-License-Identifier: GPL-2.0-only
+- `kprobes/` SPDX-License-Identifier: GPL-2.0-only# builds the kprobes example kernel modules; # then to use one (as root):  insmod <module_name.ko>
+- `landlock/` SPDX-License-Identifier: BSD-3-Clause
+- `livepatch/` SPDX-License-Identifier: GPL-2.0-only
+- `mei/` SPDX-License-Identifier: GPL-2.0 # Copyright (c) 2012-2019, Intel Corporation. All rights reserved.
+- `nitro_enclaves/` SPDX-License-Identifier: GPL-2.0 # # Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+- `pfsm/` SPDX-License-Identifier: GPL-2.0
+- `pidfd/` SPDX-License-Identifier: GPL-2.0
 - `pktgen/` pktgen（数据包生成器）的示例与基准脚本 ========================================================== 本目录包含一pktgen 示例和基准脚本，可轻松复制并针对你的用例进行调整 通用文档位于内核中：Documentation/networking/pktgen.rst  辅助包含文件 ==================== 本目录包含两个可“包含”的辅助 shell 文件
-- `qmi/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `rpmsg/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `rust/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `seccomp/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `timers/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `trace_events/` 鈥?SPDX-License-Identifier: GPL-2.0-only# builds the trace events example kernel modules; # then to use one (as root):  insmod <module_name.ko>
-- `trace_printk/` 鈥?SPDX-License-Identifier: GPL-2.0-only# builds a module that calls various trace_printk routines # then to use one (as root):  insmod <module_name.ko>
-- `tsm-mr/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `uhid/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `user_events/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `v4l/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `qmi/` SPDX-License-Identifier: GPL-2.0-only
+- `rpmsg/` SPDX-License-Identifier: GPL-2.0-only
+- `rust/` SPDX-License-Identifier: GPL-2.0
+- `seccomp/` SPDX-License-Identifier: GPL-2.0
+- `timers/` SPDX-License-Identifier: GPL-2.0
+- `trace_events/` SPDX-License-Identifier: GPL-2.0-only# builds the trace events example kernel modules; # then to use one (as root):  insmod <module_name.ko>
+- `trace_printk/` SPDX-License-Identifier: GPL-2.0-only# builds a module that calls various trace_printk routines # then to use one (as root):  insmod <module_name.ko>
+- `tsm-mr/` SPDX-License-Identifier: GPL-2.0-only
+- `uhid/` SPDX-License-Identifier: GPL-2.0-only
+- `user_events/` SPDX-License-Identifier: GPL-2.0
+- `v4l/` SPDX-License-Identifier: GPL-2.0-only
 - `vfio-mdev/` 使用 mtty vfio-mdev 示例代码 ====================================  mtty 是一个示vfio-mdev 驱动，演示了如何使用中介设备（mediated device）框架。该示例驱动创建一mdev 设备，模拟通过 PCI 卡提供的串口 1. 构建并加mtty.ko 模块
-- `vfs/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `watch_queue/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `watchdog/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `vfs/` SPDX-License-Identifier: GPL-2.0-only
+- `watch_queue/` SPDX-License-Identifier: GPL-2.0-only
+- `watchdog/` SPDX-License-Identifier: GPL-2.0
 - `workqueue/`
 
 ## scripts/
@@ -523,22 +525,22 @@ Rust 内核支持（bindings、核心、helpers、vendored crates）
 
 - `atomic/`
 - `bash-completion/`
-- `basic/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # fixdep: used to generate dependency information during build process
+- `basic/` SPDX-License-Identifier: GPL-2.0-only# # fixdep: used to generate dependency information during build process
 - `clang-tools/`
 - `coccinelle/`
 - `crypto/` 加密 API 与算法实现
-- `dtc/` 鈥?SPDX-License-Identifier: GPL-2.0# scripts/dtc makefile # *** Also keep .gitignore in sync when changing ***
+- `dtc/` SPDX-License-Identifier: GPL-2.0# scripts/dtc makefile # *** Also keep .gitignore in sync when changing ***
 - `dummy-tools/`
-- `gcc-plugins/` 鈥?SPDX-License-Identifier: GPL-2.0# Build rules for plugins #
-- `gdb/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `gendwarfksyms/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `genksyms/` 鈥?SPDX-License-Identifier: GPL-2.0# -I needed for generated C source to include headers in source tree # dependencies on generated files need to be listed explicitly
+- `gcc-plugins/` SPDX-License-Identifier: GPL-2.0# Build rules for plugins #
+- `gdb/` SPDX-License-Identifier: GPL-2.0-only
+- `gendwarfksyms/` SPDX-License-Identifier: GPL-2.0
+- `genksyms/` SPDX-License-Identifier: GPL-2.0# -I needed for generated C source to include headers in source tree # dependencies on generated files need to be listed explicitly
 - `include/` 内核公共头文件（linux/、asm-generic/、uapi/）
-- `ipe/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `kconfig/` 鈥?SPDX-License-Identifier: GPL-2.0# =========================================================================== # Kernel configuration targets
+- `ipe/` SPDX-License-Identifier: GPL-2.0-only
+- `kconfig/` SPDX-License-Identifier: GPL-2.0# =========================================================================== # Kernel configuration targets
 - `ksymoops/` ksymoops 已从内核中移除。它一直是一个独立的工具，不链接到任何特定的内核版本。最新版本可https://www.kernel.org/pub/linux/utils/kernel/ksymoops 找到，同时还有对其他工具的补丁，以便提供更准确的 Oops 调试信息 Keith Owens <kaos@ocs.com.au> Sat Jun 19 10:30:34 EST 1999
 - `livepatch/` SPDX-License-Identifier: GPL-2.0# 用于开发者工具的独立 Makefile（不属于 kbuild）
-- `mod/` 鈥?SPDX-License-Identifier: GPL-2.0# dependencies on generated files need to be listed explicitly
+- `mod/` SPDX-License-Identifier: GPL-2.0# dependencies on generated files need to be listed explicitly
 - `package/`
 - `selinux/` 有关安装虚拟 SELinux 策略的信息，请参Documentation/admin-guide/LSM/SELinux.rst
 - `tracing/`
@@ -548,31 +550,31 @@ Rust 内核支持（bindings、核心、helpers、vendored crates）
 安全模块（selinux、apparmor、landlock、smack 等）
 
 - `apparmor/` SPDX-License-Identifier: GPL-2.0# 用于AppArmor Linux Security Module Makefile#
-- `bpf/` 鈥?SPDX-License-Identifier: GPL-2.0 # # Copyright (C) 2020 Google LLC.
+- `bpf/` SPDX-License-Identifier: GPL-2.0 # # Copyright (C) 2020 Google LLC.
 - `integrity/` SPDX-License-Identifier: GPL-2.0# # 用于缓存 inode 完整性数据（iintMakefile
-- `ipe/` 鈥?SPDX-License-Identifier: GPL-2.0 # # Copyright (C) 2020-2024 Microsoft Corporation. All rights reserved.
+- `ipe/` SPDX-License-Identifier: GPL-2.0 # # Copyright (C) 2020-2024 Microsoft Corporation. All rights reserved.
 - `keys/` SPDX-License-Identifier: GPL-2.0# # 用于密钥管理 Makefile
 - `landlock/`
-- `loadpin/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `loadpin/` SPDX-License-Identifier: GPL-2.0-only
 - `lockdown/`
 - `safesetid/` SPDX-License-Identifier: GPL-2.0# # 用于safesetid LSM Makefile.
 - `selinux/` SPDX-License-Identifier: GPL-2.0# # 用于SELinux 模块作为内核树的一部分构建 Makefile.
 - `smack/` SPDX-License-Identifier: GPL-2.0-only# # 用于SMACK LSM Makefile
-- `tomoyo/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `yama/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `tomoyo/` SPDX-License-Identifier: GPL-2.0
+- `yama/` SPDX-License-Identifier: GPL-2.0-only
 
 ## sound/
 
 ALSA 声音子系统与音频驱动
 
-- `ac97/` 鈥?SPDX-License-Identifier: GPL-2.0-only# # make for AC97 bus drivers
-- `aoa/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `ac97/` SPDX-License-Identifier: GPL-2.0-only# # make for AC97 bus drivers
+- `aoa/` SPDX-License-Identifier: GPL-2.0-only
 - `arm/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
-- `atmel/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `atmel/` SPDX-License-Identifier: GPL-2.0-only
 - `core/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
 - `drivers/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
-- `firewire/` 鈥?SPDX-License-Identifier: GPL-2.0# To find a header included by define_trace.h.
-- `hda/` 鈥?SPDX-License-Identifier: GPL-2.0# this must be the last entry after codec drivers; # otherwise the codec drivers won't be hooked before the PCI probe
+- `firewire/` SPDX-License-Identifier: GPL-2.0# To find a header included by define_trace.h.
+- `hda/` SPDX-License-Identifier: GPL-2.0# this must be the last entry after codec drivers; # otherwise the codec drivers won't be hooked before the PCI probe
 - `i2c/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
 - `isa/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
 - `mips/` SPDX-License-Identifier: GPL-2.0-only# # 用于ALSA Makefile
@@ -582,36 +584,36 @@ ALSA 声音子系统与音频驱动
 - `pcmcia/` SPDX-License-Identifier: GPL-2.0-only# # 用于ALSA Makefile
 - `ppc/` SPDX-License-Identifier: GPL-2.0-only# # 用于ALSA Makefile
 - `sh/` SPDX-License-Identifier: GPL-2.0-only# # 用于ALSA Makefile
-- `soc/` 鈥?SPDX-License-Identifier: GPL-2.0# snd-soc-test-y := soc-topology-test.o # snd-soc-test-y := soc-utils-test.o
+- `soc/` SPDX-License-Identifier: GPL-2.0# snd-soc-test-y := soc-topology-test.o # snd-soc-test-y := soc-utils-test.o
 - `sparc/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
 - `spi/` SPDX-License-Identifier: GPL-2.0# 用于SPI drivers Makefile
 - `synth/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
 - `usb/` SPDX-License-Identifier: GPL-2.0# # 用于ALSA Makefile
-- `virtio/` 鈥?SPDX-License-Identifier: GPL-2.0+
-- `x86/` 鈥?SPDX-License-Identifier: GPL-2.0-only
-- `xen/` 鈥?SPDX-License-Identifier: GPL-2.0 OR MIT
+- `virtio/` SPDX-License-Identifier: GPL-2.0+
+- `x86/` SPDX-License-Identifier: GPL-2.0-only
+- `xen/` SPDX-License-Identifier: GPL-2.0 OR MIT
 
 ## tools/
 
 用户空间工具（perf、bpftool、selftests、kunit、cpupower 等）
 
-- `accounting/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `accounting/` SPDX-License-Identifier: GPL-2.0
 - `arch/` 特定于体系结构的代码（arm64、x86、riscv、m68k、powerpc 等）以及引导基础设施
 - `bootconfig/` SPDX-License-Identifier: GPL-2.0# 用于bootconfig command Makefile
-- `bpf/` 鈥?SPDX-License-Identifier: GPL-2.0# This will work when bpf is built in tools env. where srctree # isn't set and when invoked from selftests build, where srctree
-- `build/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `bpf/` SPDX-License-Identifier: GPL-2.0# This will work when bpf is built in tools env. where srctree # isn't set and when invoked from selftests build, where srctree
+- `build/` SPDX-License-Identifier: GPL-2.0
 - `certs/`
 - `cgroup/`
-- `counter/` 鈥?SPDX-License-Identifier: GPL-2.0# Do not use make's built-in rules # (this improves performance and avoids hard-to-debug behaviour);
+- `counter/` SPDX-License-Identifier: GPL-2.0# Do not use make's built-in rules # (this improves performance and avoids hard-to-debug behaviour);
 - `crypto/` 加密 API 与算法实现
 - `debugging/` SPDX-License-Identifier: GPL-2.0# 用于debugging tools Makefile
-- `dma/` 鈥?SPDX-License-Identifier: GPL-2.0# This will work when dma is built in tools env. where srctree # isn't set and when invoked from selftests build, where srctree
+- `dma/` SPDX-License-Identifier: GPL-2.0# This will work when dma is built in tools env. where srctree # isn't set and when invoked from selftests build, where srctree
 - `docs/`
-- `firewire/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `firewire/` SPDX-License-Identifier: GPL-2.0
 - `firmware/` SPDX-License-Identifier: GPL-2.0# 用于firmware tools Makefile
-- `gpio/` 鈥?SPDX-License-Identifier: GPL-2.0# This will work when gpio is built in tools env. where srctree # isn't set and when invoked from selftests build, where srctree
+- `gpio/` SPDX-License-Identifier: GPL-2.0# This will work when gpio is built in tools env. where srctree # isn't set and when invoked from selftests build, where srctree
 - `hv/` SPDX-License-Identifier: GPL-2.0# 用于Hyper-V tools Makefile# Do not use make's built-in rules
-- `iio/` 鈥?SPDX-License-Identifier: GPL-2.0# Do not use make's built-in rules # (this improves performance and avoids hard-to-debug behaviour);
+- `iio/` SPDX-License-Identifier: GPL-2.0# Do not use make's built-in rules # (this improves performance and avoids hard-to-debug behaviour);
 - `include/` 内核公共头文件（linux/、asm-generic/、uapi/）
 - `kvm/`
 - `laptop/`
@@ -620,25 +622,25 @@ ALSA 声音子系统与音频驱动
 - `memory-model/` ===================================== 		LINUX 内核内存一致性模		=====================================  ============ 简============  本目录包Linux 内核的内存一致性模型（简称内存模型），使“cat语言编写并可执行
 - `mm/` SPDX-License-Identifier: GPL-2.0# 用于vm tools Makefile#
 - `net/` 网络协议栈（ipv4、ipv6、netfilter、BPF、核心、以太网、无线等）
-- `objtool/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `pcmcia/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `perf/` 鈥?SPDX-License-Identifier: GPL-2.0# # This is a simple wrapper Makefile that calls the main Makefile.perf
+- `objtool/` SPDX-License-Identifier: GPL-2.0
+- `pcmcia/` SPDX-License-Identifier: GPL-2.0
+- `perf/` SPDX-License-Identifier: GPL-2.0# # This is a simple wrapper Makefile that calls the main Makefile.perf
 - `power/`
 - `rcu/`
 - `sched/`
 - `sched_ext/` SCHED_EXT 示例调度============================  # 简 本目录包含若sched_ext 示例调度器。这些调度器旨在提供使用 sched_ext 可构建的不同类型调度器的示例，并演示 sched_ext 的各项特性如何被使用
 - `scripts/` 构建脚本、checkpatch、coccinelle 补丁、kconfig、modpost 等
 - `sound/` ALSA 声音子系统与音频驱动
-- `spi/` 鈥?SPDX-License-Identifier: GPL-2.0-only# Do not use make's built-in rules # (this improves performance and avoids hard-to-debug behaviour);
+- `spi/` SPDX-License-Identifier: GPL-2.0-only# Do not use make's built-in rules # (this improves performance and avoids hard-to-debug behaviour);
 - `testing/`
 - `thermal/`
 - `time/`
-- `tracing/` 鈥?SPDX-License-Identifier: GPL-2.0
+- `tracing/` SPDX-License-Identifier: GPL-2.0
 - `unittests/`
 - `usb/` SPDX-License-Identifier: GPL-2.0# 用于USB tools Makefile# Do not use make's built-in rules
 - `verification/`
-- `virtio/` 鈥?SPDX-License-Identifier: GPL-2.0
-- `wmi/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `virtio/` SPDX-License-Identifier: GPL-2.0
+- `wmi/` SPDX-License-Identifier: GPL-2.0-only
 - `workqueue/`
 - `writeback/`
 
@@ -647,7 +649,7 @@ ALSA 声音子系统与音频驱动
 虚拟化（KVM、UML、Xen 等）
 
 - `kvm/`
-- `lib/` 鈥?SPDX-License-Identifier: GPL-2.0-only
+- `lib/` SPDX-License-Identifier: GPL-2.0-only
 
 ---
 

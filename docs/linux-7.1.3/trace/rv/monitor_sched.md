@@ -1,10 +1,12 @@
+# monitor_sched
+
 ﻿## 调度器监视器
 
 
 - 名称：sched
 - 类型：多个监视器的容- 作者：Gabriele Monaco <gmonaco@redhat.com>, Daniel Bristot de Oliveira <bristot@kernel.org>
 
-### 描述
+## 描述
 
 
 描述复杂系统（例如调度器）的监视器很容易变得难以理解，因为可能的状态转换太多通常可以将这类描述拆分为更小的监视器，共享部分或全部事件。事实上，并发启用这些更小的监视器，就相当于用一个单一的大监视器来测试系统将模型拆分为多个规格不仅更容易理解，而且在出错时能提供更多线索
@@ -274,6 +276,6 @@ schedule 意味着任务切换（sts）监视器确保任务切换仅发生在�
  #=========#
 
 ```
-### 参考资
+## 参考资
 
 [^1^] - https://bristot.me/linux-task-model

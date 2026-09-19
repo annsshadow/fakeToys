@@ -1,3 +1,5 @@
+# pci_iov_resource_on_powernv
+
 ﻿## Powernv 上的 PCI Express I/O 虚拟化资
 
 Wei Yang <weiyang@linux.vnet.ibm.com>
@@ -82,6 +84,7 @@ P8 每个 PHB 最多支256 个可分区端点
 
   Our current solution is to allocate 256 segments even if the VF(n) BAR
   space doesn't need that much, as shown in Figure 1.1::
+
 
      0      1                     total_VFs - 1                255
      +------+------+-     -+------+------+-      -+------+------+

@@ -6,7 +6,7 @@ use shared::{error::AppError, response::ActionResult};
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/forum/view/all",
+    path = "/api/bbs/forum/view/all",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -30,8 +30,14 @@ pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
         .iter()
         .map(|row| {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
             if let Some(v) = row.get::<_, Option<String>>("description") {
                 map.insert("description".to_string(), Value::String(v));
             }
@@ -40,7 +46,7 @@ pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -49,7 +55,7 @@ pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/bbs/forum/view/{id}",
+    path = "/api/bbs/forum/view/{id}",
     params(
         ("id" = String, Path, description = "Forum ID")
     ),
@@ -77,8 +83,14 @@ pub async fn view_one(
     match row {
         Some(row) => {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
             if let Some(v) = row.get::<_, Option<String>>("description") {
                 map.insert("description".to_string(), Value::String(v));
             }

@@ -1,4 +1,6 @@
-﻿## gxfb - AMD Geode GX2 甯х紦鍐查┍鍔。
+# gxfb
+
+﻿## gxfb - AMD Geode GX2 甯х紦内查┍鍔。
 
 这是面向基于 AMD Geode GX2 的处理器的图形帧缓冲驱动
 优点

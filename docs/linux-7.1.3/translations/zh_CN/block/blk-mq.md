@@ -1,11 +1,15 @@
 
+# blk-mq
+
 :Original: Documentation/block/blk-mq.rst
 
 :翻译:
 
+
  柯子杰 kezijie <kezijie@leap-io-kernel.com>
 
 :校译:
+
 
 
 
@@ -120,6 +124,7 @@ I/O 请求完成了。
 
 
 该API在以下内核代码中:
+
 
 include/linux/blk-mq.h
 

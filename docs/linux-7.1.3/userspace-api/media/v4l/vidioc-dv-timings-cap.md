@@ -1,5 +1,7 @@
+# vidioc-dv-timings-cap
+
 ﻿
-######## ioctl VIDIOC_DV_TIMINGS_CAP, VIDIOC_SUBDEV_DV_TIMINGS_CAP
+## ioctl VIDIOC_DV_TIMINGS_CAP, VIDIOC_SUBDEV_DV_TIMINGS_CAP
 
 
 ## 名称

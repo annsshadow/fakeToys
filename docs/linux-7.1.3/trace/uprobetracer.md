@@ -1,9 +1,11 @@
+# uprobetracer
+
 ﻿## Uprobe-tracer：基Uprobe 的事件跟
 
 :Author: Srikar Dronamraju
 
 
-### 概述
+## 概述
 
 
 基于 uprobe 的跟踪事件与基于 kprobe 的跟踪事件类似。要启用此功能，请用
@@ -78,17 +80,21 @@ fetch-args 支持多种类型。Uprobe 跟踪器将按给定类型访问内存�
 
  * Add a probe as a new uretprobe event::
 
+
     echo 'r /bin/bash:0x4245c0' > /sys/kernel/tracing/uprobe_events
 
  * Unset registered event::
+
 
     echo '-:p_bash_0x4245c0' >> /sys/kernel/tracing/uprobe_events
 
  * Print out the events that are registered::
 
+
     cat /sys/kernel/tracing/uprobe_events
 
  * Clear all events::
+
 
     echo > /sys/kernel/tracing/uprobe_events
 

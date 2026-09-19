@@ -4,7 +4,7 @@
     <div class="fd-header glass-card">
       <div class="fd-title">
         <h1>表单设计器</h1>
-        <p class="subtitle">/jaxrs/form/* — 可视化表单构建器</p>
+        <p class="subtitle">/api/form/* — 可视化表单构建器</p>
       </div>
       <div class="fd-actions">
         <button class="btn" @click="resetForm" title="新建表单">📄 新建</button>
@@ -1011,7 +1011,7 @@ function parseOptions(s?: string) {
 async function loadForms() {
   formsLoading.value = true
   try {
-    const path = routeAppId.value ? `/jaxrs/form/list/app/${routeAppId.value}` : '/jaxrs/form/list/all'
+    const path = routeAppId.value ? `/api/form/list/app/${routeAppId.value}` : '/api/form/list/all'
     const r: any = await api.get(path)
     forms.value = (r?.data?.data ?? r?.data ?? []).map((form: any) => ({
       ...form,
@@ -1027,7 +1027,7 @@ async function loadForms() {
 }
 async function loadForm(f: FormDef) {
   try {
-    const r: any = await api.get(`/jaxrs/form/${f.id}`)
+    const r: any = await api.get(`/api/form/${f.id}`)
     const data = r?.data ?? f
     const definition = parseFormDefinition(data)
     currentForm.value = {
@@ -1086,9 +1086,9 @@ async function saveForm() {
       appId,
       status: currentForm.value.status,
     })
-    if (currentForm.value.id) await api.put(`/jaxrs/form/${currentForm.value.id}`, payload)
+    if (currentForm.value.id) await api.put(`/api/form/${currentForm.value.id}`, payload)
     else {
-      const created: any = await api.post('/jaxrs/form', payload)
+      const created: any = await api.post('/api/form', payload)
       currentForm.value.id = created?.data?.id
     }
     currentForm.value.definition = definition
@@ -1253,7 +1253,7 @@ function validatePreview(): boolean {
 async function submitPreview() {
   if (!validatePreview()) return
   try {
-    await api.post('/jaxrs/form/submit', { formId: currentForm.value.id, data: previewData.value })
+    await api.post('/api/form/submit', { formId: currentForm.value.id, data: previewData.value })
     toast.info('提交成功')
     previewData.value = {}
     previewErrors.value = {}

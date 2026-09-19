@@ -1,11 +1,15 @@
 
+# scsi_mid_low_api
+
 :Original: Documentation/scsi/scsi_mid_low_api.rst
 
 :翻译:
 
+
  郝栋栋 doubled <doubled@leap-io-kernel.com>
 
 :校译:
+
 
 
 

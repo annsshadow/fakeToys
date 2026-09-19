@@ -1,5 +1,5 @@
 -- plan002 U2：calendar_assemble_control 与 mind_assemble_control 端点闭合
--- 所需的缺列/缺表补齐（对照 x_calendar_assemble_control / x_mind_assemble_control jaxrs 全集）。
+-- 所需的缺列/缺表补齐（对照 x_calendar_assemble_control / x_mind_assemble_control o2server 全集）。
 --
 -- 全部幂等（IF NOT EXISTS / ADD COLUMN IF NOT EXISTS / DROP COLUMN IF EXISTS），
 -- 可重复执行；回滚见 085_calendar_mind_u2_columns_rollback.sql。

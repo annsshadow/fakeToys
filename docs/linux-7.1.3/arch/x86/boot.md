@@ -1,3 +1,5 @@
+# boot
+
 ﻿
 ## Linux/x86 引导协议
 
@@ -351,6 +353,7 @@ Protocol:	2.00+
    ext_loader_ver  <- 0x23
 
   Assigned boot loader IDs:
+
 
 	==== =======================================
 	0x0  LILO
@@ -811,6 +814,7 @@ kernel_info 通过为内核映像信息提供一个可扩展的位置来解决�
 	.asciz  "String_1"
   example_strings_end:
   kernel_info_end:
+
 
 ```
 

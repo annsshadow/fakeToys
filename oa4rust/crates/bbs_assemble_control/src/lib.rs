@@ -16,10 +16,10 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
 
-pub const JAVA_BASE: &str = "/jaxrs/bbs_assemble_control";
+pub const API_BASE: &str = "/api/bbs_assemble_control";
 pub mod routes;
 
-/// plan002 U2 — Java 端点全量闭合（106 条对齐）新增实现。
+/// plan002 U2 — o2server 端点全量闭合（106 条对齐）新增实现。
 pub mod u2;
 
 #[cfg(test)]
@@ -42,6 +42,10 @@ pub struct LoginRequest {
 #[derive(Debug, Deserialize)]
 pub struct CreateTopicRequest {
     pub forum_id: Option<String>,
+    #[serde(alias = "sectionId")]
+    pub section_id: Option<String>,
+    #[serde(alias = "authorId")]
+    pub author_id: Option<String>,
     pub title: Option<String>,
     pub content: Option<String>,
     pub creator: Option<String>,
@@ -49,7 +53,12 @@ pub struct CreateTopicRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateReplyRequest {
+    #[serde(alias = "subjectId")]
+    pub subject_id: Option<String>,
+    #[serde(alias = "topicId")]
     pub topic_id: Option<String>,
+    #[serde(alias = "authorId")]
+    pub author_id: Option<String>,
     pub content: Option<String>,
     pub creator: Option<String>,
 }
@@ -152,7 +161,10 @@ pub async fn get_control_config(
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+        (
+            "enabled".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+        ),
         (
             "maxForumCount".to_string(),
             Value::Number(serde_json::Number::from(
@@ -161,7 +173,10 @@ pub async fn get_control_config(
         ),
         (
             "allowAnonymous".to_string(),
-            Value::Bool(row.get("allow_anonymous")),
+            Value::Bool(
+                row.get::<_, Option<bool>>("allow_anonymous")
+                    .unwrap_or(false),
+            ),
         ),
     ]));
 
@@ -189,17 +204,97 @@ pub async fn list_control_sections(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let total_sections = sections.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(sections),
         total_sections as i64,
         0,
     )))
+}
+
+// ── 版块发布/管理写路由（W14 x_component_ForumSection）──────────────────────
+// x_bbs_assemble_control_section 无 deleted_at 列 → 硬删（shared::crud 惯例，
+// 表/列白名单静态、值全 $N 占位符防注入）；creator 缺省取会话登录人。
+fn section_create_spec() -> shared::CrudSpec {
+    shared::CrudSpec {
+        table: "x_bbs_assemble_control_section",
+        columns: &[("name", "name"), ("creator", "creator")],
+        soft_delete: false,
+    }
+}
+fn section_update_spec() -> shared::CrudSpec {
+    shared::CrudSpec {
+        table: "x_bbs_assemble_control_section",
+        columns: &[("name", "name")],
+        soft_delete: false,
+    }
+}
+
+#[axum::debug_handler]
+pub async fn section_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut obj = match body.0 {
+        Value::Object(o) => o,
+        _ => serde_json::Map::new(),
+    };
+    if !obj
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty())
+    {
+        obj.insert(
+            "creator".to_string(),
+            Value::String(session.person_unique.clone()),
+        );
+    }
+    let id = shared::crud_create(&pool, &section_create_spec(), &Value::Object(obj)).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn section_update(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &section_update_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn section_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &section_create_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -239,7 +334,7 @@ pub async fn update_control_config(
     ))))
 }
 
-/// GET /jaxrs/bbs/assemble/control/forum/list
+/// GET /api/bbs/assemble/control/forum/list
 #[allow(non_snake_case)]
 pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -258,14 +353,14 @@ pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
     )))
 }
 
-/// GET /jaxrs/bbs/assemble/control/forum/{id}
+/// GET /api/bbs/assemble/control/forum/{id}
 #[allow(non_snake_case)]
 pub async fn get_forum(
     pool: Extension<Pool>,
@@ -288,7 +383,7 @@ pub async fn get_forum(
     }
 }
 
-/// POST /jaxrs/bbs/assemble/control/topic/create
+/// POST /api/bbs/assemble/control/topic/create
 #[allow(non_snake_case)]
 pub async fn create_topic(
     pool: Extension<Pool>,
@@ -296,15 +391,24 @@ pub async fn create_topic(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let forum_id = req.forum_id.unwrap_or_default();
+    let forum_id = req.forum_id.clone().unwrap_or_default();
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
-    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+    let creator = req.creator.clone().unwrap_or_default();
+    // x_bbs_topic.author_id/section_id 为 NOT NULL（无默认）：author 缺省回退 creator，
+    // section 缺省回退 forum_id（版块维度），杜绝 500。
+    let author_id = req.author_id.clone().unwrap_or_else(|| creator.clone());
+    let section_id = req
+        .section_id
+        .clone()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| forum_id.clone());
 
     client
         .execute(
-            "INSERT INTO x_bbs_topic (id, forum_id, title, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &forum_id, &title, &content, &creator],
+            "INSERT INTO x_bbs_topic (id, forum_id, title, content, creator, author_id, section_id, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&id, &forum_id, &title, &content, &creator, &author_id, &section_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -318,7 +422,7 @@ pub async fn create_topic(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// GET /jaxrs/bbs/assemble/control/topic/list/{forumId}
+/// GET /api/bbs/assemble/control/topic/list/{forumId}
 #[allow(non_snake_case)]
 pub async fn list_topics_by_forum(
     pool: Extension<Pool>,
@@ -340,36 +444,48 @@ pub async fn list_topics_by_forum(
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
     )))
 }
 
-/// POST /jaxrs/bbs/assemble/control/reply/create
+/// POST /api/bbs/assemble/control/reply/create
 #[allow(non_snake_case)]
 pub async fn create_reply(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Json(req): Json<CreateReplyRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let topic_id = req.topic_id.unwrap_or_default();
-    let content = req.content.unwrap_or_default();
-    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+    // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）。subjectId/topicId 同义，
+    // 归一到 subject 并双写 topic_id（回复列表按 topic_id 过滤）；作者缺省取登录人。
+    let subject_id = req
+        .subject_id
+        .clone()
+        .or_else(|| req.topic_id.clone())
+        .unwrap_or_default();
+    let creator = req
+        .creator
+        .clone()
+        .or_else(|| req.author_id.clone())
+        .filter(|c| !c.is_empty())
+        .unwrap_or_else(|| session.person_unique.clone());
 
     client
         .execute(
-            "INSERT INTO x_bbs_reply (id, topic_id, content, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
-            &[&id, &topic_id, &content, &creator],
+            "INSERT INTO x_bbs_reply (id, subject_id, author_id, topic_id, content, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id, &subject_id, &creator, &subject_id, &req.content.clone().unwrap_or_default(), &creator],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("topicId".to_string(), Value::String(topic_id)),
+        ("topicId".to_string(), Value::String(subject_id)),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -401,7 +517,7 @@ pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -448,7 +564,7 @@ pub async fn mobile_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -507,7 +623,7 @@ pub async fn reply_filter_list_page_page_count_count(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply ORDER BY create_time::timestamp DESC LIMIT $2::int OFFSET $1::int",
+            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply ORDER BY create_time::timestamp DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
@@ -520,7 +636,7 @@ pub async fn reply_filter_list_page_page_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -549,7 +665,7 @@ pub async fn reply_list_sub_id(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -600,7 +716,7 @@ pub async fn subject_top_sectionId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -675,7 +791,9 @@ pub async fn section_viewforum_forumId(
             map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
             map.insert(
                 "sort".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                )),
             );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
@@ -685,7 +803,7 @@ pub async fn section_viewforum_forumId(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -756,7 +874,7 @@ pub async fn list_reply_filter(
     let rows = client
         .query(
             "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
-             WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int",
+             WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -796,7 +914,7 @@ pub async fn list_topics_creamed(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_cream = true ORDER BY create_time::timestamp DESC \
-             LIMIT $1::int OFFSET $2::int",
+             LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -836,7 +954,7 @@ pub async fn list_topics_recommended(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time::timestamp DESC \
-             LIMIT $1::int OFFSET $2::int",
+             LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -875,7 +993,7 @@ pub async fn list_subjects_filtered(
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
-             WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int",
+             WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -915,7 +1033,7 @@ pub async fn list_subjects_index(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_top = true ORDER BY create_time::timestamp DESC \
-             LIMIT $1::int OFFSET $2::int",
+             LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -955,7 +1073,7 @@ pub async fn list_subjects_recommended_index(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time::timestamp DESC \
-             LIMIT $1::int OFFSET $2::int",
+             LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -1085,7 +1203,7 @@ pub async fn picture_list(
         .map_err(|_| AppError::Internal)?;
     let urls: Vec<Value> = match row {
         Some(r) => {
-            let content: String = r.get("content");
+            let content: String = r.get::<_, Option<String>>("content").unwrap_or_default();
             content
                 .split_whitespace()
                 .filter(|s| {
@@ -1103,7 +1221,7 @@ pub async fn picture_list(
         None => Vec::new(),
     };
     let total_urls = urls.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(urls),
         total_urls as i64,
         0,
@@ -1160,7 +1278,7 @@ pub async fn shutup_list(
     let rows = client
         .query(
             "SELECT id, person, reason, create_time FROM x_bbs_shutup \
-             ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int",
+             ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
             &[&count, &offset],
         )
         .await
@@ -1174,8 +1292,14 @@ pub async fn shutup_list(
         .iter()
         .map(|row| {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("person".to_string(), Value::String(row.get("person")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "person".to_string(),
+                Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+            );
             if let Some(val) = row_opt_json::<String>(row, "reason") {
                 map.insert("reason".to_string(), val);
             }
@@ -1227,9 +1351,9 @@ pub async fn subject_filter_listsubjectinfo(
     let limit_val = body.get("count").and_then(|v| v.as_i64()).unwrap_or(20);
     let offset = (offset_val.saturating_sub(1)).saturating_mul(limit_val);
     let sql = if forum_id.is_empty() {
-        "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int"
+        "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2"
     } else {
-        "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL AND forum_id = $3 ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int"
+        "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL AND forum_id = $3 ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2"
     };
     let rows = if forum_id.is_empty() {
         client
@@ -1295,7 +1419,7 @@ pub async fn subject_search(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1) \
-             ORDER BY create_time::timestamp DESC LIMIT $2::int OFFSET $3::int",
+             ORDER BY create_time::timestamp DESC LIMIT $2 OFFSET $3",
             &[&"%".to_string(), &count, &offset],
         )
         .await
@@ -1424,7 +1548,7 @@ pub async fn topic_recommended_index(
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
-             WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time::timestamp DESC LIMIT $1::int",
+             WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time::timestamp DESC LIMIT $1",
             &[&count],
         )
         .await
@@ -1435,7 +1559,7 @@ pub async fn topic_recommended_index(
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1461,7 +1585,7 @@ pub async fn topic_search(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1) \
-             ORDER BY create_time::timestamp DESC LIMIT $2::int OFFSET $3::int",
+             ORDER BY create_time::timestamp DESC LIMIT $2 OFFSET $3",
             &[&"%".to_string(), &count, &offset],
         )
         .await
@@ -1509,13 +1633,21 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "sort".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                    )),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -1527,7 +1659,7 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1606,7 +1738,7 @@ pub async fn user_reply_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .map(|r| serde_json::to_value(r).unwrap())
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1636,7 +1768,7 @@ pub async fn user_role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1665,7 +1797,9 @@ pub async fn user_section_list(
             map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
             map.insert(
                 "sort".to_string(),
-                Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+                Value::Number(serde_json::Number::from(
+                    row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                )),
             );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
@@ -1674,7 +1808,7 @@ pub async fn user_section_list(
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1720,7 +1854,7 @@ pub async fn user_subject_list(
         .map(|t| serde_json::to_value(t).unwrap())
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1754,7 +1888,10 @@ pub async fn subjectattach_list(
         .map(|row| {
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("url".to_string(), Value::String(row.get("url")));
+            map.insert(
+                "url".to_string(),
+                Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+            );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
             }
@@ -1762,7 +1899,7 @@ pub async fn subjectattach_list(
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,

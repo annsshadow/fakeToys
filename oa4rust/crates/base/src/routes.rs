@@ -8,26 +8,26 @@ use crate::{cache_detail, echo_get, openapi_info};
 
 pub fn build_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/base/echo/get", get(echo_get))
-        .route("/jaxrs/base/echo", get(echo_get))
-        .route("/jaxrs/base/cache/detail", get(cache_detail))
-        .route("/jaxrs/base/openapi/info", get(openapi_info))
-        // plan002 U2：Java 全集对齐（x_base_core_project jaxrs，补齐 5 条）
-        .route("/jaxrs/base/cache", post(crate::cache_receive))
+        .route("/api/base/echo/get", get(echo_get))
+        .route("/api/base/echo", get(echo_get))
+        .route("/api/base/cache/detail", get(cache_detail))
+        .route("/api/base/openapi/info", get(openapi_info))
+        // plan002 U2：o2server 全集对齐（x_base_core_project o2server，补齐 5 条）
+        .route("/api/base/cache", post(crate::cache_receive))
         .route(
-            "/jaxrs/base/cache/config/flush",
+            "/api/base/cache/config/flush",
             get(crate::cache_config_flush),
         )
         .route(
-            "/jaxrs/base/cache/commonscript/flush",
+            "/api/base/cache/commonscript/flush",
             get(crate::cache_commonscript_flush),
         )
         .route(
-            "/jaxrs/base/fireschedule/classname/{className}",
+            "/api/base/fireschedule/classname/{className}",
             get(crate::fireschedule_execute),
         )
         .route(
-            "/jaxrs/base/sysresource/filePath/{filePath}",
+            "/api/base/sysresource/filePath/{filePath}",
             get(crate::sysresource_list),
         )
         .layer(axum::Extension(pool))

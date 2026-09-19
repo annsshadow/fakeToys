@@ -1,3 +1,5 @@
+# atarikbd
+
 ﻿## 智能键盘（ikbd）协
 ## 简
 Atari 公司的智能键盘（Intelligent Keyboard，ikbd）是一个通用的键盘控制器，其

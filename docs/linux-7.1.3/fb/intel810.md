@@ -1,4 +1,6 @@
-﻿## Intel 810/815 甯х紦鍐查┍鍔。
+# intel810
+
+﻿## Intel 810/815 甯х紦内查┍鍔。
 
 Tony Daplas <adaplas@pol.net>
 

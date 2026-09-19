@@ -1,3 +1,5 @@
+# monreader
+
 ﻿## 用于读取 z/VM Monitor 记录Linux API
 
 
@@ -62,7 +64,7 @@ API 没有提供用于控制 `*MONITOR` 服务的接口，例如指定要收集�
 
 ```
 这会以默monitor DCSS（MONDCSS）加载模块并创建一个设备节点
-### 文件操作
+## 文件操作
 支持以下文件操作：open、release、read、poll。读取有两种可选方式：要么配合轮询（polling）的非阻塞读取，要么不带轮询的阻塞读取。不支持 IOCTL
 ### 读取
 从设备读取会提供一12 字节monitor 控制元素（MCE），其后跟随一组连续的一个或多个 monitor 记录（类似于 CMS 工具 MONWRITE 的输出，但不4K 控制块）。MCE 包含关于后续记录集类型（sample/event 数据）、其中包含的 monitor 域（domain），以及记录集在 monitor DCSS 中起始和结束地址的信息。起始和结束地址可用于确定记录集的大小，结束地址是最后一个数据字节的地址。起始地址需要用来正确处“end-of-frame记录（域 1，记13），即它可以用来确定相对4K 页（frame）边界的记录起始偏移量

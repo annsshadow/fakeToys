@@ -150,207 +150,201 @@ pub async fn edit_person(
 
 /// 构建个人中心模块路由
 ///
-/// 注册个人信息查询/更新、密码修改（Java PasswordAction 契约）、
-/// 密码重置（Java ResetAction 契约）等接口。
+/// 注册个人信息查询/更新、密码修改（o2server PasswordAction 契约）、
+/// 密码重置（o2server ResetAction 契约）等接口。
 ///
 /// 使用 main.rs 注入的共享 SessionManager，确保与 auth crate 登录会话互认。
 pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
     let reset_store = reset::ResetCodeStore::new();
 
     Router::new()
-        .route("/jaxrs/person", get(get_person))
-        .route("/jaxrs/person", put(edit_person))
-        .route("/jaxrs/person/password", put(password::change))
+        .route("/api/person", get(get_person))
+        .route("/api/person", put(edit_person))
+        .route("/api/person/password", put(password::change))
         .route(
-            "/jaxrs/reset/check/credential/{credential}",
+            "/api/reset/check/credential/{credential}",
             get(reset::check_credential),
         )
         .route(
-            "/jaxrs/reset/check/password/{password}",
+            "/api/reset/check/password/{password}",
             get(reset::check_password),
         )
         .route(
-            "/jaxrs/reset/code/credential/{credential}",
+            "/api/reset/code/credential/{credential}",
             get(reset::send_code),
         )
-        .route("/jaxrs/reset", put(reset::reset_password))
+        .route("/api/reset", put(reset::reset_password))
         .route(
-            "/jaxrs/reset/password/anonymous",
+            "/api/reset/password/anonymous",
             post(reset::reset_password_anonymous),
         )
         // 注册端点（Public，无需认证）
-        .route("/jaxrs/person/regist", post(regist::register))
+        .route("/api/person/regist", post(regist::register))
         .route(
-            "/jaxrs/person/regist/check/name/{name}",
+            "/api/person/regist/check/name/{name}",
             get(regist::check_name),
         )
         .route(
-            "/jaxrs/person/regist/check/mobile/{mobile}",
+            "/api/person/regist/check/mobile/{mobile}",
             get(regist::check_mobile),
         )
         .route(
-            "/jaxrs/person/regist/check/email/{email}",
+            "/api/person/regist/check/email/{email}",
             get(regist::check_email),
         )
-        .route("/jaxrs/person/regist/code", post(regist::send_regist_code))
+        .route("/api/person/regist/code", post(regist::send_regist_code))
         // 电子签名端点
-        .route("/jaxrs/person/signature/upload", post(signature::upload))
-        .route("/jaxrs/person/signature/list", get(signature::list))
+        .route("/api/person/signature/upload", post(signature::upload))
+        .route("/api/person/signature/list", get(signature::list))
+        .route("/api/person/signature/delete/{id}", get(signature::delete))
         .route(
-            "/jaxrs/person/signature/delete/{id}",
-            get(signature::delete),
-        )
-        .route(
-            "/jaxrs/person/signature/manager/list",
+            "/api/person/signature/manager/list",
             get(signature::manager_list),
         )
         // 头像端点
-        .route("/jaxrs/person/icon/{person}", get(icon::get))
-        .route("/jaxrs/person/icon/upload", post(icon::upload))
-        // ══ Java x_organization_assemble_personal 契约补齐（u2）════════════
+        .route("/api/person/icon/{person}", get(icon::get))
+        .route("/api/person/icon/upload", post(icon::upload))
+        // ══ o2server x_organization_assemble_personal 契约补齐（u2）════════════
         // PersonAction
-        // 注：GET/PUT /jaxrs/person/icon 已由 personal_extend 提供同路径实现，
+        // 注：GET/PUT /api/person/icon 已由 personal_extend 提供同路径实现，
         // 此处仅补齐 octet-stream 上传与 mock 别名，避免跨 crate 路由冲突。
-        .route("/jaxrs/person/mockputtopost", post(edit_person))
-        .route("/jaxrs/person/icon", post(u2::set_icon_octet_stream))
+        .route("/api/person/mockputtopost", post(edit_person))
+        .route("/api/person/icon", post(u2::set_icon_octet_stream))
         .route(
-            "/jaxrs/person/icon/mockputtopost",
+            "/api/person/icon/mockputtopost",
             post(u2::upload_multipart_alias),
         )
         // PasswordAction
-        .route(
-            "/jaxrs/person/password/mockputtopost",
-            post(password::change),
-        )
+        .route("/api/person/password/mockputtopost", post(password::change))
         // RegistAction
-        .route("/jaxrs/person/regist/mode", get(u2::regist_mode))
+        .route("/api/person/regist/mode", get(u2::regist_mode))
         .route(
-            "/jaxrs/person/regist/captcha/width/{width}/height/{height}",
+            "/api/person/regist/captcha/width/{width}/height/{height}",
             get(auth::captcha::captcha_with_size),
         )
         .route(
-            "/jaxrs/person/regist/code/mobile/{mobile}",
+            "/api/person/regist/code/mobile/{mobile}",
             get(u2::regist_code_mobile),
         )
         .route(
-            "/jaxrs/person/regist/check/password/{password}",
+            "/api/person/regist/check/password/{password}",
             get(u2::regist_check_password),
         )
         // ResetAction
-        .route("/jaxrs/reset/mockputtopost", post(reset::reset_password))
+        .route("/api/reset/mockputtopost", post(reset::reset_password))
         // SignatureAction
         .route(
-            "/jaxrs/person/signature/list/person/{flag}",
+            "/api/person/signature/list/person/{flag}",
             get(u2::signature_list_person),
         )
         // CustomAction
-        .route("/jaxrs/person/custom/{name}", get(u2::custom_get))
-        .route("/jaxrs/person/custom/{name}", put(u2::custom_edit))
-        .route("/jaxrs/person/custom/{name}", post(u2::custom_edit))
-        .route("/jaxrs/person/custom/{name}", delete(u2::custom_delete))
+        .route("/api/person/custom/{name}", get(u2::custom_get))
+        .route("/api/person/custom/{name}", put(u2::custom_edit))
+        .route("/api/person/custom/{name}", post(u2::custom_edit))
+        .route("/api/person/custom/{name}", delete(u2::custom_delete))
         .route(
-            "/jaxrs/person/custom/{name}/mockdeletetoget",
+            "/api/person/custom/{name}/mockdeletetoget",
             get(u2::custom_delete),
         )
         .route(
-            "/jaxrs/person/custom/manager/person/{person}/name/{name}",
+            "/api/person/custom/manager/person/{person}/name/{name}",
             get(u2::custom_manager_get),
         )
         .route(
-            "/jaxrs/person/custom/manager/person/{person}/name/{name}",
+            "/api/person/custom/manager/person/{person}/name/{name}",
             put(u2::custom_manager_edit),
         )
         .route(
-            "/jaxrs/person/custom/manager/person/{person}/name/{name}/mockputtopost",
+            "/api/person/custom/manager/person/{person}/name/{name}/mockputtopost",
             post(u2::custom_manager_edit),
         )
         // DefinitionAction
-        .route("/jaxrs/person/definition/{name}", get(u2::definition_get))
-        .route("/jaxrs/person/definition/{name}", put(u2::definition_edit))
-        .route("/jaxrs/person/definition/{name}", post(u2::definition_edit))
+        .route("/api/person/definition/{name}", get(u2::definition_get))
+        .route("/api/person/definition/{name}", put(u2::definition_edit))
+        .route("/api/person/definition/{name}", post(u2::definition_edit))
         .route(
-            "/jaxrs/person/definition/{name}",
+            "/api/person/definition/{name}",
             delete(u2::definition_delete),
         )
         .route(
-            "/jaxrs/person/definition/{name}/mockdeletetoget",
+            "/api/person/definition/{name}/mockdeletetoget",
             get(u2::definition_delete),
         )
         .route(
-            "/jaxrs/person/definition/{name}/mockputtopost",
+            "/api/person/definition/{name}/mockputtopost",
             post(u2::definition_edit),
         )
         // EmpowerAction 残余
         .route(
-            "/jaxrs/person/empower/list/{id}/next/{count}",
+            "/api/person/empower/list/{id}/next/{count}",
             get(u2::empower_list_next),
         )
         .route(
-            "/jaxrs/person/empower/list/{id}/prev/{count}",
+            "/api/person/empower/list/{id}/prev/{count}",
             get(u2::empower_list_prev),
         )
         .route(
-            "/jaxrs/person/empower/list/person/{flag}",
+            "/api/person/empower/list/person/{flag}",
             get(u2::empower_list_with_person),
         )
         .route(
-            "/jaxrs/person/empower/{id}/mockputtopost",
+            "/api/person/empower/{id}/mockputtopost",
             post(empower::update),
         )
         .route(
-            "/jaxrs/person/empower/manager/{id}/mockputtopost",
+            "/api/person/empower/manager/{id}/mockputtopost",
             post(empower::manager_update),
         )
         .route(
-            "/jaxrs/person/empower/{id}/mockdeletetoget",
+            "/api/person/empower/{id}/mockdeletetoget",
             get(empower::delete),
         )
         .route(
-            "/jaxrs/person/empower/manager/{id}/mockdeletetoget",
+            "/api/person/empower/manager/{id}/mockdeletetoget",
             get(empower::manager_delete),
         )
         // EmpowerLogAction
         .route(
-            "/jaxrs/person/empowerlog/list/{id}/next/{count}",
+            "/api/person/empowerlog/list/{id}/next/{count}",
             get(u2::log_list_next),
         )
         .route(
-            "/jaxrs/person/empowerlog/list/{id}/prev/{count}",
+            "/api/person/empowerlog/list/{id}/prev/{count}",
             get(u2::log_list_prev),
         )
         .route(
-            "/jaxrs/person/empowerlog/list/currentperson/paging/{page}/size/{size}",
+            "/api/person/empowerlog/list/currentperson/paging/{page}/size/{size}",
             post(u2::log_currentperson_paging),
         )
         .route(
-            "/jaxrs/person/empowerlog/list/to/currentperson/paging/{page}/size/{size}",
+            "/api/person/empowerlog/list/to/currentperson/paging/{page}/size/{size}",
             post(u2::log_to_currentperson_paging),
         )
         .route(
-            "/jaxrs/person/empowerlog/manager/list/paging/{page}/size/{size}",
+            "/api/person/empowerlog/manager/list/paging/{page}/size/{size}",
             post(u2::log_manager_paging),
         )
         .route(
-            "/jaxrs/person/empowerlog/{id}",
+            "/api/person/empowerlog/{id}",
             axum::routing::delete(u2::log_delete),
         )
         .route(
-            "/jaxrs/person/empowerlog/{id}/mockdeletetoget",
+            "/api/person/empowerlog/{id}/mockdeletetoget",
             get(u2::log_delete),
         )
         // ExmailAction
-        .route("/jaxrs/person/exmail/new/count", get(u2::exmail_new_count))
+        .route("/api/person/exmail/new/count", get(u2::exmail_new_count))
         .route(
-            "/jaxrs/person/exmail/new/count/passive",
+            "/api/person/exmail/new/count/passive",
             get(u2::exmail_new_count_passive),
         )
         .route(
-            "/jaxrs/person/exmail/list/title/passive",
+            "/api/person/exmail/list/title/passive",
             get(u2::exmail_list_title_passive),
         )
-        .route("/jaxrs/person/exmail/sso", get(u2::exmail_sso))
-        .route("/jaxrs/person/exmail", get(u2::exmail_callback_get))
-        .route("/jaxrs/person/exmail", post(u2::exmail_callback_post))
+        .route("/api/person/exmail/sso", get(u2::exmail_sso))
+        .route("/api/person/exmail", get(u2::exmail_callback_get))
+        .route("/api/person/exmail", post(u2::exmail_callback_post))
         .layer(Extension(pool))
         .layer(Extension(session_manager))
         .layer(Extension(reset_store))

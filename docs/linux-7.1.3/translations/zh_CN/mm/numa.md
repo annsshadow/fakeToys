@@ -1,10 +1,14 @@
+# numa
+
 :Original: Documentation/mm/numa.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 始于1999年11月，作者： <kanoj@sgi.com>
@@ -36,6 +40,7 @@
 [cache misses]到“本地”内存——同一单元的内存，如果有的话——或者到最近的有内存的单元。
 
 这就自然而然有了Linux软件对NUMA系统的视角:
+
 
 Linux将系统的硬件资源划分为多个软件抽象，称为“节点”。Linux将节点映射到硬件平台的物理单元
 上，对一些架构的细节进行了抽象。与物理单元一样，软件节点可能包含0或更多的CPU、内存和/或IO

@@ -1,3 +1,5 @@
+# index
+
 ﻿
 ## 椹卞姩瀹炵幇鑰?API 鎸囧崡
 
@@ -66,7 +68,7 @@
 
 - [80211/index](80211/index)
 - [acpi/index](acpi/index)
-- [backlight/lp855x-driver.rst](backlight/lp855x-driver.rst)
+- [backlight/lp855x-driver.rst](backlight/lp855x-driver.md)
 - [clk](clk)
 - [coco/index](coco/index)
 - [console](console)

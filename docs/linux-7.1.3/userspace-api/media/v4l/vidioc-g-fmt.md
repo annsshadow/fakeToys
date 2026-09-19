@@ -1,7 +1,9 @@
+# vidioc-g-fmt
+
 ﻿
 
 
-######## ioctl VIDIOC_G_FMT, VIDIOC_S_FMT, VIDIOC_TRY_FMT
+## ioctl VIDIOC_G_FMT, VIDIOC_S_FMT, VIDIOC_TRY_FMT
 
 
 ## Name

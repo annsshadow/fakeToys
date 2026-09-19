@@ -32,33 +32,33 @@ mod closure_tests {
     #[tokio::test]
     async fn closure_person_endpoints_registered() {
         for uri in [
-            "/jaxrs/person/list/login/after",
-            "/jaxrs/person/list/login/after/object",
-            "/jaxrs/person/list/login/recent",
-            "/jaxrs/person/list/login/recent/object",
-            "/jaxrs/person/list/pair/identity",
-            "/jaxrs/person/detail/p1",
-            "/jaxrs/person/list/group/object",
-            "/jaxrs/person/list/identity/object",
-            "/jaxrs/person/list/personattribute",
-            "/jaxrs/person/list/personattribute/object",
-            "/jaxrs/person/list/person/sub/direct",
-            "/jaxrs/person/list/person/sub/direct/object",
-            "/jaxrs/person/list/person/sub/nested",
-            "/jaxrs/person/list/person/sub/nested/object",
-            "/jaxrs/person/list/person/sup/direct",
-            "/jaxrs/person/list/person/sup/direct/object",
-            "/jaxrs/person/list/person/sup/nested",
-            "/jaxrs/person/list/person/sup/nested/object",
-            "/jaxrs/person/list/role/object",
-            "/jaxrs/person/list/unit/sub/direct",
-            "/jaxrs/person/list/unit/sub/direct/object",
-            "/jaxrs/person/list/unit/sub/nested",
-            "/jaxrs/person/list/unit/sub/nested/object",
-            "/jaxrs/person/list/unit/sub/direct/like",
-            "/jaxrs/person/list/unit/sub/direct/like/object",
-            "/jaxrs/person/list/unit/sub/nested/like",
-            "/jaxrs/person/list/unit/sub/nested/like/object",
+            "/api/person/list/login/after",
+            "/api/person/list/login/after/object",
+            "/api/person/list/login/recent",
+            "/api/person/list/login/recent/object",
+            "/api/person/list/pair/identity",
+            "/api/person/detail/p1",
+            "/api/person/list/group/object",
+            "/api/person/list/identity/object",
+            "/api/person/list/personattribute",
+            "/api/person/list/personattribute/object",
+            "/api/person/list/person/sub/direct",
+            "/api/person/list/person/sub/direct/object",
+            "/api/person/list/person/sub/nested",
+            "/api/person/list/person/sub/nested/object",
+            "/api/person/list/person/sup/direct",
+            "/api/person/list/person/sup/direct/object",
+            "/api/person/list/person/sup/nested",
+            "/api/person/list/person/sup/nested/object",
+            "/api/person/list/role/object",
+            "/api/person/list/unit/sub/direct",
+            "/api/person/list/unit/sub/direct/object",
+            "/api/person/list/unit/sub/nested",
+            "/api/person/list/unit/sub/nested/object",
+            "/api/person/list/unit/sub/direct/like",
+            "/api/person/list/unit/sub/direct/like/object",
+            "/api/person/list/unit/sub/nested/like",
+            "/api/person/list/unit/sub/nested/like/object",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -71,34 +71,34 @@ mod closure_tests {
     #[tokio::test]
     async fn closure_unit_endpoints_registered() {
         for uri in [
-            "/jaxrs/unit/identity/level",
-            "/jaxrs/unit/identity/level/object",
-            "/jaxrs/unit/identity/type",
-            "/jaxrs/unit/identity/type/object",
-            "/jaxrs/unit/list/identity",
-            "/jaxrs/unit/list/identity/object",
-            "/jaxrs/unit/list/identity/sup/nested",
-            "/jaxrs/unit/list/identity/sup/nested/object",
-            "/jaxrs/unit/list/level",
-            "/jaxrs/unit/list/level/object",
-            "/jaxrs/unit/list/level/name/object",
-            "/jaxrs/unit/list/person",
-            "/jaxrs/unit/list/person/object",
-            "/jaxrs/unit/list/person/sup/nested",
-            "/jaxrs/unit/list/person/sup/nested/object",
-            "/jaxrs/unit/list/unitattribute",
-            "/jaxrs/unit/list/unitattribute/object",
-            "/jaxrs/unit/list/unitduty",
-            "/jaxrs/unit/list/unitduty/object",
-            "/jaxrs/unit/list/unit/sub/direct/object",
-            "/jaxrs/unit/list/unit/sub/nested/object",
-            "/jaxrs/unit/list/unit/sup/direct/object",
-            "/jaxrs/unit/list/unit/sup/nested/object",
-            "/jaxrs/unit/list/unit/tree",
-            "/jaxrs/unit/check/unit/has/identity",
-            "/jaxrs/unit/check/unit/has/unit",
-            "/jaxrs/unit/list/types",
-            "/jaxrs/unit/list/types/object",
+            "/api/unit/identity/level",
+            "/api/unit/identity/level/object",
+            "/api/unit/identity/type",
+            "/api/unit/identity/type/object",
+            "/api/unit/list/identity",
+            "/api/unit/list/identity/object",
+            "/api/unit/list/identity/sup/nested",
+            "/api/unit/list/identity/sup/nested/object",
+            "/api/unit/list/level",
+            "/api/unit/list/level/object",
+            "/api/unit/list/level/name/object",
+            "/api/unit/list/person",
+            "/api/unit/list/person/object",
+            "/api/unit/list/person/sup/nested",
+            "/api/unit/list/person/sup/nested/object",
+            "/api/unit/list/unitattribute",
+            "/api/unit/list/unitattribute/object",
+            "/api/unit/list/unitduty",
+            "/api/unit/list/unitduty/object",
+            "/api/unit/list/unit/sub/direct/object",
+            "/api/unit/list/unit/sub/nested/object",
+            "/api/unit/list/unit/sup/direct/object",
+            "/api/unit/list/unit/sup/nested/object",
+            "/api/unit/list/unit/tree",
+            "/api/unit/check/unit/has/identity",
+            "/api/unit/check/unit/has/unit",
+            "/api/unit/list/types",
+            "/api/unit/list/types/object",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -111,15 +111,15 @@ mod closure_tests {
     #[tokio::test]
     async fn closure_identity_endpoints_registered() {
         for uri in [
-            "/jaxrs/identity/list/person/object",
-            "/jaxrs/identity/list/unit/sub/direct/object",
-            "/jaxrs/identity/list/unit/sub/nested/object",
-            "/jaxrs/identity/list/unit/person",
-            "/jaxrs/identity/list/unit/person/object",
-            "/jaxrs/identity/list/group",
-            "/jaxrs/identity/list/group/object",
-            "/jaxrs/identity/list/major/person",
-            "/jaxrs/identity/list/major/person/object",
+            "/api/identity/list/person/object",
+            "/api/identity/list/unit/sub/direct/object",
+            "/api/identity/list/unit/sub/nested/object",
+            "/api/identity/list/unit/person",
+            "/api/identity/list/unit/person/object",
+            "/api/identity/list/group",
+            "/api/identity/list/group/object",
+            "/api/identity/list/major/person",
+            "/api/identity/list/major/person/object",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -132,26 +132,26 @@ mod closure_tests {
     #[tokio::test]
     async fn closure_group_role_duty_endpoints_registered() {
         for uri in [
-            "/jaxrs/group/has/role",
-            "/jaxrs/group/list/group/sub/direct",
-            "/jaxrs/group/list/group/sub/direct/object",
-            "/jaxrs/group/list/group/sub/nested",
-            "/jaxrs/group/list/group/sub/nested/object",
-            "/jaxrs/group/list/group/sup/direct",
-            "/jaxrs/group/list/group/sup/direct/object",
-            "/jaxrs/group/list/group/sup/nested",
-            "/jaxrs/group/list/group/sup/nested/object",
-            "/jaxrs/group/list/person/object",
-            "/jaxrs/group/list/identity",
-            "/jaxrs/group/list/identity/object",
-            "/jaxrs/group/list/group/tree",
-            "/jaxrs/role/list/object",
-            "/jaxrs/role/list/person/object",
-            "/jaxrs/unitduty/list/identity/unit/name",
-            "/jaxrs/unitduty/list/identity/unit/name/object",
-            "/jaxrs/unitduty/list/name/identity",
-            "/jaxrs/unitduty/list/unit/object",
-            "/jaxrs/unitduty/find/by/unit/name",
+            "/api/group/has/role",
+            "/api/group/list/group/sub/direct",
+            "/api/group/list/group/sub/direct/object",
+            "/api/group/list/group/sub/nested",
+            "/api/group/list/group/sub/nested/object",
+            "/api/group/list/group/sup/direct",
+            "/api/group/list/group/sup/direct/object",
+            "/api/group/list/group/sup/nested",
+            "/api/group/list/group/sup/nested/object",
+            "/api/group/list/person/object",
+            "/api/group/list/identity",
+            "/api/group/list/identity/object",
+            "/api/group/list/group/tree",
+            "/api/role/list/object",
+            "/api/role/list/person/object",
+            "/api/unitduty/list/identity/unit/name",
+            "/api/unitduty/list/identity/unit/name/object",
+            "/api/unitduty/list/name/identity",
+            "/api/unitduty/list/unit/object",
+            "/api/unitduty/find/by/unit/name",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -164,19 +164,19 @@ mod closure_tests {
     #[tokio::test]
     async fn closure_attr_misc_endpoints_registered() {
         for uri in [
-            "/jaxrs/personattribute/list/name/person",
-            "/jaxrs/personattribute/list/attribute/person/name",
-            "/jaxrs/personattribute/list/person/object",
-            "/jaxrs/personattribute/set/person/name",
-            "/jaxrs/personattribute/append/person/name",
-            "/jaxrs/unitattribute/list/name/unit",
-            "/jaxrs/unitattribute/list/attribute/unit/name",
-            "/jaxrs/unitattribute/list/unit/object",
-            "/jaxrs/unitattribute/set/unit/name",
-            "/jaxrs/unitattribute/append/unit/name",
-            "/jaxrs/empower/list/identity/object",
-            "/jaxrs/empowerlog",
-            "/jaxrs/distinguishedname/list",
+            "/api/personattribute/list/name/person",
+            "/api/personattribute/list/attribute/person/name",
+            "/api/personattribute/list/person/object",
+            "/api/personattribute/set/person/name",
+            "/api/personattribute/append/person/name",
+            "/api/unitattribute/list/name/unit",
+            "/api/unitattribute/list/attribute/unit/name",
+            "/api/unitattribute/list/unit/object",
+            "/api/unitattribute/set/unit/name",
+            "/api/unitattribute/append/unit/name",
+            "/api/empower/list/identity/object",
+            "/api/empowerlog",
+            "/api/distinguishedname/list",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -190,7 +190,7 @@ mod closure_tests {
     async fn closure_get_unit_type_endpoint_reachable() {
         // 唯一新增 GET 端点：命中路由后因无法建连返回 500（非 404）
         assert_eq!(
-            status_of("GET", "/jaxrs/unit/list/type/dept/object").await,
+            status_of("GET", "/api/unit/list/type/dept/object").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -257,8 +257,8 @@ mod closure_tests {
     }
 
     #[test]
-    fn closure_wrap_boolean_contract_matches_java() {
-        // Java WrapBoolean 序列化为 {"value": bool}
+    fn closure_wrap_boolean_contract_matches_legacy() {
+        // o2server WrapBoolean 序列化为 {"value": bool}
         let v = wrap_bool(true);
         assert_eq!(v, serde_json::json!({"value": true}));
         assert_eq!(wrap_bool(false), serde_json::json!({"value": false}));
@@ -282,7 +282,7 @@ mod closure_tests {
 
     #[test]
     fn closure_merged_flags_merges_single_and_list() {
-        // Java Wi 兼容：{name, nameList} / {unit, unitList} 单值与数组合并去重
+        // o2server Wi 兼容：{name, nameList} / {unit, unitList} 单值与数组合并去重
         let body = serde_json::json!({"unit": "u1", "unitList": ["u1", " u2 "], "name": "n1"});
         assert_eq!(
             crate::endpoints_duty2::merged_flags(&body, "unit", "unitList"),

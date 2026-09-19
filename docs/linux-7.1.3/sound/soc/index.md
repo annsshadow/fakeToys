@@ -1,3 +1,5 @@
+# index
+
 ﻿## ALSA SoC 灞。
 
 本页ALSA SoC（片上音频系统）层文档的索引，汇总了 overview、codec、dai、dapm、dpcm 等子章节入口，便于音频驱动开发者按主题查阅 SoC 音频框架说明

@@ -1,5 +1,7 @@
+# scsi
+
 ﻿
-## SCSI 瀛愮郴缁熸枃妗。
+## SCSI 子愮系统熸枃妗。
 
 Linux 文档项目（LDP）维护着一份描Linux 内核（lk.4 系列SCSI 子系统的文档。参见：
 https://www.tldp.org/HOWTO/SCSI-2.4-HOWTO 。LDP 提供单页和多页的 HTML 版本，以postscript pdf 版本

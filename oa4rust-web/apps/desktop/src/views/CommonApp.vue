@@ -1,31 +1,51 @@
 <template>
   <div class="crud-view">
     <div class="view-header glass-card">
-      <div><h1>公共组件库</h1><p class="subtitle">/jaxrs/general/assemble/control/list</p></div>
-      <button class="btn-primary" @click="showCreate=true">+ 新建</button>
+      <div>
+        <h1>公共组件库</h1>
+        <p class="subtitle">/api/general/assemble/control/*（x_general_assemble_control_config）</p>
+      </div>
+      <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
-      <div class="toolbar"><input v-model="search" placeholder="搜索..." class="search-input" /><button class="btn-refresh" @click="loadData">🔄 刷新</button></div>
+      <div class="toolbar">
+        <input v-model="search" placeholder="搜索系统名称 / 版本..." class="search-input" />
+        <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+      </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
-      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">📦</div><p>暂无数据</p></div>
+      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧰</div><p>暂无公共组件配置</p></div>
       <table v-else class="data-table">
-        <thead><tr><th>名称</th><th>标识</th><th>更新时间</th><th>操作</th></tr></thead>
+        <thead><tr><th>系统</th><th>维护模式</th><th>开放注册</th><th>版本</th><th>创建时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.name||item.label||'—' }}</td>
-            <td class="mono">{{ item.flag||item.id||'—' }}</td>
-            <td>{{ fmtTime(item.updateTime||item.createTime) }}</td>
-            <td><button class="btn-sm" @click="editItem(item)">编辑</button><button class="btn-sm btn-del" @click="deleteItem(item)">删除</button></td>
+            <td>{{ item.systemName||'—' }}</td>
+            <td>{{ item.maintenanceMode?'是':'否' }}</td>
+            <td>{{ item.allowRegistration?'是':'否' }}</td>
+            <td class="mono">{{ item.version||'—' }}</td>
+            <td>{{ fmtTime(item.createTime) }}</td>
+            <td>
+              <button class="btn-sm" @click="editItem(item)">编辑</button>
+              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
     <div v-if="showCreate||showEdit" class="modal-overlay" @click.self="closeModal">
       <div class="modal glass-card">
-        <h3>{{ showEdit?'编辑':'新建' }}公共组件库</h3>
-        <div class="form-group"><label>名称</label><input v-model="form.name" class="form-input" /></div>
-        <div class="form-group"><label>标识</label><input v-model="form.flag" class="form-input" /></div>
-        <div class="modal-actions"><button class="btn-cancel" @click="closeModal">取消</button><button class="btn-save" :disabled="!form.name" @click="saveItem">保存</button></div>
+        <h3>{{ showEdit?'编辑':'新建' }}公共组件配置</h3>
+        <div class="form-group"><label>系统名称</label><input v-model="form.systemName" placeholder="如 o2server" class="form-input mono" /></div>
+        <div class="form-group"><label>版本</label><input v-model="form.version" placeholder="如 2.x" class="form-input mono" /></div>
+        <div class="form-group">
+          <label><input type="checkbox" v-model="form.maintenanceMode" /> 维护模式</label>
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" v-model="form.allowRegistration" /> 开放注册</label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="closeModal">取消</button>
+          <button class="btn-save" :disabled="!form.systemName?.trim()||saving" @click="saveItem">{{ saving?'保存中…':'保存' }}</button>
+        </div>
       </div>
     </div>
   </div>
@@ -34,49 +54,73 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { confirmMsg } from '../utils/toast'
 
 interface Item {
   id: string
-  name?: string
-  label?: string
-  flag?: string
-  updateTime?: string
+  systemName?: string
+  maintenanceMode?: boolean
+  allowRegistration?: boolean
+  version?: string
   createTime?: string
 }
+interface GeneralForm {
+  systemName?: string
+  version?: string
+  maintenanceMode?: boolean
+  allowRegistration?: boolean
+}
+
+const listEp = '/api/general/assemble/control/list'
+const createEp = '/api/general/assemble/control/create'
+const qk = ['Common', 'list']
+
 const search = ref(''),
   showCreate = ref(false),
   showEdit = ref(false),
-  loading = ref(false)
+  loading = ref(false),
+  saving = ref(false)
 const items = ref<Item[]>([]),
-  form = ref<Partial<Item>>({}),
+  form = ref<GeneralForm>({}),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
-const ep = '/jaxrs/general/assemble/control/list'
-const qk = ['Common', 'list']
+
 const { data } = useQuery({
   queryKey: qk,
   queryFn: async () => {
     loading.value = true
     try {
-      const r = await api.get(ep)
-      return (r as any)?.data ?? []
+      const r = (await api.get(listEp)) as unknown as { data?: unknown }
+      return Array.isArray(r?.data) ? (r.data as Item[]) : []
     } finally {
       loading.value = false
     }
   },
 })
-items.value = data.value ?? []
+items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
+
 const filtered = computed(() =>
   search.value
     ? items.value.filter(
         (i) =>
-          (i.name || '').toLowerCase().includes(search.value.toLowerCase()) ||
-          (i.flag || '').toLowerCase().includes(search.value.toLowerCase()),
+          (i.systemName || '').toLowerCase().includes(search.value.toLowerCase()) ||
+          (i.version || '').toLowerCase().includes(search.value.toLowerCase()),
       )
     : items.value,
 )
+
+function openCreate() {
+  form.value = { systemName: '', version: '', maintenanceMode: false, allowRegistration: false }
+  editingId.value = null
+  showCreate.value = true
+}
 function editItem(item: Item) {
-  form.value = { ...item }
+  form.value = {
+    systemName: item.systemName ?? '',
+    version: item.version ?? '',
+    maintenanceMode: Boolean(item.maintenanceMode),
+    allowRegistration: Boolean(item.allowRegistration),
+  }
   editingId.value = item.id
   showEdit.value = true
 }
@@ -86,23 +130,38 @@ function closeModal() {
   form.value = {}
 }
 const saveM = useMutation({
-  mutationFn: async (d: any) => (editingId.value ? api.put(ep + '/' + editingId.value, d) : api.post(ep, d)),
+  mutationFn: async () => {
+    saving.value = true
+    try {
+      // 后端 spec 按 TEXT 列写入：布尔以 'true'/'false' 字符串传递，与列表 bool 读取兼容（PG text→bool）。
+      const payload: Record<string, string> = {
+        systemName: form.value.systemName ?? '',
+        version: form.value.version ?? '',
+        maintenanceMode: String(Boolean(form.value.maintenanceMode)),
+        allowRegistration: String(Boolean(form.value.allowRegistration)),
+      }
+      if (editingId.value) return api.post(`/api/general/assemble/control/save/${editingId.value}`, payload)
+      return api.post(createEp, payload)
+    } finally {
+      saving.value = false
+    }
+  },
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
 })
 function saveItem() {
-  if (form.value.name) saveM.mutate(form.value)
+  saveM.mutate()
 }
 const delM = useMutation({
-  mutationFn: async (id: string) => api.delete(ep + '/' + id),
+  mutationFn: async (id: string) => api.post(`/api/general/assemble/control/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },
 })
-function deleteItem(item: Item) {
-  if (confirmMsg('确定删除？')) delM.mutate(item.id)
+async function deleteItem(item: Item) {
+  if (await confirmMsg('确定删除该配置？')) delM.mutate(item.id)
 }
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
@@ -115,75 +174,6 @@ function fmtTime(t?: string) {
     return String(t)
   }
 }
-
-const assemble_control_qrcode_list_ref = ref<any[]>([])
-const assemble_control_securityclearance_enable_ref = ref<any[]>([])
-const general_assemble_control_invoice_ref = ref<any[]>([])
-const general_core_list_ref = ref<any[]>([])
-const general_assemble_control_office_ref = ref<any[]>([])
-const general_dict_item_create_ref = ref<any[]>([])
-const general_area_list_ref = ref<any[]>([])
-const general_config_list_ref = ref<any[]>([])
-const assemble_control_attendscope_list_ref = ref<any[]>([])
-const assemble_control_excel_upload_ref = ref<any[]>([])
-const assemble_control_area_create_ref = ref<any[]>([])
-const dict_item_list_test_dict_id_ref = ref<any[]>([])
-const general_assemble_config_ref = ref<any[]>([])
-const assemble_control_permissions_mind_ref = ref<any[]>([])
-const general_worktime_isworkday_20240101_ref = ref<any[]>([])
-const assemble_control_area_list_ref = ref<any[]>([])
-const general_assemble_control_securityclearance_ref = ref<any[]>([])
-const assemble_control_securityclearance_list_ref = ref<any[]>([])
-const assemble_control_securityclearance_object_ref = ref<any[]>([])
-const assemble_control_invoice_list_ref = ref<any[]>([])
-const general_assemble_control_status_ref = ref<any[]>([])
-const assemble_control_worktime_minutesofworkday_ref = ref<any[]>([])
-const general_worktime_isworkday_ref = ref<any[]>([])
-const assemble_control_upgrade_2021090902_ref = ref<any[]>([])
-const general_file_list_ref = ref<any[]>([])
-const api_jaxrs_ap_455_data = ref<any[]>([])
-const api_jaxrs_ap_42_data = ref<any[]>([])
-const api_jaxrs_co_514_data = ref<any[]>([])
-const api_jaxrs_correlatio_588_data = ref<any[]>([])
-const api_jaxrs_co_405_data = ref<any[]>([])
-const api_jaxrs_correlatio_128_data = ref<any[]>([])
-const api_jaxrs_correlatio_39_data = ref<any[]>([])
-const api_jaxrs_correlatio_521_data = ref<any[]>([])
-const api_jaxrs_correlatio_173_data = ref<any[]>([])
-const api_jaxrs_correlatio_939_data = ref<any[]>([])
-const api_jaxrs_correlatio_390_data = ref<any[]>([])
-const api_jaxrs_co_467_data = ref<any[]>([])
-const api_jaxrs_correlatio_484_data = ref<any[]>([])
-const jaxrs_correlation_service_processing_correlation_type_processplatform_job_job_1_ref = ref<any[]>([])
-const jaxrs_correlation_service_processing_correlation_type_processplatform_job_job_2_ref = ref<any[]>([])
-const api_jaxrs_correlatio_347_data = ref<any[]>([])
-const api_jaxrs_correlatio_549_data = ref<any[]>([])
-const api_jaxrs_co_571_data = ref<any[]>([])
-const api_jaxrs_correlatio_116_data = ref<any[]>([])
-const jaxrs_correlation_service_processing_unlink_type1_id1_type2_id2_ref = ref<any[]>([])
-const api_jaxrs_ge_584_data = ref<any[]>([])
-const api_jaxrs_ge_88_data = ref<any[]>([])
-const jaxrs_general_assemble_control_excel_upload_with_url_ref = ref<any[]>([])
-const api_jaxrs_general_as_790_data = ref<any[]>([])
-const api_jaxrs_ge_799_data = ref<any[]>([])
-const jaxrs_general_assemble_control_invoice_upload_ref = ref<any[]>([])
-const api_jaxrs_ge_807_data = ref<any[]>([])
-const jaxrs_general_assemble_control_invoice_upload_with_url_ref = ref<any[]>([])
-const jaxrs_general_assemble_control_office_html_to_word_ref = ref<any[]>([])
-const api_jaxrs_ge_132_data = ref<any[]>([])
-const api_jaxrs_ge_60_data = ref<any[]>([])
-const jaxrs_general_assemble_control_securityclearance_subject_ref = ref<any[]>([])
-const jaxrs_general_assemble_control_securityclearance_system_ref = ref<any[]>([])
-const api_jaxrs_ge_638_data = ref<any[]>([])
-const jaxrs_general_assemble_control_upgrade_2021090901_ref = ref<any[]>([])
-const api_jaxrs_ge_840_data = ref<any[]>([])
-const api_jaxrs_ge_83_data = ref<any[]>([])
-const api_jaxrs_general_di_728_data = ref<any[]>([])
-const api_jaxrs_general_di_462_data = ref<any[]>([])
-const api_jaxrs_general_fi_958_data = ref<any[]>([])
-const api_jaxrs_ge_977_data = ref<any[]>([])
-const api_jaxrs_general_in_370_data = ref<any[]>([])
-const api_jaxrs_ge_489_data = ref<any[]>([])
 </script>
 <style scoped>
 .crud-view{display:flex;flex-direction:column;gap:16px;height:100%}
@@ -205,10 +195,11 @@ const api_jaxrs_ge_489_data = ref<any[]>([])
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
-.modal{padding:24px;width:480px;max-width:90vw}
+.modal{padding:24px;width:440px;max-width:90vw}
 .modal h3{font-size:16px;color:var(--color-primary);margin:0 0 16px}
 .form-group{margin-bottom:12px}
-.form-group label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.form-group label{font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:8px}
+.form-group label:first-child{display:block;font-size:12px;color:var(--text-muted)}
 .form-input{width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none;box-sizing:border-box}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .btn-cancel{padding:8px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer}

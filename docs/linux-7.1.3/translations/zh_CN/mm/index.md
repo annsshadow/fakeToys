@@ -1,20 +1,24 @@
 
+# index
+
 :Original: Documentation/mm/index.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## Linux内存管理文档
 
 
 这是一份关于了解Linux的内存管理子系统的指南。如果你正在寻找关于简单分配内存的
 建议，请参阅内存分配指南
-(Documentation/translations/zh_CN/core-api/memory-allocation.rst)。
+(Documentation/translations/zh_CN/core-api/memory-allocation.md)。
 关于控制和调整的指南，请看管理指南
-(Documentation/translations/zh_CN/admin-guide/mm/index.rst)。
+(Documentation/translations/zh_CN/admin-guide/mm/index.md)。
 
 
 - [highmem](highmem)

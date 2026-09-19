@@ -1,8 +1,10 @@
+# netif-msg
+
 ﻿## NETIF 消息级别
 
 
 网络接口消息级别设置的设计
-### 历史
+## 历史
 
 
  消息级别接口的设计受到以往实践向后兼容性的指导和约束。为了理解当前的实践
@@ -28,14 +30,17 @@
 
     Or more precisely::
 
+
 	debug < 0 ? 0 : 1 << min(sizeof(int)-1, debug)
 
     Messages should changes from::
+
 
       if (debug > 1)
 	   printk(MSG_DEBUG "%s: ...
 
     to::
+
 
       if (np->msg_enable & NETIF_MSG_LINK)
 	   printk(MSG_DEBUG "%s: ...

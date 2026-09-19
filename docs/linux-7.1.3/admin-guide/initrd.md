@@ -1,3 +1,5 @@
+# initrd
+
 ﻿## 使用初始 RAM 磁盘（initrd
 
 Written 1996,2000 by Werner Almesberger <werner.almesberger@epfl.ch> and
@@ -7,7 +9,7 @@ Hans Lermen <lermen@fgan.de>
 initrd 提供了通过引导加载程序加载一RAM 磁盘的能力。随后该 RAM 磁盘可以被挂为根文件系统，并可以从中运行程序。之后，可以从另一个设备挂载一个新的根文件系统先前的根（来initrd）随后被移动到一个目录，并可以在之后被卸载
 initrd 主要设计用于让系统启动分两个阶段进行：内核以一组最小的内置驱动启动，而额的模块从 initrd 加载
 本文档简要概initrd 的使用。关于启动过程的更详细讨论可参见 [#f1]_
-### 操作
+## 操作
 
 
 使用 initrd 时，系统通常如下启动
@@ -95,9 +97,11 @@ initrd 执行程序所需的组件（例如可执行文件格式和文件系统�
     (if space is critical, you may want to use the Minix FS instead of Ext2)
  3) mount the file system, e.g.::
 
+
 	# mount -t ext2 -o loop initrd /mnt
 
  4) create the console device::
+
 
     # mkdir /mnt/dev
     # mknod /mnt/dev/console c 5 1
@@ -110,6 +114,7 @@ initrd 执行程序所需的组件（例如可执行文件格式和文件系统�
  6) correct operation the initrd environment can frequently be tested
     even without rebooting with the command::
 
+
 	# chroot /mnt /sbin/init
 
     This is of course limited to initrds that do not interfere with the
@@ -119,10 +124,12 @@ initrd 执行程序所需的组件（例如可执行文件格式和文件系统�
     such a chroot'ed initrd environment.)
  7) unmount the file system::
 
+
 	# umount /mnt
 
  8) the initrd is now in the file "initrd". Optionally, it can now be
     compressed::
+
 
 	# gzip -9 initrd
 ```
@@ -147,7 +154,7 @@ initrd 执行程序所需的组件（例如可执行文件格式和文件系统�
 关于其它引导加载程序，请参考各自的文档
 现在你可以引导并享受使用 initrd 了
 
-### 更改根设
+## 更改根设
 
 完成其职责后，init 通常会更改根设备，并继续在“真正的”根设备上启Linux 系统
 该流程包含以下步骤：
@@ -181,7 +188,7 @@ initrd 执行程序所需的组件（例如可执行文件格式和文件系统�
 ```
 也可以将 initrd NFS 挂载的根一起使用，详见 `pivot_root(8)` 手册页
 
-### 使用场景
+## 使用场景
 
 
 实现 initrd 的主要动机是允许在系统安装时进行模块化内核配置。流程如下：
@@ -217,7 +224,7 @@ initrd 加载的系统可以调用一个用户友好的对话框，并且还可�
 注意，该机制NFS 及类似文件系统不兼容
 这个旧的、已废弃的机制通常称为 `change_root`，而新的、受支持的机制称`pivot_root`
 
-### change_root pivot_root 混合机制
+## change_root pivot_root 混合机制
 
 
 如果你不想使`root=/dev/ram0` 来触pivot_root 机制，你可以initrd 镜像同时创建 `/linuxrc` `/sbin/init`
@@ -231,7 +238,7 @@ initrd 加载的系统可以调用一个用户友好的对话框，并且还可�
 将由这个 init 负责在最终执行真正的 `/sbin/init` 之前构建正确的环境（也许使用
 命令行上传入`root= device`）
 
-### 资源
+## 资源
 
 
     https://www.almesberger.net/cv/papers/ols2k-9.ps.gz

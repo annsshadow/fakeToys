@@ -1,3 +1,5 @@
+# verify-bugs-and-bisect-regressions
+
 ﻿
 ## 如何验证缺陷并进行回归的二分定位
 
@@ -63,6 +65,7 @@
 
   b) Build, install, and boot a kernel::
 
+
     cp ~/kernel-config-working .config
     make olddefconfig
     make -j $(nproc --all)
@@ -112,6 +115,7 @@
 
   b) Initialize the bisection::
 
+
     cd ~/linux/
     git bisect start
     git bisect good v6.0
@@ -134,12 +138,14 @@
 
   d) Once your finished the bisection, put a few things away::
 
+
     cd ~/linux/
     git bisect log > ~/bisect-log
     cp .config ~/bisection-config-culprit
     git bisect reset
 
   e) Try to verify the bisection result::
+
 
     git switch --discard-changes --detach mainline/master
     git revert --no-edit cafec0cacaca0
@@ -160,6 +166,7 @@
 
     To then for example erase a kernel that identifies itself as
     '6.0-rc1-local-gcafec0cacaca0', use this::
+
 
        sudo rm -rf /lib/modules/6.0-rc1-local-gcafec0cacaca0
        sudo kernel-install -v remove 6.0-rc1-local-gcafec0cacaca0
@@ -301,6 +308,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   Now create a build configuration file::
 
+
     make olddefconfig
 
   The kernel build scripts then will try to locate the build configuration file for the running kernel and then adjust it for the needs of the kernel sources you checked out. While doing so, it will print a few lines you need to check.
@@ -321,6 +329,7 @@ Note: the instructions assume you are building and testing on the same machine; 
      yes '' | make localmodconfig
 
   There is a catch to this, as the 'apparently' in initial sentence of this step and the preparation instructions already hinted at:
+
 
   “localmodconfig”目标很容易禁用那些仅偶尔使用的功能对应的内核模块——例如自启动以来尚未连接的外部外设的模块、尚未使用的虚拟化软件、VPN 隧道，以及其他一些东西。这是因为某些任务依赖的内核模块只有在你首次执行这类任务时，Linux 才会加载
 
@@ -349,6 +358,7 @@ Note: the instructions assume you are building and testing on the same machine; 
       -e DEBUG_INFO -e DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT -e KALLSYMS
 
   But if you are extremely short on storage space, you might want to disable debug symbols instead::
+
 
     ./scripts/config -d DEBUG_INFO -d DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT \
       -d DEBUG_INFO_DWARF4 -d DEBUG_INFO_DWARF5 -e CONFIG_DEBUG_INFO_NONE
@@ -395,6 +405,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   * In all other cases, run::
 
+
       cd ~/linux/
       git switch --discard-changes --detach mainline/master
 
@@ -423,6 +434,7 @@ Note: the instructions assume you are building and testing on the same machine; 
   For now assume 150 MByte in /boot/ and 200 in /lib/modules/ will suffice; how much your kernels actually require will be determined later during this guide.
 
   Now install the kernel's modules and its image, which will be stored in parallel to the your Linux distribution's kernels::
+
 
     sudo make modules_install
     command -v installkernel && sudo make install
@@ -488,6 +500,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   Now use the checked out code to build and install another kernel using the commands the earlier steps already described in more detail::
 
+
     cp ~/kernel-config-working .config
     make olddefconfig
     make -j $(nproc --all)
@@ -499,6 +512,7 @@ Note: the instructions assume you are building and testing on the same machine; 
     reboot
 
   Confirm you booted the kernel you intended to start and check its tainted status::
+
 
     tail -n 1 ~/kernels-built
     uname -r
@@ -515,7 +529,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 如果你遇到的是回归问题，请继续并至少执行下一段
 
 
-### 2 段：检查你构建的内核是否工作正
+## 2 段：检查你构建的内核是否工作正
 
 
 如果是回归问题，你现在需要确保早前创建的精简配置文件按预期工作；否则用它进行二分定位就是在浪费时间[details <introworkingcheck_bisref>]
@@ -531,6 +545,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   Now use the checked out code to configure, build, and install another kernel using the commands the previous subsection explained in more detail::
 
+
     cp ~/kernel-config-working .config
     make olddefconfig
     make -j $(nproc --all)
@@ -543,6 +558,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   When the system booted, you may want to verify once again that the kernel you started is the one you just built::
 
+
     tail -n 1 ~/kernels-built
     uname -r
 
@@ -552,7 +568,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
 ```
 
-### 3 段：执行二分定位并验证结
+## 3 段：执行二分定位并验证结
 
 
 在完成了所有准备工作和预防性构建之后，你现在可以开始二分定位了。这会让你构建相当多的内核——通常约为 15 个，如果你是在更新到较新系列（如6.0.13 6.1.5）时遇到的回归。但不用担心，由于早前创建的精简构建配置，这个过程比许多人想象的要快得多：在普x86 机器上，平均来说编译每个内核通常只需10 15 分钟
@@ -605,9 +621,11 @@ Note: the instructions assume you are building and testing on the same machine; 
   Now verify if the feature that regressed works at this kernel bisection point.
   If it does, run this::
 
+
     git bisect good
 
   If it does not, run this::
+
 
     git bisect bad
 
@@ -639,6 +657,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   Begin by checking out the latest codebase depending on the range you bisected:
 
+
   - Did you face a regression within a stable/longterm series (say between 6.0.13 and 6.0.15) that does not happen in mainline? Then check out the
 ```
 
@@ -647,6 +666,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   * In all other cases check out latest mainline::
 
+
       git fetch mainline
       git switch --discard-changes --detach mainline/master
 
@@ -654,14 +674,17 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   Now try reverting the culprit by specifying its commit id::
 
+
     git revert --no-edit cafec0cacaca0
 
   If that fails, give up trying and move on to the next step; if it works, adjust the tag to facilitate the identification and prevent accidentally overwriting another kernel::
+
 
     cp ~/kernel-config-working .config
     ./scripts/config --set-str CONFIG_LOCALVERSION '-local-cafec0cacaca0-reverted'
 
   Build a kernel using the familiar command sequence, just without copying the the base .config over::
+
 
     make olddefconfig &&
     make -j $(nproc --all)
@@ -678,7 +701,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 
 ```
 
-### 补充任务：二分定位期间及之后的清理工
+## 补充任务：二分定位期间及之后的清理工
 
 
 在遵循本指南期间及之后，你可能想要或需要删除一些已安装的内核：否则启动菜单会变得混乱，或者空间可能耗尽
@@ -693,9 +716,11 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   To remove the modules of a kernel with the kernelrelease identifier '*6.0-rc1-local-gcafec0cacaca0*', start by removing the directory holding its modules::
 
+
     sudo rm -rf /lib/modules/6.0-rc1-local-gcafec0cacaca0
 
   Afterwards try the following command::
+
 
     sudo kernel-install -v remove 6.0-rc1-local-gcafec0cacaca0
 
@@ -731,9 +756,11 @@ Note: the instructions assume you are building and testing on the same machine; 
 
   * In case you want to test a stable or longterm kernel, first add the branch holding the series you are interested in (6.2 in the example), unless you already did so earlier::
 
+
       git remote set-branches --add stable linux-6.2.y
 
     Then fetch the latest changes and check out the latest version from the series::
+
 
       git fetch stable
       git switch --discard-changes --detach stable/linux-6.2.y
@@ -757,15 +784,18 @@ Note: the instructions assume you are building and testing on the same machine; 
 
     Now give that kernel a special tag to facilitates its identification and prevent accidentally overwriting another kernel::
 
+
       ./scripts/config --set-str CONFIG_LOCALVERSION '-local-cafec0cacaca0-reverted'
 
   * In case you want to test a patch, store the patch in a file like '/tmp/foobars-proposed-fix-v1.patch' and apply it like this::
+
 
       git apply /tmp/foobars-proposed-fix-v1.patch
 
     In case of multiple patches, repeat this step with the others.
 
     Now give that kernel a special tag to facilitates its identification and prevent accidentally overwriting another kernel::
+
 
     ./scripts/config --set-str CONFIG_LOCALVERSION '-local-foobars-fix-v1'
 
@@ -790,7 +820,7 @@ Note: the instructions assume you are building and testing on the same machine; 
 [details <introoptional_bisref>]
 
 
-### 结语
+## 结语
 
 
 你已到达分步指南的结尾
@@ -951,7 +981,7 @@ If you have space constraints, be sure to hay attention to the :ref:`关于调�
 - 如果下载完整的仓库耗时太久或需要过多存储空间，可以考虑 :ref:`使用 'shallow clone'（浅克隆sources_shallow_bisref>`
 
 
-###### 使用 bundle 下载 Linux mainline 源代
+##### 使用 bundle 下载 Linux mainline 源代
 
 
 使用以下命令通过
@@ -1097,7 +1127,7 @@ If you have space constraints, be sure to hay attention to the :ref:`关于调�
 根据你的需要，此时你可能想要或必须调整一些内核配置选项
 
 
-###### 发行版特定的调整
+##### 发行版特定的调整
 
 
   **Are you running** [... <configmods_bissbs>]
@@ -1181,7 +1211,7 @@ If you have space constraints, be sure to hay attention to the :ref:`关于调�
 
 在这个阶段很多事情都可能出错，但下面的说明能帮你自助解决。另一个小节介绍了如何直接将内核打包成 deb、rpm tar 文件
 
-###### 处理构建错误
+##### 处理构建错误
 
 
 当构建错误发生时，它可能是由你机器环境的某些方面引起的，这种情况通常能快速修复；但有时问题出在代码中，只能由开发者修复。仔细查看失败信息，再结合在网上做一些调研，通常能告诉你属于哪一种情况。要进行这样的调查，请重新启动构
@@ -1517,6 +1547,7 @@ If you have space constraints, be sure to hay attention to the :ref:`关于调�
   Afterwards :ref:`generate the initramfs and add the kernel to your boot
   loader's configuration <install_bisref>`; on some distributions the following
   command will take care of both these tasks::
+
 
     sudo /sbin/installkernel 6.0.0-rc1-local-g928a87efa423 /boot/vmlinuz-6.0.0-rc1-local-g928a87efa423
 

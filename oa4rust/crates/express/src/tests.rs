@@ -40,7 +40,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/query?code=TEST123&company=SF")
+                    .uri("/api/express/query?code=TEST123&company=SF")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -59,7 +59,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/companies")
+                    .uri("/api/express/companies")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -79,7 +79,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/subscribe")
+                    .uri("/api/express/subscribe")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -103,7 +103,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/list")
+                    .uri("/api/express/person/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -124,7 +124,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/list")
+                    .uri("/api/express/person/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from("{}".to_string()))
@@ -151,7 +151,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/list")
+                    .uri("/api/express/person/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -173,7 +173,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/unit/list")
+                    .uri("/api/express/unit/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -195,7 +195,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/identity/list")
+                    .uri("/api/express/identity/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -217,7 +217,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/group/list")
+                    .uri("/api/express/group/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -239,7 +239,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/role/list")
+                    .uri("/api/express/role/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -261,7 +261,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/with/unit")
+                    .uri("/api/express/person/with/unit")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -283,7 +283,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/with/identity")
+                    .uri("/api/express/person/with/identity")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -306,7 +306,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/list")
+                    .uri("/api/express/person/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -333,7 +333,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/unit/list")
+                    .uri("/api/express/unit/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -360,7 +360,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/express/person/list")
+                    .uri("/api/express/person/list")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))

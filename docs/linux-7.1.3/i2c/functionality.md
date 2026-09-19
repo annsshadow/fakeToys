@@ -1,7 +1,9 @@
+# functionality
+
 ﻿## I2C/SMBus Functionality
 
 
-### 简
+## 简
 
 
 由于并非每个 I2C SMBus 适配器都实现I2C 规范中的全部内容，因此当一个客户端获得

@@ -1,3 +1,5 @@
+# vfs
+
 ﻿
 ## Linux 虚拟文件系统概述
 
@@ -52,7 +54,7 @@ dentry 放入 RAM，缓存中某些部分是缺失的。为了将你的路径名
 所传入struct file_system_type 描述了你的文件系统。当请求将某个文件系统挂到你的命名空间中的某个目录时，VFS 会调用该特定文件系统的相get_tree() 方法详见 Documentation/filesystems/mount_api.rst
 你可以在 /proc/filesystems 文件中看到注册到内核的所有文件系统
 
-### struct file_system_type
+## struct file_system_type
 
 这描述了文件系统。定义了以下成员
 

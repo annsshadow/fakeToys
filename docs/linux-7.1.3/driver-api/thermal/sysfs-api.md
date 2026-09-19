@@ -1,3 +1,5 @@
+# sysfs-api
+
 ﻿## Generic Thermal Sysfs driver How To（通用 Thermal Sysfs 驱动使用指南
 
 Written by Sujith Thomas <sujith.thomas@intel.com>, Zhang Rui <rui.zhang@intel.com>
@@ -74,6 +76,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 
     ::
 
+
 	void thermal_zone_device_unregister(struct thermal_zone_device *tz)
 
     This interface function removes the thermal zone device.
@@ -81,6 +84,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
     unbinds all the thermal cooling devices it uses.
 
 	::
+
 
 	   struct thermal_zone_device
 	   *thermal_zone_of_sensor_register(struct device *dev, int sensor_id,
@@ -95,6 +99,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 	thermal zone device.
 
 	The parameters for this interface are:
+
 
 	dev:
 			Device node of sensor containing valid node pointer in
@@ -132,6 +137,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 
 	::
 
+
 	    void thermal_zone_of_sensor_unregister(struct device *dev,
 						   struct thermal_zone_device *tzd)
 
@@ -143,6 +149,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 	get_trend() thermal zone device callbacks.
 
 	::
+
 
 	  struct thermal_zone_device
 	  *devm_thermal_zone_of_sensor_register(struct device *dev,
@@ -163,6 +170,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 
 	::
 
+
 		void devm_thermal_zone_of_sensor_unregister(struct device *dev,
 						struct thermal_zone_device *tzd)
 
@@ -175,6 +183,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 
 	::
 
+
 		int thermal_zone_get_slope(struct thermal_zone_device *tz)
 
 	This interface is used to read the slope attribute value
@@ -182,6 +191,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 	drivers for temperature calculations.
 
 	::
+
 
 		int thermal_zone_get_offset(struct thermal_zone_device *tz)
 
@@ -218,6 +228,7 @@ thermal sysfs 驱动的主要任务是thermal zone 属性以cooling 设备属性
 		set the Current throttle state of the cooling device.
 
     ::
+
 
 	void thermal_cooling_device_unregister(struct thermal_cooling_device *cdev)
 

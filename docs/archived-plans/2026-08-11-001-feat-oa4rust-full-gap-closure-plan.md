@@ -44,7 +44,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 
 ## Key Technical Decisions
 
-- **双因素登录两阶段拆分**：Java 先发码（value=true）再验码（codeLogin），Rust 当前单请求模式不符合前端契约，必须拆分为两个独立端点（POST /jaxrs/authentication/two/factory/login + POST /jaxrs/authentication/code）
+- **双因素登录两阶段拆分**：Java 先发码（value=true）再验码（codeLogin），Rust 当前单请求模式不符合前端契约，必须拆分为两个独立端点（POST /api/authentication/two/factory/login + POST /api/authentication/code）
 - **LDAP 可选集成**：通过环境变量开关控制，默认关闭，认证失败时静默回退数据库密码，不阻塞主流程
 - **批量查询无认证**：express 模块批量查询与 Java 一致，不需要认证（前端内部调用场景）
 - **授权管理复用现有角色体系**：管理员判断通过 auth_role 角色体系，不新增字段
@@ -66,7 +66,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - **passwordExpired 检查依赖**：auth_person 表需含 `change_password_time` 和 `password_expired_time` 字段 — 需确认两字段均存在（当前仅确认 change_password_time，password_expired_time 待确认）
 - **TokenThreshold 实体**：需确认 migrations 是否存在 — 已创建 `TokenThreshold` 实体，在 `migrations/` 目录确认
 - **ldappress vs ldap3 vs ldap-src crate**：`ldappress` 与 Rust 1.75 工具链兼容 — 确认 `ldappress` crate 在 `Cargo.toml` 中已添加为依赖
-- **批量查询端点路由路径**：需对照 Java express 模块路由注册确认 — 在 `crates/express/` 中确认 `/jaxrs/express/person/list`、`/jaxrs/express/unit/list` 等路由已注册
+- **批量查询端点路由路径**：需对照 Java express 模块路由注册确认 — 在 `crates/express/` 中确认 `/api/express/person/list`、`/api/express/unit/list` 等路由已注册
 - **empower 相关数据表（x_empower）schema**：需确认 migrations 是否存在 — 在 `migrations/` 目录确认 `x_empower` 表已存在
 
 ### Deferred to Implementation
@@ -74,7 +74,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - **SSO 完整请求/响应结构**：需对照 Java SsoAction 的实际 JSON 契约确定
 - **用户注册唯一性冲突处理细节**：需确认 Java 端在用户名/手机/邮箱冲突时的具体错误消息
 - **电子签名的存储方式**：本地文件系统 vs 对象存储，需评估现有文件存储模块能力
-- **MCP 脚本自动生成的路径参数解析规则**：需确定如何处理带路径参数的端点（如 `/jaxrs/person/{id}`）
+- **MCP 脚本自动生成的路径参数解析规则**：需确定如何处理带路径参数的端点（如 `/api/person/{id}`）
 - **OpenAPI 生成的 tag 分配规则**：需确定按 crate 名还是按业务域分配 tag
 - **SSO 3DES key 的分发方式**：加密辅助端点返回的加密 token 中，key 如何安全分发（预共享 vs API 动态传递）
 - **safe_logout 并发注销的 SessionManager 锁粒度**：RwLock 是否足够，大量 session 批量删除的性能风险
@@ -82,33 +82,33 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 
 ## Requirements
 
-- R1. 登录端点（POST /jaxrs/authentication）必须检查用户 locked 状态（返回 locked 错误）和 passwordExpired（首次登录或未修改过密码且 Config.firstLoginModifyPwd=true 时返回 passwordExpired=true），与 Java ActionLogin 行为一致
+- R1. 登录端点（POST /api/authentication）必须检查用户 locked 状态（返回 locked 错误）和 passwordExpired（首次登录或未修改过密码且 Config.firstLoginModifyPwd=true 时返回 passwordExpired=true），与 Java ActionLogin 行为一致
 - R2. 登录响应结构必须扩展为与 Java AbstractWoAuthentication 一致的字段：token, tokenType, roleList, passwordExpired, identityList, 以及完整 Person 字段（id, unique, name, mobile, email, icon, job, department, unit, position）
-- R3. check_token 端点（POST /jaxrs/authentication/check/token）必须增加管理员权限校验（isManager），返回 token 持有者的 distinguishedName 字符串（而非 {authenticated: true/false}）
-- R4. 双因素登录拆分为两阶段：第一阶段 POST /jaxrs/authentication/two/factory/login 验证密码后发送短信验证码并返回 value=true + passwordExpired；第二阶段 POST /jaxrs/authentication/code 验证 credential + codeAnswer 并签发 token
-- R5. safe_logout 端点（POST /jaxrs/authentication/safe/logout）必须写入 TokenThreshold 实体记录当前时间戳，并在多实例场景下广播更新（单实例可跳过广播）
+- R3. check_token 端点（POST /api/authentication/check/token）必须增加管理员权限校验（isManager），返回 token 持有者的 distinguishedName 字符串（而非 {authenticated: true/false}）
+- R4. 双因素登录拆分为两阶段：第一阶段 POST /api/authentication/two/factory/login 验证密码后发送短信验证码并返回 value=true + passwordExpired；第二阶段 POST /api/authentication/code 验证 credential + codeAnswer 并签发 token
+- R5. safe_logout 端点（POST /api/authentication/safe/logout）必须写入 TokenThreshold 实体记录当前时间戳，并在多实例场景下广播更新（单实例可跳过广播）
 - R6. switch_user 响应必须补全 tokenType, roleList, passwordExpired 字段，与 Java ActionSwitchUser 的 AbstractWoAuthentication 返回结构一致
-- R7. 补全电子签名端点：POST /jaxrs/person/signature/upload（multipart，Base64 存 PostgreSQL custom 表）、GET /jaxrs/person/signature/list（当前用户签名列表）、GET /jaxrs/person/signature/delete/{id}（软删除）；管理员可用 GET /jaxrs/person/signature/manager/list 查看所有用户签名
-- R8. 补全头像端点：GET /jaxrs/person/icon/{person}（无权限也可访问，返回该用户头像信息）、POST /jaxrs/person/icon/upload（multipart，存储为 base64 到 auth_person.icon 字段）
-- R9. 用户注册端点（POST /jaxrs/person/regist）必须校验验证码（复用 ResetCodeStore）并检查用户名/手机/邮箱唯一性，返回与 Java ActionCreate 一致的响应结构
-- R10. correlation_core_entity delete 端点（DELETE /jaxrs/correlation/core/entity/delete/{id}）返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
-- R11. hotpic_core_entity delete 端点（DELETE /jaxrs/hotpic/core/entity/delete/{id}）同上；hotpic list 端点返回的 data 数组必须包含 base64 字段
+- R7. 补全电子签名端点：POST /api/person/signature/upload（multipart，Base64 存 PostgreSQL custom 表）、GET /api/person/signature/list（当前用户签名列表）、GET /api/person/signature/delete/{id}（软删除）；管理员可用 GET /api/person/signature/manager/list 查看所有用户签名
+- R8. 补全头像端点：GET /api/person/icon/{person}（无权限也可访问，返回该用户头像信息）、POST /api/person/icon/upload（multipart，存储为 base64 到 auth_person.icon 字段）
+- R9. 用户注册端点（POST /api/person/regist）必须校验验证码（复用 ResetCodeStore）并检查用户名/手机/邮箱唯一性，返回与 Java ActionCreate 一致的响应结构
+- R10. correlation_core_entity delete 端点（DELETE /api/correlation/core/entity/delete/{id}）返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
+- R11. hotpic_core_entity delete 端点（DELETE /api/hotpic/core/entity/delete/{id}）同上；hotpic list 端点返回的 data 数组必须包含 base64 字段
 - R12. 修复后 `cargo test -p correlation_core_entity` 和 `cargo test -p hotpic_core_entity` 全部通过
 - R13. 新增 LDAP 认证模块：通过环境变量 `LDAP_URL` / `LDAP_BASE_DN` / `LDAP_BIND_USER` / `LDAP_BIND_PWD` / `LDAP_ENABLE` 配置，默认关闭
 - R14. 登录时若 LDAP_ENABLE=true 且 LDAP 认证成功，直接签发会话；LDAP 认证失败时回退到数据库密码校验
 - R15. LDAP 使用简单绑定（simple bind）方式，连接超时 3 秒，失败不阻塞主流程
 - R16. Cargo.toml 新增 `ldappress` 或等效 LDAP crate 依赖
-- R17. 批量查询人员（POST /jaxrs/express/person/list）：接受 `{"ids":["id1","id2"]}` 或 `{"identities":["id1","id2"]}`，返回完整 Person 对象列表
-- R18. 批量查询组织单位（POST /jaxrs/express/unit/list）：接受单位 ID 列表，返回完整 Unit 对象列表
-- R19. 批量查询身份（POST /jaxrs/express/identity/list）：接受身份 ID 列表，返回完整 Identity 对象列表
-- R20. 批量查询群组（POST /jaxrs/express/group/list）：接受群组 ID 列表，返回完整 Group 对象列表
-- R21. 批量查询角色（POST /jaxrs/express/role/list）：接受角色 ID 列表，返回完整 Role 对象列表
-- R22. 批量查询人员所在组织（POST /jaxrs/express/person/with/unit）：接受人员 ID 列表，返回每个人员所属组织信息
-- R23. 批量查询人员所在身份（POST /jaxrs/express/person/with/identity）：接受人员 ID 列表，返回每个人员的所有身份
+- R17. 批量查询人员（POST /api/express/person/list）：接受 `{"ids":["id1","id2"]}` 或 `{"identities":["id1","id2"]}`，返回完整 Person 对象列表
+- R18. 批量查询组织单位（POST /api/express/unit/list）：接受单位 ID 列表，返回完整 Unit 对象列表
+- R19. 批量查询身份（POST /api/express/identity/list）：接受身份 ID 列表，返回完整 Identity 对象列表
+- R20. 批量查询群组（POST /api/express/group/list）：接受群组 ID 列表，返回完整 Group 对象列表
+- R21. 批量查询角色（POST /api/express/role/list）：接受角色 ID 列表，返回完整 Role 对象列表
+- R22. 批量查询人员所在组织（POST /api/express/person/with/unit）：接受人员 ID 列表，返回每个人员所属组织信息
+- R23. 批量查询人员所在身份（POST /api/express/person/with/identity）：接受人员 ID 列表，返回每个人员的所有身份
 - R24. 以上批量查询端点无需认证（express 模块特性，与 Java 一致）
-- R25. 补全授权管理 CRUD：POST /jaxrs/person/empower（创建授权）、GET /jaxrs/person/empower/{id}（查询授权）、PUT /jaxrs/person/empower/{id}（更新授权）、DELETE /jaxrs/person/empower/{id}（删除授权）、POST /jaxrs/person/empower/{id}/enable（启用）、POST /jaxrs/person/empower/{id}/disable（禁用）
-- R26. 管理员端点：POST /jaxrs/person/empower/manager（管理员创建）、PUT /jaxrs/person/empower/manager/{id}（管理员更新）、DELETE /jaxrs/person/empower/manager/{id}（管理员删除）、POST /jaxrs/person/empower/manager/list/paging/{page}/size/{size}（管理员分页查询）
-- R27. 查询当前用户授权：GET /jaxrs/person/empower/list/currentperson（我的授权）、GET /jaxrs/person/empower/list/currentperson/enable（我的生效授权）、GET /jaxrs/person/empower/list/to（我拥有的被授权）、GET /jaxrs/person/empower/list/to/enable（我生效的被授权）
+- R25. 补全授权管理 CRUD：POST /api/person/empower（创建授权）、GET /api/person/empower/{id}（查询授权）、PUT /api/person/empower/{id}（更新授权）、DELETE /api/person/empower/{id}（删除授权）、POST /api/person/empower/{id}/enable（启用）、POST /api/person/empower/{id}/disable（禁用）
+- R26. 管理员端点：POST /api/person/empower/manager（管理员创建）、PUT /api/person/empower/manager/{id}（管理员更新）、DELETE /api/person/empower/manager/{id}（管理员删除）、POST /api/person/empower/manager/list/paging/{page}/size/{size}（管理员分页查询）
+- R27. 查询当前用户授权：GET /api/person/empower/list/currentperson（我的授权）、GET /api/person/empower/list/currentperson/enable（我的生效授权）、GET /api/person/empower/list/to（我拥有的被授权）、GET /api/person/empower/list/to/enable（我生效的被授权）
 - R28. 权限控制：管理员可管理他人授权，普通用户只能管理自身授权
 
 ## Requirements Traceability
@@ -190,7 +190,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - **SSO 完整请求/响应结构**：需对照 Java SsoAction 的实际 JSON 契约确定
 - **用户注册唯一性冲突处理细节**：需确认 Java 端在用户名/手机/邮箱冲突时的具体错误消息
 - **电子签名的存储方式**：本地文件系统 vs 对象存储，需评估现有文件存储模块能力
-- **MCP 脚本自动生成的路径参数解析规则**：需确定如何处理带路径参数的端点（如 `/jaxrs/person/{id}`）
+- **MCP 脚本自动生成的路径参数解析规则**：需确定如何处理带路径参数的端点（如 `/api/person/{id}`）
 - **OpenAPI 生成的 tag 分配规则**：需确定按 crate 名还是按业务域分配 tag
 - **SSO 3DES key 的分发方式**：加密辅助端点返回的加密 token 中，key 如何安全分发（预共享 vs API 动态传递）
 - **safe_logout 并发注销的 SessionManager 锁粒度**：RwLock 是否足够，大量 session 批量删除的性能风险
@@ -254,15 +254,15 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/auth/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- 第一阶段：POST /jaxrs/authentication/two/factory/login 发送 credential+password → 验证通过 → 发送短信验证码 → 返回 `{value: true, passwordExpired: false}`
-- 第二阶段：POST /jaxrs/authentication/code 发送 credential+codeAnswer → 验证验证码 → 签发 token → 返回完整 PersonInfo
+- 第一阶段：POST /api/authentication/two/factory/login 发送 credential+password → 验证通过 → 发送短信验证码 → 返回 `{value: true, passwordExpired: false}`
+- 第二阶段：POST /api/authentication/code 发送 credential+codeAnswer → 验证验证码 → 签发 token → 返回完整 PersonInfo
 - 复用 existing CodeStore 模式存储短信验证码
 - 响应结构：`{value: true, passwordExpired: ...}` 返回第一阶段，`{token: ..., person: {...}}` 返回第二阶段
 - 两阶段绑定：第一阶段成功后签发短期临时 token（server-side session），第二阶段必须携带该临时 token 才能验证 codeAnswer。临时 token 绑定到特定 credential，防止攻击者替换为受害者 credential 绕过密码
 
 **Test scenarios:**
-- Happy path: 双因素登录已启用，POST /jaxrs/authentication/two/factory/login 发送正确 credential+password → 返回 `{value: true, passwordExpired: false}` 并发送短信验证码
-- Happy path: POST /jaxrs/authentication/code 发送正确 credential+codeAnswer → 签发会话并返回完整 token+Person（AE2）
+- Happy path: 双因素登录已启用，POST /api/authentication/two/factory/login 发送正确 credential+password → 返回 `{value: true, passwordExpired: false}` 并发送短信验证码
+- Happy path: POST /api/authentication/code 发送正确 credential+codeAnswer → 签发会话并返回完整 token+Person（AE2）
 - Error path: 第一因子密码错误 → 返回 error（不暴露是否验证码正确）
 - Error path: 验证码过期或错误 → 返回 error
 - Happy path: 有效 code → 签发 token 返回完整 PersonInfo
@@ -286,7 +286,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/auth/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- POST /jaxrs/authentication/safe/logout 写入 TokenThreshold 实体记录当前时间戳
+- POST /api/authentication/safe/logout 写入 TokenThreshold 实体记录当前时间戳
 - 多实例场景下广播更新：调用 `SessionManager::broadcast_logout(person_unique)` 通知所有实例
 - 单实例场景下：仅执行本地 session 移除，不广播（单实例可跳过广播）
 - 广播机制：使用共享状态或事件总线，确保多实例间同步
@@ -317,18 +317,18 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/personal/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- POST /jaxrs/person/signature/upload：接收 multipart/form-data 图片字节，Base64 编码后存入 custom 表（name=CUSTOM_SIGNATURE_NAME, person=当前用户）
-- GET /jaxrs/person/signature/list：返回当前用户签名列表
-- GET /jaxrs/person/signature/delete/{id}：软删除
-- GET /jaxrs/person/signature/manager/list：管理员查看所有用户签名
+- POST /api/person/signature/upload：接收 multipart/form-data 图片字节，Base64 编码后存入 custom 表（name=CUSTOM_SIGNATURE_NAME, person=当前用户）
+- GET /api/person/signature/list：返回当前用户签名列表
+- GET /api/person/signature/delete/{id}：软删除
+- GET /api/person/signature/manager/list：管理员查看所有用户签名
 - 响应结构：ActionResult<T> 9 字段契约
 
 **Test scenarios:**
-- Happy path: 已登录用户 POST /jaxrs/person/signature/upload 上传签名图片 → 签名 Base64 存入 custom 表 → 返回上传成功确认
-- Happy path: 已登录用户 GET /jaxrs/person/signature/list → 返回该用户所有签名
-- Happy path: 已登录用户 GET /jaxrs/person/signature/delete/{id} → 软删除成功
-- Happy path: 管理员 GET /jaxrs/person/signature/manager/list → 返回所有用户签名
-- Error path: 未登录用户 POST /jaxrs/person/signature/upload → 返回 401
+- Happy path: 已登录用户 POST /api/person/signature/upload 上传签名图片 → 签名 Base64 存入 custom 表 → 返回上传成功确认
+- Happy path: 已登录用户 GET /api/person/signature/list → 返回该用户所有签名
+- Happy path: 已登录用户 GET /api/person/signature/delete/{id} → 软删除成功
+- Happy path: 管理员 GET /api/person/signature/manager/list → 返回所有用户签名
+- Error path: 未登录用户 POST /api/person/signature/upload → 返回 401
 - Error path: 图片格式不支持 → 返回 error
 - Error path: 图片大小超限 → 返回 error
 
@@ -351,15 +351,15 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/personal/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- GET /jaxrs/person/icon/{person}：无权限也可访问，返回该用户头像信息
-- POST /jaxrs/person/icon/upload：接收 multipart 文件，存储为 base64 到 auth_person.icon 字段
+- GET /api/person/icon/{person}：无权限也可访问，返回该用户头像信息
+- POST /api/person/icon/upload：接收 multipart 文件，存储为 base64 到 auth_person.icon 字段
 - 响应结构：ActionResult<T> 9 字段契约
 - 头像存储：使用 PostgreSQL BLOB（base64 字符串），不改存文件系统
 
 **Test scenarios:**
-- Happy path: 任何用户 GET /jaxrs/person/icon/{person} → 返回该用户的头像信息
-- Happy path: 已登录用户 POST /jaxrs/person/icon/upload → auth_person.icon 字段更新
-- Happy path: 未登录用户 GET /jaxrs/person/icon/{person} → 返回该用户头像信息（公开访问，与 R8 一致）
+- Happy path: 任何用户 GET /api/person/icon/{person} → 返回该用户的头像信息
+- Happy path: 已登录用户 POST /api/person/icon/upload → auth_person.icon 字段更新
+- Happy path: 未登录用户 GET /api/person/icon/{person} → 返回该用户头像信息（公开访问，与 R8 一致）
 - Error path: 文件格式不支持 → 返回 error
 
 **Verification:**
@@ -380,7 +380,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/personal/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- POST /jaxrs/person/regist：校验验证码（复用 ResetCodeStore），检查用户名/手机/邮箱唯一性，返回与 Java ActionCreate 一致的响应结构
+- POST /api/person/regist：校验验证码（复用 ResetCodeStore），检查用户名/手机/邮箱唯一性，返回与 Java ActionCreate 一致的响应结构
 - 复用 existing `ResetCodeStore` 模式存储验证码
 - 唯一性校验：SQL UNIQUE 约束 + 应用层预检查，冲突时返回明确错误消息
 
@@ -416,24 +416,24 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/express/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- 批量查询人员：POST /jaxrs/express/person/list 接受 `{"ids":["id1","id2"]}` 或 `{"identities":["id1","id2"]}`，返回完整 Person 对象列表
-- 批量查询组织单位：POST /jaxrs/express/unit/list 接受单位 ID 列表，返回完整 Unit 对象列表
-- 批量查询身份：POST /jaxrs/express/identity/list 接受身份 ID 列表，返回完整 Identity 对象列表
-- 批量查询群组：POST /jaxrs/express/group/list 接受群组 ID 列表，返回完整 Group 对象列表
-- 批量查询角色：POST /jaxrs/express/role/list 接受角色 ID 列表，返回完整 Role 对象列表
-- 批量查询人员组织：POST /jaxrs/express/person/with/unit 接受人员 ID 列表，返回每个人员所属组织信息
-- 批量查询人员身份：POST /jaxrs/express/person/with/identity 接受人员 ID 列表，返回每个人员的所有身份
+- 批量查询人员：POST /api/express/person/list 接受 `{"ids":["id1","id2"]}` 或 `{"identities":["id1","id2"]}`，返回完整 Person 对象列表
+- 批量查询组织单位：POST /api/express/unit/list 接受单位 ID 列表，返回完整 Unit 对象列表
+- 批量查询身份：POST /api/express/identity/list 接受身份 ID 列表，返回完整 Identity 对象列表
+- 批量查询群组：POST /api/express/group/list 接受群组 ID 列表，返回完整 Group 对象列表
+- 批量查询角色：POST /api/express/role/list 接受角色 ID 列表，返回完整 Role 对象列表
+- 批量查询人员组织：POST /api/express/person/with/unit 接受人员 ID 列表，返回每个人员所属组织信息
+- 批量查询人员身份：POST /api/express/person/with/identity 接受人员 ID 列表，返回每个人员的所有身份
 - 无认证：express 模块批量查询与 Java 一致，不需要认证
 - 安全防护：单次请求 ID 数量上限 100 条、速率限制每分钟 60 次、默认返回字段排除 mobile/email 等 PII（需额外参数显式请求）
 
 **Test scenarios:**
-- Happy path: POST /jaxrs/express/person/list 发送 `{"ids":["id1","id2"]}` → 返回包含完整 Person 字段的列表（AE9）
-- Happy path: POST /jaxrs/express/unit/list 发送单位 ID 列表 → 返回完整 Unit 对象列表
-- Happy path: POST /jaxrs/express/identity/list 发送身份 ID 列表 → 返回完整 Identity 对象列表
-- Happy path: POST /jaxrs/express/group/list 发送群组 ID 列表 → 返回完整 Group 对象列表
-- Happy path: POST /jaxrs/express/role/list 发送角色 ID 列表 → 返回完整 Role 对象列表
-- Happy path: POST /jaxrs/express/person/with/unit 发送人员 ID 列表 → 返回每个人员所属组织信息
-- Happy path: POST /jaxrs/express/person/with/identity 发送人员 ID 列表 → 返回每个人员的所有身份
+- Happy path: POST /api/express/person/list 发送 `{"ids":["id1","id2"]}` → 返回包含完整 Person 字段的列表（AE9）
+- Happy path: POST /api/express/unit/list 发送单位 ID 列表 → 返回完整 Unit 对象列表
+- Happy path: POST /api/express/identity/list 发送身份 ID 列表 → 返回完整 Identity 对象列表
+- Happy path: POST /api/express/group/list 发送群组 ID 列表 → 返回完整 Group 对象列表
+- Happy path: POST /api/express/role/list 发送角色 ID 列表 → 返回完整 Role 对象列表
+- Happy path: POST /api/express/person/with/unit 发送人员 ID 列表 → 返回每个人员所属组织信息
+- Happy path: POST /api/express/person/with/identity 发送人员 ID 列表 → 返回每个人员的所有身份
 - Error path: 无效 ID 列表 → 返回 error（列表为空或单个 ID 无效时）
 - Error path: 无认证 → 返回 200（无需认证，与 Java 一致）
 
@@ -491,38 +491,38 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/empower/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- POST /jaxrs/person/empower：创建授权
-- GET /jaxrs/person/empower/{id}：查询授权
-- PUT /jaxrs/person/empower/{id}：更新授权
-- DELETE /jaxrs/person/empower/{id}：删除授权
-- GET /jaxrs/person/empower/{id}/enable：启用授权
-- GET /jaxrs/person/empower/{id}/disable：禁用授权
-- POST /jaxrs/person/empower/manager：管理员创建授权
-- PUT /jaxrs/person/empower/manager/{id}：管理员更新授权
-- DELETE /jaxrs/person/empower/manager/{id}：管理员删除授权
-- POST /jaxrs/person/empower/manager/list/paging/{page}/size/{size}：管理员分页查询
-- GET /jaxrs/person/empower/list/currentperson：查询当前用户授权
-- GET /jaxrs/person/empower/list/currentperson/enable：查询当前用户生效授权
-- GET /jaxrs/person/empower/list/to：查询我拥有的被授权
-- GET /jaxrs/person/empower/list/to/enable：查询我生效的被授权
+- POST /api/person/empower：创建授权
+- GET /api/person/empower/{id}：查询授权
+- PUT /api/person/empower/{id}：更新授权
+- DELETE /api/person/empower/{id}：删除授权
+- GET /api/person/empower/{id}/enable：启用授权
+- GET /api/person/empower/{id}/disable：禁用授权
+- POST /api/person/empower/manager：管理员创建授权
+- PUT /api/person/empower/manager/{id}：管理员更新授权
+- DELETE /api/person/empower/manager/{id}：管理员删除授权
+- POST /api/person/empower/manager/list/paging/{page}/size/{size}：管理员分页查询
+- GET /api/person/empower/list/currentperson：查询当前用户授权
+- GET /api/person/empower/list/currentperson/enable：查询当前用户生效授权
+- GET /api/person/empower/list/to：查询我拥有的被授权
+- GET /api/person/empower/list/to/enable：查询我生效的被授权
 - 管理员可管理他人授权，普通用户只能管理自身授权
 - 复用 existing auth_role 角色体系
-- IDOR 防护：所有写操作端点（POST/PUT/DELETE /jaxrs/person/empower/{id}）必须调用 `require_owner` 验证当前用户是该授权的 owner，防止跨用户篡改（遵循 institutional learning: IDOR 安全修复）
-- enable/disable 端点改为 POST 方法（避免 CSRF 风险）：POST /jaxrs/person/empower/{id}/enable 和 POST /jaxrs/person/empower/{id}/disable
+- IDOR 防护：所有写操作端点（POST/PUT/DELETE /api/person/empower/{id}）必须调用 `require_owner` 验证当前用户是该授权的 owner，防止跨用户篡改（遵循 institutional learning: IDOR 安全修复）
+- enable/disable 端点改为 POST 方法（避免 CSRF 风险）：POST /api/person/empower/{id}/enable 和 POST /api/person/empower/{id}/disable
 
 **Test scenarios:**
-- Happy path: admin POST /jaxrs/person/empower/manager → 创建授权写入数据库
-- Happy path: admin GET /jaxrs/person/empower/{id} → 返回授权信息
-- Happy path: admin PUT /jaxrs/person/empower/{id} → 更新授权
-- Happy path: admin DELETE /jaxrs/person/empower/{id} → 删除授权
-- Happy path: admin GET /jaxrs/person/empower/{id}/enable → 启用授权
-- Happy path: admin GET /jaxrs/person/empower/{id}/disable → 禁用授权
-- Error path: 普通用户 POST /jaxrs/person/empower → 返回 403 Forbidden
-- Error path: 普通用户 GET /jaxrs/person/empower/{id}（非自身授权）→ 返回 403 Forbidden（require_owner 验证）
-- Error path: 普通用户 PUT/DELETE /jaxrs/person/empower/{id}（非自身授权）→ 返回 403 Forbidden
-- Happy path: 普通用户 GET /jaxrs/person/empower/{id}（自身授权）→ 返回自身授权
-- Happy path: 普通用户 GET /jaxrs/person/empower/list/currentperson → 返回当前用户授权列表
-- Happy path: 普通用户 GET /jaxrs/person/empower/list/to → 返回其拥有的被授权
+- Happy path: admin POST /api/person/empower/manager → 创建授权写入数据库
+- Happy path: admin GET /api/person/empower/{id} → 返回授权信息
+- Happy path: admin PUT /api/person/empower/{id} → 更新授权
+- Happy path: admin DELETE /api/person/empower/{id} → 删除授权
+- Happy path: admin GET /api/person/empower/{id}/enable → 启用授权
+- Happy path: admin GET /api/person/empower/{id}/disable → 禁用授权
+- Error path: 普通用户 POST /api/person/empower → 返回 403 Forbidden
+- Error path: 普通用户 GET /api/person/empower/{id}（非自身授权）→ 返回 403 Forbidden（require_owner 验证）
+- Error path: 普通用户 PUT/DELETE /api/person/empower/{id}（非自身授权）→ 返回 403 Forbidden
+- Happy path: 普通用户 GET /api/person/empower/{id}（自身授权）→ 返回自身授权
+- Happy path: 普通用户 GET /api/person/empower/list/currentperson → 返回当前用户授权列表
+- Happy path: 普通用户 GET /api/person/empower/list/to → 返回其拥有的被授权
 
 **Verification:**
 - `cargo test -p empower` 通过
@@ -544,15 +544,15 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 - Test: `crates/hotpic/src/tests.rs`（新增测试用例）
 
 **Approach:**
-- correlation_core_entity delete 端点：DELETE /jaxrs/correlation/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
-- hotpic_core_entity delete 端点：DELETE /jaxrs/hotpic/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
+- correlation_core_entity delete 端点：DELETE /api/correlation/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
+- hotpic_core_entity delete 端点：DELETE /api/hotpic/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))` 而非 `Value::Null`
 - hotpic list 端点：返回的 data 数组必须包含 base64 字段
 - 修复后 `cargo test -p correlation_core_entity` 和 `cargo test -p hotpic_core_entity` 全部通过
 
 **Test scenarios:**
-- Happy path: DELETE /jaxrs/correlation/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))`
-- Happy path: DELETE /jaxrs/hotpic/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))`
-- Happy path: GET /jaxrs/hotpic/core/entity/list → 返回的 data 数组每条包含 base64 字段
+- Happy path: DELETE /api/correlation/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))`
+- Happy path: DELETE /api/hotpic/core/entity/delete/{id} → 返回 `ActionResult::success(json!({"success": true}))`
+- Happy path: GET /api/hotpic/core/entity/list → 返回的 data 数组每条包含 base64 字段
 - Error path: 删除操作涉及未授权 → 返回 403
 - Error path: 删除操作涉及非存在 ID → 返回 error
 

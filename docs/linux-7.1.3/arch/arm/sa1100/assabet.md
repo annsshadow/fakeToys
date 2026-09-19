@@ -1,3 +1,5 @@
+# assabet
+
 ﻿## Intel Assabet（SA-1110 评估）板
 
 
@@ -8,7 +10,7 @@ http://developer.intel.com
 http://www.cs.cmu.edu/~wearable/software/assabet.html
 
 
-### 构建内核
+## 构建内核
 
 
 ```
@@ -60,7 +62,7 @@ http://sources.redhat.com/ecos/docs.html。请参考它了解说明
 ```
 
 
-### 灏嗗唴鏍告槧鍍忓啓鍏ラ棯瀛。
+### 灏嗗唴鏍告槧鍍忓啓鍏ラ棯子。
 
 首先，内核映像必须被加载RAM 中。如果你zImage 文件
 

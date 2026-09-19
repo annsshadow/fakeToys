@@ -1,3 +1,5 @@
+# aic7xxx
+
 ﻿
 ## Adaptec Aic7xxx Fast -> Ultra160 Family Manager Set v7.0
 
@@ -145,6 +147,7 @@ Linux 操作系统 README
    line containing ``options aic7xxx aic7xxx=[command[,command...]]`` where
    ``command`` is one or more of the following:
 
+
 ```
 verbose
 
@@ -222,6 +225,7 @@ tag_info:{{value[,value...]}[,{value[,value...]}...]}
 		- 所有其他目标保持默认深度
 	    ::
 
+
                 tag_info:{{},{32,,32}}
 
 	    在控制器 1 上：
@@ -238,6 +242,7 @@ dv: {value[,value...]}
 
     :Definition: 按控制器设置域验证（Domain Validation）策略		 控制器可省略，表		 它们应保持默认读取流设置
     :Possible Values:
+
 
 		      ==== ===============================
 		       < 0 使用串行 EEPROM 中的设置                         0 禁用 DV

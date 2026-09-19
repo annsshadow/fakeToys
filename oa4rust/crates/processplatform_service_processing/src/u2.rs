@@ -1,9 +1,9 @@
-//! plan002 U2 收尾：对齐 Java x_processplatform_service_processing jaxrs/** 契约。
+//! plan002 U2 收尾：对齐 o2server x_processplatform_service_processing o2server/** 契约。
 //!
-//! 权威端点清单：docs/audits/java-endpoint-inventory.json 中
+//! 权威端点清单：docs/audits/o2server-endpoint-inventory.json 中
 //! x_processplatform_service_processing（127 动词注解 / 121 唯一端点，剥注释口径）。
-//! 本模块按 `{war}/jaxrs/<类路径>/<方法路径>` 形状补齐缺口路由；前缀沿用本 crate 惯例
-//! /jaxrs/processplatform/service/processing。既有契约形状一致的端点保持不动。
+//! 本模块按 `{war}/api/<类路径>/<方法路径>` 形状补齐缺口路由；前缀沿用本 crate 惯例
+//! /api/processplatform/service/processing。既有契约形状一致的端点保持不动。
 //!
 //! 落地语义说明（schema 子集）：
 //! - applicationdict/data 走 migration 079 的 x_application_dict / x_data（JSONB 路径寻址）；
@@ -307,7 +307,7 @@ async fn data_put_whole(pool: &Pool, scope: &str, bundle: &str, body: Value) -> 
     ok(json!({ "scope": scope, "bundle": bundle, "value": data }))
 }
 
-/// POST 语义：仅创建；已存在报错（Java ExceptionDataAlreadyExist）
+/// POST 语义：仅创建；已存在报错（o2server ExceptionDataAlreadyExist）
 async fn data_create_whole(
     pool: &Pool,
     scope: &str,
@@ -358,7 +358,7 @@ async fn data_update_whole(pool: &Pool, scope: &str, bundle: &str, body: Value) 
     ok(json!({ "scope": scope, "bundle": bundle, "value": data }))
 }
 
-/// 单键写入：create 要求键不存在、update 要求键已存在（Java parent/already-exist 异常语义）
+/// 单键写入：create 要求键不存在、update 要求键已存在（o2server parent/already-exist 异常语义）
 async fn data_set_key(
     pool: &Pool,
     scope: &str,
@@ -1094,7 +1094,7 @@ pub async fn record_edit(
     ok(row_to_json(&row))
 }
 
-/// DELETE record/{id}：物理删除（Java Record delete 语义）
+/// DELETE record/{id}：物理删除（o2server Record delete 语义）
 #[allow(non_snake_case)]
 pub async fn record_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1200,7 +1200,7 @@ pub async fn review_init_for_view(pool: Extension<Pool>) -> H {
     let mut created = Vec::new();
     for row in &rows {
         let work: String = row.get("work");
-        let person: String = row.get("person");
+        let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
         let id = Uuid::new_v4().to_string();
         client
             .execute(
@@ -1546,7 +1546,7 @@ pub async fn touch_delay(pool: Extension<Pool>) -> H {
         .map_err(|_| AppError::Internal)?;
     let mut touched: Vec<String> = Vec::new();
     for row in &rows {
-        let work: String = row.get("work");
+        let work: String = row.get::<_, Option<String>>("work").unwrap_or_default();
         record_insert(&client, &work, "touch_delay", "delay touched", "system")
             .await
             .ok();
@@ -1830,7 +1830,7 @@ pub async fn work_edit(
     ok(row_to_json(&row))
 }
 
-/// DELETE work/{id}：物理删除工作及其任务（Java delete 级联语义，事务内执行）
+/// DELETE work/{id}：物理删除工作及其任务（o2server delete 级联语义，事务内执行）
 #[allow(non_snake_case)]
 pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1852,7 +1852,7 @@ pub async fn work_delete(pool: Extension<Pool>, Path(id): Path<String>) -> H {
     ok(json!({ "id": id, "value": true }))
 }
 
-/// DELETE work/{id}/draft：删除该工作的全部草稿；无草稿报错（Java ExceptionDeleteDraft）
+/// DELETE work/{id}/draft：删除该工作的全部草稿；无草稿报错（o2server ExceptionDeleteDraft）
 #[allow(non_snake_case)]
 pub async fn work_draft_delete(pool: Extension<Pool>, Path(work): Path<String>) -> H {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

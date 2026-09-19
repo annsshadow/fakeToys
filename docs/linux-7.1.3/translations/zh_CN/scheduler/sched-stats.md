@@ -1,7 +1,10 @@
 
+# sched-stats
+
 :Original: Documentation/scheduler/sched-stats.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -138,7 +141,7 @@ domain<N> <cpumask> 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 
         的CPU次数为#，因为该任务在原CPU是冷缓存状态
     36) 在这个调度域中调用try_to_wake_up()唤醒任务时，引发被动负载均衡#次
 
-### /proc/<pid>/schedstat
+## /proc/<pid>/schedstat
 
 schedstats还添加了一个新的/proc/<pid>/schedstat文件，来提供一些进程级的
 相同信息。这个文件中，有三个字段与该进程相关：

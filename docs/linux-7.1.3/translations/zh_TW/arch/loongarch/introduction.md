@@ -1,5 +1,7 @@
 
 
+# introduction
+
 :Original: Documentation/arch/loongarch/introduction.rst
 :Translator: Huacai Chen <chenhuacai@loongson.cn>
 
@@ -27,6 +29,7 @@ LA64中每個寄存器爲64位寬。 `$r0` 的內容總是固定爲0，而其他
 
 內核使用了一套LoongArch寄存器約定，定義在LoongArch ELF psABI規範中，詳細描述參見
 參考文獻 <loongarch-references-zh_TW>:
+
 
 ================= =============== =================== ==========
 寄存器名          別名            用途                跨調用保持
@@ -86,6 +89,7 @@ LSX使用 `$v0` ~ `$v31` 向量寄存器，而LASX則使用 `$x0` ~ `$x31` 。
 
 
 控制狀態寄存器只能在特權模式（PLV0）下訪問:
+
 
 ================= ==================================== ==========
 地址              全稱描述                             簡稱
@@ -169,6 +173,7 @@ ERA，TLBRERA，MERRERA和DERA有時也分別稱爲EPC，TLBREPC，MERREPC和DEP
 
 
 LoongArch的指令字長爲32位，一共有9種基本指令格式（以及一些變體）:
+
 
 =========== ==========================
 格式名稱    指令構成

@@ -1,3 +1,5 @@
+# ip_dynaddr
+
 ﻿
 ## IP动态地址 hack-port v0.03
 
@@ -26,9 +28,11 @@
 
   To enable verbose mode::
 
+
     # echo 2 > /proc/sys/net/ipv4/ip_dynaddr
 
   To disable (default)::
+
 
      # echo 0 > /proc/sys/net/ipv4/ip_dynaddr
 

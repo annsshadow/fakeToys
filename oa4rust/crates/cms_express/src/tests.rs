@@ -22,7 +22,7 @@ async fn test_uuid_random_returns_uuid() {
     let response = app()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms/uuid/random")
+                .uri("/api/cms/uuid/random")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -49,7 +49,7 @@ async fn test_template_form_list_returns_data() {
     let response = app()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms/templateform/list")
+                .uri("/api/cms/templateform/list")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -64,7 +64,7 @@ async fn test_view_publish_route_exists() {
     let response = app()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms/view/publish/view-001")
+                .uri("/api/cms/view/publish/view-001")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -84,7 +84,7 @@ async fn test_view_unpublish_route_exists() {
     let response = app()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms/view/unpublish/view-001")
+                .uri("/api/cms/view/unpublish/view-001")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),

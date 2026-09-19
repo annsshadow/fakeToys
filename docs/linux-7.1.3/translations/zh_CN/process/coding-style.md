@@ -1,4 +1,6 @@
 
+# coding-style
+
 :Original: Documentation/process/coding-style.rst
 
 
@@ -199,7 +201,7 @@ C 语言风格中另外一个常见问题是大括号的放置。和缩进大小
 		otherwise();
 	}
 
-######## 3.1) 空格
+#### 3.1) 空格
 
 
 Linux 内核的空格使用方式 (主要) 取决于它是用于函数还是关键字。(大多数) 关键字
@@ -235,6 +237,7 @@ Linux 内核的空格使用方式 (主要) 取决于它是用于函数还是关�
 ```
 
 	=  +  -  <  >  *  /  %  |  &  ^  <=  >=  ==  !=  ?  :
+
 
 ```
 ```
@@ -346,6 +349,7 @@ C 程序员不使用类似 ThisVariableIsATemporaryCounter 这样华丽的名字
 
      .. note::
 
+
        要这样做，必须事出有因。如果某个变量是 ``unsigned long`` ，那么没有必要
 
 	typedef unsigned long myflags_t;
@@ -411,7 +415,7 @@ C 程序员不使用类似 ThisVariableIsATemporaryCounter 这样华丽的名字
 	}
 	EXPORT_SYMBOL(system_is_up);
 
-######## 6.1) 函数原型
+#### 6.1) 函数原型
 
 
 在函数原型中包含参数名和它们的数据类型。虽然 C 语言里没有这样的要求，但在
@@ -752,7 +756,7 @@ cpp 手册对宏的讲解很详细。gcc internals 手册也详细讲解了 RTL�
 言经常用到它。
 
 
-### 13) 打印内核消息
+## 13) 打印内核消息
 
 
 内核开发者应该看起来有文化。请一定注意内核信息的拼写，以给人良好的印象。
@@ -903,7 +907,7 @@ Linux内核布尔（bool）类型是C99 _Bool类型的别名。布尔值只能�
 在你的代码里自己重新定义。
 
 
-### 19) 编辑器模式行和其他需要罗嗦的事情
+## 19) 编辑器模式行和其他需要罗嗦的事情
 
 
 有一些编辑器可以解释嵌入在源文件里的由一些特殊标记标明的配置信息。比如，emacs
@@ -996,7 +1000,7 @@ Vim 能够解析这样的标记：
 	#endif /** CONFIG_SOMETHING **/
 
 
-### 附录 I) 参考资料
+## 附录 I) 参考资料
 
 
 The C Programming Language, 2nd Edition

@@ -1,3 +1,5 @@
+# arcnet-hardware
+
 ﻿锘。
 ## ARCnet 硬件
 
@@ -260,6 +262,7 @@ TP 拓扑也有集线器。使用它们并不困难；你只需TP 链连接到�
 
     ::
 
+
 	A0000		- VGA graphics memory (ok if you don't have VGA)
 	B0000		- Monochrome text mode
 	C0000		\  One of these is your VGA BIOS - usually C0000.
@@ -290,6 +293,7 @@ TP 拓扑也有集线器。使用它们并不困难；你只需TP 链连接到�
     requirement here is that all cards on the network with ETS1 and ETS2
     jumpers have them in the same position.  Chris Hindy <chrish@io.org>
     sent in a chart with actual values for this:
+
 
 	======= ======= =============== ====================
 	ET1	ET2	Response Time	Reconfiguration Time
@@ -556,7 +560,7 @@ PC270E PC260 板卡的增强版本，配备两个模块化的 RJ11 型插孔，�
 将某个开关设Off/Open 表示”，On/Closed 表示”
 
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 
@@ -693,6 +697,7 @@ S2 中的八个开关用于设置节ID。这些开关的工作方式PC100 系列
       is different in hard- and software! The most important differences
       are:
 
+
       - The long board has no Shared memory.
       - On the long board the selection of the interrupt is done by binary
 	coded switch, on the short board directly by jumper.
@@ -765,7 +770,7 @@ PC550 配备两个模块化的 RJ11 型插孔，用于连接双绞线布线。�
 将某个开关设Off/Open 表示”，On/Closed 表示”
 
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 
@@ -1284,7 +1289,7 @@ ARCNET Datapoint Corporation 的注册商
 将某个开关拨Off（关）表"1"，拨On（开）表"0"
 
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且必须不同0 号开关（ID0）作为最低有效位（LSB）
@@ -1501,7 +1506,7 @@ ARCNET Datapoint Corporation 的注册商
 将某个开关拨Off（关）表"1"，拨On（开）表"0"
 
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且必须不同0
@@ -1797,7 +1802,7 @@ SW 1    ：共享内存地址I/O 基地址
 
 ```
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且不能0
@@ -1949,7 +1954,7 @@ I/O 地址是所有拨"1" 的开关的取值之和。请注意x200 以下I/O 地
 
 ```
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW3 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且不能0
@@ -2111,7 +2116,7 @@ SW3 中的八个开关用于设置节ID。连接到网络的每个节点必须�
 
 ```
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且不能0 号开关（ID0）作为最低有效位（LSB）
@@ -2470,7 +2475,7 @@ SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须�
 将某个开关拨Off（关）表"1"，拨On（开）表"0"
 
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW1 中的八个开关用于设置节ID
@@ -2667,7 +2672,7 @@ On（开）表示已安装跳线，Off（关）表示未安装跳线
 将某个开关拨Off（关）表"1"，拨On（开）表"0"
 
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且必须不同0
@@ -2853,7 +2858,7 @@ SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须�
 
 将跳线设ON（开）表示连接上方的两个引脚，设off 表示连接下方两个引脚——或者——在 IRQ 设置的情况下，表示完全不连接任何引脚
 
-##### 设置节点 ID
+#### 设置节点 ID
 
 
 SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须具有唯一的节ID，且不能0
@@ -3032,7 +3037,7 @@ SW2 中的八个开关用于设置节ID。连接到网络的每个节点必须�
 
 ```
 
-##### SW1：超时、中断与 ROM
+#### SW1：超时、中断与 ROM
 
 
 要选择一个硬件中断级别，请将 SW1 上（位于 1-5 号开关处）的 DIP 开关中的一个拨up（on）：IRQ3、IRQ4、IRQ5、IRQ7、IRQ2。厂商默认值为 IRQ2

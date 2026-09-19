@@ -1,3 +1,5 @@
+# volatile-considered-harmful
+
 ﻿
 
 为何不应使用 "volatile" 类型限定

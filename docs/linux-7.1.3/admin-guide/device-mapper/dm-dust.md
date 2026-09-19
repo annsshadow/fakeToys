@@ -1,3 +1,5 @@
+# dm-dust
+
 ﻿## dm-dust
 
 
@@ -18,7 +20,7 @@
 借助 dm-dust，用户可以使“addbadblock“removebadblock消息在新的位置添加任意坏块，以及使用 “enable“disable消息来调节所配置“bad blocks是被视为坏块还是被绕过
 1. 将该块从“坏块列表”中移除
 2. 成功完成写入
-### 表参
+## 表参
 这模拟了具有坏扇区的驱动
 的“重映射扇区”行为
 <device_path> <offset> <blksz>

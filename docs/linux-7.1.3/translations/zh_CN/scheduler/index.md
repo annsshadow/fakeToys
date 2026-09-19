@@ -1,12 +1,16 @@
 
+# index
+
 :Original: Documentation/scheduler/index.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
 :校译:
+
 
 
 
@@ -26,6 +30,7 @@
 - [sched-debug](sched-debug)
 
 TODOList:
+
 
     sched-deadline
     sched-rt-group

@@ -1,3 +1,5 @@
+# map_cpumap
+
 ﻿
 ## BPF_MAP_TYPE_CPUMAP
 
@@ -18,7 +20,7 @@ Linux 内核 5.9 版本开始，CPUMAP 可以在远CPU 运行第二XDP 程序。
 ### 内核 BPF
 
 
-##### bpf_redirect_map()
+#### bpf_redirect_map()
 
 
      long bpf_redirect_map(struct bpf_map *map, u32 key, u64 flags)
@@ -30,7 +32,7 @@ Linux 内核 5.9 版本开始，CPUMAP 可以在远CPU 运行第二XDP 程序。
 
     CPUMAP 条目只能从用户空间更查找/删除，而不    eBPF 程序中进行。试图从内核 eBPF 程序调用这些函数
     将导致程序加载失败并出现验证器（verifier）警告
-##### bpf_map_update_elem()
+#### bpf_map_update_elem()
 
 
     int bpf_map_update_elem(int fd, const void **key, const void **value, __u64 flags);

@@ -30,7 +30,7 @@ async fn next_version(
     Ok(row.get::<_, i64>("next"))
 }
 
-/// POST /jaxrs/portal/assemble/designer/script —— 新建脚本并落 v1 版本快照
+/// POST /api/portal/assemble/designer/script —— 新建脚本并落 v1 版本快照
 pub async fn create(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -77,7 +77,7 @@ pub async fn create(
     ))))
 }
 
-/// PUT /jaxrs/portal/assemble/designer/script/{id} —— 更新脚本并落新版本快照
+/// PUT /api/portal/assemble/designer/script/{id} —— 更新脚本并落新版本快照
 pub async fn update(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
@@ -126,7 +126,7 @@ pub async fn update(
     ))))
 }
 
-/// DELETE /jaxrs/portal/assemble/designer/script/{id} —— 软删除
+/// DELETE /api/portal/assemble/designer/script/{id} —— 软删除
 pub async fn delete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,

@@ -1,3 +1,5 @@
+# k8temp
+
 ﻿## 内核驱动 k8temp
 
 
@@ -15,7 +17,7 @@ Author: Rudolf Marek
 
 Contact: Rudolf Marek <r.marek@assembler.cz>
 
-### 描述
+## 描述
 
 
 该驱动允许读取内置于 AMD K8 系列 CPU（Athlon64/FX、Opteron）中的温度传感器的读数。官方文档称其从 K8 核心F 修订版开始工作，但实际上它似乎在除前两个修订版（SH-B0 SH-B3）之外的所K8 修订版上都有实现

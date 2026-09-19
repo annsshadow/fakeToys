@@ -75,7 +75,7 @@ async fn test_get_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms_assemble_control/get/control/config")
+                .uri("/api/cms_assemble_control/get/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -87,14 +87,14 @@ async fn test_get_control_config_route() {
 }
 
 #[tokio::test]
-async fn test_post_jaxrs_document_id_view_count() {
+async fn test_post_document_id_view_count() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/document/test-id/view/count")
+                .uri("/api/document/test-id/view/count")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -106,14 +106,14 @@ async fn test_post_jaxrs_document_id_view_count() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_application_id() {
+async fn test_get_application_id() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/application/test-id")
+                .uri("/api/application/test-id")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -125,14 +125,14 @@ async fn test_get_jaxrs_application_id() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_document_search() {
+async fn test_get_document_search() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms_assemble_control/document/search")
+                .uri("/api/cms_assemble_control/document/search")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -144,14 +144,14 @@ async fn test_get_jaxrs_document_search() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_anonymous_document_id_view() {
+async fn test_get_anonymous_document_id_view() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/anonymous/document/test-id/view")
+                .uri("/api/anonymous/document/test-id/view")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -163,15 +163,15 @@ async fn test_get_jaxrs_anonymous_document_id_view() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_data_document_id_array_data() {
+async fn test_get_data_document_id_array_data() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
-    // Java DataAction：array/data 为 POST（ActionUpdateArrayDataWithDocument）
+    // o2server DataAction：array/data 为 POST（ActionUpdateArrayDataWithDocument）
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/data/document/test-id/array/data")
+                .uri("/api/data/document/test-id/array/data")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -183,14 +183,14 @@ async fn test_get_jaxrs_data_document_id_array_data() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_data_document_id_mockdeletetoget() {
+async fn test_get_data_document_id_mockdeletetoget() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/data/document/test-id/mockdeletetoget")
+                .uri("/api/data/document/test-id/mockdeletetoget")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -202,14 +202,14 @@ async fn test_get_jaxrs_data_document_id_mockdeletetoget() {
 }
 
 #[tokio::test]
-async fn test_post_jaxrs_data_document_id_mockputtopost() {
+async fn test_post_data_document_id_mockputtopost() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/data/document/test-id/mockputtopost")
+                .uri("/api/data/document/test-id/mockputtopost")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -221,14 +221,14 @@ async fn test_post_jaxrs_data_document_id_mockputtopost() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_data_document_id_path0() {
+async fn test_get_data_document_id_path0() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/data/document/test-id/path0")
+                .uri("/api/data/document/test-id/path0")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -240,14 +240,14 @@ async fn test_get_jaxrs_data_document_id_path0() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_fileinfo_id() {
+async fn test_get_fileinfo_id() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/fileinfo/test-id")
+                .uri("/api/fileinfo/test-id")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -259,14 +259,14 @@ async fn test_get_jaxrs_fileinfo_id() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_fileinfo_id_mockdeletetoget() {
+async fn test_get_fileinfo_id_mockdeletetoget() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/fileinfo/test-id/mockdeletetoget")
+                .uri("/api/fileinfo/test-id/mockdeletetoget")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -278,14 +278,14 @@ async fn test_get_jaxrs_fileinfo_id_mockdeletetoget() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_anonymous_fileinfo_download_document_id() {
+async fn test_get_anonymous_fileinfo_download_document_id() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/anonymous/fileinfo/download/document/test-id")
+                .uri("/api/anonymous/fileinfo/download/document/test-id")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -297,14 +297,14 @@ async fn test_get_jaxrs_anonymous_fileinfo_download_document_id() {
 }
 
 #[tokio::test]
-async fn test_get_jaxrs_fileinfo_download_document_id() {
+async fn test_get_fileinfo_download_document_id() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/fileinfo/download/document/test-id")
+                .uri("/api/fileinfo/download/document/test-id")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -316,14 +316,14 @@ async fn test_get_jaxrs_fileinfo_download_document_id() {
 }
 
 #[tokio::test]
-async fn test_post_jaxrs_fileinfo_upload_document_docId() {
+async fn test_post_fileinfo_upload_document_docId() {
     let pool = build_test_pool();
     let app = crate::cms_assemble_control_router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/fileinfo/upload/document/test-id")
+                .uri("/api/fileinfo/upload/document/test-id")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -345,7 +345,7 @@ async fn test_update_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/cms_assemble_control/update/control/config")
+                .uri("/api/cms_assemble_control/update/control/config")
                 .method(Method::GET)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))
@@ -390,7 +390,7 @@ async fn test_document_crud_end_to_end() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri(format!("/jaxrs/anonymous/document/{}/view", doc_id))
+                .uri(format!("/api/anonymous/document/{}/view", doc_id))
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -419,7 +419,7 @@ async fn test_document_soft_delete() {
         return;
     }
 
-    // Java ActionDeleteWithDocument 语义：删除的是文档数据（字段行），
+    // o2server ActionDeleteWithDocument 语义：删除的是文档数据（字段行），
     // 而非文档实体；且需要文档编辑者会话（IDOR 门禁）。
     let owner = "test-doc-softdelete-owner";
     let doc_id = "test-doc-softdelete-001";
@@ -459,7 +459,7 @@ async fn test_document_soft_delete() {
 
     let app = crate::router(test_pool());
     let req = Request::builder()
-        .uri(format!("/jaxrs/data/document/{}/mockdeletetoget", doc_id))
+        .uri(format!("/api/data/document/{}/mockdeletetoget", doc_id))
         .method(Method::GET)
         .extension(session)
         .body(Body::empty())
@@ -512,13 +512,13 @@ mod tests {
     use tower::util::ServiceExt;
 
     #[tokio::test]
-    async fn test_get_jaxrs_application_id() {
+    async fn test_get_application_id() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/application/test-id")
+                    .uri("/api/application/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -529,13 +529,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_cms_assemble_control_get_control_c() {
+    async fn test_get_cms_assemble_control_get_control_c() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/get/control/config")
+                    .uri("/api/cms_assemble_control/get/control/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -546,13 +546,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_cms_assemble_control_list_control_() {
+    async fn test_get_cms_assemble_control_list_control_() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/list/control/sections")
+                    .uri("/api/cms_assemble_control/list/control/sections")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -563,13 +563,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_cms_assemble_control_update_contro() {
+    async fn test_get_cms_assemble_control_update_contro() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_assemble_control/update/control/config")
+                    .uri("/api/cms_assemble_control/update/control/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -580,13 +580,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_commend_list_paging_docId() {
+    async fn test_get_commend_list_paging_docId() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/commend/list/paging/test-id")
+                    .uri("/api/commend/list/paging/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -597,13 +597,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_queryview_flag_view_definition_que() {
+    async fn test_get_queryview_flag_view_definition_que() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/queryview/flag/test-id/definition/test-id")
+                    .uri("/api/queryview/flag/test-id/definition/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -614,13 +614,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_document_id_view_count() {
+    async fn test_post_document_id_view_count() {
         let pool = build_test_pool();
         let app = crate::cms_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/document/test-id/view/count")
+                    .uri("/api/document/test-id/view/count")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -628,5 +628,42 @@ mod tests {
             .await
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    // ── cms/assemble/control/* 斜杠路径家族路由注册 ─────────────────────────
+    // 这 4 条是前端 o2server 斜杠口径调用、此前未注册（桌面契约守卫 KNOWN_BACKEND_GAPS）的端点；
+    // 现在补齐真实 list handler，此测试锁定"已注册"（非 404），DB 缺数据时返回 500/200 而非 404。
+    async fn get_status(app: &axum::Router, uri: &str) -> StatusCode {
+        app.clone()
+            .oneshot(
+                Request::builder()
+                    .uri(uri)
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status()
+    }
+
+    #[tokio::test]
+    async fn test_cms_assemble_control_list_routes_registered() {
+        let pool = build_test_pool();
+        let app = crate::cms_assemble_control_router(pool);
+        for uri in [
+            "/api/cms/assemble/control/dict/list",
+            "/api/cms/assemble/control/form/list",
+            "/api/cms/assemble/control/view/list",
+            "/api/cms/assemble/control/xform/list",
+        ] {
+            let status = get_status(&app, uri).await;
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "route {} should be registered",
+                uri
+            );
+        }
     }
 }

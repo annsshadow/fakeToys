@@ -1,3 +1,5 @@
+# vcpu
+
 ﻿
 ## 通用 vcpu 接口
 
@@ -44,10 +46,11 @@ kvm_device_attr，但目标VCPU 级别的设置和控制
 
 :Returns:
 
+
 	 =======  ======================================================
 	 -ENODEV  PMUv3 不支持或 GIC 未初始化
 	 -ENXIO   PMUv3 未正确配置，或者调用此属性前未按要求
-	 	  閰嶇疆鍐呮牳鍐?irqchip
+	 	  閰嶇疆内呮核内?irqchip
 	 -EBUSY   PMUv3 已经初始化，或者某VCPU 已经运行	 -EINVAL  无效的过滤器范围
 	 =======  ======================================================
 
@@ -68,13 +71,14 @@ kvm_device_attr，但目标VCPU 级别的设置和控制
 一个过滤器范围定义为范[@base_event, @base_event + @nevents)，连@action（KVM_PMU_EVENT_ALLOW KVM_PMU_EVENT_DENY）。第一个注册的范围定义了全局策略（如果第一@action DENY，则为全局 ALLOW；如果第一@action ALLOW，则为全局 DENY）。可以编程多个范围，并且必须适配 PMU 架构所定义的事件空间（ARMv8.0 上为 10 位，ARMv8.1 起为 16 位）
 注意：通过为同一范围注册相反的动作来 “取消一个过滤器并不会改变默认动作。例如，先将事件范围 [0:10) ALLOW 过滤器作为第一个过滤器安装，然后对该范围应DENY 动作，将使整个范围保持禁用状态
 限制：事0（SW_INCR）永远不会被过滤，因为它不统计硬件事件。过滤事0x1E（CHAIN）也没有效果，因为它严格来说不是一个事件。可以使用事0x11（CPU_CYCLES）来过滤周期计数器
-### 1.4 属性：KVM_ARM_VCPU_PMU_V3_SET_PMU
+## 1.4 属性：KVM_ARM_VCPU_PMU_V3_SET_PMU
 
 
 :Parameters: in kvm_device_attr.addr the address to an int representing the PMU
              identifier.
 
 :Returns:
+
 
 	 =======  ====================================================
 	 -EBUSY   PMUv3 已经初始化、某VCPU 已经运行过，或                  已经设置了一个事件过滤器
@@ -94,6 +98,7 @@ exit_reason = KVM_EXIT_FAIL_ENTRY 返回，并通过hardare_entry_failure_reason
 	     representing the maximum value taken by PMCR_EL0.N
 
 :Returns:
+
 
 	 =======  ====================================================
 	 -EBUSY   PMUv3 已经初始化、某VCPU 已经运行过，或                  已经设置了事件过滤器

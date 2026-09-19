@@ -1,13 +1,15 @@
+# acpi
+
 ﻿
 ## ACPI 琛。
 
 ACPI 是“高级配置与电源接口”（Advanced Configuration and Power Interface），是一定义平台与操作系统如何管理电源以及配置计算机硬件的标准。出于本操作理论的目的，提到“ACPI”时，我们通常指的是“ACPI 表”——平台（BIOS/EFI）向操作系统传递静态配信息的方式
 以下 ACPI 表包含关CXL 设备*静*配置与性能数据
-- [acpi/cedt.rst](acpi/cedt.rst)
-- [acpi/srat.rst](acpi/srat.rst)
-- [acpi/hmat.rst](acpi/hmat.rst)
-- [acpi/slit.rst](acpi/slit.rst)
-- [acpi/dsdt.rst](acpi/dsdt.rst)
+- [acpi/cedt.rst](acpi/cedt.md)
+- [acpi/srat.rst](acpi/srat.md)
+- [acpi/hmat.rst](acpi/hmat.md)
+- [acpi/slit.rst](acpi/slit.md)
+- [acpi/dsdt.rst](acpi/dsdt.md)
 
 SRAT 表也可能包含通用的端发起者（initiator）内容，旨在描述通用端口，但不包通往端点路径其余部分的信息
 Linux 使用这些表来为静态配置（BIOS/EFI）的 CXL 设备配置内核资源，例如：

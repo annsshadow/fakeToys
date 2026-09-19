@@ -1,3 +1,5 @@
+# vm
+
 ﻿
 ## 通用虚拟机（vm）接
 
@@ -84,7 +86,7 @@ KVM 不以任何形式强制或限cpu 模型数据。请把通过
 	   0 in case of success.
 
 
-### 2.3. 属性：KVM_S390_VM_CPU_MACHINE_FEAT (r/o)
+## 2.3. 属性：KVM_S390_VM_CPU_MACHINE_FEAT (r/o)
 
 
 允许用户空间获取可用cpu 特性。若硬件提供且该特性被 kvm 支持，则视为
@@ -269,6 +271,7 @@ CPU 模型不支持，则将其存0 且不允许被设!= 0 的值
 :Parameters: Pointer to a `struct kvm_smccc_filter`
 
 :Returns:
+
 
         ======  ===========================================
         EEXIST  Range intersects with a previously inserted

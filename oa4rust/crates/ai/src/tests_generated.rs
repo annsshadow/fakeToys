@@ -62,7 +62,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/base/config")
+                    .uri("/api/ai/config/base/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

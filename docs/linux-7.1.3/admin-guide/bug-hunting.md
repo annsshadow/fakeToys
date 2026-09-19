@@ -1,3 +1,5 @@
+# bug-hunting
+
 ﻿## 缺陷追踪（Bug Hunting?
 
 ```
@@ -49,7 +51,7 @@
 ```
 尽管它是一?**Oops** 或某种其他类型的栈跟踪，通常仍需要找到出错的那一行才能定位和处理缺陷。在本章中，我们用“Oops”来泛指所有需要分析的各类栈跟踪。
 如果内核使用 `CONFIG_DEBUG_INFO` 编译，你可以通过 `scripts/decode_stacktrace.sh` 脚本来提升栈跟踪的质量。
-### 已加载的模块
+## 已加载的模块
 
 
 已被污染或正在加，卸载的模块会以?...)”标记，其中污染标志?`Documentation/admin-guide/tainted-kernels.rst` 中描述；“正在加载”用?”标注，“正在卸载”用?”标注。
@@ -69,7 +71,7 @@
 
 
 如果你能将缺陷的位置指向内核源文件，报告缺陷的效果最好。有两种方法可以做到这一点。通常，使?`gdb` 更简单，但内核应预先使用调试信息编译。
-##### gdb
+#### gdb
 
 
 GNU 调试器（`gdb`）是确定 OOPS ?`vmlinux` 文件中精确文件与行号的最佳方式。
@@ -195,6 +197,7 @@ GNU 调试器（`gdb`）是确定 OOPS ?`vmlinux` 文件中精确文件与行号
 
      ?"gcc -c -o foo.o foo.s" 编译它，然后查看 "objdump --disassemble foo.o" 的输出?
      Output:
+
 
      ip_queue_xmit:
          push       %ebp

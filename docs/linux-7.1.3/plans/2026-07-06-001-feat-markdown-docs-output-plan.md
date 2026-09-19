@@ -1,3 +1,5 @@
+# 2026-07-06-001-feat-markdown-docs-output-plan
+
 ﻿---
 title: feat: Add Markdown docs output via Pandoc pipeline
 type: feat

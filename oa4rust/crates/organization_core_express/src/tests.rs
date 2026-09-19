@@ -23,7 +23,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/core/express/status")
+                    .uri("/api/organization/core/express/status")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -43,7 +43,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/core/express/sync")
+                    .uri("/api/organization/core/express/sync")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -63,7 +63,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/core/express/config")
+                    .uri("/api/organization/core/express/config")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

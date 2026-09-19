@@ -1,3 +1,5 @@
+# cpu-hotplug-spec
+
 ﻿
 ## Linux/x86-64 下对 CPU 热插拔的固件支持
 

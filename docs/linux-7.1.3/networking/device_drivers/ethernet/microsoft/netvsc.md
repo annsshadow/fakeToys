@@ -1,3 +1,5 @@
+# netvsc
+
 ﻿
 ## Hyper-V 网络驱动
 
@@ -24,9 +26,11 @@
 
   To exclude UDP port numbers in hashing::
 
+
 	ethtool -N eth0 rx-flow-hash udp4 sd
 
   To show UDP hash level::
+
 
 	ethtool -n eth0 rx-flow-hash udp4
 

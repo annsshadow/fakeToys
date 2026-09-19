@@ -190,21 +190,18 @@ pub async fn template_get(
 
 /// 创建推送核心实体路由
 /// 注册以下路由：
-/// - /jaxrs/jpush/core/entity/device/list - 设备列表
-/// - /jaxrs/jpush/core/entity/device/{id} - 设备详情
-/// - /jaxrs/jpush/core/entity/device/create - 创建设备
-/// - /jaxrs/jpush/core/entity/template/list - 模板列表
-/// - /jaxrs/jpush/core/entity/template/{id} - 模板详情
+/// - /api/jpush/core/entity/device/list - 设备列表
+/// - /api/jpush/core/entity/device/{id} - 设备详情
+/// - /api/jpush/core/entity/device/create - 创建设备
+/// - /api/jpush/core/entity/template/list - 模板列表
+/// - /api/jpush/core/entity/template/{id} - 模板详情
 pub fn jpush_core_entity_router(_pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/jpush/core/entity/device/list", get(device_list))
-        .route("/jaxrs/jpush/core/entity/device/{id}", get(device_get))
-        .route(
-            "/jaxrs/jpush/core/entity/device/create",
-            post(device_create),
-        )
-        .route("/jaxrs/jpush/core/entity/template/list", get(template_list))
-        .route("/jaxrs/jpush/core/entity/template/{id}", get(template_get))
+        .route("/api/jpush/core/entity/device/list", get(device_list))
+        .route("/api/jpush/core/entity/device/{id}", get(device_get))
+        .route("/api/jpush/core/entity/device/create", post(device_create))
+        .route("/api/jpush/core/entity/template/list", get(template_list))
+        .route("/api/jpush/core/entity/template/{id}", get(template_get))
 }
 
 #[cfg(test)]

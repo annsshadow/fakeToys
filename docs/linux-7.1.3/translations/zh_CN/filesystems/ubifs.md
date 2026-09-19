@@ -1,12 +1,16 @@
 
 
+# ubifs
+
 :Original: Documentation/filesystems/ubifs.rst
 
 :翻译:
 
+
    邵明寅 Shao Mingyin <shao.mingyin@zte.com.cn>
 
 :校译:
+
 
    杨涛 yang tao <yang.tao172@zte.com.cn>
 

@@ -1,11 +1,15 @@
 
+# balance
+
 :Original: Documentation/mm/balance.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## 内存平衡

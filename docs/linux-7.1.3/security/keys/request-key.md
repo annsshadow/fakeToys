@@ -1,8 +1,10 @@
+# request-key
+
 ﻿## Key 请求 Service
 
 
 The key 请求 service part the key retention service (参
-Documentation/安全/keys/核心.rst).  document explains 更多 fully 如何
+Documentation/安全/keys/核心.md).  document explains 更多 fully 如何
 the requesting algorithm works.
 
 The 进程 starts 任一the 内核 requesting 一service calling
@@ -79,6 +81,7 @@ forking 鍜?execution 鐨?/sbin/request-key.
 
 一请求 proceeds the 以下 manner:
 
+
   1) 进程 一calls 请求_key() [the userspace 系统调用 calls the 内核
      接口].
 
@@ -89,6 +92,7 @@ forking 鍜?execution 鐨?/sbin/request-key.
 
   3) 请求_key() sees 一doesn't 具有 the desired key 尚未, 因此 creates
      two things:
+
 
       一 一uninstantiated key U requested 类型 description.
 
@@ -155,6 +159,7 @@ instantiated 用于 一short amount time.
 
 一search 任何 特定 keyring proceeds the 以下 fashion:
 
+
   1) the key 管理 code searches 用于 一key (keyring_search_rcu) 
      firstly calls key_permission(SEARCH) 鍦?the keyring 瀹?s starting 涓。
      鑻，姝?denies permission, 瀹?doesn't search further.
@@ -180,6 +185,7 @@ one-key 缓存 第一 checked 用于 一match.
 search_进程_keyrings() invoked, performs the 以下 searches
 直到 one succeeds:
 
+
   1) extant, the 进程's 线程 keyring searched.
 
   2) extant, the 进程's 进程 keyring searched.
@@ -188,6 +194,7 @@ search_进程_keyrings() invoked, performs the 以下 searches
 
   4) the 进程 具有 assumed the authority associated 一请求_key()
      authorisation key 然后:
+
 
       一 extant, the calling 进程's 线程 keyring searched.
 

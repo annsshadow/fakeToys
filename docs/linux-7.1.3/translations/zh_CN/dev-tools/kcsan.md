@@ -1,5 +1,7 @@
 
 
+# kcsan
+
 :Original: Documentation/dev-tools/kcsan.rst
 :Translator: 刘浩阳 Haoyang Liu <tttturtleruss@hust.edu.cn>
 
@@ -123,6 +125,7 @@ KCSAN 提供了几个其他的配置选项来自定义行为（见 `lib/Kconfig.
 
 此外，KCSAN 可以根据偏好设置显示或隐藏整个类别的数据竞争。可以使用如下
 Kconfig 参数进行更改:
+
 
 - `CONFIG_KCSAN_REPORT_VALUE_CHANGE_ONLY`: 如果启用了该参数并且通过观测点
   (watchpoint) 观测到一个有冲突的写操作，但是对应的内存地址中存储的值没有改变，

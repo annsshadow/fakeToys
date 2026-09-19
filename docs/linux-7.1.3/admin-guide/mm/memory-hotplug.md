@@ -1,3 +1,5 @@
+# memory-hotplug
+
 ﻿## 内存热插
 
 
@@ -35,7 +37,7 @@ Linux 中的内存热插拔使SPARSEMEM 内存模型，该模型将物理内存�
 
 内存热插拔由两个阶段组成
 
-(1) 灏嗗唴瀛樺姞鍏?Linux
+(1) 灏嗗唴子樺姞鍏?Linux
 (2) 将内存块上线（online
 
 在第一阶段，分配并初始化元数据，例如内存映射（“memmap”）以及用于直接映射的页表，并创建内存块；后者还会为管理新建的内存块创建 sysfs 文件
@@ -307,6 +309,7 @@ Linux 收到内存热插拔事件通知、从而能够开始添加热插拔内�
 	/sys/devices/system/node/node0/memory9 -> ../../memory/memory9
 
   A backlink will also be created::
+
 
 	/sys/devices/system/memory/memory9/node0 -> ../../node/node0
 

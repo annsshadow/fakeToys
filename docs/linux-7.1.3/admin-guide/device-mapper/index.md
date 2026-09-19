@@ -1,3 +1,5 @@
+# index
+
 ﻿## 设备映射（Device Mapper
 
 本页Device Mapper（设备映射）文档的索引，汇总了各类存储目标（target）与辅助内核模块的说明入口（如缓存、加dm-crypt、RAID、精简配置、VDO、快照等），便于系统管理员与开发者查阅存储栈配置

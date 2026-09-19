@@ -1,3 +1,5 @@
+# mount_api
+
 ﻿
 ## 文件系统挂载 API（Filesystem Mount API
 
@@ -61,20 +63,24 @@ fs_context 的字段如下：
      这些是可以在文件系统上下文上执行的操作（见下文）。这必须->init_fs_context() file_system_type 操作设置
    * ::
 
+
        struct file_system_type *fs_type
 
      指向正在构建或重新配置的文件系统file_system_type 的指针。这会保留对类型所有者的一个引用
    * ::
+
 
        void *fs_private
 
      指向文件系统私有数据的指针。文件系统需要将其解析出的任何选项存储在这里
    * ::
 
+
        struct dentry *root
 
      指向可挂载树的根（以及间接指向其超级块）的指针。这->get_tree() 操作填充。如果设置了它，也必须持有对 root->d_sb 的一个活动引用
    * ::
+
 
        struct user_namespace *user_ns
        struct net *net_ns
@@ -82,30 +88,36 @@ fs_context 的字段如下：
      这是调用进程所使用的命名空间的一个子集。它们保留对每个命名空间的引用。订阅的命名空间可能被文件系统替换，以反映其他来源，例如自动挂载（automount）时父挂载的超级块
    * ::
 
+
        const struct cred *cred
 
      挂载者的凭证。这保留对凭证的一个引用
    * ::
+
 
        char *source
 
      这指定了来源。它可以是一个块设备（例/dev/sda1），或一些更特殊的东西，例如 NFS 所期望"host:/path"
    * ::
 
+
        char *subtype
 
      这是一个要添加/proc/mounts 中显示的类型的字符串，用于限定它（由 FUSE 使用）。如果文件系统需要，可以设置它
    * ::
+
 
        void *security
 
      LSM 用来挂接其超级块安全数据的地方。相关的安全操作在下面描述
    * ::
 
+
        void *s_fs_info
 
      为新的超级块建议s_fs_info，由 sget_fc() 设置在超级块中。这可用于区分超级块
    * ::
+
 
        unsigned int sb_flags
        unsigned int sb_flags_mask
@@ -113,10 +125,12 @@ fs_context 的字段如下：
      要在 super_block::s_flags 中设清除哪些 SB_* 标志位
    * ::
 
+
        unsigned int s_iflags
 
      这些将在创建超级块时s->s_iflags 做按位或
    * ::
+
 
        enum fs_context_purpose
 
@@ -156,13 +170,16 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      当上下文被销毁时调用，用于清理文件系统上下文的文件系统相关部分。它应当意识到上下文的某些部分可能已被移除并被设NULL（由 ->get_tree() 完成）
    * ::
 
+
 	int (*dup)(struct fs_context *fc, struct fs_context *src_fc);
 
      当文件系统上下文被复制时调用，以复制文件系统私有数据。可以返回一个错误来指示复制失败
      .. Warning::
 
+
          注意，即使这失败了，put_fs_context() 也会紧接其后被调用，因此 ->dup() *必须* 让文件系统私有数据对 ->free() 是安全的
    * ::
+
 
 	int (*parse_param)(struct fs_context *fc,
 			   struct fs_parameter *param);
@@ -172,6 +189,7 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      如果成功，应返回 0，否则返回一个负的错误码
    * ::
 
+
 	int (*parse_monolithic)(struct fs_context *fc, void *data);
 
      当调mount(2) 系统调用以一次性传入整个数据页时调用。如果预期这只是一个由逗号分隔"key[=val]" 条目列表，那么可以将其设NULL
@@ -179,12 +197,14 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      如果文件系统（例NFS）需要先检查数据，然后发现它是标准的键-值列表，那么它可以转交给 generic_parse_monolithic()
    * ::
 
+
 	int (*get_tree)(struct fs_context *fc);
 
      调用以获取或创建可挂载的根与超级块，使用存储在文件系统上下文中的信息（重新配置通过一个不同的向量进行）。它可以将其想要的任何资源从文件系统上下文分离，并转移到它创建的超级块上
      成功时它应将 fc->root 设置为可挂载的根并返0。在出错的情况下，它应返回一个负的错误码
      在用户空间驱动的上下文上，该阶段会被设置为只允许在任何特定上下文上调用一次
    * ::
+
 
 	int (*reconfigure)(struct fs_context *fc);
 
@@ -203,16 +223,19 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      reference 在上下文是为超级块重新配置（FS_CONTEXT_FOR_RECONFIGURE）而创建时为非 NULL，此时它指向要重新配置的超级块的dentry。在子挂载（FS_CONTEXT_FOR_SUBMOUNT）的情况下它也为NULL，此时它指向自动挂载点
    * ::
 
+
 	int security_fs_context_dup(struct fs_context *fc,
 				    struct fs_context *src_fc);
 
      调用以初始化 fc->security（它被预设为 NULL）并分配所需资源。原始的文件系统上下文由 src_fc 指向，可用来参考。成功应返回 0，失败返回负的错误码
    * ::
 
+
 	void security_fs_context_free(struct fs_context *fc);
 
      调用以清理附加到 fc->security 的任何内容。注意其内容可能已被转移到超级块，并且指针在 get_tree 期间被清空
    * ::
+
 
 	int security_fs_context_parse_param(struct fs_context *fc,
 					    struct fs_parameter *param);
@@ -221,21 +244,25 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      param 指向的值可能被修改（如果是字符串）或被窃取（前提是值指针被设为 NULL）。如果被窃取，必须返1 以防止它被传递给文件系统
    * ::
 
+
 	int security_fs_context_validate(struct fs_context *fc);
 
      在所有选项都被解析之后调用，以整体验证这一集合，并进行任何必要的分配，使得 security_sb_get_tree() security_sb_reconfigure() 不太可能失败。应返回 0 或负的错误码
      在重新配置的情况下，目标超级块可以通过 fc->root 访问
    * ::
 
+
 	int security_sb_get_tree(struct fs_context *fc);
 
      在挂载过程中调用，以验证指定的超级块是否被允许挂载，并将安全数据转移到那里。应返回 0 或负的错误码
    * ::
 
+
 	void security_sb_reconfigure(struct fs_context *fc);
 
      调用以将任何重新配置应用LSM 的上下文。它绝不能失败。错误检查和资源分配必须由参数解析和验证钩子提前完成
    * ::
+
 
 	int security_sb_mountpoint(struct fs_context *fc,
 			           struct path *mountpoint,
@@ -256,6 +283,7 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      fs_type 指定管理该上下文的文件系统类型，sb_flags 预设其中存储的超级块标志
    * ::
 
+
        struct fs_context *fs_context_for_reconfigure(
 		struct dentry *dentry,
 		unsigned int sb_flags,
@@ -263,6 +291,7 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
 
      分配一个文件系统上下文，用于重新配置一个已有的超级块。dentry 提供对要配置的超级块的引用。sb_flags sb_flags_mask 指明哪些超级块标志需要改变以及改成什么
    * ::
+
 
        struct fs_context *fs_context_for_submount(
 		struct file_system_type *fs_type,
@@ -272,16 +301,19 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      注意，不要求 reference dentry fs_type 属于相同的文件系统类型
    * ::
 
+
         struct fs_context *vfs_dup_fs_context(struct fs_context *src_fc);
 
      复制一个文件系统上下文，复制其中记录的任何选项，并复制或额外引用其中持有的任何资源。这可用于文件系统必须在挂载内再进行挂载的情况，例如 NFS4 通过内部挂载目标服务器的根，然后做一次私有的路径遍历（pathwalk）到达目标目录
      新上下文中的 purpose 从旧的继承而来
    * ::
 
+
        void put_fs_context(struct fs_context *fc);
 
      销毁一个文件系统上下文，释放它持有的任何资源。这会调->free() 操作。这预期由任何创建了文件系统上下文的人调用
      .. Warning::
+
 
         文件系统上下文没有被引用计数，因此这会导致无条件的销毁
 ```
@@ -306,11 +338,13 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      如果有一个值，该值存储在 struct 的一个联合体中的 param->{string,blob,name,file} 之一里。注意该函数可能会窃取并清空该指针，但随后要负责处置该对象
    * ::
 
+
        int vfs_parse_fs_qstr(struct fs_context *fc, const char *key,
 			       const struct qstr *value);
 
      vfs_parse_fs_param() 的一个包装，会复制传给它value 字符串
    * ::
+
 
        int vfs_parse_fs_string(struct fs_context *fc, const char *key,
 			       const char *value);
@@ -318,15 +352,18 @@ VFS、安全和文件系统的挂载选项vfs_parse_mount_option() 逐个设置�
      vfs_parse_fs_param() 的一个包装，会复制传给它value 字符串
    * ::
 
+
        int generic_parse_monolithic(struct fs_context *fc, void *data);
 
      解析 sys_mount() 的数据页，假设其形式为由逗号分隔的由 key[=val] 选项组成的文本列表。列表中的每一项都被传vfs_mount_option()。当 ->parse_monolithic() 方法NULL 时这是默认行为
    * ::
 
+
        int vfs_get_tree(struct fs_context *fc);
 
      获取或创建可挂载的根与超级块，使用文件系统上下文中的参数来选择/配置超级块。这会调->get_tree() 方法
    * ::
+
 
        struct vfsmount *vfs_create_mount(struct fs_context *fc);
 
@@ -390,6 +427,7 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
 
      参数规格表，以一个空条目终止，其中的条目类型:
 
+
 	struct fs_parameter_spec {
 		const char		*name;
 		u8			opt;
@@ -447,6 +485,7 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
 
      以上全部取两个参数：name 字符串和选项编号——例:
 
+
 	static const struct fs_parameter_spec afs_param_specs[] = {
 		fsparam_flag	("autocell",	Opt_autocell),
 		fsparam_flag	("dyn",		Opt_dyn),
@@ -458,9 +497,11 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
      还提供了一个额外的__fsparam()，它取额外的一对参数来为不匹配上述任何宏的情况指定类型和标志
  (2) ::
 
+
        const struct fs_parameter_enum *enums;
 
      枚举值名到整数的映射表，以一个空条目终止。其类型:
+
 
 	struct fs_parameter_enum {
 		u8		opt;
@@ -469,6 +510,7 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
 	};
 
      该数组是一个以 { 参数 ID, name } 为键的未排序元素列表，指示要映射到的 value，例:
+
 
 	static const struct fs_parameter_enum afs_param_enums[] = {
 		{ Opt_bar,   "x",      1},
@@ -490,6 +532,7 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
 
      在“名-> 整数”映射表中按名字查找一个常量。该表是一个元素类型为如下的结构的数组::
 
+
 	struct constant_table {
 		const char	*name;
 		int		value;
@@ -498,11 +541,13 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
      如果找到匹配，返回对应的值。如果没找到匹配，则改为返回 not_found 值
    * ::
 
+
        bool fs_validate_description(const char *name,
                                     const struct fs_parameter_description *desc);
 
      这对参数描述执行一些验证检查。如果描述良好则返回 true，否则返false。如果验证失败，它会将错误记录到内核日志缓冲区
    * ::
+
 
         int fs_parse(struct fs_context *fc,
 		     const struct fs_parameter_description *desc,
@@ -514,6 +559,7 @@ VFS 提供了若干辅助函数供文件系统在创建或查找超级块时使�
      如果最初没有匹配，但键带有 "no" 前缀且没有值，则会尝试用去掉前缀的键去查找。如果这匹配到一个类型带fs_param_neg_with_no 标志的参数，则会形成匹配，并result->negated 会被设为 true
      如果参数不匹配，将返-ENOPARAM；如果参数匹配但值有误，将返-EINVAL；否则会返回该参数的选项编号
    * ::
+
 
        int fs_lookup_param(struct fs_context *fc,
 			   struct fs_parameter *value,

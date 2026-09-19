@@ -1,6 +1,8 @@
+# func-write
+
 ﻿
 
-######## V4L2 write()
+## V4L2 write()
 
 ## 名称
 

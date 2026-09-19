@@ -1,5 +1,7 @@
 
 
+# kconfig
+
 :Original: Documentation/kbuild/kconfig.rst
 :Translator: 慕冬亮 Dongliang Mu <dzm91@hust.edu.cn>
 
@@ -87,9 +89,11 @@ gconfig（'gconf'）程序的帮助文本较少。
 
     或::
 
+
         KCONFIG_ALLCONFIG=mini.config make allnoconfig
 
     或::
+
 
         make KCONFIG_ALLCONFIG=mini.config allnoconfig
 
@@ -164,6 +168,7 @@ gconfig（'gconf'）程序的帮助文本较少。
     这说明你还可以在搜索字符串中使用正则表达式（regex），所以如果你对
     MEMORY_HOTPLUG 不感兴趣，你可以尝试::
 
+
         /^hotplug
 
     在搜索时，符号将按以下顺序排序：
@@ -172,6 +177,7 @@ gconfig（'gconf'）程序的帮助文本较少。
     - 然后是其他匹配项，按字母顺序排列。
 
     例如，^ATH.K 匹配::
+
 
         ATH5K ATH9K ATH5K_AHB ATH5K_DEBUG [...] ATH6KL ATH6KL_DEBUG
         [...] ATH9K_AHB ATH9K_BTCOEX_SUPPORT ATH9K_COMMON [...]
@@ -191,6 +197,7 @@ gconfig（'gconf'）程序的帮助文本较少。
         make MENUCONFIG_COLOR=<theme> menuconfig
 
     可用的主题有::
+
 
       - mono       => 选择适合单色显示器的颜色
       - blackbg    => 选择具有黑色背景的配色方案
@@ -249,6 +256,7 @@ nconfig 是一个替代的基于文本的配置工具。它在终端（窗口）
         Ctrl-F hotplug
 
     或::
+
 
         菜单：File, Search, hotplug
 

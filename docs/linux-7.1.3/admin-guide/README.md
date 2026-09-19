@@ -1,3 +1,5 @@
+# README
+
 ﻿
 ## Linux 内核 6.x 版本 <http://kernel.org/>
 
@@ -67,6 +69,7 @@
    newer patch files, enter the top level directory of the kernel source
    (linux-6.x) and execute::
 
+
      xz -cd ../patch-6.x.xz | patch -p1
 
    Replace "x" for all versions bigger than the version "x" of your current
@@ -88,6 +91,7 @@
    process.  It determines the current kernel version and applies any
    patches found::
 
+
      linux/scripts/patch-kernel linux
 
    The first argument in the command above is the location of the
@@ -95,6 +99,7 @@
    an alternative directory can be specified as the second argument.
 
  - Make sure you have no stale .o files and dependencies lying around::
+
 
      cd linux
      make mrproper
@@ -122,6 +127,7 @@
      build directory:    /home/name/build/kernel
 
    To configure and build the kernel, use::
+
 
      cd /usr/src/linux-6.x
      make O=/home/name/build/kernel menuconfig
@@ -222,6 +228,7 @@
    in Documentation/kbuild/kconfig.rst.
 
  - NOTES on ``make config``:
+
 
     - Having unnecessary drivers will make the kernel bigger, and can
       under some circumstances lead to problems: probing for a

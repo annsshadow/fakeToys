@@ -27,7 +27,7 @@ pub struct SignatureInfo {
     pub created_at: Option<String>,
 }
 
-/// POST /jaxrs/person/signature/upload
+/// POST /api/person/signature/upload
 ///
 /// 接收 multipart/form-data 图片字节，Base64 编码后存入 x_custom 表。
 pub async fn upload(
@@ -94,7 +94,7 @@ pub async fn upload(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// GET /jaxrs/person/signature/list
+/// GET /api/person/signature/list
 ///
 /// 返回当前用户的所有签名列表。
 pub async fn list(
@@ -123,7 +123,7 @@ pub async fn list(
                 "id": row.get::<_, String>("id"),
                 "name": row.get::<_, String>("name"),
                 "person": row.get::<_, String>("person"),
-                "value": row.get::<_, String>("value"),
+                "value": row.get::<_, Option<String>>("value").unwrap_or_default(),
                 "created_at": row.get::<_, Option<String>>("created_at").map(|s| {
                     chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
                         .ok()
@@ -139,7 +139,7 @@ pub async fn list(
     )))
 }
 
-/// GET /jaxrs/person/signature/delete/{id}
+/// GET /api/person/signature/delete/{id}
 ///
 /// 软删除指定签名（仅当前用户自己的签名）。
 pub async fn delete(
@@ -167,7 +167,7 @@ pub async fn delete(
     Ok(Json(ActionResult::success(json!({ "success": true }))))
 }
 
-/// GET /jaxrs/person/signature/manager/list
+/// GET /api/person/signature/manager/list
 ///
 /// 管理员查看所有用户签名列表。
 pub async fn manager_list(
@@ -200,7 +200,7 @@ pub async fn manager_list(
                 "id": row.get::<_, String>("id"),
                 "name": row.get::<_, String>("name"),
                 "person": row.get::<_, String>("person"),
-                "value": row.get::<_, String>("value"),
+                "value": row.get::<_, Option<String>>("value").unwrap_or_default(),
                 "created_at": row.get::<_, Option<String>>("created_at").map(|s| {
                     chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S")
                         .ok()

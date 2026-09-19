@@ -98,7 +98,7 @@ async fn test_create_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/create")
+                .uri("/api/processplatform/assemble/surface/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -118,7 +118,7 @@ async fn test_get_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/get/surface-1")
+                .uri("/api/processplatform/assemble/surface/get/surface-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -137,7 +137,7 @@ async fn test_list_surfaces_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/list/processplatform")
+                .uri("/api/processplatform/assemble/surface/list/processplatform")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -160,7 +160,7 @@ async fn test_save_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/save/surface-1")
+                .uri("/api/processplatform/assemble/surface/save/surface-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -180,7 +180,7 @@ async fn test_delete_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/delete/surface-1")
+                .uri("/api/processplatform/assemble/surface/delete/surface-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -199,7 +199,7 @@ async fn test_preview_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/preview/surface-1")
+                .uri("/api/processplatform/assemble/surface/preview/surface-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -218,7 +218,7 @@ async fn test_publish_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/assemble/surface/publish/surface-1")
+                .uri("/api/processplatform/assemble/surface/publish/surface-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -231,13 +231,13 @@ async fn test_publish_surface_route_exists() {
 #[cfg(test)]
 mod tests {
     #[tokio::test]
-    async fn test_get_jaxrs_processplatform_assemble_surface_g() {
+    async fn test_get_processplatform_assemble_surface_g() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/get/test-id")
+                    .uri("/api/processplatform/assemble/surface/get/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -248,13 +248,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_processplatform_assemble_surface_l() {
+    async fn test_get_processplatform_assemble_surface_l() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/list/test-id")
+                    .uri("/api/processplatform/assemble/surface/list/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -265,13 +265,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_processplatform_assemble_surface_p() {
+    async fn test_get_processplatform_assemble_surface_p() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/preview/test-id")
+                    .uri("/api/processplatform/assemble/surface/preview/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -282,13 +282,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_processplatform_assemble_surface_c() {
+    async fn test_post_processplatform_assemble_surface_c() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/create")
+                    .uri("/api/processplatform/assemble/surface/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -299,13 +299,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_processplatform_assemble_surface_d() {
+    async fn test_post_processplatform_assemble_surface_d() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/delete/test-id")
+                    .uri("/api/processplatform/assemble/surface/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -316,13 +316,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_processplatform_assemble_surface_p() {
+    async fn test_post_processplatform_assemble_surface_p() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/publish/test-id")
+                    .uri("/api/processplatform/assemble/surface/publish/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -333,13 +333,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_processplatform_assemble_surface_s() {
+    async fn test_post_processplatform_assemble_surface_s() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/save/test-id")
+                    .uri("/api/processplatform/assemble/surface/save/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -355,7 +355,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/date/2024-01-01/hour/09/exclude/draft/true/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/date/2024-01-01/hour/09/exclude/draft/true/manage")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -371,7 +371,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/task/list/person/p1/exclude/draft/true/manage")
+                    .uri("/api/processplatform/assemble/surface/task/list/person/p1/exclude/draft/true/manage")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -387,7 +387,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/surface/attachment/download/x/work/w/abc.txt.def")
+                    .uri("/api/processplatform/assemble/surface/attachment/download/x/work/w/abc.txt.def")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),

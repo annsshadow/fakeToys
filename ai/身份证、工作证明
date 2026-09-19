@@ -1,0 +1,26 @@
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "如何申请租房？"
+      },
+      {
+        "from": "gpt",
+        "value": "请登录官网申请"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "租房需要什么材料？"
+      },
+      {
+        "from": "gpt",
+        "value": "身份证、工作证明"
+      }
+    ]
+  }
+]

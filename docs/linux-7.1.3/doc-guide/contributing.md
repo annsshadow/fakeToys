@@ -1,3 +1,5 @@
+# contributing
+
 ﻿
 ## 如何帮助改进内核文档
 
@@ -43,6 +45,7 @@ C 代码编译器发出的警告常常可以被当作误报而打发掉，从而
 
   Two kerneldoc comments in devfreq.c fail to adhere to the required format,
   resulting in these doc-build warnings:
+
 
     ./drivers/devfreq/devfreq.c:1818: warning: bad line:
   	  - Resource-managed devfreq_register_notifier()

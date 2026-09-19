@@ -1,3 +1,5 @@
+# new-machine
+
 ﻿
 ## Adding a new board to LinuxSH
 
@@ -166,6 +168,7 @@ sh03），而另一些则必须定义几乎全部（rts7751r2d）
 
  - Add machine vector definitions to the board's setup.c. At a bare minimum,
    this must be defined as something like::
+
 
 	struct sh_machine_vector mv_vapor __initmv = {
 		.mv_name = "vapor",

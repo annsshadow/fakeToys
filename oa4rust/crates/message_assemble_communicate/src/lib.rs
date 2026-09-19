@@ -9,6 +9,33 @@ pub mod routes;
 #[cfg(test)]
 mod tests_u2;
 
+// ── message/unread/count（裸路径，桌面 Dashboard 引用；统计未读消息）────────────
+// 未读 = x_message_consume 中 read_status 非 'read' 的待消费条目。
+#[allow(non_snake_case)]
+pub async fn unread_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*)::int AS c FROM x_message_consume WHERE (read_status IS NULL OR read_status = '' OR read_status <> 'read')",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i32 = row.get("c");
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+            (
+                "im".to_string(),
+                Value::Number(serde_json::Number::from(count as i64)),
+            ),
+        ]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn send_message(
     pool: Extension<Pool>,
@@ -75,9 +102,18 @@ pub async fn receive_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -94,7 +130,7 @@ pub async fn receive_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -139,7 +175,7 @@ pub async fn consume_list_consume_count_count(
 
     let limit = count.max(1);
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2::int", &[&consume, &limit])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -147,9 +183,18 @@ pub async fn consume_list_consume_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -166,7 +211,7 @@ pub async fn consume_list_consume_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -182,7 +227,7 @@ pub async fn consume_list_consume_currentperson_count_count(
 
     let limit = count.max(1);
     let rows = client
-        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2::int", &[&consume, &limit])
+        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -190,16 +235,28 @@ pub async fn consume_list_consume_currentperson_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
                 ),
                 (
                     "readStatus".to_string(),
-                    Value::String(row.get("read_status")),
+                    Value::String(
+                        row.get::<_, Option<String>>("read_status")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -213,7 +270,7 @@ pub async fn consume_list_consume_currentperson_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -229,7 +286,7 @@ pub async fn consume_list_consume_person_person_count_count(
 
     let limit = count.max(1);
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3::int", &[&consume, &person, &limit])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3", &[&consume, &person, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -237,9 +294,18 @@ pub async fn consume_list_consume_person_person_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -256,7 +322,7 @@ pub async fn consume_list_consume_person_person_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -279,9 +345,18 @@ pub async fn consume_type_type(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "type".to_string(),
                     Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
@@ -302,7 +377,7 @@ pub async fn consume_type_type(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -316,12 +391,16 @@ pub async fn consume_type_type_mockputtopost(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // W12 收敛：对齐 Java ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
+    // W12 收敛：对齐 o2server ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
     // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
     let id_list: Vec<String> = body
         .get("idList")
         .and_then(Value::as_array)
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
         .unwrap_or_default();
 
     let found: i64 = if id_list.is_empty() {
@@ -334,15 +413,16 @@ pub async fn consume_type_type_mockputtopost(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        // Java 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
+        // o2server 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
         let _ = msg_type;
         n as i64
     };
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("value".to_string(), Value::Number(serde_json::Number::from(found))),
-        ]),
+        serde_json::Map::from_iter([(
+            "value".to_string(),
+            Value::Number(serde_json::Number::from(found)),
+        )]),
     ))))
 }
 
@@ -414,7 +494,10 @@ pub async fn im_conversation_business_businessId(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -456,7 +539,10 @@ pub async fn im_conversation_list_my(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -484,7 +570,7 @@ pub async fn im_conversation_list_my(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -506,7 +592,10 @@ pub async fn im_conversation_list_with_person(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -527,7 +616,7 @@ pub async fn im_conversation_list_with_person(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -573,7 +662,10 @@ pub async fn im_conversation_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -619,20 +711,41 @@ pub async fn im_conversation_id_group(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("role".to_string(), Value::String(row.get("role"))),
-                ("joinTime".to_string(), Value::String(row.get("join_time"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "role".to_string(),
+                    Value::String(row.get::<_, Option<String>>("role").unwrap_or_default()),
+                ),
+                (
+                    "joinTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("join_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -679,11 +792,17 @@ pub async fn im_manager_config_post(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "configKey".to_string(),
-                    Value::String(row.get("config_key")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_key")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "configValue".to_string(),
-                    Value::String(row.get("config_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -730,7 +849,10 @@ pub async fn im_conversation_update(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -781,7 +903,7 @@ pub async fn im_conversation_id_group_quit_self(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // Java 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
+    // o2server 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
     let conv_type = conversation_type(&client, &id).await?;
     if conv_type.as_deref() != Some("group") {
         return Ok(Json(ActionResult::error(
@@ -818,8 +940,17 @@ pub async fn im_conversation_id_icon(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("\"conversationId\"".to_string(), Value::String(id)),
-                ("iconUrl".to_string(), Value::String(row.get("icon_url"))),
-                ("iconName".to_string(), Value::String(row.get("icon_name"))),
+                (
+                    "iconUrl".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon_url").unwrap_or_default()),
+                ),
+                (
+                    "iconName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("icon_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -842,7 +973,7 @@ pub async fn im_conversation_id_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // Java ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
+    // o2server ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
     if !is_conversation_member(&client, &id, &session.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -889,7 +1020,10 @@ pub async fn im_conversation_id_single(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -1035,11 +1169,17 @@ pub async fn im_manager_config(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "\"configKey\"".to_string(),
-                    Value::String(row.get("config_key")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_key")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "\"configValue\"".to_string(),
-                    Value::String(row.get("config_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("config_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -1151,7 +1291,7 @@ pub async fn im_msg_collection_list_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1159,10 +1299,16 @@ pub async fn im_msg_collection_list_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"messageId\"".to_string(),
-                    Value::String(row.get("message_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("message_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -1176,7 +1322,7 @@ pub async fn im_msg_collection_list_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1351,14 +1497,17 @@ pub async fn im_msg_download_id_image_width_width_height_height(
 
     match row {
         Some(row) => {
-            let file_url: String = row.get("file_url");
+            let file_url: String = row.get::<_, Option<String>>("file_url").unwrap_or_default();
             let resized_url = format!("{}?w={}&h={}", file_url, width, height);
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("\"fileUrl\"".to_string(), Value::String(resized_url)),
                 (
                     "\"fileName\"".to_string(),
-                    Value::String(row.get("file_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "width".to_string(),
@@ -1397,12 +1546,21 @@ pub async fn im_msg_list_object(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1423,7 +1581,7 @@ pub async fn im_msg_list_object(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1440,7 +1598,7 @@ pub async fn im_msg_list_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1448,12 +1606,21 @@ pub async fn im_msg_list_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1474,7 +1641,7 @@ pub async fn im_msg_list_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1551,7 +1718,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     let id = Uuid::new_v4().to_string();
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
     let file_size = data.len().to_string();
-    let file_url = format!("/jaxrs/message/assemble/communicate/im/msg/download/{id}");
+    let file_url = format!("/api/message/assemble/communicate/im/msg/download/{id}");
     let file_mime = file_mime.unwrap_or_else(|| "application/octet-stream".to_string());
 
     let result = client
@@ -1592,9 +1759,18 @@ pub async fn instant_currentperson_consumed(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1611,7 +1787,7 @@ pub async fn instant_currentperson_consumed(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1633,9 +1809,18 @@ pub async fn instant_currentperson_consumed_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1652,7 +1837,7 @@ pub async fn instant_currentperson_consumed_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1690,8 +1875,8 @@ pub async fn instant_currentperson_consumed_mockputtopost(
         None
     };
 
-    // W12 收敛：对齐 Java ActionCurrentPersonConsumed——Wo extends WrapBoolean，
-    // 成功路径恒 value=true（与 idList 是否为空无关，Java 总是先 setValue(true)）
+    // W12 收敛：对齐 o2server ActionCurrentPersonConsumed——Wo extends WrapBoolean，
+    // 成功路径恒 value=true（与 idList 是否为空无关，o2server 总是先 setValue(true)）
     let _ = result;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
@@ -1706,7 +1891,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1714,23 +1899,35 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
                 ),
                 (
                     "consumeTime".to_string(),
-                    Value::String(row.get("consume_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1745,7 +1942,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1753,23 +1950,35 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
                 ),
                 (
                     "consumeTime".to_string(),
-                    Value::String(row.get("consume_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("consume_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1784,7 +1993,7 @@ pub async fn instant_list_currentperson_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1792,9 +2001,18 @@ pub async fn instant_list_currentperson_count_count_asc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1811,7 +2029,7 @@ pub async fn instant_list_currentperson_count_count_asc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1826,7 +2044,7 @@ pub async fn instant_list_currentperson_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1834,9 +2052,18 @@ pub async fn instant_list_currentperson_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1853,7 +2080,7 @@ pub async fn instant_list_currentperson_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1868,7 +2095,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1876,9 +2103,18 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1895,7 +2131,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1910,7 +2146,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1918,9 +2154,18 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1937,7 +2182,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1952,7 +2197,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1::int", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1960,9 +2205,18 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -1979,7 +2233,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1994,7 +2248,7 @@ pub async fn instant_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2::int", &[&id, &count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2002,9 +2256,18 @@ pub async fn instant_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2021,7 +2284,7 @@ pub async fn instant_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2036,7 +2299,7 @@ pub async fn instant_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2::int", &[&id, &count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2044,9 +2307,18 @@ pub async fn instant_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("consume".to_string(), Value::String(row.get("consume"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "consume".to_string(),
+                    Value::String(row.get::<_, Option<String>>("consume").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2063,7 +2335,7 @@ pub async fn instant_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2104,7 +2376,7 @@ pub async fn mass_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3::int", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3", &[&id, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2112,9 +2384,18 @@ pub async fn mass_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("massId".to_string(), Value::String(row.get("mass_id"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "massId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mass_id").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2131,7 +2412,7 @@ pub async fn mass_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2146,7 +2427,7 @@ pub async fn mass_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3::int", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3", &[&id, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2154,9 +2435,18 @@ pub async fn mass_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("massId".to_string(), Value::String(row.get("mass_id"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "massId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mass_id").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2173,7 +2463,7 @@ pub async fn mass_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2199,8 +2489,14 @@ pub async fn mass_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2269,7 +2565,7 @@ pub async fn message_list_paging_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2277,12 +2573,21 @@ pub async fn message_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "\"conversationId\"".to_string(),
-                    Value::String(row.get("conversation_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("conversation_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "sender".to_string(),
                     Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default()),
@@ -2303,7 +2608,7 @@ pub async fn message_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -2311,11 +2616,11 @@ pub async fn message_list_paging_page_size_size(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// plan002 U2 — Java 对齐缺口端点（connector / ws / mass 家族 + 动词补齐）
+// plan002 U2 — o2server 对齐缺口端点（connector / ws / mass 家族 + 动词补齐）
 //
 // 表：x_message_ws_session / x_message_conversation_ext（migration 063 幂等
 // 补建），其余沿用既有表。写操作按 IDOR 门禁：
-//   - 管理资源（mass 群发创建/删除）一律 require_admin（Java 要求
+//   - 管理资源（mass 群发创建/删除）一律 require_admin（o2server 要求
 //     Manager/MessageManager 角色），is_admin 对不可用 DB fail-closed；
 //   - 会话内个人操作（退群/已读/单聊删除）person_unique 取自会话，
 //     操作前校验成员身份，禁止代他人操作。
@@ -2358,7 +2663,7 @@ async fn conversation_type(
     Ok(row.map(|r| r.get::<_, Option<String>>("type").unwrap_or_default()))
 }
 
-/// POST /connector — Java ActionCreate：先落 Instant(consumed=false)，
+/// POST /connector — o2server ActionCreate：先落 Instant(consumed=false)，
 /// 再为每个启用的 consumer 展开一条 Message 落库。
 #[allow(non_snake_case)]
 pub async fn connector_create(
@@ -2433,7 +2738,7 @@ pub async fn connector_create(
     ))))
 }
 
-/// POST /ws — Java ActionCreate：仅向当前打开的 ws 连接投递；
+/// POST /ws — o2server ActionCreate：仅向当前打开的 ws 连接投递；
 /// 有在线连接时落 ws 消费记录，返回 value=true，否则如实返回 false。
 #[allow(non_snake_case)]
 pub async fn ws_create(
@@ -2531,7 +2836,7 @@ pub async fn ws_list_person_current_node(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2573,7 +2878,7 @@ pub async fn ws_list_person(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2597,7 +2902,7 @@ fn mass_target_list(req: &Value) -> Vec<String> {
     targets
 }
 
-/// POST /mass — Java ActionCreate：需 Manager/MessageManager 角色，
+/// POST /mass — o2server ActionCreate：需 Manager/MessageManager 角色，
 /// 目标人群与 body 必填，落 Mass 记录（creator_person 取自会话）。
 #[allow(non_snake_case)]
 pub async fn mass_create(
@@ -2677,7 +2982,7 @@ pub async fn mass_enable_type_get(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2685,7 +2990,7 @@ pub async fn mass_enable_type_get(
 }
 
 /// DELETE /mass/{id} 与 GET /mass/{id}/mockdeletetoget 共用：
-/// Java ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
+/// o2server ActionDelete 需 Manager/MessageManager 角色，删除前校验存在性。
 #[allow(non_snake_case)]
 pub async fn mass_id_mockdeletetoget(
     pool: Extension<Pool>,
@@ -2718,7 +3023,7 @@ pub async fn mass_id_mockdeletetoget(
 }
 
 /// DELETE /im/conversation/{id}/single（及 GET mockdeletetoget）—
-/// Java ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
+/// o2server ActionDeleteSingleConversationVirtual：单聊虚拟删除（per-person ext 置位）。
 #[allow(non_snake_case)]
 pub async fn im_conversation_id_single_delete_virtual(
     pool: Extension<Pool>,
@@ -2780,7 +3085,7 @@ pub async fn im_conversation_id_single_delete_virtual(
     ))))
 }
 
-/// PUT /instant/currentperson/consumed — Java PUT：将当前人员的 instant 标记已消费。
+/// PUT /instant/currentperson/consumed — o2server PUT：将当前人员的 instant 标记已消费。
 #[allow(non_snake_case)]
 pub async fn instant_currentperson_consumed_put(
     pool: Extension<Pool>,

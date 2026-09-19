@@ -1,3 +1,5 @@
+# s3fb
+
 ﻿## s3fb - 面向 S3 Trio/Virge 芯片fbdev 驱动
 
 

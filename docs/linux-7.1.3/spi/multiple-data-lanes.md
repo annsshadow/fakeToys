@@ -1,9 +1,11 @@
+# multiple-data-lanes
+
 ﻿## 具有多数据通道SPI 设备
 
 
 一些专用的 SPI 控制器与外设支持多条数据通道，允许并行地一次性读取多个字这与八线 SPI 不同，后者是同时传输单个字的多个位
 例如，支持并行闪存的控制器具备此特性，一些同步采ADC 也是如此，其中每通道都有自己的数据通道
-### 描述接线
+## 描述接线
 
 
 devicetree 中的 `spi-tx-bus-width` `spi-rx-bus-width` 属性用于描述控制器
@@ -121,6 +123,7 @@ devicetree 中的 `spi-tx-bus-width` `spi-rx-bus-width` 属性用于描述控制
     Assuming the controller is sending the MSB first, the sequence of bits
     sent over the tx wire would be (right-most bit is sent first)::
 
+
         controller    > data bits >     peripheral
         ----------   ----------------   ----------
             SDO 0    0-0-0-1-0-0-0-1    SDI 0
@@ -142,6 +145,7 @@ devicetree 中的 `spi-tx-bus-width` `spi-rx-bus-width` 属性用于描述控制
 
     The data is mirrored on each tx wire::
 
+
         controller    > data bits >     peripheral
         ----------   ----------------   ----------
             SDO 0    0-0-0-1-0-0-0-1    SDI 0
@@ -161,6 +165,7 @@ devicetree 中的 `spi-tx-bus-width` `spi-rx-bus-width` 属性用于描述控制
         spi_sync_transfer(spi, &xfer, 1);
 
     Each rx wire has a different data word sent simultaneously::
+
 
         controller    < data bits <     peripheral
         ----------   ----------------   ----------

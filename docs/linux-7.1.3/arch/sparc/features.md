@@ -1,3 +1,5 @@
+# features
+
 ﻿# sparc Architecture Features
 
 This page lists the architecture-specific features for the sparc architecture.

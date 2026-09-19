@@ -1,3 +1,5 @@
+# udplite
+
 ﻿
 ## UDP-Lite 协议（RFC 3828
 
@@ -31,6 +33,7 @@
 
   ::
 
+
       s = socket(PF_INET6, SOCK_DGRAM, IPPROTO_UDPLITE);
 
 ```
@@ -40,6 +43,7 @@
 
       例如::
 
+
 	int val = 20;
 	setsockopt(s, SOL_UDPLITE, UDPLITE_SEND_CSCOV, &val, sizeof(int));
 
@@ -48,6 +52,7 @@
     * 接收方校验和覆盖：UDPLITE_RECV_CSCOV
 
       此选项是接收方对应的部分。它是真正可选的，即并非启用部分校验和覆盖流量所必需。它的功能是作为流量过滤器：启用时，它指示内核丢弃所有覆盖长度_小于_此值的数据包。例如，如果要保RTP UDP 头部，接收方可以强制只接收最小覆盖为 20 的数据包::
+
 
 	int min = 20;
 	setsockopt(s, SOL_UDPLITE, UDPLITE_RECV_CSCOV, &min, sizeof(int));
@@ -94,6 +99,7 @@
 ```
   将总是被忽略，:
 
+
 	getsockopt(sockfd, SOL_SOCKET, SO_NO_CHECK, &value, ...);
 
 ```
@@ -105,11 +111,13 @@
   确切的值还取决于接MTU。接MTU 反过来可能触IP 分片。在这种情况下，生成UDP-Lite 数据包被拆分为多IP 数据包，其中只有第一个包L4 头部
   发送缓冲区大小对校验和覆盖长度有影响。考虑以下示例::
 
+
     Payload: 1536 bytes          Send Buffer:     1024 bytes
     MTU:     1500 bytes          Coverage Length:  856 bytes
 
 ```
   UDP-Lite 将把1536 字节分装在两个独立的数据包中::
+
 
     Packet 1: 1024 payload + 8 byte header + 20 byte IP header = 1052 bytes
     Packet 2:  512 payload + 8 byte header + 20 byte IP header =  540 bytes
@@ -117,6 +125,7 @@
 ```
   覆盖数据包覆盖第一个数据包中的 UDP-Lite 头部848 字节负载，第二个数据包被完全覆盖。注意对于第二个数据包，覆盖长度超过了数据包长度。内核在这种情况下总是将覆盖长度重新调整为数据包长度
   作为一UDP-Lite 数据包被拆分为多个微小分片的例子，考虑以下示例::
+
 
     Payload: 1024 bytes            Send buffer size: 1024 bytes
     MTU:      300 bytes            Coverage length:   575 bytes
@@ -131,6 +140,7 @@
 ```
   UDP-Lite 模块生成一1032 字节的数据包024 + 8 字节头部）。根据接MTU，这些被拆分4 IP 数据包（280 字节 IP 负载 + 20 字节 IP 头部）。内核模块在对分片释放给 IP 模块之前，对前两个完整数据包的内容，加上最后一个数据包15 字节求和
   要查IPv6 分片的类似情况，考虑链路 MTU 1280 字节、写缓冲区为 3356 字节。如果校验和覆盖小于 1232 字节（MTU 减去 IPv6/分片头部长度），只需考虑第一个分片。当使用更大的校验和覆盖长度时，每个符合条件的分片都需要被校验和。假设我们有一3062 的校验和覆盖356 字节的缓冲区将被拆分为以下分:
+
 
     Fragment 1: 1280 bytes carrying  1232 bytes of UDP-Lite data
     Fragment 2: 1280 bytes carrying  1232 bytes of UDP-Lite data
@@ -172,6 +182,7 @@
 
 ```
   然后::
+
 
 	      iptables -A INPUT -p udplite -j LOG
 

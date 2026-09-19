@@ -1,4 +1,6 @@
 
+# coding-style
+
 :Original: Documentation/process/coding-style.rst <submittingpatches>
 :Translator: Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 
@@ -16,6 +18,7 @@ En primer lugar, sugeriría imprimir una copia de los estándares de código
 GNU, y NO leerlo. Quémelos, es un gran gesto simbólico.
 
 De todos modos, aquí va:
+
 
 
 ### 1) Sangría
@@ -47,6 +50,7 @@ declaración de switch es para alinear el `switch` y sus etiquetas
 sangría` (`double-indenting`) en etiquetas `case``. Por ejemplo:
 
 
+
 	switch (suffix) {
 	case 'G':
 	case 'g':
@@ -68,16 +72,19 @@ No ponga varias declaraciones en una sola línea a menos que tenga algo que
 ocultar:
 
 
+
 	if (condición) haz_esto;
 	  haz_otra_cosa;
 
 No use comas para evitar el uso de llaves:
 
 
+
 	if (condición)
 		haz_esto(), haz_eso();
 
 Siempre use llaves para múltiples declaraciones:
+
 
 
 	if (condición) {
@@ -130,12 +137,14 @@ la llave de apertura en la línea, y colocar la llave de cierre primero,
 así:
 
 
+
 	if (x es verdad) {
 		hacemos y
 	}
 
 Esto se aplica a todos los bloques de declaraciones que no son funciones
 (if, switch, for, while, do). Por ejemplo:
+
 
 
 	switch (action) {
@@ -153,6 +162,7 @@ Sin embargo, hay un caso especial, a saber, las funciones: tienen la llave
 de apertura al comienzo de la siguiente línea, así:
 
 
+
 	int funcion(int x)
 	{
 		cuerpo de la función
@@ -167,6 +177,7 @@ Tenga en cuenta que la llave de cierre está vacía en su línea propia,
 **excepto** en los casos en que es seguida por una continuación de la misma
 declaración, es decir, un `while` en una sentencia do o un `else` en
 una sentencia if, como en:
+
 
 
 	do {
@@ -210,6 +221,7 @@ Esto no aplica si solo una rama de una declaración condicional es una sola
 declaración; en este último caso utilice llaves en ambas ramas:
 
 
+
 	if (condición) {
 		haz_esto();
 		haz_eso();
@@ -220,12 +232,13 @@ declaración; en este último caso utilice llaves en ambas ramas:
 Además, use llaves cuando un bucle contenga más de una declaración simple:
 
 
+
 	while (condición) {
 		if (test)
 			haz_eso();
 	}
 
-######## 3.1) Espacios
+#### 3.1) Espacios
 
 
 El estilo del kernel Linux para el uso de espacios depende (principalmente)
@@ -252,11 +265,13 @@ Este ejemplo es **malo**:
 
 
 
+
 	s = sizeof( struct file );
 
 Al declarar datos de puntero o una función que devuelve un tipo de puntero,
 el uso preferido de `*` es adyacente al nombre del dato o nombre de la
 función y no junto al nombre del tipo. Ejemplos:
+
 
 
 
@@ -268,6 +283,7 @@ Use un espacio alrededor (a cada lado de) la mayoría de los operadores
 ```
 
 	=  +  -  <  >  *  /  %  |  &  ^  <=  >=  ==  !=  ?  :
+
 
 ```
 ```
@@ -374,6 +390,7 @@ puede decir qué es `a` en realidad.
 Mucha gente piensa que  los typedefs `ayudan a la legibilidad`. No. Son
 útiles solamente para:
 
+
  (a) objetos totalmente opacos (donde el typedef se usa activamente para
      **ocultar** cuál es el objeto).
 
@@ -394,6 +411,7 @@ Mucha gente piensa que  los typedefs `ayudan a la legibilidad`. No. Son
      aunque encajan en la categoría (d) mejor que aquí.
 
      .. note::
+
 
        De nuevo - debe haber una **razón** para esto. si algo es
        ``unsigned long``, entonces no hay razón para hacerlo
@@ -469,13 +487,14 @@ función es exportada, la macro **EXPORT** debería ponerse inmediatamente
 después de la función de cierre de línea de llave. Por ejemplo:
 
 
+
 	int sistema_corriendo(void)
 	{
 		return estado_sistema == SISTEMA_CORRIENDO;
 	}
 	EXPORT_SYMBOL(sistema_corriendo);
 
-######## 6.1) Prototipos de funciones
+#### 6.1) Prototipos de funciones
 
 
 En los prototipos de funciones, incluya nombres de parámetros con sus tipos
@@ -495,6 +514,7 @@ Al escribir prototipos de funciones, mantenga el `orden de los elementos regular
 
 ```
 El orden preferido de elementos para un prototipo de función es:
+
 
 - clase de almacenamiento (a continuación, `static __always_inline`,
   teniendo en cuenta que `__always_inline` es técnicamente un atributo
@@ -544,6 +564,7 @@ difícil de verificar que sean correctos, de todos modos.
 
 La razón para usar gotos es:
 
+
 - Las declaraciones incondicionales son más fáciles de entender y seguir.
 - se reduce el anidamiento
 - errores al no actualizar los puntos de salida individuales al hacer
@@ -577,6 +598,7 @@ Un tipo común de error a tener en cuenta es "un error de error" que es algo
 así:
 
 
+
 	err:
 		kfree(foo->bar);
 		kfree(foo);
@@ -585,6 +607,7 @@ así:
 El error en este código es que en algunas rutas de salida, `foo` es NULL.
 Normalmente la solución para esto es dividirlo en dos etiquetas de error
 `err_free_bar:` y `err_free_foo:`:
+
 
 
 	err_free_bar:
@@ -619,6 +642,7 @@ kernel-doc. Consulte los archivos en Documentation/doc-guide/ <doc_guide>
 y `tools/docs/kernel-doc` para más detalles.
 
 El estilo preferido para comentarios largos (de varias líneas) es:
+
 
 
 	/*
@@ -659,6 +683,7 @@ programa).
 Por lo tanto, puede deshacerse de GNU emacs o cambiarlo y usar valores más
 sanos. Para hacer esto último, puede pegar lo siguiente en su archivo
 .emacs:
+
 
 
   (defun c-lineup-arglist-tabs-only (ignored)
@@ -824,6 +849,7 @@ asemejan a funciones.
 Las macros con varias instrucciones deben contenerse en un bloque do-while:
 
 
+
 	#define macrofun(a, b, c)			\
 		do {					\
 			if (a == 5)			\
@@ -832,7 +858,9 @@ Las macros con varias instrucciones deben contenerse en un bloque do-while:
 
 Cosas a evitar al usar macros:
 
+
 1) macros que afectan el flujo de control:
+
 
 
 	#define FOO(x)					\
@@ -846,6 +874,7 @@ función de `llamada`; no rompa los analizadores internos de aquellos que
 leerán el código.
 
 2) macros que dependen de tener una variable local con un nombre mágico:
+
 
 
 	#define FOO(val) bar(index, val)
@@ -868,6 +897,7 @@ problemas similares con macros usando parámetros.
 locales en macros que se asemejan a funciones:
 
 
+
 	#define FOO(x)				\
 	({					\
 		typeof(x) ret;			\
@@ -882,7 +912,7 @@ El manual de cpp trata las macros de forma exhaustiva. El manual interno de
 gcc también cubre RTL, que se usa frecuentemente con lenguaje ensamblador
 en el kernel.
 
-### 13) Imprimir mensajes del kernel
+## 13) Imprimir mensajes del kernel
 
 
 A los desarrolladores del kernel les gusta ser vistos como alfabetizados.
@@ -930,6 +960,7 @@ a cerca de ellos. :ref:`Documentation/core-api/memory-allocation.rst
 La forma preferida para pasar el tamaño de una estructura es la siguiente:
 
 
+
 	p = kmalloc(sizeof(*p), ...);
 
 La forma alternativa donde se deletrea el nombre de la estructura perjudica
@@ -944,9 +975,11 @@ garantizado por la programación en idioma C.
 La forma preferida para asignar una matriz es la siguiente:
 
 
+
 	p = kmalloc_array(n, sizeof(...), ...);
 
 La forma preferida para asignar una matriz a cero es la siguiente:
+
 
 
 	p = kcalloc(n, sizeof(...), ...);
@@ -1080,7 +1113,7 @@ tipos si lo necesita. Siéntase libre de leer detenidamente ese archivo de
 encabezado para ver qué más ya está definido y que no debe reproducir en su
 código.
 
-### 19) Editores modeline y otros desastres
+## 19) Editores modeline y otros desastres
 
 
 Algunos editores pueden interpretar la información de configuración
@@ -1088,9 +1121,11 @@ incrustada en los archivos fuente, indicado con marcadores especiales. Por
 ejemplo, emacs interpreta las líneas marcadas como esto:
 
 
+
 	-**- mode: c -**-
 
 O así:
+
 
 
 	/*
@@ -1100,6 +1135,7 @@ O así:
 	*/
 
 Vim interpreta los marcadores que se ven así:
+
 
 
 	/** vim:set sw=8 noet **/
@@ -1140,6 +1176,7 @@ para indentar correctamente la siguiente instrucción en la salida en
 ensamblador:
 
 
+
 	asm ("magic %reg1, #42\n\t"
 	     "more_magic %reg2, %reg3"
 	     : /** outputs **/ : /** inputs **/ : /** clobbers **/);
@@ -1172,6 +1209,7 @@ convertir un símbolo Kconfig en una expresión booleana de C, y utilícelo en
 un condicional de C normal:
 
 
+
 	if (IS_ENABLED(CONFIG_SOMETHING)) {
 		...
 	}
@@ -1189,24 +1227,25 @@ líneas), incluya un comentario después de #endif en la misma línea,
 anotando la expresión condicional utilizada. Por ejemplo:
 
 
+
 	#ifdef CONFIG_SOMETHING
 	...
 	#endif /** CONFIG_SOMETHING **/
 
-### 22) No rompa el kernel
+## 22) No rompa el kernel
 
 
 En general, la decisión de romper el kernel pertenece al usuario, más que
 al desarrollador del kernel.
 
-######## Evite el panic()
+### Evite el panic()
 
 
 panic() debe usarse con cuidado y principalmente solo durante el arranque
 del sistema. panic() es, por ejemplo, aceptable cuando se queda sin memoria
 durante el arranque y no puede continuar.
 
-######## Use WARN() en lugar de BUG()
+##### Use WARN() en lugar de BUG()
 
 
 No agregue código nuevo que use cualquiera de las variantes BUG(), como

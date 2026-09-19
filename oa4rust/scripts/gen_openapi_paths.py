@@ -126,7 +126,7 @@ def scan_request_structs():
 def infer_request_body(path: str, method: str) -> str:
     if method not in ("POST", "PUT", "PATCH"):
         return ""
-    p = path.replace("/jaxrs/", "").strip("/")
+    p = path.replace("/api/", "").strip("/")
     parts = p.split("/")
     # Skip leading crate-like segment
     if parts:
@@ -187,7 +187,7 @@ def extract_crate_name(filepath: Path) -> str:
 def path_to_func_name(crate: str, path: str, method: str, handler: str) -> str:
     """将路由路径转换为唯一函数名。"""
     import hashlib
-    p = path.replace("/jaxrs/", "")
+    p = path.replace("/api/", "")
     parts = p.split("/")
     func_parts = [crate]
     for part in parts:

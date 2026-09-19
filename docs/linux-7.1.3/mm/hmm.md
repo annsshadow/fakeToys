@@ -1,3 +1,5 @@
+# hmm
+
 ﻿## 异构内存管理（HMM
 提供基础设施和辅助函数，将非传统内存（如板载 GPU 内存这样的设备内存）集成常规内核路径中，其基石是为这类内存提供专门的 struct page（参见本文档5 7 节）
 HMM 还提供可选的 SVM（Share Virtual Memory，共享虚拟内存）辅助函数，即允许
@@ -147,7 +149,7 @@ HMM_PFN_VALID | HMM_PFN_WRITE銆。
     struct resource *res;
     struct dev_pagemap pagemap;
 
-    res = request_free_mem_region(&iomem_resource, /* 瀛楄妭鏁?*/,
+    res = request_free_mem_region(&iomem_resource, /* 子楄妭鏁?*/,
                                   "name of driver resource");
     pagemap.type = MEMORY_DEVICE_PRIVATE;
     pagemap.range.start = res->start;

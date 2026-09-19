@@ -74,457 +74,448 @@ use crate::{
     get_express_config, get_express_status, list_organization_units, sync_organization_data,
 };
 
-/// plan002 U2：路由对齐 Java x_organization_assemble_express 契约路径
-/// （/jaxrs/{resource}/...，与 control/express 等 crate 的既有注册互不冲突：
-/// GET /jaxrs/person/{flag}、GET /jaxrs/unit/list 已被 control 占用，
+/// plan002 U2：路由对齐 o2server x_organization_assemble_express 契约路径
+/// （/api/{resource}/...，与 control/express 等 crate 的既有注册互不冲突：
+/// GET /api/person/{flag}、GET /api/unit/list 已被 control 占用，
 /// 本模块仅注册其余方法+路径组合）。
 pub fn router(pool: Pool) -> axum::Router {
     Router::new()
         // 既有（U2 之前的占位端点，保留）
         .route(
-            "/jaxrs/organization/assemble/express/config/get",
+            "/api/organization/assemble/express/config/get",
             get(get_express_config),
         )
         .route(
-            "/jaxrs/organization/assemble/express/units/list",
+            "/api/organization/assemble/express/units/list",
             get(list_organization_units),
         )
         .route(
-            "/jaxrs/organization/assemble/express/data/sync",
+            "/api/organization/assemble/express/data/sync",
             get(sync_organization_data),
         )
         .route(
-            "/jaxrs/organization/assemble/express/status/get",
+            "/api/organization/assemble/express/status/get",
             get(get_express_status),
         )
         // person（12）
-        .route("/jaxrs/person/auth/info/{flag}", get(person_auth_info_flag))
-        .route("/jaxrs/person/nick/name/{flag}", get(person_nick_name_flag))
-        .route("/jaxrs/person/mobile/{flag}", get(person_mobile_flag))
-        .route("/jaxrs/person/list", post(person_list))
-        .route("/jaxrs/person/list/object", post(person_list_object))
-        .route("/jaxrs/person/list/all", get(person_list_all))
-        .route("/jaxrs/person/list/all/object", get(person_list_all_object))
-        .route("/jaxrs/person/has/role", post(person_has_role))
-        .route("/jaxrs/person/list/identity", post(person_list_identity))
-        .route("/jaxrs/person/list/group", post(person_list_group))
-        .route("/jaxrs/person/list/role", post(person_list_role))
+        .route("/api/person/auth/info/{flag}", get(person_auth_info_flag))
+        .route("/api/person/nick/name/{flag}", get(person_nick_name_flag))
+        .route("/api/person/mobile/{flag}", get(person_mobile_flag))
+        .route("/api/person/list", post(person_list))
+        .route("/api/person/list/object", post(person_list_object))
+        .route("/api/person/list/all", get(person_list_all))
+        .route("/api/person/list/all/object", get(person_list_all_object))
+        .route("/api/person/has/role", post(person_has_role))
+        .route("/api/person/list/identity", post(person_list_identity))
+        .route("/api/person/list/group", post(person_list_group))
+        .route("/api/person/list/role", post(person_list_role))
         .route(
-            "/jaxrs/person/list/filter/{page}/size/{size}",
+            "/api/person/list/filter/{page}/size/{size}",
             post(person_list_filter_page_size),
         )
         // identity（5）
-        .route("/jaxrs/identity/list", post(identity_list))
-        .route("/jaxrs/identity/list/object", post(identity_list_object))
-        .route("/jaxrs/identity/list/person", post(identity_list_person))
+        .route("/api/identity/list", post(identity_list))
+        .route("/api/identity/list/object", post(identity_list_object))
+        .route("/api/identity/list/person", post(identity_list_person))
         .route(
-            "/jaxrs/identity/list/unit/sub/direct",
+            "/api/identity/list/unit/sub/direct",
             post(identity_list_unit_sub_direct),
         )
         .route(
-            "/jaxrs/identity/list/unit/sub/nested",
+            "/api/identity/list/unit/sub/nested",
             post(identity_list_unit_sub_nested),
         )
         // unit（9）
-        .route("/jaxrs/unit/list", post(unit_list))
-        .route("/jaxrs/unit/list/object", post(unit_list_object))
-        .route("/jaxrs/unit/list/all", get(unit_list_all))
-        .route("/jaxrs/unit/list/all/object", get(unit_list_all_object))
+        .route("/api/unit/list", post(unit_list))
+        .route("/api/unit/list/object", post(unit_list_object))
+        .route("/api/unit/list/all", get(unit_list_all))
+        .route("/api/unit/list/all/object", get(unit_list_all_object))
         .route(
-            "/jaxrs/unit/list/unit/sub/direct",
+            "/api/unit/list/unit/sub/direct",
             post(unit_list_unit_sub_direct),
         )
         .route(
-            "/jaxrs/unit/list/unit/sub/nested",
+            "/api/unit/list/unit/sub/nested",
             post(unit_list_unit_sub_nested),
         )
         .route(
-            "/jaxrs/unit/list/unit/sup/direct",
+            "/api/unit/list/unit/sup/direct",
             post(unit_list_unit_sup_direct),
         )
         .route(
-            "/jaxrs/unit/list/unit/sup/nested",
+            "/api/unit/list/unit/sup/nested",
             post(unit_list_unit_sup_nested),
         )
         .route(
-            "/jaxrs/unit/check/unit/has/person",
+            "/api/unit/check/unit/has/person",
             post(unit_check_unit_has_person),
         )
         // group（3）
-        .route("/jaxrs/group/list", post(group_list))
-        .route("/jaxrs/group/list/object", post(group_list_object))
-        .route("/jaxrs/group/list/person", post(group_list_person))
+        .route("/api/group/list", post(group_list))
+        .route("/api/group/list/object", post(group_list_object))
+        .route("/api/group/list/person", post(group_list_person))
         // role（2）
-        .route("/jaxrs/role/list", post(role_list))
-        .route("/jaxrs/role/list/person", post(role_list_person))
+        .route("/api/role/list", post(role_list))
+        .route("/api/role/list/person", post(role_list_person))
         // unitduty（2）
-        .route("/jaxrs/unitduty/list/name", post(unitduty_list_name))
+        .route("/api/unitduty/list/name", post(unitduty_list_name))
         .route(
-            "/jaxrs/unitduty/list/name/unit",
+            "/api/unitduty/list/name/unit",
             post(unitduty_list_name_unit),
         )
         // ── U2 收尾新增（98 条）───────────────────────────────────────────
         // person 剩余（27）
         .route(
-            "/jaxrs/person/list/login/after",
+            "/api/person/list/login/after",
             post(person_list_login_after),
         )
         .route(
-            "/jaxrs/person/list/login/after/object",
+            "/api/person/list/login/after/object",
             post(person_list_login_after_object),
         )
         .route(
-            "/jaxrs/person/list/login/recent",
+            "/api/person/list/login/recent",
             post(person_list_login_recent),
         )
         .route(
-            "/jaxrs/person/list/login/recent/object",
+            "/api/person/list/login/recent/object",
             post(person_list_login_recent_object),
         )
         .route(
-            "/jaxrs/person/list/pair/identity",
+            "/api/person/list/pair/identity",
             post(person_list_pair_identity),
         )
-        .route("/jaxrs/person/detail/{flag}", post(person_detail_flag))
+        .route("/api/person/detail/{flag}", post(person_detail_flag))
         .route(
-            "/jaxrs/person/list/group/object",
+            "/api/person/list/group/object",
             post(person_list_group_object),
         )
         .route(
-            "/jaxrs/person/list/identity/object",
+            "/api/person/list/identity/object",
             post(person_list_identity_object),
         )
         .route(
-            "/jaxrs/person/list/personattribute",
+            "/api/person/list/personattribute",
             post(person_list_personattribute),
         )
         .route(
-            "/jaxrs/person/list/personattribute/object",
+            "/api/person/list/personattribute/object",
             post(person_list_personattribute_object),
         )
         .route(
-            "/jaxrs/person/list/person/sub/direct",
+            "/api/person/list/person/sub/direct",
             post(person_list_person_sub_direct),
         )
         .route(
-            "/jaxrs/person/list/person/sub/direct/object",
+            "/api/person/list/person/sub/direct/object",
             post(person_list_person_sub_direct_object),
         )
         .route(
-            "/jaxrs/person/list/person/sub/nested",
+            "/api/person/list/person/sub/nested",
             post(person_list_person_sub_nested),
         )
         .route(
-            "/jaxrs/person/list/person/sub/nested/object",
+            "/api/person/list/person/sub/nested/object",
             post(person_list_person_sub_nested_object),
         )
         .route(
-            "/jaxrs/person/list/person/sup/direct",
+            "/api/person/list/person/sup/direct",
             post(person_list_person_sup_direct),
         )
         .route(
-            "/jaxrs/person/list/person/sup/direct/object",
+            "/api/person/list/person/sup/direct/object",
             post(person_list_person_sup_direct_object),
         )
         .route(
-            "/jaxrs/person/list/person/sup/nested",
+            "/api/person/list/person/sup/nested",
             post(person_list_person_sup_nested),
         )
         .route(
-            "/jaxrs/person/list/person/sup/nested/object",
+            "/api/person/list/person/sup/nested/object",
             post(person_list_person_sup_nested_object),
         )
         .route(
-            "/jaxrs/person/list/role/object",
+            "/api/person/list/role/object",
             post(person_list_role_object),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/direct",
+            "/api/person/list/unit/sub/direct",
             post(person_list_unit_sub_direct),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/direct/object",
+            "/api/person/list/unit/sub/direct/object",
             post(person_list_unit_sub_direct_object),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/nested",
+            "/api/person/list/unit/sub/nested",
             post(person_list_unit_sub_nested),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/nested/object",
+            "/api/person/list/unit/sub/nested/object",
             post(person_list_unit_sub_nested_object),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/direct/like",
+            "/api/person/list/unit/sub/direct/like",
             post(person_list_unit_sub_direct_like),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/direct/like/object",
+            "/api/person/list/unit/sub/direct/like/object",
             post(person_list_unit_sub_direct_like_object),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/nested/like",
+            "/api/person/list/unit/sub/nested/like",
             post(person_list_unit_sub_nested_like),
         )
         .route(
-            "/jaxrs/person/list/unit/sub/nested/like/object",
+            "/api/person/list/unit/sub/nested/like/object",
             post(person_list_unit_sub_nested_like_object),
         )
         // unit 剩余（29）
         .route(
-            "/jaxrs/unit/identity/level",
+            "/api/unit/identity/level",
             post(unit_get_with_identity_with_level),
         )
         .route(
-            "/jaxrs/unit/identity/level/object",
+            "/api/unit/identity/level/object",
             post(unit_get_with_identity_with_level_object),
         )
         .route(
-            "/jaxrs/unit/identity/type",
+            "/api/unit/identity/type",
             post(unit_get_with_identity_with_type),
         )
         .route(
-            "/jaxrs/unit/identity/type/object",
+            "/api/unit/identity/type/object",
             post(unit_get_with_identity_with_type_object),
         )
-        .route("/jaxrs/unit/list/identity", post(unit_list_identity))
+        .route("/api/unit/list/identity", post(unit_list_identity))
         .route(
-            "/jaxrs/unit/list/identity/object",
+            "/api/unit/list/identity/object",
             post(unit_list_identity_object),
         )
         .route(
-            "/jaxrs/unit/list/identity/sup/nested",
+            "/api/unit/list/identity/sup/nested",
             post(unit_list_identity_sup_nested),
         )
         .route(
-            "/jaxrs/unit/list/identity/sup/nested/object",
+            "/api/unit/list/identity/sup/nested/object",
             post(unit_list_identity_sup_nested_object),
         )
-        .route("/jaxrs/unit/list/level", post(unit_list_level))
+        .route("/api/unit/list/level", post(unit_list_level))
+        .route("/api/unit/list/level/object", post(unit_list_level_object))
         .route(
-            "/jaxrs/unit/list/level/object",
-            post(unit_list_level_object),
-        )
-        .route(
-            "/jaxrs/unit/list/level/name/object",
+            "/api/unit/list/level/name/object",
             post(unit_list_level_name_object),
         )
-        .route("/jaxrs/unit/list/person", post(unit_list_person))
+        .route("/api/unit/list/person", post(unit_list_person))
         .route(
-            "/jaxrs/unit/list/person/object",
+            "/api/unit/list/person/object",
             post(unit_list_person_object),
         )
         .route(
-            "/jaxrs/unit/list/person/sup/nested",
+            "/api/unit/list/person/sup/nested",
             post(unit_list_person_sup_nested),
         )
         .route(
-            "/jaxrs/unit/list/person/sup/nested/object",
+            "/api/unit/list/person/sup/nested/object",
             post(unit_list_person_sup_nested_object),
         )
         .route(
-            "/jaxrs/unit/list/unitattribute",
+            "/api/unit/list/unitattribute",
             post(unit_list_unitattribute),
         )
         .route(
-            "/jaxrs/unit/list/unitattribute/object",
+            "/api/unit/list/unitattribute/object",
             post(unit_list_unitattribute_object),
         )
-        .route("/jaxrs/unit/list/unitduty", post(unit_list_unitduty))
+        .route("/api/unit/list/unitduty", post(unit_list_unitduty))
         .route(
-            "/jaxrs/unit/list/unitduty/object",
+            "/api/unit/list/unitduty/object",
             post(unit_list_unitduty_object),
         )
         .route(
-            "/jaxrs/unit/list/unit/sub/direct/object",
+            "/api/unit/list/unit/sub/direct/object",
             post(unit_list_unit_sub_direct_object),
         )
         .route(
-            "/jaxrs/unit/list/unit/sub/nested/object",
+            "/api/unit/list/unit/sub/nested/object",
             post(unit_list_unit_sub_nested_object),
         )
         .route(
-            "/jaxrs/unit/list/unit/sup/direct/object",
+            "/api/unit/list/unit/sup/direct/object",
             post(unit_list_unit_sup_direct_object),
         )
         .route(
-            "/jaxrs/unit/list/unit/sup/nested/object",
+            "/api/unit/list/unit/sup/nested/object",
             post(unit_list_unit_sup_nested_object),
         )
-        .route("/jaxrs/unit/list/unit/tree", post(unit_list_unit_tree))
+        .route("/api/unit/list/unit/tree", post(unit_list_unit_tree))
         .route(
-            "/jaxrs/unit/check/unit/has/identity",
+            "/api/unit/check/unit/has/identity",
             post(unit_check_unit_has_identity),
         )
         .route(
-            "/jaxrs/unit/check/unit/has/unit",
+            "/api/unit/check/unit/has/unit",
             post(unit_check_unit_has_unit),
         )
-        .route("/jaxrs/unit/list/types", post(unit_list_types))
+        .route("/api/unit/list/types", post(unit_list_types))
+        .route("/api/unit/list/types/object", post(unit_list_types_object))
         .route(
-            "/jaxrs/unit/list/types/object",
-            post(unit_list_types_object),
-        )
-        .route(
-            "/jaxrs/unit/list/type/{type}/object",
+            "/api/unit/list/type/{type}/object",
             get(unit_list_type_type_object),
         )
         // identity 剩余（9）
         .route(
-            "/jaxrs/identity/list/person/object",
+            "/api/identity/list/person/object",
             post(identity_list_person_object),
         )
         .route(
-            "/jaxrs/identity/list/unit/sub/direct/object",
+            "/api/identity/list/unit/sub/direct/object",
             post(identity_list_unit_sub_direct_object),
         )
         .route(
-            "/jaxrs/identity/list/unit/sub/nested/object",
+            "/api/identity/list/unit/sub/nested/object",
             post(identity_list_unit_sub_nested_object),
         )
         .route(
-            "/jaxrs/identity/list/unit/person",
+            "/api/identity/list/unit/person",
             post(identity_list_unit_person),
         )
         .route(
-            "/jaxrs/identity/list/unit/person/object",
+            "/api/identity/list/unit/person/object",
             post(identity_list_unit_person_object),
         )
-        .route("/jaxrs/identity/list/group", post(identity_list_group))
+        .route("/api/identity/list/group", post(identity_list_group))
         .route(
-            "/jaxrs/identity/list/group/object",
+            "/api/identity/list/group/object",
             post(identity_list_group_object),
         )
         .route(
-            "/jaxrs/identity/list/major/person",
+            "/api/identity/list/major/person",
             post(identity_list_major_person),
         )
         .route(
-            "/jaxrs/identity/list/major/person/object",
+            "/api/identity/list/major/person/object",
             post(identity_list_major_person_object),
         )
         // group 剩余（13）
-        .route("/jaxrs/group/has/role", post(group_has_role))
+        .route("/api/group/has/role", post(group_has_role))
         .route(
-            "/jaxrs/group/list/group/sub/direct",
+            "/api/group/list/group/sub/direct",
             post(group_list_group_sub_direct),
         )
         .route(
-            "/jaxrs/group/list/group/sub/direct/object",
+            "/api/group/list/group/sub/direct/object",
             post(group_list_group_sub_direct_object),
         )
         .route(
-            "/jaxrs/group/list/group/sub/nested",
+            "/api/group/list/group/sub/nested",
             post(group_list_group_sub_nested),
         )
         .route(
-            "/jaxrs/group/list/group/sub/nested/object",
+            "/api/group/list/group/sub/nested/object",
             post(group_list_group_sub_nested_object),
         )
         .route(
-            "/jaxrs/group/list/group/sup/direct",
+            "/api/group/list/group/sup/direct",
             post(group_list_group_sup_direct),
         )
         .route(
-            "/jaxrs/group/list/group/sup/direct/object",
+            "/api/group/list/group/sup/direct/object",
             post(group_list_group_sup_direct_object),
         )
         .route(
-            "/jaxrs/group/list/group/sup/nested",
+            "/api/group/list/group/sup/nested",
             post(group_list_group_sup_nested),
         )
         .route(
-            "/jaxrs/group/list/group/sup/nested/object",
+            "/api/group/list/group/sup/nested/object",
             post(group_list_group_sup_nested_object),
         )
         .route(
-            "/jaxrs/group/list/person/object",
+            "/api/group/list/person/object",
             post(group_list_person_object),
         )
-        .route("/jaxrs/group/list/identity", post(group_list_identity))
+        .route("/api/group/list/identity", post(group_list_identity))
         .route(
-            "/jaxrs/group/list/identity/object",
+            "/api/group/list/identity/object",
             post(group_list_identity_object),
         )
-        .route("/jaxrs/group/list/group/tree", post(group_list_group_tree))
+        .route("/api/group/list/group/tree", post(group_list_group_tree))
         // role 剩余（2）
-        .route("/jaxrs/role/list/object", post(role_list_object))
+        .route("/api/role/list/object", post(role_list_object))
         .route(
-            "/jaxrs/role/list/person/object",
+            "/api/role/list/person/object",
             post(role_list_person_object),
         )
         // unitduty 剩余（5）
         .route(
-            "/jaxrs/unitduty/list/identity/unit/name",
+            "/api/unitduty/list/identity/unit/name",
             post(unitduty_list_identity_unit_name),
         )
         .route(
-            "/jaxrs/unitduty/list/identity/unit/name/object",
+            "/api/unitduty/list/identity/unit/name/object",
             post(unitduty_list_identity_unit_name_object),
         )
         .route(
-            "/jaxrs/unitduty/list/name/identity",
+            "/api/unitduty/list/name/identity",
             post(unitduty_list_name_identity),
         )
         .route(
-            "/jaxrs/unitduty/list/unit/object",
+            "/api/unitduty/list/unit/object",
             post(unitduty_list_unit_object),
         )
         .route(
-            "/jaxrs/unitduty/find/by/unit/name",
+            "/api/unitduty/find/by/unit/name",
             post(unitduty_find_by_unit_name),
         )
         // personattribute（5）
         .route(
-            "/jaxrs/personattribute/list/name/person",
+            "/api/personattribute/list/name/person",
             post(personattr_list_name_person),
         )
         .route(
-            "/jaxrs/personattribute/list/attribute/person/name",
+            "/api/personattribute/list/attribute/person/name",
             post(personattr_list_attribute_person_name),
         )
         .route(
-            "/jaxrs/personattribute/list/person/object",
+            "/api/personattribute/list/person/object",
             post(personattr_list_person_object),
         )
         .route(
-            "/jaxrs/personattribute/set/person/name",
+            "/api/personattribute/set/person/name",
             post(personattr_set_person_name),
         )
         .route(
-            "/jaxrs/personattribute/append/person/name",
+            "/api/personattribute/append/person/name",
             post(personattr_append_person_name),
         )
         // unitattribute（5）
         .route(
-            "/jaxrs/unitattribute/list/name/unit",
+            "/api/unitattribute/list/name/unit",
             post(unitattr_list_name_unit),
         )
         .route(
-            "/jaxrs/unitattribute/list/attribute/unit/name",
+            "/api/unitattribute/list/attribute/unit/name",
             post(unitattr_list_attribute_unit_name),
         )
         .route(
-            "/jaxrs/unitattribute/list/unit/object",
+            "/api/unitattribute/list/unit/object",
             post(unitattr_list_unit_object),
         )
         .route(
-            "/jaxrs/unitattribute/set/unit/name",
+            "/api/unitattribute/set/unit/name",
             post(unitattr_set_unit_name),
         )
         .route(
-            "/jaxrs/unitattribute/append/unit/name",
+            "/api/unitattribute/append/unit/name",
             post(unitattr_append_unit_name),
         )
         // empower / empowerlog / distinguishedname（3）
         .route(
-            "/jaxrs/empower/list/identity/object",
+            "/api/empower/list/identity/object",
             post(empower_list_identity_object),
         )
-        .route("/jaxrs/empowerlog", post(empowerlog_create))
-        .route(
-            "/jaxrs/distinguishedname/list",
-            post(distinguishedname_list),
-        )
+        .route("/api/empowerlog", post(empowerlog_create))
+        .route("/api/distinguishedname/list", post(distinguishedname_list))
         .layer(Extension(pool))
 }

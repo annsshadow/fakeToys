@@ -19,9 +19,9 @@
 
 ## Key Flows
 
-- 门户设计创建与保存：`POST /jaxrs/portal/design/save`（及 `/jaxrs/portal/assemble/designer/create`）→ `create_design`（uuid v4，creator="system"）→ INSERT INTO `x_portal_design`；`POST .../designer/save/{id}` → `save_design` UPDATE `x_portal_design` SET content/update_time
+- 门户设计创建与保存：`POST /api/portal/design/save`（及 `/api/portal/assemble/designer/create`）→ `create_design`（uuid v4，creator="system"）→ INSERT INTO `x_portal_design`；`POST .../designer/save/{id}` → `save_design` UPDATE `x_portal_design` SET content/update_time
 - 页面 CRUD：`POST .../designer/page/create` → `create_page` INSERT INTO `x_portal_page`（name/category/content JSON 序列化存储）；`POST .../page/save/{id}` → UPDATE content；`GET .../page/{id}` → `get_page` 按 id 查询并反序列化 content
-- 设计列表：`GET /jaxrs/portal/design/list` → `list_designs` 查询 `x_portal_design` WHERE deleted_at IS NULL ORDER BY update_time DESC；页面按分类浏览走 `GET .../page/list/{category}` → 查询 `x_portal_page WHERE category=$1`
+- 设计列表：`GET /api/portal/design/list` → `list_designs` 查询 `x_portal_design` WHERE deleted_at IS NULL ORDER BY update_time DESC；页面按分类浏览走 `GET .../page/list/{category}` → 查询 `x_portal_page WHERE category=$1`
 
 ## Dependencies
 
@@ -41,15 +41,15 @@
 
 
 
-- `POST /jaxrs/portal/assemble/designer/create`
-- `GET /jaxrs/portal/assemble/designer/get/{id}`
-- `GET /jaxrs/portal/assemble/designer/list`
-- `POST /jaxrs/portal/assemble/designer/page/create`
-- `POST /jaxrs/portal/assemble/designer/page/delete/{id}`
-- `GET /jaxrs/portal/assemble/designer/page/list/{category}`
-- `POST /jaxrs/portal/assemble/designer/page/save/{id}`
-- `GET /jaxrs/portal/assemble/designer/page/{id}`
-- `POST /jaxrs/portal/assemble/designer/save/{id}`
-- `GET /jaxrs/portal/design/list`
-- `POST /jaxrs/portal/design/save`
-- `GET /jaxrs/portal/design/{id}`
+- `POST /api/portal/assemble/designer/create`
+- `GET /api/portal/assemble/designer/get/{id}`
+- `GET /api/portal/assemble/designer/list`
+- `POST /api/portal/assemble/designer/page/create`
+- `POST /api/portal/assemble/designer/page/delete/{id}`
+- `GET /api/portal/assemble/designer/page/list/{category}`
+- `POST /api/portal/assemble/designer/page/save/{id}`
+- `GET /api/portal/assemble/designer/page/{id}`
+- `POST /api/portal/assemble/designer/save/{id}`
+- `GET /api/portal/design/list`
+- `POST /api/portal/design/save`
+- `GET /api/portal/design/{id}`

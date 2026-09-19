@@ -1,3 +1,5 @@
+# ipu6
+
 ﻿
 ## Intel IPU6 驱动
 
@@ -12,6 +14,7 @@ Intel Chipsets 例如 Tiger Lake, Jasper Lake, Alder Lake, Raptor Lake
 Meteor Lake. IPU6 consists two 主要 系统: 输入 系统 (ISYS) 
 Processing 系统 (PSYS). IPU6 visible the PCI 总线 作为 一单个 设备, 
 鍙，涓?found 鐢?`lspci`:
+
 
 `0000:00:05.0 Multimedia controller: Intel Corporation Device xxxx (rev xx)`
 
@@ -35,6 +38,7 @@ IPU6 驱动 initialize the ISYS PSYS 电源 up down 请求 设置 the
 Buttress frequency control 注册 用于 ISYS PSYS
 (`IPU6_BUTTRESS_REG_IS_FREQ_CTL` 鍜?`IPU6_BUTTRESS_REG_PS_FREQ_CTL`) 鍦。
 函数:
+
 
 
 Buttress forwards the 请求 Punit, 之后 Punit execute the 电源 up flow,

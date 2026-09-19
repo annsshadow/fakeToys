@@ -1,3 +1,5 @@
+# linuxized-acpica
+
 ﻿
 ## Linuxized ACPICA —ACPICA 发布自动化简
 :Copyright: |copy| 2013-2016, Intel Corporation
@@ -66,10 +68,12 @@ ACPICA 项目的主页是：www.acpica.org，它Intel Corporation 维护和支�
          include/asm/acenv.h
     B. ACPICA Functionality —ACPICA 代码库发布，用于给出 ACPICA 接口（acpi_*）的 OS 无关实现       ::
 
+
          drivers/acpi/acpica
          include/acpi/ac*.h
          tools/power/acpi
     C. Linux/ACPI Functionality —向其Linux 内核子系统以及用户空间程序提Linux 特定ACPI 功能       ::
+
 
          drivers/acpi
          include/linux/acpi.h
@@ -77,6 +81,7 @@ ACPICA 项目的主页是：www.acpica.org，它Intel Corporation 维护和支�
          include/acpi
          tools/power/acpi
     D. Architecture Specific ACPICA/ACPI Functionalities —ACPI 子系统提供，用于给出 ACPI 接口的架构相关实现。它们是 Linux 特定的组件，不在本文档范围内       ::
+
 
          include/asm/acpi.h
          include/asm/acpi*.h

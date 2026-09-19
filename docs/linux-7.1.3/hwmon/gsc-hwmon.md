@@ -1,3 +1,5 @@
+# gsc-hwmon
+
 ﻿## gsc-hwmon 内核驱动
 
 
@@ -5,7 +7,7 @@
 Datasheet: http://trac.gateworks.com/wiki/gsc
 Author: Tim Harvey <tharvey@gateworks.com>
 
-### 描述
+## 描述
 
 该驱动支持对温度传感器、连接到 GSC 的各ADC，以及某些板上可选的 FAN 控制器的
 硬件监控

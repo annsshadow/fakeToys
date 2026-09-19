@@ -1,3 +1,5 @@
+# asus-laptop
+
 ﻿## Asus 笔记本扩展功
 
 Version 0.1
@@ -11,7 +13,7 @@ http://acpi4asus.sf.net/
  （类似于键盘）
  在部分型号上，它还支持调整显示亮度与输出、开LCD 背光灯，而最重要的是，允许你让那些用 指示邮件和无线状态的炫酷 LED 闪烁
 该驱动取代了旧的 asus_acpi 驱动
-### 要求
+## 要求
 
 
   为你的计算机配置好的内核 2.6.X 源代码，并启ACPI 支持。你还需要配CONFIG_INPUT   CONFIG_ACPI

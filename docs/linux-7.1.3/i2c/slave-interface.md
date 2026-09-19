@@ -1,3 +1,5 @@
+# slave-interface
+
 ﻿## Linux I2C 从设备（slave）接
 
 作者：Wolfram Sang <wsa@sang-engineering.com> 2014-15

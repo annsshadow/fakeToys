@@ -20,14 +20,14 @@ OUTPUT_FILE = CRATES_DIR / "mcp_server" / "src" / "generated_routes.rs"
 
 # 权限级别映射（路径前缀 -> 是否需要认证）
 PUBLIC_PREFIXES = [
-    "/jaxrs/authentication",
-    "/jaxrs/authentication/captcha",
-    "/jaxrs/authentication/oauth",
-    "/jaxrs/authentication/code",
-    "/jaxrs/authentication/refresh",
-    "/jaxrs/reset",
-    "/jaxrs/secret/check",
-    "/jaxrs/secret/set",
+    "/api/authentication",
+    "/api/authentication/captcha",
+    "/api/authentication/oauth",
+    "/api/authentication/code",
+    "/api/authentication/refresh",
+    "/api/reset",
+    "/api/secret/check",
+    "/api/secret/set",
     "/health",
 ]
 
@@ -74,9 +74,9 @@ def extract_crate_name(filepath: Path) -> str:
 def path_to_tool_name(crate: str, path: str, method: str) -> str:
     """将路由路径转换为 MCP 工具名称。
     使用完整路径生成唯一名称，避免多 crate 共享同一路径前缀时命名冲突。
-    工具名格式：jaxrs_{crate}_{path_snake_case}
+    工具名格式：legacy_{crate}_{path_snake_case}
     """
-    p = path.replace("/jaxrs/", "")
+    p = path.replace("/api/", "")
     parts = p.split("/")
     tool_parts = []
     for part in parts:
@@ -87,7 +87,7 @@ def path_to_tool_name(crate: str, path: str, method: str) -> str:
             s = re.sub(r'([A-Z])', r'_\1', part).lower().strip("_")
             if s and (not tool_parts or tool_parts[-1] != s):
                 tool_parts.append(s)
-    return f"jaxrs_{crate}_{'_'.join(tool_parts)}"
+    return f"legacy_{crate}_{'_'.join(tool_parts)}"
 
 def extract_path_params(path: str) -> list:
     """从路径提取路径参数名称。"""

@@ -1,3 +1,5 @@
+# cirrusfb
+
 ﻿## Cirrus Logic 芯片组帧缓冲驱动
 
 Copyright 1999 Jeff Garzik <jgarzik@pobox.com>
@@ -23,7 +25,7 @@ Copyright 1999 Jeff Garzik <jgarzik@pobox.com>
  - m68k (Amiga)
 
 
-### 默认视频模式
+## 默认视频模式
 
 目前支持两个内核命令行参数：
 

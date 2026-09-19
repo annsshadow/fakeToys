@@ -1,3 +1,5 @@
+# eql
+
 ﻿
 ## EQL 驱动：串IP 负载均衡 HOWTO
 
@@ -47,6 +49,7 @@
 
   Apply the patch by running the commands::
 
+
        cd /usr/src
        patch </usr/local/src/eql-1.1/eql-1.1.patch
 
@@ -78,6 +81,7 @@
   it in the routing table using the cool new route syntax that makes
   life so much easier::
 
+
        route add default eql
 
 
@@ -100,6 +104,7 @@
   it. (-- Or just ifconfig it down, and the eql driver will take it out
   for you.--)::
 
+
        eql_emancipate eql sl0
        eql_emancipate eql ppp0
        eql_emancipate eql sl1
@@ -111,7 +116,7 @@
 
   总体思路是自动建立并保持所需的尽可能多的 SLIP 连接
 
-##### 3.3.1.  /etc/slip/runslip.conf
+#### 3.3.1.  /etc/slip/runslip.conf
 
 
 ```
@@ -271,7 +276,7 @@
   ======  ========	===  ========   ======= ======= ===
 
 ```
-### 5.2. Anthony Healy 的报
+## 5.2. Anthony Healy 的报
 
 ```
     Date: Mon, 13 Feb 1995 16:17:29 +1100 (EST)

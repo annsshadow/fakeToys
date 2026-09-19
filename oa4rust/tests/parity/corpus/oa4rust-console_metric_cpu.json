@@ -15,6 +15,6 @@
   },
   "method": "GET",
   "name": "console_metric_cpu",
-  "path": "/jaxrs/console/metric/cpu",
+  "path": "/api/console/metric/cpu",
   "status": 200
 }

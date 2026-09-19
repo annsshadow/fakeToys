@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>消息推送</h1>
-      <p class="subtitle">/jaxrs/jpush/* — 设备与模板管理</p>
+      <p class="subtitle">/api/jpush/* — 设备与模板管理</p>
     </div>
     <div class="content-panel glass-card">
       <div class="tabs">
@@ -72,7 +72,7 @@ const stats = computed(() => ({
 async function loadDevices() {
   loadingD.value = true
   try {
-    const r = await api.get('/jaxrs/jpush_assemble_control/device/list/jpush')
+    const r = await api.get('/api/jpush_assemble_control/device/list/jpush')
     devices.value = r.data ?? []
   } catch {
     devices.value = []
@@ -84,7 +84,7 @@ async function loadDevices() {
 async function loadTemplates() {
   loadingT.value = true
   try {
-    const r = await api.get('/jaxrs/jpush/template/list')
+    const r = await api.get('/api/jpush/template/list')
     templates.value = r.data ?? []
   } catch {
     templates.value = []
@@ -94,9 +94,9 @@ async function loadTemplates() {
 }
 
 async function delDevice(d: any) {
-  if (!confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`)) return
+  if (!(await confirmMsg(`确定删除设备「${d.alias || d.regId || d.deviceId}」？`))) return
   try {
-    await api.delete(`/jaxrs/jpush/core/entity/device/${d.id}`)
+    await api.delete(`/api/jpush/core/entity/device/${d.id}`)
     devices.value = devices.value.filter((x) => x.id !== d.id)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))

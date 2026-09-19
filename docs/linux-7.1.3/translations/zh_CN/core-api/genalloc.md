@@ -1,11 +1,15 @@
 
+# genalloc
+
 :Original: Documentation/core-api/genalloc.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  时奎亮 <alexs@kernel.org>
 
@@ -24,7 +28,9 @@
 使用这个分配器的代码应该包括<linux/genalloc.h>。这个动作从创建一个池开始，使用
 一个:
 
+
 该API在以下内核代码中:
+
 
 lib/genalloc.c
 
@@ -39,7 +45,9 @@ lib/genalloc.c
 
 一个内存池池被关闭的方法是:
 
+
 该API在以下内核代码中:
+
 
 lib/genalloc.c
 
@@ -49,7 +57,9 @@ BUG()，使整个系统崩溃。你已经被警告了。
 一个新创建的内存池没有内存可以分配。在这种状态下，它是相当无用的，所以首要任务之一通常
 是向内存池里添加内存。这可以通过以下方式完成:
 
+
 该API在以下内核代码中:
+
 
 include/linux/genalloc.h
 
@@ -61,7 +71,9 @@ lib/genalloc.c
 
 从内存池中分配内存（并将其放回）的函数是:
 
+
 该API在以下内核代码中:
+
 
 include/linux/genalloc.h
 
@@ -76,13 +88,16 @@ gen_pool_add_virt()添加的情况下才会起作用。请注意，这个函数�
 供对分配函数如何选择返回哪块特定内存的控制。如果需要这样的控制，下面的函数将是有意义
 的:
 
+
 该API在以下内核代码中:
+
 
 lib/genalloc.c
 
 使用gen_pool_alloc_algo()进行的分配指定了一种用于选择要分配的内存的算法；默认算法可
 以用gen_pool_set_algo()来设置。数据值被传递给算法；大多数算法会忽略它，但偶尔也会需
 要它。当然，人们可以写一个特殊用途的算法，但是已经有一套公平的算法可用了:
+
 
 - gen_pool_first_fit是一个简单的初配分配器；如果没有指定其他算法，这是默认算法。
 
@@ -102,5 +117,6 @@ lib/genalloc.c
 写特殊用途的内存分配器。
 
 该API在以下内核代码中:
+
 
 lib/genalloc.c

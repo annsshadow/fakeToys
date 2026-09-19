@@ -1,3 +1,5 @@
+# philips
+
 ﻿
 ## Philips webcams (pwc driver)
 
@@ -104,6 +106,7 @@ leds
 
    will blink the LED once every second. But with::
 
+
      leds=0,0
 
    the LED never goes on, making it suitable for silent surveillance.
@@ -138,6 +141,7 @@ dev_hint
 
    This somewhat cryptic syntax is best explained by a few examples::
 
+
      dev_hint=3,5              The first detected cam gets assigned
 			       /dev/video3, the second /dev/video5. Any
 			       other cameras will get the first free
@@ -156,6 +160,7 @@ dev_hint
 				through /dev/video6.
 
    Some points worth knowing:
+
 
    - Serialnumbers are case sensitive and must be written full, including
      leading zeroes (it's treated as a string).

@@ -1,3 +1,5 @@
+# context-analysis
+
 ﻿
 
 ## 基于编译器的上下文分析（Context Analysis
@@ -84,7 +86,7 @@ Clang 编译器目前支持完整的上下文分
 
 Lockdep 断言（例`lockdep_assert_held()`）会告知编译器的上下文分析：在断言之后，相关的同步原语已被持有。这可以避免在复杂控制流场景中出现误报，并在静态分析能力有限的地方鼓励使用 Lockdep。例如，当一个函数并*总是**需要持锁时，这就很有用，因为此`__must_hold()` 并不合适
 
-#### 鍏抽敭瀛。
+#### 鍏抽敭子。
 
 
    :identifiers: context_lock_struct

@@ -19,8 +19,8 @@
 
 ## Key Flows
 
-- 查询表面 CRUD：`POST /jaxrs/query/assemble/surface/create` → `create_surface`（uuid v4，creator="system"）→ INSERT INTO `x_query_surface`；`GET .../get/{id}`、`GET .../list/{category}`（ORDER BY update_time DESC）、`POST .../save/{id}` UPDATE 同表
-- 导入模型执行：`POST /jaxrs/importmodel/id/{id}/execute` → `importmodel_id_execute` 先按 id 查 `x_query_import_model` 取 model_flag → INSERT INTO `x_query_import_model_record` 生成执行记录 → 返回 recordId；记录分页与状态查询走 `x_query_import_model_record`
+- 查询表面 CRUD：`POST /api/query/assemble/surface/create` → `create_surface`（uuid v4，creator="system"）→ INSERT INTO `x_query_surface`；`GET .../get/{id}`、`GET .../list/{category}`（ORDER BY update_time DESC）、`POST .../save/{id}` UPDATE 同表
+- 导入模型执行：`POST /api/importmodel/id/{id}/execute` → `importmodel_id_execute` 先按 id 查 `x_query_import_model` 取 model_flag → INSERT INTO `x_query_import_model_record` 生成执行记录 → 返回 recordId；记录分页与状态查询走 `x_query_import_model_record`
 - 数据表动态查询：`GET .../table/list/paging/{page}/{size}` 查询 `x_query_table`；行数据经 `x_query_table_data` 支持分页/next/prev 游标及 ILIKE 条件筛选（`table_list_tableFlag_row_select_where_where`），另有 neural 计算结果查询 `x_query_neural_calculate`
 
 ## Dependencies
@@ -46,12 +46,12 @@
 
 
 
-- `POST /jaxrs/importmodel/id/{id}/execute`
-- `POST /jaxrs/query/assemble/surface/create`
-- `POST /jaxrs/query/assemble/surface/delete/{id}`
-- `GET /jaxrs/query/assemble/surface/get/{id}`
-- `GET /jaxrs/query/assemble/surface/list/{category}`
-- `GET /jaxrs/query/assemble/surface/preview/{id}`
-- `POST /jaxrs/query/assemble/surface/save/{id}`
-- `GET /jaxrs/queryview/flag/{view}/application/flag/{app}/execute`
-- `GET /jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}`
+- `POST /api/importmodel/id/{id}/execute`
+- `POST /api/query/assemble/surface/create`
+- `POST /api/query/assemble/surface/delete/{id}`
+- `GET /api/query/assemble/surface/get/{id}`
+- `GET /api/query/assemble/surface/list/{category}`
+- `GET /api/query/assemble/surface/preview/{id}`
+- `POST /api/query/assemble/surface/save/{id}`
+- `GET /api/queryview/flag/{view}/application/flag/{app}/execute`
+- `GET /api/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}`

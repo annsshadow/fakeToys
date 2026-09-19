@@ -1,7 +1,10 @@
 
+# sak
+
 :Original: Documentation/security/sak.rst
 
 :翻译:
+
 
  张巍 zhangwei <zhangwei@cqsoftware.com.cn>
 
@@ -55,6 +58,7 @@ BACKSPACE对X服务器有特殊作用。我们将选择CTRL-ALT-PAUSE。
 
      然后::
 
+
         # ps aux|grep 579
         root       579  0.0  0.1  1088  436 ?        S    00:43   0:00 gpm -t ps/2
 
@@ -63,9 +67,11 @@ BACKSPACE对X服务器有特殊作用。我们将选择CTRL-ALT-PAUSE。
 
      老的::
 
+
         daemon gpm
 
      新的::
+
 
         daemon gpm < /dev/null
 
@@ -73,6 +79,7 @@ BACKSPACE对X服务器有特殊作用。我们将选择CTRL-ALT-PAUSE。
 
      此外，某个著名的Linux发行版在它的rc.sysinit和rc scripts的脚本中
      包含了以下三行代码::
+
 
         exec 3<&0
         exec 4>&1

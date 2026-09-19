@@ -11,6 +11,6 @@
   },
   "method": "GET",
   "name": "portalcategory_list",
-  "path": "/jaxrs/portalcategory/list",
+  "path": "/api/portalcategory/list",
   "status": 200
 }

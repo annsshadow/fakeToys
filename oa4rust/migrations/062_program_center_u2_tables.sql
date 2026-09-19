@@ -1,6 +1,6 @@
 -- plan002 U2: program_center missing-endpoint tables.
--- x_program_warn_log  -> jaxrs/warnlog family (POST /warnlog, list/next/prev, view/system/log/tag)
--- x_program_app_pack  -> jaxrs/apppack family (pack info / publish / download / android build)
+-- x_program_warn_log  -> /api/warnlog family (POST /warnlog, list/next/prev, view/system/log/tag)
+-- x_program_app_pack  -> /api/apppack family (pack info / publish / download / android build)
 -- Additive columns fix latent schema gaps hit by existing routed reads:
 --   x_program_script.content (script_flag / script_id SELECT it)
 --   x_program_dict.flag      (dict_dictFlag_path_data filters on it; dict_data_write updates it)

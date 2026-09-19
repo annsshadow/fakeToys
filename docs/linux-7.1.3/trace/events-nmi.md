@@ -1,3 +1,5 @@
+# events-nmi
+
 ﻿## NMI 跟踪事件
 
 
@@ -6,7 +8,7 @@
 	/sys/kernel/tracing/events/nmi
 
 
-### nmi_handler
+## nmi_handler
 
 
 如果你怀疑你NMI 处理程序占用了大CPU 时间，你可能想使用这个跟踪点。内

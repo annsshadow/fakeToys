@@ -1,8 +1,11 @@
 
 
+# generic-hdlc
+
 :Original: Documentation/networking/generic-hdlc.rst
 
 :翻译:
+
 
    孙渔喜 Sun yuxi <sun.yuxi@zte.com.cn>
 
@@ -13,6 +16,7 @@ Krzysztof Halasa <khc@pm.waw.pl>
 
 
 通用HDLC层当前支持以下协议:
+
 
 1. 帧中继（支持ANSI、CCITT、Cisco及无LMI模式）
 
@@ -124,6 +128,7 @@ Krzysztof Halasa <khc@pm.waw.pl>
   - n393 - 监控事件计数 - 用户侧和网络侧共用
 
 帧中继专用命令:
+
 
 - create n | delete n - 添加/删除DLCI编号为n的PVC接口。
   新创建的接口将命名为pvc0、pvc1等。

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_control/get/control/config")
+                    .uri("/api/cms_control/get/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms_control/list/control/sections")
+                    .uri("/api/cms_control/list/control/sections")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

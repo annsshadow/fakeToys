@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/echo/get")
+                    .uri("/api/base/echo/get")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/cache/detail")
+                    .uri("/api/base/cache/detail")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/openapi/info")
+                    .uri("/api/base/openapi/info")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/cache")
+                    .uri("/api/base/cache")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/cache/config/flush")
+                    .uri("/api/base/cache/config/flush")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -117,7 +117,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/cache/commonscript/flush")
+                    .uri("/api/base/cache/commonscript/flush")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -137,7 +137,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication")
+                    .uri("/api/base/fireschedule/classname/com.x.processplatform.service.processing.ScheduleApplication")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -157,7 +157,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/sysresource/filePath/(0)")
+                    .uri("/api/base/sysresource/filePath/(0)")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

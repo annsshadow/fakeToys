@@ -23,7 +23,7 @@ for (const file of rustFiles) {
     if (depth !== 0) continue;
     let path = line.substring(pathStart, endIdx);
     path = path.replace(/\\"/g, '');
-    if (path.startsWith('/jaxrs/')) rustPaths.add(path);
+    if (path.startsWith('/api/')) rustPaths.add(path);
   }
 }
 
@@ -50,15 +50,15 @@ const missing = [...rustPaths].filter(p => !allFrontend.has(p));
 
 // Modules with request() fallback
 const modulesWithFallback = [
-  '/jaxrs/processplatform/assemble/surface',
-  '/jaxrs/attendance/assemble/control',
-  '/jaxrs/general/assemble/control',
-  '/jaxrs/meeting/assemble/control',
-  '/jaxrs/message/assemble/communicate',
-  '/jaxrs/file/',
-  '/jaxrs/surface/appdict',
-  '/jaxrs/program_center',
-  '/jaxrs/processplatform/service/processing',
+  '/api/processplatform/assemble/surface',
+  '/api/attendance/assemble/control',
+  '/api/general/assemble/control',
+  '/api/meeting/assemble/control',
+  '/api/message/assemble/communicate',
+  '/api/file/',
+  '/api/surface/appdict',
+  '/api/program_center',
+  '/api/processplatform/service/processing',
 ];
 
 let coveredByFallback = 0;

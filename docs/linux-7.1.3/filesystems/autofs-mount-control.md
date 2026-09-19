@@ -1,3 +1,5 @@
+# autofs-mount-control
+
 ﻿
 ## autofs 内核模块的杂项设备控制操
 
@@ -22,6 +24,7 @@ autofs 真正的问题在于它无法重新连接到已有的挂载。人们立�
 ```
 
     /etc/auto.direct:
+
 
     /automount/dparse/g6  budgie:/autofs/export1
     /automount/dparse/g1  shark:/autofs/export1

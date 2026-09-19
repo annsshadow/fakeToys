@@ -1,7 +1,9 @@
+# uvesafb
+
 ﻿## uvesafb —兼容 VBE2+ 规范的通用显卡驱动
 
 
-### 1. 需求（Requirements
+## 1. 需求（Requirements
 
 uvesafb 适用于带有符VBE 2.0 标准 Video BIOS 的显卡
 与其他驱动不同，uvesafb 借助一个名v86d 的用户态辅助程序工作。v86d 利用
@@ -53,7 +55,7 @@ video= 字符串的一部分。若 uvesafb 编入内核，则使用 uvesafb.v86d
 =========== ======================================
 maxhf:n 最大水平频率（单位 kHz）maxvf:n 最大垂直频率（单位 Hz）maxclk:n 最大像素时钟（单位 MHz）=========== ======================================
 
-### 4. sysfs 接口（The sysfs interface
+## 4. sysfs 接口（The sysfs interface
 
 uvesafb 提供若干 sysfs 节点，用于配置参数及提供额外信息
 驱动属性：

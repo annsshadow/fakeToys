@@ -1,3 +1,5 @@
+# old-module-parameters
+
 ﻿## 旧内核中从用户空间控I2C 设备驱动绑定
 
 
@@ -5,7 +7,7 @@
 在内2.6.32 之前，许I2C 驱动使用 <linux/i2c.h> 提供的辅助宏，这些宏创建了标准的模块参数，让用户可以控制驱动如何探测 I2C 总线并附加到设备。这些参数被称为 `probe`（让驱动探测一个额外的地址）、`force`（强制将驱动附加到给定设备）`ignore`（阻止驱动探测给定地址）
 随着 I2C 子系统向标准设备驱动绑定模型转换，这些每模块参数变得不再需要，并且集中式实现成为可能。新的、基sysfs 的接口在 Documentation/i2c/instantiating-devices.rst Method 4: Instantiate from user-space"一节中描述
 下面是旧模块参数到新接口的映射
-### 将驱动附加到 I2C 设备
+## 将驱动附加到 I2C 设备
 
 
 ```
@@ -20,7 +22,7 @@
   # echo <device> 0x2d > /sys/bus/i2c/devices/i2c-1/new_device
 
 ```
-### 阻止驱动附加I2C 设备
+## 阻止驱动附加I2C 设备
 
 
 ```

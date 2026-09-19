@@ -1,4 +1,6 @@
 
+# numastat
+
 :Original: Documentation/admin-guide/numastat.rst
 :Translator: Tao Zou <wodemia@linux.alibaba.com>
 
@@ -20,6 +22,7 @@ numa_hit、numa_miss和numa_foreign计数器反映了进程是否能够在他们
 上成功分配内存时增加other_node计数。需要注意，没有和numa_foreign对应的计数器。
 
 更多细节内容:
+
 
 =============== ============================================================
 numa_hit        一个进程想要从本节点分配内存并且成功。

@@ -1,3 +1,5 @@
+# rsb
+
 ﻿
 ## RSB 相关的缓解措
 
@@ -38,7 +40,7 @@ RSB 投毒SpectreRSB [#spectre-rsb]_ 使用的一种技术，攻击者通过它�
 ## RSB 投毒（Intel AMD
 - 所有攻击向量都可以潜在地通过在不信任域和信任域之间转换时，使RSB 填充序列
   [#intel-rsb-filling]_ [#amd-rsb-filling]_ 冲刷掉任何被投毒RSB 条目来缓解
-#### SpectreRSB
+### SpectreRSB
 
 ```
 RSB 投毒SpectreRSB [#spectre-rsb]_ 使用的一种技术，攻击
@@ -130,7 +132,7 @@ RET 的分支来保护自己
   - “间接分支预测屏障（IBPB）是一种间接分支控制机制，它建立一个屏障，阻止在屏
     之前运行的软件控制同一逻辑处理器上在屏障之后执行的间接分支的预测目标。
     [#intel-ibpb-btb]_
-#### AMD RETBleed / SRSO / 分支类型混淆
+### AMD RETBleed / SRSO / 分支类型混淆
 - 在上下文切换VMEXIT 时，user->kernel guest->host RSB 下溢IBRS 
   eIBRS 缓解
 AMD 上，被污染的 RSB 表项也可能由 AMD RETBleed
@@ -144,7 +146,7 @@ AMD 上，被污染的 RSB 表项也可能由 AMD RETBleed
 ## RSB 下溢（仅 Intel
   结合）来跟踪内核返回，并RSB 接近为空时填充它
 
-#### RSBA Alternate（RSBA，“Intel Retbleed”）
+### RSBA Alternate（RSBA，“Intel Retbleed”）
 
 
 某些 Intel Skylake CPU 容易受到 Intel 变体

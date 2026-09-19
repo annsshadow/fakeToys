@@ -1,3 +1,5 @@
+# virtiofs
+
 ﻿
 
 ## virtiofs：virtio-fs 主机<->客户机共享文件系
@@ -22,7 +24,7 @@ Linux virtiofs 文件系统为半虚拟化（paravirtualized）的 VIRTIO "virti
 
 
 virtiofs 支持通用VFS 挂载选项，例remount、ro、rw、context 等。它也支FUSE 挂载选项
-##### atime 行为
+#### atime 行为
 
 
 atime 相关的挂载选项（例noatime、strictatime）会被忽略。virtiofs atime 行为与主机上所导出目录的底层文件系统相同

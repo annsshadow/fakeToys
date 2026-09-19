@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/send")
+                    .uri("/api/message/assemble/communicate/send")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/receive/test-id")
+                    .uri("/api/message/assemble/communicate/receive/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mark_read/test-id")
+                    .uri("/api/message/assemble/communicate/mark_read/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/list/test-id/count/test-id")
+                    .uri("/api/message/assemble/communicate/consume/list/test-id/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/list/test-id/currentperson/count/test-id")
+                    .uri("/api/message/assemble/communicate/consume/list/test-id/currentperson/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/list/test-id/person/test-id/count/test-id")
+                    .uri("/api/message/assemble/communicate/consume/list/test-id/person/test-id/count/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/type/test-id")
+                    .uri("/api/message/assemble/communicate/consume/type/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/type/test-id/mockputtopost")
+                    .uri("/api/message/assemble/communicate/consume/type/test-id/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/test-id/type/test-id")
+                    .uri("/api/message/assemble/communicate/consume/test-id/type/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                    .uri("/api/message/assemble/communicate/im/conversation")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/business/test-id")
+                    .uri("/api/message/assemble/communicate/im/conversation/business/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/list/my")
+                    .uri("/api/message/assemble/communicate/im/conversation/list/my")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -265,7 +265,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/list/with/person")
+                    .uri("/api/message/assemble/communicate/im/conversation/list/with/person")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -286,7 +286,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/mockputtopost")
+                    .uri("/api/message/assemble/communicate/im/conversation/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -307,7 +307,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -328,7 +328,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/group")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -350,7 +350,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -371,7 +371,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -392,7 +392,9 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group/quit/self")
+                    .uri(
+                        "/api/message/assemble/communicate/im/conversation/test-id/group/quit/self",
+                    )
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -413,7 +415,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/icon")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/icon")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -434,7 +436,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/read")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/read")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -455,7 +457,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/read/mockputtopost")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/read/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -476,7 +478,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/single")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/single")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -497,7 +499,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/single/mockdeletetoget")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/single/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -518,7 +520,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/top/cancel")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/cancel")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -539,7 +541,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/top/cancel/mockputtopost")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/cancel/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -560,7 +562,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/top/set")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/set")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -581,7 +583,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/top/set/mockputtopost")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/set/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -602,7 +604,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/manager/config")
+                    .uri("/api/message/assemble/communicate/im/manager/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -623,7 +625,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg")
+                    .uri("/api/message/assemble/communicate/im/msg")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -644,7 +646,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/clear")
+                    .uri("/api/message/assemble/communicate/im/msg/clear")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -665,7 +667,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/collection")
+                    .uri("/api/message/assemble/communicate/im/msg/collection")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -686,7 +688,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/collection/list/test-id/size/test-id")
+                    .uri("/api/message/assemble/communicate/im/msg/collection/list/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -707,7 +709,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/collection/remove")
+                    .uri("/api/message/assemble/communicate/im/msg/collection/remove")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -728,7 +730,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/download/test-id")
+                    .uri("/api/message/assemble/communicate/im/msg/download/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -739,9 +741,13 @@ mod tests {
         // (empty 404 body); this handler may legitimately answer 404 for a
         // missing x_message_file row but always with a body, so assert the
         // body is non-empty instead of the status.
-        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
-        assert!(!bytes.is_empty(),
-            "im_msg_download_id route should be registered");
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap_or_default();
+        assert!(
+            !bytes.is_empty(),
+            "im_msg_download_id route should be registered"
+        );
     }
 
     #[tokio::test]
@@ -751,7 +757,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/download/test-id/image/width/test-id/height/test-id")
+                    .uri("/api/message/assemble/communicate/im/msg/download/test-id/image/width/test-id/height/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -772,7 +778,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/list/object")
+                    .uri("/api/message/assemble/communicate/im/msg/list/object")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -793,7 +799,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/list/test-id/size/test-id")
+                    .uri("/api/message/assemble/communicate/im/msg/list/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -814,7 +820,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/revoke/test-id")
+                    .uri("/api/message/assemble/communicate/im/msg/revoke/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -836,7 +842,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed")
+                    .uri("/api/message/assemble/communicate/instant/currentperson/consumed")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -857,7 +863,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/all")
+                    .uri("/api/message/assemble/communicate/instant/currentperson/consumed/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -878,7 +884,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost")
+                    .uri("/api/message/assemble/communicate/instant/currentperson/consumed/mockputtopost")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -899,7 +905,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/consumed/count/test-id/asc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/consumed/count/test-id/asc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -920,7 +926,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/consumed/count/test-id/desc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/consumed/count/test-id/desc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -941,7 +947,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/count/test-id/asc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/count/test-id/asc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -962,7 +968,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/count/test-id/desc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/count/test-id/desc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -983,7 +989,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/noim/count/test-id/desc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/noim/count/test-id/desc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1004,7 +1010,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/not/consumed/count/test-id/asc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/test-id/asc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1025,7 +1031,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/currentperson/not/consumed/count/test-id/desc")
+                    .uri("/api/message/assemble/communicate/instant/list/currentperson/not/consumed/count/test-id/desc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1046,7 +1052,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/test-id/next/test-id")
+                    .uri("/api/message/assemble/communicate/instant/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1067,7 +1073,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/list/test-id/prev/test-id")
+                    .uri("/api/message/assemble/communicate/instant/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1088,7 +1094,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/enable/type")
+                    .uri("/api/message/assemble/communicate/mass/enable/type")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1109,7 +1115,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/list/test-id/next/test-id")
+                    .uri("/api/message/assemble/communicate/mass/list/test-id/next/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1130,7 +1136,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/list/test-id/prev/test-id")
+                    .uri("/api/message/assemble/communicate/mass/list/test-id/prev/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1151,7 +1157,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/test-id")
+                    .uri("/api/message/assemble/communicate/mass/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1172,7 +1178,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/test-id/mockdeletetoget")
+                    .uri("/api/message/assemble/communicate/mass/test-id/mockdeletetoget")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -1193,7 +1199,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/message/custom/create")
+                    .uri("/api/message/assemble/communicate/message/custom/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -1214,7 +1220,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/message/list/paging/test-id/size/test-id")
+                    .uri("/api/message/assemble/communicate/message/list/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

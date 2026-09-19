@@ -1,7 +1,9 @@
+# kconfig-language
+
 ﻿## Kconfig 语言
 
 
-### 简
+## 简
 
 
 配置数据库是一系列配置选项的集
@@ -53,6 +55,7 @@
 
   and::
 
+
 	bool
 	prompt "Networking support"
 
@@ -98,12 +101,14 @@
 
   and::
 
+
 	depends on BAR
 	bool "foo"
 	default y
 
   The dependency definition itself may be conditional by appending "if"
   followed by an expression. For example::
+
 
     config FOO
 	tristate
@@ -142,6 +147,7 @@
 
   The following values are possible:
 
+
 	===		===		=============	==============
 	FOO		BAR		BAZ's default	choice for BAZ
 	===		===		=============	==============
@@ -160,6 +166,7 @@
 
   Note: If the feature provided by BAZ is highly desirable for FOO,
   FOO should imply not only BAZ, but also its dependency BAR::
+
 
     config FOO
 	tristate "foo"
@@ -451,7 +458,7 @@ MODVERSIONS 直接依赖MODULES，这意味着仅当 MODULES 不为 'n' 时才�
 注意：这里使用了内部配置变量 HAVE_GENERIC_IOMAP，引入它是为了克select 的限制——select 会无视依赖而将配置选项强制设为 'y'
 依赖被移到了符号 GENERIC_IOMAP 上，从而避免了 select 将某个符号强制设'y' 的情况
 
-#### 添加需要编译器支持的特
+## 添加需要编译器支持的特
 
 
 有若干特性需要编译器支持。描述对编译器特性的依赖的推荐方式是使用 "depends on"
@@ -471,7 +478,7 @@ MODVERSIONS 直接依赖MODULES，这意味着仅当 MODULES 不为 'n' 时才�
 
 ```
 
-#### 仅作为模块构
+### 仅作为模块构
 
 要将某组件的构建限制为仅模块，可对其配置符号限定
 ```

@@ -85,7 +85,7 @@ async fn test_process_query_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/service/processing/process")
+                .uri("/api/query/service/processing/process")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -113,7 +113,7 @@ async fn test_batch_process_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/service/processing/batch")
+                .uri("/api/query/service/processing/batch")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -133,7 +133,7 @@ async fn test_get_service_status_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/service/processing/status")
+                .uri("/api/query/service/processing/status")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -152,7 +152,7 @@ async fn test_reset_service_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/service/processing/reset")
+                .uri("/api/query/service/processing/reset")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -164,11 +164,11 @@ async fn test_reset_service_route_exists() {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// plan002 U2：Java x_query_service_processing 契约端点（u2 模块）行为测试
+// plan002 U2：o2server x_query_service_processing 契约端点（u2 模块）行为测试
 //
 // 这些测试编码业务意图：
 //  1. touch/reset 是真实任务状态机 —— 状态落库可查，reset 清除错误并回到 idle；
-//  2. neural 推算必须以「已完成学习」为前提 —— 缺学习记录时拒绝（对齐 Java
+//  2. neural 推算必须以「已完成学习」为前提 —— 缺学习记录时拒绝（对齐 o2server
 //     ExceptionModelNotReady），不得凭空给出计算结果；
 //  3. 动态表行按 bundle 定位 upsert —— 同 bundle 反复更新不得产生重复行。
 // ═════════════════════════════════════════════════════════════════════════════
@@ -341,7 +341,7 @@ mod u2_contract {
         ensure_schema().await;
         let v = get(
             app(),
-            "/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/touch",
+            "/api/query/service/processing/touch/high/freq/work/node/u2node/touch",
         )
         .await;
         assert_eq!(v["data"]["status"], "touched");
@@ -357,7 +357,7 @@ mod u2_contract {
 
         let v = get(
             app(),
-            "/jaxrs/query/service/processing/touch/high/freq/work/node/u2node/reset",
+            "/api/query/service/processing/touch/high/freq/work/node/u2node/reset",
         )
         .await;
         assert_eq!(v["data"]["status"], "idle");
@@ -378,7 +378,7 @@ mod u2_contract {
         ensure_schema().await;
         let v = get(
             app(),
-            "/jaxrs/query/service/processing/touch/optimize/index/n0/touch",
+            "/api/query/service/processing/touch/optimize/index/n0/touch",
         )
         .await;
         assert_eq!(v["data"]["value"], true);
@@ -393,19 +393,15 @@ mod u2_contract {
             .get("c");
         assert_eq!(n, 1);
 
-        let v = get(
-            app(),
-            "/jaxrs/query/service/processing/table/reload/dynamic",
-        )
-        .await;
+        let v = get(app(), "/api/query/service/processing/table/reload/dynamic").await;
         assert_eq!(v["type"], "success");
     }
 
     #[tokio::test]
     async fn u2_extra_document_validates_required_fields() {
         ensure_schema().await;
-        let p = "/jaxrs/query/service/processing/index/update/extra/document";
-        // 缺 type/key/id/createTime/updateTime 必须被拒（对齐 Java ExceptionEmptyField）
+        let p = "/api/query/service/processing/index/update/extra/document";
+        // 缺 type/key/id/createTime/updateTime 必须被拒（对齐 o2server ExceptionEmptyField）
         let v = post(app(), p, r#"{"key":"k","id":"i"}"#.into()).await;
         assert_eq!(v["type"], "error");
         assert!(v["message"].as_str().unwrap().contains("required"));
@@ -429,7 +425,7 @@ mod u2_contract {
         ensure_schema().await;
         let v = post(
             app(),
-            "/jaxrs/query/service/processing/index/directory/document/count",
+            "/api/query/service/processing/index/directory/document/count",
             "{}".into(),
         )
         .await;
@@ -441,7 +437,7 @@ mod u2_contract {
         // 带 category 过滤时（非全量口径）→ 计数 0 且 exists=false
         let v = post(
             app(),
-            "/jaxrs/query/service/processing/index/directory/document/count",
+            "/api/query/service/processing/index/directory/document/count",
             r#"{"category":"custom","key":"x"}"#.into(),
         )
         .await;
@@ -467,7 +463,7 @@ mod u2_contract {
         }
         let v = post(
             app(),
-            "/jaxrs/query/service/processing/design/search",
+            "/api/query/service/processing/design/search",
             r#"{"keyword":"U2SEARCH目标","moduleList":[{"moduleType":"cms"}]}"#.into(),
         )
         .await;
@@ -484,7 +480,7 @@ mod u2_contract {
         ensure_schema().await;
         let v = post(
             app(),
-            "/jaxrs/query/service/processing/design/search",
+            "/api/query/service/processing/design/search",
             r#"{"keyword":"   ","moduleList":[]}"#.into(),
         )
         .await;
@@ -502,8 +498,8 @@ mod u2_contract {
         .await
         .unwrap();
 
-        let base = "/jaxrs/query/service/processing/neural";
-        // 未学习：推算必须拒绝（对齐 Java ExceptionModelNotReady）
+        let base = "/api/query/service/processing/neural";
+        // 未学习：推算必须拒绝（对齐 o2server ExceptionModelNotReady）
         let v = get(
             app(),
             &format!("{base}/list/calculate/model/u2model/work/w1"),
@@ -547,7 +543,7 @@ mod u2_contract {
         )
         .await
         .unwrap();
-        let base = "/jaxrs/query/service/processing/neural";
+        let base = "/api/query/service/processing/neural";
         let v = get(app(), &format!("{base}/generate/model/u2gen")).await;
         assert_eq!(v["data"]["action"], "generate");
         // 幂等启动：重复 generate 不新增运行中任务
@@ -576,11 +572,11 @@ mod u2_contract {
         .await
         .unwrap();
 
-        let ins = "/jaxrs/query/service/processing/table/u2table/insert";
+        let ins = "/api/query/service/processing/table/u2table/insert";
         let v = post(app(), ins, r#"{"name":"row-a"}"#.into()).await;
         let bundle = v["data"]["bundle"].as_str().unwrap().to_string();
 
-        let upd = "/jaxrs/query/service/processing/table/u2table/update";
+        let upd = "/api/query/service/processing/table/u2table/update";
         for round in 0..3 {
             let v = post(
                 app(),

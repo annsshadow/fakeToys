@@ -1,10 +1,12 @@
+# suspend-and-interrupts
+
 ﻿## 系统挂起与设备中
 
 Copyright (C) 2014 Intel Corp.
 Author: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
 
 
-### 挂起与恢复设IRQ
+## 挂起与恢复设IRQ
 
 
 设备中断请求线（IRQ）通常在系统挂起期间、设备挂起的“late”阶段之后被禁用（即，在所有设备的 ->prepare>suspend ->suspend_late 回调都已执行之后）。这是由 suspend_device_irqs() 完成的

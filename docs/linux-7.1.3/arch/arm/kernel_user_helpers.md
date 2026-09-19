@@ -1,3 +1,5 @@
+# kernel_user_helpers
+
 ﻿## 内核提供的用户空间辅助函
 
 这些是内核提供的一段用户态代码，可从用户空间在内核内存的固定地址处访问它用于向用户空间提供一些需要内核协助的操作，因为许ARM CPU 缺少原生特或指令。其设想是让这段代码直接在用户模式下执行以获得最佳效率，但它内核对应部分过于紧密耦合，因而不能交由用户库来处理。实际上，这段代码甚可能CPU 而异，取决于可用的指令集，或是否SMP 系统。换言之，内核保留
@@ -12,7 +14,7 @@
 某些辅助函数。出于这个原因，程序在假定调用某个特定辅助函数是安全的之前，
 必须检__kuser_helper_version 的值（见下文）。该检查理想情况下应只在进启动时执行一次，如果进程所运行的内核版本未提供所需的辅助函数，则应尽早中止
 执行
-### kuser_helper_version
+## kuser_helper_version
 
 
 位置0xffff0ffc
@@ -41,7 +43,7 @@
 注意
   用户空间可假定该字段的值在任何单个进程的生存期内都不会改变。这意味着
   该字段可以在库的初始化阶段或程序启动阶段被读取一次
-### kuser_get_tls
+## kuser_get_tls
 
 
 位置0xffff0fe0
@@ -76,7 +78,7 @@
 ```
 注意
   - 仅在 __kuser_helper_version >= 1 时有效（自内核版2.6.12 起）
-### kuser_cmpxchg
+## kuser_cmpxchg
 
 
 位置0xffff0fc0
@@ -122,7 +124,7 @@
 注意
   - 该例程已根据需要包含了内存屏障
   - 仅在 __kuser_helper_version >= 2 时有效（自内核版2.6.12 起）
-### kuser_memory_barrier
+## kuser_memory_barrier
 
 
 位置0xffff0fa0
@@ -152,7 +154,7 @@
 ```
 注意
   - 仅在 __kuser_helper_version >= 3 时有效（自内核版2.6.15 起）
-### kuser_cmpxchg64
+## kuser_cmpxchg64
 
 
 位置0xffff0f60

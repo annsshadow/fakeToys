@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   designerPaths,
+  extractList,
   moveItem,
   type PortalWidget,
   parsePortalContent,
@@ -59,7 +60,48 @@ describe('designer contracts', () => {
   })
 
   it('encodes identifiers in every dynamic backend path', () => {
-    expect(designerPaths.tableExecute('a/b')).toBe('/jaxrs/query/assemble/designer/table/a%2Fb/execute')
-    expect(designerPaths.viewList('sales north')).toBe('/jaxrs/query/assemble/designer/view/list/query/sales%20north')
+    expect(designerPaths.tableExecute('a/b')).toBe('/api/query/assemble/designer/table/a%2Fb/execute')
+    expect(designerPaths.viewList('sales north')).toBe('/api/query/assemble/designer/view/list/query/sales%20north')
+  })
+
+  it('encodes identifiers in the remaining portal/table/view path builders', () => {
+    // 路径注入防护：任何 id 段都必须 encodeURIComponent，逐构造器钉死。
+    const bad = 'a/b c'
+    const enc = 'a%2Fb%20c'
+    expect(designerPaths.portalGet(bad)).toBe(`/api/portal/assemble/designer/get/${enc}`)
+    expect(designerPaths.portalSave(bad)).toBe(`/api/portal/assemble/designer/save/${enc}`)
+    expect(designerPaths.tableGet(bad)).toBe(`/api/query/assemble/designer/table/${enc}`)
+    expect(designerPaths.tableSave(bad)).toBe(`/api/query/assemble/designer/table/${enc}`)
+    expect(designerPaths.viewGet(bad)).toBe(`/api/query/assemble/designer/view/${enc}`)
+    expect(designerPaths.viewSave(bad)).toBe(`/api/query/assemble/designer/view/${enc}`)
+    expect(designerPaths.viewDelete(bad)).toBe(`/api/query/assemble/designer/view/${enc}`)
+    expect(designerPaths.viewSimulate(bad)).toBe(`/api/query/assemble/designer/view/${enc}/simulate`)
+    expect(designerPaths.viewBundle(bad)).toBe(`/api/query/assemble/designer/view/${enc}/bundle`)
+  })
+
+  it('extractList unwraps both bare arrays and {data} envelopes, degrading to []', () => {
+    expect(extractList(['a'])).toEqual(['a'])
+    expect(extractList({ data: [1, 2] })).toEqual([1, 2])
+    expect(extractList({ other: [] })).toEqual([])
+    expect(extractList(null)).toEqual([])
+  })
+
+  it('moveItem returns an unmutated copy for out-of-bounds or no-op moves', () => {
+    const items = [1, 2, 3]
+    expect(moveItem(items, 5, 0)).toEqual([1, 2, 3])
+    expect(moveItem(items, -1, 0)).toEqual([1, 2, 3])
+    expect(moveItem(items, 1, 1)).toEqual([1, 2, 3])
+    expect(items).toEqual([1, 2, 3])
+  })
+
+  it('parsePortalContent degrades to an empty design for broken or widget-less input', () => {
+    expect(parsePortalContent('not json')).toEqual({ version: 1, widgets: [] })
+    expect(parsePortalContent({ components: { widgets: 'nope' } })).toEqual({ version: 1, widgets: [] })
+  })
+
+  it('parseViewDefinition degrades to the empty view for null-ish or broken JSON', () => {
+    const empty = { version: 1, sql: '', filters: [], sorts: [], paging: { page: 1, size: 20 } }
+    expect(parseViewDefinition('null')).toEqual(empty)
+    expect(parseViewDefinition('{broken')).toEqual(empty)
   })
 })

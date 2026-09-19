@@ -1,3 +1,5 @@
+# ivtv
+
 ﻿
 ## ivtv 驱动
 
@@ -15,7 +17,7 @@
       输入的应用程序，例如 mplayer、xine、MythTV 等
 IVTV 项目的主要目标是为基iCompression iTVC15 Conexant
 CX23415/CX23416 MPEG 编解码器的视频采集卡，提供一个“净室”（clean room方式Linux 开源驱动实现
-### 特
+## 特
 
  - 通过调谐器或 S-Video/复合接口及音频线路输入，对广播电视（及声音）进行硬件 mpeg2 采集 - 在存在硬件支持的情况下，FM 收音进行硬件 mpeg2 采集 - 支持带立体声NTSC、PAL、SECAM - 支持 SAP 与双语传输 - 支持原始 VBI（隐藏字幕与图文电视） - 支持切片VBI（隐藏字幕与图文电视），并能够将其插入采集到MPEG 流中 - 支持原始 YUV PCM 输入
 ### PVR-350（基CX23415）的附加特

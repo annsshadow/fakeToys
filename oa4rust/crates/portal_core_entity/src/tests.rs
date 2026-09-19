@@ -22,7 +22,7 @@ async fn test_portal_list_returns_success() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/portal/list")
+                .uri("/api/portal/portal/list")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -42,7 +42,7 @@ async fn test_widget_list_returns_success() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/widget/list")
+                .uri("/api/portal/widget/list")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -62,7 +62,7 @@ async fn test_page_list_returns_error_without_db() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/page/list")
+                .uri("/api/portal/page/list")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -82,7 +82,7 @@ async fn test_page_get_returns_error_without_db() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/page/get/test-page-id")
+                .uri("/api/portal/page/get/test-page-id")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -110,7 +110,7 @@ async fn test_page_create_returns_error_without_db() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/page/create")
+                .uri("/api/portal/page/create")
                 .method(axum::http::Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -139,7 +139,7 @@ async fn test_page_update_returns_error_without_db() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/page/update")
+                .uri("/api/portal/page/update")
                 .method(axum::http::Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -165,7 +165,7 @@ async fn test_page_remove_returns_error_without_db() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/page/remove")
+                .uri("/api/portal/page/remove")
                 .method(axum::http::Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -186,7 +186,7 @@ async fn test_script_list_returns_success() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/script/list")
+                .uri("/api/portal/script/list")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),

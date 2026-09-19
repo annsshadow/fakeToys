@@ -103,7 +103,7 @@ fn person_row_to_value(row: &deadpool_postgres::tokio_postgres::Row, include_pii
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
 
-/// POST /jaxrs/express/person/list
+/// POST /api/express/person/list
 ///
 /// Accepts {"ids":[...]} or {"identities":[...]}, returns full Person list.
 /// No authentication required. ID count capped at 100. PII fields (mobile/email)
@@ -211,7 +211,7 @@ pub async fn express_person_list(
     ))))
 }
 
-/// POST /jaxrs/express/unit/list
+/// POST /api/express/unit/list
 ///
 /// Accepts unit ID list, returns full Unit list.
 /// No authentication required. ID count capped at 100.
@@ -258,7 +258,7 @@ pub async fn express_unit_list(
     ))))
 }
 
-/// POST /jaxrs/express/identity/list
+/// POST /api/express/identity/list
 ///
 /// Accepts identity ID list, returns full Identity list.
 /// No authentication required. ID count capped at 100.
@@ -297,7 +297,7 @@ pub async fn express_identity_list(
     ))))
 }
 
-/// POST /jaxrs/express/group/list
+/// POST /api/express/group/list
 ///
 /// Accepts group ID list, returns full Group list.
 /// No authentication required. ID count capped at 100.
@@ -336,7 +336,7 @@ pub async fn express_group_list(
     ))))
 }
 
-/// POST /jaxrs/express/role/list
+/// POST /api/express/role/list
 ///
 /// Accepts role ID list, returns full Role list.
 /// No authentication required. ID count capped at 100.
@@ -378,7 +378,7 @@ pub async fn express_role_list(
     ))))
 }
 
-/// POST /jaxrs/express/person/with/unit
+/// POST /api/express/person/with/unit
 ///
 /// Accepts person ID list, returns each person with their organization (unit) info.
 /// No authentication required. ID count capped at 100.
@@ -435,7 +435,7 @@ pub async fn express_person_with_unit(
     ))))
 }
 
-/// POST /jaxrs/express/person/with/identity
+/// POST /api/express/person/with/identity
 ///
 /// Accepts person ID list, returns each person with their identities.
 /// No authentication required. ID count capped at 100.

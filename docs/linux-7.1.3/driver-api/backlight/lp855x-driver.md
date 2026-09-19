@@ -1,3 +1,5 @@
+# lp855x-driver
+
 ﻿## lp855x 内核驱动
 
 
@@ -9,7 +11,7 @@ LP855x IC 的背光驱
 
 Author: Milo(Woogyom) Kim <milo.kim@ti.com>
 
-### 描述
+## 描述
 
 
 - 亮度控制

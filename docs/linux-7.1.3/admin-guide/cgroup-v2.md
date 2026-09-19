@@ -1,5 +1,7 @@
+# cgroup-v2
+
 ﻿
-## 鎺у埗缁?v2
+## 鎺у埗统?v2
 
 
 :Date: October, 2015
@@ -159,10 +161,10 @@ cgroup v2 目前支持以下挂载选项
         此选项恢复 pids.events:max 类似 v1 的行为，即只统计本地的（cgroup 内部的）fork 失败。不带此选项时，pids.events.max 表示 cgroup 子树上任pids.max 的强制执行情况
 
 
-### 组织进程与线
+## 组织进程与线
 
 
-#### 进程
+### 进程
 
 
 最初，只存在根 cgroup，所有进程都属于它
@@ -200,7 +202,7 @@ proc/$PID/cgroup列出了进程的 cgroup 归属。如果系统中正在使用�
 
 
 ```
-#### 线程
+## 线程
 
 
 cgroup v2 对一部分控制器支持线程粒度，以满足需要在进程组各线程之间进行分层资源分配的使用场景。默认情况下，一个进程的所有线程都属于同一cgroup，该 cgroup 同时也作为资源域（resource domain），承载不属于某个特定进程或线程的资源消耗。线程模式允许线程散布在子树上，同时仍然为它们维护共同的资源域
@@ -254,7 +256,7 @@ C 被创建为域，但并未连接到一个能够承载子域的父节点。在
 - perf_event
 - pids
 
-### [解除]填充通知
+## [解除]填充通知
 
 
 每个非根 cgroup 都有一“cgroup.events文件，其中包“populated字段，指示该 cgroup 的子层次中是否有活动进程。如cgroup 及其后代中没有活动进程，其值为 0；否则为 1。当值发生变化时会触poll [id]notify 事件。例如，这可用于在某个子层次的所有进程退出后启动清理操作。填充状态的更新与通知是递归的。考虑以下子层次，其中括号内的数字表示进程
@@ -306,13 +308,13 @@ A、B C “populated字段1，D 的为 0。C 中的那一个进程退出后，B 
 由于控制器调节目标资源向cgroup 子节点的分配，启用它会在cgroup 中创建该控制器的接口文件。在上例中，B 上启“cpu会在 C D 中创建以 “cpu.为前缀的控制器接口文件。同样地，从 B 禁用 “memory会从 C D 中移除以 “memory.为前缀的控制器接口文件。这意味着控制器接口文件——任何不“cgroup.开头的文件——由父节点而非 cgroup 自身拥有
 
 
-#### 自上而下约束
+## 自上而下约束
 
 
 资源是自上而下分配的，一cgroup 只有在父节点已向它分配了某资源之后，才能进一步分配该资源。这意味着所有非根的 “cgroup.subtree_control文件只能包含在其父节点的 “cgroup.subtree_control文件中启用的控制器。只有当父节点启用了某个控制器时，该控制器才能被启用；而如果有一个或多个子节点启用了某控制器，则该控制器不能被禁用
 
 
-#### 鏃犲唴閮ㄨ繘绋嬬害鏉。
+### 鏃犲唴閮ㄨ繘绋嬬害鏉。
 
 
 非根 cgroup 只有在自身没有任何进程时，才能向子节点分配域资源。换言之，只有不包含任何进程的cgroup 才能在其 “cgroup.subtree_control文件中启用域控制器
@@ -510,17 +512,21 @@ cgroup 控制器根据资源类型与预期使用场景实现了若干种资源�
 
   The default value can be updated by::
 
+
     # echo 125 > cgroup-example-interface-file
 
   or::
+
 
     # echo "default 125" > cgroup-example-interface-file
 
   An override can be set by::
 
+
     # echo "8:16 170" > cgroup-example-interface-file
 
   and cleared by::
+
 
     # echo "8:0 default" > cgroup-example-interface-file
     # cat cgroup-example-interface-file
@@ -531,7 +537,7 @@ cgroup 控制器根据资源类型与预期使用场景实现了若干种资源�
 - 对于频率不太高的事件，应创建一个接口文“events”，其中列出事件的键值对。每当发生可通知的事件时，应在该文件上生成文件修改事件
 
 
-### 核心接口文件
+## 核心接口文件
 
 
 所cgroup 核心文件都以 “cgroup.为前缀
@@ -657,6 +663,7 @@ cgroup 控制器根据资源类型与预期使用场景实现了若干种资源�
   cgroup.stat
 	A read-only flat-keyed file with the following entries:
 
+
 	  nr_descendants
 		可见后代 cgroup 的总数
 
@@ -678,6 +685,7 @@ cgroup 控制器根据资源类型与预期使用场景实现了若干种资源�
   cgroup.stat.local
 	A read-only flat-keyed file which exists in non-root cgroups.
 	The following entry is defined:
+
 
 	  frozen_usec
 		Cumulative time that this cgroup has spent between freezing and
@@ -794,12 +802,14 @@ cgroup 控制器根据资源类型与预期使用场景实现了若干种资源�
 	It always reports the following three stats, which account for all the
 	processes in the cgroup:
 
+
  - usage_usec
  - user_usec
  - system_usec
 
 	and the following five when the controller is enabled, which account for
 	only the processes under the fair-class scheduler:
+
 
  - nr_periods
  - nr_throttled
@@ -1627,6 +1637,7 @@ field.
 	When a better control quality is needed, latency QoS
 	parameters can be configured.  For example::
 
+
 	  8:16 enable=1 ctrl=auto rpct=95.00 rlat=75000 wpct=95.00 wlat=150000 min=50.00 max=150.0
 
 	shows that on sdb, the controller is enabled, will consider
@@ -1709,6 +1720,7 @@ field.
 
 	An example read output follows::
 
+
 	  default 100
 	  8:16 200
 	  8:0 50
@@ -1738,17 +1750,21 @@ field.
 
 	Setting read limit at 2M BPS and write at 120 IOPS for 8:16::
 
+
 	  echo "8:16 rbps=2097152 wiops=120" > io.max
 
 	Reading returns the following::
+
 
 	  8:16 rbps=2097152 wbps=max riops=max wiops=120
 
 	Write IOPS limit can be removed by writing the following::
 
+
 	  echo "8:16 wiops=max" > io.max
 
 	Reading now returns the following::
+
 
 	  8:16 rbps=2097152 wbps=max riops=max wiops=max
 
@@ -1854,6 +1870,7 @@ A single attribute controls the behavior of the I/O priority cgroup policy,
 namely the io.prio.class attribute. The following values are accepted for
 that attribute:
 
+
   no-change
 	不修I/O 优先级类
 
@@ -1871,6 +1888,7 @@ that attribute:
 
 The following numerical values are associated with the I/O priority policies:
 
+
 +----------------+---+
 | no-change      | 0 |
 +----------------+---+
@@ -1883,6 +1901,7 @@ The following numerical values are associated with the I/O priority policies:
 
 The numerical value that corresponds to each I/O priority class is as follows:
 
+
 +-------------------------------+---+
 | IOPRIO_CLASS_NONE             | 0 |
 +-------------------------------+---+
@@ -1894,6 +1913,7 @@ The numerical value that corresponds to each I/O priority class is as follows:
 +-------------------------------+---+
 
 The algorithm to set the I/O priority class for a request is as follows:
+
 
 - If I/O priority class policy is promote-to-rt, change the request I/O
   priority class to IOPRIO_CLASS_RT and change the request I/O priority
@@ -2016,6 +2036,7 @@ of a new process would cause a cgroup policy to be violated.
 
 	The memory node numbers are comma-separated numbers or ranges.
 	For example::
+
 
 	  # cat cpuset.mems
 	  0-1,3
@@ -2235,7 +2256,7 @@ of a new process would cause a cgroup policy to be violated.
 
 
 ```
-### 设备控制
+## 设备控制
 
 
 设备控制器管理对设备文件的访问。它既包括创建新的设备文件（使用 mknod），也包括对现有设备文件的访问
@@ -2283,6 +2304,7 @@ BPF_PROG_TYPE_CGROUP_DEVICE 程序的一个示例可以在内核源码树的 too
 
 	An example for mlx4 and ocrdma device follows::
 
+
 	  mlx4_0 hca_handle=1 hca_object=20
 	  ocrdma1 hca_handle=1 hca_object=23
 
@@ -2317,6 +2339,7 @@ BPF_PROG_TYPE_CGROUP_DEVICE 程序的一个示例可以在内核源码树的 too
 
 	An example for xe follows::
 
+
 	  drm/0000:03:00.0/vram0 8514437120
 	  drm/0000:03:00.0/stolen 67108864
 
@@ -2325,6 +2348,7 @@ BPF_PROG_TYPE_CGROUP_DEVICE 程序的一个示例可以在内核源码树的 too
 	It exists for all the cgroup except root.
 
 	An example for xe follows::
+
 
 	  drm/0000:03:00.0/vram0 12550144
 	  drm/0000:03:00.0/stolen 8650752
@@ -2378,6 +2402,7 @@ Miscellaneous cgroup 为那些无法像其它 cgroup 资源那样被抽象的标
 
 Miscellaneous controller provides 3 interface files. If two misc resources (res_a and res_b) are registered then:
 
+
   misc.capacity
         A read-only flat-keyed file shown only in the root cgroup.  It shows
         miscellaneous scalar resources available on the platform along with
@@ -2391,6 +2416,7 @@ Miscellaneous controller provides 3 interface files. If two misc resources (res_
         A read-only flat-keyed file shown in the all cgroups.  It shows
         the current usage of the resources in the cgroup and its children.::
 
+
 	  $ cat misc.current
 	  res_a 3
 	  res_b 0
@@ -2400,6 +2426,7 @@ Miscellaneous controller provides 3 interface files. If two misc resources (res_
         historical maximum usage of the resources in the cgroup and its
         children.::
 
+
 	  $ cat misc.peak
 	  res_a 10
 	  res_b 8
@@ -2408,15 +2435,18 @@ Miscellaneous controller provides 3 interface files. If two misc resources (res_
         A read-write flat-keyed file shown in the non root cgroups. Allowed
         maximum usage of the resources in the cgroup and its children.::
 
+
 	  $ cat misc.max
 	  res_a max
 	  res_b 4
 
 	Limit can be set by::
 
+
 	  # echo res_a 1 > misc.max
 
 	Limit can be set to max by::
+
 
 	  # echo res_a max > misc.max
 
@@ -2438,7 +2468,7 @@ Miscellaneous controller provides 3 interface files. If two misc resources (res_
         this file reflects only the local events.
 
 ```
-#### 迁移与所有权
+## 迁移与所有权
 
 
 一个杂项标量资源会被记账到首次使用它的 cgroup，并一直保持记账到该资源被释放为止。将进程迁移到不同的 cgroup 并不会把记账转移到进程所移动到的目的 cgroup
@@ -2516,7 +2546,7 @@ namespace is destroyed.  The cgroupns root and the actual cgroups
 remain.
 
 
-### 根与视图
+## 根与视图
 
 
 cgroup 命名空间‘cgroupns root是调unshare(2) 的进程所运行cgroup。例如，如果位于 /batchjobs/container_id1 cgroup 中的一个进程调unshare，cgroup /batchjobs/container_id1 就成cgroupns 根。对init_cgroup_ns，这就是真正的根（’）cgroup
@@ -2566,7 +2596,7 @@ Note that the relative path always starts with '/' to indicate that
 its relative to the cgroup namespace root of the caller.
 
 
-### 迁移setns(2)
+## 迁移setns(2)
 
 
 Processes inside a cgroup namespace can move into and out of the
@@ -2587,6 +2617,7 @@ namespace should only be exposed to its own cgroupns hierarchy.
 
 setns(2) to another cgroup namespace is allowed when:
 
+
 (a) the process has CAP_SYS_ADMIN against its current user namespace
 (b) the process has CAP_SYS_ADMIN against the target cgroup
     namespace's userns
@@ -2596,7 +2627,7 @@ namespace.  It is expected that the someone moves the attaching
 process under the target cgroup namespace root.
 
 
-### 与其他命名空间的交互
+## 与其他命名空间的交互
 
 
 Namespace specific cgroup hierarchy can be mounted by a process

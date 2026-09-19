@@ -1,3 +1,5 @@
+# leds-lp5562
+
 ﻿## lp5562 内核驱动
 
 
@@ -40,6 +42,7 @@ engine_mux
     echo 1 > /sys/bus/i2c/devices/xxxx/run_engine
 
   要运行闪烁的白色图案::
+
 
     echo 1 or 2 or 3 > /sys/bus/i2c/devices/xxxx/select_engine
     echo "W" > /sys/bus/i2c/devices/xxxx/engine_mux

@@ -28,7 +28,7 @@ async fn test_get_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/config")
+                .uri("/api/bbs/assemble/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -47,7 +47,7 @@ async fn test_list_control_sections_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/section/list")
+                .uri("/api/bbs/assemble/control/section/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -66,7 +66,7 @@ async fn test_list_forums_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/forum/list")
+                .uri("/api/bbs/assemble/control/forum/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -85,7 +85,7 @@ async fn test_forum_view_all_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/forum/view/all")
+                .uri("/api/bbs/assemble/control/forum/view/all")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -108,7 +108,7 @@ async fn test_create_topic_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/topic/create")
+                .uri("/api/bbs/assemble/control/topic/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -128,7 +128,7 @@ async fn test_subject_view_id_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/subject/view/sub-001")
+                .uri("/api/bbs/assemble/control/subject/view/sub-001")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -147,7 +147,7 @@ async fn test_permission_section_section_id_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/permission/section/sec-001")
+                .uri("/api/bbs/assemble/control/permission/section/sec-001")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -168,7 +168,7 @@ async fn test_shutup_create_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/shutup/create")
+                .uri("/api/bbs/assemble/control/shutup/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(body))
@@ -188,7 +188,7 @@ async fn test_uuid_generate_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs/assemble/control/uuid")
+                .uri("/api/bbs/assemble/control/uuid")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),

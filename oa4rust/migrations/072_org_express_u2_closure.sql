@@ -3,7 +3,7 @@
 -- 1) x_org_group.parent_id：群组层级（sub/sup/tree 端点，o2 Group.groupList 递归）
 -- 2) x_org_unit."type"：组织类型（unit identity/type、list/types 端点）
 -- 3) x_empower.from_identity/to_identity：empower/list/identity/object 的身份维度
--- 4) x_org_empower_log：POST /jaxrs/empowerlog 落库表
+-- 4) x_org_empower_log：POST /api/empowerlog 落库表
 -- 均为增量变更（IF NOT EXISTS），向后兼容。
 
 ALTER TABLE "x_org_group" ADD COLUMN IF NOT EXISTS "parent_id" VARCHAR(255);

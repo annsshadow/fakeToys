@@ -47,28 +47,28 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_agent_param_family_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/agent/a-1").await,
+            status_of("GET", "/api/program_center/agent/a-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/agent/a-1/disable").await,
+            status_of("GET", "/api/program_center/agent/a-1/disable").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/agent/a-1/enable").await,
+            status_of("GET", "/api/program_center/agent/a-1/enable").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/agent/a-1/execute").await,
+            status_of("GET", "/api/program_center/agent/a-1/execute").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         // PUT file：会话扩展缺失先拒绝（500），但绝非 404/405
-        let put_status = status_of("PUT", "/jaxrs/program_center/agent/a-1/file").await;
+        let put_status = status_of("PUT", "/api/program_center/agent/a-1/file").await;
         assert_ne!(put_status, StatusCode::NOT_FOUND);
         assert_ne!(put_status, StatusCode::METHOD_NOT_ALLOWED);
-        // POST /agent（Java 创建入口）
+        // POST /agent（o2server 创建入口）
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/agent").await,
+            status_of("POST", "/api/program_center/agent").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -78,17 +78,17 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_appstyle_put_and_erase_get_reachable() {
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/appstyle").await,
+            status_of("PUT", "/api/program_center/appstyle").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("GET", "/jaxrs/program_center/appstyle/current/update").await,
+            status_of("GET", "/api/program_center/appstyle/current/update").await,
             StatusCode::NOT_FOUND
         );
         for uri in [
-            "/jaxrs/program_center/appstyle/image/application/top",
-            "/jaxrs/program_center/appstyle/image/menu/logo/blur",
-            "/jaxrs/program_center/appstyle/image/process/default",
+            "/api/program_center/appstyle/image/application/top",
+            "/api/program_center/appstyle/image/menu/logo/blur",
+            "/api/program_center/appstyle/image/process/default",
         ] {
             assert_ne!(
                 status_of("PUT", uri).await,
@@ -97,11 +97,11 @@ mod u3_tests {
             );
         }
         for uri in [
-            "/jaxrs/program_center/appstyle/image/application/top/erase",
-            "/jaxrs/program_center/appstyle/image/menu/logo/blur/erase",
-            "/jaxrs/program_center/appstyle/image/menu/logo/focus/erase",
-            "/jaxrs/program_center/appstyle/image/process/default/erase",
-            "/jaxrs/program_center/appstyle/image/setup/about/logo/erase",
+            "/api/program_center/appstyle/image/application/top/erase",
+            "/api/program_center/appstyle/image/menu/logo/blur/erase",
+            "/api/program_center/appstyle/image/menu/logo/focus/erase",
+            "/api/program_center/appstyle/image/process/default/erase",
+            "/api/program_center/appstyle/image/setup/about/logo/erase",
         ] {
             assert_eq!(
                 status_of("GET", uri).await,
@@ -116,29 +116,29 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_bar_foo_param_routes_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/bar/create/mass/0/10").await,
+            status_of("GET", "/api/program_center/bar/create/mass/0/10").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/foo/create/mass/5/20").await,
+            status_of("GET", "/api/program_center/foo/create/mass/5/20").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/bar/select1/field/status/value/open/count/10"
+                "/api/program_center/bar/select1/field/status/value/open/count/10"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/bar/select2/count/10").await,
+            status_of("GET", "/api/program_center/bar/select2/count/10").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/bar/select3/field/name/value/x/count/5"
+                "/api/program_center/bar/select3/field/name/value/x/count/5"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -146,7 +146,7 @@ mod u3_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/bar/select4/field/entity/value/y/count/5"
+                "/api/program_center/bar/select4/field/entity/value/y/count/5"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -160,7 +160,7 @@ mod u3_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/captcha/v2/create/width/200/height/80"
+                "/api/program_center/captcha/v2/create/width/200/height/80"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -168,7 +168,19 @@ mod u3_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/captcha/c-1/validate/answer/1234"
+                "/api/program_center/captcha/c-1/validate/answer/1234"
+            )
+            .await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", "/api/program_center/code/create/mobile/13800000000").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(
+                "GET",
+                "/api/program_center/code/validate/mobile/13800000000/answer/123456"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -176,29 +188,13 @@ mod u3_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/code/create/mobile/13800000000"
-            )
-            .await,
-            StatusCode::INTERNAL_SERVER_ERROR
-        );
-        assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456"
-            )
-            .await,
-            StatusCode::INTERNAL_SERVER_ERROR
-        );
-        assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/program_center/code/validate/mobile/13800000000/answer/123456/cascade"
+                "/api/program_center/code/validate/mobile/13800000000/answer/123456/cascade"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/code/list/paging/1/size/20").await,
+            status_of("POST", "/api/program_center/code/list/paging/1/size/20").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -208,17 +204,17 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_collect_family_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/collect").await,
+            status_of("GET", "/api/program_center/collect").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/collect").await,
+            status_of("POST", "/api/program_center/collect").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
             status_of(
                 "DELETE",
-                "/jaxrs/program_center/collect/name/n/mobile/m/code/c"
+                "/api/program_center/collect/name/n/mobile/m/code/c"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -226,18 +222,18 @@ mod u3_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/collect/controllermobile/name/n/mobile/m"
+                "/api/program_center/collect/controllermobile/name/n/mobile/m"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/collect/name/n/exist").await,
+            status_of("GET", "/api/program_center/collect/name/n/exist").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         for uri in [
-            "/jaxrs/program_center/collect/resetpassword",
-            "/jaxrs/program_center/collect/urlMapping",
+            "/api/program_center/collect/resetpassword",
+            "/api/program_center/collect/urlMapping",
         ] {
             let s = status_of("PUT", uri).await;
             assert_ne!(s, StatusCode::NOT_FOUND, "PUT {uri}");
@@ -250,31 +246,31 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_config_family_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/config").await,
+            status_of("GET", "/api/program_center/config").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/config-open/get/disable/export/enable"
+                "/api/program_center/config-open/get/disable/export/enable"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         for uri in [
-            "/jaxrs/program_center/config/change/password",
-            "/jaxrs/program_center/config/open",
-            "/jaxrs/program_center/config/open/run/time/config",
-            "/jaxrs/program_center/config/ternary/management",
+            "/api/program_center/config/change/password",
+            "/api/program_center/config/open",
+            "/api/program_center/config/open/run/time/config",
+            "/api/program_center/config/ternary/management",
         ] {
             let s = status_of("POST", uri).await;
             assert_ne!(s, StatusCode::NOT_FOUND, "POST {uri}");
             assert_ne!(s, StatusCode::METHOD_NOT_ALLOWED, "POST {uri}");
         }
         for uri in [
-            "/jaxrs/program_center/config/collect",
-            "/jaxrs/program_center/config/portal",
-            "/jaxrs/program_center/config/proxy",
+            "/api/program_center/config/collect",
+            "/api/program_center/config/portal",
+            "/api/program_center/config/proxy",
         ] {
             let s = status_of("PUT", uri).await;
             assert_ne!(s, StatusCode::NOT_FOUND, "PUT {uri}");
@@ -287,17 +283,17 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_deploy_dict_distribute_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/deploy/list/paging/1/size/20").await,
+            status_of("POST", "/api/program_center/deploy/list/paging/1/size/20").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/deploy/server/resource").await,
+            status_of("POST", "/api/program_center/deploy/server/resource").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
             status_of(
                 "POST",
-                "/jaxrs/program_center/deploy/web/resource/as/new/newname"
+                "/api/program_center/deploy/web/resource/as/new/newname"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -305,64 +301,64 @@ mod u3_tests {
 
         // 参数化字典路由：段值避开静态 dictFlag/list 以命中参数节点
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/dict/d-id").await,
+            status_of("GET", "/api/program_center/dict/d-id").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        let put_status = status_of("PUT", "/jaxrs/program_center/dict/d-id").await;
+        let put_status = status_of("PUT", "/api/program_center/dict/d-id").await;
         assert_ne!(put_status, StatusCode::NOT_FOUND);
         assert_ne!(put_status, StatusCode::METHOD_NOT_ALLOWED);
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/dict/my-flag/my-path/data/mockdeletetoget"
+                "/api/program_center/dict/my-flag/my-path/data/mockdeletetoget"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         let post_status = status_of(
             "POST",
-            "/jaxrs/program_center/dict/my-flag/my-path/data/mockputtopost",
+            "/api/program_center/dict/my-flag/my-path/data/mockputtopost",
         )
         .await;
         assert_ne!(post_status, StatusCode::NOT_FOUND);
         assert_ne!(post_status, StatusCode::METHOD_NOT_ALLOWED);
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/dict/list/paging/1/size/20").await,
+            status_of("POST", "/api/program_center/dict/list/paging/1/size/20").await,
             StatusCode::NOT_FOUND
         );
 
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/dingding/sync/organization/register/callback/true"
+                "/api/program_center/dingding/sync/organization/register/callback/true"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/deploy/d-1").await,
+            status_of("GET", "/api/program_center/deploy/d-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/dict/my-flag/data").await,
+            status_of("GET", "/api/program_center/dict/my-flag/data").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/dict/my-flag/my-path/data").await,
+            status_of("GET", "/api/program_center/dict/my-flag/my-path/data").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/module/m-1/compare").await,
+            status_of("GET", "/api/program_center/module/m-1/compare").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/distribute/assemble/source/o2").await,
+            status_of("GET", "/api/program_center/distribute/assemble/source/o2").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/distribute/webserver/assemble/source/o2"
+                "/api/program_center/distribute/webserver/assemble/source/o2"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -374,26 +370,26 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_invoke_extras_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/invoke").await,
+            status_of("GET", "/api/program_center/invoke").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/invoke/list/with/category/cms").await,
+            status_of("GET", "/api/program_center/invoke/list/with/category/cms").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/invoke/i-1/execute/get").await,
+            status_of("GET", "/api/program_center/invoke/i-1/execute/get").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         for uri in [
-            "/jaxrs/program_center/invoke/i-1/execute",
-            "/jaxrs/program_center/invoke/i-1/client/web/token/tk-1/execute",
+            "/api/program_center/invoke/i-1/execute",
+            "/api/program_center/invoke/i-1/client/web/token/tk-1/execute",
         ] {
             let s = status_of("POST", uri).await;
             assert_ne!(s, StatusCode::NOT_FOUND, "POST {uri}");
             assert_ne!(s, StatusCode::METHOD_NOT_ALLOWED, "POST {uri}");
         }
-        let file_put = status_of("PUT", "/jaxrs/program_center/invoke/i-1/file").await;
+        let file_put = status_of("PUT", "/api/program_center/invoke/i-1/file").await;
         assert_ne!(file_put, StatusCode::NOT_FOUND);
         assert_ne!(file_put, StatusCode::METHOD_NOT_ALLOWED);
     }
@@ -403,49 +399,49 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_market_module_family_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/jest/clear/cache/es").await,
+            status_of("GET", "/api/program_center/jest/clear/cache/es").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/market/m-1").await,
+            status_of("GET", "/api/program_center/market/m-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/market/m-1/cover/pic").await,
+            status_of("GET", "/api/program_center/market/m-1/cover/pic").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/market/m-1/download").await,
+            status_of("GET", "/api/program_center/market/m-1/download").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/market/m-1/install/log").await,
+            status_of("GET", "/api/program_center/market/m-1/install/log").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("GET", "/jaxrs/program_center/market/m-1/install/or/update").await,
+            status_of("GET", "/api/program_center/market/m-1/install/or/update").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/program_center/market/m-1/install/or/update").await,
+            status_of("PUT", "/api/program_center/market/m-1/install/or/update").await,
             StatusCode::METHOD_NOT_ALLOWED
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/market/m-1/installed/version").await,
+            status_of("GET", "/api/program_center/market/m-1/installed/version").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/market/m-1/uninstall").await,
+            status_of("GET", "/api/program_center/market/m-1/uninstall").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/market/list/paging/1/size/20").await,
+            status_of("POST", "/api/program_center/market/list/paging/1/size/20").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
             status_of(
                 "POST",
-                "/jaxrs/program_center/market/list/install/log/paging/1/size/20"
+                "/api/program_center/market/list/install/log/paging/1/size/20"
             )
             .await,
             StatusCode::NOT_FOUND
@@ -453,55 +449,47 @@ mod u3_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/market/list/paging/1/size/20/category/cms"
+                "/api/program_center/market/list/paging/1/size/20/category/cms"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
 
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/module/output/m-1/file").await,
+            status_of("GET", "/api/program_center/module/output/m-1/file").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of(
-                "DELETE",
-                "/jaxrs/program_center/module/remove/structure/m-1"
-            )
-            .await,
+            status_of("DELETE", "/api/program_center/module/remove/structure/m-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        let write_put = status_of("PUT", "/jaxrs/program_center/module/write/m-1").await;
+        let write_put = status_of("PUT", "/api/program_center/module/write/m-1").await;
         assert_ne!(write_put, StatusCode::NOT_FOUND);
         assert_ne!(write_put, StatusCode::METHOD_NOT_ALLOWED);
 
         assert_eq!(
-            status_of("POST", "/jaxrs/program_center/mpweixin/check").await,
+            status_of("POST", "/api/program_center/mpweixin/check").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/mpweixin/menu/update/wm-1").await,
+            status_of("POST", "/api/program_center/mpweixin/menu/update/wm-1").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/program_center/mpweixin/menu/delete/wm-1").await,
+            status_of("DELETE", "/api/program_center/mpweixin/menu/delete/wm-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/program_center/mpweixin/menu/create/to/weixin"
-            )
-            .await,
+            status_of("GET", "/api/program_center/mpweixin/menu/create/to/weixin").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
 
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/output/f-1/select/file").await,
+            status_of("GET", "/api/program_center/output/f-1/select/file").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("PUT", "/jaxrs/program_center/output/f-1/select").await,
+            status_of("PUT", "/api/program_center/output/f-1/select").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -511,98 +499,94 @@ mod u3_tests {
     #[tokio::test]
     async fn u3_logs_misc_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/prompterrorlog").await,
+            status_of("POST", "/api/program_center/prompterrorlog").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/prompterrorlog/p-1").await,
+            status_of("GET", "/api/program_center/prompterrorlog/p-1").await,
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of("GET", "/api/program_center/prompterrorlog/list/p-1/next/10").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/prompterrorlog/list/p-1/next/10"
-            )
-            .await,
-            StatusCode::INTERNAL_SERVER_ERROR
-        );
-        assert_eq!(
-            status_of(
-                "GET",
-                "/jaxrs/program_center/prompterrorlog/list/p-1/next/10/date/2026-08-24"
+                "/api/program_center/prompterrorlog/list/p-1/next/10/date/2026-08-24"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/unexpectederrorlog").await,
+            status_of("POST", "/api/program_center/unexpectederrorlog").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/unexpectederrorlog/u-1").await,
+            status_of("GET", "/api/program_center/unexpectederrorlog/u-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/unexpectederrorlog/list/u-1/prev/5"
+                "/api/program_center/unexpectederrorlog/list/u-1/prev/5"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
 
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/qiyeweixin").await,
+            status_of("GET", "/api/program_center/qiyeweixin").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("POST", "/jaxrs/program_center/qiyeweixin").await,
+            status_of("POST", "/api/program_center/qiyeweixin").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("POST", "/jaxrs/program_center/qiyeweixin/request/pull/sync").await,
+            status_of("POST", "/api/program_center/qiyeweixin/request/pull/sync").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
 
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/schedule/schedule/fire").await,
+            status_of("POST", "/api/program_center/schedule/schedule/fire").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/program_center/schedule/list/schedulelog/application/app-1"
+                "/api/program_center/schedule/list/schedulelog/application/app-1"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
 
-        let script_name_post = status_of("POST", "/jaxrs/program_center/script/name/demo").await;
+        let script_name_post = status_of("POST", "/api/program_center/script/name/demo").await;
         assert_ne!(script_name_post, StatusCode::NOT_FOUND);
         assert_ne!(script_name_post, StatusCode::METHOD_NOT_ALLOWED);
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/script/sc-flag").await,
+            status_of("GET", "/api/program_center/script/sc-flag").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/script/name/demo/imported").await,
+            status_of("GET", "/api/program_center/script/name/demo/imported").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/program_center/script/list/paging/1/size/20").await,
+            status_of("POST", "/api/program_center/script/list/paging/1/size/20").await,
             StatusCode::NOT_FOUND
         );
 
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/validation/timeout/30000").await,
+            status_of("GET", "/api/program_center/validation/timeout/30000").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/program_center/welink/pull/sync").await,
+            status_of("GET", "/api/program_center/welink/pull/sync").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("POST", "/jaxrs/program_center/welink/request/pull/sync").await,
+            status_of("POST", "/api/program_center/welink/request/pull/sync").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -691,9 +675,7 @@ mod u3_tests {
         let pool = mock_pool();
         let r = u3_market_list_paging_category(
             Extension(pool),
-            axum::extract::Path(1i64),
-            axum::extract::Path(20i64),
-            axum::extract::Path("cms".to_string()),
+            axum::extract::Path((1i64, 20i64, "cms".to_string())),
         )
         .await;
         assert!(matches!(r, Err(shared::error::AppError::Internal)));

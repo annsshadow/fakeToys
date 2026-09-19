@@ -9,7 +9,7 @@ use tower::util::ServiceExt;
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication",
+    route: "/api/authentication",
     method: POST,
     handler: login,
     test_name: parity_behavior__auth__login,
@@ -21,7 +21,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/check/token",
+    route: "/api/authentication/check/token",
     method: POST,
     handler: check_token,
     test_name: parity_behavior__auth__check_token,
@@ -33,7 +33,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/login",
+    route: "/api/authentication/login",
     method: POST,
     handler: login_1,
     test_name: parity_behavior__auth__login_1,
@@ -45,7 +45,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/bind/name/test-id/code/test-id/redirecturi/test-id",
+    route: "/api/authentication/oauth/bind/name/test-id/code/test-id/redirecturi/test-id",
     method: GET,
     handler: oauth,
     test_name: parity_behavior__auth__oauth,
@@ -57,7 +57,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/dingding/config",
+    route: "/api/authentication/oauth/dingding/config",
     method: GET,
     handler: oauth_1,
     test_name: parity_behavior__auth__oauth_1,
@@ -69,7 +69,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/list",
+    route: "/api/authentication/oauth/list",
     method: GET,
     handler: oauth_2,
     test_name: parity_behavior__auth__oauth_2,
@@ -81,7 +81,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/login/dingding/code/test-id",
+    route: "/api/authentication/oauth/login/dingding/code/test-id",
     method: GET,
     handler: oauth_3,
     test_name: parity_behavior__auth__oauth_3,
@@ -93,7 +93,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/login/name/test-id/code/test-id/redirecturi/test-id",
+    route: "/api/authentication/oauth/login/name/test-id/code/test-id/redirecturi/test-id",
     method: GET,
     handler: oauth_4,
     test_name: parity_behavior__auth__oauth_4,
@@ -105,7 +105,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/login/qywx/code/test-id",
+    route: "/api/authentication/oauth/login/qywx/code/test-id",
     method: GET,
     handler: oauth_5,
     test_name: parity_behavior__auth__oauth_5,
@@ -120,7 +120,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/name/test-id",
+    route: "/api/authentication/oauth/name/test-id",
     method: GET,
     handler: oauth_6,
     test_name: parity_behavior__auth__oauth_6,
@@ -132,7 +132,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/authentication/oauth/qywx/config",
+    route: "/api/authentication/oauth/qywx/config",
     method: GET,
     handler: oauth_7,
     test_name: parity_behavior__auth__oauth_7,
@@ -144,7 +144,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/mpweixin/login/code/test-id",
+    route: "/api/mpweixin/login/code/test-id",
     method: GET,
     handler: mpweixin_login,
     test_name: parity_behavior__auth__mpweixin_login,
@@ -156,7 +156,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/qiyeweixin/code/test-id",
+    route: "/api/qiyeweixin/code/test-id",
     method: GET,
     handler: qiyeweixin_login,
     test_name: parity_behavior__auth__qiyeweixin_login,
@@ -168,7 +168,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/welink/code/test-id",
+    route: "/api/welink/code/test-id",
     method: GET,
     handler: welink_login,
     test_name: parity_behavior__auth__welink_login,
@@ -180,7 +180,7 @@ parity_test!(
 parity_test!(
     crate: auth,
     router_fn: router,
-    route: "/jaxrs/zhengwudingding/code/test-id",
+    route: "/api/zhengwudingding/code/test-id",
     method: GET,
     handler: zwdingding_login,
     test_name: parity_behavior__auth__zwdingding_login,
@@ -194,7 +194,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1",
+    route: "/api/ai/assemble/control/config/list/mcp/paging/1/size/1",
     method: GET,
     handler: config_list_mcp_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__config_list_mcp_paging_page_size_size,
@@ -206,7 +206,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/list/enable/model",
+    route: "/api/ai_assemble_control/config/list/enable/model",
     method: GET,
     handler: config_list_enable_model,
     test_name: parity_behavior__ai_assemble_control__config_list_enable_model,
@@ -218,7 +218,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/1",
+    route: "/api/ai_assemble_control/config/list/mcp/paging/1/size/1",
     method: GET,
     handler: config_list_mcp_paging_page_size_size_1,
     test_name: parity_behavior__ai_assemble_control__config_list_mcp_paging_page_size_size_1,
@@ -230,7 +230,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1",
+    route: "/api/ai_assemble_control/config/list/model/paging/1/size/1",
     method: GET,
     handler: config_list_model_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__config_list_model_paging_page_size_size,
@@ -239,11 +239,11 @@ parity_test!(
     body: String::new(),
 );
 
-// Java FileAction.listWithIds: these list endpoints take POST, not GET.
+// o2server FileAction.listWithIds: these list endpoints take POST, not GET.
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/list",
+    route: "/api/ai_assemble_control/file/list",
     method: POST,
     handler: file_list,
     test_name: parity_behavior__ai_assemble_control__file_list,
@@ -256,7 +256,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/list/paging/1/size/1",
+    route: "/api/ai_assemble_control/file/list/paging/1/size/1",
     method: POST,
     handler: file_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__file_list_paging_page_size_size,
@@ -268,7 +268,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/index/list/paging/1/size/1",
+    route: "/api/ai_assemble_control/index/list/paging/1/size/1",
     method: POST,
     handler: index_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__index_list_paging_page_size_size,
@@ -280,7 +280,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/list/ai/models",
+    route: "/api/ai_assemble_control/list/ai/models",
     method: GET,
     handler: list_ai_models,
     test_name: parity_behavior__ai_assemble_control__list_ai_models,
@@ -292,7 +292,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/app/list",
+    route: "/api/ai/app/list",
     method: GET,
     handler: app_list,
     test_name: parity_behavior__ai__app_list,
@@ -304,7 +304,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/chat/list/completion/test-id/paging/1/size/1",
+    route: "/api/ai/chat/list/completion/test-id/paging/1/size/1",
     method: GET,
     handler: chat_list_completion_paging,
     test_name: parity_behavior__ai__chat_list_completion_paging,
@@ -316,7 +316,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/chat/list/paging/1/size/1",
+    route: "/api/ai/chat/list/paging/1/size/1",
     method: GET,
     handler: chat_list_paging,
     test_name: parity_behavior__ai__chat_list_paging,
@@ -328,7 +328,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/list/enable/model",
+    route: "/api/ai/config/list/enable/model",
     method: GET,
     handler: list_enable_model,
     test_name: parity_behavior__ai__list_enable_model,
@@ -340,7 +340,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/list/mcp/paging/1/size/1",
+    route: "/api/ai/config/list/mcp/paging/1/size/1",
     method: GET,
     handler: config_list_mcp_paging,
     test_name: parity_behavior__ai__config_list_mcp_paging,
@@ -352,7 +352,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/list/model/paging/1/size/1",
+    route: "/api/ai/config/list/model/paging/1/size/1",
     method: GET,
     handler: config_list_model_paging,
     test_name: parity_behavior__ai__config_list_model_paging,
@@ -364,7 +364,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/conversation/list",
+    route: "/api/ai/conversation/list",
     method: GET,
     handler: conversation_list,
     test_name: parity_behavior__ai__conversation_list,
@@ -376,7 +376,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/model/list",
+    route: "/api/ai/model/list",
     method: GET,
     handler: model_list,
     test_name: parity_behavior__ai__model_list,
@@ -388,7 +388,7 @@ parity_test!(
 parity_test!(
     crate: bbs_assemble_control,
     router_fn: router,
-    route: "/jaxrs/bbs/assemble/control/forum/list",
+    route: "/api/bbs/assemble/control/forum/list",
     method: GET,
     handler: list_forums,
     test_name: parity_behavior__bbs_assemble_control__list_forums,
@@ -400,7 +400,7 @@ parity_test!(
 parity_test!(
     crate: bbs_assemble_control,
     router_fn: router,
-    route: "/jaxrs/bbs/assemble/control/reply/list/sub/test-id",
+    route: "/api/bbs/assemble/control/reply/list/sub/test-id",
     method: GET,
     handler: reply_list_sub_id,
     test_name: parity_behavior__bbs_assemble_control__reply_list_sub_id,
@@ -412,7 +412,7 @@ parity_test!(
 parity_test!(
     crate: bbs_assemble_control,
     router_fn: router,
-    route: "/jaxrs/bbs/assemble/control/section/list",
+    route: "/api/bbs/assemble/control/section/list",
     method: GET,
     handler: list_control_sections,
     test_name: parity_behavior__bbs_assemble_control__list_control_sections,
@@ -424,7 +424,7 @@ parity_test!(
 parity_test!(
     crate: bbs_assemble_control,
     router_fn: router,
-    route: "/jaxrs/bbs/assemble/control/topic/list/forum/test-id",
+    route: "/api/bbs/assemble/control/topic/list/forum/test-id",
     method: GET,
     handler: list_topics_by_forum,
     test_name: parity_behavior__bbs_assemble_control__list_topics_by_forum,
@@ -436,7 +436,7 @@ parity_test!(
 parity_test!(
     crate: calendar_assemble_control,
     router_fn: router,
-    route: "/jaxrs/calendar_assemble_control/list/control/calendars",
+    route: "/api/calendar_assemble_control/list/control/calendars",
     method: GET,
     handler: list_control_calendars,
     test_name: parity_behavior__calendar_assemble_control__list_control_calendars,
@@ -448,7 +448,7 @@ parity_test!(
 parity_test!(
     crate: calendar,
     router_fn: router,
-    route: "/jaxrs/calendar/calendar/list/my",
+    route: "/api/calendar/calendar/list/my",
     method: GET,
     handler: calendar_list_my,
     test_name: parity_behavior__calendar__calendar_list_my,
@@ -460,7 +460,7 @@ parity_test!(
 parity_test!(
     crate: calendar,
     router_fn: router,
-    route: "/jaxrs/calendar/calendar/list/public",
+    route: "/api/calendar/calendar/list/public",
     method: GET,
     handler: calendar_list_public,
     test_name: parity_behavior__calendar__calendar_list_public,
@@ -472,7 +472,7 @@ parity_test!(
 parity_test!(
     crate: calendar,
     router_fn: router,
-    route: "/jaxrs/calendar/event/list/test-id",
+    route: "/api/calendar/event/list/test-id",
     method: GET,
     handler: event_list,
     test_name: parity_behavior__calendar__event_list,
@@ -484,7 +484,7 @@ parity_test!(
 parity_test!(
     crate: cms_assemble_control,
     router_fn: router,
-    route: "/jaxrs/cms_assemble_control/list/control/sections",
+    route: "/api/cms_assemble_control/list/control/sections",
     method: GET,
     handler: list_control_sections,
     test_name: parity_behavior__cms_assemble_control__list_control_sections,
@@ -496,7 +496,7 @@ parity_test!(
 parity_test!(
     crate: cms_assemble_control,
     router_fn: router,
-    route: "/jaxrs/commend/list/paging/1?doc_id=1",
+    route: "/api/commend/list/paging/1?doc_id=1",
     method: GET,
     handler: commend_list_paging,
     test_name: parity_behavior__cms_assemble_control__commend_list_paging,
@@ -508,7 +508,7 @@ parity_test!(
 parity_test!(
     crate: cms_core_entity,
     router_fn: router,
-    route: "/jaxrs/cms/article/list",
+    route: "/api/cms/article/list",
     method: GET,
     handler: article_list,
     test_name: parity_behavior__cms_core_entity__article_list,
@@ -520,7 +520,7 @@ parity_test!(
 parity_test!(
     crate: cms_core_entity,
     router_fn: router,
-    route: "/jaxrs/cms/category/list",
+    route: "/api/cms/category/list",
     method: GET,
     handler: category_list,
     test_name: parity_behavior__cms_core_entity__category_list,
@@ -532,7 +532,7 @@ parity_test!(
 parity_test!(
     crate: cms_core_express,
     router_fn: router,
-    route: "/jaxrs/cms/core/express/content/list",
+    route: "/api/cms/core/express/content/list",
     method: GET,
     handler: content_list,
     test_name: parity_behavior__cms_core_express__content_list,
@@ -544,7 +544,7 @@ parity_test!(
 parity_test!(
     crate: component_assemble_control,
     router_fn: router,
-    route: "/jaxrs/component/assemble/control/status/list",
+    route: "/api/component/assemble/control/status/list",
     method: GET,
     handler: status_list,
     test_name: parity_behavior__component_assemble_control__status_list,
@@ -556,7 +556,7 @@ parity_test!(
 parity_test!(
     crate: component_assemble_control,
     router_fn: router,
-    route: "/jaxrs/component_assemble_control/list/components",
+    route: "/api/component_assemble_control/list/components",
     method: GET,
     handler: list_components,
     test_name: parity_behavior__component_assemble_control__list_components,
@@ -568,7 +568,7 @@ parity_test!(
 parity_test!(
     crate: component_assemble_control,
     router_fn: router,
-    route: "/jaxrs/component_assemble_control/list/control/categories",
+    route: "/api/component_assemble_control/list/control/categories",
     method: GET,
     handler: list_control_categories,
     test_name: parity_behavior__component_assemble_control__list_control_categories,
@@ -580,7 +580,7 @@ parity_test!(
 parity_test!(
     crate: component,
     router_fn: router,
-    route: "/jaxrs/component/list/all",
+    route: "/api/component/list/all",
     method: GET,
     handler: list_all,
     test_name: parity_behavior__component__list_all,
@@ -592,7 +592,7 @@ parity_test!(
 parity_test!(
     crate: correlation,
     router_fn: router,
-    route: "/jaxrs/correlation/type/cms/list",
+    route: "/api/correlation/type/cms/list",
     method: GET,
     handler: list_cms_correlations,
     test_name: parity_behavior__correlation__list_cms_correlations,
@@ -604,7 +604,7 @@ parity_test!(
 parity_test!(
     crate: correlation,
     router_fn: router,
-    route: "/jaxrs/correlation/type/processplatform/list",
+    route: "/api/correlation/type/processplatform/list",
     method: GET,
     handler: list_process_platform_correlations,
     test_name: parity_behavior__correlation__list_process_platform_correlations,
@@ -616,7 +616,7 @@ parity_test!(
 parity_test!(
     crate: correlation_service_processing,
     router_fn: router,
-    route: "/jaxrs/correlation/service/processing/correlation/list/type/cms/document/test-id",
+    route: "/api/correlation/service/processing/correlation/list/type/cms/document/test-id",
     method: GET,
     handler: correlation_list_type_cms_document_document,
     test_name: parity_behavior__correlation_service_processing__correlation_list_type_cms_document_document,
@@ -628,7 +628,7 @@ parity_test!(
 parity_test!(
     crate: correlation_service_processing,
     router_fn: router,
-    route: "/jaxrs/correlation/service/processing/correlation/list/type/cms/document/test-id/site/test-id",
+    route: "/api/correlation/service/processing/correlation/list/type/cms/document/test-id/site/test-id",
     method: GET,
     handler: correlation_list_type_cms_document_document_site_site,
     test_name: parity_behavior__correlation_service_processing__correlation_list_type_cms_document_document_site_site,
@@ -640,7 +640,7 @@ parity_test!(
 parity_test!(
     crate: correlation_service_processing,
     router_fn: router,
-    route: "/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/test-id",
+    route: "/api/correlation/service/processing/correlation/list/type/processplatform/job/test-id",
     method: GET,
     handler: correlation_list_type_processplatform_job_job,
     test_name: parity_behavior__correlation_service_processing__correlation_list_type_processplatform_job_job,
@@ -652,7 +652,7 @@ parity_test!(
 parity_test!(
     crate: correlation_service_processing,
     router_fn: router,
-    route: "/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/test-id/site/test-id",
+    route: "/api/correlation/service/processing/correlation/list/type/processplatform/job/test-id/site/test-id",
     method: GET,
     handler: correlation_list_type_processplatform_job_job_site_site,
     test_name: parity_behavior__correlation_service_processing__correlation_list_type_processplatform_job_job_site_site,
@@ -664,7 +664,7 @@ parity_test!(
 parity_test!(
     crate: correlation_service_processing,
     router_fn: router,
-    route: "/jaxrs/correlation/service/processing/list/test-id",
+    route: "/api/correlation/service/processing/list/test-id",
     method: GET,
     handler: list_correlations,
     test_name: parity_behavior__correlation_service_processing__list_correlations,
@@ -676,7 +676,7 @@ parity_test!(
 parity_test!(
     crate: file_assemble_control,
     router_fn: router,
-    route: "/jaxrs/file/assemble/control/file/list/test-id",
+    route: "/api/file/assemble/control/file/list/test-id",
     method: GET,
     handler: list_files,
     test_name: parity_behavior__file_assemble_control__list_files,
@@ -688,7 +688,7 @@ parity_test!(
 parity_test!(
     crate: file,
     router_fn: router,
-    route: "/jaxrs/file/folder/list/top",
+    route: "/api/file/folder/list/top",
     method: GET,
     handler: folder_list_top,
     test_name: parity_behavior__file__folder_list_top,
@@ -700,7 +700,7 @@ parity_test!(
 parity_test!(
     crate: file,
     router_fn: router,
-    route: "/jaxrs/file/folder/list/test-id",
+    route: "/api/file/folder/list/test-id",
     method: GET,
     handler: folder_list_with_folder,
     test_name: parity_behavior__file__folder_list_with_folder,
@@ -712,7 +712,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1",
+    route: "/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1",
     method: GET,
     handler: cipher_hotpic_filter_list_page_page_count_count,
     test_name: parity_behavior__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count,
@@ -724,7 +724,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/assemble/control/list/control/applications",
+    route: "/api/hotpic/assemble/control/list/control/applications",
     method: GET,
     handler: list_control_applications,
     test_name: parity_behavior__hotpic_assemble_control__list_control_applications,
@@ -736,7 +736,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/assemble/control/list/control/panels",
+    route: "/api/hotpic/assemble/control/list/control/panels",
     method: GET,
     handler: list_control_panels,
     test_name: parity_behavior__hotpic_assemble_control__list_control_panels,
@@ -748,7 +748,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1",
+    route: "/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1",
     method: GET,
     handler: user_hotpic_filter_list_page_page_count_count,
     test_name: parity_behavior__hotpic_assemble_control__user_hotpic_filter_list_page_page_count_count,
@@ -760,7 +760,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/list/hotpics",
+    route: "/api/hotpic/list/hotpics",
     method: GET,
     handler: list_hotpics,
     test_name: parity_behavior__hotpic_assemble_control__list_hotpics,
@@ -772,7 +772,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count",
+    route: "/api/hotpic_assemble_control/cipher/hotpic/filter/list/page/page/count/count",
     method: GET,
     handler: cipher_hotpic_filter_list_page_page_count_count_1,
     test_name: parity_behavior__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count_1,
@@ -784,7 +784,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic_assemble_control/list/control/applications",
+    route: "/api/hotpic_assemble_control/list/control/applications",
     method: GET,
     handler: list_control_applications_1,
     test_name: parity_behavior__hotpic_assemble_control__list_control_applications_1,
@@ -798,7 +798,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai/assemble/control/config/create/mcp",
+    route: "/api/ai/assemble/control/config/create/mcp",
     method: POST,
     handler: config_create_mcp,
     test_name: parity_behavior__ai_assemble_control__config_create_mcp,
@@ -810,7 +810,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai/assemble/control/config/delete/mcp/test-id",
+    route: "/api/ai/assemble/control/config/delete/mcp/test-id",
     method: POST,
     handler: config_delete_mcp_flag,
     test_name: parity_behavior__ai_assemble_control__config_delete_mcp_flag,
@@ -822,7 +822,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai/assemble/control/config/get/mcp/test-id",
+    route: "/api/ai/assemble/control/config/get/mcp/test-id",
     method: GET,
     handler: config_get_mcp_flag,
     test_name: parity_behavior__ai_assemble_control__config_get_mcp_flag,
@@ -834,7 +834,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai/assemble/control/config/update/mcp/test-id",
+    route: "/api/ai/assemble/control/config/update/mcp/test-id",
     method: POST,
     handler: config_update_mcp_flag,
     test_name: parity_behavior__ai_assemble_control__config_update_mcp_flag,
@@ -846,7 +846,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/chat/completion",
+    route: "/api/ai_assemble_control/chat/completion",
     method: POST,
     handler: chat_completion,
     test_name: parity_behavior__ai_assemble_control__chat_completion,
@@ -858,7 +858,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/base/config",
+    route: "/api/ai_assemble_control/config/base/config",
     method: GET,
     handler: config_base_config,
     test_name: parity_behavior__ai_assemble_control__config_base_config,
@@ -870,7 +870,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/create/mcp",
+    route: "/api/ai_assemble_control/config/create/mcp",
     method: GET,
     handler: config_create_mcp_1,
     test_name: parity_behavior__ai_assemble_control__config_create_mcp_1,
@@ -882,7 +882,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/create/model",
+    route: "/api/ai_assemble_control/config/create/model",
     method: GET,
     handler: config_create_model,
     test_name: parity_behavior__ai_assemble_control__config_create_model,
@@ -894,7 +894,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/delete/mcp/flag",
+    route: "/api/ai_assemble_control/config/delete/mcp/flag",
     method: GET,
     handler: config_delete_mcp_flag_1,
     test_name: parity_behavior__ai_assemble_control__config_delete_mcp_flag_1,
@@ -906,7 +906,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/delete/model/flag",
+    route: "/api/ai_assemble_control/config/delete/model/flag",
     method: GET,
     handler: config_delete_model_flag,
     test_name: parity_behavior__ai_assemble_control__config_delete_model_flag,
@@ -918,7 +918,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/get/mcp/ext/flag",
+    route: "/api/ai_assemble_control/config/get/mcp/ext/flag",
     method: GET,
     handler: config_get_mcp_ext_flag,
     test_name: parity_behavior__ai_assemble_control__config_get_mcp_ext_flag,
@@ -930,7 +930,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/get/mcp/flag",
+    route: "/api/ai_assemble_control/config/get/mcp/flag",
     method: GET,
     handler: config_get_mcp_flag_1,
     test_name: parity_behavior__ai_assemble_control__config_get_mcp_flag_1,
@@ -942,7 +942,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/get/model/flag",
+    route: "/api/ai_assemble_control/config/get/model/flag",
     method: GET,
     handler: config_get_model_flag,
     test_name: parity_behavior__ai_assemble_control__config_get_model_flag,
@@ -954,7 +954,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/save",
+    route: "/api/ai_assemble_control/config/save",
     method: GET,
     handler: config_save,
     test_name: parity_behavior__ai_assemble_control__config_save,
@@ -966,7 +966,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/update/mcp/flag",
+    route: "/api/ai_assemble_control/config/update/mcp/flag",
     method: GET,
     handler: config_update_mcp_flag_1,
     test_name: parity_behavior__ai_assemble_control__config_update_mcp_flag_1,
@@ -978,7 +978,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/update/model/flag",
+    route: "/api/ai_assemble_control/config/update/model/flag",
     method: GET,
     handler: config_update_model_flag,
     test_name: parity_behavior__ai_assemble_control__config_update_model_flag,
@@ -990,7 +990,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/copy/file",
+    route: "/api/ai_assemble_control/file/copy/file",
     method: GET,
     handler: file_copy_file,
     test_name: parity_behavior__ai_assemble_control__file_copy_file,
@@ -1002,7 +1002,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/delete/flag",
+    route: "/api/ai_assemble_control/file/delete/flag",
     method: GET,
     handler: file_delete_flag,
     test_name: parity_behavior__ai_assemble_control__file_delete_flag,
@@ -1014,7 +1014,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/flag",
+    route: "/api/ai_assemble_control/file/flag",
     method: GET,
     handler: file_flag,
     test_name: parity_behavior__ai_assemble_control__file_flag,
@@ -1026,7 +1026,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/id/download",
+    route: "/api/ai_assemble_control/file/id/download",
     method: GET,
     handler: file_id_download,
     test_name: parity_behavior__ai_assemble_control__file_id_download,
@@ -1038,7 +1038,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/id/download/scale",
+    route: "/api/ai_assemble_control/file/id/download/scale",
     method: GET,
     handler: file_id_download_scale,
     test_name: parity_behavior__ai_assemble_control__file_id_download_scale,
@@ -1050,7 +1050,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/upload",
+    route: "/api/ai_assemble_control/file/upload",
     method: GET,
     handler: file_upload,
     test_name: parity_behavior__ai_assemble_control__file_upload,
@@ -1062,7 +1062,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/get/ai/control/config",
+    route: "/api/ai_assemble_control/get/ai/control/config",
     method: GET,
     handler: get_ai_control_config,
     test_name: parity_behavior__ai_assemble_control__get_ai_control_config,
@@ -1074,7 +1074,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/get/usage/stats",
+    route: "/api/ai_assemble_control/get/usage/stats",
     method: GET,
     handler: get_usage_stats,
     test_name: parity_behavior__ai_assemble_control__get_usage_stats,
@@ -1086,7 +1086,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/index/cms/doc/docId",
+    route: "/api/ai_assemble_control/index/cms/doc/docId",
     method: GET,
     handler: index_cms_doc_docId,
     test_name: parity_behavior__ai_assemble_control__index_cms_doc_docId,
@@ -1098,7 +1098,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId",
+    route: "/api/ai_assemble_control/index/cms/doc/with/app/appId",
     method: GET,
     handler: index_cms_doc_with_app_appId,
     test_name: parity_behavior__ai_assemble_control__index_cms_doc_with_app_appId,
@@ -1110,7 +1110,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/index/delete/flag",
+    route: "/api/ai_assemble_control/index/delete/flag",
     method: GET,
     handler: index_delete_flag,
     test_name: parity_behavior__ai_assemble_control__index_delete_flag,
@@ -1122,7 +1122,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/index/sync/to/knowledge",
+    route: "/api/ai_assemble_control/index/sync/to/knowledge",
     method: GET,
     handler: index_sync_to_knowledge,
     test_name: parity_behavior__ai_assemble_control__index_sync_to_knowledge,
@@ -1134,7 +1134,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/update/ai/control/config",
+    route: "/api/ai_assemble_control/update/ai/control/config",
     method: GET,
     handler: update_ai_control_config,
     test_name: parity_behavior__ai_assemble_control__update_ai_control_config,
@@ -1146,7 +1146,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/chat/delete/test-id",
+    route: "/api/ai/chat/delete/test-id",
     method: GET,
     handler: chat_delete,
     test_name: parity_behavior__ai__chat_delete,
@@ -1158,7 +1158,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/base/config",
+    route: "/api/ai/config/base/config",
     method: GET,
     handler: config_base_config,
     test_name: parity_behavior__ai__config_base_config,
@@ -1170,7 +1170,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/get",
+    route: "/api/ai/config/get",
     method: GET,
     handler: config_get,
     test_name: parity_behavior__ai__config_get,
@@ -1182,7 +1182,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/get/mcp/test-id",
+    route: "/api/ai/config/get/mcp/test-id",
     method: GET,
     handler: config_get_mcp,
     test_name: parity_behavior__ai__config_get_mcp,
@@ -1194,7 +1194,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/get/model/test-id",
+    route: "/api/ai/config/get/model/test-id",
     method: GET,
     handler: config_get_model,
     test_name: parity_behavior__ai__config_get_model,
@@ -1206,7 +1206,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/file/delete/test-id",
+    route: "/api/ai/file/delete/test-id",
     method: GET,
     handler: file_delete,
     test_name: parity_behavior__ai__file_delete,

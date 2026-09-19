@@ -1,7 +1,9 @@
+# vidioc-subdev-g-frame-interval
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBDEV_G_FRAME_INTERVAL、VIDIOC_SUBDEV_S_FRAME_INTERVAL
+## ioctl VIDIOC_SUBDEV_G_FRAME_INTERVAL、VIDIOC_SUBDEV_S_FRAME_INTERVAL
 
 
 ## 名称

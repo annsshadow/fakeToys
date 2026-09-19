@@ -1,3 +1,5 @@
+# can
+
 ﻿## SocketCAN - 控制器局域网（Controller Area Network
 
 
@@ -244,11 +246,11 @@ struct canfd_frame 和已有的 struct can_frame 在结构体内的相同偏移�
 这两CAN(FD) 帧结构的长度定义CAN(FD) 网络接口skbuff 数据长度的最大传输单元（MTU）。在 include/linux/can.h 中为 CAN 特定MTU 规定了两个定义：
 
 
-  #define CAN_MTU   (sizeof(struct can_frame))   == 16  => 缁忓吀 CAN 甯。
+  #define CAN_MTU   (sizeof(struct can_frame))   == 16  => 统忓吀 CAN 甯。
   #define CANFD_MTU (sizeof(struct canfd_frame)) == 72  => CAN FD 甯。
 
 
-### 返回的报文标
+## 返回的报文标
 
 
 RAW BCM 套接字上使用系统调用 recvmsg(2) 时，msg->msg_flags 字段可能包含以下标志
@@ -636,7 +638,7 @@ ival2锛。
     write(s, &msg, sizeof(msg));
 
 
-#### 广播管理CAN FD 支持
+## 广播管理CAN FD 支持
 
 
 CAN_BCM 的编API 依赖struct can_frame，它作为数组直接放在 bcm_msg_head 结构之后。为了对 CAN FD 帧遵循此模式，bcm_msg_head 标志中的一个新标志 'CAN_FD_FRAME' 指示 bcm_msg_head 后面连接CAN 帧结构被定义struct canfd_frame

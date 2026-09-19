@@ -1,3 +1,5 @@
+# pci-ntb-howto
+
 ﻿
 ## PCI 非透明桥（NTB）端点功能（EPF）用户指
 
@@ -25,7 +27,7 @@
 
 
 ```
-### 端点功能驱动
+## 端点功能驱动
 
 
 ```
@@ -41,7 +43,7 @@
 
 
 ```
-### 创建 pci-epf-ntb 设备
+## 创建 pci-epf-ntb 设备
 
 
 可以使用 configfs 创建 PCI 端点功能设备。要创建
@@ -71,7 +73,7 @@ PCI 端点功能驱动会在设备绑定到驱动时，用默认值填充这些�
 
 
 ```
-### 配置 pci-epf-ntb 设备
+## 配置 pci-epf-ntb 设备
 
 
 用户可以使用configfs 条目配置 pci-epf-ntb 设备。为了更vendorid deviceid，请执行以下
@@ -98,7 +100,7 @@ NTB 特定的内容填```
 	# echo 0x100000 > functions/pci_epf_ntb/func1/pci_epf_ntb.0/mw2
 
 ```
-### pci-epf-ntb 设备绑定EP 控制
+## pci-epf-ntb 设备绑定EP 控制
 
 NTB 功能设备应连接到连接到两台主机的两个 PCI 端点控制器。使NTB 功能设备内部'primary' 'secondary' 条目，将一PCI 端点控制器连接到 primary 接口，将另一PCI 端点控制器连接到 secondary
 ```
@@ -109,7 +111,7 @@ NTB 功能设备应连接到连接到两台主机的两个 PCI 端点控制器�
 ```
 完成上述步骤后，两个 PCI 端点控制器都准备好与主机建立链路
 
-### 启动链路
+## 启动链路
 
 
 为了让端点设备与主机建立链路，_start_ 字段应被填充'1'。对NTB，两PCI 端点控制器都
@@ -134,7 +136,7 @@ NTB 功能设备应连接到连接到两台主机的两个 PCI 端点控制器�
 
 
 ```
-### 使用 ntb_hw_epf 设备
+## 使用 ntb_hw_epf 设备
 
 
 主机侧软件遵Linux 中标准的 NTB 软件架构。所有现有的客户端侧 NTB 实用工具，如 NTB Transport ClientNTB Netdev、NTB Ping Pong Test Client NTB Tool Test Client，都可以NTB 功能设备一起使用

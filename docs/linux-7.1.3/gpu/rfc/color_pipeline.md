@@ -1,3 +1,5 @@
+# color_pipeline
+
 ﻿
 ## Linux 颜色管线 API
 
@@ -130,7 +132,7 @@ COLOR_PIPELINE 属性仅在设置了 DRM_CLIENT_CAP_PLANE_COLOR_PIPELINE 时才�
 ```
     Plane 10
     鈹溾攢 "TYPE": immutable enum {Overlay, Primary, Cursor} = Primary
-    鈹溾攢 鈥?
+    鈹溾攢 
     鈹斺攢 "COLOR_PIPELINE": enum {0, 42, 52} = 0
 ```
 ## 颜色管线发现

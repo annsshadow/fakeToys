@@ -1,5 +1,7 @@
 
 
+# kmsan
+
 :Original: Documentation/dev-tools/kmsan.rst
 :Translator: 刘浩阳 Haoyang Liu <tttturtleruss@hust.edu.cn>
 
@@ -65,6 +67,7 @@ KMSAN 是一个动态错误检测器，旨在查找未初始化值的使用。�
 工具显示了局部变量中未初始化的字节及其被复制到其他内存位置前的堆栈。
 
 KMSAN 会在以下情况下报告未初始化的值 `v`:
+
 
  - 在条件判断中，例如 `if (v) { ... }`；
  - 在索引或指针解引用中，例如 `array[v]` 或 `*v`；

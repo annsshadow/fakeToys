@@ -1,7 +1,9 @@
+# gameport-programming
+
 ﻿#### 编写 gameport 驱动
 
 
-#### 一个基本的经典 gameport
+## 一个基本的经典 gameport
 
 
 如果 gameport 没有提供超出 inb()/outb() 之外的功能，
@@ -30,7 +32,7 @@
 仅在有真正使用它的时候才占用 io 空间。在 ->close() 回调中再次禁用它。你也可以在
 ->open() 回调中选择 io 地址，这样当某些可能的地址已被其他 gameport 占用时它也不会失败
 
-#### 内存映射gameport
+### 内存映射gameport
 
 
 当一gameport 可以通过 MMIO 访问时，优先采用这种方式，因为它更快，允许每秒更多的

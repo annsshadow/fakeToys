@@ -43,8 +43,8 @@ pub struct OidcTokenResponse {
 
 pub fn oidc_router() -> Router {
     Router::new()
-        .route("/jaxrs/authentication/oidc/authorize", get(oidc_authorize))
-        .route("/jaxrs/authentication/oidc/callback", get(oidc_callback))
+        .route("/api/authentication/oidc/authorize", get(oidc_authorize))
+        .route("/api/authentication/oidc/callback", get(oidc_callback))
 }
 
 pub async fn oidc_authorize(Query(req): Query<OidcAuthorizeRequest>) -> Result<Redirect, AppError> {

@@ -1,3 +1,5 @@
+# parport
+
 ﻿Parport
 +++++++
 
@@ -23,7 +25,7 @@
 以告`parport` 代码您想要三PC 风格的端口，一个位0x3bc 且无 IRQ，一个位0x378 使用 IRQ 7，一个位0x278 使用自动检测的 IRQ。目前支PC 风格（`parport_pc`）、Sun `bpp`、Amiga、Atari MFC3 硬件
 PCI 并行 I/O 卡的支持来自 `parport_pc`。对于受支持PCI 卡不应指定基地址 I/O，因为它们会被自动检测
 
-### modprobe
+## modprobe
 
 
 如果您使modprobe，将如下面的行添加到

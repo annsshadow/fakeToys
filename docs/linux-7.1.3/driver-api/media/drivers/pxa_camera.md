@@ -1,8 +1,10 @@
+# pxa_camera
+
 ﻿## PXA 鎽勫儚澶翠富鏈洪┍鍔。
 
 作 Robert Jarzmik <robert.jarzmik@free.fr>
 
-### 约束
+## 约束
 
 
 a) YUV422P 格式的图像尺   所YUV422P 图像都被强制要求 width x height % 16 = 0   这是由于 DMA 约束，它只传8 字节倍数的平面

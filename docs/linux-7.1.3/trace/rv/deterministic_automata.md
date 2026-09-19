@@ -1,3 +1,5 @@
+# deterministic_automata
+
 ﻿## Deterministic Automata
 
 
@@ -31,7 +33,7 @@
                                             +--------------+
 
 ```
-### Deterministic Automaton in C
+## Deterministic Automaton in C
 
 
 在论"Efficient formal verification for the Linux kernel" 中，作者提出了一种在 C 中表示自动机的简单方法，该方法可作为 Linux 内核中的常规代码使用
@@ -87,7 +89,7 @@
   next_state = automaton_wip.function[curr_state][event];
 
 ```
-### Graphviz .dot format
+## Graphviz .dot format
 
 
 Graphviz 开源工具可以使用（文本形式的）DOT 语言作为源来生成自动机的图形表示。DOT 格式被广泛使用，并且可以转换为许多其他格式

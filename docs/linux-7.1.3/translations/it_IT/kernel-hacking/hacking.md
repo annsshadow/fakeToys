@@ -1,4 +1,6 @@
 
+# hacking
+
 	  Documentation/kernel-hacking/hacking.rst <kernel_hacking_hack>
 
 :Original: Documentation/kernel-hacking/hacking.rst <kernel_hacking_hack>
@@ -30,6 +32,7 @@ e generiche informazioni.
 
 
 In qualsiasi momento ognuna delle CPU di un sistema può essere:
+
 
 - non associata ad alcun processo, servendo un'interruzione hardware;
 
@@ -222,6 +225,7 @@ UNIX è "fornite meccanismi e non politiche"
 Non è permesso invocare una procedura che potrebbe dormire, fanno eccezione
 i seguenti casi:
 
+
 - Siete in un contesto utente.
 
 - Non trattenete alcun spinlock.
@@ -318,6 +322,7 @@ Queste procedure sono utilizzate per la richiesta dinamica di un puntatore ad
 un pezzo di memoria allineato, esattamente come malloc e free nello spazio
 utente, ma `kmalloc()` ha un argomento aggiuntivo per indicare alcune
 opzioni. Le opzioni più importanti sono:
+
 
 `GFP_KERNEL`
     Potrebbe dormire per librarare della memoria. L'opzione fornisce il modo
@@ -749,6 +754,7 @@ l'istruzione di pre-processore \`#if' all'interno del codice sorgente.
 
 Al fine d'avere le vostre cose in ordine per l'inclusione ufficiale, o
 anche per avere patch pulite, c'è del lavoro amministrativo da fare:
+
 
 - Trovare chi è responsabile del codice che state modificando. Guardare in cima
    ai file sorgenti, all'interno del file `MAINTAINERS`, ed alla fine

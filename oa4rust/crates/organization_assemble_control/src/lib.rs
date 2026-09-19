@@ -29,7 +29,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1::int",
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1",
                 &[&count],
             )
             .await
@@ -37,7 +37,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
                 &[&flag, &count],
             )
             .await
@@ -52,9 +52,15 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -64,7 +70,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -93,9 +99,15 @@ pub async fn organization_assemble_control_role_flag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -118,7 +130,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time::text DESC LIMIT $1::int",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time::text DESC LIMIT $1",
                 &[&count],
             )
             .await
@@ -126,7 +138,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time::text DESC LIMIT $2::int",
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time::text DESC LIMIT $2",
                 &[&flag, &count],
             )
             .await
@@ -141,9 +153,18 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("level".to_string(), Value::String(row.get("level"))),
-                    ("sort".to_string(), Value::String(row.get("sort"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "level".to_string(),
+                        Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                    ),
+                    (
+                        "sort".to_string(),
+                        Value::String(row.get::<_, Option<String>>("sort").unwrap_or_default()),
+                    ),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
                         Value::String(row.get("create_time")),
@@ -156,7 +177,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -185,9 +206,18 @@ pub async fn organization_assemble_control_unit_flag(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
-                    ("level".to_string(), Value::String(row.get("level"))),
-                    ("sort".to_string(), Value::String(row.get("sort"))),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "level".to_string(),
+                        Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                    ),
+                    (
+                        "sort".to_string(),
+                        Value::String(row.get::<_, Option<String>>("sort").unwrap_or_default()),
+                    ),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
                         Value::String(row.get("create_time")),
@@ -232,8 +262,14 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
             let sort: i32 = row.get("sort");
             Value::Object(serde_json::Map::from_iter(
                 [
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     (
                         "level".to_string(),
                         Value::Number(serde_json::Number::from(level)),
@@ -242,10 +278,16 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
                         "sort".to_string(),
                         Value::Number(serde_json::Number::from(sort)),
                     ),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     ),
                 ]
                 .into_iter()
@@ -255,7 +297,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -292,8 +334,14 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
             let sort: i32 = row.get("sort");
             Value::Object(serde_json::Map::from_iter(
                 [
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     (
                         "level".to_string(),
                         Value::Number(serde_json::Number::from(level)),
@@ -302,10 +350,16 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
                         "sort".to_string(),
                         Value::Number(serde_json::Number::from(sort)),
                     ),
-                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    (
+                        "creator".to_string(),
+                        Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                    ),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     ),
                 ]
                 .into_iter()
@@ -315,7 +369,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -355,10 +409,22 @@ pub async fn organization_assemble_control_person_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -368,7 +434,7 @@ pub async fn organization_assemble_control_person_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -399,8 +465,14 @@ pub async fn export_export_all(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -433,11 +505,17 @@ pub async fn export_result_flag_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "\"fileUrl\"".to_string(),
-                    Value::String(row.get("file_url")),
+                    Value::String(row.get::<_, Option<String>>("file_url").unwrap_or_default()),
                 ),
                 (
                     "createTime".to_string(),
@@ -474,8 +552,14 @@ pub async fn export_zhengwudingding_person(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -506,9 +590,18 @@ pub async fn group_list_like_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -518,7 +611,7 @@ pub async fn group_list_like_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -541,9 +634,18 @@ pub async fn group_list_like_pinyin(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -553,7 +655,7 @@ pub async fn group_list_like_pinyin(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -576,9 +678,18 @@ pub async fn group_list_like_pinyin_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -588,7 +699,7 @@ pub async fn group_list_like_pinyin_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -612,9 +723,18 @@ pub async fn group_list_pinyininitial(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -624,7 +744,7 @@ pub async fn group_list_pinyininitial(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -647,9 +767,18 @@ pub async fn group_list_pinyininitial_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -659,7 +788,7 @@ pub async fn group_list_pinyininitial_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -687,9 +816,18 @@ pub async fn group_list_flag_sub_direct(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -699,7 +837,7 @@ pub async fn group_list_flag_sub_direct(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -725,21 +863,39 @@ pub async fn group_list_flag_sub_nested(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -773,9 +929,18 @@ pub async fn group_list_flag_sup_direct(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -785,7 +950,7 @@ pub async fn group_list_flag_sup_direct(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -819,21 +984,39 @@ pub async fn group_list_flag_sup_nested(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -860,9 +1043,18 @@ pub async fn group_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1019,9 +1211,18 @@ pub async fn group_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1052,7 +1253,10 @@ pub async fn identity_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1077,12 +1281,21 @@ pub async fn identity_list_like_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1092,7 +1305,7 @@ pub async fn identity_list_like_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1115,12 +1328,21 @@ pub async fn identity_list_like_pinyin(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1130,7 +1352,7 @@ pub async fn identity_list_like_pinyin(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1153,12 +1375,21 @@ pub async fn identity_list_like_pinyin_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1168,7 +1399,7 @@ pub async fn identity_list_like_pinyin_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1192,12 +1423,21 @@ pub async fn identity_list_pinyininitial(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1207,7 +1447,7 @@ pub async fn identity_list_pinyininitial(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1230,12 +1470,21 @@ pub async fn identity_list_pinyininitial_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1245,7 +1494,7 @@ pub async fn identity_list_pinyininitial_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1272,12 +1521,21 @@ pub async fn identity_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1319,7 +1577,10 @@ pub async fn identity_flag_mockdeletetoget(
             ("unitId".to_string(), Value::String(row.get("unit_id"))),
             (
                 "identityId".to_string(),
-                Value::String(row.get("identity_id")),
+                Value::String(
+                    row.get::<_, Option<String>>("identity_id")
+                        .unwrap_or_default(),
+                ),
             ),
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
@@ -1353,12 +1614,21 @@ pub async fn identity_flag_mockputtopost(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1386,9 +1656,21 @@ pub async fn inputperson_template(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1398,7 +1680,7 @@ pub async fn inputperson_template(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1420,9 +1702,21 @@ pub async fn inputperson_wipe(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1432,7 +1726,7 @@ pub async fn inputperson_wipe(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1455,8 +1749,14 @@ pub async fn permissionsetting_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1466,7 +1766,7 @@ pub async fn permissionsetting_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1491,9 +1791,18 @@ pub async fn permissionsetting_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1561,9 +1870,18 @@ pub async fn permissionsetting_flag_mockputtopost(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1601,9 +1919,15 @@ pub async fn personattribute_flag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1685,9 +2009,15 @@ pub async fn personattribute_flag_mockputtopost(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1733,7 +2063,7 @@ pub async fn personcard_listgrouptypes(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1751,7 +2081,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1761,10 +2091,22 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1774,7 +2116,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1792,7 +2134,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1802,10 +2144,22 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1815,7 +2169,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -1856,7 +2210,7 @@ pub async fn personcard_mylist(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1883,10 +2237,22 @@ pub async fn personcard_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1959,9 +2325,15 @@ pub async fn role_list_like_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1971,7 +2343,7 @@ pub async fn role_list_like_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1996,9 +2368,15 @@ pub async fn role_list_like_pinyin(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2008,7 +2386,7 @@ pub async fn role_list_like_pinyin(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2033,9 +2411,15 @@ pub async fn role_list_like_pinyin_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2045,7 +2429,7 @@ pub async fn role_list_like_pinyin_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2071,9 +2455,15 @@ pub async fn role_list_pinyininitial(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2083,7 +2473,7 @@ pub async fn role_list_pinyininitial(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2108,9 +2498,15 @@ pub async fn role_list_pinyininitial_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2120,7 +2516,7 @@ pub async fn role_list_pinyininitial_mockputtopost(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2192,9 +2588,15 @@ pub async fn role_flag_mockputtopost(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2232,9 +2634,15 @@ pub async fn unitattribute_flag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2316,9 +2724,15 @@ pub async fn unitattribute_flag_mockputtopost(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2352,7 +2766,7 @@ pub async fn unitduty_distinct_name(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2416,12 +2830,21 @@ pub async fn unitduty_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2450,12 +2873,21 @@ pub async fn unitduty_update_member(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2465,7 +2897,7 @@ pub async fn unitduty_update_member(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2482,12 +2914,12 @@ pub async fn unitduty_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2498,12 +2930,21 @@ pub async fn unitduty_list_flag_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2513,7 +2954,7 @@ pub async fn unitduty_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2530,12 +2971,12 @@ pub async fn unitduty_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2546,12 +2987,21 @@ pub async fn unitduty_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2561,7 +3011,7 @@ pub async fn unitduty_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2586,12 +3036,21 @@ pub async fn unitduty_list_unit_unitFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2601,7 +3060,7 @@ pub async fn unitduty_list_unit_unitFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2627,12 +3086,21 @@ pub async fn unitduty_list_name_name(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2642,7 +3110,7 @@ pub async fn unitduty_list_name_name(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2669,12 +3137,21 @@ pub async fn unitduty_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2684,7 +3161,7 @@ pub async fn unitduty_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2709,12 +3186,21 @@ pub async fn unitduty_list_identity_identityFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2724,7 +3210,7 @@ pub async fn unitduty_list_identity_identityFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2758,7 +3244,7 @@ pub async fn unitduty_distinct_name_like_key(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2775,12 +3261,12 @@ pub async fn unitattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2797,9 +3283,15 @@ pub async fn unitattribute_list_flag_prev_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2809,7 +3301,7 @@ pub async fn unitattribute_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2826,12 +3318,12 @@ pub async fn unitattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2848,9 +3340,15 @@ pub async fn unitattribute_list_flag_next_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2860,7 +3358,7 @@ pub async fn unitattribute_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2891,9 +3389,15 @@ pub async fn unitattribute_list_unit_flag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2903,7 +3407,7 @@ pub async fn unitattribute_list_unit_flag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2920,12 +3424,12 @@ pub async fn role_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2938,9 +3442,15 @@ pub async fn role_list_flag_prev_count(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2950,7 +3460,7 @@ pub async fn role_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2977,9 +3487,15 @@ pub async fn role_list_person_personFlag(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2989,7 +3505,7 @@ pub async fn role_list_person_personFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3018,9 +3534,15 @@ pub async fn role_list_like(
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3030,7 +3552,7 @@ pub async fn role_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3053,13 +3575,25 @@ pub async fn role_list_group_groupFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3069,7 +3603,7 @@ pub async fn role_list_group_groupFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3087,7 +3621,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3097,10 +3631,22 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3110,7 +3656,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -3128,7 +3674,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person ORDER BY create_time::text DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -3138,10 +3684,22 @@ pub async fn personcard_listpaging_page_page_size_size(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3151,7 +3709,7 @@ pub async fn personcard_listpaging_page_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         size,
@@ -3177,15 +3735,24 @@ pub async fn personcard_listVCf_idList(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3211,15 +3778,24 @@ pub async fn personcard_listPersonalVCf_idList(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3255,10 +3831,22 @@ pub async fn personcard_createQR_cardId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3299,10 +3887,22 @@ pub async fn personcard_createCode_cardId(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), Value::String(row.get("mobile"))),
-                ("email".to_string(), Value::String(row.get("email"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "mobile".to_string(),
+                    Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default()),
+                ),
+                (
+                    "email".to_string(),
+                    Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3324,12 +3924,12 @@ pub async fn personattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3346,9 +3946,15 @@ pub async fn personattribute_list_flag_prev_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3358,7 +3964,7 @@ pub async fn personattribute_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3375,12 +3981,12 @@ pub async fn personattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3397,9 +4003,15 @@ pub async fn personattribute_list_flag_next_count(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3409,7 +4021,7 @@ pub async fn personattribute_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3440,9 +4052,15 @@ pub async fn personattribute_list_person_personFlag(
                 ),
                 (
                     "attributeValue".to_string(),
-                    Value::String(row.get("attribute_value")),
+                    Value::String(
+                        row.get::<_, Option<String>>("attribute_value")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3452,7 +4070,7 @@ pub async fn personattribute_list_person_personFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3476,19 +4094,31 @@ pub async fn loginrecord_stream(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "loginTime".to_string(),
                     Value::String(row.get("login_time")),
                 ),
-                ("ip".to_string(), Value::String(row.get("ip"))),
-                ("device".to_string(), Value::String(row.get("device"))),
+                (
+                    "ip".to_string(),
+                    Value::String(row.get::<_, Option<String>>("ip").unwrap_or_default()),
+                ),
+                (
+                    "device".to_string(),
+                    Value::String(row.get::<_, Option<String>>("device").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3512,9 +4142,21 @@ pub async fn inputperson_result_flag_flag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3524,7 +4166,7 @@ pub async fn inputperson_result_flag_flag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3551,7 +4193,9 @@ pub async fn identity_flag_order_before_followFlag(
         None => return Ok(Json(ActionResult::error("identity not found"))),
     };
 
-    let unit_id: String = identity_row.get("unit_id");
+    let unit_id: String = identity_row
+        .get::<_, Option<String>>("unit_id")
+        .unwrap_or_default();
 
     let follow_identity = if follow_flag != "(0)" {
         client
@@ -3627,12 +4271,21 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3642,7 +4295,7 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3659,12 +4312,12 @@ pub async fn identity_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3675,12 +4328,21 @@ pub async fn identity_list_flag_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3690,7 +4352,7 @@ pub async fn identity_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3707,12 +4369,12 @@ pub async fn identity_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3723,12 +4385,21 @@ pub async fn identity_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3738,7 +4409,7 @@ pub async fn identity_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3763,12 +4434,21 @@ pub async fn identity_list_unitduty_name_unitDutyName(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3778,7 +4458,7 @@ pub async fn identity_list_unitduty_name_unitDutyName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3803,12 +4483,21 @@ pub async fn identity_list_unit_unitFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3818,7 +4507,7 @@ pub async fn identity_list_unit_unitFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3843,12 +4532,21 @@ pub async fn identity_list_person_personFlag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3858,7 +4556,7 @@ pub async fn identity_list_person_personFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3885,12 +4583,21 @@ pub async fn identity_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "identityId".to_string(),
-                    Value::String(row.get("identity_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("identity_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3900,7 +4607,7 @@ pub async fn identity_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3917,12 +4624,12 @@ pub async fn group_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3933,9 +4640,18 @@ pub async fn group_list_flag_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3945,7 +4661,7 @@ pub async fn group_list_flag_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3962,12 +4678,12 @@ pub async fn group_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1::int",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time::text DESC LIMIT $1",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2::int",
+            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time::text DESC LIMIT $2",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3978,9 +4694,18 @@ pub async fn group_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -3990,7 +4715,7 @@ pub async fn group_list_flag_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4013,11 +4738,26 @@ pub async fn group_list_role_roleFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4027,7 +4767,7 @@ pub async fn group_list_role_roleFlag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4050,21 +4790,39 @@ pub async fn group_list_person_personFlag_sup_nested(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4087,11 +4845,26 @@ pub async fn group_list_person_personFlag_sup_direct(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4101,7 +4874,7 @@ pub async fn group_list_person_personFlag_sup_direct(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4128,9 +4901,18 @@ pub async fn group_list_like(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -4140,7 +4922,7 @@ pub async fn group_list_like(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4149,122 +4931,122 @@ pub async fn group_list_like(
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-    .route("/jaxrs/organization/assemble/control/export/export/all", get(export_export_all))
-    .route("/jaxrs/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
-    .route("/jaxrs/organization/assemble/control/export/zhengwudingding/person", get(export_zhengwudingding_person))
-    .route("/jaxrs/organization/assemble/control/group/list/like", get(group_list_like))
-    .route("/jaxrs/organization/assemble/control/group/list/like/mockputtopost", get(group_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin", get(group_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost", get(group_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/direct", get(group_list_person_personFlag_sup_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/nested", get(group_list_person_personFlag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial", get(group_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost", get(group_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/role/{roleFlag}", get(group_list_role_roleFlag))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/next/{count}", get(group_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/prev/{count}", get(group_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/direct", get(group_list_flag_sub_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/nested", get(group_list_flag_sub_nested))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/direct", get(group_list_flag_sup_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/nested", get(group_list_flag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/group/{flag}", get(group_flag))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member", get(group_flag_add_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost", get(group_flag_add_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", get(group_flag_delete_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", get(group_flag_delete_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", get(group_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockputtopost", get(group_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/like", get(identity_list_like))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost", get(identity_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin", get(identity_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost", get(identity_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/person/{personFlag}", get(identity_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial", get(identity_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost", get(identity_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/unit/{unitFlag}", get(identity_list_unit_unitFlag))
-    .route("/jaxrs/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}", get(identity_list_unitduty_name_unitDutyName))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/next/{count}", get(identity_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/prev/{count}", get(identity_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}", get(identity_list_flag_unitduty_name_unitDutyName))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}", get(identity_flag))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", get(identity_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockputtopost", get(identity_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/order/before/{followFlag}", get(identity_flag_order_before_followFlag))
-    .route("/jaxrs/organization/assemble/control/inputperson/result/flag/{flag}", get(inputperson_result_flag_flag))
-    .route("/jaxrs/organization/assemble/control/inputperson/template", get(inputperson_template))
-    .route("/jaxrs/organization/assemble/control/inputperson/wipe", get(inputperson_wipe))
-    .route("/jaxrs/organization/assemble/control/loginrecord/{stream}", get(loginrecord_stream))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/list", get(permissionsetting_list))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}", get(permissionsetting_flag))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", get(permissionsetting_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost", get(permissionsetting_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/person/{personFlag}", get(personattribute_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/next/{count}", get(personattribute_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/prev/{count}", get(personattribute_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}", get(personattribute_flag))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", get(personattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost", get(personattribute_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/createCode/{cardId}", get(personcard_createCode_cardId))
-    .route("/jaxrs/organization/assemble/control/personcard/createQR/{cardId}", get(personcard_createQR_cardId))
-    .route("/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}", get(personcard_listPersonalVCf_idList))
-    .route("/jaxrs/organization/assemble/control/personcard/listVCf/{idList}", get(personcard_listVCf_idList))
-    .route("/jaxrs/organization/assemble/control/personcard/listgrouptypes", get(personcard_listgrouptypes))
-    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}", get(personcard_listpaging_page_page_size_size))
-    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost", get(personcard_listpaging_page_page_size_size_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}", get(personcard_listpagingwithgroup_page_page_size_size))
-    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost", get(personcard_listpagingwithgroup_page_page_size_size_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/mylist", get(personcard_mylist))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}", get(personcard_flag))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", get(personcard_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/list/group/{groupFlag}", get(role_list_group_groupFlag))
-    .route("/jaxrs/organization/assemble/control/role/list/like", get(role_list_like))
-    .route("/jaxrs/organization/assemble/control/role/list/like/mockputtopost", get(role_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin", get(role_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost", get(role_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/person/{personFlag}", get(role_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial", get(role_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost", get(role_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/{flag}/next/{count}", get(organization_assemble_control_role_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/role/list/{flag}/prev/{count}", get(role_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/role/{flag}", get(organization_assemble_control_role_flag))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", get(role_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockputtopost", get(role_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/unit/{flag}", get(unitattribute_list_unit_flag))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/next/{count}", get(unitattribute_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/prev/{count}", get(unitattribute_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}", get(unitattribute_flag))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", get(unitattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost", get(unitattribute_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name", get(unitduty_distinct_name))
-    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name/like/{key}", get(unitduty_distinct_name_like_key))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/identity/{identityFlag}", get(unitduty_list_identity_identityFlag))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/like", get(unitduty_list_like))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/name/{name}", get(unitduty_list_name_name))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/unit/{unitFlag}", get(unitduty_list_unit_unitFlag))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/next/{count}", get(unitduty_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/prev/{count}", get(unitduty_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/unitduty/update/member", get(unitduty_update_member))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}", get(unitduty_flag))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(unitduty_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockputtopost", get(unitduty_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sub/nested", get(organization_assemble_control_unit_list_flag_sub_nested))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested", get(organization_assemble_control_unit_list_flag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}", get(organization_assemble_control_unit_list_flag_sup_nested_type_type))
-    .route("/jaxrs/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
-    .route("/jaxrs/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
-    .route("/jaxrs/identity/{id}", get(identity_id))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", delete(group_flag_delete_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", delete(group_flag_delete_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", delete(group_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", delete(identity_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", delete(permissionsetting_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", delete(personattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", delete(personcard_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", delete(role_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
+    .route("/api/organization/assemble/control/export/export/all", get(export_export_all))
+    .route("/api/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
+    .route("/api/organization/assemble/control/export/zhengwudingding/person", get(export_zhengwudingding_person))
+    .route("/api/organization/assemble/control/group/list/like", get(group_list_like))
+    .route("/api/organization/assemble/control/group/list/like/mockputtopost", get(group_list_like_mockputtopost))
+    .route("/api/organization/assemble/control/group/list/like/pinyin", get(group_list_like_pinyin))
+    .route("/api/organization/assemble/control/group/list/like/pinyin/mockputtopost", get(group_list_like_pinyin_mockputtopost))
+    .route("/api/organization/assemble/control/group/list/person/{personFlag}/sup/direct", get(group_list_person_personFlag_sup_direct))
+    .route("/api/organization/assemble/control/group/list/person/{personFlag}/sup/nested", get(group_list_person_personFlag_sup_nested))
+    .route("/api/organization/assemble/control/group/list/pinyininitial", get(group_list_pinyininitial))
+    .route("/api/organization/assemble/control/group/list/pinyininitial/mockputtopost", get(group_list_pinyininitial_mockputtopost))
+    .route("/api/organization/assemble/control/group/list/role/{roleFlag}", get(group_list_role_roleFlag))
+    .route("/api/organization/assemble/control/group/list/{flag}/next/{count}", get(group_list_flag_next_count))
+    .route("/api/organization/assemble/control/group/list/{flag}/prev/{count}", get(group_list_flag_prev_count))
+    .route("/api/organization/assemble/control/group/list/{flag}/sub/direct", get(group_list_flag_sub_direct))
+    .route("/api/organization/assemble/control/group/list/{flag}/sub/nested", get(group_list_flag_sub_nested))
+    .route("/api/organization/assemble/control/group/list/{flag}/sup/direct", get(group_list_flag_sup_direct))
+    .route("/api/organization/assemble/control/group/list/{flag}/sup/nested", get(group_list_flag_sup_nested))
+    .route("/api/organization/assemble/control/group/{flag}", get(group_flag))
+    .route("/api/organization/assemble/control/group/{flag}/add/member", get(group_flag_add_member))
+    .route("/api/organization/assemble/control/group/{flag}/add/member/mockputtopost", get(group_flag_add_member_mockputtopost))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member", get(group_flag_delete_member))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member/mockputtopost", get(group_flag_delete_member_mockputtopost))
+    .route("/api/organization/assemble/control/group/{flag}/mockdeletetoget", get(group_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/group/{flag}/mockputtopost", get(group_flag_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/like", get(identity_list_like))
+    .route("/api/organization/assemble/control/identity/list/like/mockputtopost", get(identity_list_like_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/like/pinyin", get(identity_list_like_pinyin))
+    .route("/api/organization/assemble/control/identity/list/like/pinyin/mockputtopost", get(identity_list_like_pinyin_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/person/{personFlag}", get(identity_list_person_personFlag))
+    .route("/api/organization/assemble/control/identity/list/pinyininitial", get(identity_list_pinyininitial))
+    .route("/api/organization/assemble/control/identity/list/pinyininitial/mockputtopost", get(identity_list_pinyininitial_mockputtopost))
+    .route("/api/organization/assemble/control/identity/list/unit/{unitFlag}", get(identity_list_unit_unitFlag))
+    .route("/api/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}", get(identity_list_unitduty_name_unitDutyName))
+    .route("/api/organization/assemble/control/identity/list/{flag}/next/{count}", get(identity_list_flag_next_count))
+    .route("/api/organization/assemble/control/identity/list/{flag}/prev/{count}", get(identity_list_flag_prev_count))
+    .route("/api/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}", get(identity_list_flag_unitduty_name_unitDutyName))
+    .route("/api/organization/assemble/control/identity/{flag}", get(identity_flag))
+    .route("/api/organization/assemble/control/identity/{flag}/mockdeletetoget", get(identity_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/identity/{flag}/mockputtopost", get(identity_flag_mockputtopost))
+    .route("/api/organization/assemble/control/identity/{flag}/order/before/{followFlag}", get(identity_flag_order_before_followFlag))
+    .route("/api/organization/assemble/control/inputperson/result/flag/{flag}", get(inputperson_result_flag_flag))
+    .route("/api/organization/assemble/control/inputperson/template", get(inputperson_template))
+    .route("/api/organization/assemble/control/inputperson/wipe", get(inputperson_wipe))
+    .route("/api/organization/assemble/control/loginrecord/{stream}", get(loginrecord_stream))
+    .route("/api/organization/assemble/control/permissionsetting/list", get(permissionsetting_list))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}", get(permissionsetting_flag))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", get(permissionsetting_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}/mockputtopost", get(permissionsetting_flag_mockputtopost))
+    .route("/api/organization/assemble/control/personattribute/list/person/{personFlag}", get(personattribute_list_person_personFlag))
+    .route("/api/organization/assemble/control/personattribute/list/{flag}/next/{count}", get(personattribute_list_flag_next_count))
+    .route("/api/organization/assemble/control/personattribute/list/{flag}/prev/{count}", get(personattribute_list_flag_prev_count))
+    .route("/api/organization/assemble/control/personattribute/{flag}", get(personattribute_flag))
+    .route("/api/organization/assemble/control/personattribute/{flag}/mockdeletetoget", get(personattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/personattribute/{flag}/mockputtopost", get(personattribute_flag_mockputtopost))
+    .route("/api/organization/assemble/control/personcard/createCode/{cardId}", get(personcard_createCode_cardId))
+    .route("/api/organization/assemble/control/personcard/createQR/{cardId}", get(personcard_createQR_cardId))
+    .route("/api/organization/assemble/control/personcard/listPersonalVCf/{idList}", get(personcard_listPersonalVCf_idList))
+    .route("/api/organization/assemble/control/personcard/listVCf/{idList}", get(personcard_listVCf_idList))
+    .route("/api/organization/assemble/control/personcard/listgrouptypes", get(personcard_listgrouptypes))
+    .route("/api/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}", get(personcard_listpaging_page_page_size_size))
+    .route("/api/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost", get(personcard_listpaging_page_page_size_size_mockputtopost))
+    .route("/api/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}", get(personcard_listpagingwithgroup_page_page_size_size))
+    .route("/api/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost", get(personcard_listpagingwithgroup_page_page_size_size_mockputtopost))
+    .route("/api/organization/assemble/control/personcard/mylist", get(personcard_mylist))
+    .route("/api/organization/assemble/control/personcard/{flag}", get(personcard_flag))
+    .route("/api/organization/assemble/control/personcard/{flag}/mockdeletetoget", get(personcard_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/role/list/group/{groupFlag}", get(role_list_group_groupFlag))
+    .route("/api/organization/assemble/control/role/list/like", get(role_list_like))
+    .route("/api/organization/assemble/control/role/list/like/mockputtopost", get(role_list_like_mockputtopost))
+    .route("/api/organization/assemble/control/role/list/like/pinyin", get(role_list_like_pinyin))
+    .route("/api/organization/assemble/control/role/list/like/pinyin/mockputtopost", get(role_list_like_pinyin_mockputtopost))
+    .route("/api/organization/assemble/control/role/list/person/{personFlag}", get(role_list_person_personFlag))
+    .route("/api/organization/assemble/control/role/list/pinyininitial", get(role_list_pinyininitial))
+    .route("/api/organization/assemble/control/role/list/pinyininitial/mockputtopost", get(role_list_pinyininitial_mockputtopost))
+    .route("/api/organization/assemble/control/role/list/{flag}/next/{count}", get(organization_assemble_control_role_list_flag_next_count))
+    .route("/api/organization/assemble/control/role/list/{flag}/prev/{count}", get(role_list_flag_prev_count))
+    .route("/api/organization/assemble/control/role/{flag}", get(organization_assemble_control_role_flag))
+    .route("/api/organization/assemble/control/role/{flag}/mockdeletetoget", get(role_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/role/{flag}/mockputtopost", get(role_flag_mockputtopost))
+    .route("/api/organization/assemble/control/unitattribute/list/unit/{flag}", get(unitattribute_list_unit_flag))
+    .route("/api/organization/assemble/control/unitattribute/list/{flag}/next/{count}", get(unitattribute_list_flag_next_count))
+    .route("/api/organization/assemble/control/unitattribute/list/{flag}/prev/{count}", get(unitattribute_list_flag_prev_count))
+    .route("/api/organization/assemble/control/unitattribute/{flag}", get(unitattribute_flag))
+    .route("/api/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", get(unitattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitattribute/{flag}/mockputtopost", get(unitattribute_flag_mockputtopost))
+    .route("/api/organization/assemble/control/unitduty/distinct/name", get(unitduty_distinct_name))
+    .route("/api/organization/assemble/control/unitduty/distinct/name/like/{key}", get(unitduty_distinct_name_like_key))
+    .route("/api/organization/assemble/control/unitduty/list/identity/{identityFlag}", get(unitduty_list_identity_identityFlag))
+    .route("/api/organization/assemble/control/unitduty/list/like", get(unitduty_list_like))
+    .route("/api/organization/assemble/control/unitduty/list/name/{name}", get(unitduty_list_name_name))
+    .route("/api/organization/assemble/control/unitduty/list/unit/{unitFlag}", get(unitduty_list_unit_unitFlag))
+    .route("/api/organization/assemble/control/unitduty/list/{flag}/next/{count}", get(unitduty_list_flag_next_count))
+    .route("/api/organization/assemble/control/unitduty/list/{flag}/prev/{count}", get(unitduty_list_flag_prev_count))
+    .route("/api/organization/assemble/control/unitduty/update/member", get(unitduty_update_member))
+    .route("/api/organization/assemble/control/unitduty/{flag}", get(unitduty_flag))
+    .route("/api/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(unitduty_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitduty/{flag}/mockputtopost", get(unitduty_flag_mockputtopost))
+    .route("/api/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
+    .route("/api/organization/assemble/control/unit/list/{flag}/sub/nested", get(organization_assemble_control_unit_list_flag_sub_nested))
+    .route("/api/organization/assemble/control/unit/list/{flag}/sup/nested", get(organization_assemble_control_unit_list_flag_sup_nested))
+    .route("/api/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}", get(organization_assemble_control_unit_list_flag_sup_nested_type_type))
+    .route("/api/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
+    .route("/api/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
+    .route("/api/identity/{id}", get(identity_id))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member", delete(group_flag_delete_member))
+    .route("/api/organization/assemble/control/group/{flag}/delete/member/mockputtopost", delete(group_flag_delete_member_mockputtopost))
+    .route("/api/organization/assemble/control/group/{flag}/mockdeletetoget", delete(group_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/identity/{flag}/mockdeletetoget", delete(identity_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", delete(permissionsetting_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/personattribute/{flag}/mockdeletetoget", delete(personattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/personcard/{flag}/mockdeletetoget", delete(personcard_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/role/{flag}/mockdeletetoget", delete(role_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", delete(unitattribute_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitduty/{flag}/mockdeletetoget", delete(unitduty_flag_mockdeletetoget))
+    .route("/api/organization/assemble/control/unitduty/update/member", put(unitduty_update_member))
     .merge(u2_router::router())
     .layer(Extension(pool))
 }

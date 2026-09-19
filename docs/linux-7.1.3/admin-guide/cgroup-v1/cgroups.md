@@ -1,3 +1,5 @@
+# cgroups
+
 ﻿## 控制组（Control Groups
 
 Paul Menage <menage@google.com> 基于
@@ -18,10 +20,10 @@ Modified by Christoph Lameter <cl@gentwo.org>
 	1.5 clone_children 的作用是什么？
 	1.6 如何使用 cgroups 2. 使用示例与语	2.1 基本用法
 	2.2 附加进程
-	2.3 鎸夊悕绉版寕杞藉眰绾? 3. 鍐呮牳 API
+	2.3 鎸夊悕绉版寕杞藉眰绾? 3. 内呮核 API
 	3.1 概述
 	3.2 同步
-	3.3 瀛愮郴缁?API
+	3.3 子愮系统?API
  4. 扩展属性的使用
  5. 问题
 
@@ -84,7 +86,7 @@ Firefox/Lynx 这样的浏览器归入 WWW 网络类，(k)nfsd 归入 NFS 网络�
 没有这种能力，管理员就不得不把这cgroup 拆分成多个独立的 cgroup，然后将新的 cgroup 与新的资源类关联起来
 
 
-### 1.3 cgroups 是如何实现的
+## 1.3 cgroups 是如何实现的
 
 控制组对内核的扩展如下：
 
@@ -231,7 +233,7 @@ cgroups 通过 mkdir 系统调用shell 命令创建。cgroup 的属性（例如�
 
 ```
 如果cgroup 正在使用中（内部cgroup、或已附加进程、或被其他子系统特定的引用保持存活），这将失败
-### 2.2 附加进程
+## 2.2 附加进程
 
 
 ```
@@ -256,7 +258,7 @@ cgroups 通过 mkdir 系统调用shell 命令创建。cgroup 的属性（例如�
 你可以使cgroup.procs 文件代替 tasks 文件，一次性移动一个线程组中的所有线程。将线程组中任意任务PID 回显cgroup.procs 会使该线程组中的所有任务都附加到该 cgroup。向 cgroup.procs 写入 0 会移动写入任务所在线程组中的所有任务
 注意：由于每个任务在每个已挂载层级中始终恰好是一cgroup 的成员，要将任务从其当前 cgroup 移除，你必须通过写入cgroup tasks 文件将它移入一个新cgroup（可能是cgroup）
 注意：由于某cgroup 子系统施加的限制，将进程移动到另一cgroup 可能会失败
-### 2.3 鎸夊悕绉版寕杞藉眰绾?
+## 2.3 鎸夊悕绉版寕杞藉眰绾?
 
 在挂cgroups 层级时传name=<x> 选项，会将给定名称与该层级关联。这可以在挂载一个已存在的层级时使用，以便按名称而不是按其活动子系统集合来引用它。每个层级要么无名，要么具有一个唯一名称
 名称应当匹配 [\w.-]+
@@ -284,7 +286,7 @@ cgroup 系统使用一个全局互斥cgroup_mutex。任何想要修cgroup 的代
 子系统可以通过 cgroup_lock()/cgroup_unlock() 函数获取/释放 cgroup_mutex
 可以通过以下方式访问任务cgroup 指针- 持有 cgroup_mutex - 持有任务alloc_lock 时（通过 task_lock()- rcu_read_lock() 临界区内通过 rcu_dereference()
 
-### 3.3 瀛愮郴缁?API
+### 3.3 子愮系统?API
 
 
 每个子系统应当：

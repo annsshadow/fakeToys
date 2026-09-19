@@ -1,3 +1,5 @@
+# iamt
+
 ﻿
 ## Intel(R) 主动管理技术（Intel AMT
 

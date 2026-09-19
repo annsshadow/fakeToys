@@ -1,3 +1,5 @@
+# features
+
 ﻿# mips Architecture Features
 
 This page lists the architecture-specific features for the mips architecture.

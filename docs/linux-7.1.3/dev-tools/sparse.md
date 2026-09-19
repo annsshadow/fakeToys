@@ -1,3 +1,5 @@
+# sparse
+
 ﻿
 ## Sparse
 
@@ -34,7 +36,7 @@ https://sparse.docs.kernel.org 找到
 现在你就拥有了进行严格类型检查所需的全部基础设施
 一个小提示：常量整"0" 是特殊的。你可以在不引发 sparse 任何抱怨的情况下，常量 0 用作 bitwise 整数类型。这是因"bitwise"（顾名思义）被设计用来确保 bitwise
 类型不会被混淆（小端 vs 大端 vs cpu vs 其它），而在那里常量 "0" 确实_是_特殊的
-### 获取 sparse
+## 获取 sparse
 
 
 你可以从以下地址获取最新发布版本的 tarballhttps://www.kernel.org/pub/software/devel/sparse/dist/

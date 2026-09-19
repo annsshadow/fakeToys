@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/device/list")
+                    .uri("/api/jpush/device/list")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/device/test-id")
+                    .uri("/api/jpush/device/test-id")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -94,7 +94,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/template/list")
+                    .uri("/api/jpush/template/list")
                     .body(Body::empty())
                     .unwrap(),
             )

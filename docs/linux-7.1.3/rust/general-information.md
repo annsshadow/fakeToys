@@ -1,3 +1,5 @@
+# general-information
+
 ﻿
 ## 一般信
 
@@ -82,13 +84,13 @@ C 侧的函数和类型在 Rust 中的声明
 主要思想是，将所有与内核 C API 的直接交互封装到经过仔细审阅和文档化的抽象中这样一来，只要满足以下条件，这些抽象的使用者就不会引入未定义行为（UB）：
 
 #. 抽象是正确的（“健全的”，sound）#. 任何 `unsafe` 块都遵守调用块内操作所必需的安全约定。类似地，任   `unsafe impl`\ s 都遵守实现该 trait 所必需的安全约定
-#### 绑定
+## 绑定
 
 
 通过将来`include/` C 头文件包含进 `rust/bindings/bindings_helper.h``bindgen` 工具会自动为所包含的子系统集成生成绑定。构建完成后，请查看
 `rust/bindings/` 目录中的 `*_generated.rs` 输出文件
 对于 `bindgen` 不会自动生成C 头文件部分（例如 C `inline` 函数非平凡的宏），可以在 `rust/helpers/` 中添加一个小的包装函数来使其同样Rust 侧可用
-#### 抽象
+### 抽象
 
 
 抽象是绑定与内核内使用者之间的一层。它们位`rust/kernel/`，其作用是将

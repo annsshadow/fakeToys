@@ -49,7 +49,7 @@ test('creates and round-trips a form through the web designer', async ({ page })
   await page.locator('.palette-item').filter({ hasText: '文本' }).first().click()
   await page.getByPlaceholder('字段标签').fill('申请原因')
   await page.getByPlaceholder('唯一标识', { exact: true }).fill('reason')
-  const saveResponse = audit.waitForWrite((response) => new URL(response.url()).pathname === '/jaxrs/form')
+  const saveResponse = audit.waitForWrite((response) => new URL(response.url()).pathname === '/api/form')
   await page.getByTitle('保存').click()
   const saved = await saveResponse
   await expectSuccessfulWrite(saved)

@@ -6,24 +6,24 @@ const source = readFileSync(resolve(import.meta.dirname, 'index.ts'), 'utf8')
 const value = 'value /?#'
 const encoded = 'value%20%2F%3F%23'
 const expectedImplementations = [
-  `api.post(\`/jaxrs/query/service/neural/generate/\${encodeURIComponent(model_flag)}\`, body)`,
-  `api.get(\`/jaxrs/person/empower/\${encodeURIComponent(id)}\`)`,
-  `api.get(\`/jaxrs/person/empower/\${encodeURIComponent(id)}/enable\`)`,
-  `api.get(\`/jaxrs/person/empower/\${encodeURIComponent(id)}/disable\`)`,
-  `api.post(\`/jaxrs/person/empower/\${encodeURIComponent(id)}/enable\`, body)`,
-  `api.post(\`/jaxrs/person/empower/\${encodeURIComponent(id)}/disable\`, body)`,
-  `\`/jaxrs/person/empower/manager/list/paging/\${encodeURIComponent(page)}/size/\${encodeURIComponent(size)}\``,
+  `api.post(\`/api/query/service/neural/generate/\${encodeURIComponent(model_flag)}\`, body)`,
+  `api.get(\`/api/person/empower/\${encodeURIComponent(id)}\`)`,
+  `api.get(\`/api/person/empower/\${encodeURIComponent(id)}/enable\`)`,
+  `api.get(\`/api/person/empower/\${encodeURIComponent(id)}/disable\`)`,
+  `api.post(\`/api/person/empower/\${encodeURIComponent(id)}/enable\`, body)`,
+  `api.post(\`/api/person/empower/\${encodeURIComponent(id)}/disable\`, body)`,
+  `\`/api/person/empower/manager/list/paging/\${encodeURIComponent(page)}/size/\${encodeURIComponent(size)}\``,
   `api.get(\`/ws/realtime/room/\${encodeURIComponent(room_id)}\`)`,
   `api.get(\`/ws/realtime/room/\${encodeURIComponent(room_id)}/stats\`)`,
-  `api.get(\`/jaxrs/base/sysresource/filePath/\${encodeURIComponent(filePath)}\`)`,
-  `api.get(\`/jaxrs/base/fireschedule/classname/\${encodeURIComponent(className)}\`)`,
+  `api.get(\`/api/base/sysresource/filePath/\${encodeURIComponent(filePath)}\`)`,
+  `api.get(\`/api/base/fireschedule/classname/\${encodeURIComponent(className)}\`)`,
 ]
 
 function encodePath(prefix: string, ...parameters: string[]): string {
   return prefix + parameters.map((parameter) => encodeURIComponent(parameter)).join('/')
 }
 
-const jpushRoute = '/jaxrs/jpush_assemble_control/device/list/'
+const jpushRoute = '/api/jpush_assemble_control/device/list/'
 
 function assembleDeviceListPath(pushType: string): string {
   return `${jpushRoute}${encodeURIComponent(pushType)}`
@@ -34,8 +34,8 @@ describe('jpushApi', () => {
     expect(assembleDeviceListPath('jpush')).toBe(`${jpushRoute}jpush`)
     expect(assembleDeviceListPath('vendor/mobile push')).toBe(`${jpushRoute}vendor%2Fmobile%20push`)
     expect(source).toContain('assembleDeviceList: (pushType: string) =>')
-    expect(source).toContain('api.get(`/jaxrs/jpush_assemble_control/device/list/${encodeURIComponent(pushType)}`)')
-    expect(source).not.toContain("assembleDeviceList: () => api.get('/jaxrs/jpush_assemble_control/device/list')")
+    expect(source).toContain('api.get(`/api/jpush_assemble_control/device/list/${encodeURIComponent(pushType)}`)')
+    expect(source).not.toContain("assembleDeviceList: () => api.get('/api/jpush_assemble_control/device/list')")
   })
 })
 
@@ -53,8 +53,8 @@ describe('API path parameters', () => {
     expect(source).not.toMatch(/api\.(?:get|post|put|delete)\(['"][^'"]*:[A-Za-z_]/)
   })
 
-  it('uses the backend realtime route without a jaxrs or double-slash prefix', () => {
+  it('uses the backend realtime route without a legacy or double-slash prefix', () => {
     expect(source).toContain("getrealtime: () => api.get('/ws/realtime')")
-    expect(source).not.toContain('/jaxrs//ws/realtime')
+    expect(source).not.toContain('/api//ws/realtime')
   })
 })

@@ -1,3 +1,5 @@
+# hiddev
+
 ﻿## Care feeding 您的 Human 接口 设备
 
 
@@ -79,6 +81,7 @@ bundles called "reports".  每个 report divided 进入 "字段",
 ### 读取():
 
 
+
 这是 the 事件 接口.  the HID 设备's 状changes,
 performs 一中断 transfer containing 一report 包含
 the changed 鍊?  The hid-core.c 妯″潡 parses the report, 鍜。
@@ -104,7 +107,9 @@ ioctl() 描述 下文.
 ### ioctl():
 
 
+
 这是 the control 接口. 存在 一数字 controls:
+
 
 HIDIOCGVERSION
   - int (读取)
@@ -235,6 +240,7 @@ HIDIOCSFLAG
 
 杩欎簺 鎿嶄綔 respectively inspect 鍜?replace the 妯″紡 鏍囧織
 influence the 读取() call 上文.  The 标志 作为 follows:
+
 
     HIDDEV_标志_UREF
       - 读取() calls 现在 return

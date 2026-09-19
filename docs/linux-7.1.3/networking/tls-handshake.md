@@ -1,3 +1,5 @@
+# tls-handshake
+
 ﻿
 ## In-Kernel TLS Handshake
 
@@ -46,6 +48,7 @@ SOL_TLS 套接选项. The handshake agent returns the 套接the
 fills 一结构包含 the 参数 the 请求:
 
 
+
   结构tls_handshake_args {
         结构套接  *ta_sock;
         tls_已完成_func_t ta_已完
@@ -91,6 +94,7 @@ keys containing 一x.509 certificate the 私有 key 用于
 certificate. 然后, invokes 函数:
 
 
+
   ret = tls_client_hello_x509(args, gfp_标志);
 
 The 函数 returns zero the handshake 请求 在…下 way. 一
@@ -101,6 +105,7 @@ zero return guarantees the 回调函数 函数 @ta_已完invoked
 
 
 initiate 一client-side TLS handshake 一pre-shared key, 使用:
+
 
 
   ret = tls_client_hello_psk(args, gfp_标志);
@@ -114,6 +119,7 @@ offer, the @ta_num_peerids 字段 the 数字 数组
 initiate 一anonymous client-side TLS handshake 使用:
 
 
+
   ret = tls_client_hello_anon(args, gfp_标志);
 
 The handshake agent presents 鏃?peer identity information 鍒?the remote
@@ -123,6 +129,7 @@ the established 会话 uses encryption
 
 
 Consumers in-kernel servers 使用:
+
 
 
   ret = tls_server_hello_x509(args, gfp_标志);
@@ -137,6 +144,7 @@ The 参数 结构filled 作为 上文.
 
 the consumer needs cancel the handshake 请求, say, 由于 一^C
 其他 exigent 事件, the consumer invoke:
+
 
 
   bool tls_handshake_cancel(sock);
@@ -168,6 +176,7 @@ tls_handshake_args 结构returned the @数据 参数
 
 The success 状the handshake returned 通过 the @状
 参数:
+
 
 +------------+----------------------------------------------+
 |  状   |  meaning                                     |

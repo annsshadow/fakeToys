@@ -43,10 +43,10 @@ async function loadPdf() {
   loading.value = true
   pdfUrl.value = ''
   try {
-    await api.get(`/jaxrs/attachment/download/${fid}/stream`)
-    pdfUrl.value = `/jaxrs/file/download/${fid}`
+    await api.get(`/api/attachment/download/${fid}/stream`)
+    pdfUrl.value = `/api/file/download/${fid}`
   } catch {
-    pdfUrl.value = `/jaxrs/file/download/${fid}`
+    pdfUrl.value = `/api/file/download/${fid}`
   } finally {
     loading.value = false
   }

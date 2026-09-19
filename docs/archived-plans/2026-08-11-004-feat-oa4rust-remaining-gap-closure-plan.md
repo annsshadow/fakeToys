@@ -16,7 +16,7 @@ origin: docs/brainstorms/2026-08-11-oa4rust-remaining-gap-closure-requirements.m
 
 ## Problem Frame
 
-oa4rust 已完成 83 个 crate 的真实化（2593 handlers），但 o2web 前端在以下场景仍无法工作：组织管理页面展开单位树时调用 `/jaxrs/unit/list/{id}/sub/nested` 返回 404；AI 助手面板只显示单条固定回复无对话历史；Office 文档附件点击预览只显示 URL 字符串而非内容。这些缺口的根本原因是三个遗留问题：migration 遗漏了 FILE_FILE.content 和 x_ai_chat.creator 列、SQLx 直接依赖与 SeaORM 为默认路径的架构决策矛盾、递归导航只覆盖了 group 层级未覆盖 unit 层级。
+oa4rust 已完成 83 个 crate 的真实化（2593 handlers），但 o2web 前端在以下场景仍无法工作：组织管理页面展开单位树时调用 `/api/unit/list/{id}/sub/nested` 返回 404；AI 助手面板只显示单条固定回复无对话历史；Office 文档附件点击预览只显示 URL 字符串而非内容。这些缺口的根本原因是三个遗留问题：migration 遗漏了 FILE_FILE.content 和 x_ai_chat.creator 列、SQLx 直接依赖与 SeaORM 为默认路径的架构决策矛盾、递归导航只覆盖了 group 层级未覆盖 unit 层级。
 
 ---
 
@@ -205,9 +205,9 @@ oa4rust 已完成 83 个 crate 的真实化（2593 handlers），但 o2web 前�
    - 实际实现：同 sup_nested，但记录 type 参数被忽略的日志
 
 4. 路由注册：
-   - `GET /jaxrs/organization/assemble/control/unit/list/{flag}/sub/nested`
-   - `GET /jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested`
-   - `GET /jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}`
+   - `GET /api/organization/assemble/control/unit/list/{flag}/sub/nested`
+   - `GET /api/organization/assemble/control/unit/list/{flag}/sup/nested`
+   - `GET /api/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}`
 
 **Patterns to follow:**
 - `crates/organization_assemble_control/src/lib.rs` lines 457-550（group sub/sup nested 实现）
@@ -337,7 +337,7 @@ if let Some(api_key) = std::env::var("AI_API_KEY").ok() {
 ```
 
 **路由注册:**
-- `GET /jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}` → `attachment2_id_office_preview_type_type`（复用现有函数，type 参数可忽略或用于格式校验）
+- `GET /api/file/assemble/control/attachment2/{id}/office/preview/type/{type}` → `attachment2_id_office_preview_type_type`（复用现有函数，type 参数可忽略或用于格式校验）
 
 **Patterns to follow:**
 - `crates/file_assemble_control/src/lib.rs` lines 538-539（base64 decode 模式）

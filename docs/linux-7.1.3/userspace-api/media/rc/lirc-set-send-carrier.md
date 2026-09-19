@@ -1,3 +1,5 @@
+# lirc-set-send-carrier
+
 ﻿######## ioctl LIRC_SET_SEND_CARRIER
 
 

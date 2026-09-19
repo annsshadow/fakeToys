@@ -44,11 +44,11 @@ def is_test_file(name: str) -> bool:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Java side mapping: extract JAXRS endpoints from the o2server source tree and
+# Java side mapping: extract LEGACY endpoints from the o2server source tree and
 # match Rust endpoints to their Java counterparts (war + action path).
 #
 # Matching semantics (case-insensitive, path params normalized to {}):
-# - candidate rust paths: strip 0..3 leading module segments after /jaxrs
+# - candidate rust paths: strip 0..3 leading module segments after /api
 # - candidate java paths: full class@Path/method@Path, plus variants with the
 #   first/second segment (class-level prefix like "surface/") dropped
 # - mock variant suffixes translate methods (O2OA MockServletFilter):
@@ -73,7 +73,7 @@ WAR_ALIAS = {
     'portal': 'x_portal_assemble_surface',
     'message': 'x_message_assemble_communicate',
 }
-# crates without a deployable JAXRS war (entity jars, Rust-only modules)
+# crates without a deployable LEGACY war (entity jars, Rust-only modules)
 NO_WAR_CRATES = {
     'base', 'console', 'realtime', 'shared', 'signature', 'preview',
     'personal_extend', 'empower', 'express', 'message', 'query_service',
@@ -136,7 +136,7 @@ def resolve_war(crate_name, o2_dirs):
 
 def match_java_action(java_index, war, method, rust_path):
     """Return the Java action path for a Rust endpoint, or '' when unmatched."""
-    after = seg_norm(re.sub(r'^/jaxrs', '', rust_path))
+    after = seg_norm(re.sub(r'^/api', '', rust_path))
     tail = after[-1] if after else ''
     j_method = {'mockdeletetoget': 'GET', 'mockputtopost': 'POST'}.get(tail, method)
     bucket = java_index.get((war, j_method)) or java_index.get((war, method))

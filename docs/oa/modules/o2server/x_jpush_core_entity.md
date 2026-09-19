@@ -12,7 +12,7 @@
 
 ## Key Flows
 
-- 设备列表：`GET /jaxrs/jpush/core/entity/device/list` → `device_list` 查 `x_jpush_device`，CreateTime 倒序 limit 20，输出 id/userId/platform/token（userId 键名为带引号的 `"\"userId\""`）
+- 设备列表：`GET /api/jpush/core/entity/device/list` → `device_list` 查 `x_jpush_device`，CreateTime 倒序 limit 20，输出 id/userId/platform/token（userId 键名为带引号的 `"\"userId\""`）
 - 设备详情：`GET .../device/{id}` → find_by_id 无则返回 AppError::NotFound（非 ActionResult error）
 - 设备创建：`POST .../device/create` → uuid v4、字段缺省空串、create_time=NotSet；请求体 userId 键名同样为带引号的 `"\"userId\""`
 - 模板列表/详情：`GET .../template/list` Name 升序 limit 20；`GET .../template/{id}` 无则 AppError::NotFound

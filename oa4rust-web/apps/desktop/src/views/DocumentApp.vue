@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>文档管理</h1>
-      <p class="subtitle">/jaxrs/document/*</p>
+      <p class="subtitle">/api/document/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="tabs">
@@ -98,7 +98,7 @@ async function doSearch() {
     const params: Record<string, string> = {}
     if (keyword.value.trim()) params.keyword = keyword.value
     if (tab.value === 'draft') params.type = 'draft'
-    const r = await api.get('/jaxrs/document/list', { params })
+    const r = await api.get('/api/document/list', { params })
     items.value = r.data?.list ?? r.data ?? []
   } catch {
     items.value = []
@@ -111,7 +111,7 @@ async function onCreate() {
   if (!createForm.value.title.trim()) return
   creating.value = true
   try {
-    await api.post('/jaxrs/document/document', createForm.value)
+    await api.post('/api/document/document', createForm.value)
     showCreate.value = false
     createForm.value = { title: '', content: '' }
     doSearch()
@@ -123,9 +123,9 @@ async function onCreate() {
 }
 
 async function onDelete(item: DocItem) {
-  if (!confirmMsg(`确定删除文档「${item.title || item.id}」？`)) return
+  if (!(await confirmMsg(`确定删除文档「${item.title || item.id}」？`))) return
   try {
-    await api.delete(`/jaxrs/document/${item.id}`)
+    await api.delete(`/api/document/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))
@@ -151,24 +151,24 @@ const document_d_1_view_count_ref = ref<any[]>([])
 const document_d_1_control_ref = ref<any[]>([])
 const document_d_1_ref = ref<any[]>([])
 const document_batch_data_modify_ref = ref<any[]>([])
-const api_jaxrs_document_data = ref<any[]>([])
-const api_jaxrs_do_359_data = ref<any[]>([])
-const api_jaxrs_do_831_data = ref<any[]>([])
-const api_jaxrs_do_494_data = ref<any[]>([])
-const api_jaxrs_do_532_data = ref<any[]>([])
-const api_jaxrs_do_862_data = ref<any[]>([])
-const api_jaxrs_do_389_data = ref<any[]>([])
-const api_jaxrs_do_733_data = ref<any[]>([])
-const api_jaxrs_do_392_data = ref<any[]>([])
-const api_jaxrs_do_98_data = ref<any[]>([])
-const api_jaxrs_do_590_data = ref<any[]>([])
-const api_jaxrs_do_500_data = ref<any[]>([])
-const api_jaxrs_document_d_142_data = ref<any[]>([])
-const api_jaxrs_document_f_206_data = ref<any[]>([])
-const api_jaxrs_document_f_644_data = ref<any[]>([])
-const api_jaxrs_document_f_856_data = ref<any[]>([])
-const api_jaxrs_document_l_753_data = ref<any[]>([])
-const api_jaxrs_document_l_855_data = ref<any[]>([])
+const api_document_data = ref<any[]>([])
+const api_do_359_data = ref<any[]>([])
+const api_do_831_data = ref<any[]>([])
+const api_do_494_data = ref<any[]>([])
+const api_do_532_data = ref<any[]>([])
+const api_do_862_data = ref<any[]>([])
+const api_do_389_data = ref<any[]>([])
+const api_do_733_data = ref<any[]>([])
+const api_do_392_data = ref<any[]>([])
+const api_do_98_data = ref<any[]>([])
+const api_do_590_data = ref<any[]>([])
+const api_do_500_data = ref<any[]>([])
+const api_document_d_142_data = ref<any[]>([])
+const api_document_f_206_data = ref<any[]>([])
+const api_document_f_644_data = ref<any[]>([])
+const api_document_f_856_data = ref<any[]>([])
+const api_document_l_753_data = ref<any[]>([])
+const api_document_l_855_data = ref<any[]>([])
 </script>
 
 <style scoped>

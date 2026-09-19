@@ -14,7 +14,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/config")
+                    .uri("/api/mind/assemble/control/config")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -31,7 +31,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/config/update")
+                    .uri("/api/mind/assemble/control/config/update")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"id":"test-id","configData":"{}"}"#))
@@ -50,7 +50,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/config/update")
+                    .uri("/api/mind/assemble/control/config/update")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"configData":"{}"}"#))
@@ -75,7 +75,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/x")
+                    .uri("/api/mind/assemble/control/folder/x")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -91,7 +91,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/move/x")
+                    .uri("/api/mind/assemble/control/folder/move/x")
                     .method("PUT")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -108,7 +108,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/x/force")
+                    .uri("/api/mind/assemble/control/folder/x/force")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -124,7 +124,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/filter/list/x/next/1")
+                    .uri("/api/mind/assemble/control/mind/filter/list/x/next/1")
                     .method("PUT")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -141,7 +141,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/filter/recycle/x/next/1")
+                    .uri("/api/mind/assemble/control/mind/filter/recycle/x/next/1")
                     .method("PUT")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -158,7 +158,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/filter/shared/x/next/1")
+                    .uri("/api/mind/assemble/control/mind/filter/shared/x/next/1")
                     .method("PUT")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -175,7 +175,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/list/x/shareRecords")
+                    .uri("/api/mind/assemble/control/mind/list/x/shareRecords")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -190,7 +190,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/list/x/version")
+                    .uri("/api/mind/assemble/control/mind/list/x/version")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -205,7 +205,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/recycle/x")
+                    .uri("/api/mind/assemble/control/mind/recycle/x")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -221,7 +221,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/restore/x")
+                    .uri("/api/mind/assemble/control/mind/restore/x")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -236,7 +236,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/save")
+                    .uri("/api/mind/assemble/control/mind/save")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -253,7 +253,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/share/x")
+                    .uri("/api/mind/assemble/control/mind/share/x")
                     .method("PUT")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -270,7 +270,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/share/x/cancel")
+                    .uri("/api/mind/assemble/control/mind/share/x/cancel")
                     .method("PUT")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -287,7 +287,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/version/x")
+                    .uri("/api/mind/assemble/control/mind/version/x")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -302,7 +302,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/view/x")
+                    .uri("/api/mind/assemble/control/mind/view/x")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -317,7 +317,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/x")
+                    .uri("/api/mind/assemble/control/mind/x")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -332,7 +332,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/x/destorymind")
+                    .uri("/api/mind/assemble/control/mind/x/destorymind")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -348,7 +348,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/x/destoryrecycle")
+                    .uri("/api/mind/assemble/control/mind/x/destoryrecycle")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -364,7 +364,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/x/icon")
+                    .uri("/api/mind/assemble/control/mind/x/icon")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -379,7 +379,7 @@ mod tests {
         let resp = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/mind/x/icon/size/64")
+                    .uri("/api/mind/assemble/control/mind/x/icon/size/64")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
@@ -422,7 +422,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri(format!("/jaxrs/mind/assemble/control/mind/{}", id))
+                    .uri(format!("/api/mind/assemble/control/mind/{}", id))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -438,7 +438,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/jaxrs/mind/assemble/control/mind/list/{}/shareRecords",
+                        "/api/mind/assemble/control/mind/list/{}/shareRecords",
                         id
                     ))
                     .body(Body::empty())

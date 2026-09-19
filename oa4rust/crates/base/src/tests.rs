@@ -17,7 +17,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/echo/get")
+                    .uri("/api/base/echo/get")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -36,7 +36,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/openapi/info")
+                    .uri("/api/base/openapi/info")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/base/echo/get")
+                    .uri("/api/base/echo/get")
                     .body(Body::empty())
                     .unwrap(),
             )

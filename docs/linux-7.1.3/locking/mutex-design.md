@@ -1,3 +1,5 @@
+# mutex-design
+
 ﻿## 通用互斥体子系统
 
 
@@ -5,7 +7,7 @@ started by Ingo Molnar <mingo@redhat.com>
 
 updated by Davidlohr Bueso <davidlohr@hp.com>
 
-### 什么是互斥体？
+## 什么是互斥体？
 
 Linux 内核中，互斥体（mutex）指的是一种特定的加锁原语，用于在
 共享内存系统上强制串行化，而不仅仅是在学术或类似理论教科书中表“互斥”（mutual exclusion）的通用术语。互斥体是一种睡眠锁，其行为

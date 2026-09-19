@@ -29,7 +29,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/forum/list")
+                        .uri("/api/bbs/core/entity/forum/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -52,7 +52,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/section/list/test-forum-id")
+                        .uri("/api/bbs/core/entity/section/list/test-forum-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -75,7 +75,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/subject/top/test-section-id")
+                        .uri("/api/bbs/core/entity/subject/top/test-section-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -98,7 +98,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/subject/list/test-section-id")
+                        .uri("/api/bbs/core/entity/subject/list/test-section-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -121,7 +121,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/forum")
+                        .uri("/api/bbs/core/entity/forum")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"测试论坛"}"#))
@@ -148,7 +148,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/forum/forum-001")
+                        .uri("/api/bbs/core/entity/forum/forum-001")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"更新论坛名称"}"#))
@@ -175,7 +175,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/forum/forum-001")
+                        .uri("/api/bbs/core/entity/forum/forum-001")
                         .method(axum::http::Method::DELETE)
                         .body(Body::empty())
                         .unwrap(),
@@ -201,7 +201,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/section")
+                        .uri("/api/bbs/core/entity/section")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"前端版块","forumId":"forum-001"}"#))
@@ -228,7 +228,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/section/section-001")
+                        .uri("/api/bbs/core/entity/section/section-001")
                         .method(axum::http::Method::DELETE)
                         .body(Body::empty())
                         .unwrap(),
@@ -254,7 +254,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/subject")
+                        .uri("/api/bbs/core/entity/subject")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(
@@ -283,7 +283,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/bbs/core/entity/subject/subject-001")
+                        .uri("/api/bbs/core/entity/subject/subject-001")
                         .method(axum::http::Method::DELETE)
                         .body(Body::empty())
                         .unwrap(),

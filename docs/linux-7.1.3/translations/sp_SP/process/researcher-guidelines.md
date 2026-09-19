@@ -1,4 +1,6 @@
 
+# researcher-guidelines
+
 :Original: Documentation/process/researcher-guidelines.rst
 :Translator: Avadhut Naik <avadhut.naik@amd.com>
 
@@ -26,6 +28,7 @@ actividades afines deben seguir las reglas estándar de ética de la
 investigación. Para más información sobre la ética de la investigación
 en general, ética en la tecnología y la investigación de las comunidades
 de desarrolladores en particular, ver:
+
 
 
 - `Historia de la Ética en la Investigación <https://www.unlv.edu/research/ORI-HSR/history-ethics>`_
@@ -91,7 +94,7 @@ comentario de otros desarrolladores.
   otra herramienta o método utilizado para realizar el trabajo.
 - ¿En qué versión de Linux se encontró el problema? Se prefiere usar la
   versión más reciente o una rama reciente de linux-next (ver
-  Documentation/process/howto.rst).
+  Documentation/process/howto.md).
 - ¿Que se cambió para solucionar el problema y por qué se cree es correcto?
 - ¿Como se probó el cambio para la complicación y el tiempo de ejecución?
 - ¿Qué confirmación previa corrige este cambio? Esto debería ir en un “Fixes:”
@@ -113,6 +116,7 @@ comentario de otros desarrolladores.
   This flaw was found using an experimental static analysis tool we are
   developing, LeakMagic[1], which reported the following warning when
   analyzing the v5.15 kernel release:
+
 
    path/to/foo_bar.c:187: missing kfree() call?
 

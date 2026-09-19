@@ -1,3 +1,5 @@
+# kmemleak
+
 ﻿## 内核内存泄漏检测器
 
 
@@ -6,7 +8,7 @@ Kmemleak 提供了一种检测可能的内核内存泄漏的方法，其方式�
 （跟踪式垃圾收集器），区别在于孤儿（orphan）对象不会被释放，而只是通过
 /sys/kernel/debug/kmemleak 报告。Valgrind 工具（`memcheck --leak-check`）也使用
 类似的方法来检测用户空间应用程序中的内存泄漏
-### 用法
+## 用法
 
 
 必须在“Kernel hacking”中启用 CONFIG_DEBUG_KMEMLEAK。一个内核线程每10 分钟
@@ -47,7 +49,7 @@ Kmemleak 也可以通过在内核命令行传入 `kmemleak=off` 在启动时禁�
 如果启用CONFIG_DEBUG_KMEMLEAK_DEFAULT_OFF，则 kmemleak 默认是禁用的。在内核
 命令行传`kmemleak=on` 可启用该功能
 如果你遇到类“Error while writing to stdout“write_loop: Invalid argument的错误，请确kmemleak 已被正确启用
-### 基本算法
+## 基本算法
 
 
 通过 `kmalloc`、`vmalloc`、`kmem_cache_alloc` 及其同类函数进行的内存分配会被跟踪，
@@ -78,7 +80,7 @@ Kmemleak 也可以通过在内核命令行传入 `kmemleak=off` 在启动时禁�
   # cat /sys/kernel/debug/kmemleak
 ```
 
-### 释放 kmemleak 内部对象
+## 释放 kmemleak 内部对象
 
 
 为了kmemleak 被用户禁用或因致命错误禁用之后，仍能访问之前发现的内存泄漏，kmemleak
@@ -87,7 +89,7 @@ Kmemleak 也可以通过在内核命令行传入 `kmemleak=off` 在启动时禁�
   # echo clear > /sys/kernel/debug/kmemleak
 ```
 
-### Kmemleak API
+## Kmemleak API
 
 
 函数原型请参include/linux/kmemleak.h 头文件

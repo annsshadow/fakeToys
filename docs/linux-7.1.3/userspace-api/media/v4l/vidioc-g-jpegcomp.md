@@ -1,7 +1,9 @@
+# vidioc-g-jpegcomp
+
 ﻿
 
 
-######## ioctl VIDIOC_G_JPEGCOMP, VIDIOC_S_JPEGCOMP
+## ioctl VIDIOC_G_JPEGCOMP, VIDIOC_S_JPEGCOMP
 
 
 ## 名称（Name

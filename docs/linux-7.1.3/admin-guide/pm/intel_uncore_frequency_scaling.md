@@ -1,3 +1,5 @@
+# intel_uncore_frequency_scaling
+
 ﻿
 ## Intel Uncore 频率调节
 

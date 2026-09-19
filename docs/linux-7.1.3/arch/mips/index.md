@@ -1,5 +1,5 @@
 
-## MIPS 相关文档
+# MIPS 相关文档
 
 
 - [启动](booting)

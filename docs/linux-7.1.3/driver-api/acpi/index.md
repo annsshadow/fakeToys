@@ -1,4 +1,4 @@
-## ACPI 支持
+# ACPI 支持
 
 
 - [Linux 化 ACPICA](linuxized-acpica)

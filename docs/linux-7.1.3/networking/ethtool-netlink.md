@@ -1,3 +1,5 @@
+# ethtool-netlink
+
 ﻿## ethtool Netlink 接口
 
 
@@ -1839,7 +1841,7 @@ ETHTOOL_A_RSS_FLOW_HASH 携带每个流类型的位掩码，指示哪些头字�
 设置时，可选的 `ETHTOOL_A_PLCA_VERSION` 属性指PLCA 管理接口所符合的标准与版本。若未设置，
 该接口为供应商特定的，并（可能）由驱动提供。OPEN Alliance SIG 为内PLCA 协调子层
 10BASE-T1S PHY 规定了标准寄存器映射。参https://www.opensig.org/about/specifications/ 上的
-鈥?0BASE-T1S PLCA Management Registers鈥濄€?
+0BASE-T1S PLCA Management Registers鈥濄€?
 
 设置时，可选的 `ETHTOOL_A_PLCA_ENABLED` 属性指PLCA RS 的管理状态。若未设置，节点运行
 “plainCSMA/CD 模式下。该选项对应`IEEE 802.3cg-2019` 30.16.1.1.1

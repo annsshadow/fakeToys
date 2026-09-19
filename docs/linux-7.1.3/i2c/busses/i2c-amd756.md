@@ -1,3 +1,5 @@
+# i2c-amd756
+
 ﻿## 内核驱动 i2c-amd756
 
 
@@ -17,7 +19,7 @@ Authors:
  - Frodo Looijaard <frodol@dds.nl>,
  - Philip Edelbrock <phil@netroedge.com>
 
-### Description
+## Description
 
 
 该驱动支AMD 7566668 8111 外设总线控制器，以及 nVidia nForce

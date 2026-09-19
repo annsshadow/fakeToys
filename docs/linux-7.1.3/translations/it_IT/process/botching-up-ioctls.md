@@ -1,4 +1,6 @@
 
+# botching-up-ioctls
+
 :Original: Documentation/process/botching-up-ioctls.rst
 
 ## (Come evitare di) Raffazzonare delle ioctl
@@ -99,6 +101,7 @@ sfruttati per diventare root. Questo significa che dobbiamo avere una completa
 validazione degli input e gestire in modo robusto i percorsi - tanto le GPU
 moriranno comunque nel più strano dei casi particolari:
 
+
  - Le ioctl devono verificare l'overflow dei vettori. Inoltre, per i valori
    interi si devono verificare **overflow**, **underflow**, e **clamping**. Il
    classico esempio è l'inserimento direttamente nell'hardware di valori di
@@ -192,6 +195,7 @@ certe GPU. Questo significa che il driver deve esporre verso lo spazio
 utente tonnellate di agganci per accedere ad oggetti e altre risorse. Farlo
 correttamente porterà con se alcune insidie:
 
+
  - Collegate sempre la vita di una risorsa creata dinamicamente, a quella del
    descrittore di file. Considerate una mappatura 1:1 se la vostra risorsa
    dev'essere condivisa fra processi - passarsi descrittori di file sul socket
@@ -224,6 +228,7 @@ correttamente porterà con se alcune insidie:
 
 
 Non tutti i problemi si risolvono con una nuova ioctl:
+
 
 - Pensateci su due o tre volte prima di implementare un'interfaccia privata per
   un driver. Ovviamente è molto più veloce seguire questa via piuttosto che

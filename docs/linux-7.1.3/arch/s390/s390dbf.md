@@ -1,10 +1,12 @@
+# s390dbf
+
 ﻿## S390 调试特性（S390 Debug Feature
 
 files:
       - arch/s390/kernel/debug.c
       - arch/s390/include/asm/debug.h
 
-### 描述（Description）：
+## 描述（Description）：
 
 
 本特性的目标是提供一个内核调试日API，其中的日志记录可以高效地存储在内存中，每个组件（例如设备驱动）都可以拥有各自独立的调试日志这样做的一个目的是在生产系统崩溃后检查调试日志，以分析崩溃的原因
@@ -111,7 +113,7 @@ event 调用exception 调用有四种版本：一种用于记录原始数据，�
   module_init(init);
   module_exit(cleanup);
 
-### Debugfs 接口（Debugfs Interface
+## Debugfs 接口（Debugfs Interface
 
 可以通过读取对应debugfs 文件来检查调试日志的视图
 ```

@@ -13,7 +13,7 @@ use crate::integration_tests::db::TEST_DB;
 //   (a) With no LDAP configured in the test environment, login via the auth
 //       endpoint with seeded admin creds (it-admin / password123) falls back to
 //       the database password check and returns 200 + a session token.
-//   (b) GET /jaxrs/ldap/config reports LDAP as disabled (enabled == false) when
+//   (b) GET /api/ldap/config reports LDAP as disabled (enabled == false) when
 //       no LDAP configuration is present.
 //
 // Mirrors tests/integration_tests/scenarios/cms_document.rs in structure.
@@ -41,7 +41,7 @@ pub async fn ldap_fallback_flow() {
 
     // (a) Login with admin creds — DB-fallback path (no LDAP configured).
     let login_resp = client
-        .post(format!("{}/jaxrs/authentication", base))
+        .post(format!("{}/api/authentication", base))
         .json(&json!({
             "credential": "it-admin",
             "password": "password123"
@@ -69,7 +69,7 @@ pub async fn ldap_fallback_flow() {
 
     // (b) LDAP config endpoint — must report enabled == false (no LDAP configured).
     let config_resp = client
-        .get(format!("{}/jaxrs/ldap/config", base))
+        .get(format!("{}/api/ldap/config", base))
         .header("Authorization", &auth_header)
         .send()
         .await

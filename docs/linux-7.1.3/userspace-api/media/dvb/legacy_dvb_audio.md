@@ -1,3 +1,5 @@
+# legacy_dvb_audio
+
 ﻿
 
 
@@ -304,7 +306,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
      #define AUDIO_CAP_SDDS 128
      #define AUDIO_CAP_AC3  256
 
-#### 常量
+## 常量
 
 
     :header-rows:  0
@@ -355,7 +357,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
        - `AUDIO_CAP_AC3`
 
        - 硬件接受 Dolby Digital ATSC A/52 音频          也称AC-3
-#### 描述
+### 描述
 
 
 `AUDIO_GET_CAPABILITIES`_ 的调用返回一个无符号整数，其中根据硬能力设置了以下比特位
@@ -1115,7 +1117,7 @@ Generic Error Codes <gen-errors> 一章中说明
     #include <fcntl.h>
 
 
-#### 参数
+## 参数
 
 
     :header-rows:  0
@@ -1148,7 +1150,7 @@ Generic Error Codes <gen-errors> 一章中说明
        - `O_NONBLOCK`
        - | 以非阻塞模式打开
           | （默认是阻塞模式
-#### 描述
+### 描述
 
 
 此系统调用打开一个命名的音频设备（例`/dev/dvb/adapter0/audio0`以供后续使用。当 open() 调用成功后，设备即可使用。阻塞或非阻塞模的意义在存在差异的函数文档中说明。它不影open() 调用本身的语义以阻塞模式打开的设备之后可以使fcntl 系统调用F_SETFL 命令切换

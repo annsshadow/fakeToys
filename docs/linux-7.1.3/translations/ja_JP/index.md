@@ -1,4 +1,6 @@
 
+# index
+
 	\renewcommand\thesection*
 	\renewcommand\thesubsection*
 	\kerneldocCJKon

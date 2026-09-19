@@ -1,3 +1,5 @@
+# op-tee
+
 ﻿## OP-TEE（开放可移植可信执行环境，Open Portable Trusted Execution Environment
 
 OP-TEE 驱动处理基于 OP-TEE [^1^] TEE。目前仅支持基于 ARM TrustZone OP-TEE 方案
@@ -33,7 +35,7 @@ GlobalPlatform TEE Client API [^5^] 实现在通用 TEE API 之上
    +-----------------------------+       +------------------------------+
 ```
 RPC（远程过程调用，Remote Procedure Call）是来自安全世界对内核驱动或 tee-supplicant 的请求。一RPC OPTEE_SMC_CALL_WITH_ARG 返回的一组特殊范围的 SMCCC 返回值标识。旨在发给内核的 RPC 消息由内核驱动处理。其RPC 消息将被转发tee-supplicant，驱动不再进一步参与，除非切换共享内存缓冲区的表示
-### OP-TEE 设备枚举（OP-TEE device enumeration
+## OP-TEE 设备枚举（OP-TEE device enumeration
 
 OP-TEE 提供了一个伪可信应用程序：drivers/tee/optee/device.c，以支持设备枚举。换句话说，OP-TEE 驱动调用该应用程序来检索可作为设备注册TEE 总线上的可信应用程序列表
 ### OP-TEE 通知（OP-TEE notifications

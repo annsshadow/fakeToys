@@ -1,3 +1,5 @@
+# java
+
 ﻿### Java(tm) Binary 内核 支持 用于 Linux v1.03
 
 本文介绍如何Linux 内核中通过 binfmt_misc 机制直接执行 Java 二进制程序与可执JAR 文件，说明所需的内核配置、binfmt_misc 注册项与 Java 运行时环境准备，面向希望以内核透明方式运行 Java 应用的用户
@@ -8,6 +10,7 @@ Linux beats them 全部! 同时 全部 其他 OS's TALKING 关于 direct
 
 您可execute Java applications Java Applets just 类似 任何
 其他 program 之后 具有 已完the 以下:
+
 
 1) 必须 第一 install the Java Developers Kit 用于 Linux.
    The Java 鍦?Linux HOWTO gives the details 鍦?getting 鍜。
@@ -21,7 +24,7 @@ Linux beats them 全部! 同时 全部 其他 OS's TALKING 关于 direct
    作为 the 应用程序 itself).
 
 2) 具有 compile BINFMT_MISC 任一作为 一模块 进入
-   the 鍐呮牳 (`CONFIG_BINFMT_MISC`) 鍜?set 瀹?up properly.
+   the 内呮核 (`CONFIG_BINFMT_MISC`) 鍜?set 瀹?up properly.
    choose compile 作为 一模块, 具有
    insert manually modprobe/insmod, 作为 kmod
    cannot easily 受支binfmt_misc.
@@ -36,13 +39,16 @@ Linux beats them 全部! 同时 全部 其他 OS's TALKING 关于 direct
 
    support for executable Jar files::
 
+
      ':ExecutableJAR:E::jar::/usr/local/bin/jarwrapper:'
 
    support for Java Applets::
 
+
      ':Applet:E::html::/usr/bin/appletviewer:'
 
    or the following, if you want to be more selective::
+
 
      ':Applet:M::<!--applet::/usr/bin/appletviewer:'
 
@@ -61,6 +67,7 @@ Linux beats them 全部! 同时 全部 其他 OS's TALKING 关于 direct
 
    You, too, need the little program after the script. Compile like::
 
+
 	gcc -O2 -o javaclassname javaclassname.c
 
    and stick it to ``/usr/local/bin``.
@@ -70,6 +77,7 @@ Linux beats them 全部! 同时 全部 其他 OS's TALKING 关于 direct
 
 ```
 Javawrapper shell script:
+
 
 
   #!/bin/bash
@@ -160,6 +168,7 @@ Javawrapper shell script:
   /usr/bin/java $FQCLASS "$@"
 
 javaclassname.c:
+
 
 
   /* javaclassname.c
@@ -385,6 +394,7 @@ added 您的 CLASSPATH 期间 execution.
 
 test 您的 setup, enter the 以下 简Java app, name
 瀹?"HelloWorld.java":
+
 
 
 	绫?HelloWorld {

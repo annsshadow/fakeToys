@@ -1,4 +1,6 @@
 
+# index
+
 	\renewcommand\thesection*
 	\renewcommand\thesubsection*
 
@@ -77,6 +79,7 @@ Come trovare le persone che accetteranno le vostre modifiche.
 
 Poi ci sono altre guide sulla comunità che sono di interesse per molti
 degli sviluppatori:
+
 
 - [kernel-docs](kernel-docs)
 

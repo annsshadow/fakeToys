@@ -1,3 +1,5 @@
+# drm-kms
+
 ﻿## 内核模式设置 (KMS)
 
 
@@ -111,7 +113,9 @@ KMS 向用户空间呈现的基本对象结构相当简单。帧缓冲（由 `st
 
    :internal:
 
+
    :export:
+
 
 
 ## Modeset Base Object Abstraction
@@ -132,7 +136,9 @@ KMS 向用户空间呈现的基本对象结构相当简单。帧缓冲（由 `st
 
    :internal:
 
+
    :export:
+
 
 ## Atomic Mode Setting
 
@@ -204,7 +210,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ### 原子模式设置 IOCTL UAPI 函数
 
@@ -212,6 +220,7 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
    :doc: overview
 
    :export:
+
 
 ## CRTC Abstraction
 
@@ -223,26 +232,32 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ### 色彩管理函数参
 
 
    :export:
 
+
    :internal:
+
 
 ## Frame Buffer Abstraction
 
 
    :doc: overview
 
-### 甯х紦鍐插嚱鏁板弬鑰。
+### 甯х紦内插嚱鏁板弬鑰。
 
 
    :internal:
 
+
    :export:
+
 
 ## DRM Format Handling
 
@@ -254,7 +269,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 
 ## Dumb Buffer Objects
@@ -272,19 +289,24 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ### Plane 合成函数参
 
 
    :export:
 
+
 ### Plane 损坏跟踪函数参
 
 
    :export:
 
+
    :internal:
+
 
 ### Plane 紧急显示特
 
@@ -296,7 +318,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ## Colorop Abstraction
 
@@ -308,14 +332,18 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ## 显示模式函数参
 
 
    :internal:
 
+
    :export:
+
 
 ## Connector Abstraction
 
@@ -327,7 +355,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ### Writeback Connectors
 
@@ -336,7 +366,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
   :internal:
 
+
   :export:
+
 
 ## Encoder Abstraction
 
@@ -348,7 +380,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ## KMS Locking
 
@@ -357,7 +391,9 @@ Atomic state 结构的加锁在内部使用 :c:type:`struct drm_modeset_lock <dr
 
    :internal:
 
+
    :export:
+
 
 ## KMS Properties
 
@@ -394,7 +430,9 @@ KMS 驱动可能需要添加额外的属性以支持新功能。除了上面提�
 
    :internal:
 
+
    :export:
+
 
 
 ### Standard Connector Properties
@@ -478,7 +516,9 @@ KMS 驱动可能需要添加额外的属性以支持新功能。除了上面提�
 
    :internal:
 
+
    :export:
+
 
 ## Vertical Blank Work
 
@@ -490,4 +530,6 @@ KMS 驱动可能需要添加额外的属性以支持新功能。除了上面提�
 
    :internal:
 
+
    :export:
+

@@ -1,3 +1,5 @@
+# slave-testunit-backend
+
 ﻿
 ## Linux I2C 从机 testunit 后端
 
@@ -43,10 +45,10 @@ Notify 测试。对于某些测试，I2C 从机控制器必须能够在主模式
 DELAY 是一个通用参数，会延迟 CMD 中测试的执行的执行。当某个命令正在运行
 （包括延迟期间）时，新的命令不会被应答。你需要等待旧命令完成
 命令在下一节中描述。无效的命令会导致传输不被应答
-### 命令
+## 命令
 
 
-#### 0x00 NOOP
+### 0x00 NOOP
 
 
 保留供将来使用
@@ -70,7 +72,7 @@ DELAY 是一个通用参数，会延迟 CMD 中测试的执行的执行。当某
   # i2cset -y 0 0x30 1 0x50 0x80 5 i
 
 ```
-#### 0x02 SMBUS_HOST_NOTIFY
+## 0x02 SMBUS_HOST_NOTIFY
 
 
   :header-rows: 1
@@ -93,7 +95,7 @@ DELAY 是一个通用参数，会延迟 CMD 中测试的执行的执行。当某
   Detected HostNotify from address 0x30
 
 ```
-#### 0x03 SMBUS_BLOCK_PROC_CALL
+## 0x03 SMBUS_BLOCK_PROC_CALL
 
 
   :header-rows: 1
@@ -117,7 +119,7 @@ i2c_smbus_block_process_call() 的示例（你需i2c-tools v4.2 ```
   0x10 0x0f 0x0e 0x0d 0x0c 0x0b 0x0a 0x09 0x08 0x07 0x06 0x05 0x04 0x03 0x02 0x01 0x00
 
 ```
-#### 0x04 GET_VERSION_WITH_REP_START
+## 0x04 GET_VERSION_WITH_REP_START
 
 
   :header-rows: 1
@@ -151,7 +153,7 @@ i2c_smbus_block_process_call() 的示例（你需i2c-tools v4.2 ```
   0x00
 
 ```
-#### 0x05 SMBUS_ALERT_REQUEST
+## 0x05 SMBUS_ALERT_REQUEST
 
 
   :header-rows: 1

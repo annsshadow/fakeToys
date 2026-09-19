@@ -1,3 +1,5 @@
+# w1-generic
+
 ﻿## 1-wire（w1）子系统简
 
 1-wire 总线是一种简单的主从总线，它通过一根信号线（外加地线，所以是两根线）进行通信
@@ -15,7 +17,7 @@ w1 主设备示例：
     - DS2482 (i2c to w1 bridge)
     - Emulated devices, such as a RS232 converter, parallel port adapter, etc
 
-### w1 子系统做了什么？
+## w1 子系统做了什么？
 
 当一w1 主设备驱动向 w1 子系统注册时，会发生以下事情
 

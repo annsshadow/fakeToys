@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/get/control/config")
+                    .uri("/api/calendar_assemble_control/get/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/list/control/calendars")
+                    .uri("/api/calendar_assemble_control/list/control/calendars")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/update/control/config")
+                    .uri("/api/calendar_assemble_control/update/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar/assemble/control/calendar/detail/test-id")
+                    .uri("/api/calendar/assemble/control/calendar/detail/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -98,7 +98,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/calendar/list/my")
+                    .uri("/api/calendar_assemble_control/calendar/list/my")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/calendar/list/public")
+                    .uri("/api/calendar_assemble_control/calendar/list/public")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -138,7 +138,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/calendar/some-id")
+                    .uri("/api/calendar_assemble_control/calendar/some-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -158,7 +158,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/calendar/ismanager")
+                    .uri("/api/calendar_assemble_control/calendar/ismanager")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -178,7 +178,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/event/some-id")
+                    .uri("/api/calendar_assemble_control/event/some-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -198,7 +198,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/setting/list/all")
+                    .uri("/api/calendar_assemble_control/setting/list/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -218,7 +218,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/setting/ismanager")
+                    .uri("/api/calendar_assemble_control/setting/ismanager")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

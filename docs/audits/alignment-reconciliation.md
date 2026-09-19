@@ -111,25 +111,25 @@ a5fe9cc1  56.7%（49 条）
 
 | 实验 | 结果 |
 |------|------|
-| POST `/x_organization_assemble_authentication/jaxrs/authentication`
+| POST `/x_organization_assemble_authentication/api/authentication`
   body `{"credential":"xadmin","password":"o2oa@2022"}` | **HTTP 200**，`type=success`，
   **token 位于 `data.token`**（实测 43 字符），另含 tokenType/roleList/distinguishedName |
 | 同路径错误密码 | HTTP **500**，`type=error`，无 data 字段 → 现有 `is_success()` 门禁可正确拒绝 |
-| POST `/jaxrs/authentication/login`（旧缺陷路径） | 本容器实测 **404 快速返回**（0.2s）；
+| POST `/api/authentication/login`（旧缺陷路径） | 本容器实测 **404 快速返回**（0.2s）；
   ops 文档所述"挂起"未复现（可能针对 GET 或特定状态），但候选顺序仍按防御性设计 |
 
 ### 3.2 代码变更（tests/behavior_comparison/comparator.rs，唯一代码改动文件）
 
-`login()` 由单一硬编码 `{base}/jaxrs/authentication/login` 改为**候选路径顺序回退**：
+`login()` 由单一硬编码 `{base}/api/authentication/login` 改为**候选路径顺序回退**：
 
-1. `/x_organization_assemble_authentication/jaxrs/authentication`（O2OA v9 真实路径，首选）
-2. `/jaxrs/authentication/login`（Rust legacy 别名）
-3. `/jaxrs/authentication`（Rust 主认证路径，crates/auth 同时服务此形状）
+1. `/x_organization_assemble_authentication/api/authentication`（O2OA v9 真实路径，首选）
+2. `/api/authentication/login`（Rust legacy 别名）
+3. `/api/authentication`（Rust 主认证路径，crates/auth 同时服务此形状）
 
 - token 提取逻辑不变（`data.token`）——实测确认 Rust（ActionResult<LoginResponse>）与
   Java v9 响应的 token 字段位置一致。
 - 函数签名未变，`behavior_compare.rs` 调用点无需改动。
-- 排序理由：Java 首跳命中真路径，不会触达未知裸 `/jaxrs/*`；Rust 侧第 1 候选立即 404 后回退。
+- 排序理由：Java 首跳命中真路径，不会触达未知裸 `/api/*`；Rust 侧第 1 候选立即 404 后回退。
 
 ### 3.3 验证结果
 

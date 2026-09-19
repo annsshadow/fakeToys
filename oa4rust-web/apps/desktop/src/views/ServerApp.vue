@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>服务器管理</h1>
-      <p class="subtitle">/jaxrs/server/* — 命令执行与授权管理</p>
+      <p class="subtitle">/api/server/* — 命令执行与授权管理</p>
     </div>
     <div class="content-panel glass-card">
       <div class="grid-2col">
@@ -54,7 +54,7 @@ const license = ref<Record<string, unknown> | null>(null)
 async function loadLicense() {
   loadingLicense.value = true
   try {
-    const r = await api.get('/jaxrs/server/license')
+    const r = await api.get('/api/server/license')
     license.value = r.data ?? null
   } catch {
     license.value = null
@@ -69,7 +69,7 @@ async function executeCommand() {
   execOutput.value = ''
   execError.value = ''
   try {
-    const r = await api.post('/jaxrs/server/execute', { command: command.value })
+    const r = await api.post('/api/server/execute', { command: command.value })
     execOutput.value = JSON.stringify(r.data, null, 2)
   } catch (e: any) {
     execError.value = e?.message ?? '命令执行失败'
@@ -79,9 +79,9 @@ async function executeCommand() {
 }
 
 async function stopServer() {
-  if (!confirmMsg('确定要停止服务器？所有连接将被断开。')) return
+  if (!(await confirmMsg('确定要停止服务器？所有连接将被断开。'))) return
   try {
-    await api.post('/jaxrs/server/stop', null)
+    await api.post('/api/server/stop', null)
     execOutput.value = '服务器已停止'
   } catch (e: any) {
     execError.value = '停止失败: ' + (e?.message ?? '')

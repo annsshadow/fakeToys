@@ -1,7 +1,9 @@
+# vme
+
 ﻿## VME Device Drivers
 
 
-### Driver registration
+## Driver registration
 
 
 与其Linux 内核子系统一样，VME 设备驱动VME 子系统注册，通常从设备的 init
@@ -37,7 +39,7 @@ dev->bridge->num 访问
 驱动的退出例程中调用
 
 
-### Resource management
+## Resource management
 
 
 一旦驱动向 VME 核心注册，所提供match 例程将被调用注册时指定的次数。如果匹
@@ -231,4 +233,6 @@ VME API 提供以下功能来配location monitor（位置监视器）
 
    :internal:
 
+
    :export:
+

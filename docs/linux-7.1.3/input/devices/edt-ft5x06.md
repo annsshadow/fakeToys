@@ -1,3 +1,5 @@
+# edt-ft5x06
+
 ﻿### 基于 EDT ft5x06 Polytouch 设备
 
 

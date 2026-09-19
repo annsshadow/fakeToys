@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 pub use shared::{ControlClient, ControlPool, DynControlPool, RowGet};
 
-pub const JAVA_BASE: &str = "/jaxrs/file_assemble_control";
+pub const API_BASE: &str = "/api/file_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -105,7 +105,7 @@ pub async fn list_storage_pools(
     };
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -197,7 +197,7 @@ pub async fn list_control_categories(
     };
 
     let count = categories.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(categories),
         count,
         0,
@@ -240,7 +240,9 @@ pub async fn list_files(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "creator".to_string(),
@@ -253,13 +255,19 @@ pub async fn list_files(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("folderId".to_string(), Value::String(row.get("folder_id"))),
+                (
+                    "folderId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("folder_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -297,7 +305,9 @@ pub async fn get_file(
                 ),
                 (
                     "size".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("size").unwrap_or(0),
+                    )),
                 ),
                 (
                     "creator".to_string(),
@@ -310,7 +320,13 @@ pub async fn get_file(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("folderId".to_string(), Value::String(row.get("folder_id"))),
+                (
+                    "folderId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("folder_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -763,7 +779,9 @@ pub async fn attachment_list_editor_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -783,7 +801,7 @@ pub async fn attachment_list_editor_owner(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -834,7 +852,9 @@ pub async fn attachment_list_folder_folderId(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -854,7 +874,7 @@ pub async fn attachment_list_folder_folderId(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -905,7 +925,9 @@ pub async fn attachment_list_share_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -925,7 +947,7 @@ pub async fn attachment_list_share_owner(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -975,7 +997,9 @@ pub async fn attachment_list_top(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -995,7 +1019,7 @@ pub async fn attachment_list_top(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1133,7 +1157,9 @@ pub async fn attachment_id(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1386,7 +1412,9 @@ pub async fn attachment2_list_editor_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1406,7 +1434,7 @@ pub async fn attachment2_list_editor_owner(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1456,7 +1484,9 @@ pub async fn attachment2_list_filter_name(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1476,7 +1506,7 @@ pub async fn attachment2_list_filter_name(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1526,7 +1556,9 @@ pub async fn attachment2_list_folder_folderId(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1546,7 +1578,7 @@ pub async fn attachment2_list_folder_folderId(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1596,7 +1628,9 @@ pub async fn attachment2_list_share_owner(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1616,7 +1650,7 @@ pub async fn attachment2_list_share_owner(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1665,7 +1699,9 @@ pub async fn attachment2_list_top(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1685,7 +1721,7 @@ pub async fn attachment2_list_top(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1704,7 +1740,7 @@ pub async fn attachment2_list_type_page_size_size(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1::int OFFSET $2::int",
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
             &[&page_size, &offset],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1737,7 +1773,9 @@ pub async fn attachment2_list_type_page_size_size(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -1757,7 +1795,7 @@ pub async fn attachment2_list_type_page_size_size(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1904,7 +1942,9 @@ pub async fn attachment2_id(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -2475,7 +2515,9 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
@@ -2495,13 +2537,14 @@ pub async fn config_is_file_manager(
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    // W12 收敛：对齐 Java ActionIsManager——Wo extends WrapBoolean，仅 value 键。
-    // Java 语义 controlAble(当前人)：登录人（管理员）为 true，匿名会话为 false，
+    // W12 收敛：对齐 o2server ActionIsManager——Wo extends WrapBoolean，仅 value 键。
+    // o2server 语义 controlAble(当前人)：登录人（管理员）为 true，匿名会话为 false，
     // 与"已认证即会话存在"一致。
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("value".to_string(), Value::Bool(!session.person_unique.is_empty())),
-        ]),
+        serde_json::Map::from_iter([(
+            "value".to_string(),
+            Value::Bool(!session.person_unique.is_empty()),
+        )]),
     ))))
 }
 
@@ -2528,7 +2571,7 @@ pub async fn editor_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2644,7 +2687,9 @@ pub async fn file_list_referencetype(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -2664,7 +2709,7 @@ pub async fn file_list_referencetype(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2714,7 +2759,9 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -2734,7 +2781,7 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2779,13 +2826,15 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2831,13 +2880,15 @@ pub async fn file_list_id_next_count(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2896,13 +2947,15 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2948,13 +3001,15 @@ pub async fn file_list_id_prev_count(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3013,13 +3068,15 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3247,7 +3304,9 @@ pub async fn file_id(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -3383,7 +3442,7 @@ pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3427,7 +3486,7 @@ pub async fn folder_list_id(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3472,7 +3531,7 @@ pub async fn folder2_batch_download(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    // Java 语义：按文件夹批量打包下载 —— 无打包引擎，显式 501 + warn。
+    // o2server 语义：按文件夹批量打包下载 —— 无打包引擎，显式 501 + warn。
     Err(u2_capability_unavailable("zip-batch-download"))
 }
 
@@ -3508,7 +3567,7 @@ pub async fn folder2_list_top(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3540,7 +3599,7 @@ pub async fn folder2_id_download(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, id);
-    // Java 语义：文件夹打包下载 —— 无打包引擎，显式 501 + warn。
+    // o2server 语义：文件夹打包下载 —— 无打包引擎，显式 501 + warn。
     Err(u2_capability_unavailable("zip-folder-download"))
 }
 
@@ -3559,8 +3618,8 @@ pub async fn recycle_empty(
         .await
         .map_err(|_| AppError::Internal)?;
     let _ = result;
-    // W12 收敛：对齐 Java ActionEmpty——Wo extends WrapBoolean，成功路径恒回 value=true
-    // （即便回收站为空，Java 也先 setValue(true) 再短路返回）
+    // W12 收敛：对齐 o2server ActionEmpty——Wo extends WrapBoolean，成功路径恒回 value=true
+    // （即便回收站为空，o2server 也先 setValue(true) 再短路返回）
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("value".to_string(), Value::Bool(true))]),
     ))))
@@ -3610,7 +3669,9 @@ pub async fn recycle_list(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "mimeType".to_string(),
@@ -3627,7 +3688,7 @@ pub async fn recycle_list(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3827,7 +3888,9 @@ pub async fn share_list(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -3840,7 +3903,7 @@ pub async fn share_list(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3890,13 +3953,15 @@ pub async fn share_list_att_share_shareId_folder_folderId(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3956,7 +4021,9 @@ pub async fn share_list_my(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -3969,7 +4036,7 @@ pub async fn share_list_my(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4019,13 +4086,15 @@ pub async fn share_list_my2_shareType_fileType(
                 ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("length").unwrap_or(0),
+                    )),
                 ),
             ]))
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4039,7 +4108,11 @@ pub async fn share_list_to_me(
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, session);
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(vec![]),
+        0,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -4050,7 +4123,11 @@ pub async fn share_list_to_me2_fileType(
     axum::extract::Path(file_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, session, file_type);
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(vec![]),
+        0,
+        0,
+    )))
 }
 
 #[axum::debug_handler]
@@ -4100,20 +4177,20 @@ pub async fn share_id_password_password(
     u2_share_get_with_password(pool, axum::extract::Path((id, password))).await
 }
 
-// ════════════ plan002 U2：file 模块端点全量闭合（Java jaxrs 105 端点对齐） ════════════
+// ════════════ plan002 U2：file 模块端点全量闭合（o2server o2server 105 端点对齐） ════════════
 // 语义红线（沿用 processplatform_assemble_surface U2-b 先例，禁止假成功壳）：
 //   - 新上传 = BlobStorage put + 回读校验。FS 后端真实落盘；STORAGE_BACKEND=db 时
 //     DbBlobStorage.put 为 no-op、get 必然 Err → 显式 501 + warn（不写内容必丢的元数据行）。
 //     FS 模式下同时回写 FILE_FILE.content(base64)，保证既有下载/预览路径语义不变。
 //   - 元数据管理（改名/删除/分享/保存到文件夹）：真实参数化 SQL + IDOR 门禁
-//     （require_owner；Java manager-only 操作用 is_admin）。
+//     （require_owner；o2server manager-only 操作用 is_admin）。
 //   - 无引擎能力（zip 打包批量下载、文件夹打包下载、系统级配置写入）：
 //     显式 501 NotImplemented + tracing::warn（fail loud）。
 //
-// 跨 crate 裁决记录：GET /jaxrs/file/{id} 已被 cms_assemble_control 以相同方法注册
+// 跨 crate 裁决记录：GET /api/file/{id} 已被 cms_assemble_control 以相同方法注册
 // （语义为 CMS 文件，不可复用），本模块该端点由既有模块前缀路由
-// /jaxrs/file/assemble/control/file/{id} 闭合，不再裸注册以免引入跨 crate 冲突；
-// 其余缺口一律按 Java 真实路径注册（经归一化查重无跨 crate 占用）。
+// /api/file/assemble/control/file/{id} 闭合，不再裸注册以免引入跨 crate 冲突；
+// 其余缺口一律按 o2server 真实路径注册（经归一化查重无跨 crate 占用）。
 
 fn u2_capability_unavailable(capability: &'static str) -> AppError {
     tracing::warn!(
@@ -4537,7 +4614,7 @@ pub async fn u2_file_delete_by_id(
     ))))
 }
 
-/// Java FileAction.delete(referenceType, reference)：manager-only，按引用批量清除。
+/// o2server FileAction.delete(referenceType, reference)：manager-only，按引用批量清除。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn u2_file_delete_by_reference(
@@ -4565,7 +4642,7 @@ pub async fn u2_file_delete_by_reference(
     ))))
 }
 
-/// Java ActionListReferenceType：当前用户各 referenceType 的文件计数。
+/// o2server ActionListReferenceType：当前用户各 referenceType 的文件计数。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn u2_file_list_reference_types(
@@ -4600,7 +4677,7 @@ pub async fn u2_file_list_reference_types(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4732,7 +4809,7 @@ pub async fn u2_folder_delete(
     ))))
 }
 
-// ── 分享族（FILE_SHARE 真实 CRUD；字段对齐 Java personal.Share） ────────────
+// ── 分享族（FILE_SHARE 真实 CRUD；字段对齐 o2server personal.Share） ────────────
 
 fn u2_share_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     let mut map = serde_json::Map::from_iter([
@@ -4787,7 +4864,7 @@ pub async fn u2_share_create(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 输入校验先于任何 DB 访问（与 Java ActionCreate 一致：fileId/shareType 必填，
+    // 输入校验先于任何 DB 访问（与 o2server ActionCreate 一致：fileId/shareType 必填，
     // password 型分享必须带密码）。
     let file_id = body
         .get("fileId")
@@ -4824,7 +4901,7 @@ pub async fn u2_share_create(
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 与 Java 一致的 upsert：同人同文件已有分享则更新，否则新建。
+    // 与 o2server 一致的 upsert：同人同文件已有分享则更新，否则新建。
     let existing = client
         .query_opt(
             "SELECT id FROM FILE_SHARE WHERE person = $1 AND file_id = $2",
@@ -4926,7 +5003,7 @@ pub async fn u2_share_delete(
     ))))
 }
 
-/// 屏蔽分享：将 validTime 置为过去时刻（Java shield 语义 = 使分享失效）。
+/// 屏蔽分享：将 validTime 置为过去时刻（o2server shield 语义 = 使分享失效）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn u2_share_shield(
@@ -5032,7 +5109,7 @@ pub async fn u2_share_save_to_folder(
 
 // ── 配置族（无配置存储引擎 → 显式 501 + warn） ─────────────────────────────
 
-/// Java 真实路径为 /list/type/{page}/size/{size}（2 段参数）；既有 handler 为历史
+/// o2server 真实路径为 /list/type/{page}/size/{size}（2 段参数）；既有 handler 为历史
 /// 字面路由设计的 3 元组 —— 以适配器复用其查询逻辑，不改动原函数。
 #[axum::debug_handler]
 #[allow(non_snake_case)]

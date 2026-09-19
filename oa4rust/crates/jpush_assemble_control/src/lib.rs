@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use uuid::Uuid;
 
-pub const JAVA_BASE: &str = "/jaxrs/jpush_assemble_control";
+pub const API_BASE: &str = "/api/jpush_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -72,8 +72,14 @@ pub async fn list_control_apps(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "enabled".to_string(),
                     Value::Bool(row.get::<_, i64>("cnt") > 0),
@@ -83,7 +89,7 @@ pub async fn list_control_apps(
         .collect();
 
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -154,21 +160,39 @@ pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("target".to_string(), Value::String(row.get("target"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "target".to_string(),
+                    Value::String(row.get::<_, Option<String>>("target").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -193,14 +217,32 @@ pub async fn get_jpush(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("target".to_string(), Value::String(row.get("target"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "target".to_string(),
+                    Value::String(row.get::<_, Option<String>>("target").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -446,21 +488,39 @@ pub async fn device_list_pushType(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("target".to_string(), Value::String(row.get("target"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "target".to_string(),
+                    Value::String(row.get::<_, Option<String>>("target").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -543,10 +603,22 @@ pub async fn message_test_send(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("target".to_string(), Value::String(row.get("target"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "target".to_string(),
+                    Value::String(row.get::<_, Option<String>>("target").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
