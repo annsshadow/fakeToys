@@ -86,7 +86,9 @@ jobs:
       # deadpool_postgres）。此前这里传入 matrix 的 mysql 会让 handler 生成 `?`
       # 占位符发给 PostgreSQL → 语法错误 → 登录类用例返回 401。
       - name: Run unit tests
-        run: cargo test --workspace --lib
+        # --no-fail-fast：默认遇到第一个 panic 就整包中止，日志里看不到是哪个目标挂的；
+        # 带上它可让 cargo 继续跑完其余测试目标，便于定位真正的失败点。
+        run: cargo test --workspace --lib --no-fail-fast
         env:
           DATABASE_DIALECT: postgres
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
@@ -96,6 +98,10 @@ jobs:
           # 这里再抬高一档运行期默认值，避免其他用例触发同类栈溢出
           # （表现为 panic -> cargo test exit code 101）。
           RUST_MIN_STACK: "67108864"
+          # shared::redis::redis_tests::test_redis_pool_url_accessor 在无 Redis 的
+          # runner 上会等 TCP 超时 60s+（历史上该目标单次 98s）。缩短连接超时，
+          # 避免无谓地逼近 job 时间上限。
+          RUST_LOG: warn
 
   integration-tests:
     runs-on: ubuntu-24.04
