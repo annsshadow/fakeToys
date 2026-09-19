@@ -41,6 +41,27 @@ pub async fn is_db_available() -> bool {
     )
 }
 
+/// 尝试连接默认测试 Redis（redis://127.0.0.1:6379），超时 2s。
+///
+/// Redis 在本项目中是**可选依赖**（见 `crate::redis` 顶部注释：不可达时降级为
+/// 进程内内存实现）。CI 的 unit-tests job 只起了 postgres service，没有任何
+/// Redis 服务，因此凡是以「能连上 Redis」为前提的测试都必须在缺服务时优雅跳过，
+/// 否则会断言失败 -> panic -> `cargo test` 以 exit code 101 结束。
+///
+/// 与 `is_db_available()` 对称，供测试做运行时守卫。
+pub async fn is_redis_available() -> bool {
+    let url =
+        crate::redis::redis_url_from_env().unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
+    matches!(
+        tokio::time::timeout(
+            Duration::from_secs(2),
+            crate::redis::RedisPool::from_url(&url)
+        )
+        .await,
+        Ok(Ok(_))
+    )
+}
+
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，
 /// 用于 Extension<DatabaseConnection> 类型的 handler 测试。
 /// 若 PG 不可达，返回 Err。
