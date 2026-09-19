@@ -121,13 +121,13 @@ pub async fn unread_count(
 /// 创建消息核心实体路由
 pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/message/core/entity/list", get(list))
+        .route("/api/message/core/entity/list", get(list))
         .route(
-            "/jaxrs/message/core/entity/list/by/{consume}",
+            "/api/message/core/entity/list/by/{consume}",
             get(list_by_consume),
         )
         .route(
-            "/jaxrs/message/core/entity/unread/count/{consume}",
+            "/api/message/core/entity/unread/count/{consume}",
             get(unread_count),
         )
 }

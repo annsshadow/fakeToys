@@ -29,25 +29,49 @@ pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
         .iter()
         .map(|row| {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("title".to_string(), Value::String(row.get("title")));
-            map.insert("type".to_string(), Value::String(row.get("type")));
-            map.insert("visible".to_string(), Value::Bool(row.get("visible")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
+            map.insert(
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+            );
+            map.insert(
+                "type".to_string(),
+                Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+            );
+            map.insert(
+                "visible".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
+            );
             if let Some(v) = row.get::<_, Option<i32>>("order_number") {
                 map.insert(
                     "orderNumber".to_string(),
                     serde_json::Number::from(v).into(),
                 );
             }
-            map.insert("path".to_string(), Value::String(row.get("path")));
-            map.insert("iconPath".to_string(), Value::String(row.get("icon_path")));
+            map.insert(
+                "path".to_string(),
+                Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+            );
+            map.insert(
+                "iconPath".to_string(),
+                Value::String(
+                    row.get::<_, Option<String>>("icon_path")
+                        .unwrap_or_default(),
+                ),
+            );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -71,19 +95,43 @@ pub async fn get_component(
     match row {
         Some(row) => {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("title".to_string(), Value::String(row.get("title")));
-            map.insert("type".to_string(), Value::String(row.get("type")));
-            map.insert("visible".to_string(), Value::Bool(row.get("visible")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
+            map.insert(
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+            );
+            map.insert(
+                "type".to_string(),
+                Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+            );
+            map.insert(
+                "visible".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
+            );
             if let Some(v) = row.get::<_, Option<i32>>("order_number") {
                 map.insert(
                     "orderNumber".to_string(),
                     serde_json::Number::from(v).into(),
                 );
             }
-            map.insert("path".to_string(), Value::String(row.get("path")));
-            map.insert("iconPath".to_string(), Value::String(row.get("icon_path")));
+            map.insert(
+                "path".to_string(),
+                Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+            );
+            map.insert(
+                "iconPath".to_string(),
+                Value::String(
+                    row.get::<_, Option<String>>("icon_path")
+                        .unwrap_or_default(),
+                ),
+            );
             Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Err(AppError::NotFound),

@@ -1,4 +1,6 @@
 
+# management-style
+
 :Original: Documentation/process/management-style.rst <managementstyle>
 :Translator: Alex Shi <alex.shi@linux.alibaba.com>
 

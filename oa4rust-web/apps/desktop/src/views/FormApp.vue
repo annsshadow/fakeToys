@@ -4,7 +4,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>表单管理</h1>
-        <p class="subtitle">/jaxrs/form/* — 表单定义、版本管理、预览发布</p>
+        <p class="subtitle">/api/form/* — 表单定义、版本管理、预览发布</p>
       </div>
       <div class="header-actions">
         <button class="btn-outline" @click="showSearch=true">🔍 搜索</button>
@@ -252,7 +252,7 @@ const searchedForms = computed(() => {
 async function loadList() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/form/list')
+    const r = await api.get('/api/form/list')
     items.value = r.data ?? []
   } catch {
     items.value = []
@@ -264,7 +264,7 @@ async function loadList() {
 async function loadV2() {
   loadingV2.value = true
   try {
-    const r = await api.get('/jaxrs/form/v2/list')
+    const r = await api.get('/api/form/v2/list')
     itemsV2.value = r.data ?? []
   } catch {
     itemsV2.value = []
@@ -275,7 +275,7 @@ async function loadV2() {
 
 function viewDetail(f: FormItem) {
   api
-    .get('/jaxrs/form/' + f.id)
+    .get('/api/form/' + f.id)
     .then((r) => {
       detailItem.value = r.data ?? f
     })
@@ -308,9 +308,9 @@ async function saveForm() {
   }
   try {
     if (editingForm.value?.id) {
-      await api.put('/jaxrs/form/update/' + editingForm.value.id, mform.value)
+      await api.put('/api/form/update/' + editingForm.value.id, mform.value)
     } else {
-      await api.post('/jaxrs/form/create', mform.value)
+      await api.post('/api/form/create', mform.value)
     }
     showCreate.value = false
     loadList()
@@ -320,9 +320,9 @@ async function saveForm() {
 }
 
 async function deleteForm(f: FormItem) {
-  if (!confirmMsg('确定删除表单「' + (f.name || f.id) + '」？')) return
+  if (!(await confirmMsg('确定删除表单「' + (f.name || f.id) + '」？'))) return
   try {
-    await api.delete('/jaxrs/form/delete/' + f.id)
+    await api.delete('/api/form/delete/' + f.id)
     items.value = items.value.filter((x) => x.id !== f.id)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))
@@ -377,7 +377,7 @@ async function doImport() {
     }
     for (const f of data) {
       try {
-        await api.post('/jaxrs/form/create', f)
+        await api.post('/api/form/create', f)
       } catch {}
     }
     importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 个表单' }

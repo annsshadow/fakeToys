@@ -1,7 +1,10 @@
 
+# workqueue
+
 :Original: Documentation/core-api/workqueue.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
@@ -656,6 +659,7 @@ dm-crypt 的性能测试清楚地阐明了这一取舍。
 ```
 如果kworkers失控了（使用了太多的cpu），有两类可能的问题:
 
+
  1. 正在迅速调度的事情
  2. 一个消耗大量cpu周期的工作项。
 
@@ -695,6 +699,7 @@ dm-crypt 的性能测试清楚地阐明了这一取舍。
 
 
 该API在以下内核代码中:
+
 
 include/linux/workqueue.h
 

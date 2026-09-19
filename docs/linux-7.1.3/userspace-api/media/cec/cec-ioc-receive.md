@@ -1,7 +1,9 @@
+# cec-ioc-receive
+
 ﻿
 
 
-######## ioctls CEC_RECEIVE 鍜?CEC_TRANSMIT
+## ioctls CEC_RECEIVE 鍜?CEC_TRANSMIT
 
 
 ## 名称
@@ -94,6 +96,7 @@ CEC_RECEIVE、CEC_TRANSMIT - 接收或发送一CEC 消息
 
     - .. _`CEC-MSG-FL-REPLY-TO-FOLLOWERS`:
 
+
       - `CEC_MSG_FL_REPLY_TO_FOLLOWERS`
       - 1
       - 如果一CEC 发送期望一个应答，那么默认情况下该应答只发送给
@@ -101,11 +104,13 @@ CEC_RECEIVE、CEC_TRANSMIT - 接收或发送一CEC 消息
 	的结果，一次通过 ioctl CEC_RECEIVE <CEC_RECEIVE>
     - .. _`CEC-MSG-FL-RAW`:
 
+
       - `CEC_MSG_FL_RAW`
       - 2
       - 通常 CEC 消息在发送前会经过校验。如果调ioctl CEC_TRANSMIT <CEC_TRANSMIT>
 	时设置了此标志，则不进行任何校验，消息按原样发送。这在调CEC 问题时很有用	此标志仅在进程具`CAP_SYS_RAWIO` 能力（capability）时才允许使用	如果未设置，则返`EPERM` 错误码
     - .. _`CEC-MSG-FL-REPLY-VENDOR-ID`:
+
 
       - `CEC_MSG_FL_REPLY_VENDOR_ID`
       - 4
@@ -120,37 +125,45 @@ CEC_RECEIVE、CEC_TRANSMIT - 接收或发送一CEC 消息
 
     - .. _`CEC-TX-STATUS-OK`:
 
+
       - `CEC_TX_STATUS_OK`
       - 0x01
       - 消息发送成功。这CEC_TX_STATUS_MAX_RETRIES <CEC-TX-STATUS-MAX-RETRIES>
 	互斥。如果早期尝试在最终发送成功之前遭遇失败，其他位仍可被设置    - .. _`CEC-TX-STATUS-ARB-LOST`:
 
+
       - `CEC_TX_STATUS_ARB_LOST`
       - 0x02
       - CEC 线路仲裁丢失，即另一个发送在同时以更高优先级开始	可选状态，并非所有硬件都能检测到此错误条件    - .. _`CEC-TX-STATUS-NACK`:
 
+
       - `CEC_TX_STATUS_NACK`
       - 0x04
       - 消息未被确认。注意某些硬件无法区未确状态与其他错误条件	即发送结果只OK FAIL。在这种情况下，发送失败时会返回此状态    - .. _`CEC-TX-STATUS-LOW-DRIVE`:
+
 
       - `CEC_TX_STATUS_LOW_DRIVE`
       - 0x08
       - CEC 总线上检测到低驱动（low drive）。这表示某个 follower
 	检测到总线上的错误并请求重传。可选状态，并非所有硬件都能检测到此错误条件    - .. _`CEC-TX-STATUS-ERROR`:
 
+
       - `CEC_TX_STATUS_ERROR`
       - 0x10
       - 发生了某些错误。这用于任何不适合 `CEC_TX_STATUS_ARB_LOST`
 	`CEC_TX_STATUS_LOW_DRIVE` 的错误，可能是因为硬件无法判断发生了哪个错误	或者硬件测试了除这两者之外的其他条件。可选状态    - .. _`CEC-TX-STATUS-MAX-RETRIES`:
+
 
       - `CEC_TX_STATUS_MAX_RETRIES`
       - 0x20
       - 在重试一次或多次后发送仍然失败。此状态位CEC_TX_STATUS_OK <CEC-TX-STATUS-OK>
 	互斥。其他位仍可被设置，以说明看到了哪些失败    - .. _`CEC-TX-STATUS-ABORTED`:
 
+
       - `CEC_TX_STATUS_ABORTED`
       - 0x40
       - 发送因 HDMI 断开连接、或适配器被取消配置（unconfigured）	或一次发送被中断、或驱动在尝试开始一次发送时返回错误而被中止    - .. _`CEC-TX-STATUS-TIMEOUT`:
+
 
       - `CEC_TX_STATUS_TIMEOUT`
       - 0x80
@@ -163,17 +176,21 @@ CEC_RECEIVE、CEC_TRANSMIT - 接收或发送一CEC 消息
 
     - .. _`CEC-RX-STATUS-OK`:
 
+
       - `CEC_RX_STATUS_OK`
       - 0x01
       - 消息接收成功    - .. _`CEC-RX-STATUS-TIMEOUT`:
+
 
       - `CEC_RX_STATUS_TIMEOUT`
       - 0x02
       - 对一条较早发送消息的应答超时    - .. _`CEC-RX-STATUS-FEATURE-ABORT`:
 
+
       - `CEC_RX_STATUS_FEATURE_ABORT`
       - 0x04
       - 消息接收成功，但应答`CEC_MSG_FEATURE_ABORT`	此状态仅在消息是对一条较早发送消息的应答时才被设置    - .. _`CEC-RX-STATUS-ABORTED`:
+
 
       - `CEC_RX_STATUS_ABORTED`
       - 0x08

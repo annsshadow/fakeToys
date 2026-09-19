@@ -1,3 +1,5 @@
+# mei
+
 ﻿
 ## 简
 
@@ -64,20 +66,24 @@ Intel MEI 驱动支持以下 IOCTL 命令
 
 	Usage:
 
+
         struct mei_connect_client_data client_data;
 
         ioctl(fd, IOCTL_MEI_CONNECT_CLIENT, &client_data);
 
 	Inputs:
 
+
         struct mei_connect_client_data - 包含以下内容
 	Input field:
+
 
 		in_client_uuid -	需要连接到FW 特性的 GUID
          Outputs:
 		out_client_properties - 客户端属性：MTU 与协议版本
 
          Error returns:
+
 
                 ENOTTY  没有这样的客户端（即错误GUID）或连接不被允许
 		EINVAL	错误IOCTL 编号
@@ -95,14 +101,17 @@ Intel MEI 驱动支持以下 IOCTL 命令
 
         Usage:
 
+
         struct mei_connect_client_data_vtag client_data_vtag;
 
         ioctl(fd, IOCTL_MEI_CONNECT_CLIENT_VTAG, &client_data_vtag);
 
         Inputs:
 
+
         struct mei_connect_client_data_vtag - 包含以下内容
         Input field:
+
 
                 in_client_uuid -  需要连接到FW 特性的 GUID
                 vtag - 虚拟标签 [1, 255]
@@ -111,6 +120,7 @@ Intel MEI 驱动支持以下 IOCTL 命令
                 out_client_properties - 客户端属性：MTU 与协议版本
 
          Error returns:
+
 
                 ENOTTY 没有这样的客户端（即错误GUID）或连接不被允许
                 EINVAL 错误IOCTL 编号tag == 0
@@ -129,6 +139,7 @@ Intel MEI 驱动支持以下 IOCTL 命令
 
 	Usage:
 
+
 		uint32_t enable;
 
 		ioctl(fd, IOCTL_MEI_NOTIFY_SET, &enable);
@@ -139,6 +150,7 @@ Intel MEI 驱动支持以下 IOCTL 命令
 		uint32_t enable[disable] = 0;
 
 	Error returns:
+
 
 
 		EINVAL	错误IOCTL 编号

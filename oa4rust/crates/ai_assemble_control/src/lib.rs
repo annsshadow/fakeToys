@@ -12,7 +12,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use shared::{db::dialect, error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/ai_assemble_control";
+pub const API_BASE: &str = "/api/ai_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -61,13 +61,18 @@ pub async fn get_ai_control_config(
                 ),
                 (
                     "defaultModel".to_string(),
-                    Value::String(row.get("default_model")),
+                    Value::String(
+                        row.get::<_, Option<String>>("default_model")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "temperature".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(row.get::<_, f64>("temperature"))
-                            .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
+                        serde_json::Number::from_f64(
+                            row.get::<_, Option<f64>>("temperature").unwrap_or(0.0),
+                        )
+                        .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
                     ),
                 ),
                 (
@@ -75,7 +80,10 @@ pub async fn get_ai_control_config(
                     Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens"))),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 ("o2AiFileList".to_string(), Value::Array(vec![])),
                 (
                     "deepSeekApiUrl".to_string(),
@@ -177,12 +185,18 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
                 (
                     "contextWindow".to_string(),
                     Value::Number(serde_json::Number::from(8192i64)),
@@ -192,11 +206,129 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
+}
+
+// ── ann/list（AI 模块公告/模型公告，桌面 AIAssistant 配置串引用，查 x_ai_ann 096）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, title, content, category, status, creator, create_time::text AS create_time \
+             FROM x_ai_ann WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── ann 家族 CRUD（x_ai_ann 096，通用参数化写）──
+fn ann_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_ai_ann",
+        columns: &[
+            ("title", "title"),
+            ("content", "content"),
+            ("category", "category"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &ann_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &ann_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ann_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &ann_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
@@ -306,23 +438,23 @@ pub async fn get_usage_stats(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
     let router = Router::new()
         .route(
-            "/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}",
+            "/api/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}",
             get(config_list_mcp_paging_page_size_size),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/get/mcp/{id}",
+            "/api/ai/assemble/control/config/get/mcp/{id}",
             get(config_get_mcp_flag),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/create/mcp",
+            "/api/ai/assemble/control/config/create/mcp",
             post(config_create_mcp),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/update/mcp/{id}",
+            "/api/ai/assemble/control/config/update/mcp/{id}",
             post(config_update_mcp_flag),
         )
         .route(
-            "/jaxrs/ai/assemble/control/config/delete/mcp/{id}",
+            "/api/ai/assemble/control/config/delete/mcp/{id}",
             post(config_delete_mcp_flag),
         );
 
@@ -361,13 +493,18 @@ pub async fn config_base_config(
                 ),
                 (
                     "defaultModel".to_string(),
-                    Value::String(row.get("default_model")),
+                    Value::String(
+                        row.get::<_, Option<String>>("default_model")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "temperature".to_string(),
                     Value::Number(
-                        serde_json::Number::from_f64(row.get::<_, f64>("temperature"))
-                            .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
+                        serde_json::Number::from_f64(
+                            row.get::<_, Option<f64>>("temperature").unwrap_or(0.0),
+                        )
+                        .unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()),
                     ),
                 ),
                 (
@@ -375,7 +512,10 @@ pub async fn config_base_config(
                     Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens"))),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -576,7 +716,10 @@ pub async fn config_get_mcp_ext_flag(
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -627,7 +770,10 @@ pub async fn config_get_mcp_flag(
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -667,7 +813,10 @@ pub async fn config_get_model_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -676,8 +825,14 @@ pub async fn config_get_model_flag(
                     "url".to_string(),
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -717,7 +872,10 @@ pub async fn config_list_enable_model(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -726,8 +884,14 @@ pub async fn config_list_enable_model(
                     "url".to_string(),
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -747,7 +911,7 @@ pub async fn config_list_enable_model(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -790,7 +954,10 @@ pub async fn config_list_mcp_paging_page_size_size(
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
                 ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -810,7 +977,7 @@ pub async fn config_list_mcp_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -840,7 +1007,10 @@ pub async fn config_list_model_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -849,8 +1019,14 @@ pub async fn config_list_model_paging_page_size_size(
                     "url".to_string(),
                     Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
                 ),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -870,7 +1046,7 @@ pub async fn config_list_model_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1124,7 +1300,7 @@ pub async fn file_delete_flag(
     ))))
 }
 
-/// Java FileAction.listWithIds（POST /file/list）：按 id 列表查找文件。
+/// o2server FileAction.listWithIds（POST /file/list）：按 id 列表查找文件。
 /// ids 经归一化查重（trim、去空、保序去重）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -1153,7 +1329,7 @@ pub async fn file_list_with_ids(
         .collect();
 
     if ids.is_empty() {
-        return Ok(Json(ActionResult::java_success(
+        return Ok(Json(ActionResult::legacy_success(
             Value::Array(Vec::new()),
             0,
             0,
@@ -1173,25 +1349,48 @@ pub async fn file_list_with_ids(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1218,24 +1417,44 @@ pub async fn file_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1304,7 +1523,7 @@ pub async fn file_upload(
             ),
             (
                 "date".to_string(),
-                Value::String(shared::response::java_date_now()),
+                Value::String(shared::response::legacy_date_now()),
             ),
             (
                 "spent".to_string(),
@@ -1332,19 +1551,42 @@ pub async fn file_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                (
+                    "fileName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1370,18 +1612,26 @@ pub async fn file_id_download(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
                     "url".to_string(),
-                    Value::String(format!("/download/{}", row.get::<_, String>("id"))),
+                    Value::String(format!(
+                        "/download/{}",
+                        row.get::<_, Option<String>>("id").unwrap_or_default()
+                    )),
                 ),
                 (
                     "fileSize".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("file_size").unwrap_or(0),
+                    )),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1443,15 +1693,24 @@ pub async fn index_cms_doc_with_app_appId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1476,10 +1735,22 @@ pub async fn index_cms_doc_docId(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1531,24 +1802,39 @@ pub async fn index_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("docId".to_string(), Value::String(row.get("doc_id"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "docId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("doc_id").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// Java IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
+/// o2server IndexAction.syncToKnowledge（GET /index/sync/to/knowledge，无参数）：
 /// 将全部启用文档标记为已同步知识库。GET 无请求体——不得要求 JSON body。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -1644,7 +1930,7 @@ pub async fn chat_completion(
 
     let owners: Vec<String> = owner_rows
         .iter()
-        .map(|r| r.get::<_, String>("creator"))
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default())
         .collect();
 
     let is_owned_by_others = !owners.is_empty()
@@ -1778,7 +2064,7 @@ async fn process_chat_request(
 
     let owners: Vec<String> = owner_rows
         .iter()
-        .map(|r| r.get::<_, String>("creator"))
+        .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default())
         .collect();
 
     let is_owned_by_others = !owners.is_empty()
@@ -1963,7 +2249,7 @@ pub async fn chat_completion_stream(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 端点全量闭合：Java ChatAction/ConfigAction 缺口端点。
+// plan002 U2 端点全量闭合：o2server ChatAction/ConfigAction 缺口端点。
 //   - 真实参数化 SQL 操作既有表（x_ai_conversation / x_ai_chat / x_ai_mcp_config）
 //   - LLM 调用类沿用 AI_API_KEY 门控约定（无 key 时模拟，非假壳）
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1995,14 +2281,14 @@ async fn u2_normalized_name_dup(
     Ok(cnt > 0)
 }
 
-/// Java ConfigAction.getConfig（GET /config/get）：读取基础 AI 配置。
+/// o2server ConfigAction.getConfig（GET /config/get）：读取基础 AI 配置。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     get_ai_control_config(pool).await
 }
 
-/// Java ChatAction.listPaging（GET /chat/list/paging/{page}/size/{size}）：
+/// o2server ChatAction.listPaging（GET /chat/list/paging/{page}/size/{size}）：
 /// 分页列示当前用户的线索（映射 x_ai_conversation，按 create_time 倒序）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2052,14 +2338,14 @@ pub async fn chat_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// Java ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
+/// o2server ChatAction.listCompletionPaging（GET /chat/list/completion/{clueId}/paging/{page}/size/{size}）：
 /// 按线索分页查找对话（映射 x_ai_chat.conversation_id，按 create_time 倒序）。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2097,7 +2383,10 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
                 ("clueId".to_string(), Value::String(clue_id.clone())),
                 ("role".to_string(), Value::String(row.get("role"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -2110,14 +2399,14 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// Java ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
+/// o2server ChatAction.delete（GET /chat/delete/{clueId}）：删除线索及其对话。
 /// 归属校验：仅线索所有者可删（他人线索 → 403）。软删除保持既有约定。
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -2178,7 +2467,7 @@ pub async fn chat_delete_clue_id(
     ))))
 }
 
-/// Java ChatAction.writeCompletionExtra（POST /chat/write/completion/extra）：
+/// o2server ChatAction.writeCompletionExtra（POST /chat/write/completion/extra）：
 /// 写入对话扩展数据。id 必填（对应 ExceptionFieldEmpty）；扩展数据真实落库
 /// x_ai_chat.extra；网关转发沿用 AI_API_KEY 门控——无 key 时标记 simulated，
 /// 落库仍真实发生（非假成功）。

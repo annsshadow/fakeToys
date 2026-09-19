@@ -79,6 +79,19 @@ describe('W13/W14 repository closure manifest', () => {
       .filter((entry) => entry.workItem === 'W14' && entry.kind === 'legacy_family_component')
       .map((entry) => entry.legacyComponent as string)
 
+    // 遗留 o2web 源树（oa/o2web）已随 1d2c81eb 移除：源目录缺失时无法做发现对账，
+    // 降级为对裁决集合自身的完整性校验（非空、无重复、状态均已裁决）。
+    if (!existsSync(legacyRoot)) {
+      expect(adjudicated.length).toBeGreaterThan(0)
+      expect(new Set(adjudicated).size).toBe(adjudicated.length)
+      expect(
+        manifest.entries
+          .filter((entry) => entry.workItem === 'W14')
+          .every((entry) => ['implemented', 'out_of_scope', 'still_blocked'].includes(entry.status)),
+      ).toBe(true)
+      return
+    }
+
     expect(sorted(adjudicated)).toEqual(sorted(discoveredW14Families()))
     expect(new Set(adjudicated).size).toBe(adjudicated.length)
   })

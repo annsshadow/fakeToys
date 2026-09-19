@@ -37,19 +37,19 @@
 
 ### 1. CMS 列表桩单实体投影
 
-- **端点**：`/jaxrs/data/document/{id}`、`/jaxrs/log/{id}`、`/jaxrs/script/{id}`、`/jaxrs/view/{id}` 等
+- **端点**：`/api/data/document/{id}`、`/api/log/{id}`、`/api/script/{id}`、`/api/view/{id}` 等
 - **差异**：GET 返回全表列表而非单实体
 - **状态**：allowlist 留档，待 behavior_compare 确认单实体投影后修正
 
 ### 2. `{id}/control` 端点响应结构差异
 
-- **端点**：`/jaxrs/appinfo/{id}/control`、`/jaxrs/categoryinfo/{id}/control`、`/jaxrs/document/{id}/control`
+- **端点**：`/api/appinfo/{id}/control`、`/api/categoryinfo/{id}/control`、`/api/document/{id}/control`
 - **差异**：Rust 返回实体字段子集；Java 返回 `{control:{allowVisit,allowPublish,allowManage}}`
 - **状态**：allowlist 留档，设计级差异
 
 ### 3. 别名 GET 端点字段子集
 
-- **端点**：`/jaxrs/appinfo/alias/{alias}`、`/jaxrs/categoryinfo/alias/{alias}`
+- **端点**：`/api/appinfo/alias/{alias}`、`/api/categoryinfo/alias/{alias}`
 - **差异**：Rust 仅返回核心字段子集；Java 返回实体全部字段
 - **状态**：allowlist 留档，设计级差异
 
@@ -86,7 +86,7 @@
 
 ### 9. BAM 周期统计 data 结构差异（21 项）
 
-- **端点**：`/jaxrs/processplatform/assemble/bam/period/list/count/completed/task/...`
+- **端点**：`/api/processplatform/assemble/bam/period/list/count/completed/task/...`
 - **差异**：Java data 为按月键控对象；Rust 结构不同
 - **状态**：allowlist 留档，待 behavior_compare 确认
 
@@ -100,16 +100,16 @@
 
 | # | Method | Endpoint | 疑似缺失能力 | 建议归属 |
 |---|--------|----------|-------------|---------|
-| 1 | GET | /jaxrs/categoryinfo/list/manage/app/{appId} | 按管理权限过滤的分类列表 | cms |
-| 2 | GET | /jaxrs/categoryinfo/erase/category/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
-| 3 | GET | /jaxrs/appinfo/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
-| 4 | GET | /jaxrs/comment/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
-| 5 | GET | /jaxrs/categoryinfo/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
-| 6 | GET | /jaxrs/anonymous/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/data | 匿名字典数据查询 | cms |
-| 7 | GET | /jaxrs/anonymous/fileinfo/download/document/{id} | 匿名文件下载 | cms |
-| 8 | DELETE | /jaxrs/categoryinfo/erase/category/{id} | 分类物理删除 | cms |
-| 9 | GET | /jaxrs/permission/appInfo/{id}/manageable | 应用管理权限查询 | cms |
-| 10 | GET | /jaxrs/permission/appInfo/{id}/viewers | 应用查看权限查询 | cms |
+| 1 | GET | /api/categoryinfo/list/manage/app/{appId} | 按管理权限过滤的分类列表 | cms |
+| 2 | GET | /api/categoryinfo/erase/category/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
+| 3 | GET | /api/appinfo/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
+| 4 | GET | /api/comment/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
+| 5 | GET | /api/categoryinfo/{id}/mockdeletetoget | mock delete-to-get 模式 | cms |
+| 6 | GET | /api/anonymous/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}/data | 匿名字典数据查询 | cms |
+| 7 | GET | /api/anonymous/fileinfo/download/document/{id} | 匿名文件下载 | cms |
+| 8 | DELETE | /api/categoryinfo/erase/category/{id} | 分类物理删除 | cms |
+| 9 | GET | /api/permission/appInfo/{id}/manageable | 应用管理权限查询 | cms |
+| 10 | GET | /api/permission/appInfo/{id}/viewers | 应用查看权限查询 | cms |
 
 *（其余 40 条类似，集中在 CMS 的权限查询、匿名访问、mock 操作模式）*
 
@@ -117,12 +117,12 @@
 
 | # | Method | Endpoint | 疑似缺失能力 | 建议归属 |
 |---|--------|----------|-------------|---------|
-| 1 | GET | /jaxrs/processplatform/assemble/surface/work/{id}/attachment/{workId}/list | 工作附件列表 | processplatform |
-| 2 | GET | /jaxrs/processplatform/assemble/surface/work/{id}/opinion/list | 工作意见列表 | processplatform |
-| 3 | GET | /jaxrs/processplatform/assemble/surface/work/{id}/readlog/list | 工作阅读日志 | processplatform |
-| 4 | POST | /jaxrs/processplatform/assemble/surface/work/{id}/opinion | 提交工作意见 | processplatform |
-| 5 | GET | /jaxrs/processplatform/assemble/surface/task/{id}/attachment/list | 任务附件列表 | processplatform |
-| 6 | GET | /jaxrs/processplatform/assemble/surface/workcompleted/{id}/attachment/list | 已完成工作附件 | processplatform |
+| 1 | GET | /api/processplatform/assemble/surface/work/{id}/attachment/{workId}/list | 工作附件列表 | processplatform |
+| 2 | GET | /api/processplatform/assemble/surface/work/{id}/opinion/list | 工作意见列表 | processplatform |
+| 3 | GET | /api/processplatform/assemble/surface/work/{id}/readlog/list | 工作阅读日志 | processplatform |
+| 4 | POST | /api/processplatform/assemble/surface/work/{id}/opinion | 提交工作意见 | processplatform |
+| 5 | GET | /api/processplatform/assemble/surface/task/{id}/attachment/list | 任务附件列表 | processplatform |
+| 6 | GET | /api/processplatform/assemble/surface/workcompleted/{id}/attachment/list | 已完成工作附件 | processplatform |
 
 *（其余 38 条类似，集中在工作流引擎的附件/意见/日志/读日志查询）*
 
@@ -130,11 +130,11 @@
 
 | # | Method | Endpoint | 疑似缺失能力 | 建议归属 |
 |---|--------|----------|-------------|---------|
-| 1 | GET | /jaxrs/organization/assemble/control/unit/{flag}/sub/direct | 单元直属下级查询 | organization |
-| 2 | GET | /jaxrs/organization/assemble/control/unit/{flag}/sub/all | 单元全部下级查询 | organization |
-| 3 | GET | /jaxrs/organization/assemble/control/person/{flag}/duty/list | 人员职务列表 | organization |
-| 4 | GET | /jaxrs/organization/assemble/control/unit/{flag}/duty/list | 单元职务列表 | organization |
-| 5 | GET | /jaxrs/organization/assemble/control/identity/list/unit/{flag} | 按单元查身份列表 | organization |
+| 1 | GET | /api/organization/assemble/control/unit/{flag}/sub/direct | 单元直属下级查询 | organization |
+| 2 | GET | /api/organization/assemble/control/unit/{flag}/sub/all | 单元全部下级查询 | organization |
+| 3 | GET | /api/organization/assemble/control/person/{flag}/duty/list | 人员职务列表 | organization |
+| 4 | GET | /api/organization/assemble/control/unit/{flag}/duty/list | 单元职务列表 | organization |
+| 5 | GET | /api/organization/assemble/control/identity/list/unit/{flag} | 按单元查身份列表 | organization |
 
 *（其余 18 条类似，集中在组织树查询、职务/身份关联查询）*
 

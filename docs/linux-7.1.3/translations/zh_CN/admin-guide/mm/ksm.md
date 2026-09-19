@@ -1,7 +1,10 @@
 
+# ksm
+
 :Original: Documentation/admin-guide/mm/ksm.rst
 
 :翻译:
+
 
   徐鑫 xu xin <xu.xin16@zte.com.cn>
 

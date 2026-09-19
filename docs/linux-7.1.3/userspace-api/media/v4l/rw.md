@@ -1,4 +1,6 @@
-﻿######## 璇，鍐。
+# rw
+
+﻿######## 璇，内。
 
 VIDIOC_QUERYCAP ioctl 返回struct `v4l2_capability` `capabilities`
 字段中的 `V4L2_CAP_READWRITE` 标志被设置时，输入与输出设备分别支持 `read()`

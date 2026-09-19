@@ -1,3 +1,5 @@
+# eprobetrace
+
 ﻿
 ## Eprobe - 基于事件的探针追
 :Author: Steven Rostedt <rostedt@goodmis.org>
@@ -101,7 +103,7 @@ Eprobe 可以限制记录的内容。注意，这对性能没有帮助，因为�
 
 ```
 注意，如果在 prev_pid next_pid 之后不加上“u32”，这些值默认会以十六进制显示
-### 示例 2
+## 示例 2
 
 如果要记录某个特定的系统调用，但 syscalls 事件未启用，仍然可以使用 raw_syscalls（系统调用事件不是普通事件，而是在内核中raw_syscalls 事件创建）。为了追openat 系统调用，可以在 raw_syscalls 事件之上创建一个事件探针：
 ```
@@ -209,7 +211,7 @@ filename 显示fault)”。这很可能是因为 filename 尚未被拉入内存�
               cat-1331    [001] ...5.  2944.831362: openat: (synthetic.filename) filename="trace"
 
 ```
-### 示例 3
+## 示例 3
 
 如果有可用的 syscall trace 事件，上述做法就不需要第一```
 

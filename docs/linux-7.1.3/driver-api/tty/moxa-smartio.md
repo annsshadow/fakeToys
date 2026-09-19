@@ -1,3 +1,5 @@
+# moxa-smartio
+
 ﻿## MOXA Smartio/Industio Family Device Driver Installation Guide
 
 
@@ -14,7 +16,7 @@ Copyright (C) 2021, Jiri Slaby
    5. Setserial
    6. Troubleshooting
 
-##### 1. Introduction
+## 1. Introduction
 
 
    Smartio/Industio/UPCI 系列 Linux 驱动支持以下多端口板卡：
@@ -54,7 +56,7 @@ Copyright (C) 2021, Jiri Slaby
    - Serial-HOWTO
    - Kernel-HOWTO
 
-##### 2. System Requirement
+### 2. System Requirement
 
 
    - 最多可组合安装 4 块板
@@ -90,7 +92,7 @@ Copyright (C) 2021, Jiri Slaby
    4th board	ttyM24 - ttyM31
    ============ ===============
 
-##### 4. Utilities
+#### 4. Utilities
 
 
    本驱动包3 个工具，msdiag、msmon msterm。这 3 个工具以源代码形式发布。它们应当被编译为可执行文件并复制到 /usr/bin
@@ -107,7 +109,7 @@ Copyright (C) 2021, Jiri Slaby
 
 
    该工具提供所tty 端口（尤其是 MOXA 端口）的数据收发能力。它对测试简单应用很有用，例如向连接到该端口的调制解调器发AT 命令，或作为登录用的终端。注意，这只是一个哑终端仿真，不处理全屏操作
-##### 5. Setserial
+### 5. Setserial
 
 
    支持Setserial 参数如下
@@ -129,7 +131,7 @@ Copyright (C) 2021, Jiri Slaby
    baud_base	  This option sets the base baud rate.
    ============== =============================================================
 
-##### 6. Troubleshooting
+#### 6. Troubleshooting
 
 
    启动时的错误消息及解决方案已尽可能清晰地说明。如果所有可能的解决方案都失败，请联系我们的技术支持团队以获取更多帮助

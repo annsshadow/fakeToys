@@ -1,3 +1,5 @@
+# lirc-set-rec-timeout
+
 ﻿######## ioctl LIRC_GET_REC_TIMEOUT and LIRC_SET_REC_TIMEOUT
 
 

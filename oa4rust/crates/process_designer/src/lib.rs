@@ -39,7 +39,7 @@ pub async fn application_list_summary(pool: Extension<Pool>) -> Json<ActionResul
     let client = match pool.get().await {
         Ok(client) => client,
         Err(_) => {
-            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
+            return Json(ActionResult::legacy_success(Value::Array(vec![]), 0, 0));
         }
     };
 
@@ -52,7 +52,7 @@ pub async fn application_list_summary(pool: Extension<Pool>) -> Json<ActionResul
     {
         Ok(rows) => rows,
         Err(_) => {
-            return Json(ActionResult::java_success(Value::Array(vec![]), 0, 0));
+            return Json(ActionResult::legacy_success(Value::Array(vec![]), 0, 0));
         }
     };
 
@@ -60,18 +60,27 @@ pub async fn application_list_summary(pool: Extension<Pool>) -> Json<ActionResul
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "applicationCategory".to_string(),
-                    Value::String(row.get("application_category")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application_category")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Json(ActionResult::java_success(Value::Array(data), count, 0))
+    Json(ActionResult::legacy_success(Value::Array(data), count, 0))
 }
 
 #[allow(non_snake_case)]
@@ -91,8 +100,14 @@ pub async fn application_list(
         .iter()
         .map(|row| {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
             if let Some(val) = row_opt_json::<String>(row, "description") {
                 map.insert("description".to_string(), val);
             }
@@ -102,17 +117,23 @@ pub async fn application_list(
             ) {
                 map.insert("formDefinition".to_string(), val);
             }
-            map.insert("status".to_string(), Value::String(row.get("status")));
+            map.insert(
+                "status".to_string(),
+                Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+            );
             map.insert(
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             );
             Value::Object(map)
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -134,8 +155,14 @@ pub async fn application_get(
         .map_err(|_| AppError::NotFound)?;
 
     let mut result_map = serde_json::Map::new();
-    result_map.insert("id".to_string(), Value::String(row.get("id")));
-    result_map.insert("name".to_string(), Value::String(row.get("name")));
+    result_map.insert(
+        "id".to_string(),
+        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+    );
+    result_map.insert(
+        "name".to_string(),
+        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+    );
     if let Some(val) = row_opt_json::<String>(&row, "description") {
         result_map.insert("description".to_string(), val);
     }
@@ -145,10 +172,16 @@ pub async fn application_get(
     ) {
         result_map.insert("formDefinition".to_string(), val);
     }
-    result_map.insert("status".to_string(), Value::String(row.get("status")));
+    result_map.insert(
+        "status".to_string(),
+        Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+    );
     result_map.insert(
         "createTime".to_string(),
-        Value::String(row.get("create_time")),
+        Value::String(
+            row.get::<_, Option<String>>("create_time")
+                .unwrap_or_default(),
+        ),
     );
     let result = Value::Object(result_map);
 
@@ -217,8 +250,14 @@ pub async fn application_update(
         .map_err(|_| AppError::NotFound)?;
 
     let mut result_map = serde_json::Map::new();
-    result_map.insert("id".to_string(), Value::String(row.get("id")));
-    result_map.insert("name".to_string(), Value::String(row.get("name")));
+    result_map.insert(
+        "id".to_string(),
+        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+    );
+    result_map.insert(
+        "name".to_string(),
+        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+    );
     if let Some(val) = row_opt_json::<String>(&row, "description") {
         result_map.insert("description".to_string(), val);
     }
@@ -228,10 +267,16 @@ pub async fn application_update(
     ) {
         result_map.insert("formDefinition".to_string(), val);
     }
-    result_map.insert("status".to_string(), Value::String(row.get("status")));
+    result_map.insert(
+        "status".to_string(),
+        Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+    );
     result_map.insert(
         "createTime".to_string(),
-        Value::String(row.get("create_time")),
+        Value::String(
+            row.get::<_, Option<String>>("create_time")
+                .unwrap_or_default(),
+        ),
     );
     let result = Value::Object(result_map);
 
@@ -293,15 +338,24 @@ pub async fn designer_get_route(
     };
 
     let mut route_map = serde_json::Map::new();
-    route_map.insert("id".to_string(), Value::String(row.get("id")));
-    route_map.insert("name".to_string(), Value::String(row.get("name")));
+    route_map.insert(
+        "id".to_string(),
+        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+    );
+    route_map.insert(
+        "name".to_string(),
+        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+    );
     route_map.insert(
         "processId".to_string(),
-        Value::String(row.get("process_id")),
+        Value::String(
+            row.get::<_, Option<String>>("process_id")
+                .unwrap_or_default(),
+        ),
     );
     route_map.insert(
         "type".to_string(),
-        Value::String(row.get::<_, String>("type")),
+        Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
     );
     if let Some(val) = row_opt_json::<String>(&row, "description") {
         route_map.insert("description".to_string(), val);

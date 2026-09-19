@@ -1,5 +1,5 @@
 
-## Documentazione dei sottosistemi del kernel
+# Documentazione dei sottosistemi del kernel
 
 
 In questa parte della documentazione si entra nel dettaglio di come funzionano
@@ -8,7 +8,7 @@ kernel. Molte delle informazioni qui contenute provengono direttamente dai
 sorgenti del kernel, con aggiunte di materiale dove è necessario (anche se
 talora **non** è stato aggiunto tutto ciò che era necessario).
 
-### Sottosistemi principali
+## Sottosistemi principali
 
 
 - [core-api/index](core-api/index)

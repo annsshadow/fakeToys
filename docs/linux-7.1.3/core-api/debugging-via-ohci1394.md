@@ -1,7 +1,9 @@
+# debugging-via-ohci1394
+
 ﻿## 利用 OHCI-1394 火线（FireWire）控制器提供的物DMA 进行调试
 
 
-### 简介（Introduction
+## 简介（Introduction
 
 基本上，当今使用的所有火线控制器都符OHCI-1394 规范，该规范将控制器定义为一PCI 总线主设备，它使DMA 将数据传输从 CPU 上卸载，并拥有一个“物理响应单元（Physical Response Unit）”，该单元在应用OHCI-1394 驱动定义的过滤器之后，通过 PCI 总线DMA 执行特定请求
 一旦正确配置，远程机器就可以发送这些请求，要求 OHCI-1394 控制器对物理系统内存执行读和写请求，并且对于读请求，将物理内存读取的结果发送回请求方

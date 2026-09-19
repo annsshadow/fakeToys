@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/surface/get/test-id")
+                    .uri("/api/portal/assemble/surface/get/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/surface/create")
+                    .uri("/api/portal/assemble/surface/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/surface/list/test-id")
+                    .uri("/api/portal/assemble/surface/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/surface/preview/test-id")
+                    .uri("/api/portal/assemble/surface/preview/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/surface/publish/test-id")
+                    .uri("/api/portal/assemble/surface/publish/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/surface/list")
+                    .uri("/api/portal/surface/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/surface/test-id/preview")
+                    .uri("/api/portal/surface/test-id/preview")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/surface/publish")
+                    .uri("/api/portal/surface/publish")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

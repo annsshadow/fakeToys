@@ -963,6 +963,39 @@ S8ARr2vqmeZSYIJABzClXMa1aS2XpA4=
 
         assert_eq!(response.status(), StatusCode::OK);
     }
+
+    #[test]
+    fn test_extract_signer_info_reads_identity_from_the_fixture_certificate() {
+        // 意图：签名者身份必须来自证书 subject（不虚构），时间戳是当前的 RFC3339。
+        let (subject, signing_time) =
+            PdfSignatureService::extract_signer_info(TEST_CERT).expect("fixture cert parses");
+        assert!(subject.expect("fixture has a subject").chars().count() > 3);
+        let time = signing_time.expect("signing time recorded");
+        assert!(time.contains('T'), "RFC3339 timestamp expected: {time}");
+    }
+
+    #[test]
+    fn test_verify_certificate_dates_accepts_the_currently_valid_fixture() {
+        PdfSignatureService::verify_certificate_dates(TEST_CERT)
+            .expect("fixture cert is within its validity window");
+    }
+
+    #[test]
+    fn test_parse_pem_cert_chain_counts_blocks_and_rejects_empty_input() {
+        assert!(PdfSignatureService::parse_pem_cert_chain("no pem here").is_err());
+        // 两个证书块拼接（自签根 + 自身）应解析出 2 个证书
+        let two = format!("{TEST_CERT}\n{TEST_CERT}");
+        let certs = PdfSignatureService::parse_pem_cert_chain(&two).expect("two blocks parse");
+        assert_eq!(certs.len(), 2);
+    }
+
+    #[test]
+    fn test_verify_cert_chain_builds_a_single_self_signed_link() {
+        // 单证书自签链：subject==issuer，应产出 1 条链记录而非报错。
+        let links = PdfSignatureService::verify_cert_chain(TEST_CERT)
+            .expect("single self-signed cert forms a valid chain");
+        assert_eq!(links.len(), 1);
+    }
 }
 
 #[cfg(test)]

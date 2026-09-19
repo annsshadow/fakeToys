@@ -41,7 +41,7 @@ The O2OA platform's Java backend (`o2server`, 57+ Maven modules) is being gradua
                            │
               ┌────────────┼────────────┐
               ▼            ▼            ▼
-        /jaxrs/control  /jaxrs/auth   /jaxrs/cms
+        /api/control  /api/auth   /api/cms
           → Rust         → Rust       → Java
         (port 3000)   (port 3000)   (port 20020)
 ```
@@ -59,14 +59,14 @@ Each module follows a 4-step process, with rollback possible at each step:
 
 ```nginx
 # Rust-handled modules
-location ~ ^/jaxrs/(control|auth|personal|program_init)/ {
+location ~ ^/api/(control|auth|personal|program_init)/ {
     proxy_pass http://127.0.0.1:3000;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
 }
 
 # Java-handled modules (default)
-location /jaxrs/ {
+location /api/ {
     proxy_pass http://127.0.0.1:20020;
     proxy_set_header Host $host;
 }

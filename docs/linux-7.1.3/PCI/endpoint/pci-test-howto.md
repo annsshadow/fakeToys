@@ -1,3 +1,5 @@
+# pci-test-howto
+
 ﻿
 ## PCI 测试用户指南
 
@@ -24,7 +26,7 @@
 
 ```
 
-### 端点功能驱动
+## 端点功能驱动
 
 
 ```
@@ -41,7 +43,7 @@
 
 ```
 
-### 创建 pci-epf-test 设备
+## 创建 pci-epf-test 设备
 
 
 可以使用 configfs 创建 PCI 端点功能设备。要创建设备，执行以下命令：
@@ -77,7 +79,7 @@ PCI 端点框架会在该目录下填充以下内容
 
 ```
 
-### 配置 pci-epf-test 设备
+## 配置 pci-epf-test 设备
 
 
 用户可以使用 configfs 条目配置 pci-epf-test 设备。要修改功能所使用vendorid MSI 中断数量，执行以下命令：
@@ -110,7 +112,7 @@ PCI 端点框架会在该目录下填充以下内容
 覆盖默认BAR 大小只能在将 pci-epf-test 设备绑定PCI 端点控制器驱动之前进行
 注意：某些端点控制器可能具有固定大小或保留的 BAR；对于这类控制器，configfs 中对应的 BAR 大小将被忽略
 
-### pci-epf-test 设备绑定EP 控制
+## pci-epf-test 设备绑定EP 控制
 
 为了让端点功能设备可用，必须将其绑定PCI 端点控制器驱动。使configfs 绑定该功能：
 
@@ -122,7 +124,7 @@ PCI 端点框架会在该目录下填充以下内容
 
 完成上述步骤后，PCI 端点即可准备与主机建立链路
 
-### 启动链路
+## 启动链路
 
 
 端点设备要与主机建立链路，需start 属性写1
@@ -168,7 +170,7 @@ tools/testing/selftests/pci_endpoint 中加入的 Kselftest 可用于运行所�
 ```
 
 测试程序将位<rootfs>/usr/bin/ 目录下
-#### Kselftest 输出
+## Kselftest 输出
 
 ```
 
@@ -237,7 +239,7 @@ tools/testing/selftests/pci_endpoint 中加入的 Kselftest 可用于运行所�
 
 ```
 
-#### Kselftest EP Doorbell
+## Kselftest EP Doorbell
 
 
 如果端点 MSI 控制器用doorbell（门铃）用例，请运行以下命令进行测试

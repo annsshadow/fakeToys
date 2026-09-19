@@ -1,11 +1,15 @@
 
+# cpuid
+
 :Original: Documentation/virt/acrn/cpuid.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  时奎亮 Alex Shi <alexs@kernel.org>
 
@@ -16,6 +20,7 @@
 在ACRN超级管理器上运行的客户虚拟机可以使用CPUID检查其一些功能。
 
 ACRN的cpuid函数是:
+
 
 函数: 0x40000000
 
@@ -39,6 +44,7 @@ ACRN的cpuid函数是:
 
 ```
 其中 `flag` 的定义如下:
+
 
 ================================= =========== ================================
 标志                              值          描述

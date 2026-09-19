@@ -1,3 +1,5 @@
+# sht21
+
 ﻿## 内核驱动 sht21
 
 
@@ -35,9 +37,10 @@
 
 Author:
 
+
   Urs Fleisch <urs.fleisch@sensirion.com>
 
-### 描述
+## 描述
 
 
 SHT21 SHT25 是采DFN 封装的湿度和温度传感器，其尺寸仅3 x 3 mm，高度为 1.1 mm。这两个器件的区别在SHT25 的精度更高（相对湿度 1.8%，温0.2 摄氏度），SHT21 为（相对湿度 2.0%，温0.3 摄氏度）

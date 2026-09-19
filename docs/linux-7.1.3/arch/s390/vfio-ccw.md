@@ -1,7 +1,9 @@
+# vfio-ccw
+
 ﻿## vfio-ccw：基础架构
 
 
-### 简
+## 简
 
 此处我们描述 Linux/s390 I/O 子通道设备vfio 支持。vfio-ccw 的动机是将子通道透传给虚拟机，vfio 是实现这一目的的手段
 与其他硬件架构不同，s390 定义了一种统一I/O 访问方法，即所谓的通道 I/O（Channel I/O）。它有自己的访问模式
@@ -102,7 +104,7 @@ ret_code 存储每次访问该区域的返回码。可能出现以下值：
 `-EINVAL`
   ORB 指定了长度超255 CCW 的链，或发生了内部错误
 
-### vfio-ccw cmd 区域
+## vfio-ccw cmd 区域
 
 
 vfio-ccw cmd 区域用于接受异步指令
@@ -132,7 +134,7 @@ command 指定要发出的命令；ret_code 存储每次访问该区域的返回
   请求正在被处理，调用者应重试
 `-EBUSY`
   在处halt 请求期间，子通道处于状态挂起或繁忙状态
-### vfio-ccw schib 区域
+## vfio-ccw schib 区域
 
 
 vfio-ccw schib 区域用于返回子通道信息（Subchannel-Information
@@ -145,7 +147,7 @@ vfio-ccw schib 区域用于返回子通道信息（Subchannel-Information
 
 该区域通过区域类型 VFIO_REGION_SUBTYPE_CCW_SCHIB 暴露
 读取该区域会触发向关联硬件发STORE SUBCHANNEL
-### vfio-ccw crw 区域
+## vfio-ccw crw 区域
 
 
 vfio-ccw crw 区域用于返回通道报告字（Channel Report Word，CRW

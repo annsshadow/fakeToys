@@ -50,7 +50,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/designer/application/list")
+                    .uri("/api/process/designer/application/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -79,7 +79,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/designer/application/test-id")
+                    .uri("/api/process/designer/application/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -108,7 +108,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/designer/application/create")
+                    .uri("/api/process/designer/application/create")
                     .method(Method::POST)
                     .header(header::CONTENT_TYPE, "application/json")
                     .body(Body::from(r#"{"name":"test"}"#))
@@ -138,7 +138,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/designer/application/update")
+                    .uri("/api/process/designer/application/update")
                     .method(Method::POST)
                     .header(header::CONTENT_TYPE, "application/json")
                     .body(Body::from(r#"{"id":"test-id","name":"updated"}"#))
@@ -168,7 +168,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/designer/application/remove")
+                    .uri("/api/process/designer/application/remove")
                     .method(Method::POST)
                     .header(header::CONTENT_TYPE, "application/json")
                     .body(Body::from(r#"{"id":"test-id"}"#))
@@ -199,7 +199,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/process/designer/application/list")
+                    .uri("/api/process/designer/application/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),

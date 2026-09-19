@@ -1,7 +1,10 @@
 
+# kobject
+
 :Original: Documentation/core-api/kobject.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -76,6 +79,7 @@ kobject在结构的开头），相反，你得使用container_of()宏，其可�
 
 ```
 其中:
+
 
   - `ptr` 是一个指向嵌入kobject的指针，
   - `type` 是包含结构体的类型，
@@ -298,6 +302,7 @@ default_groups 指针是一个默认属性的列表，它将为任何用这个 k
 同的ktype，但是如果它们不是相同的，就要非常小心。
 
 一个kset有以下功能:
+
 
  - 它像是一个包含一组对象的袋子。一个kset可以被内核用来追踪“所有块
    设备”或“所有PCI设备驱动”。

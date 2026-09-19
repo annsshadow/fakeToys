@@ -1,3 +1,5 @@
+# locking
+
 ﻿
 ## KVM 锁概
 
@@ -168,7 +170,7 @@ mmu_spte_update() 中查看是否需要因该原因刷TLB，因为这是一个�
 Present 状态。当 PTE 被标记为访问追踪时，W 位不会被保存；在恢复Present 状态时，W 位根据是是一次写访问来设置。如果不是，W 位将保持清零，直到发生一次写访问，届时它将使用上述脏位追机制被设置
 ### 3. 参考（Reference
 
-##### ``kvm_lock``
+#### ``kvm_lock``
 
 
 :Type:		mutex

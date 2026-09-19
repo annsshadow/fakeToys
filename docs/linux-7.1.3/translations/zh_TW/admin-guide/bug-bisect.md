@@ -1,8 +1,11 @@
 
 
+# bug-bisect
+
 :Original: [../../../admin-guide/bug-bisect](../../../admin-guide/bug-bisect)
 
 :譯者:
+
 
  吳想成 Wu XiangCheng <bobwxc@email.cn>
  胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
@@ -58,6 +61,7 @@
 	$ git bisect good
 
   或::
+
 
 	$ git bisect bad
 

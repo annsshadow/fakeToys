@@ -1,8 +1,10 @@
+# subdev-formats
+
 ﻿
 
 ## 濯掍綋鎬荤嚎鏍煎紡
 
-鏈枃璇存槑 Video4Linux 瀛愯澶囷紙subdev锛夊獟浣撴€荤嚎鏍煎紡缁撴瀯浣撶殑鍚勫瓧娈靛惈涔夛紝娑电洊鍥惧儚瀹藉害涓庨珮搴︺€佸儚绱犱唬鐮併€佸瓧娈甸『搴忋€佽壊褰╃┖闂淬€乊'CbCr/HSV 缂栫爜銆侀噺鍖栬寖鍥翠笌浼犺緭鍑芥暟绛夊睘鎬э紝骞惰В閲婂簲鐢ㄧ▼搴忓浣曢€氳繃鐩稿簲鏍囧織璇锋眰椹卞姩杩涜鑹插僵绌洪棿杞崲锛屼緵鎽勫儚澶翠笌 ISP 椹卞姩寮€鍙戣€呭湪瀵规帴濯掍綋绠＄嚎鏃跺弬鑰冦€?
+鏈枃璇存槑 Video4Linux 子愯澶囷紙subdev锛夊獟浣撴€荤嚎鏍煎紡统撴瀯浣撶殑鍚勫瓧娈靛惈涔夛紝娑电洊鍥惧儚瀹藉害涓庨珮搴︺€佸儚绱犱唬鐮併€佸瓧娈甸『搴忋€佽壊褰╃┖闂淬€乊'CbCr/HSV 缂栫爜銆侀噺鍖栬寖鍥翠笌浼犺緭鍑芥暟绛夊睘鎬э紝骞惰В閲婂簲鐢ㄧ▼搴忓浣曢€氳繃鐩稿簲鏍囧織璇锋眰椹卞姩杩涜鑹插僵绌洪棿杞崲锛屼緵鎽勫儚澶翠笌 ISP 椹卞姩寮€鍙戣€呭湪瀵规帴濯掍綋绠＄嚎鏃跺弬鑰冦€?
 
 
 
@@ -17,20 +19,20 @@
       - `height`
       - 鍥惧儚楂樺害锛堜互鍍忕礌涓哄崟浣嶏級銆傚鏋?`field` 涓?`V4L2_FIELD_TOP`銆?
 	`V4L2_FIELD_BOTTOM` 鎴?`V4L2_FIELD_ALTERNATE` 涔嬩竴锛屽垯 `height`
-	琛ㄧず瀛楁涓殑琛屾暟锛涘惁鍒欒〃绀哄抚涓殑琛屾暟锛堝浜庨殧琛屾壂鎻忔牸寮忥紝甯ч珮涓?
-	瀛楁楂樼殑涓ゅ€嶏級銆?
+	琛ㄧず子楁涓殑琛屾暟锛涘惁鍒欒〃绀哄抚涓殑琛屾暟锛堝浜庨殧琛屾壂鎻忔牸寮忥紝甯ч珮涓?
+	子楁楂樼殑涓ゅ€嶏級銆?
     - - __u32
       - `code`
       - 鏍煎紡浠ｇ爜锛屾潵鑷灇涓?
 	v4l2_mbus_pixelcode <v4l2-mbus-pixelcode>銆?
     - - __u32
       - `field`
-      - 瀛楁椤哄簭锛屾潵鑷灇涓?`v4l2_field`銆傝瑙?
+      - 子楁椤哄簭锛屾潵鑷灇涓?`v4l2_field`銆傝瑙?
 	field-order銆傚浜庡厓鏁版嵁 mbus 浠ｇ爜涓洪浂銆?
     - - __u32
       - `colorspace`
       - 鍥惧儚鑹插僵绌洪棿锛屾潵鑷灇涓?`v4l2_colorspace`銆?
-        蹇呴』鐢遍┍鍔ㄤ负瀛愯澶囪缃€傚鏋滃簲鐢ㄧ▼搴忚缃簡
+        蹇呴』鐢遍┍鍔ㄤ负子愯澶囪缃€傚鏋滃簲鐢ㄧ▼搴忚缃簡
 	鏍囧織 `V4L2_MBUS_FRAMEFMT_SET_CSC`锛屽垯搴旂敤绋嬪簭鍙湪婧愮鍙ｏ紙source pad锛変笂
 	璁剧疆璇ュ瓧娈碉紝浠ヨ姹傚獟浣撴€荤嚎鏁版嵁鐨勭壒瀹氳壊褰╃┖闂淬€傚鏋滈┍鍔ㄦ棤娉曞鐞嗘墍璇锋眰鐨?
 	杞崲锛屽畠灏嗚繑鍥炲彟涓€涓彈鏀寔鐨勮壊褰╃┖闂淬€傞┍鍔ㄩ€氳繃鍦ㄤ笌鏋氫妇瀵瑰簲鐨勭粨鏋勪綋
@@ -97,14 +99,15 @@
 
     - .. _`mbus-framefmt-set-csc`:
 
+
       - `V4L2_MBUS_FRAMEFMT_SET_CSC`
       - 0x0001
       - 鐢卞簲鐢ㄧ▼搴忚缃€備粎鐢ㄤ簬婧愮鍙ｏ紝瀵规帴鏀剁鍙ｏ紙sink pad锛夊拷鐣ャ€?
 	鑻ヨ缃紝鍒欒姹傚瓙璁惧灏嗚壊褰╃┖闂翠粠鎺ユ敹鍒扮殑鑹插僵绌洪棿杞崲涓烘墍璇锋眰鐨?
-	鑹插僵绌洪棿鍊笺€傝嫢鑹插害瀛楁锛坄colorspace`銆乣xfer_func`銆?
+	鑹插僵绌洪棿鍊笺€傝嫢鑹插害子楁锛坄colorspace`銆乣xfer_func`銆?
 	`ycbcr_enc`銆乣hsv_enc` 鎴?`quantization`锛夎璁句负 `*_DEFAULT`锛?
 	鍒欒鑹插害璁剧疆灏嗕繚鎸佷负鎺ユ敹鍒版椂鐨勭姸鎬佷笉鍙樸€?
-	鍥犳锛岃鏀瑰彉閲忓寲鑼冨洿锛屽彧闇€灏?`quantization` 瀛楁璁句负闈為粯璁ゅ€?
+	鍥犳锛岃鏀瑰彉閲忓寲鑼冨洿锛屽彧闇€灏?`quantization` 子楁璁句负闈為粯璁ゅ€?
 	锛坄V4L2_QUANTIZATION_FULL_RANGE` 鎴?
 	`V4L2_QUANTIZATION_LIM_RANGE`锛夛紝鑰屾墍鏈夊叾浠栬壊搴﹀瓧娈靛簲璁句负 `*_DEFAULT`銆?
 
@@ -112,12 +115,12 @@
 ### 濯掍綋鎬荤嚎鍍忕礌浠ｇ爜
 
 
-濯掍綋鎬荤嚎鍍忕礌浠ｇ爜鎻忚堪浜嗗湪鐗╃悊鎬荤嚎涓婁紶杈撶殑鍥惧儚鏍煎紡锛堟棦瀛樺湪浜庣嫭绔嬬殑鐗╃悊
-缁勪欢涔嬮棿锛屼篃瀛樺湪浜?SoC 鍣ㄤ欢鍐呴儴锛夈€備笉搴斿皢鍏朵笌 V4L2 鍍忕礌鏍煎紡娣锋穯锛屽悗鑰呬娇鐢?
-鍥涘瓧绗︿唬鐮侊紙four character codes锛夋弿杩板瓨鍌ㄥ湪鍐呭瓨涓殑鍥惧儚鏍煎紡銆?
+濯掍綋鎬荤嚎鍍忕礌浠ｇ爜鎻忚堪浜嗗湪鐗╃悊鎬荤嚎涓婁紶杈撶殑鍥惧儚鏍煎紡锛堟棦子樺湪浜庣嫭绔嬬殑鐗╃悊
+统勪欢涔嬮棿锛屼篃子樺湪浜?SoC 鍣ㄤ欢内呴儴锛夈€備笉搴斿皢鍏朵笌 V4L2 鍍忕礌鏍煎紡娣锋穯锛屽悗鑰呬娇鐢?
+鍥涘瓧绗︿唬鐮侊紙four character codes锛夋弿杩板瓨鍌ㄥ湪内呭瓨涓殑鍥惧儚鏍煎紡銆?
 
-灏界鎬荤嚎涓婄殑鍥惧儚鏍煎紡涓庡唴瀛樹腑鐨勫浘鍍忔牸寮忎箣闂村瓨鍦ㄥ叧鑱旓紙鍘熷鐨?Bayer 鍥惧儚
-涓嶄細鍥犱负瀛樺叆鍐呭瓨灏辩濂囧湴杞崲涓?JPEG锛夛紝浣嗕簩鑰呬箣闂村苟涓嶅瓨鍦ㄤ竴涓€瀵瑰簲鐨勫叧绯汇€?
+灏界鎬荤嚎涓婄殑鍥惧儚鏍煎紡涓庡唴子樹腑鐨勫浘鍍忔牸寮忎箣闂村瓨鍦ㄥ叧鑱旓紙鍘熷鐨?Bayer 鍥惧儚
+涓嶄細鍥犱负子樺叆内呭瓨灏辩濂囧湴杞崲涓?JPEG锛夛紝浣嗕簩鑰呬箣闂村苟涓嶅瓨鍦ㄤ竴涓€瀵瑰簲鐨勫叧绯汇€?
 
 铏界劧濯掍綋鎬荤嚎鍍忕礌浠ｇ爜鏄熀浜庡儚绱犲湪骞惰鎬荤嚎涓婄殑浼犺緭鏂瑰紡鏉ュ懡鍚嶇殑锛屼絾涓茶鎬荤嚎
 骞舵病鏈夊畾涔夌嫭绔嬬殑浠ｇ爜銆傛寜鐓ф儻渚嬶紝瀹冧滑浣跨敤鍦ㄥ崟涓椂閽熷懆鏈熷唴浼犺緭涓€涓噰鏍风殑
@@ -127,7 +130,7 @@ MIPI CSI-2 鐨?24 浣?RGB锛圧GB888锛夋牸寮忎娇鐢?MEDIA_BUS_FMT_RGB888_1
 MEDIA_BUS_FMT_RGB888_1X24 灏嗚摑鑹茬殑绗竴浣嶅畾涔夊湪 bit 0銆傚敖绠¤浠ｇ爜鐢ㄤ簬骞惰
 鎬荤嚎涓婄殑 24 浣?RGB 鏁版嵁锛屼絾 MEDIA_BUS_FMT_RGB888_3X8 鎴?
 MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
-##### 鎵撳寘 RGB 鏍煎紡
+#### 鎵撳寘 RGB 鏍煎紡
 
 
 杩欎簺鏍煎紡灏嗗儚绱犳暟鎹綔涓虹孩銆佺豢銆佽摑鍒嗛噺杩涜浼犺緭銆傛牸寮忎唬鐮佺敱浠ヤ笅淇℃伅鏋勬垚銆?
@@ -140,11 +143,11 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
 
 - 鎬荤嚎瀹藉害銆?
 
-- 瀵逛簬鎬讳綅鏁板皬浜庘€滄€荤嚎閲囨牱鏁?脳 鎬荤嚎瀹藉害鈥濈殑鏍煎紡锛岄渶瑕佷竴涓～鍏呭€硷紝鎸囨槑瀛楄妭鏄～鍏呭湪鍏舵渶楂樹綅锛圥ADHI锛夎繕鏄渶浣庝綅锛圥ADLO锛夈€傚浜庡悇鍒嗛噺鍒嗗埆濉厖鍦ㄦ渶楂樹綅锛圕PADHI锛夋垨鏈€浣庝綅锛圕PADLO锛夌殑鎯呭喌锛屼娇鐢ㄢ€淐鈥濆墠缂€銆?
+- 瀵逛簬鎬讳綅鏁板皬浜庘€滄€荤嚎閲囨牱鏁?脳 鎬荤嚎瀹藉害鈥濈殑鏍煎紡锛岄渶瑕佷竴涓～鍏呭€硷紝鎸囨槑子楄妭鏄～鍏呭湪鍏舵渶楂樹綅锛圥ADHI锛夎繕鏄渶浣庝綅锛圥ADLO锛夈€傚浜庡悇鍒嗛噺鍒嗗埆濉厖鍦ㄦ渶楂樹綅锛圕PADHI锛夋垨鏈€浣庝綅锛圕PADLO锛夌殑鎯呭喌锛屼娇鐢ㄢ€淐鈥濆墠缂€銆?
 
 - 瀵逛簬鎬荤嚎閲囨牱鏁板ぇ浜?1 鐨勬牸寮忥紝闇€瑕佷竴涓搴忓€硷紝鎸囨槑鍍忕礌鏄珮浣嶄紭鍏堬紙MSB first锛孊E锛夎繕鏄綆浣嶄紭鍏堬紙LSB first锛孡E锛変紶杈撱€?
 
-渚嬪锛岃嫢鍍忕礌缂栫爜涓?5 浣嶇孩銆? 浣嶇豢鍜?5 浣嶈摑锛屽苟鍦ㄩ珮浣嶅～鍏咃紝浠ユ瘡鍍忕礌 2 涓?8 浣嶉噰鏍蜂紶杈擄紝涓旀渶楂樻湁鏁堜綅锛堝～鍏呬綅銆佺孩鑹蹭互鍙婁竴鍗婄殑缁胯壊鍊硷級鍏堜紶杈擄紝鍒欒鏍煎紡鍛藉悕涓?
+渚嬪锛岃嫢鍍忕礌缂栫爜涓?5 浣嶇孩銆? 浣嶇豢鍜?5 浣嶈摑锛屽苟鍦ㄩ珮浣嶅～鍏咃紝浠ユ瘡鍍忕礌 2 涓?8 浣嶉噰鏍蜂紶杈擄紝涓旀渶楂樻湁鏁堜綅锛堝～鍏呬綅銆佺孩鑹蹭互鍙婁竴鍗婄殑统胯壊鍊硷級鍏堜紶杈擄紝鍒欒鏍煎紡鍛藉悕涓?
 `MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE`銆?
 
 涓嬭〃鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 RGB 鏍煎紡銆?
@@ -197,6 +200,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-RGB444-1X12:
 
+
       - MEDIA_BUS_FMT_RGB444_1X12
       - 0x1016
 #       -
@@ -233,6 +237,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB444-2X8-PADHI-BE:
+
 
       - MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE
       - 0x1001
@@ -306,6 +311,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB444-2X8-PADHI-LE:
 
+
       - MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE
       - 0x1002
 #       -
@@ -377,6 +383,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `1`
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RGB555-2X8-PADHI-BE:
+
 
       - MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE
       - 0x1003
@@ -450,6 +457,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB555-2X8-PADHI-LE:
 
+
       - MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE
       - 0x1004
 #       -
@@ -522,6 +530,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `3`
     - .. _MEDIA-BUS-FMT-RGB565-1X16:
 
+
       - MEDIA_BUS_FMT_RGB565_1X16
       - 0x1017
 #       -
@@ -558,6 +567,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-BGR565-2X8-BE:
+
 
       - MEDIA_BUS_FMT_BGR565_2X8_BE
       - 0x1005
@@ -631,6 +641,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-BGR565-2X8-LE:
 
+
       - MEDIA_BUS_FMT_BGR565_2X8_LE
       - 0x1006
 #       -
@@ -702,6 +713,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `4`
       - g\ `3`
     - .. _MEDIA-BUS-FMT-RGB565-2X8-BE:
+
 
       - MEDIA_BUS_FMT_RGB565_2X8_BE
       - 0x1007
@@ -775,6 +787,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB565-2X8-LE:
 
+
       - MEDIA_BUS_FMT_RGB565_2X8_LE
       - 0x1008
 #       -
@@ -847,6 +860,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `3`
     - .. _MEDIA-BUS-FMT-RGB666-1X18:
 
+
       - MEDIA_BUS_FMT_RGB666_1X18
       - 0x1009
 #       -
@@ -883,6 +897,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB666-2X9-BE:
+
 
       - MEDIA_BUS_FMT_RGB666_2X9_BE
       - 0x1025
@@ -956,6 +971,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-BGR666-1X18:
 
+
       - MEDIA_BUS_FMT_BGR666_1X18
       - 0x1023
 #       -
@@ -992,6 +1008,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `1`
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RBG888-1X24:
+
 
       - MEDIA_BUS_FMT_RBG888_1X24
       - 0x100e
@@ -1030,6 +1047,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-RGB666-1X24_CPADHI:
 
+
       - MEDIA_BUS_FMT_RGB666_1X24_CPADHI
       - 0x1015
 #       -
@@ -1066,6 +1084,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-BGR666-1X24_CPADHI:
+
 
       - MEDIA_BUS_FMT_BGR666_1X24_CPADHI
       - 0x1024
@@ -1104,6 +1123,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RGB565-1X24_CPADHI:
 
+
       - MEDIA_BUS_FMT_RGB565_1X24_CPADHI
       - 0x1022
 #       -
@@ -1141,6 +1161,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-BGR888-1X24:
 
+
       - MEDIA_BUS_FMT_BGR888_1X24
       - 0x1013
 #       -
@@ -1177,6 +1198,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `1`
       - r\ `0`
     - .. _MEDIA-BUS-FMT-BGR888-3X8:
+
 
       - MEDIA_BUS_FMT_BGR888_3X8
       - 0x101b
@@ -1285,6 +1307,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-GBR888-1X24:
 
+
       - MEDIA_BUS_FMT_GBR888_1X24
       - 0x1014
 #       -
@@ -1322,6 +1345,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RGB888-1X24:
 
+
       - MEDIA_BUS_FMT_RGB888_1X24
       - 0x100a
 #       -
@@ -1358,6 +1382,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB888-2X12-BE:
+
 
       - MEDIA_BUS_FMT_RGB888_2X12_BE
       - 0x100b
@@ -1431,6 +1456,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB888-2X12-LE:
 
+
       - MEDIA_BUS_FMT_RGB888_2X12_LE
       - 0x100c
 #       -
@@ -1502,6 +1528,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `5`
       - g\ `4`
     - .. _MEDIA-BUS-FMT-RGB888-3X8:
+
 
       - MEDIA_BUS_FMT_RGB888_3X8
       - 0x101c
@@ -1610,6 +1637,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB666-1X30-CPADLO:
 
+
       - MEDIA_BUS_FMT_RGB666_1X30-CPADLO
       - 0x101e
 #       -
@@ -1646,6 +1674,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
       - 0
     - .. _MEDIA-BUS-FMT-RGB888-1X30-CPADLO:
+
 
       - MEDIA_BUS_FMT_RGB888_1X30-CPADLO
       - 0x101f
@@ -1684,6 +1713,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-ARGB888-1X32:
 
+
       - MEDIA_BUS_FMT_ARGB888_1X32
       - 0x100d
       -
@@ -1721,6 +1751,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB888-1X32-PADHI:
 
+
       - MEDIA_BUS_FMT_RGB888_1X32_PADHI
       - 0x100f
       -
@@ -1757,6 +1788,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-RGB101010-1X30:
+
 
       - MEDIA_BUS_FMT_RGB101010_1X30
       - 0x1018
@@ -1856,6 +1888,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-RGB666-1X36-CPADLO:
 
+
       - MEDIA_BUS_FMT_RGB666_1X36_CPADLO
       - 0x1020
       -
@@ -1897,6 +1930,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-RGB888-1X36-CPADLO:
 
+
       - MEDIA_BUS_FMT_RGB888_1X36_CPADLO
       - 0x1021
       -
@@ -1937,6 +1971,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
       - 0
     - .. _MEDIA-BUS-FMT-RGB121212-1X36:
+
 
       - MEDIA_BUS_FMT_RGB121212_1X36
       - 0x1019
@@ -2070,6 +2105,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 1
       - 0
     - .. _MEDIA-BUS-FMT-RGB161616-1X48:
+
 
       - MEDIA_BUS_FMT_RGB161616_1X48
       - 0x101a
@@ -2234,6 +2270,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-RGB202020-1X60:
 
+
       - MEDIA_BUS_FMT_RGB202020_1X60
       - 0x1026
 #       -
@@ -2333,6 +2370,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-RGB666-1X7X3-SPWG:
 
+
       - MEDIA_BUS_FMT_RGB666_1X7X3_SPWG
       - 0x1010
       - 0
@@ -2397,6 +2435,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RGB888-1X7X4-SPWG:
+
 
       - MEDIA_BUS_FMT_RGB888_1X7X4_SPWG
       - 0x1011
@@ -2463,6 +2502,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RGB888-1X7X4-JEIDA:
 
+
       - MEDIA_BUS_FMT_RGB888_1X7X4_JEIDA
       - 0x1012
       - 0
@@ -2528,6 +2568,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `2`
     - .. _MEDIA-BUS-FMT-RGB101010-1X7X5-SPWG:
 
+
       - MEDIA_BUS_FMT_RGB101010_1X7X5_SPWG
       - 0x1026
       - 0
@@ -2592,6 +2633,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - r\ `0`
     - .. _MEDIA-BUS-FMT-RGB101010-1X7X5-JEIDA:
+
 
       - MEDIA_BUS_FMT_RGB101010_1X7X5_JEIDA
       - 0x1027
@@ -2661,7 +2703,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
     \normalsize
 
 
-##### Bayer 鏍煎紡
+## Bayer 鏍煎紡
 
 
 杩欎簺鏍煎紡灏嗗儚绱犳暟鎹綔涓虹孩銆佺豢銆佽摑鍒嗛噺杩涜浼犺緭銆傛牸寮忎唬鐮佺敱浠ヤ笅淇℃伅鏋勬垚銆?
@@ -2676,7 +2718,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
 
 - 鎬荤嚎瀹藉害銆?
 
-- 瀵逛簬鎬讳綅鏁板皬浜庘€滄€荤嚎閲囨牱鏁?脳 鎬荤嚎瀹藉害鈥濈殑鏍煎紡锛岄渶瑕佷竴涓～鍏呭€硷紝鎸囨槑瀛楄妭鏄～鍏呭湪鍏舵渶楂樹綅锛圥ADHI锛夎繕鏄渶浣庝綅锛圥ADLO锛夈€?
+- 瀵逛簬鎬讳綅鏁板皬浜庘€滄€荤嚎閲囨牱鏁?脳 鎬荤嚎瀹藉害鈥濈殑鏍煎紡锛岄渶瑕佷竴涓～鍏呭€硷紝鎸囨槑子楄妭鏄～鍏呭湪鍏舵渶楂樹綅锛圥ADHI锛夎繕鏄渶浣庝綅锛圥ADLO锛夈€?
 
 - 瀵逛簬鎬荤嚎閲囨牱鏁板ぇ浜?1 鐨勬牸寮忥紝闇€瑕佷竴涓搴忓€硷紝鎸囨槑鍍忕礌鏄珮浣嶄紭鍏堬紙MSB first锛孊E锛夎繕鏄綆浣嶄紭鍏堬紙LSB first锛孡E锛変紶杈撱€?
 
@@ -2687,7 +2729,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
 
     Bayer 鍥炬
 
-涓嬭〃鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 Bayer 鏍煎紡銆傛暟鎹粍缁囦粎浠ョ涓€涓儚绱犱负渚嬬粰鍑恒€?
+涓嬭〃鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 Bayer 鏍煎紡銆傛暟鎹粍统囦粎浠ョ涓€涓儚绱犱负渚嬬粰鍑恒€?
 \begingroup
     \tiny
     \setlength{\tabcolsep}{2pt}
@@ -2727,6 +2769,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-SBGGR8-1X8:
 
+
       - MEDIA_BUS_FMT_SBGGR8_1X8
       - 0x3001
 #       -
@@ -2751,6 +2794,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG8-1X8:
+
 
       - MEDIA_BUS_FMT_SGBRG8_1X8
       - 0x3013
@@ -2777,6 +2821,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG8-1X8:
 
+
       - MEDIA_BUS_FMT_SGRBG8_1X8
       - 0x3002
 #       -
@@ -2801,6 +2846,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB8-1X8:
+
 
       - MEDIA_BUS_FMT_SRGGB8_1X8
       - 0x3014
@@ -2827,6 +2873,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR10-ALAW8-1X8:
 
+
       - MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8
       - 0x3015
 #       -
@@ -2851,6 +2898,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG10-ALAW8-1X8:
+
 
       - MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8
       - 0x3016
@@ -2877,6 +2925,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG10-ALAW8-1X8:
 
+
       - MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8
       - 0x3017
 #       -
@@ -2901,6 +2950,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB10-ALAW8-1X8:
+
 
       - MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8
       - 0x3018
@@ -2927,6 +2977,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR10-DPCM8-1X8:
 
+
       - MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8
       - 0x300b
 #       -
@@ -2951,6 +3002,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG10-DPCM8-1X8:
+
 
       - MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8
       - 0x300c
@@ -2977,6 +3029,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG10-DPCM8-1X8:
 
+
       - MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8
       - 0x3009
 #       -
@@ -3002,6 +3055,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB10-DPCM8-1X8:
 
+
       - MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8
       - 0x300d
 #       -
@@ -3026,6 +3080,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `1`
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR10-2X8-PADHI-BE:
+
 
       - MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE
       - 0x3003
@@ -3075,6 +3130,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR10-2X8-PADHI-LE:
 
+
       - MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE
       - 0x3004
 #       -
@@ -3122,6 +3178,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `9`
       - b\ `8`
     - .. _MEDIA-BUS-FMT-SBGGR10-2X8-PADLO-BE:
+
 
       - MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE
       - 0x3005
@@ -3171,6 +3228,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - 0
     - .. _MEDIA-BUS-FMT-SBGGR10-2X8-PADLO-LE:
 
+
       - MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE
       - 0x3006
 #       -
@@ -3219,6 +3277,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `2`
     - .. _MEDIA-BUS-FMT-SBGGR10-1X10:
 
+
       - MEDIA_BUS_FMT_SBGGR10_1X10
       - 0x3007
 #       -
@@ -3243,6 +3302,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG10-1X10:
+
 
       - MEDIA_BUS_FMT_SGBRG10_1X10
       - 0x300e
@@ -3269,6 +3329,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG10-1X10:
 
+
       - MEDIA_BUS_FMT_SGRBG10_1X10
       - 0x300a
 #       -
@@ -3293,6 +3354,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB10-1X10:
+
 
       - MEDIA_BUS_FMT_SRGGB10_1X10
       - 0x300f
@@ -3319,6 +3381,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR12-1X12:
 
+
       - MEDIA_BUS_FMT_SBGGR12_1X12
       - 0x3008
 #       -
@@ -3343,6 +3406,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG12-1X12:
+
 
       - MEDIA_BUS_FMT_SGBRG12_1X12
       - 0x3010
@@ -3369,6 +3433,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG12-1X12:
 
+
       - MEDIA_BUS_FMT_SGRBG12_1X12
       - 0x3011
 #       -
@@ -3393,6 +3458,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB12-1X12:
+
 
       - MEDIA_BUS_FMT_SRGGB12_1X12
       - 0x3012
@@ -3419,6 +3485,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR14-1X14:
 
+
       - MEDIA_BUS_FMT_SBGGR14_1X14
       - 0x3019
 #       -
@@ -3443,6 +3510,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG14-1X14:
+
 
       - MEDIA_BUS_FMT_SGBRG14_1X14
       - 0x301a
@@ -3469,6 +3537,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG14-1X14:
 
+
       - MEDIA_BUS_FMT_SGRBG14_1X14
       - 0x301b
 #       -
@@ -3493,6 +3562,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB14-1X14:
+
 
       - MEDIA_BUS_FMT_SRGGB14_1X14
       - 0x301c
@@ -3519,6 +3589,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR16-1X16:
 
+
       - MEDIA_BUS_FMT_SBGGR16_1X16
       - 0x301d
 #       -
@@ -3543,6 +3614,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG16-1X16:
+
 
       - MEDIA_BUS_FMT_SGBRG16_1X16
       - 0x301e
@@ -3569,6 +3641,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG16-1X16:
 
+
       - MEDIA_BUS_FMT_SGRBG16_1X16
       - 0x301f
 #       -
@@ -3593,6 +3666,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB16-1X16:
+
 
       - MEDIA_BUS_FMT_SRGGB16_1X16
       - 0x3020
@@ -3619,6 +3693,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - r\ `0`
     - .. _MEDIA-BUS-FMT-SBGGR20-1X20:
 
+
       - MEDIA_BUS_FMT_SBGGR20_1X20
       - 0x3021
       -
@@ -3643,6 +3718,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - b\ `1`
       - b\ `0`
     - .. _MEDIA-BUS-FMT-SGBRG20-1X20:
+
 
       - MEDIA_BUS_FMT_SGBRG20_1X20
       - 0x3022
@@ -3669,6 +3745,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SGRBG20-1X20:
 
+
       - MEDIA_BUS_FMT_SGRBG20_1X20
       - 0x3023
       -
@@ -3693,6 +3770,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
       - g\ `1`
       - g\ `0`
     - .. _MEDIA-BUS-FMT-SRGGB20-1X20:
+
 
       - MEDIA_BUS_FMT_SRGGB20_1X20
       - 0x3024
@@ -3722,10 +3800,10 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
     \endgroup
 
 
-##### 鎵撳寘 YUV 鏍煎紡
+## 鎵撳寘 YUV 鏍煎紡
 
 
-杩欎簺鏁版嵁鏍煎紡灏嗗儚绱犳暟鎹綔涓猴紙鍙兘缁忚繃涓嬮噰鏍风殑锛塝銆乁 鍜?V 鍒嗛噺杩涜浼犺緭銆傞儴鍒嗘牸寮忓湪鍏舵煇浜涢噰鏍蜂腑鍖呭惈铏氭嫙浣嶏紝缁熺О涓衡€淵DYC鈥濓紙Y-Dummy-Y-Chroma锛孻-铏氭嫙-Y-鑹插害锛夋牸寮忋€備笉鑳戒緷璧栬繖浜涜櫄鎷熶綅鐨勫€硷紝鍥犱负瀹冧滑鏄湭瀹氫箟鐨勩€?
+杩欎簺鏁版嵁鏍煎紡灏嗗儚绱犳暟鎹綔涓猴紙鍙兘统忚繃涓嬮噰鏍风殑锛塝銆乁 鍜?V 鍒嗛噺杩涜浼犺緭銆傞儴鍒嗘牸寮忓湪鍏舵煇浜涢噰鏍蜂腑鍖呭惈铏氭嫙浣嶏紝统熺О涓衡€淵DYC鈥濓紙Y-Dummy-Y-Chroma锛孻-铏氭嫙-Y-鑹插害锛夋牸寮忋€備笉鑳戒緷璧栬繖浜涜櫄鎷熶綅鐨勫€硷紝鍥犱负瀹冧滑鏄湭瀹氫箟鐨勩€?
 
 鏍煎紡浠ｇ爜鐢变互涓嬩俊鎭瀯鎴愩€?
 
@@ -3739,7 +3817,7 @@ MEDIA_BUS_FMT_BGR888_1X24 浠ｇ爜涓嶅緱鐢ㄤ簬 CSI-2銆?
 
 渚嬪锛岃嫢鍍忕礌缂栫爜涓?8 浣?YUV 鍊硷紝涓嬮噰鏍蜂负 4:2:2锛屽苟浠ユ瘡鍍忕礌 2 涓?8 浣嶆€荤嚎閲囨牱銆佹寜 U銆乊銆乂銆乊 鐨勯『搴忎紶杈擄紝鍒欏懡鍚嶄负 `MEDIA_BUS_FMT_UYVY8_2X8`銆?
 
-v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛屽苟鎻忚堪浜嗘瘡涓噰鏍蜂腑鍍忕礌鏁版嵁鐨勭粍缁囨柟寮忋€傚綋涓€绉嶆牸寮忔ā寮忚鎷嗗垎鍒板涓噰鏍蜂腑鏃讹紝浼氭弿杩拌妯″紡涓瘡涓噰鏍枫€?
+v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛屽苟鎻忚堪浜嗘瘡涓噰鏍蜂腑鍍忕礌鏁版嵁鐨勭粍统囨柟寮忋€傚綋涓€绉嶆牸寮忔ā寮忚鎷嗗垎鍒板涓噰鏍蜂腑鏃讹紝浼氭弿杩拌妯″紡涓瘡涓噰鏍枫€?
 
 閫氳繃鎬荤嚎浼犺緭鐨勬瘡涓綅鐨勮鑹茬敱涓嬪垪浠ｇ爜涔嬩竴鏍囪瘑銆?
 
@@ -3805,6 +3883,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - 0
     - .. _MEDIA-BUS-FMT-Y8-1X8:
 
+
       - MEDIA_BUS_FMT_Y8_1X8
       - 0x2001
 #       -
@@ -3841,6 +3920,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-UV8-1X8:
+
 
       - MEDIA_BUS_FMT_UV8_1X8
       - 0x2015
@@ -3913,6 +3993,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-UYVY8-1_5X8:
+
 
       - MEDIA_BUS_FMT_UYVY8_1_5X8
       - 0x2002
@@ -4126,6 +4207,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY8-1_5X8:
 
+
       - MEDIA_BUS_FMT_VYUY8_1_5X8
       - 0x2003
 #       -
@@ -4337,6 +4419,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV8-1_5X8:
+
 
       - MEDIA_BUS_FMT_YUYV8_1_5X8
       - 0x2004
@@ -4550,6 +4633,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU8-1_5X8:
 
+
       - MEDIA_BUS_FMT_YVYU8_1_5X8
       - 0x2005
 #       -
@@ -4762,6 +4846,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `0`
     - .. _MEDIA-BUS-FMT-UYVY8-2X8:
 
+
       - MEDIA_BUS_FMT_UYVY8_2X8
       - 0x2006
 #       -
@@ -4903,6 +4988,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY8-2X8:
+
 
       - MEDIA_BUS_FMT_VYUY8_2X8
       - 0x2007
@@ -5046,6 +5132,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV8-2X8:
 
+
       - MEDIA_BUS_FMT_YUYV8_2X8
       - 0x2008
 #       -
@@ -5187,6 +5274,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU8-2X8:
+
 
       - MEDIA_BUS_FMT_YVYU8_2X8
       - 0x2009
@@ -5330,6 +5418,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `0`
     - .. _MEDIA-BUS-FMT-Y10-1X10:
 
+
       - MEDIA_BUS_FMT_Y10_1X10
       - 0x200a
 #       -
@@ -5366,6 +5455,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-Y10-2X8-PADHI_LE:
+
 
       - MEDIA_BUS_FMT_Y10_2X8_PADHI_LE
       - 0x202c
@@ -5438,6 +5528,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `9`
       - y\ `8`
     - .. _MEDIA-BUS-FMT-UYVY10-2X10:
+
 
       - MEDIA_BUS_FMT_UYVY10_2X10
       - 0x2018
@@ -5581,6 +5672,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY10-2X10:
 
+
       - MEDIA_BUS_FMT_VYUY10_2X10
       - 0x2019
 #       -
@@ -5722,6 +5814,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV10-2X10:
+
 
       - MEDIA_BUS_FMT_YUYV10_2X10
       - 0x200b
@@ -5865,6 +5958,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU10-2X10:
 
+
       - MEDIA_BUS_FMT_YVYU10_2X10
       - 0x200c
 #       -
@@ -6007,6 +6101,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `0`
     - .. _MEDIA-BUS-FMT-Y12-1X12:
 
+
       - MEDIA_BUS_FMT_Y12_1X12
       - 0x2013
 #       -
@@ -6043,6 +6138,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-UYVY12-2X12:
+
 
       - MEDIA_BUS_FMT_UYVY12_2X12
       - 0x201c
@@ -6186,6 +6282,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY12-2X12:
 
+
       - MEDIA_BUS_FMT_VYUY12_2X12
       - 0x201d
 #       -
@@ -6327,6 +6424,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV12-2X12:
+
 
       - MEDIA_BUS_FMT_YUYV12_2X12
       - 0x201e
@@ -6470,6 +6568,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU12-2X12:
 
+
       - MEDIA_BUS_FMT_YVYU12_2X12
       - 0x201f
 #       -
@@ -6612,6 +6711,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `0`
     - .. _MEDIA-BUS-FMT-Y14-1X14:
 
+
       - MEDIA_BUS_FMT_Y14_1X14
       - 0x202d
 #       -
@@ -6649,6 +6749,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-Y16-1X16:
 
+
       - MEDIA_BUS_FMT_Y16_1X16
       - 0x202e
 #       -
@@ -6685,6 +6786,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-UYVY8-1X16:
+
 
       - MEDIA_BUS_FMT_UYVY8_1X16
       - 0x200f
@@ -6758,6 +6860,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY8-1X16:
 
+
       - MEDIA_BUS_FMT_VYUY8_1X16
       - 0x2010
 #       -
@@ -6829,6 +6932,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV8-1X16:
+
 
       - MEDIA_BUS_FMT_YUYV8_1X16
       - 0x2011
@@ -6902,6 +7006,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU8-1X16:
 
+
       - MEDIA_BUS_FMT_YVYU8_1X16
       - 0x2012
 #       -
@@ -6973,6 +7078,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `1`
       - u\ `0`
     - .. _MEDIA-BUS-FMT-YDYUYDYV8-1X16:
+
 
       - MEDIA_BUS_FMT_YDYUYDYV8_1X16
       - 0x2014
@@ -7116,6 +7222,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `0`
     - .. _MEDIA-BUS-FMT-UYVY10-1X20:
 
+
       - MEDIA_BUS_FMT_UYVY10_1X20
       - 0x201a
 #       -
@@ -7187,6 +7294,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY10-1X20:
+
 
       - MEDIA_BUS_FMT_VYUY10_1X20
       - 0x201b
@@ -7260,6 +7368,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV10-1X20:
 
+
       - MEDIA_BUS_FMT_YUYV10_1X20
       - 0x200d
 #       -
@@ -7331,6 +7440,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU10-1X20:
+
 
       - MEDIA_BUS_FMT_YVYU10_1X20
       - 0x200e
@@ -7404,6 +7514,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `0`
     - .. _MEDIA-BUS-FMT-VUY8-1X24:
 
+
       - MEDIA_BUS_FMT_VUY8_1X24
       - 0x201a
 #       -
@@ -7441,6 +7552,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUV8-1X24:
 
+
       - MEDIA_BUS_FMT_YUV8_1X24
       - 0x2025
 #       -
@@ -7477,6 +7589,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-UYYVYY8-0-5X24:
+
 
       - MEDIA_BUS_FMT_UYYVYY8_0_5X24
       - 0x2026
@@ -7550,6 +7663,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-UYVY12-1X24:
 
+
       - MEDIA_BUS_FMT_UYVY12_1X24
       - 0x2020
 #       -
@@ -7621,6 +7735,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-VYUY12-1X24:
+
 
       - MEDIA_BUS_FMT_VYUY12_1X24
       - 0x2021
@@ -7694,6 +7809,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUYV12-1X24:
 
+
       - MEDIA_BUS_FMT_YUYV12_1X24
       - 0x2022
 #       -
@@ -7765,6 +7881,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-YVYU12-1X24:
+
 
       - MEDIA_BUS_FMT_YVYU12_1X24
       - 0x2023
@@ -7838,6 +7955,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - u\ `0`
     - .. _MEDIA-BUS-FMT-YUV10-1X30:
 
+
       - MEDIA_BUS_FMT_YUV10_1X30
       - 0x2016
 #       -
@@ -7874,6 +7992,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-UYYVYY10-0-5X30:
+
 
       - MEDIA_BUS_FMT_UYYVYY10_0_5X30
       - 0x2027
@@ -7946,6 +8065,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-AYUV8-1X32:
+
 
       - MEDIA_BUS_FMT_AYUV8_1X32
       - 0x2017
@@ -8046,6 +8166,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - 0
     - .. _MEDIA-BUS-FMT-UYYVYY12-0-5X36:
 
+
       - MEDIA_BUS_FMT_UYYVYY12_0_5X36
       - 0x2028
       -
@@ -8125,6 +8246,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - y\ `1`
       - y\ `0`
     - .. _MEDIA-BUS-FMT-YUV12-1X36:
+
 
       - MEDIA_BUS_FMT_YUV12_1X36
       - 0x2029
@@ -8260,6 +8382,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - 0
     - .. _MEDIA-BUS-FMT-YUV16-1X48:
 
+
       - MEDIA_BUS_FMT_YUV16_1X48
       - 0x202a
 #       -
@@ -8331,6 +8454,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - v\ `1`
       - v\ `0`
     - .. _MEDIA-BUS-FMT-UYYVYY16-0-5X48:
+
 
       - MEDIA_BUS_FMT_UYYVYY16_0_5X48
       - 0x202b
@@ -8477,7 +8601,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
 
 	\endgroup
 
-##### HSV/HSL 鏍煎紡
+## HSV/HSL 鏍煎紡
 
 
 杩欎簺鏍煎紡浠ュ渾鏌卞舰鍧愭爣绯讳娇鐢ㄨ壊鐩?楗卞拰搴?鏄庡害锛圚ue-Saturation-Value锛夋垨
@@ -8491,7 +8615,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
 
 - 鎬荤嚎瀹藉害銆?
 
-- 瀵逛簬鎬讳綅鏁板皬浜庘€滄€荤嚎閲囨牱鏁?脳 鎬荤嚎瀹藉害鈥濈殑鏍煎紡锛岄渶瑕佷竴涓～鍏呭€硷紝鎸囨槑瀛楄妭鏄～鍏呭湪鍏舵渶楂樹綅锛圥ADHI锛夎繕鏄渶浣庝綅锛圥ADLO锛夈€?
+- 瀵逛簬鎬讳綅鏁板皬浜庘€滄€荤嚎閲囨牱鏁?脳 鎬荤嚎瀹藉害鈥濈殑鏍煎紡锛岄渶瑕佷竴涓～鍏呭€硷紝鎸囨槑子楄妭鏄～鍏呭湪鍏舵渶楂樹綅锛圥ADHI锛夎繕鏄渶浣庝綅锛圥ADLO锛夈€?
 
 - 瀵逛簬鎬荤嚎閲囨牱鏁板ぇ浜?1 鐨勬牸寮忥紝闇€瑕佷竴涓搴忓€硷紝鎸囨槑鍍忕礌鏄珮浣嶄紭鍏堬紙MSB first锛孊E锛夎繕鏄綆浣嶄紭鍏堬紙LSB first锛孡E锛変紶杈撱€?
 
@@ -8547,6 +8671,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - 0
     - .. _MEDIA-BUS-FMT-AHSV8888-1X32:
 
+
       - MEDIA_BUS_FMT_AHSV8888_1X32
       - 0x6001
       -
@@ -8587,7 +8712,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
     \endgroup
 
 
-##### JPEG 鍘嬬缉鏍煎紡
+## JPEG 鍘嬬缉鏍煎紡
 
 
 杩欎簺鏁版嵁鏍煎紡鐢辨潵鑷?JPEG 鍘嬬缉杩囩▼鐨勬湁搴?8 浣嶅瓧鑺傚簭鍒楁瀯鎴愩€傞櫎 `_JPEG`
@@ -8611,11 +8736,12 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - Remarks
     - .. _MEDIA-BUS-FMT-JPEG-1X8:
 
+
       - MEDIA_BUS_FMT_JPEG_1X8
       - 0x4001
       - 闄ょ敤浜庡苟琛屾€荤嚎澶栵紝璇ユ牸寮忎篃鎺ㄨ崘鐢ㄤ簬閫氳繃 MIPI CSI 鎬荤嚎銆侀噰鐢?
 	User Defined 8-bit Data Types 浼犺緭 JPEG 鏁版嵁銆?
-##### 渚涘簲鍟嗕笌璁惧鐗瑰畾鏍煎紡
+### 渚涘簲鍟嗕笌璁惧鐗瑰畾鏍煎紡
 
 
 鏈妭鍒楀嚭鎴栦负渚涘簲鍟嗐€佹垨涓鸿澶囨墍鐗瑰畾鐨勫鏉傛暟鎹牸寮忋€?
@@ -8630,6 +8756,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - Code
       - Comments
     - .. _MEDIA-BUS-FMT-S5C-UYVY-JPEG-1X8:
+
 
       - MEDIA_BUS_FMT_S5C_UYVY_JPEG_1X8
       - 0x5001
@@ -8651,6 +8778,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - Comments
     - .. _MEDIA-BUS-FMT-METADATA-FIXED:
 
+
       - MEDIA_BUS_FMT_METADATA_FIXED
       - 0x7001
       - 褰撳悓涓€涓┍鍔ㄥ鐞嗛摼璺殑涓ょ锛屼笖鎬荤嚎鏍煎紡涓轰竴绉嶆棤娉曚粠鐢ㄦ埛绌洪棿
@@ -8659,7 +8787,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
 ##### 閫氱敤涓茶鍏冩暟鎹牸寮?
 
 
-閫氱敤涓茶鍏冩暟鎹牸寮忕敤浜庝覆琛屾€荤嚎涓婏紝鍏朵腑瀹為檯鏁版嵁鍐呭鎴栧鎴栧皯鏄澶囩壒瀹氱殑锛屼絾鏁版嵁鐢卞涓澶囧彂閫佸拰鎺ユ敹锛岃繖浜涜澶囦笉浠ヤ换浣曟柟寮忓鐞嗘暟鎹紝鍙槸灏嗗叾鍐欏叆绯荤粺鍐呭瓨锛屼緵娴佹按绾挎湯绔殑杞欢杩涜澶勭悊銆?
+閫氱敤涓茶鍏冩暟鎹牸寮忕敤浜庝覆琛屾€荤嚎涓婏紝鍏朵腑瀹為檯鏁版嵁内呭鎴栧鎴栧皯鏄澶囩壒瀹氱殑锛屼絾鏁版嵁鐢卞涓澶囧彂閫佸拰鎺ユ敹锛岃繖浜涜澶囦笉浠ヤ换浣曟柟寮忓鐞嗘暟鎹紝鍙槸灏嗗叾内欏叆绯荤粺内呭瓨锛屼緵娴佹按绾挎湯绔殑杞欢杩涜澶勭悊銆?
 
 鏁扮粍鍗曞厓鏍间腑鐨勨€渂鈥濊〃绀轰竴涓暟鎹瓧鑺傦紝鍏跺悗璺熼殢浣嶇殑缂栧彿锛屾渶鍚庢槸浠ヤ笅鏍囩殑浣嶇紪鍙枫€傗€渪鈥濊〃绀哄～鍏呬綅銆?
 :header-rows:  2
@@ -8698,6 +8826,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - 0
     - .. _MEDIA-BUS-FMT-META-8:
 
+
       - MEDIA_BUS_FMT_META_8
       - 0x8001
 #       -
@@ -8726,6 +8855,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - b0\ `1`
       - b0\ `0`
     - .. _MEDIA-BUS-FMT-META-10:
+
 
       - MEDIA_BUS_FMT_META_10
       - 0x8002
@@ -8756,6 +8886,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - x
     - .. _MEDIA-BUS-FMT-META-12:
 
+
       - MEDIA_BUS_FMT_META_12
       - 0x8003
 #       -
@@ -8784,6 +8915,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - x
       - x
     - .. _MEDIA-BUS-FMT-META-14:
+
 
       - MEDIA_BUS_FMT_META_14
       - 0x8004
@@ -8814,6 +8946,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - x
     - .. _MEDIA-BUS-FMT-META-16:
 
+
       - MEDIA_BUS_FMT_META_16
       - 0x8005
 #       -
@@ -8843,6 +8976,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - x
     - .. _MEDIA-BUS-FMT-META-20:
 
+
       - MEDIA_BUS_FMT_META_20
       - 0x8006
 #       -
@@ -8871,6 +9005,7 @@ v4l2-mbus-pixelcode-yuv8 鍒楀嚭浜嗗凡鏈夌殑鎵撳寘 YUV 鏍煎紡锛�
       - x
       - x
     - .. _MEDIA-BUS-FMT-META-24:
+
 
       - MEDIA_BUS_FMT_META_24
       - 0x8007

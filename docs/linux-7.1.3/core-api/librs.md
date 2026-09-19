@@ -1,3 +1,5 @@
+# librs
+
 ﻿## Reed-Solomon 库编程接
 
 :Author: Thomas Gleixner
@@ -138,10 +140,12 @@ Reed-Solomon 码用于通信和存储应用中，以确保数据完整性
 本章包含 Reed-Solomon 库中供开发者使用的结构的自动生成文档
    :internal:
 
+
 ## 提供的公共函
 
 本章包含导出Reed-Solomon 函数的自动生成文档
    :export:
+
 
 ## 致谢
 

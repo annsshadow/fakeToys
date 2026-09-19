@@ -1,7 +1,10 @@
 
+# testing
+
 :Original: Documentation/rust/testing.rst
 
 :翻译:
+
 
  郭杰 Ben Guo <benx.guo@gmail.com>
 
@@ -21,7 +24,7 @@
 
 这些测试来自 Rust 文档中的示例。它们会被转换为 KUnit 测试。
 
-######## 使用
+#### 使用
 
 
 ```
@@ -41,7 +44,7 @@ Documentation/dev-tools/kunit/index.rst。
 	   Kernel hacking -> Rust hacking -> Doctests for the `kernel` crate
 
 ```
-######## KUnit 测试即文档测试
+##### KUnit 测试即文档测试
 
 
 文档测试（ **doctests** ）一般用于展示函数、结构体或模块等的使用方法。
@@ -121,7 +124,7 @@ Rust 测试中常用的断言宏是来自 Rust 标准库（ `core` ）中的 `as
 
 	https://rust.docs.kernel.org/kernel/error/type.Result.html#error-codes-in-c-and-rust
 
-### ``#[test]`` 测试
+## ``#[test]`` 测试
 
 
 此外，还有 `#[test]` 测试。与文档测试类似，这些测试与用户空间中的测试方式也非常相近，并且同样会映射到 KUnit。
@@ -185,7 +188,7 @@ Rust 测试中常用的断言宏是来自 Rust 标准库（ `core` ）中的 `as
 如果 `#[test]` 测试可以对用户起到示例作用，那就应该改用文档测试。
 即使是 API 的边界情况，例如错误或边界问题，放在示例中展示也同样有价值。
 
-### ``rusttest`` 宿主机测试
+## ``rusttest`` 宿主机测试
 
 
 ```

@@ -1,3 +1,5 @@
+# nfsd-io-modes
+
 ﻿
 ## NFSD IO 模式
 
@@ -83,6 +85,7 @@ NFSD DIRECT O_DIRECT 的意义上会尽最大努力处理未对齐IO
     nfsd_write_direct 跟踪事件展示NFSD 如何将给定未对齐WRITE 拆分为一DIO 对齐
     的中间段
     这一组合跟踪事件WRITE 很有:
+
 
       echo 1 > /sys/kernel/tracing/events/nfsd/nfsd_write_opened/enable
       echo 1 > /sys/kernel/tracing/events/nfsd/nfsd_write_direct/enable

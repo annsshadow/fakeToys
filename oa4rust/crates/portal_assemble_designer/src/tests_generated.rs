@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/create")
+                    .uri("/api/portal/assemble/designer/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/get/test-id")
+                    .uri("/api/portal/assemble/designer/get/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/list")
+                    .uri("/api/portal/assemble/designer/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/save/test-id")
+                    .uri("/api/portal/assemble/designer/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/page/list/test-id")
+                    .uri("/api/portal/assemble/designer/page/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/page/test-id")
+                    .uri("/api/portal/assemble/designer/page/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/page/create")
+                    .uri("/api/portal/assemble/designer/page/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/page/save/test-id")
+                    .uri("/api/portal/assemble/designer/page/save/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/assemble/designer/page/delete/test-id")
+                    .uri("/api/portal/assemble/designer/page/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -202,7 +202,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/design/list")
+                    .uri("/api/portal/design/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -223,7 +223,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/design/test-id")
+                    .uri("/api/portal/design/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -244,7 +244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/portal/design/save")
+                    .uri("/api/portal/design/save")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

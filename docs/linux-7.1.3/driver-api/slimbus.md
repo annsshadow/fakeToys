@@ -1,3 +1,5 @@
+# slimbus
+
 ﻿## Linux 内核 SLIMbus 支持
 
 
@@ -56,9 +58,12 @@ slim_driver。该通知允许驱动采取必要步骤
 
    :internal:
 
+
    :internal:
 
+
    :export:
+
 
 ### 时钟暂停（Clock-pause）：
 
@@ -67,6 +72,7 @@ SLIMbus 规定，在总线进入低功耗模式之前，必须向总线上所活
 #### Clock-pause API锛。
 
    :export:
+
 
 ### 消息传递（Messaging）：
 
@@ -77,6 +83,8 @@ SLIMbus 规定，在总线进入低功耗模式之前，必须向总线上所活
 
    :export:
 
+
 #### 流式（Streaming）API
 
    :export:
+

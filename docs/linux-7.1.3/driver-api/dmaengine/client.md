@@ -1,3 +1,5 @@
+# client
+
 ﻿## DMA Engine（DMA 引擎）API 指南
 
 
@@ -129,11 +131,13 @@ slave DMA 的用法包含以下步骤：
 
     - DMA_MEM_TO_DEV / DEV_MEM_TO_MEM:
 
+
       1. 准备描述符（dmaengine_prep_*         在客户端缓冲区中构造元数据
       2. 使用 dmaengine_desc_attach_metadata() 将缓冲区附加到描述符
       3. 提交传输
 
     - DMA_DEV_TO_MEM:
+
 
       1. 准备描述符（dmaengine_prep_*      2. 使用 dmaengine_desc_attach_metadata() 将缓冲区附加到描述符
       3. 提交传输
@@ -143,15 +147,18 @@ slave DMA 的用法包含以下步骤：
 
     - DMA_MEM_TO_DEV / DEV_MEM_TO_MEM:
 
+
       1. 准备描述符（dmaengine_prep_*      2. 使用 dmaengine_desc_get_metadata_ptr() 获取指向引擎元数据区的指      3. 在该指针处更新元数据
       4. 使用 dmaengine_desc_set_metadata_len() 告知 DMA engine 客户端已放入元数据缓冲区的字节数
       5. 提交传输
 
     - DMA_DEV_TO_MEM:
 
+
       1. 准备描述符（dmaengine_prep_*      2. 提交传输
       3. 传输完成时，使用 dmaengine_desc_get_metadata_ptr() 获取指向引擎元数据区的指      4. 从该指针读取元数
   .. note::
+
 
      当使DESC_METADATA_ENGINE 模式时，描述符的元数据区在传输完成后不再有效（若使用回调，则有效至回调返回为止）
      不允许混合使DESC_METADATA_CLIENT / DESC_METADATA_ENGINE，客户端驱动每个描述符必须只使用其中一种模式

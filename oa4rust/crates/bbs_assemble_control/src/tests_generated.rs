@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/config")
+                    .uri("/api/bbs/assemble/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/section/list")
+                    .uri("/api/bbs/assemble/control/section/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/update/control/config")
+                    .uri("/api/bbs/assemble/control/update/control/config")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/forum/list")
+                    .uri("/api/bbs/assemble/control/forum/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/forum/test-id")
+                    .uri("/api/bbs/assemble/control/forum/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/topic/create")
+                    .uri("/api/bbs/assemble/control/topic/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/topic/list/forum/test-id")
+                    .uri("/api/bbs/assemble/control/topic/list/forum/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/reply/create")
+                    .uri("/api/bbs/assemble/control/reply/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -181,7 +181,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/forum/view/all")
+                    .uri("/api/bbs/assemble/control/forum/view/all")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -207,7 +207,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/reply/list/sub/test-id")
+                    .uri("/api/bbs/assemble/control/reply/list/sub/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -228,7 +228,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/subject/view/test-id")
+                    .uri("/api/bbs/assemble/control/subject/view/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -249,7 +249,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/subject/top/test-id")
+                    .uri("/api/bbs/assemble/control/subject/top/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -270,7 +270,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/permission/section/test-id")
+                    .uri("/api/bbs/assemble/control/permission/section/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -291,7 +291,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/permission/subject/test-id")
+                    .uri("/api/bbs/assemble/control/permission/subject/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -312,7 +312,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/section/viewforum/test-id")
+                    .uri("/api/bbs/assemble/control/section/viewforum/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -345,7 +345,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/shutup/create")
+                    .uri("/api/bbs/assemble/control/shutup/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -388,7 +388,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/assemble/control/uuid")
+                    .uri("/api/bbs/assemble/control/uuid")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

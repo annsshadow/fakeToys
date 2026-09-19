@@ -1,7 +1,9 @@
+# vidioc-g-ctrl
+
 ﻿
 
 
-######## ioctl VIDIOC_G_CTRL, VIDIOC_S_CTRL
+## ioctl VIDIOC_G_CTRL, VIDIOC_S_CTRL
 
 
 ## 名称（Name

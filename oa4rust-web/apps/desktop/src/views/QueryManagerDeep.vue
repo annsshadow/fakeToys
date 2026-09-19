@@ -4,7 +4,7 @@
     <div class="qm-header glass-card">
       <div class="qm-title">
         <h1>查询管理</h1>
-        <p class="subtitle">/jaxrs/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
+        <p class="subtitle">/api/query/assemble/designer/* — 查询定义、视图、表格、SQL、统计、导入</p>
       </div>
       <div class="qm-actions">
         <button class="btn" @click="showCreate=true">+ 新建查询</button>
@@ -399,7 +399,7 @@ async function runQuery() {
   if (!sqlText.value.trim() || !selected.value) return
   resultLoading.value = true
   try {
-    const r: any = await api.post('/jaxrs/query/assemble/designer/execute', {
+    const r: any = await api.post('/api/query/assemble/designer/execute', {
       id: selected.value.id,
       sql: sqlText.value,
     })
@@ -419,7 +419,7 @@ async function runStats() {
   if (!selected.value) return
   resultLoading.value = true
   try {
-    const r: any = await api.post('/jaxrs/query/assemble/designer/stat/do', {
+    const r: any = await api.post('/api/query/assemble/designer/stat/do', {
       id: selected.value.id,
       dimension: statConfig.value.dimension,
       metric: statConfig.value.metric,
@@ -434,7 +434,7 @@ async function runStats() {
 }
 
 const delM = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/query/assemble/designer/delete/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: ['qm', 'list'] })
     if (selected.value?.id) selected.value = null
@@ -447,7 +447,7 @@ function deleteQuery() {
 
 const cm = useMutation({
   mutationFn: () =>
-    api.post('/jaxrs/query/assemble/designer/create', {
+    api.post('/api/query/assemble/designer/create', {
       name: nform.value.name,
       sql: nform.value.sql,
       category: nform.value.category,
@@ -507,7 +507,7 @@ async function runBatch() {
     if (!batchRunning.value) break
     const t0 = Date.now()
     try {
-      await api.post('/jaxrs/query/assemble/designer/execute', { sql: stmt.trim() })
+      await api.post('/api/query/assemble/designer/execute', { sql: stmt.trim() })
       batchResults.value.push({ success: true, message: '执行成功', duration: Date.now() - t0 })
     } catch (e: any) {
       batchResults.value.push({ success: false, message: e?.message ?? '执行失败', duration: Date.now() - t0 })
@@ -634,7 +634,7 @@ async function doImport() {
     }
     for (const q of data) {
       try {
-        await api.post('/jaxrs/query/assemble/designer/create', q)
+        await api.post('/api/query/assemble/designer/create', q)
       } catch {}
     }
     importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条` }
@@ -659,16 +659,16 @@ function openProps() {
   if (selected.value) showProps.value = true
 }
 
-const api_jaxrs_qu_102_data = ref<any[]>([])
-const api_jaxrs_qu_109_data = ref<any[]>([])
-const api_jaxrs_qu_615_data = ref<any[]>([])
-const api_jaxrs_qu_186_data = ref<any[]>([])
-const api_jaxrs_qu_731_data = ref<any[]>([])
-const api_jaxrs_qu_720_data = ref<any[]>([])
-const api_jaxrs_qu_81_data = ref<any[]>([])
-const api_jaxrs_qu_760_data = ref<any[]>([])
-const api_jaxrs_qu_523_data = ref<any[]>([])
-const api_jaxrs_qu_39_data = ref<any[]>([])
+const api_qu_102_data = ref<any[]>([])
+const api_qu_109_data = ref<any[]>([])
+const api_qu_615_data = ref<any[]>([])
+const api_qu_186_data = ref<any[]>([])
+const api_qu_731_data = ref<any[]>([])
+const api_qu_720_data = ref<any[]>([])
+const api_qu_81_data = ref<any[]>([])
+const api_qu_760_data = ref<any[]>([])
+const api_qu_523_data = ref<any[]>([])
+const api_qu_39_data = ref<any[]>([])
 </script>
 
 <style scoped>

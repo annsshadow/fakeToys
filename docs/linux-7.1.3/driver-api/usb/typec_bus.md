@@ -1,3 +1,5 @@
+# typec_bus
+
 ﻿
 ## 用于 USB Type-C 交替模式（Alternate Mode）驱动的 API
 
@@ -36,7 +38,7 @@ USB Type-C Connector Class <typec> 为端口支持的每个交替模式提供一
 #define ALTMODEX_CONF_A = TYPEC_MODAL_STATE(0);
 #define ALTMODEX_CONF_B = TYPEC_MODAL_STATE(1);
 
-#### 线缆插头交替模式
+## 线缆插头交替模式
 
 
 交替模式驱动不会被绑定到线缆插头交替模式设备，只绑定到对端交替模式设备。如果该交替模式支持或要求一响应 SOP Prime（以及可选的 SOP Double Prime）消息的线缆，该交替模式的驱动必须使`typec_altmode_get_plug()`

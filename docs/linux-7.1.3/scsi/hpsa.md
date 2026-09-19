@@ -1,3 +1,5 @@
+# hpsa
+
 ﻿
 ## HPSA - Hewlett Packard Smart Array 驱动
 
@@ -39,6 +41,7 @@
   因此对于逻辑驱动器的更改，用户通常不必使用它。在热插拔诸如磁带机  或包含预配置逻辑驱动器的整个存储箱等设备时，它可能很有用
   "firmware_revision" 属性包Smart Array 的固件版本。例:
 
+
 	root@host:/sys/class/scsi_host/host4# cat firmware_revision
 	7.14
 
@@ -58,6 +61,7 @@
 
   （其c:b:t:l 分别是设备的控制器、总线、目标与 lun
   例如::
+
 
 	root@host:/sys/class/scsi_disk/4:0:0:0/device# cat unique_id
 	600508B1001044395355323037570F77

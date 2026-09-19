@@ -195,7 +195,7 @@ pub async fn get_query_history(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, create_time FROM x_query_import_record ORDER BY create_time DESC LIMIT $1::int",
+            "SELECT id, name, create_time FROM x_query_import_record ORDER BY create_time DESC LIMIT $1",
             &[&limit],
         )
         .await
@@ -205,11 +205,20 @@ pub async fn get_query_history(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("query".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "query".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "executedAt".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -246,7 +255,7 @@ pub async fn cache_query_result(
 
     let cached = match query_row {
         Some(row) => {
-            let query_name: String = row.get("name");
+            let query_name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let cache_id = uuid::Uuid::new_v4().to_string();
             client
                 .execute(
@@ -289,7 +298,7 @@ pub async fn get_cache_status(
 
     let (cached, hits, misses) = match query_row {
         Some(row) => {
-            let query_name: String = row.get("name");
+            let query_name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
             let count_row = client
                 .query_one(
                     "SELECT COUNT(*) as cnt FROM x_query_import_record WHERE name = $1",
@@ -320,20 +329,20 @@ pub async fn get_cache_status(
 }
 
 /// 查询核心Express路由
-/// 路由前缀: /jaxrs/query/core/express/*
+/// 路由前缀: /api/query/core/express/*
 pub fn query_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/query/core/express/execute", post(execute_query))
+        .route("/api/query/core/express/execute", post(execute_query))
         .route(
-            "/jaxrs/query/core/express/history/{limit}",
+            "/api/query/core/express/history/{limit}",
             get(get_query_history),
         )
         .route(
-            "/jaxrs/query/core/express/cache/{queryId}",
+            "/api/query/core/express/cache/{queryId}",
             post(cache_query_result),
         )
         .route(
-            "/jaxrs/query/core/express/cache/status/{queryId}",
+            "/api/query/core/express/cache/status/{queryId}",
             get(get_cache_status),
         )
         .layer(Extension(pool))

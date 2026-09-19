@@ -1,4 +1,6 @@
 
+# sphinx
+
 	  Documentation/doc-guide/index.rst <doc_guide>
 
 
@@ -67,7 +69,7 @@ indicare che state usando il nuovo ambiente. Se aprite un nuova sessione,
 prima di generare la documentazione, dovrete rieseguire questo comando per
 rientrare nell'ambiente virtuale.
 
-### Generazione d'immagini
+## Generazione d'immagini
 
 
 Il meccanismo che genera la documentazione del kernel contiene un'estensione
@@ -106,6 +108,7 @@ sarà in grado di darvi dei suggerimenti su come procedere per completare
 	Warning: better to also install "texlive-luatex85".
 	You should run:
 
+
 		sudo dnf install -y texlive-luatex85
 		/usr/bin/virtualenv sphinx_2.4.4
 		. sphinx_2.4.4/bin/activate
@@ -121,6 +124,7 @@ ambiente virtuale per Python. I requisiti per generare i documenti html
 sono considerati obbligatori, gli altri sono opzionali.
 
 Questo script ha i seguenti parametri:
+
 
 `--no-pdf`
 	Disabilita i controlli per la generazione di PDF;
@@ -174,6 +178,7 @@ Potete eliminare la documentazione generata tramite il comando
 
 Aggiungere nuova documentazione è semplice:
 
+
 1. aggiungete un file `.rst` nella sottocartella `Documentation`
 2. aggiungete un riferimento ad esso nell'indice (`TOC tree`_) in
    `Documentation/index.rst`.
@@ -200,6 +205,7 @@ cui cominciare. Esistono, inoltre, anche alcuni
 In questa sezione troverete alcune linee guida specifiche per la documentazione
 del kernel:
 
+
 - Non esagerate con i costrutti di reStructuredText. Mantenete la
   documentazione semplice. La maggior parte della documentazione dovrebbe
   essere testo semplice con una strutturazione minima che permetta la
@@ -213,6 +219,7 @@ del kernel:
 
 - Mantenete la decorazione dei livelli di intestazione come segue:
 
+
 ```
 
        ======
@@ -221,15 +228,18 @@ del kernel:
 
   2. ``=`` per i capitoli::
 
+
        Capitoli
        ========
 
   3. ``-`` per le sezioni::
 
+
        Sezioni
        -------
 
   4. ``~`` per le sottosezioni::
+
 
        Sottosezioni
        ~~~~~~~~~~~~
@@ -255,11 +265,13 @@ Il **Dominio Sphinx C** (denominato c) è adatto alla documentazione delle API C
 Per esempio, un prototipo di una funzione:
 
 
+
     .. c:function:: int ioctl( int fd, int request )
 
 Il dominio C per kernel-doc ha delle funzionalità aggiuntive. Per esempio,
 potete assegnare un nuovo nome di riferimento ad una funzione con un nome
 molto comune come `open` o `ioctl`:
+
 
 
      .. c:function:: int ioctl( int fd, int request )
@@ -289,6 +301,7 @@ ne giustifichino l'uso.
 La `flat-table` è anch'essa una lista di liste simile alle `list-table`
 ma con delle funzionalità aggiuntive:
 
+
 - column-span: col ruolo `cspan` una cella può essere estesa attraverso
   colonne successive
 
@@ -302,6 +315,7 @@ ma con delle funzionalità aggiuntive:
 
 opzioni:
 
+
 - `:header-rows:`   [int] conta le righe di intestazione
 - `:stub-columns:`  [int] conta le colonne di stub
 - `:widths:`        [[int] [int] ... ] larghezza delle colonne
@@ -309,6 +323,7 @@ opzioni:
   mancanti, ne crea di vuote.
 
 ruoli:
+
 
 - `:cspan:` [int] colonne successive (**morecols**)
 - `:rspan:` [int] righe successive (**morerows**)
@@ -338,9 +353,11 @@ la lista di celle che compongono la **riga** stessa. Fanno eccezione i **comment
 
       - .. _`it last row`:
 
+
         - row 3
 
 Che verrà rappresentata nel seguente modo:
+
 
    .. flat-table:: table title
       :widths: 2 1 1 3
@@ -359,6 +376,7 @@ Che verrà rappresentata nel seguente modo:
         - `1` `1` field 2.2 - 3.3
 
       - .. _`it last row`:
+
 
         - row 3
 

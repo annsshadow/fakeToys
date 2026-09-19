@@ -1,7 +1,9 @@
+# gen-errors
+
 ﻿
 
 
-######## 通用错误码（Generic Error Codes
+## 通用错误码（Generic Error Codes
 
 
     :header-rows:  0

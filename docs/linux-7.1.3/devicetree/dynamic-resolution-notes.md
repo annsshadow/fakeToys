@@ -1,8 +1,10 @@
+# dynamic-resolution-notes
+
 ﻿## DeviceTree 动态解析器说明
 
 
 本文档描述位drivers/of/resolver.c 的内核内 DeviceTree 解析器的实现
-### 解析器的工作原理
+## 解析器的工作原理
 
 
 解析器的输入是一棵使用恰当的 dtc 选项编译、并带有 /plugin/ 标签的任意设备树。这会生成相应的 __fixups__ __local_fixups__ 节点

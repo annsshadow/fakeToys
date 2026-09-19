@@ -1,8 +1,11 @@
+# operations
+
 ﻿..
         为保持作者理智的笨拙风格说明        请尽量在单独的行上开始句子，以便句子变更不会diff 中串色        标题装饰sphinx.rst 中有说明
 ## 支持的文件操
 
    :local:
+
 
 下面讨论 iomap 实现的高层文件操作
 ## 缓冲 I/O
@@ -96,7 +99,7 @@ iomap 还跟踪正在进行的读写磁盘 I/O 数量该结构比 `struct buffer
 ### 缓冲
 
 `iomap_file_buffered_write` 函数将一`iocb` 写入 pagecache`IOMAP_WRITE` `IOMAP_WRITE` | `IOMAP_NOWAIT` 将作`flags` 参数传给 `->iomap_begin`调用者通常在调用此函数前以共享或独占模式获`i_rwsem`
-#### mmap 鍐欑己椤。
+#### mmap 内欑己椤。
 
 `iomap_page_mkwrite` 函数处理pagecache 中某 folio 的写缺页`IOMAP_WRITE | IOMAP_FAULT` 将作`flags` 参数传给 `->iomap_begin`调用者通常在调用此函数前以共享或独占模式获mmap `invalidate_lock`
 #### 缓冲写失
@@ -189,7 +192,7 @@ Linux 中，直接 I/O 定义为直接发往存储、绕pagecache 的文I/O`ioma
 
  - `IOMAP_NOWAIT`，如前所述
 调用者通常在调用此函数前以共享模式持有 `i_rwsem`
-### 鐩存帴鍐。
+### 鐩存帴内。
 
 直接 I/O 写发起从调用者缓冲区到存储设备的I/O在发起写 I/O 之前，pagecache 的脏部分会被刷回存储在写 I/O 前后都会pagecache 失效`->iomap_begin` `flags` 值将``IOMAP_DIRECT | IOMAP_WRITE``，可附加下列增强的组合：
 
@@ -228,7 +231,7 @@ fsdax 读执行从存储设备到调用者缓冲区memcpy`->iomap_begin` `flags`
 
  - `IOMAP_NOWAIT`，如前所述
 调用者通常在调用此函数前以共享模式持有 `i_rwsem`
-### fsdax 鍐。
+### fsdax 内。
 
 fsdax 写发起从调用者缓冲区到存储设备的 memcpy`->iomap_begin` `flags` 值将``IOMAP_DAX | IOMAP_WRITE``，可附加下列增强的组合：
 

@@ -1,7 +1,9 @@
+# vidioc-subdev-g-crop
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBDEV_G_CROP、VIDIOC_SUBDEV_S_CROP
+## ioctl VIDIOC_SUBDEV_G_CROP、VIDIOC_SUBDEV_S_CROP
 
 
 ## 名称

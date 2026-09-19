@@ -1,19 +1,24 @@
+# other_interfaces
+
 ﻿## 其他固件接口
 
 
-### DMI 接口
+## DMI 接口
 
 
    :export:
+
 
 ### EDD 接口
 
 
    :internal:
 
-### 閫氱敤绯荤粺甯х紦鍐叉帴鍙。
+
+### 閫氱敤绯荤粺甯х紦内叉帴鍙。
 
    :export:
+
 
 ### Intel Stratix10 SoC 鏈嶅姟灞。
 
@@ -31,3 +36,4 @@ Intel Stratix10 SoC 服务层为驱动程序提供了一个内核内 API，用�
    :functions: stratix10_svc_client
 
    :export:
+

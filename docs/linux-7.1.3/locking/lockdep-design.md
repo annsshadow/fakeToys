@@ -1,3 +1,5 @@
+# lockdep-design
+
 ﻿## 运行时锁正确性验证器
 
 
@@ -5,7 +7,7 @@ Ingo Molnar <mingo@redhat.com> 发起
 
 Arjan van de Ven <arjan@linux.intel.com> 补充
 
-### 锁类
+## 锁类
 
 
 验证器操作的基本对象是一"（class）锁
@@ -229,6 +231,7 @@ softirq-unsafe 的锁类自动也hardirq-unsafe。以下状态必须互斥：只
 
 	TASK A:			TASK B:
 
+
 	read_lock(X);
 				write_lock(X);
 	read_lock_2(X);
@@ -260,6 +263,7 @@ softirq-unsafe 的锁类自动也hardirq-unsafe。以下状态必须互斥：只
 
 	TASK A:			TASK B:
 
+
 	read_lock(X);
 
 				write_lock(X);
@@ -274,6 +278,7 @@ softirq-unsafe 的锁类自动也hardirq-unsafe。以下状态必须互斥：只
 ```
 
 	TASK A:			TASK B:
+
 
 	read_lock(X);
 				read_lock(Y);
@@ -307,11 +312,13 @@ softirq-unsafe 的锁类自动也hardirq-unsafe。以下状态必须互斥：只
 
 	TASK A:
 
+
 	read_lock(X);
 	write_lock(Y);
 	...
 
 	TASK B:
+
 
 	write_lock(X);
 	write_lock(Y);

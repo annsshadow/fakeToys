@@ -1,3 +1,5 @@
+# nwfpe
+
 ﻿## 简
 
 本目录包NetWinder 浮点模拟器（Floating Point Emulator.92 版本的测试发布
@@ -7,7 +9,7 @@
 浮点运算基于 John Hauser SoftFloat Release 2。SoftFloat 是符IEC/IEEE 二进制浮点算术标准的浮点软件实现。最多支持四种格式：单精度、双精度、扩展双精度以及四倍精度。标准要求的全部运算均已实现，仅十进制之间的转换除外。我们只使用单精度、双精度与扩展双精度格式。SoftFloat ARM 的移植由 Phil Blundell 完成，其基础Neil Carson NetBSD/arm32 所做的 SoftFloat 1 版本早期移植
 文件 README.FPE 描述了模拟器目前已实现的内容。文TODO 包含尚未完成的工作以及模拟器的其他设想
 缺陷报告、评论与建议请发给我，邮<scottb@netwinder.org>。诸如“安装你的模拟器后这个程序不能正常工作”之类的笼统报告，对于确认缺陷仍然存在是有用的，但在定位问题时几乎毫无帮助。请提交这些报告，但不要指望很快得到处理。缺陷仍然存在，问题主要在于定位究竟哪条指令包含该缺陷。能够说明某个具体问题的短小程序则极其珍贵
-### 法律声明
+## 法律声明
 
 
 NetWinder 浮点模拟器是自由软件。Rebel.com 编写的所有内容均依据 GNU GPL 提供。复制条件请参见 COPYING 文件。上述范围不包含 SoftFloat 代码，John Hauser SoftFloat 法律声明如下

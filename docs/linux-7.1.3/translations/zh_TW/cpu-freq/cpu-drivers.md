@@ -1,12 +1,16 @@
 
 
+# cpu-drivers
+
 :Original: Documentation/cpu-freq/cpu-drivers.rst
 
 :翻譯:
 
+
  司延騰 Yanteng Si <siyanteng@loongson.cn>
 
 :校譯:
+
 
  唐藝舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -14,6 +18,7 @@
 
 
 作者:
+
 
 
  - Dominik Brodowski  <linux@brodo.de>
@@ -101,6 +106,7 @@ CPUfreq核心層註冊一個cpufreq_driver結構體。
 如果有必要，請在你的CPU上激活CPUfreq功能支持。
 
 然後，驅動程序必須填寫以下值:
+
 
 +-----------------------------------+--------------------------------------+
 |policy->cpuinfo.min_freq和         | 該CPU支持的最低和最高頻率（kHz）     |

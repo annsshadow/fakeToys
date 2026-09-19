@@ -11,6 +11,6 @@
   },
   "method": "GET",
   "name": "program_applications",
-  "path": "/jaxrs/program/applications",
+  "path": "/api/program/applications",
   "status": 200
 }

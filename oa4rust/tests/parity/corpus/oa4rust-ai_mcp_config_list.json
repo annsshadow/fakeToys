@@ -11,6 +11,6 @@
   },
   "method": "GET",
   "name": "ai_mcp_config_list",
-  "path": "/jaxrs/ai/config/list/mcp/paging/1/size/10",
+  "path": "/api/ai/config/list/mcp/paging/1/size/10",
   "status": 200
 }

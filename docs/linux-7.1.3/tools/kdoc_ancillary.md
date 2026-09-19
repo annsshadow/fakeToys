@@ -1,3 +1,5 @@
+# kdoc_ancillary
+
 ﻿## 辅助类（Ancillary classes
 
 
@@ -8,12 +10,14 @@
    :show-inheritance:
    :undoc-members:
 
+
 ## 正则表达式类处理
 
 
    :members:
    :show-inheritance:
    :undoc-members:
+
 
 
 ## C 分词器（tokenizer
@@ -24,12 +28,14 @@
    :undoc-members:
 
 
+
 ## 中文、日文和韩文可变字体处理
 
 
    :members:
    :show-inheritance:
    :undoc-members:
+
 
 ## 内核 C 文件包含逻辑
 
@@ -38,6 +44,7 @@
    :show-inheritance:
    :undoc-members:
 
+
 ## Python 版本辅助方法
 
 
@@ -45,9 +52,11 @@
    :show-inheritance:
    :undoc-members:
 
+
 ## 将输出写YAML 文件
 
 
    :members:
    :show-inheritance:
    :undoc-members:
+

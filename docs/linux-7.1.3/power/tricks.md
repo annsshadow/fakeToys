@@ -1,3 +1,5 @@
+# tricks
+
 ﻿## swsusp/S3 技
 
 

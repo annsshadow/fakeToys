@@ -1,11 +1,15 @@
 
+# memory-hotplug
+
 :Original: Documentation/core-api/memory-hotplug.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -42,6 +46,7 @@ MEM_OFFLINE
   在内存下线完成后生成。
 
 可以通过调用如下函数来注册一个回调程序:
+
 
   hotplug_memory_notifier(callback_func, priority)
 
@@ -91,6 +96,7 @@ NOTIFY_STOP停止对通知队列的进一步处理。
 当添加/删除使用内存块设备（即普通RAM）的内存时，device_hotplug_lock应该被保持
 为:
 
+
 - 针对在线/离线请求进行同步（例如，通过sysfs）。这样一来，内存块设备只有在内存
   被完全添加后才能被用户空间访问（.online/.state属性）。而在删除内存时，我们知
   道没有人在临界区。
@@ -99,6 +105,7 @@ NOTIFY_STOP停止对通知队列的进一步处理。
 
 特别是，在添加内存和用户空间试图以比预期更快的速度上线该内存时，有可能出现锁反转，
 使用device_hotplug_lock可以避免此情况:
+
 
 - device_online()将首先接受device_lock()，然后是mem_hotplug_lock。
 

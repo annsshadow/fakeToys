@@ -1,7 +1,10 @@
 
+# irq-domain
+
 :Original: Documentation/core-api/irq/irq-domain.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
@@ -178,6 +181,7 @@ irq_domain_add_legacy()和irq_domain_create_legacy()在功能上是等价的，�
 ```
 涉及到的中断控制器有三个:
 
+
 1) IOAPIC 控制器
 2) 中断重映射控制器
 3) Local APIC 控制器
@@ -200,12 +204,14 @@ irq_domain为父域。所以在上面的例子中，将建立如下的层次结�
 ```
 使用irq_domain层次结构的主要接口有四个:
 
+
 1) irq_domain_alloc_irqs(): 分配IRQ描述符和与中断控制器相关的资源来传递这些中断。
 2) irq_domain_free_irqs(): 释放IRQ描述符和与这些中断相关的中断控制器资源。
 3) irq_domain_activate_irq(): 激活中断控制器硬件以传递中断。
 4) irq_domain_deactivate_irq(): 停用中断控制器硬件，停止传递中断。
 
 为了支持irq_domain层次结构，需要做如下修改:
+
 
 1) 一个新的字段 'parent' 被添加到irq_domain结构中；它用于维护irq_domain的层次信息。
 2) 一个新的字段 'parent_data' 被添加到irq_data结构中；它用于建立层次结构irq_data以
@@ -221,6 +227,7 @@ irq_domain为父域。所以在上面的例子中，将建立如下的层次结�
 irq_chip请求服务。所以我们可以实现更简洁的软件架构。
 
 为了让中断控制器驱动程序支持irq_domain层次结构，它需要做到以下几点:
+
 
 1) 实现 irq_domain_ops.alloc 和 irq_domain_ops.free
 2) 可选择地实现 irq_domain_ops.activate 和 irq_domain_ops.deactivate.

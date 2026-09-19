@@ -1,6 +1,8 @@
+# func-open
+
 ﻿
 
-######## V4L2 open()
+## V4L2 open()
 
 ## 名称
 

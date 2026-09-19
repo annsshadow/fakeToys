@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/test-id/setting")
+                    .uri("/api/organization/assemble/personal/test-id/setting")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/test-id/role/list")
+                    .uri("/api/organization/assemble/personal/test-id/role/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

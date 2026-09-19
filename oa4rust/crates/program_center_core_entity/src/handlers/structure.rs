@@ -238,7 +238,7 @@ pub async fn structure_delete(
 }
 
 pub fn _router(_pool: Pool, _db: Option<DatabaseConnection>) -> Router {
-    // All /jaxrs/program_center/* routes are owned by the program_center
+    // All /api/program_center/* routes are owned by the program_center
     // crate (raw-SQL implementations). Registering them here too would
     // panic axum at merge time ("Overlapping method route").
     Router::new()

@@ -1,3 +1,5 @@
+# gl518sm
+
 ﻿## 内核驱动 gl518sm
 
 
@@ -23,7 +25,7 @@
        - Hong-Gunn Chew <hglinux@gunnet.org>
        - Jean Delvare <jdelvare@suse.de>
 
-### 描述
+## 描述
 
 
    对于版本 0x00 的芯片，`in0`、`in1` `in2` 的值（+5V3V +12V*无法**被读取。这是芯片的限制，而非驱动的限制

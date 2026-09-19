@@ -1,3 +1,5 @@
+# cluster-pm-race-avoidance
+
 ﻿## 集群级上下电竞争规避算法
 
 
@@ -5,7 +7,7 @@
 “原理”一节解释了该算法的作用及其必要性。“基本模型”使用简化的系统视图
 解释通用概念。其余各节则解释该算法实际使用的细节
 
-### 原理
+## 原理
 
 
 在包含多CPU 的系统中，希望能够在系统空闲时关闭单CPU，以降低功耗与
@@ -194,6 +196,7 @@ CLUSTER_DOWN/INBOUND_NOT_COMING_UP:
 
 CLUSTER_DOWN/INBOUND_COMING_UP:
 
+
 	在此状态下，inbound CPU 建立集群，包括启用集群级的硬件一致性以	为此所需的任何其他操作（例如缓存失效）
 	该状态的目的在于完成足够的集群级建立，以使集群中的其CPU 能够
 	安全地进入一致性
@@ -203,6 +206,7 @@ CLUSTER_DOWN/INBOUND_COMING_UP:
 
 
 CLUSTER_UP/INBOUND_COMING_UP:
+
 
 	集群级建立已完成，且集群的硬件一致性已启用。集群中的其CPU 可以
 	安全地进入一致性
@@ -214,6 +218,7 @@ CLUSTER_UP/INBOUND_COMING_UP:
 
 CLUSTER_UP/INBOUND_NOT_COMING_UP:
 
+
 	集群级建立已完成，且集群的硬件一致性已启用。集群中的其CPU 可以
 	安全地进入一致性
 	集群将保持在此状态，直到做出下电的策略决策
@@ -222,6 +227,7 @@ CLUSTER_UP/INBOUND_NOT_COMING_UP:
 	条件			触发事件		下电集群的策略决
 
 CLUSTER_GOING_DOWN/INBOUND_NOT_COMING_UP:
+
 
 	一outbound CPU 正在拆除集群。被选中CPU 必须在此状态等待，直到
 	集群中的所CPU 都处CPU_DOWN 状态
@@ -243,6 +249,7 @@ CLUSTER_GOING_DOWN/INBOUND_NOT_COMING_UP:
 
 CLUSTER_GOING_DOWN/INBOUND_COMING_UP:
 
+
 	集群正在（或曾经）被拆除，但与此同时另一CPU 已上线，并正试图
 	重新建立集群
 	如果 outbound CPU 观察到此状态，它有两个选择
@@ -263,7 +270,7 @@ CLUSTER_GOING_DOWN/INBOUND_COMING_UP:
 		触发事件			（自发）
 
 
-### 最后一人（last man）与第一人（first man）的选择
+## 最后一人（last man）与第一人（first man）的选择
 
 
 outbound 侧执行集群拆除操作的 CPU 通常被称为“last man”（最后一人）

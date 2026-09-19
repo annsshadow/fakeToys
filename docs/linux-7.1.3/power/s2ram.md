@@ -1,3 +1,5 @@
+# s2ram
+
 ﻿## 如何s2ram 工作
 
 
@@ -7,7 +9,7 @@
 1) 查看 suspend.sf.net，其中的 s2ram 程序拥有很长的“已知可用”机器白名单   以及每台机器上可用的技巧
 2) 若那没有帮助，尝试阅tricks.txt video.txt。问题也许简单如某个   缺陷的模块，简单地卸载模块即可解决
 3) 你可以使Linus TRACE_RESUME 基础设施，如下所述
-#### 使用 TRACE_RESUME
+## 使用 TRACE_RESUME
 
 
 我一直在努力让我手头的机器能STR（挂起到内存），而几乎总是某个驱动存在

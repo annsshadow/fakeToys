@@ -1,10 +1,12 @@
+# redirect
+
 ﻿
 ## 重定
 
 # XDP_REDIRECT
 
 
-### 支持的映
+## 支持的映
 
 XDP_REDIRECT 适用于以下映射类型：
 
@@ -27,7 +29,7 @@ XDP_REDIRECT 的静默丢包可通过以下方式调试
 - bpf_trace
 - perf_record
 
-##### bpf_trace
+#### bpf_trace
 
 
 以下 bpftrace 命令可用于捕获并统计所XDP 跟踪点：

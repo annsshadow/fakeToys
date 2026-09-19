@@ -1,3 +1,5 @@
+# cxgb
+
 ﻿
 ## Chelsio N210 10Gb 以太网网络控制器
 
@@ -46,18 +48,22 @@ Linux 驱动发布说明
 
   To disable adaptive-rx, use ethtool::
 
+
       ethtool -C <interface> adaptive-rx off
 
   After disabling adaptive-rx, the timer latency value will be set to 50us.
   You may set the timer latency after disabling adaptive-rx::
 
+
       ethtool -C <interface> rx-usecs <microseconds>
 
   An example to set the timer latency value to 100us on eth0::
 
+
       ethtool -C eth0 rx-usecs 100
 
   You may also provide a timer latency value while disabling adaptive-rx::
+
 
       ethtool -C <interface> adaptive-rx off rx-usecs <microseconds>
 
@@ -66,6 +72,7 @@ Linux 驱动发布说明
   adaptive-rx is enabled.
 
   To view the status of the adaptive-rx and timer latency values::
+
 
       ethtool -c <interface>
 
@@ -88,9 +95,11 @@ Linux 驱动发布说明
 
   To enable TSO::
 
+
       ethtool -K <interface> tso on
 
   To view the status of TSO::
+
 
       ethtool -k <interface>
 
@@ -118,6 +127,7 @@ Linux 驱动发布说明
 
       setpci -d 1425::
 
+
 ```
 - 0x0c.l=0x0000F800
 
@@ -127,53 +137,66 @@ Linux 驱动发布说明
 
   Disabling SACK::
 
+
       sysctl -w net.ipv4.tcp_sack=0
 
   Setting large number of incoming connection requests::
+
 
       sysctl -w net.ipv4.tcp_max_syn_backlog=3000
 
   Setting maximum receive socket buffer size::
 
+
       sysctl -w net.core.rmem_max=1024000
 
   Setting maximum send socket buffer size::
+
 
       sysctl -w net.core.wmem_max=1024000
 
   Set smp_affinity (on a multiprocessor system) to a single CPU::
 
+
       echo 1 > /proc/irq/<interrupt_number>/smp_affinity
 
   Setting default receive socket buffer size::
+
 
       sysctl -w net.core.rmem_default=524287
 
   Setting default send socket buffer size::
 
+
       sysctl -w net.core.wmem_default=524287
 
   Setting maximum option memory buffers::
+
 
       sysctl -w net.core.optmem_max=524287
 
   Setting maximum backlog (# of unprocessed packets before kernel drops)::
 
+
       sysctl -w net.core.netdev_max_backlog=300000
 
   Setting TCP read buffers (min/default/max)::
+
 
       sysctl -w net.ipv4.tcp_rmem="10000000 10000000 10000000"
 
   Setting TCP write buffers (min/pressure/max)::
 
+
       sysctl -w net.ipv4.tcp_wmem="10000000 10000000 10000000"
 
   Setting TCP buffer space (min/pressure/max)::
 
+
       sysctl -w net.ipv4.tcp_mem="10000000 10000000 10000000"
 
   TCP window size for single connections:
+
 
    The receive buffer (RX_WINDOW) size must be at least as large as the
    Bandwidth-Delay Product of the communication link between the sender and
@@ -183,12 +206,14 @@ Linux 驱动发布说明
 
    At 10Gb speeds, use the following formula::
 
+
        RX_WINDOW >= 1.25MBytes * RTT(in milliseconds)
        Example for RTT with 100us: RX_WINDOW = (1,250,000 * 0.1) = 125,000
 
    RX_WINDOW sizes of 256KB - 512KB should be sufficient.
 
    Setting the min, max, and default receive buffer (RX_WINDOW) size::
+
 
        sysctl -w net.ipv4.tcp_rmem="<min> <default> <max>"
 
@@ -218,13 +243,16 @@ Linux 驱动发布说明
 
   NIC detected::
 
+
      eth#: Chelsio N210 1x10GBaseX NIC (rev #), PCIX 133MHz/64-bit
 
   Link up::
 
+
      eth#: link is up at 10 Gbps, full duplex
 
   Link down::
+
 
      eth#: link is down
 
@@ -253,6 +281,7 @@ Linux 驱动发布说明
 
       Set the smp_affinity to a single CPU::
 
+
 	  echo 1 > /proc/irq/<interrupt_number>/smp_affinity
 
       It is highly suggested that you do not run the irqbalance daemon on your
@@ -260,15 +289,18 @@ Linux 驱动发布说明
       The irqbalance daemon runs on a 10 second interval and binds interrupts
       to the least loaded CPU determined by the daemon. To disable this daemon::
 
+
 	  chkconfig --level 2345 irqbalance off
 
       By default, some Linux distributions enable the kernel feature,
       irqbalance, which performs the same function as the daemon. To disable
       this feature, add the following line to your bootloader::
 
+
 	  noirqbalance
 
 	  Example using the Grub bootloader::
+
 
 	      title Red Hat Enterprise Linux AS (2.4.21-27.ELsmp)
 	      root (hd0,0)
@@ -316,9 +348,11 @@ Linux 驱动发布说明
       AMD's provides three workarounds for this problem, however, Chelsio
       recommends the first option for best performance with this bug:
 
+
 	For 133Mhz secondary bus operation, limit the transaction length and
 	the number of outstanding transactions, via BIOS configuration
 	programming of the PCI-X card, to the following:
+
 
 	   Data Length (bytes): 1k
 
@@ -334,6 +368,7 @@ Linux 驱动发布说明
       and duplicate the problem before submitting a bug or asking for support.
 
       .. note::
+
 
 	    The default setting on most systems is 8 outstanding transactions
 	    and 2k bytes data length.

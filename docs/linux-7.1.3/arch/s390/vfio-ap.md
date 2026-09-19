@@ -1,3 +1,5 @@
+# vfio-ap
+
 ﻿## Adjunct Processor (AP) facility
 
 ## 辅助处理器（AP）设
@@ -32,6 +34,7 @@ AP 适配器卡通过 AP 总线暴露。vfio-ap 的动机是使用 VFIO 中介�
 
 To facilitate the comprehension of the design, let's start with some
 definitions:
+
 
 为了便于理解该设计，让我们从一些定义开始：
 
@@ -72,6 +75,7 @@ definitions:
   Symbolic links to these devices will also be created in the AP bus devices
   sub-directory::
 
+
     /sys/bus/ap/devices/[card04]
     /sys/bus/ap/devices/[card04]
 
@@ -89,6 +93,7 @@ definitions:
   domain can be configured with a secure private key used for clear key
   encryption. A domain is classified in one of two ways depending upon how it
   may be accessed:
+
 
   一个适配器被划分为多个域。根据适配器类型和硬件配置，一个适配器最多可容纳 256 
   域。一个域由一0 255 之间的数字标识；不过，最大域名由机型（machine model
@@ -161,6 +166,7 @@ definitions:
   The following symbolic links to these devices will be created in the AP bus
   devices subdirectory::
 
+
     /sys/bus/ap/devices/[04.0006]
     /sys/bus/ap/devices/[04.0047]
     /sys/bus/ap/devices/[0a.0006]
@@ -170,9 +176,11 @@ definitions:
 
 - AP Instructions:
 
+
 - AP 指令
 
   There are three AP instructions:
+
 
   有三AP 指令
 
@@ -205,6 +213,7 @@ A satellite control block called the Crypto Control Block (CRYCB) is attached to
 our main hardware virtualization control block. The CRYCB contains an AP Control
 Block (APCB) that has three fields to identify the adapters, usage domains and
 control domains assigned to the KVM guest:
+
 
 一个称为密码控制块（Crypto Control Block，CRYCB）的辅助控制块被附加到我们的主硬
 虚拟化控制块上。CRYCB 包含一AP 控制块（APCB），它有三个字段来标识分配给 KVM
@@ -293,6 +302,7 @@ on the adapter card for each of its domains - so each APQN must be assigned to
 
 The design introduces three new objects:
 
+
 该设计引入了三个新对象：
 
 1. AP matrix device
@@ -308,6 +318,7 @@ The design introduces three new objects:
 ### VFIO AP 设备驱动
 
 The VFIO AP (vfio_ap) device driver serves the following purposes:
+
 
 VFIO AP（vfio_ap）设备驱动用于以下目的：
 
@@ -376,6 +387,7 @@ The following block diagram illustrates the mechanism by which APQNs are
 
 The process for reserving an AP queue for use by a KVM guest is:
 
+
 KVM 客户机预留一AP 队列的过程是
 
 1. The administrator loads the vfio_ap device driver
@@ -424,6 +436,7 @@ KVM 客户机预留一AP 队列的过程是
 The VFIO AP device driver utilizes the common interfaces of the VFIO mediated
 device core driver to:
 
+
 VFIO AP 设备驱动利用 VFIO 中介设备核心驱动的通用接口来：
 
 - Register an AP mediated bus driver to add a vfio_ap mediated device to and
@@ -470,6 +483,7 @@ vfio_ap 模块的初始化期间，矩阵设备会用一'mdev_parent_ops' 结构
 
 - sysfs attribute structures:
 
+
 - sysfs 属性结构：
 
   supported_type_groups
@@ -491,6 +505,7 @@ vfio_ap 模块的初始化期间，矩阵设备会用一'mdev_parent_ops' 结构
     The VFIO AP device driver will register one mediated device type for
     passthrough devices:
 
+
     VFIO AP 设备驱动将为直通设备注册一种中介设备类型：
 
       /sys/devices/vfio_ap/matrix/mdev_supported_types/vfio_ap-passthrough
@@ -504,6 +519,7 @@ vfio_ap 模块的初始化期间，矩阵设备会用一'mdev_parent_ops' 结构
 	... device_api
 
     Where:
+
 
     其中
 
@@ -522,6 +538,7 @@ vfio_ap 模块的初始化期间，矩阵设备会用一'mdev_parent_ops' 结构
     framework, the sysfs attribute files identified in the 'mdev_attr_groups'
     structure will be created in the vfio_ap mediated device's directory. The
     sysfs attributes for a vfio_ap mediated device are:
+
 
 	* name:
 	    指定中介设备类型的名
@@ -643,10 +660,12 @@ vfio_ap 模块的初始化期间，矩阵设备会用一'mdev_parent_ops' 结构
 
 - functions:
 
+
 - 函数
 
   create:
     allocates the ap_matrix_mdev structure used by the vfio_ap driver to:
+
 
     - Store the reference to the KVM structure for the guest using the mdev
     - Store the AP matrix configuration for the adapters, domains, and control
@@ -709,6 +728,7 @@ Configuring the AP resources for a KVM guest will be performed at the
 time of `open_device` and `close_device`. The guest's AP resources are
 configured via its APCB by:
 
+
 KVM 客户机配AP 资源将在 `open_device` `close_device` 时进行。客户机
 AP 资源通过APCB 配置如下
 
@@ -733,6 +753,7 @@ matrix, so the adapters, domains and control domains assigned to vfio_ap
 mediated device via its sysfs 'assign_adapter', 'assign_domain' and
 'assign_control_domain' interfaces will be filtered before providing the AP
 configuration to a guest:
+
 
 Linux 设备模型不允许将一个未绑定到促成其直通的驱动的设备直通给 KVM 客户机。因此，
 不引用绑定到 vfio_ap 设备驱动的队列设备的 APQN 不会被分配给 KVM 客户机的矩阵。然而，
@@ -766,6 +787,7 @@ facilities: The AP Facilities Test (APFT) facility; the AP Query
 Configuration Information (QCI) facility; and the AP Queue Interruption Control
 facility. These features/facilities are made available to a KVM guest via the
 following CPU model features:
+
 
 AP 协议栈依AP 指令的存在以及三个设施：AP Facilities Test（APFT）设施；AP Query
 Configuration Information（QCI）设施；以及 AP Queue Interruption Control 设施。这
@@ -837,6 +859,7 @@ access to AP facilities. For this example, we will show how to configure
 three guests such that executing the lszcrypt command on the guests would
 look like this:
 
+
 现在让我们提供一个示例，说明如何授予 KVM 客户机对 AP 设施的访问权限。在本示例中，我
 将展示如何配置三个客户机，使得在客户机上执行 lszcrypt 命令时显示如下内容：
 
@@ -880,6 +903,7 @@ CARD.DOMAIN TYPE  MODE
 =========== ===== ============
 
 These are the steps:
+
 
 步骤如下
 
@@ -959,6 +983,7 @@ These are the steps:
 
    Take, for example, the following masks::
 
+
       apmask:
       0x7d00000000000000000000000000000000000000000000000000000000000000
 
@@ -967,6 +992,7 @@ These are the steps:
 
    The masks indicate:
 
+
    * Adapters 1, 2, 3, 4, 5, and 7 are available for use by the host default
      device drivers.
 
@@ -974,6 +1000,7 @@ These are the steps:
 
    * The subset of APQNs available for use only by the default host device
      drivers are:
+
 
      (1,0), (2,0), (3,0), (4.0), (5,0) and (7,0)
 
@@ -988,13 +1015,16 @@ These are the steps:
    By default, the two masks are set to reserve all APQNs for use by the default
    AP queue device drivers. There are two ways the default masks can be changed:
 
+
    1. The sysfs mask files can be edited by echoing a string into the
       respective sysfs mask file in one of two formats:
+
 
       * An absolute hex string starting with 0x - like "0x12345678" - sets
 	the mask. If the given string is shorter than the mask, it is padded
 	with 0s on the right; for example, specifying a mask value of 0x41 is
 	the same as specifying::
+
 
 	   0x4100000000000000000000000000000000000000000000000000000000000000
 
@@ -1010,12 +1040,14 @@ These are the steps:
 	the corresponding bit is to be switched on ('+') or off ('-'). Some
 	valid values are:
 
+
 	   - "+0"    switches bit 0 on
 	   - "-13"   switches bit 13 off
 	   - "+0x41" switches bit 65 on
 	   - "-0xff" switches bit 255 off
 
 	The following example:
+
 
 	      +0,-6,+0x47,-0xf0
 
@@ -1029,9 +1061,11 @@ These are the steps:
    2. The masks can also be changed at boot time via parameters on the kernel
       command line like this:
 
+
 	 ap.apmask=0xffff ap.aqmask=0x40
 
 	 This would create the following masks::
+
 
 	    apmask:
 	    0xffff000000000000000000000000000000000000000000000000000000000000
@@ -1040,6 +1074,7 @@ These are the steps:
 	    0x4000000000000000000000000000000000000000000000000000000000000000
 
 	 Resulting in these two pools::
+
 
 	    default drivers pool:    adapter 0-15, domain 1
 	    alternate drivers pool:  adapter 16-255, domains 0, 2-255
@@ -1050,6 +1085,7 @@ These are the steps:
    is logged to the kernel ring buffer which can be viewed with the 'dmesg'
    command. The output identifies each APQN flagged as 'in use' and identifies
    the vfio_ap mediated device to which it is assigned; for example:
+
 
    Userspace may not re-assign queue 05.0054 already assigned to 62177883-f1bb-47f0-914d-32a22e3a8804
    Userspace may not re-assign queue 04.0054 already assigned to cef03c3c-903d-4ecc-9a83-40694cb8aee4
@@ -1071,6 +1107,7 @@ These are the steps:
 
    Or the masks can be set as follows::
 
+
       echo 0xf9ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff \
       > apmask
 
@@ -1081,6 +1118,7 @@ These are the steps:
    06.0047, 06.00ab, and 06.00ff getting bound to the vfio_ap device driver. The
    sysfs directory for the vfio_ap device driver will now contain symbolic links
    to the AP queue devices bound to it::
+
 
      /sys/bus/ap
      ... [drivers]
@@ -1105,6 +1143,7 @@ These are the steps:
    queue device can be read from the parent card's sysfs directory. For example,
    to see the hardware type of the queue 05.0004:
 
+
      cat /sys/bus/ap/devices/card05/hwtype
 
    The hwtype must be 10 or higher (CEX4 or newer) in order to be bound to the
@@ -1124,6 +1163,7 @@ These are the steps:
 
    To create the mediated devices for the three guests::
 
+
 	uuidgen > create
 	uuidgen > create
 	uuidgen > create
@@ -1137,6 +1177,7 @@ These are the steps:
    This will create three mediated devices in the [devices] subdirectory named
    after the UUID written to the create attribute file. We call them $uuid1,
    $uuid2 and $uuid3 and this is the sysfs directory structure after creation::
+
 
      /sys/devices/vfio_ap/matrix/
      --- [mdev_supported_types]
@@ -1196,13 +1237,16 @@ These are the steps:
 
    To display the matrix configuration for Guest1::
 
+
 	 cat matrix
 
    To display the matrix that is or will be assigned to Guest1::
 
+
 	 cat guest_matrix
 
    This is how the matrix is configured for Guest2::
+
 
       echo 5 > assign_adapter
       echo 0x47 > assign_domain
@@ -1210,11 +1254,13 @@ These are the steps:
 
    This is how the matrix is configured for Guest3::
 
+
       echo 6 > assign_adapter
       echo 0x47 > assign_domain
       echo 0xff > assign_domain
 
    In order to successfully assign an adapter:
+
 
    * The adapter number specified must represent a value from 0 up to the
      maximum adapter number configured for the system. If an adapter number
@@ -1226,6 +1272,7 @@ These are the steps:
 
    * Each APQN derived from the Cartesian product of the APID of the adapter
      being assigned and the APQIs of the domains previously assigned:
+
 
      - Must only be available to the vfio_ap device driver as specified in the
        sysfs /sys/bus/ap/apmask and /sys/bus/ap/aqmask attribute files. If even
@@ -1242,6 +1289,7 @@ These are the steps:
 
    In order to successfully assign a domain:
 
+
    * The domain number specified must represent a value from 0 up to the
      maximum domain number configured for the system. If a domain number
      higher than the maximum is specified, the operation will terminate with
@@ -1252,6 +1300,7 @@ These are the steps:
 
     * Each APQN derived from the Cartesian product of the APQI of the domain
       being assigned and the APIDs of the adapters previously assigned:
+
 
      - Must only be available to the vfio_ap device driver as specified in the
        sysfs /sys/bus/ap/apmask and /sys/bus/ap/aqmask attribute files. If even
@@ -1267,6 +1316,7 @@ These are the steps:
        terminate with an error (EBUSY).
 
    In order to successfully assign a control domain:
+
 
    * The domain number specified must represent a value from 0 up to the maximum
      domain number configured for the system. If a control domain number higher
@@ -1337,11 +1387,13 @@ the pool of adapters and queues reserved for use by the default drivers.
 
 ## Hot plug/unplug support:
 
+
 ## 热插拔支持：
 
 An adapter, domain or control domain may be hot plugged into a running KVM
 guest by assigning it to the vfio_ap mediated device being used by the guest if
 the following conditions are met:
+
 
 在满足以下条件时，可以通过将适配器、域或控制域分配给客户机正在使用vfio_ap 中介
 设备，将其热插入到一个正在运行的 KVM 客户机：
@@ -1374,6 +1426,7 @@ guest.
 运行KVM 客户机热拔出
 
 ## Over-provisioning of AP queues for a KVM guest:
+
 
 ## KVM 客户机过度配AP 队列
 
@@ -1420,6 +1473,7 @@ guest_matrix dyn ap_config
 
 the following features are advertised:
 
+
 将通告以下特性：
 
 ---------------+---------------------------------------------------------------+
@@ -1457,6 +1511,7 @@ removed manually (i.e., echo 1 > /sys/devices/vfio_ap/matrix/$UUID/remove) while
 the mdev is in use by a KVM guest. If the guest is being emulated by QEMU,
 its mdev can be hot unplugged from the guest in one of two ways:
 
+
 对于使用 AP 设备的客户机，不支持在系统管理员不干预的情况下进行实时客户机迁移（live
 guest migration）。在 KVM 客户机能够被迁移之前，必须移vfio_ap 中介设备。遗憾的是，
 mdev 正被 KVM 客户机使用时，无法手动移除它（即 echo 1 >
@@ -1466,6 +1521,7 @@ mdev 正被 KVM 客户机使用时，无法手动移除它（即 echo 1 >
 1. If the KVM guest was started with libvirt, you can hot unplug the mdev via
    the following commands:
 
+
 1. 如果 KVM 客户机是libvirt 启动的，可以通过以下命令热拔mdev
 
       virsh detach-device <guestname> <path-to-device-xml>
@@ -1473,11 +1529,13 @@ mdev 正被 KVM 客户机使用时，无法手动移除它（即 echo 1 >
       For example, to hot unplug mdev 62177883-f1bb-47f0-914d-32a22e3a8804 from
       the guest named 'my-guest':
 
+
       例如，要从名'my-guest' 的客户机热拔mdev 62177883-f1bb-47f0-914d-32a22e3a8804
 
          virsh detach-device my-guest ~/config/my-guest-hostdev.xml
 
             The contents of my-guest-hostdev.xml:
+
 
 
             <hostdev mode='subsystem' type='mdev' managed='no' model='vfio-ap'>
@@ -1493,10 +1551,12 @@ mdev 正被 KVM 客户机使用时，无法手动移除它（即 echo 1 >
       qemu command line with 'id=hostdev0' from the guest named 'my-guest':
 
 
+
          virsh qemu-monitor-command my-guest --hmp "device_del hostdev0"
 
 2. A vfio_ap mediated device can be hot unplugged by attaching the qemu monitor
    to the guest and using the following qemu monitor command:
+
 
 2. 可以通过qemu monitor 连接到客户机并使用以qemu monitor 命令来热拔出 vfio_ap
    中介设备
@@ -1507,17 +1567,20 @@ mdev 正被 KVM 客户机使用时，无法手动移除它（即 echo 1 >
       on the qemu command line with 'id=hostdev0' when the guest was started:
 
 
+
          (QEMU) device-del id=hostdev0
 
 After live migration of the KVM guest completes, an AP configuration can be
 restored to the KVM guest by hot plugging a vfio_ap mediated device on the target
 system into the guest in one of two ways:
 
+
 KVM 客户机实时迁移完成后，可以通过在目标系统上vfio_ap 中介设备热插入到客户
 来恢复其 AP 配置，有两种方式
 
 1. If the KVM guest was started with libvirt, you can hot plug a matrix mediated
    device into the guest via the following virsh commands:
+
 
 1. 如果 KVM 客户机是libvirt 启动的，可以通过以下 virsh 命令将矩阵中介设备热插入
    客户机：
@@ -1527,12 +1590,14 @@ KVM 客户机实时迁移完成后，可以通过在目标系统上vfio_ap 中�
       For example, to hot plug mdev 62177883-f1bb-47f0-914d-32a22e3a8804 into
       the guest named 'my-guest':
 
+
       例如，要mdev 62177883-f1bb-47f0-914d-32a22e3a8804 热插入名'my-guest' 
       客户机：
 
          virsh attach-device my-guest ~/config/my-guest-hostdev.xml
 
             The contents of my-guest-hostdev.xml:
+
 
 
             <hostdev mode='subsystem' type='mdev' managed='no' model='vfio-ap'>
@@ -1549,6 +1614,7 @@ KVM 客户机实时迁移完成后，可以通过在目标系统上vfio_ap 中�
       62177883-f1bb-47f0-914d-32a22e3a8804 into the guest named 'my-guest' with
       device-id hostdev0:
 
+
       virsh qemu-monitor-command my-guest --hmp \
       "device_add vfio-ap,\
       sysfsdev=/sys/devices/vfio_ap/matrix/62177883-f1bb-47f0-914d-32a22e3a8804,\
@@ -1556,6 +1622,7 @@ KVM 客户机实时迁移完成后，可以通过在目标系统上vfio_ap 中�
 
 2. A vfio_ap mediated device can be hot plugged by attaching the qemu monitor
    to the guest and using the following qemu monitor command:
+
 
 2. 可以通过qemu monitor 连接到客户机并使用以qemu monitor 命令来热插入 vfio_ap
    中介设备
@@ -1565,6 +1632,7 @@ KVM 客户机实时迁移完成后，可以通过在目标系统上vfio_ap 中�
       For example, to plug the vfio_ap mediated device
       62177883-f1bb-47f0-914d-32a22e3a8804 into the guest with the device-id
       hostdev0:
+
 
 
          (QEMU) device-add "vfio-ap,\

@@ -1,5 +1,7 @@
 
 
+# gdb-kernel-debugging
+
 :Original: Documentation/process/debugging/gdb-kernel-debugging.rst
 :Translator: 高超 gao chao <gaochao49@huawei.com>
 

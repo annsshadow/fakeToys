@@ -1,8 +1,10 @@
+# notifier-error-inject
+
 ﻿## 通知器错误注
 
 通知器错误注入提供了向指定的通知器链回调中注入人为错误的能力。它对于测试通知器调用链失败（这种情况很少被执行）的错误处理非常有用。有一些内核模块可用于测试以下通知器
  - PM 通知 - 内存热插拔通知 - powerpc pSeries reconfig 通知 - 网络设备（Netdevice）通知
-### PM 通知器错误注入模
+## PM 通知器错误注入模
 该特性通过 debugfs 接口控制
 
   /sys/kernel/debug/notifier-error-inject/pm/actions/<notifier event>/error
@@ -20,7 +22,7 @@
 	bash: echo: write error: Cannot allocate memory
 
 ```
-### 内存热插拔通知器错误注入模
+## 内存热插拔通知器错误注入模
 该特性通过 debugfs 接口控制
 
   /sys/kernel/debug/notifier-error-inject/memory/actions/<notifier event>/error
@@ -37,7 +39,7 @@
 	bash: echo: write error: Cannot allocate memory
 
 ```
-### powerpc pSeries reconfig 通知器错误注入模
+## powerpc pSeries reconfig 通知器错误注入模
 该特性通过 debugfs 接口控制
 
   /sys/kernel/debug/notifier-error-inject/pSeries-reconfig/actions/<notifier event>/error
@@ -72,7 +74,7 @@
 	RTNETLINK answers: Invalid argument
 
 ```
-### 更多使用示例
+## 更多使用示例
 
 有一tools/testing/selftests 使用了通知器错误注入特性来测试 CPU 和内存通知器
  - tools/testing/selftests/cpu-hotplug/cpu-on-off-test.sh

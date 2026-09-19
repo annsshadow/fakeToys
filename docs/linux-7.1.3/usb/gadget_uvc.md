@@ -1,6 +1,8 @@
+# gadget_uvc
+
 ﻿## Linux UVC Gadget 驱动
 
-### Overview（概述）
+## Overview（概述）
 
 UVC Gadget 驱动是一个用USB 连接**设备（device* 侧硬件的驱动。它意在运行在具USB 设备侧硬件（例如带有 OTG 端口的开发板）的 Linux 系统上
 在设备系统上，一旦驱动被绑定，它就会表现为一个具有输出能力的 V4L2 设备
@@ -25,7 +27,7 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 
 	mkdir -p $FUNCTION
 
-#### Formats and Frames（格式与帧）
+## Formats and Frames（格式与帧）
 
 您必须通过告知 gadget 您所支持的格式，以及每种格式所支持的帧大小与帧间隔，来配置 gadget。在当前实现中，gadget 没有办法拒绝主机指令它设置的某个格式，因此本步骤 **准确* 完成非常重要，以确保主机永远不会请求一个无法提供的格式
 格式创建streaming/uncompressed streaming/mjpeg 这两configfs 组之下，帧大小则创建于格式之下，其结构如下：
@@ -85,7 +87,7 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 	create_frame 1920 1080 uncompressed yuyv
 
 当前唯一支持的非压缩格式YUYV，其细节Documentation/userspace-api/media/v4l/pixfmt-packed-yuv.rst
-#### Color Matching Descriptors（色彩匹配描述符
+## Color Matching Descriptors（色彩匹配描述符
 可以为您创建的每个格式指定一些色度（colorimetry）信息。这一步是可选的，如果跳过，将包含默认信息；这些默认值遵UVC 规范“色彩匹配描述符”（Color Matching Descriptor）一节的定义
 要创建一个色彩匹配描述符，需创建一configfs 项并将其三个属性设为期望的设置，然后从您希望它关联到的格式处建立指向它的链接：
 
@@ -106,7 +108,7 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 
 有关有效取值的详细说明，请查阅 UVC 规范。注意，存在一个默认的色彩匹配描述符，并被任何没有链接到其他色彩匹配描述符的格式所使用。可以更改默认描述符的属性设置，因此请记住，如果您这样做，就是在更改任何未链接到其他描述符的格式的默认值
 
-#### Header linking（头部链接）
+## Header linking（头部链接）
 
 UVC 规范要求 Format Frame 描述符之前要Header，用于描述诸如下文不Format 描述符的数量与累计大小等信息。这一步以及类似的操作，在 configfs 中通过链接代表 header configfs 项与代表那些其他描述符的 config 项来实现，方式如下：
 
@@ -134,7 +136,7 @@ UVC 规范要求 Format Frame 描述符之前要Header，用于描述诸如下�
 	ln -s header/h class/ss
 
 
-#### Extension Unit Support（扩展单元支持）
+## Extension Unit Support（扩展单元支持）
 
 一UVC 扩展单元（XU）本质上提供了一个独立的单元，控set get 请求可以寻址到它。这些控制请求的含义完全取决于实现，但可用于控制UVC 规范之外的设置（例如启用或禁用视频特效）。一XU 可以插入UVC 单元链中，也可以保持游离
 配置扩展单元涉及在相应的目录中创建一个条目并恰当地设置其属性，如下所示：
@@ -194,7 +196,7 @@ bControlSize 属性反映了 bmControls 属性的大小，类似地，bNrInPins 
 ```
 
 bNrInPins baSourceID 以相同方式工作
-#### Configuring Supported Controls for Camera Terminal and Processing Unit（为 Camera Terminal Processing Unit 配置受支持的控制
+## Configuring Supported Controls for Camera Terminal and Processing Unit（为 Camera Terminal Processing Unit 配置受支持的控制
 UVC 链中Camera Terminal Processing Unit 也拥bmControls 属性，其作用类似于扩展单元中的同名字段。不过与 XU 不同的是，这些单元的位标志含义在 UVC 规范中有定义；您应当查阅 “Camera Terminal Descriptor“Processing Unit Descriptor两节以获取这些标志的枚举
 
         # Set the Processing Unit's bmControls, flagging Brightness, Contrast
@@ -207,7 +209,7 @@ UVC 链中Camera Terminal Processing Unit 也拥bmControls 属性，其作用类
 
 如果您不设置这些字段，默认情况下 Camera Terminal Auto-Exposure Mode 控制Processing Unit Brightness 控制会被标记为可用；如果它们不被支持，您应当将该字段设为 0x00
 注意，Camera Terminal Processing Unit bmControls 字段的大小由 UVC 规范固定，因此这里的 bControlSize 属性是只读的
-#### Custom Strings Support（自定义字符串支持）
+## Custom Strings Support（自定义字符串支持）
 
 USB 设备各部分提供文字描述的字符串描述符，可以在 USB configfs 中通常的位置定义，然后可以UVC 函数根目录或扩展单元目录链接过去，以将这些字符串指派为描述符
 
@@ -229,13 +231,13 @@ USB 设备各部分提供文字描述的字符串描述符，可以在 USB confi
 	echo -n "A Very Useful Extension Unit" > $GADGET/strings/0x409/xu.0/s
 	ln -s $GADGET/strings/0x409/xu.0 $FUNCTION/control/extensions/xu.0
 
-#### The interrupt endpoint（中断端点）
+## The interrupt endpoint（中断端点）
 
 VideoControl 接口有一个可选的中断端点，默认是禁用的。它旨在支持 UVC 的延迟响应控set 请求（应当通过该中断端点而非占用端点 0 来响应）。目前尚不支持通过该端点发送数据，因此将其保持禁用以免混淆。如果您希望启用它，可以通过 configfs 属性来做到
 
 	echo 1 > $FUNCTION/control/enable_interrupt_ep
 
-#### Bandwidth configuration（带宽配置）
+### Bandwidth configuration（带宽配置）
 
 有三个属性控USB 连接的带宽。它们位于函数根目录，可以在限制范围内设置：
 
@@ -251,6 +253,6 @@ VideoControl 接口有一个可选的中断端点，默认是禁用的。它旨�
 
 
 这里传入的值会根据 UVC 规范（取决于 USB 连接的速度）被钳制到有效值。要理解这些设置如何影响带宽，您应当查阅 UVC 规范，但一条经验法则是：增streaming_maxpacket 设置会提升带宽（从而提升最大可能的帧率），USB 连接运行SuperSpeed 时，streaming_maxburst 同理。增streaming_interval 会降低带宽和帧率
-### The userspace application（用户空间应用程序）
+## The userspace application（用户空间应用程序）
 
 单凭 UVC Gadget 驱动本身无法做任何特别有趣的事。它必须与一个响应用 UVC 控制请求、并填充缓冲区以便排队到驱动所创建V4L2 设备的用户空间程序配合使用。这些事情如何达成取决于具体实现，超出了本文档的范围，但可以https://gitlab.freedesktop.org/camera/uvc-gadget 找到一个参考应用程

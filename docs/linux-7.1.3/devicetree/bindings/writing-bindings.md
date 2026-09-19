@@ -1,3 +1,5 @@
+# writing-bindings
+
 ﻿
 ## 设计和编Devicetree 绑定的应当做与不应当
 

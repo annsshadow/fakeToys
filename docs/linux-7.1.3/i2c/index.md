@@ -1,4 +1,6 @@
-﻿## I2C/SMBus 瀛愮郴缁。
+# index
+
+﻿## I2C/SMBus 子愮系统。
 
 ## 简
 

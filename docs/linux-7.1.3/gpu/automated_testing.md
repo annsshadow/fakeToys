@@ -1,3 +1,5 @@
+# automated_testing
+
 ﻿
 ## DRM 子系统的自动化测
 
@@ -69,7 +71,7 @@ i915 driver: https://gitlab.freedesktop.org/drm/i915/kernel/-/issues
 msm driver: https://gitlab.freedesktop.org/drm/msm/-/issues
 xe driver: https://gitlab.freedesktop.org/drm/xe/kernel/-/issues
 
-### drivers/gpu/drm/ci/${DRIVER_NAME}-${HW_REVISION}-skips.txt
+## drivers/gpu/drm/ci/${DRIVER_NAME}-${HW_REVISION}-skips.txt
 
 
 列出某个驱动在某一特定硬件修订版本上不会被运行的测试。这些通常是会因挂起机器、导OOM、耗时过长等原因而干扰测试列表运行的测试

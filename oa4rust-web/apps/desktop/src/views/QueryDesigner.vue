@@ -2,7 +2,7 @@
   <div class="query-designer">
     <div class="view-header glass-card">
       <h1>查询设计器</h1>
-      <p class="subtitle">/jaxrs/query/assemble/designer/* — 可视化查询构建</p>
+      <p class="subtitle">/api/query/assemble/designer/* — 可视化查询构建</p>
       <button class="btn-create" @click="openCreate">+ 新建查询</button>
       <button class="btn-outline" @click="showSqlEditor=true">📝 SQL编辑</button>
     </div>
@@ -299,7 +299,7 @@ const entityFields = computed(() => {
 async function loadQueries() {
   qLoading.value = true
   try {
-    const r = await api.get('/jaxrs/query/assemble/designer/list/all')
+    const r = await api.get('/api/query/assemble/designer/list/all')
     queries.value = r.data ?? []
     if (keyword.value) {
       queries.value = queries.value.filter((q) =>
@@ -336,7 +336,7 @@ async function openEdit() {
   // 列表接口不返回定义，回读 get/{id} 的 query 字段补全 SQL
   if (selected.value.id) {
     try {
-      const r = await api.get(`/jaxrs/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}`)
+      const r = await api.get(`/api/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}`)
       const detail = (r.data ?? {}) as Record<string, unknown>
       if (typeof detail.query === 'string' && detail.query) mform.value.sql = detail.query
     } catch {
@@ -358,9 +358,9 @@ async function saveQuery() {
       query: mform.value.sql,
     }
     if (editingQuery.value?.id) {
-      await api.put(`/jaxrs/query/assemble/designer/save/${editingQuery.value.id}`, data)
+      await api.put(`/api/query/assemble/designer/save/${editingQuery.value.id}`, data)
     } else {
-      await api.post('/jaxrs/query/assemble/designer/create', data)
+      await api.post('/api/query/assemble/designer/create', data)
     }
     showModal.value = false
     loadQueries()
@@ -378,7 +378,7 @@ async function runQuery() {
     if (conditions.value.length > 0) {
       params.conditions = conditions.value.filter((c) => c.field && c.value)
     }
-    const r = await api.post(`/jaxrs/query/assemble/designer/query`, {
+    const r = await api.post(`/api/query/assemble/designer/query`, {
       queryId: selected.value.id,
       ...params,
     })
@@ -391,9 +391,9 @@ async function runQuery() {
 }
 
 async function deleteQuery(q: QueryDef) {
-  if (!confirmMsg(`删除查询「${q.name || q.id}」？`)) return
+  if (!(await confirmMsg(`删除查询「${q.name || q.id}」？`))) return
   try {
-    await api.delete(`/jaxrs/query/assemble/designer/delete/${q.id}`)
+    await api.delete(`/api/query/assemble/designer/delete/${q.id}`)
     if (selected.value?.id === q.id) selected.value = null
     queries.value = queries.value.filter((x) => x.id !== q.id)
   } catch (e: any) {
@@ -545,7 +545,7 @@ async function doImport() {
     }
     for (const q of data) {
       try {
-        await api.post('/jaxrs/query/assemble/designer/create', q)
+        await api.post('/api/query/assemble/designer/create', q)
       } catch {}
     }
     importMsg.value = { ok: true, txt: `成功导入 ${data.length} 条` }

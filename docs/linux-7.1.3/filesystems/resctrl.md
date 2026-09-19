@@ -1,3 +1,5 @@
+# resctrl
+
 ﻿
 ## 资源控制特性（resctrl）的用户接口
 
@@ -142,6 +144,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 
 		To disable::
 
+
 			# echo 0 > /sys/fs/resctrl/info/L3/io_alloc
 
 		底层实现可能会减少可用于通用（CPU）缓存分配的资源。请参阅
@@ -173,6 +176,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 
 		Example::
 
+
 			# echo 1=ff > /sys/fs/resctrl/info/L3/io_alloc_cbm
 			# cat /sys/fs/resctrl/info/L3/io_alloc_cbm
 			0=ffff;1=00ff
@@ -184,6 +188,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 		一"*" ID 会用所提供CBM 配置所有域
 
 		在不需要掩码中最小连续位数量的系统上的示:
+
 
 			# echo "*=0" > /sys/fs/resctrl/info/L3/io_alloc_cbm
 			# cat /sys/fs/resctrl/info/L3/io_alloc_cbm
@@ -237,6 +242,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 		如果系统支持带宽监控事件配置（BMEC），则带宽事件将
 		可配置。输出将:
 
+
 			# cat /sys/fs/resctrl/info/L3_MON/mon_features
 			llc_occupancy
 			mbm_total_bytes
@@ -276,6 +282,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 
 	  ::
 
+
 	    # cat /sys/fs/resctrl/info/L3_MON/mbm_total_bytes_config
 	    0=0x7f;1=0x7f;2=0x7f;3=0x7f
 
@@ -286,6 +293,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	  即二进制110011b（十六进0x33）：
 	  ::
 
+
 	    # echo  "0=0x33" > /sys/fs/resctrl/info/L3_MON/mbm_total_bytes_config
 
 	    # cat /sys/fs/resctrl/info/L3_MON/mbm_total_bytes_config
@@ -294,6 +302,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	* 要将 mbm_local_bytes 改为统计0 和域 1 上所有慢速内存读操作
 	  需要设置位 4 5，即二进制的 110000b（十六进0x30）：
 	  ::
+
 
 	    # echo  "0=0x30;1=0x30" > /sys/fs/resctrl/info/L3_MON/mbm_local_bytes_config
 
@@ -311,6 +320,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	  default
 
 	"mbm_event":
+
 
 	mbm_event 模式允许用户将硬件计数器分配RMID、事件对，并在分配期
 	监控带宽使用情况。硬件会持续跟踪已分配的计数器，直到用户显式解除分配
@@ -331,6 +341,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 
 	"default":
 
+
 	在默认模式下，resctrl 假设每个 CTRL_MON MON 组中的每个事件都
 	一个硬件计数器。在 AMD 平台上，建议使用 mbm_event 模式（若支持），
 	以防止由于硬件重新分配计数器导致读取之间 MBM 事件复位。如果没
@@ -339,10 +350,12 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	* 启用 "mbm_event" 计数器分配模式：
 	  ::
 
+
 	    # echo "mbm_event" > /sys/fs/resctrl/info/L3_MON/mbm_assign_mode
 
 	* 启用 "default" 监控模式
 	  ::
+
 
 	    # echo "default" > /sys/fs/resctrl/info/L3_MON/mbm_assign_mode
 
@@ -404,6 +417,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	"event_filter" 文件包含该事件的配置，反映被其统计的是哪些内存事务
 
 	例如::
+
 
 	  # echo "local_reads, local_non_temporal_writes" >
 	    /sys/fs/resctrl/info/L3_MON/event_configs/mbm_total_bytes/event_filter
@@ -593,6 +607,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 
 	Assignment states:
 
+
 	_ : 未分配计数器
 
 	e : 以独占方式分配了计数器
@@ -614,6 +629,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	解除0 上与 mbm_total_bytes 事件关联的计数器的分配：
 	::
 
+
 	 # echo "mbm_total_bytes:0=_" > /sys/fs/resctrl/mbm_L3_assignments
 	 # cat /sys/fs/resctrl/mbm_L3_assignments
 	   mbm_total_bytes:0=_;1=e
@@ -622,6 +638,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 	解除所有域上与 mbm_total_bytes 事件关联的计数器的分配：
 	::
 
+
 	 # echo "mbm_total_bytes:*=_" > /sys/fs/resctrl/mbm_L3_assignments
 	 # cat /sys/fs/resctrl/mbm_L3_assignments
 	   mbm_total_bytes:0=_;1=_
@@ -629,6 +646,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 
 	以独占模式为所有域分配mbm_total_bytes 事件关联的计数器
 	::
+
 
 	 # echo "mbm_total_bytes:*=e" > /sys/fs/resctrl/mbm_L3_assignments
 	 # cat /sys/fs/resctrl/mbm_L3_assignments
@@ -644,7 +662,7 @@ RDT 各特性彼此正交。某个特定系统可能仅支持监控、仅支持�
 		/sys/fs/resctrl/info/L3_MON/mon_features 中找到的某个受支
 		内存带宽事件的名称，可更改输入事件
 
-### 资源分配规则
+## 资源分配规则
 
 
 当任务运行时，以下规则定义了哪些资源对其可用
@@ -883,7 +901,7 @@ SMBA（配CXL.memory）的存在与是否存在慢速内存设备无关。如果
   L3CODE:0=fffff;1=fffff;2=fffff;3=fffff
 
 ```
-### schemata 文件（在 AMD 系统上）
+## schemata 文件（在 AMD 系统上）
 
 
 读取 schemata 文件会显示所有域上的当前带宽限制。所分配的资源是
@@ -903,7 +921,7 @@ SMBA（配CXL.memory）的存在与是否存在慢速内存设备无关。如果
     L3:0=ffff;1=ffff;2=ffff;3=ffff
 
 ```
-### schemata 文件（在 AMD 系统上，SMBA 特性）
+## schemata 文件（在 AMD 系统上，SMBA 特性）
 
 
 schemata 文件的读写与上一节中不带 SMBA 时相同
@@ -1052,7 +1070,7 @@ pseudo_lock_measure。伪锁定区域的测量取决于写入debugfs 文件的�
     Dropped: 0
 
 ```
-#### 缓存命中/未命中调试示
+## 缓存命中/未命中调试示
 
 
 在此示例中，在一个平台的 L2 缓存上创建了一个名"newlock" 的伪锁定区域
@@ -1078,7 +1096,7 @@ pseudo_lock_measure。伪锁定区域的测量取决于写入debugfs 文件的�
 
 
 ```
-#### RDT 分配使用示例
+## RDT 分配使用示例
 
 
 1) 示例 1
@@ -1283,7 +1301,7 @@ socket 0 50% 的内存带宽无法被使用
   overlaps with exclusive group
 
 ```
-#### 缓存伪锁定示
+## 缓存伪锁定示
 
 
 使用 CBM 0x3 锁定缓存 id 1 上的部分 L2 缓存。伪锁定区域暴露
@@ -1391,7 +1409,7 @@ socket 0 50% 的内存带宽无法被使用
   }
 
 ```
-### 应用程序之间的锁
+## 应用程序之间的锁
 
 
 resctrl 文件系统上的某些操作由对多个文件的读/写组成，必须是原子的
@@ -1561,7 +1579,7 @@ ctrl_mon 组显示聚合数据
   31234000
 
 ```
-### 示例 2（从任务创建起开始监控）
+## 示例 2（从任务创建起开始监控）
 
 
 ```
@@ -1584,7 +1602,7 @@ ctrl_mon 组显示聚合数据
   31789000
 
 ```
-### 示例 3（在没有 CAT 支持时或创建 CAT 组之前进行监控）
+## 示例 3（在没有 CAT 支持时或创建 CAT 组之前进行监控）
 
 
 假设一个类HSW 的系统只CQM 而没CAT 支持。在这种情况resctrl 仍会
@@ -1618,7 +1636,7 @@ ctrl_mon 组显示聚合数据
 
 
 ```
-### 示例 4（监控实时任务）
+## 示例 4（监控实时任务）
 
 
 一个单插槽系统，实时任务运行在4-7 上，非实时任务运行在其他 CPU 上

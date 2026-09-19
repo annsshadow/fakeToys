@@ -1,5 +1,7 @@
+# vidioc-g-input
+
 ﻿
-######## ioctl VIDIOC_G_INPUT, VIDIOC_S_INPUT
+## ioctl VIDIOC_G_INPUT, VIDIOC_S_INPUT
 
 
 ## 名称

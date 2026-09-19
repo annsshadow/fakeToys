@@ -22,7 +22,7 @@ pub fn cms_express_router() -> Router {
 #[axum::debug_handler]
 pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
     let uuid = Uuid::new_v4().to_string();
-    // Java returns Array [String(uuid)]
+    // o2server returns Array [String(uuid)]
     Ok(Json(ActionResult::success(Value::Array(vec![
         Value::String(uuid),
     ]))))

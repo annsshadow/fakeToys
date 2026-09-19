@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 会议室列表：`GET /jaxrs/meeting/core/entity/room/list` → `room_list` 查 `x_meeting_room`，Name 升序 limit 20，可选字段经 `option_to_json` 为 None 时省略键
+- 会议室列表：`GET /api/meeting/core/entity/room/list` → `room_list` 查 `x_meeting_room`，Name 升序 limit 20，可选字段经 `option_to_json` 为 None 时省略键
 - 会议室创建：`POST .../room/create` → name 必填否则 BadRequest("name is required")，equipment 序列化为 JSON 字符串存储，uuid v4、create_time=Utc now
 - 会议室查询/更新/删除：`GET .../room/{id}` 无则 error("room not found")；`POST .../room/save/{id}` 与 `POST .../room/delete/{id}` 经 deadpool 执行原生 UPDATE/DELETE SQL，rows_affected==0 时 error("room not found")
 - 会议列表：`GET .../meeting/list` StartTime 倒序 limit 20，organizerId 取 creator 字段；startTime/endTime 输出键名为带引号的 `"\"startTime\""`/`"\"endTime\""`

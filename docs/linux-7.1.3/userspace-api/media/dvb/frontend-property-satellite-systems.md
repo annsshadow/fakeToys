@@ -1,3 +1,5 @@
+# frontend-property-satellite-systems
+
 ﻿######## 卫星传输系统使用的属
 本文件列DVB 卫星传输系统（DVB-S、DVB-S2、Turbo 码等）前端可调谐的属性参数，说明各系统下有效DTV 属性集合，供卫星电视接收相关的前端驱动与应用开发者参考
 
@@ -54,7 +56,7 @@
 此外，DTV QoS 统计 <frontend-stat-properties> 同样有效
 
 
-## Turbo 鐮佷紶杈撶郴缁。
+## Turbo 鐮佷紶杈撶系统。
 
 除所有对 DVB-S 有效的参数外，turbo 码还支持以下参数
 - DTV_MODULATION <DTV-MODULATION>

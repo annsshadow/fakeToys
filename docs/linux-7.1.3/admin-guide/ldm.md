@@ -1,8 +1,10 @@
+# ldm
+
 ﻿## LDM - 逻辑磁盘管理器（动态磁盘）
 
 
 :Author: 最初由 FlatCap - Richard Russon <ldm@flatcap.org> 撰写:Last Updated: Anton Altaparmakov 2007 3 30 日为 Windows Vista 更新
-### 概述
+## 概述
 
 
 Windows 2000、XP Vista 使用了一种新的分区方案。它完全取代MSDOS 风格的分区。它将自己的信息存储

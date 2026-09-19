@@ -258,7 +258,7 @@ async fn mpweixin_login_or_create(
     }
 }
 
-/// GET /jaxrs/mpweixin/login/code/{code} —— 微信小程序 code 登录
+/// GET /api/mpweixin/login/code/{code} —— 微信小程序 code 登录
 pub async fn mpweixin_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -276,7 +276,7 @@ pub async fn mpweixin_login(
     }
 }
 
-/// GET /jaxrs/mpweixin/bind/code/{code} —— 绑定 openid 到当前登录用户
+/// GET /api/mpweixin/bind/code/{code} —— 绑定 openid 到当前登录用户
 pub async fn mpweixin_bind_code(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -305,7 +305,7 @@ pub async fn mpweixin_bind_code(
     )))
 }
 
-/// GET /jaxrs/mpweixin/bind/openid/{openid} —— 直接绑定 openid 到当前用户
+/// GET /api/mpweixin/bind/openid/{openid} —— 直接绑定 openid 到当前用户
 pub async fn mpweixin_bind_openid(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -340,7 +340,7 @@ pub async fn mpweixin_bind_openid(
     )))
 }
 
-/// POST /jaxrs/mpweixin/menu/test/send/to/{person} —— 管理员测试发送模板消息
+/// POST /api/mpweixin/menu/test/send/to/{person} —— 管理员测试发送模板消息
 pub async fn mpweixin_test_send(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -432,14 +432,14 @@ pub fn router() -> Router {
         spawn_template_queue_worker();
     }
     Router::new()
-        .route("/jaxrs/mpweixin/login/code/{code}", get(mpweixin_login))
-        .route("/jaxrs/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
+        .route("/api/mpweixin/login/code/{code}", get(mpweixin_login))
+        .route("/api/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
         .route(
-            "/jaxrs/mpweixin/bind/openid/{openid}",
+            "/api/mpweixin/bind/openid/{openid}",
             get(mpweixin_bind_openid),
         )
         .route(
-            "/jaxrs/mpweixin/menu/test/send/to/{person}",
+            "/api/mpweixin/menu/test/send/to/{person}",
             post(mpweixin_test_send),
         )
 }

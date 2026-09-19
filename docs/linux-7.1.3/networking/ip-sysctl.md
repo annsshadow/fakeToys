@@ -1,3 +1,5 @@
+# ip-sysctl
+
 ﻿
 ## IP Sysctl
 
@@ -244,6 +246,7 @@ fib_notify_on_flag_change - INTEGER
         - 2 - 仅当 RTM_F_OFFLOAD_FAILED 标志变化时才发出通知
 
 IP Fragmentation:
+
 
 ipfrag_high_thresh - LONG INTEGER
 	用于重组 IP 分片的最大内存量
@@ -2020,6 +2023,7 @@ kuznet@ms2.inr.ac.ru
 
 Updated by:
 
+
 - Andi Kleen
   ak@muc.de
 - Nicolas Delon
@@ -2260,6 +2264,7 @@ ioam6_id_wide - LONG INTEGER
 
 IPv6 Fragmentation:
 
+
 ip6frag_high_thresh - INTEGER
 	用于重组 IPv6 分片的最大内存量。当为此目的分配ip6frag_high_thresh
 	字节的内存时，分片处理程序将丢弃数据包，直到达到 ip6frag_low_thresh
@@ -2499,12 +2504,15 @@ forwarding - INTEGER
 
 	Possible values are:
 
+
 		- 0 Forwarding disabled
 		- 1 Forwarding enabled
 
 	**FALSE (0)**:
 
+
 	By default, Host behaviour is assumed.  This means:
+
 
 	1. IsRouter flag is not set in Neighbour Advertisements.
 	2. If accept_ra is TRUE (default), transmit Router
@@ -2515,8 +2523,10 @@ forwarding - INTEGER
 
 	**TRUE (1)**:
 
+
 	If local forwarding is enabled, Router behaviour is assumed.
 	This means exactly the reverse from the above:
+
 
 	1. IsRouter flag is set in Neighbour Advertisements.
 	2. Router Solicitations are not sent unless accept_ra is 2.

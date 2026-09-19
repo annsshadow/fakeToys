@@ -1,3 +1,5 @@
+# lirc-get-rec-resolution
+
 ﻿######## ioctl LIRC_GET_REC_RESOLUTION
 
 

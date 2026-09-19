@@ -115,7 +115,7 @@ async fn fetch_role_list(pool: &Pool, person_id: &str) -> Result<Vec<String>, Ap
     Ok(rows.iter().map(|r| r.get::<_, String>("name")).collect())
 }
 
-/// GET /jaxrs/welink/code/{code} — WeLink SSO 登录
+/// GET /api/welink/code/{code} — WeLink SSO 登录
 pub async fn welink_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -178,5 +178,5 @@ pub async fn welink_login(
 
 /// WeLink SSO 路由
 pub fn router() -> Router {
-    Router::new().route("/jaxrs/welink/code/{code}", get(welink_login))
+    Router::new().route("/api/welink/code/{code}", get(welink_login))
 }

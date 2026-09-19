@@ -1,3 +1,5 @@
+# idr
+
 ﻿
 ## ID 分配
 
@@ -33,3 +35,4 @@ IDR 接口已被弃用；请改用 [XArray <xarray>](XArray <xarray>)
 
    :functions:
    :functions:
+

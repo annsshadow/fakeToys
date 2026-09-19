@@ -1,3 +1,5 @@
+# api
+
 ﻿
 ## KVM（基于内核的虚拟机）API 权威文档
 
@@ -110,7 +112,8 @@ Linux 2.6.22 起，KVM ABI 已经稳定：不允许任何不向后兼容的变�
 
 VM 没有虚拟 cpu，也没有内存。你可能希望0 用作机器类型
 
-##### X86:
+#### X86:
+
 
 
 
@@ -120,15 +123,18 @@ VM 没有虚拟 cpu，也没有内存。你可能希望0 用作机器类型
 
 
 
+
 为了S390 上创建用户控制的虚拟机，请检KVM_CAP_S390_UCONTROL，并以特权用户（CAP_SYS_ADMIN）使用标KVM_VM_S390_UCONTROL
 
 ##### MIPS:
 
 
 
+
 要在 MIPS 上使用硬件辅助虚拟化（VZ ASE），而非默认的陷入并模拟（trap & emulate）实现（该实现会改变虚拟内存布局以适配用户模式），请检KVM_CAP_MIPS_VZ 并使用标KVM_VM_MIPS_VZ
 
 ##### ARM64:
+
 
 
 
@@ -452,11 +458,13 @@ interrupt_bitmap 是挂起外部中断的位图。最多只能设置一位。该
   };
 ```
 
-##### X86:
+#### X86:
+
 
 
 
 :Returns:
+
 
 	========= ===================================
 	  0       on success,
@@ -469,6 +477,7 @@ interrupt_bitmap 是挂起外部中断的位图。最多只能设置一位。该
 注意irq' 是中断向量，而非中断引脚或线路。如果未使用内核PIC，该 ioctl 很有用
 
 ##### PPC:
+
 
 
 
@@ -498,11 +507,13 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
 
 
+
 将待注入虚拟 CPU 的外部中断排入队列。负interrupt 号会将中断出队
 
 This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
 ##### RISC-V:
+
 
 
 
@@ -519,6 +530,7 @@ b) KVM_INTERRUPT_UNSET
 This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
 ##### LOONGARCH:
+
 
 
 
@@ -942,7 +954,8 @@ KVM_CLOCK_REALTIME
 :Parameters: struct kvm_vcpu_events (out)
 :Returns: 0 on success, -1 on error
 
-##### X86:
+#### X86:
+
 
 
 
@@ -997,6 +1010,7 @@ flags 字段中定义了以下位：
 
 
 
+
 如果客户机以某种方式访问由宿主内核模拟的设备，而真实设备会因此生成物理 SError，KVM 可能会为VCPU 使一个虚SError 挂起。该系统错误中断保持挂起，直到客户机通过解除 PSTATE.A 屏蔽来接受该异常
 
 运行 VCPU 可能导致它接受挂起的 SError，或进行导致 SError 挂起的访问。事件的描述仅在 VPCU 未运行时有效
@@ -1037,7 +1051,8 @@ SError 异常始终有一ESR 值。某CPU 能够指定虚拟 SError ESR 值应�
 :Parameters: struct kvm_vcpu_events (in)
 :Returns: 0 on success, -1 on error
 
-##### X86:
+#### X86:
+
 
 
 
@@ -1062,6 +1077,7 @@ KVM_VCPUEVENT_VALID_SMM          transfer the smi sub-struct.
 如果启用KVM_CAP_X86_TRIPLE_FAULT_EVENT，则可以flags 字段中设KVM_VCPUEVENT_VALID_TRIPLE_FAULT，以表明 triple_fault 字段包含有效状态并应被写入 VCPU
 
 ##### ARM64:
+
 
 
 
@@ -1166,7 +1182,8 @@ flags 字段支持两个标志：KVM_MEM_LOG_DIRTY_PAGES KVM_MEM_READONLY。前�
 将要写入的数据，从而无法模拟该访问。取而代之，会向客户机注入一个异常（如果页表更新的起因是加载
 存储，则为数据异data abort；如果是指令获取，则为指令异instruction abort）
 
-##### S390:
+## S390:
+
 
 
 如果 VM 设置KVM_VM_S390_UCONTROL 标志，则返回 -EINVAL -EEXIST
@@ -1286,7 +1303,8 @@ vcpu ioctl 应用vcpu 特定的能力，vm ioctl 应用VM 范围的能力
 x86 上，ioctl 仅在 KVM_CREATE_IRQCHIP 之后才有用。如果没有内核irqchip，多处理器状
 必须在这些架构上由用户空间维护
 
-##### For arm64:
+#### For arm64:
+
 
 
 如果 vCPU 处于 KVM_MP_STATE_SUSPENDED 状态，KVM 会模WFI 指令的架构化执行
@@ -1307,6 +1325,7 @@ KVM_MP_STATE_RUNNABLE。如果不这样做，KVM 会在后续KVM_RUN 的调用�
 ##### For riscv:
 
 
+
 唯一有效的状态是 KVM_MP_STATE_STOPPED KVM_MP_STATE_RUNNABLE，它们反vcpu 是否被暂停
 
 LoongArch 上，仅使KVM_MP_STATE_RUNNABLE 状态来反映 vcpu 是否可运行
@@ -1325,7 +1344,8 @@ LoongArch 上，仅使KVM_MP_STATE_RUNNABLE 状态来反映 vcpu 是否可运行
 x86 上，ioctl 仅在 KVM_CREATE_IRQCHIP 之后才有用。如果没有内核irqchip，多处理器状
 必须在这些架构上由用户空间维护
 
-##### For arm64/riscv:
+#### For arm64/riscv:
+
 
 
 唯一有效的状态是 KVM_MP_STATE_STOPPED KVM_MP_STATE_RUNNABLE，它们反vcpu 是否应被暂停
@@ -1544,7 +1564,7 @@ KVM_SET_CPUID2 启用该特性
 KVM_SET_CPUID2 中启x2APIC 需KVM_CREATE_IRQCHIP，因KVM 不支持将 x2APIC MSR 访问转发
 用户空间，即 KVM 不支持在用户空间模拟 x2APIC
 
-### 4.47 KVM_PPC_GET_PVINFO
+## 4.47 KVM_PPC_GET_PVINFO
 
 
 :Capability: KVM_CAP_PPC_GET_PVINFO
@@ -1574,7 +1594,7 @@ hcall 数组定义了构成一hypercall 4 条指令
    #define KVM_PPC_PVINFO_FLAGS_EV_IDLE   (1<<0)
 
 ```
-### 4.52 KVM_SET_GSI_ROUTING
+## 4.52 KVM_SET_GSI_ROUTING
 
 
 :Capability: KVM_CAP_IRQ_ROUTING
@@ -1628,6 +1648,7 @@ arm64 上，GSI 路由有以下限制：
 s390 上，ucontrol VM 添加 KVM_IRQ_ROUTING_S390_ADAPTER 会以 -EINVAL 错误被拒绝
 
 flags:
+
 
 - KVM_MSI_VALID_DEVID：与 KVM_IRQ_ROUTING_MSI 路由条目类型一起使用，表示 devid 字段包含一
   有效值。每 VM KVM_CAP_MSI_DEVID 能力用于通告需要提供设ID 的要求。如果该能力不可用，
@@ -1686,7 +1707,7 @@ KVM_CAP_XEN_HVM 在其支持特性指示中包含 KVM_XEN_HVM_CONFIG_EVTCHN_2LEV
 两级事件通道投递。未来可能会添加 FIFO 事件通道支持
 
 
-### 4.55 KVM_SET_TSC_KHZ
+## 4.55 KVM_SET_TSC_KHZ
 
 
 :Capability: KVM_CAP_TSC_CONTROL / KVM_CAP_VM_TSC_CONTROL
@@ -1746,7 +1767,7 @@ struct kvm_lapic_state regs 字段的字35 中。因KVM_GET_LAPIC 必须MSR_IA32
 如果禁用KVM_X2APIC_API_USE_32BIT_IDS 特性，struct kvm_lapic_state 始终使用 xAPIC 格式
 
 
-### 4.58 KVM_SET_LAPIC
+## 4.58 KVM_SET_LAPIC
 
 
 :Capability: KVM_CAP_IRQCHIP
@@ -1769,7 +1790,7 @@ APIC ID 寄存器的格式（struct kvm_lapic_state regs 字段的字32-35）取
 能力的状态。参KVM_GET_LAPIC 中的说明
 
 
-### 4.59 KVM_IOEVENTFD
+## 4.59 KVM_IOEVENTFD
 
 
 :Capability: KVM_CAP_IOEVENTFD
@@ -1812,7 +1833,7 @@ ioctl ioeventfd 附加或分离到客户机内一个合法的 pio/mmio 地址。
 借助 KVM_CAP_IOEVENTFD_ANY_LENGTH，允许长度为 0 ioeventfd，内核将忽略客户机写入的长度，并可能
 获得更快vmexit。这种加速可能只适用于特定架构，ioeventfd 在任何情况下都能工作
 
-### 4.60 KVM_DIRTY_TLB
+## 4.60 KVM_DIRTY_TLB
 
 
 :Capability: KVM_CAP_SW_TLB
@@ -2687,7 +2708,7 @@ PIT 定时器中断可以使用一个每 VM 的内核线程来注入。如果它
 IOCTL 取代了已过时KVM_CREATE_PIT
 
 
-### 4.72 KVM_GET_PIT2
+## 4.72 KVM_GET_PIT2
 
 
 :Capability: KVM_CAP_PIT_STATE2
@@ -2717,7 +2738,7 @@ IOCTL 取代了已过时KVM_CREATE_PIT
 IOCTL 取代了已过时KVM_GET_PIT
 
 
-### 4.73 KVM_SET_PIT2
+## 4.73 KVM_SET_PIT2
 
 
 :Capability: KVM_CAP_PIT_STATE2
@@ -2952,7 +2973,7 @@ fd 的读取最初会提供所有趣"HPT 条目的信息。如果设置了 KVM_G
 fd 的写入从头部中给出的索引处创HPT 条目；先'n_valid' 个来自写入数据的有效条目，然后是
 'n_invalid' 个无效条目，使找到的任何先前有效条目失效
 
-### 4.79 KVM_CREATE_DEVICE
+## 4.79 KVM_CREATE_DEVICE
 
 
 :Capability: KVM_CAP_DEVICE_CTRL
@@ -3381,9 +3402,10 @@ ioctl 返回kvm 模拟x86 cpuid 特性。用户空间可以使用该 ioctl 返�
 
    eax, ebx, ecx, edx:
 
+
          function/index 组合cpuid 指令返回的
 
-### 4.89 KVM_S390_MEM_OP
+## 4.89 KVM_S390_MEM_OP
 
 
 :Capability: KVM_CAP_S390_MEM_OP, KVM_CAP_S390_PROTECTED, KVM_CAP_S390_MEM_OP_EXTENSION
@@ -3434,7 +3456,7 @@ VM 的内存读取或写入数据。KVM_CAP_S390_MEM_OP_EXTENSION 能力指定�
   - `KVM_S390_MEMOP_SIDA_WRITE`
   - `KVM_S390_MEMOP_ABSOLUTE_CMPXCHG`
 
-##### Logical read/write（逻辑写）
+### Logical read/write（逻辑写）
 
 
 访问逻辑内存，即根据 VCPU 的状态将给定的客户机地址转换为绝对地址，并使用该绝对地址作为访问
@@ -3774,7 +3796,7 @@ KVM_MSR_EXIT_REASON_FILTER，KVM 会在被拒绝的访问上向客户机注入�
 KVM_MSR_EXIT_REASON_FILTER，并在所有过滤器停用之后才将其关闭。否则可能导KVM 注入 #GP 而不
 退出到用户空间
 
-### 4.98 KVM_CREATE_SPAPR_TCE_64
+## 4.98 KVM_CREATE_SPAPR_TCE_64
 
 
 :Capability: KVM_CAP_SPAPR_TCE_64
@@ -4279,7 +4301,7 @@ ioctl（注销）注册一eventfd，以通过 SIGNAL_EVENT hypercall 从客户�
 	  -ENOENT on deassign if the conn_id isn't registered,
 	  -EEXIST on assign if the conn_id is already registered
 
-### 4.114 KVM_GET_NESTED_STATE
+## 4.114 KVM_GET_NESTED_STATE
 
 
 :Capability: KVM_CAP_NESTED_STATE
@@ -4351,7 +4373,7 @@ ioctl vcpu 的嵌套虚拟化状态从内核复制到用户空间
 
 状态的最大大小可以通过KVM_CHECK_EXTENSION ioctl() 传入 KVM_CAP_NESTED_STATE 获取
 
-### 4.115 KVM_SET_NESTED_STATE
+## 4.115 KVM_SET_NESTED_STATE
 
 
 :Capability: KVM_CAP_NESTED_STATE
@@ -4632,7 +4654,7 @@ KVM 总是使用 fixed_counter_bitmap，确fixed_counter_bitmap 设置正确是�
 注意events" 字段也适用于固定计数器的硬编码 event_select unit_mask 值fixed_counter_bitmap"
 的优先级高于 "events"，如果两者之间存在矛盾
 
-### 4.121 KVM_PPC_SVM_OFF
+## 4.121 KVM_PPC_SVM_OFF
 
 
 :Capability: basic
@@ -4797,6 +4819,7 @@ KVM_PV_INFO
     此子命令提供与转PV 客户机相关的信息
 
     ::
+
 
       struct kvm_s390_pv_info_dump {
 	__u64 dump_cpu_buffer_len;
@@ -5309,7 +5332,7 @@ id 字符串块包含一个字符串，用于标识调KVM_GET_STATS_FD 的文件
 
 Stats Data 块包含一64 位值数组，顺序Descriptors 块中的描述符相同
 
-### 4.134 KVM_GET_XSAVE2
+## 4.134 KVM_GET_XSAVE2
 
 
 :Capability: KVM_CAP_XSAVE2
@@ -5484,7 +5507,7 @@ ioctl 将所选寄存器范围writable 掩码复制到用户空间
 
 `reserved[^13^]` 数组保留供将来使用，应为 0，否KVM 可能返回错误
 
-##### KVM_ARM_FEATURE_ID_RANGE (0)
+## KVM_ARM_FEATURE_ID_RANGE (0)
 
 
 Feature ID 范围定义AArch64 系统寄存器空间，其中 op0==3、op1=={0, 1, 3}、CRn==0、CRn=={0-7}
@@ -5534,7 +5557,7 @@ KVM_MEM_GUEST_MEMFD 区域_必须_有一个有效的 guest_memfd（私有内存�
 属性为 '0'。用户空间可以通过按需通过 KVM_SET_MEMORY_ATTRIBUTES 切换 KVM_MEMORY_ATTRIBUTE_PRIVATE
 来控制内存是共享还是私有
 
-##### S390锛。
+#### S390锛。
 
 
 如果 VM 设置KVM_VM_S390_UCONTROL 标志，则返回 -EINVAL
@@ -5572,7 +5595,7 @@ KVM_MEMORY_ATTRIBUTE_PRIVATE，它将相关的 gfn 标记为客机私有内存
 
 "flags" 字段保留供将来扩展，必须'0'
 
-### 4.142 KVM_CREATE_GUEST_MEMFD
+## 4.142 KVM_CREATE_GUEST_MEMFD
 
 
 :Capability: KVM_CAP_GUEST_MEMFD
@@ -5896,7 +5919,7 @@ hardware_entry_failure_reason 中获得
 ```
 强烈建议用户空间使用 `KVM_EXIT_IO`（x86）或 `KVM_EXIT_MMIO`（除 s390 外的所有架构）来实现需
 客户机与宿主机用户空间交互的功能
-### 对于 arm64
+## 对于 arm64
 
 
 SMCCC 退出可根据 SMCCC 过滤器的配置启用。更多细节请参阅
@@ -6104,7 +6127,7 @@ FSL BookE PowerPC 芯片上，中断控制器有一条到核心的快速路径�
 早期版本Linux 在该结构中定义了一`flags` 成员。该字段现在已别
 `data[^0^]`。用户空间可以假定仅ndata 大于 0 时才会被写入
 
-### 对于 arm/arm64
+## 对于 arm/arm64
 
 
 KVM_SYSTEM_EVENT_SUSPEND 退出通过 KVM_CAP_ARM_SYSTEM_SUSPEND 虚拟机能
@@ -6995,7 +7018,7 @@ KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 将以 EINVAL 错误失败，在未使
 split IRQCHIP 的情况下设置 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 同样
 失败
 
-### 7.8 KVM_CAP_S390_USER_INSTR0
+## 7.8 KVM_CAP_S390_USER_INSTR0
 
 
 :Architectures: s390
@@ -7091,7 +7114,7 @@ VM 上启用此能力为用户空间提供了一种不再拦截某些指令的�
 `IA32_MPERF` MSR 的用户空VMM 必须显式设置客户CPUID 位
 
 
-### 7.14 KVM_CAP_S390_HPAGE_1M
+## 7.14 KVM_CAP_S390_HPAGE_1M
 
 
 :Architectures: s390
@@ -7183,7 +7206,7 @@ KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 此前曾以 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT
 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 即表示这些缺陷已被修复。用户空间不应尝
 使用 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT
 
-### 7.19 KVM_CAP_PPC_SECURE_GUEST
+## 7.19 KVM_CAP_PPC_SECURE_GUEST
 
 
 :Architectures: ppc
@@ -7276,7 +7299,7 @@ RIP 指向违规指令，即退出是故障式的（fault-like）
 所有检测到的总线锁采取行动，则应检KVM_RUN_X86_BUS_LOCK，而不论主退出原
 为何
 
-### 7.23 KVM_CAP_PPC_DAWR1
+## 7.23 KVM_CAP_PPC_DAWR1
 
 
 :Architectures: ppc
@@ -7507,7 +7530,7 @@ KVM 将退出到用户空间进行处理
 此能力旨在缓解恶VM 导致 CPU 卡住（由于事件窗口未打开）并CPU 对宿主或其他
 VM 不可用的威胁
 
-### 7.35 KVM_CAP_X86_APIC_BUS_CYCLES_NS
+## 7.35 KVM_CAP_X86_APIC_BUS_CYCLES_NS
 
 
 :Architectures: x86
@@ -7620,7 +7643,7 @@ KVM_DEV_ARM_{VGIC_GRP_CTRL, ITS_SAVE_TABLES} 保存 vgic/its 表。（2）通过
 vgic/its 表。VGICv3 LPI 挂起状态被恢复。（3）通过 KVM 设备“kvm-arm-vgic-v3”上
 命令 KVM_DEV_ARM_VGIC_{GRP_CTRL, SAVE_PENDING_TABLES} 保存 vgic3 挂起表
 
-### 7.37 KVM_CAP_PMU_CAPABILITY
+## 7.37 KVM_CAP_PMU_CAPABILITY
 
 
 :Architectures: x86
@@ -7859,6 +7882,7 @@ run->kvm_dirty_regs 位
 
   KVM_CAP_ARM_USER_IRQ >= 1:
 
+
     KVM_ARM_DEV_EL1_VTIMER -  EL1 铏氭嫙瀹氭椂鍣?
     KVM_ARM_DEV_EL1_PTIMER -  EL1 鐗╃悊瀹氭椂鍣?
     KVM_ARM_DEV_PMU        -  ARM PMU 溢出中断信号
@@ -8068,7 +8092,7 @@ KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 标志指示 KVM 支持Xen pvclock 源�
 PVCLOCK_TSC_STABLE_BIT 标志。这将在 KVM_CAP_XEN_HVM ioctl 设置
 KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 标志时完成
 
-### 8.31 KVM_CAP_SPAPR_MULTITCE
+## 8.31 KVM_CAP_SPAPR_MULTITCE
 
 
 :Architectures: ppc
@@ -8141,7 +8165,7 @@ Report（MTCR）位
 注意，KVM_X86_SW_PROTECTED_VM 目前仅用于开发和测试。不要将 KVM_X86_SW_PROTECTED_VM
 用于“真正的”VM，尤其是不要用于生产环境。软件保护的 VM 的行为和有效 ABI 是不稳定的
 
-### 8.42 KVM_CAP_PPC_RPT_INVALIDATE
+## 8.42 KVM_CAP_PPC_RPT_INVALIDATE
 
 
 :Architectures: ppc
@@ -8217,7 +8241,7 @@ KVM 退出时带有 L1 L2 客户机的寄存器状态，取决于退出时执行
 ### 9.1. x86
 
 
-##### ``KVM_GET_SUPPORTED_CPUID`` 问题
+#### ``KVM_GET_SUPPORTED_CPUID`` 问题
 
 
 通常，`KVM_GET_SUPPORTED_CPUID` 的设计使得可以将其结果直接传`KVM_SET_CPUID2`

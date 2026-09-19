@@ -281,7 +281,7 @@ pub async fn statement_list_with_query(
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -459,7 +459,10 @@ async fn execute_stat_by_id(
         .map(|s| s.to_string());
 
     let mut payload = serde_json::Map::new();
-    payload.insert("id".to_string(), Value::String(row.get("id")));
+    payload.insert(
+        "id".to_string(),
+        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+    );
     payload.insert(
         "name".to_string(),
         Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -557,7 +560,7 @@ pub async fn stat_list_with_query(
     let data: Vec<Value> = rows.iter().map(stat_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -797,7 +800,7 @@ pub async fn table_row_insert_one(
 
 // ── importmodel 记录管理补齐 ─────────────────────────────────────────────
 
-/// 删除导入记录（Java ActionDeleteRecord）
+/// 删除导入记录（o2server ActionDeleteRecord）
 #[allow(non_snake_case)]
 pub async fn importmodel_record_delete(
     pool: Extension<Pool>,
@@ -1024,7 +1027,7 @@ async fn stat_execute_scoped(
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("stat not found"))),
     };
-    let id: String = row.get("id");
+    let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
 
     let result = execute_stat_by_id(&client, &id).await?;
     Ok(Json(ActionResult::success(result)))
@@ -1391,7 +1394,7 @@ pub async fn table_row_select_post(
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

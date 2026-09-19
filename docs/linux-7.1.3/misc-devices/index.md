@@ -1,3 +1,5 @@
+# index
+
 ﻿## 各类杂项设备文档（Assorted Miscellaneous Devices Documentation
 
 本页是杂项设备（Miscellaneous Devices）文档的索引，汇总了不属于其他设备类别的各种外围设备的说明文档入口，便于读者按设备快速定位相关说明

@@ -1,3 +1,5 @@
+# lirc-get-send-mode
+
 ﻿######## ioctls LIRC_GET_SEND_MODE and LIRC_SET_SEND_MODE
 
 

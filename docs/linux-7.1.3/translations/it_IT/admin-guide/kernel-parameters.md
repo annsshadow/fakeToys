@@ -1,4 +1,6 @@
 
+# kernel-parameters
+
 :Original: Documentation/admin-guide/kernel-parameters.rst <kernelparameters>
 
 

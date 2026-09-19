@@ -210,7 +210,7 @@ graph TB
 
 **Approach:**
 - 建 probe 矩阵：对每个已播种字面标识符 × 相关 war 的 GET 端点，curl 取证（hit/error + 错误类型）。
-- 对 error 项读 o2server 对应 Action 类源码（`oa/o2server/x_*_assemble_*/src/main/java/.../jaxrs/*/Action*.java` 的 get/list-by-flag 实现），书面确定解析链（查什么列、什么顺序），写入 http.md 新增「FLAG_SEMANTICS」附录。
+- 对 error 项读 o2server 对应 Action 类源码（`oa/o2server/x_*_assemble_*/src/main/java/.../api/*/Action*.java` 的 get/list-by-flag 实现），书面确定解析链（查什么列、什么顺序），写入 http.md 新增「FLAG_SEMANTICS」附录。
 - 按链修正种子（调整 name/unique 值或 REST payload），补齐 category/forum 的创建路径；meeting 等 flag 仅认 id 且 REST 无法指定 id 的实体，明确记为"Java 侧不可种"及原因。
 - Rust 侧同步核对影子表查询的字面匹配假设（S1 曾静态核对 control 域，express 域抽查即可）。
 

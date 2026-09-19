@@ -1,3 +1,5 @@
+# legacy_dvb_osd
+
 ﻿
 
 
@@ -453,7 +455,7 @@ OSD 并不像许多其他卡那样是一个帧缓冲（frame-buffer）。它更�
 	long val;
     } osd_cap_t;
 
-#### Variables（变量）
+## Variables（变量）
 
 
     :header-rows:  0
@@ -469,7 +471,7 @@ OSD 并不像许多其他卡那样是一个帧缓冲（frame-buffer）。它更�
        - `long val`
 
        - 用于存储数据
-#### Supported capabilities（受支持的能力）
+### Supported capabilities（受支持的能力）
 
 
     :header-rows:  0
@@ -594,7 +596,7 @@ ioctl 用于获取正在使用的、基AV7110 DVB 解码器卡OSD 的能力
 
     #include <fcntl.h>
 
-#### Arguments（参数）
+## Arguments（参数）
 
 
     :header-rows:  0
@@ -627,7 +629,7 @@ ioctl 用于获取正在使用的、基AV7110 DVB 解码器卡OSD 的能力
        - `O_NONBLOCK`
        - | 以非阻塞模式打开
           | （默认是阻塞模式
-#### Description（说明）
+### Description（说明）
 
 
 system call 打开一个具名的 OSD 设备（例`/dev/dvb/adapter/osd0`）以供后续使用

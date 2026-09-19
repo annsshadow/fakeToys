@@ -1,3 +1,5 @@
+# classic_vs_extended
+
 ﻿
 ## 经典 BPF eBPF
 
@@ -59,6 +61,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
 
   GCC can compile f1, f3 into x86_64::
 
+
     f1:
 	movl $1, %edi
 	movq _f2(%rip), %rax
@@ -69,6 +72,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
 	ret
 
   Function f2 in eBPF may look like::
+
 
     f2:
 	bpf_mov R2, R1
@@ -91,6 +95,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
 
   ::
 
+
     R0 - rax
     R1 - rdi
     R2 - rsi
@@ -107,6 +112,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
   and rbx, r12 - r15 are callee saved.
 
   Then the following eBPF pseudo-program::
+
 
     bpf_mov R6, R1 /* save ctx */
     bpf_mov R2, 2
@@ -125,6 +131,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
     bpf_exit
 
   After JIT to x86_64 may look like::
+
 
     push %rbp
     mov %rsp,%rbp
@@ -152,6 +159,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
 
   Which is in this example equivalent in C to::
 
+
     u64 bpf_filter(u64 ctx)
     {
 	return foo(ctx, 2, 3, 4, 5) + bar(ctx, 6, 7, 8, 9);
@@ -165,6 +173,7 @@ eBPF 格式相对于经BPF 的一些核心变化：
   them across the calls as defined by calling convention.
 
   For example the following program is invalid::
+
 
     bpf_mov R1, 1
     bpf_call foo
@@ -255,10 +264,12 @@ eBPF 的转换
 
  * in classic BPF, this means::
 
+
 	BPF_SRC(code) == BPF_X - use register X as source operand
 	BPF_SRC(code) == BPF_K - use 32-bit immediate as source operand
 
  * in eBPF, this means::
+
 
 	BPF_SRC(code) == BPF_X - use 'src_reg' register as source operand
 	BPF_SRC(code) == BPF_K - use 32-bit immediate as source operand

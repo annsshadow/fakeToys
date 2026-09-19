@@ -18,14 +18,14 @@ describe('session store (cookie-only)', () => {
     const { sessionModule, api } = await loadSession()
     const getSpy = vi.spyOn(api, 'get')
     const postSpy = vi.spyOn(api, 'post')
-    return { store: sessionModule.useSession(), getSpy, postSpy }
+    return { store: sessionModule.useSession(), getSpy, postSpy, api }
   }
 
   it('restores an authenticated user from current-user on init', async () => {
     const { store, getSpy } = await freshStore()
     getSpy.mockResolvedValue({ data: { unique: 'u1', name: 'Alice' } } as never)
     await store.init()
-    expect(getSpy).toHaveBeenCalledWith('/jaxrs/authentication/who', { requireAuth: false })
+    expect(getSpy).toHaveBeenCalledWith('/api/authentication/who', { requireAuth: false })
     expect(store.isAuthenticated).toBe(true)
     expect(store.state.user?.unique).toBe('u1')
   })
@@ -72,5 +72,74 @@ describe('session store (cookie-only)', () => {
     expect(postSpy).toHaveBeenCalledTimes(1)
     expect(store.state.user?.unique).toBe('u9')
     expect(store.isAuthenticated).toBe(true)
+  })
+
+  it('a second init() reuses the finished first read instead of hammering the endpoint', async () => {
+    const { store, getSpy } = await freshStore()
+    getSpy.mockResolvedValue({ data: { unique: 'u1' } } as never)
+    await store.init()
+    await store.init()
+    expect(getSpy).toHaveBeenCalledTimes(1)
+    expect(store.state.user?.unique).toBe('u1')
+  })
+
+  it('login() throws AuthenticationError when the post did not establish a user', async () => {
+    const { store, getSpy, postSpy } = await freshStore()
+    postSpy.mockResolvedValue({} as never)
+    getSpy.mockResolvedValue({ data: null } as never)
+    await expect(store.login('it-login', 'pw')).rejects.toThrow('Login did not create a session')
+  })
+
+  it('refresh() asks the client to refresh the session then re-reads the current user', async () => {
+    const { store, getSpy, api } = await freshStore()
+    const refreshSpy = vi.spyOn(api, 'refreshSession').mockResolvedValue(undefined)
+    getSpy.mockResolvedValue({ data: { unique: 'u42' } } as never)
+    await store.refresh()
+    expect(refreshSpy).toHaveBeenCalledTimes(1)
+    expect(store.state.user?.unique).toBe('u42')
+  })
+
+  it('switchUser() posts the target unique and resolves under the new identity', async () => {
+    const { store, getSpy, postSpy } = await freshStore()
+    postSpy.mockResolvedValue({} as never)
+    getSpy.mockResolvedValue({ data: { unique: 'bob' } } as never)
+    const user = await store.switchUser('bob')
+    expect(postSpy).toHaveBeenCalledWith(
+      '/api/authentication/switchuser',
+      { targetUnique: 'bob' },
+      {
+        discardResponse: true,
+      },
+    )
+    expect(user.unique).toBe('bob')
+  })
+
+  it('switchUser() throws AuthenticationError when no user is established afterwards', async () => {
+    const { store, getSpy, postSpy } = await freshStore()
+    postSpy.mockResolvedValue({} as never)
+    getSpy.mockResolvedValue({ data: null } as never)
+    await expect(store.switchUser('bob')).rejects.toThrow('User switch did not create a session')
+  })
+
+  it('a 401 current-user resets the stored user through the failure handler', async () => {
+    // 语义：会话失效（后端 401 且非 refresh 请求）时，store 必须经
+    // setAuthenticationFailureHandler 把本地用户清掉，让视图回退到登录态而不是
+    // 拿着过期 user 继续渲染。
+    const { store, api } = await freshStore()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) => {
+        const u = String(input)
+        if (u.includes('/who')) {
+          return Promise.resolve(new Response(JSON.stringify({ success: false }), { status: 401 }))
+        }
+        return Promise.resolve(new Response(JSON.stringify({ success: true, data: {} }), { status: 200 }))
+      }),
+    )
+    await store.init()
+    expect(store.state.user).toBeNull()
+    expect(store.state.initialized).toBe(true)
+    expect(store.isAuthenticated).toBe(false)
+    vi.unstubAllGlobals()
   })
 })

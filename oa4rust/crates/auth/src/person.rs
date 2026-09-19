@@ -68,7 +68,7 @@ pub async fn list(
 
     let rows = match client
         .query(
-            "SELECT id, unique_id, name, mobile, email FROM auth_person LIMIT $1::int OFFSET $2::int",
+            "SELECT id, unique_id, name, mobile, email FROM auth_person LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await
@@ -94,5 +94,9 @@ pub async fn list(
         })
         .collect();
 
-    Json(ActionResult::java_success(Value::Array(data), total, size))
+    Json(ActionResult::legacy_success(
+        Value::Array(data),
+        total,
+        size,
+    ))
 }

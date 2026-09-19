@@ -1,3 +1,5 @@
+# kfuncs
+
 ﻿
 
 ## BPF 内核函数（kfuncs
@@ -477,7 +479,7 @@ BPF 子系统提供了一批“核心”kfuncs，它们可能适用于各种各�
 		return 0;
 	}
 
-### 4.2 struct cgroup * kfuncs
+## 4.2 struct cgroup * kfuncs
 
 
 `struct cgroup *` 对象也有获取和释放函数：

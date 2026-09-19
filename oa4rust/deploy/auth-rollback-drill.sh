@@ -43,45 +43,45 @@ post() { # login/refresh body helper
 echo "=== W4 auth rollback drill (Rust-side) $(date -u +%Y-%m-%dT%H:%M:%SZ) ===" | tee -a "$OUT"
 
 echo "-- 1. login (no credentials) -> Set-Cookie; body must NOT carry a token" | tee -a "$OUT"
-post POST /jaxrs/authentication "" "" '{"credential":"it-login","password":"testpass123"}' | tee -a "$OUT"
+post POST /api/authentication "" "" '{"credential":"it-login","password":"testpass123"}' | tee -a "$OUT"
 LIVE="$(last_cookie)"
 echo "   session token sha=$(sha "$LIVE") (value never printed)" | tee -a "$OUT"
 
 echo "-- 2. current-user with session cookie -> 200, body no token" | tee -a "$OUT"
-req GET /jaxrs/authentication/who "oa4rust_session=$LIVE" "" | tee -a "$OUT"
+req GET /api/authentication/who "oa4rust_session=$LIVE" "" | tee -a "$OUT"
 
 echo "-- 3. refresh via cookie rotates: old cookie then 401" | tee -a "$OUT"
 OLD="$LIVE"
-req POST /jaxrs/authentication/refresh "oa4rust_session=$LIVE" "$O" | tee -a "$OUT"
+req POST /api/authentication/refresh "oa4rust_session=$LIVE" "$O" | tee -a "$OUT"
 LIVE="$(last_cookie)"
-echo "   old cookie (rotated out) now: " ; req GET /jaxrs/authentication/who "oa4rust_session=$OLD" "" | tee -a "$OUT"
+echo "   old cookie (rotated out) now: " ; req GET /api/authentication/who "oa4rust_session=$OLD" "" | tee -a "$OUT"
 
 echo "-- 4. refresh is cookie-only: valid Bearer (no Cookie header) -> 401" | tee -a "$OUT"
-req POST /jaxrs/authentication/refresh "" "$O" -H "Authorization: Bearer $LIVE" | tee -a "$OUT"
+req POST /api/authentication/refresh "" "$O" -H "Authorization: Bearer $LIVE" | tee -a "$OUT"
 
 echo "-- 5. logout idempotent (cookie-auth delete needs exact Origin to pass CSRF)" | tee -a "$OUT"
-req DELETE /jaxrs/authentication "oa4rust_session=$LIVE" "$O" | tee -a "$OUT"
-req DELETE /jaxrs/authentication "" "" | tee -a "$OUT"
+req DELETE /api/authentication "oa4rust_session=$LIVE" "$O" | tee -a "$OUT"
+req DELETE /api/authentication "" "" | tee -a "$OUT"
 
 echo "-- 6. invalid cookie never falls back to a valid Bearer -> 401" | tee -a "$OUT"
-req GET /jaxrs/authentication/who "oa4rust_session=bogus" "" -H "Authorization: Bearer $LIVE" | tee -a "$OUT"
+req GET /api/authentication/who "oa4rust_session=bogus" "" -H "Authorization: Bearer $LIVE" | tee -a "$OUT"
 
 echo "-- 7. CSRF: cookie-auth writes require exact APP_PUBLIC_ORIGIN (probe = POST logout)" | tee -a "$OUT"
-post POST /jaxrs/authentication "" "" '{"credential":"it-login","password":"testpass123"}' >/dev/null
+post POST /api/authentication "" "" '{"credential":"it-login","password":"testpass123"}' >/dev/null
 LIVE="$(last_cookie)"
-echo "   (cookie, no origin)       expect 403:" ; req POST /jaxrs/authentication/logout "oa4rust_session=$LIVE" "" | tee -a "$OUT"
-echo "   (cookie, wrong origin)    expect 403:" ; req POST /jaxrs/authentication/logout "oa4rust_session=$LIVE" "$O_EVIL" | tee -a "$OUT"
-echo "   (cookie, exact origin)    expect 200:" ; req POST /jaxrs/authentication/logout "oa4rust_session=$LIVE" "$O" | tee -a "$OUT"
-post POST /jaxrs/authentication "" "" '{"credential":"it-login","password":"testpass123"}' >/dev/null
+echo "   (cookie, no origin)       expect 403:" ; req POST /api/authentication/logout "oa4rust_session=$LIVE" "" | tee -a "$OUT"
+echo "   (cookie, wrong origin)    expect 403:" ; req POST /api/authentication/logout "oa4rust_session=$LIVE" "$O_EVIL" | tee -a "$OUT"
+echo "   (cookie, exact origin)    expect 200:" ; req POST /api/authentication/logout "oa4rust_session=$LIVE" "$O" | tee -a "$OUT"
+post POST /api/authentication "" "" '{"credential":"it-login","password":"testpass123"}' >/dev/null
 LIVE="$(last_cookie)"
-echo "   (Bearer-only, no cookie)  expect 200 (credential requests exempt):" ; req POST /jaxrs/authentication/logout "" "" -H "Authorization: Bearer $LIVE" | tee -a "$OUT"
+echo "   (Bearer-only, no cookie)  expect 200 (credential requests exempt):" ; req POST /api/authentication/logout "" "" -H "Authorization: Bearer $LIVE" | tee -a "$OUT"
 
 echo "-- 8. rollback simulation: logout (clear, cookie+origin) -> re-login recovers; revoked cookie stays dead" | tee -a "$OUT"
 DEAD="$LIVE"
-req DELETE /jaxrs/authentication "oa4rust_session=$DEAD" "$O" | tee -a "$OUT"
-post POST /jaxrs/authentication "" "" '{"credential":"it-login","password":"testpass123"}' | tee -a "$OUT"
+req DELETE /api/authentication "oa4rust_session=$DEAD" "$O" | tee -a "$OUT"
+post POST /api/authentication "" "" '{"credential":"it-login","password":"testpass123"}' | tee -a "$OUT"
 LIVE="$(last_cookie)"
-echo "   re-login current-user (new session): " ; req GET /jaxrs/authentication/who "oa4rust_session=$LIVE" "" | tee -a "$OUT"
-echo "   revoked pre-logout cookie (expect 401): " ; req GET /jaxrs/authentication/who "oa4rust_session=$DEAD" "" | tee -a "$OUT"
+echo "   re-login current-user (new session): " ; req GET /api/authentication/who "oa4rust_session=$LIVE" "" | tee -a "$OUT"
+echo "   revoked pre-logout cookie (expect 401): " ; req GET /api/authentication/who "oa4rust_session=$DEAD" "" | tee -a "$OUT"
 
 echo "=== end drill ===" | tee -a "$OUT"

@@ -1,8 +1,10 @@
+# arm-ccn
+
 ﻿## ARM 缓存一致性网络（Cache Coherent Network
 
 CCN-504 是一个环形总线互连，由 11 个交叉点（XP）组成，每个交叉点最多支持两个设备端口，
 因此节点（设备）0 1 连接到交叉点 0，节2 3 连接到交叉点 1，依此类推
-### PMU（perf）驱
+## PMU（perf）驱
 
 CCN 驱动注册一perf PMU 驱动，它sysfs 中提供可用事件和配置选项的描述，/sys/bus/event_source/devices/ccn*
 “format目录描述perf_event_attr 结构config、config1 config2 字段的格式“events目录为所有已记录的事件提供配置模板，可与 perf 工具一起使用。例“xp_valid_flit等同“type=0x8,event=0x4”。其他参数必须显式指定

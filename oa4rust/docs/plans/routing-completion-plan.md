@@ -49,12 +49,12 @@ See scripts/all_java_handlers.json for full list.
 
 ### 1. processplatform_service_processing
 **File**: crates/processplatform_service_processing/src/lib.rs
-**Add**: pub const JAVA_BASE: &str = /jaxrs/processplatform/service/processing;
+**Add**: pub const JAVA_BASE: &str = /api/processplatform/service/processing;
 **Routes**: 200 total, **Java**: 127 handlers
 
 ### 2. processplatform_assemble_designer
 **File**: crates/processplatform_assemble_designer/src/lib.rs
-**Add**: pub const JAVA_BASE: &str = /jaxrs/processplatform/assemble/designer;
+**Add**: pub const JAVA_BASE: &str = /api/processplatform/assemble/designer;
 **Routes**: 114 total, **Java**: 118 handlers
 
 ---

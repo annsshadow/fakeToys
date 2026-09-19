@@ -1,6 +1,13 @@
+use axum::{
+    extract::{Extension, Path},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 use deadpool_postgres::Pool;
 use serde::Serialize;
+use serde_json::Value;
 use shared::error::AppError;
+use shared::response::ActionResult;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Document {
@@ -227,6 +234,128 @@ pub async fn search_documents_smart(pool: &Pool, query: &str, limit: i32) -> Vec
     search_documents(pool, query, limit)
         .await
         .unwrap_or_default()
+}
+
+// ── ftsearch/list（桌面 FtSearchApp「全文搜索引擎」配置串引用，查 x_ftsearch_document 096）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ftsearch_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, title, source, score::text AS score, creator, create_time::text AS create_time \
+             FROM x_ftsearch_document WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 200",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "source".to_string(),
+                    Value::String(row.get::<_, Option<String>>("source").unwrap_or_default()),
+                ),
+                (
+                    "score".to_string(),
+                    Value::String(row.get::<_, Option<String>>("score").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── ftsearch 家族 CRUD（x_ftsearch_document 096，通用参数化写；score 为 DOUBLE 不映射）──
+fn ftsearch_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_ftsearch_document",
+        columns: &[("title", "title"), ("body", "body"), ("source", "source")],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ftsearch_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &ftsearch_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ftsearch_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &ftsearch_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn ftsearch_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &ftsearch_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+/// 全文检索 HTTP 路由（供 create_app 挂载；此前 search crate 无 HTTP 面）。
+pub fn router(pool: Pool) -> Router {
+    Router::new()
+        .route("/api/ftsearch/list", get(ftsearch_list))
+        // ── ftsearch 家族 CRUD ──
+        .route("/api/ftsearch/create", post(ftsearch_create))
+        .route("/api/ftsearch/save/{id}", put(ftsearch_save))
+        .route("/api/ftsearch/save/{id}", post(ftsearch_save))
+        .route("/api/ftsearch/delete/{id}", delete(ftsearch_delete))
+        .route("/api/ftsearch/delete/{id}", post(ftsearch_delete))
+        .layer(Extension(pool))
 }
 
 #[cfg(test)]

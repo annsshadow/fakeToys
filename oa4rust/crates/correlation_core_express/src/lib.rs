@@ -53,15 +53,12 @@ pub async fn sync_correlation(
 
 /// 创建关联核心服务路由
 /// 注册以下路由：
-/// - /jaxrs/correlation/core/express/status - 服务状态
-/// - /jaxrs/correlation/core/express/sync - 同步关联
+/// - /api/correlation/core/express/status - 服务状态
+/// - /api/correlation/core/express/sync - 同步关联
 pub fn correlation_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/correlation/core/express/status", get(get_status))
-        .route(
-            "/jaxrs/correlation/core/express/sync",
-            get(sync_correlation),
-        )
+        .route("/api/correlation/core/express/status", get(get_status))
+        .route("/api/correlation/core/express/sync", get(sync_correlation))
         .layer(Extension(pool))
 }
 

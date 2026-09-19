@@ -1,13 +1,15 @@
+# stm32f429-overview
+
 ﻿## STM32F429 概述
 
 
-### 简
+## 简
 
 
 STM32F429 是一款面向多种应用的 Cortex-M4 MCU。其特性包括：
 
 - ARM Cortex-M4，最180MHz，带 FPU
-- 2MB 鍐呴儴 Flash 瀛樺偍鍣。
+- 2MB 内呴儴 Flash 子樺偍鍣。
 - 通过 FMC 控制器支持外部存储器（PSRAM、SDRAM、NOR、NAND
 - I2C、SPI、SAI、CAN、USB OTG、Ethernet 控制
 - LCD 鎺у埗鍣ㄤ笌鎽勫儚澶存帴鍙。

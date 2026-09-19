@@ -238,7 +238,7 @@ flowchart TD
 - `crates/organization_assemble_authentication/src/lib.rs` qiyeweixin_login 的 OAuth → DB 查询 → session 签发链路
 
 **Test scenarios:**
-- Happy path: POST /jaxrs/authentication/login 合法凭证 → 200 + Json 响应体含 token 字段
+- Happy path: POST /api/authentication/login 合法凭证 → 200 + Json 响应体含 token 字段
 - Edge case: 密码过期账户登录 → 返回 403 + "password expired" 错误码
 - Error path: 不存在的 unique_id → 返回 401 + 通用错误消息（防止枚举）
 - Integration: login 成功后 validate_session(token) → 返回 person_id + roles
@@ -399,7 +399,7 @@ flowchart TD
 4. 每批替换后补充集成测试：seed 测试数据 → 调用 handler → 断言返回真实数据。
 
 **Test scenarios:**
-- Happy path: GET /jaxrs/cms/assemble/control/document/{id} → 返回真实 document 数据（含 title/content）
+- Happy path: GET /api/cms/assemble/control/document/{id} → 返回真实 document 数据（含 title/content）
 - Edge case: 查询已软删除的 document → 返回 404
 - Error path: 无权限访问 → 返回 403
 - Integration: document CRUD 端到端 → create → read → update → delete(soft) → read 404
@@ -460,7 +460,7 @@ flowchart TD
 2. 实现 `authorize_url()` → 构造 OIDC authorize URL
 3. 实现 `token_exchange(code)` → 向 issuer/token 端点 POST 换取 access_token + id_token
 4. 实现 `verify_id_token(id_token)` → 从 JWKS 端点获取 public key，验证 JWT 签名 + claims（iss/aud/exp）
-5. 在 auth router 中注册 `/jaxrs/authentication/oidc/authorize` 和 `/jaxrs/authentication/oidc/callback`。
+5. 在 auth router 中注册 `/api/authentication/oidc/authorize` 和 `/api/authentication/oidc/callback`。
 6. 复用现有 session 签发逻辑：OIDC 验证通过 → 查询/创建 auth_person → create_session。
 
 **Test scenarios:**

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/config")
+                    .uri("/api/mind/assemble/control/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/config/update")
+                    .uri("/api/mind/assemble/control/config/update")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/tree/my")
+                    .uri("/api/mind/assemble/control/folder/tree/my")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/test-id")
+                    .uri("/api/mind/assemble/control/folder/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/save")
+                    .uri("/api/mind/assemble/control/folder/save")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/test-id/update")
+                    .uri("/api/mind/assemble/control/folder/test-id/update")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/move/test-id")
+                    .uri("/api/mind/assemble/control/folder/move/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -161,7 +161,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/mind/assemble/control/folder/test-id/force")
+                    .uri("/api/mind/assemble/control/folder/test-id/force")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),

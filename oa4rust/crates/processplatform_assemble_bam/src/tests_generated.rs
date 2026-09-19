@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/bam/get/test-id")
+                    .uri("/api/processplatform/assemble/bam/get/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/bam/create")
+                    .uri("/api/processplatform/assemble/bam/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/bam/list/test-id")
+                    .uri("/api/processplatform/assemble/bam/list/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/bam/delete/test-id")
+                    .uri("/api/processplatform/assemble/bam/delete/test-id")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/assemble/bam/status/test-id")
+                    .uri("/api/processplatform/assemble/bam/status/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

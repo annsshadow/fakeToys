@@ -52,15 +52,26 @@
             <div class="chat-status" :class="{ online: selectedChat.online }">
               {{ selectedChat.online ? '在线' : '离线' }}
             </div>
+            <div class="chat-presence" v-if="onlineCount > 0">
+              <span class="presence-dot"></span>{{ onlineCount }} 人在线
+            </div>
+            <div class="call-chip" v-if="callState !== 'idle'">
+              {{ callState === 'in-call' ? '通话中' : '呼叫中…' }}
+            </div>
           </div>
           <div class="chat-actions">
-            <button class="icon-btn" title="语音通话">📞</button>
+            <button class="icon-btn" :title="callState === 'idle' ? '语音通话' : '结束通话'" @click="toggleCall">
+              {{ callState === 'idle' ? '📞' : '⏹' }}
+            </button>
             <button class="icon-btn" title="更多信息">⋯</button>
           </div>
         </div>
 
+        <!-- P5：WebRTC 远端音频（P2P 语音，信令走 IM 房间通道） -->
+        <audio ref="remoteAudio" autoplay style="display: none" />
+
         <div ref="messageContainer" class="message-list" @scroll="handleScroll">
-          <div v-if="msgQuery.isLoading" class="loading-state">
+          <div v-if="msgLoading" class="loading-state">
             <div class="skeleton-row" v-for="i in 4" :key="i"></div>
           </div>
           <div v-else-if="messages.length === 0" class="empty-messages">
@@ -92,6 +103,7 @@
           <button class="send-btn" :disabled="!inputText.trim() || sendLoading" @click="sendMessage">
             {{ sendLoading ? '发送中...' : '发送' }}
           </button>
+          <span v-if="lastDelivered > 0" class="receipt-indicator">已投递 {{ lastDelivered }}</span>
         </div>
       </template>
       <div v-else class="no-chat-placeholder">
@@ -104,10 +116,9 @@
 </template>
 
 <script setup lang="ts">
-import { api, type O2WebSocketClient, useWebSocket } from '@oa4rust/sdk'
+import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { confirmMsg } from '../utils/toast'
 
 interface Conversation {
   id: string
@@ -136,14 +147,107 @@ const loadMoreRef = ref<HTMLElement>()
 const page = ref(1)
 const sendLoading = ref(false)
 const wsClient = ref<O2WebSocketClient | null>(null)
+// P5：IM 实时协议状态
+const session = useSession()
+const onlineCount = ref(0) // 当前房间在线连接数（presence 下行）
+const lastDelivered = ref(0) // 最近一条消息的投递回执（receipt 下行）
 
 const queryClient = useQueryClient()
+
+// ── P5：P2P WebRTC 语音（信令帧 {webrtc, sdp|candidate} 复用 IM 房间通道，
+//    o2 legacy IM 传输即 WebSocket，无需 XMPP/媒体服务器；媒体走浏览器原生 P2P）──
+const remoteAudio = ref<HTMLAudioElement>()
+const callState = ref<'idle' | 'calling' | 'in-call'>('idle')
+let localRtc: RTCPeerConnection | null = null
+let localStream: MediaStream | null = null
+const RTC_CONFIG: RTCConfiguration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+
+async function startCall(): Promise<void> {
+  const convId = selectedChat.value?.id
+  if (!convId || callState.value !== 'idle') return
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  } catch {
+    console.warn('[IM] 麦克风不可用，无法发起语音')
+    return
+  }
+  localRtc = new RTCPeerConnection(RTC_CONFIG)
+  localStream.getAudioTracks().forEach((t) => localRtc?.addTrack(t, localStream))
+  localRtc.ontrack = (e) => {
+    if (remoteAudio.value) remoteAudio.value.srcObject = e.streams[0]
+  }
+  localRtc.onicecandidate = (e) => {
+    if (e.candidate) wsClient.value?.send(convId, { webrtc: 'ice', to: convId, candidate: e.candidate })
+  }
+  const offer = await localRtc.createOffer()
+  await localRtc.setLocalDescription(offer)
+  wsClient.value?.send(convId, { webrtc: 'offer', to: convId, sdp: offer })
+  callState.value = 'calling'
+}
+
+async function handleRtcSignal(data: any): Promise<void> {
+  const convId = selectedChat.value?.id
+  // 信令只处理属于当前会话的帧
+  if (!convId || (data.to && data.to !== convId)) return
+  const ws = wsClient.value
+  switch (data.webrtc) {
+    case 'offer': {
+      if (callState.value !== 'idle') return
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      } catch {
+        console.warn('[IM] 麦克风不可用，无法接听')
+        return
+      }
+      localRtc = new RTCPeerConnection(RTC_CONFIG)
+      localStream.getAudioTracks().forEach((t) => localRtc?.addTrack(t, localStream))
+      localRtc.ontrack = (e) => {
+        if (remoteAudio.value) remoteAudio.value.srcObject = e.streams[0]
+      }
+      localRtc.onicecandidate = (e) => {
+        if (e.candidate) ws?.send(convId, { webrtc: 'ice', to: convId, candidate: e.candidate })
+      }
+      await localRtc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      const answer = await localRtc.createAnswer()
+      await localRtc.setLocalDescription(answer)
+      ws?.send(convId, { webrtc: 'answer', to: convId, sdp: answer })
+      callState.value = 'in-call'
+      break
+    }
+    case 'answer':
+      if (localRtc) await localRtc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      callState.value = 'in-call'
+      break
+    case 'ice':
+      if (localRtc && data.candidate) await localRtc.addIceCandidate(new RTCIceCandidate(data.candidate))
+      break
+    case 'end':
+      endCall(false)
+      break
+  }
+}
+
+function endCall(notify = true): void {
+  const convId = selectedChat.value?.id
+  localRtc?.close()
+  localStream?.getTracks().forEach((t) => t.stop())
+  localRtc = null
+  localStream = null
+  if (remoteAudio.value) remoteAudio.value.srcObject = null
+  callState.value = 'idle'
+  if (notify && convId) wsClient.value?.send(convId, { webrtc: 'end', to: convId })
+}
+
+function toggleCall(): void {
+  if (callState.value === 'idle') void startCall()
+  else endCall()
+}
 
 // ── 会话列表（真实 API）────────────────────────────────────────
 const { data: convData, isLoading: convLoading } = useQuery({
   queryKey: ['im', 'conversations'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/message/assemble/communicate/im/conversation/list/my')
+    const resp = await api.get('/api/message/assemble/communicate/im/conversation/list/my')
     return ((resp as any)?.data ?? []) as Conversation[]
   },
   staleTime: 30 * 1000,
@@ -166,20 +270,34 @@ const filteredConversations = computed(() => {
 })
 
 // ── 消息列表（真实 API）────────────────────────────────────────
-const msgQuery = useQuery<Message[]>({
+// useQuery 返回普通对象（嵌套 Ref），模板只解包顶层 ref。故解构出 data/isLoading/refetch，
+// 模板用 msgLoading（顶层 ref 自动解包），computed 内用 msgData.value，杜绝「msgQuery.isLoading 恒真值」渲染 bug。
+const {
+  data: msgData,
+  isLoading: msgLoading,
+  refetch: refetchMsgs,
+} = useQuery<Message[]>({
   queryKey: ['im', 'messages', () => selectedChat.value?.id],
   queryFn: async () => {
     if (!selectedChat.value) return []
-    const resp = await api.post<{ data: Message[] }>(`/jaxrs/message/assemble/communicate/im/msg/list/1/50`, {
+    const resp = await api.post<{ data: Message[] }>(`/api/message/assemble/communicate/im/msg/list/1/size/50`, {
       conversationId: selectedChat.value.id,
     })
     return ((resp as any)?.data ?? []) as Message[]
   },
-  enabled: computed(() => !!selectedChat.value).value as any,
+  // enabled 须为响应式 Ref（传 Ref 本身而非 .value 快照），会话选中后查询才会自动启用/随 key 变化重取
+  enabled: computed(() => !!selectedChat.value),
   staleTime: 10 * 1000,
 })
 
-const messages = computed(() => msgQuery.data ?? [])
+// 后端列表端点返回全量消息（parity 桩无按会话过滤参数），前端按当前会话过滤。
+// 会话键按后端带引号字面量 "\"conversationId\"" 兼容读取（O2OA 遗留约定）。
+const messages = computed(() => {
+  const all = (msgData.value ?? []) as any[]
+  const id = selectedChat.value?.id
+  if (!id) return []
+  return all.filter((m) => (m?.['"conversationId"'] ?? m?.conversationId) === id)
+})
 
 // 监听会话切换，重新加载消息
 watch(
@@ -187,7 +305,7 @@ watch(
   async (newId, oldId) => {
     if (newId !== oldId && newId) {
       page.value = 1
-      await msgQuery.refetch()
+      await refetchMsgs()
       nextTick(scrollToBottom)
     }
   },
@@ -197,7 +315,9 @@ watch(
 const sendMutation = useMutation({
   mutationFn: (content: string) => {
     if (!selectedChat.value) throw new Error('No conversation selected')
-    return api.post('/jaxrs/message/assemble/communicate/im/msg', {
+    // 后端 im/msg handler 按带引号键 "\"conversationId\"" 读取会话归属，双键下发。
+    return api.post('/api/message/assemble/communicate/im/msg', {
+      ['"conversationId"']: selectedChat.value!.id,
       conversationId: selectedChat.value!.id,
       content,
       type: 'text',
@@ -224,7 +344,7 @@ const sendMutation = useMutation({
     inputText.value = ''
     // 服务端确认后立即移除乐观消息，换真实消息
     setTimeout(() => {
-      msgQuery.refetch()
+      refetchMsgs()
     }, 500)
   },
   onError: (_err, _vars, context) => {
@@ -247,9 +367,10 @@ function sendMessage(): void {
   sendMutation.mutate(text)
   sendLoading.value = false
 
-  // 同时通过 WebSocket 推送（如果连接可用）
+  // 同时通过 WebSocket 推送（如果连接可用）。P5：房间即会话 id（conv.id），
+  // 与会话列表/消息查询的会话键一致，不再用硬编码 'chat' 广播串流。
   if (wsClient.value?.connected && selectedChat.value) {
-    wsClient.value.send('chat', {
+    wsClient.value.send(selectedChat.value.id, {
       to: selectedChat.value.id,
       content: text,
       type: 'text',
@@ -259,7 +380,7 @@ function sendMessage(): void {
 
 // ── 标记已读 ───────────────────────────────────────────────────
 async function markConversationRead(convId: string): Promise<void> {
-  await api.post(`/jaxrs/message/assemble/communicate/mark_read/${convId}`, null)
+  await api.post(`/api/message/assemble/communicate/mark_read/${convId}`, null)
   // 乐观更新
   conversations.value = conversations.value.map((c) => (c.id === convId ? { ...c, unread: 0 } : c))
 }
@@ -270,21 +391,36 @@ async function markAllRead(): Promise<void> {
   }
 }
 
-// ── WebSocket ─────────────────────────────────────────────────
+// ── WebSocket（P5：IM 完整协议——presence/receipt/会话房间）──────────────
 function initWebSocket(): void {
   const ws = useWebSocket()
   wsClient.value = ws
 
   ws.on('im_create', (data: any) => {
-    const msg = data as { content: string; sender: string; conversationId: string }
+    const msg = data as {
+      content: string
+      sender?: string
+      room?: string
+      to?: string
+      conversationId?: string
+      webrtc?: string
+      sdp?: RTCSessionDescriptionInit
+      candidate?: RTCIceCandidateInit
+    }
+    // P5：WebRTC 信令帧（offer/answer/ice/end）复用 im_create 通道，非文本消息
+    if (msg.webrtc) {
+      void handleRtcSignal(msg)
+      return
+    }
+    const convId = msg.to ?? msg.conversationId ?? msg.room
     // 添加新消息到对应对话
-    if (selectedChat.value?.id === msg.conversationId) {
-      queryClient.setQueryData(['im', 'messages', msg.conversationId], (old: Message[] | undefined) => [
+    if (convId && selectedChat.value?.id === convId) {
+      queryClient.setQueryData(['im', 'messages', convId], (old: Message[] | undefined) => [
         ...(old ?? []),
         {
           id: `ws-${Date.now()}`,
           content: msg.content,
-          sender: msg.sender,
+          sender: msg.sender ?? '对方',
           direction: 'in',
           time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         },
@@ -295,13 +431,34 @@ function initWebSocket(): void {
     queryClient.invalidateQueries({ queryKey: ['im', 'conversations'] })
   })
 
-  ws.connect().catch(() => console.warn('[IM] WebSocket connect failed'))
+  // P5：presence 下行——当前房间在线快照（roster + 在线连接数）
+  ws.on('presence', (data: any) => {
+    onlineCount.value = Number(data?.count ?? 0)
+  })
+
+  // P5：receipt 下行——最近一条消息投递到的在线连接数
+  ws.on('receipt', (data: any) => {
+    lastDelivered.value = Number(data?.delivered ?? 0)
+  })
+
+  ws.connect()
+    .then(() => {
+      // 连接建立后声明在线身份（roster 用），并切到当前会话房间。
+      const me = session.user?.unique
+      if (me) ws.declarePresence(me)
+      if (selectedChat.value) ws.joinRoom(selectedChat.value.id)
+    })
+    .catch(() => console.warn('[IM] WebSocket connect failed'))
 }
 
 // ── 工具函数 ───────────────────────────────────────────────────
 function selectConversation(conv: Conversation): void {
+  // 切换会话：结束仍在进行的通话（信令房间随会话走）
+  if (callState.value !== 'idle') endCall(false)
   selectedChat.value = conv
   if (conv.unread > 0) markConversationRead(conv.id)
+  // P5：会话房间即消息房间——选中会话时加入其房间（presence/回执按房间收敛）
+  wsClient.value?.joinRoom(conv.id)
 }
 
 function handleScroll(): void {
@@ -322,106 +479,10 @@ function formatContent(content: string): string {
 
 onMounted(initWebSocket)
 onUnmounted(() => {
+  // 卸载：先结束 P2P 通话（释放麦克风/轨道），再关 WS
+  if (callState.value !== 'idle') endCall(false)
   wsClient.value?.close()
 })
-
-// Additional message API calls
-async function createConversation() {
-  const name = prompt('输入会话名称:')
-  if (!name) return
-  try {
-    await api.post('/jaxrs/message/assemble/communicate/im/conversation/create', { name })
-    loadConversations()
-  } catch (e: any) {
-    toast.error('创建失败: : ' + (e?.message ?? ''))
-  }
-}
-async function deleteConversation(conv: any) {
-  if (!confirmMsg('确定删除该会话？')) return
-  try {
-    await api.delete('/jaxrs/message/assemble/communicate/im/conversation/' + conv.id)
-    selectedChat.value = null
-    loadConversations()
-  } catch (e: any) {
-    toast.error('删除失败: : ' + (e?.message ?? ''))
-  }
-}
-async function searchUsers() {
-  const q = prompt('搜索用户:')
-  if (!q) return
-  try {
-    const r = await api.get('/jaxrs/message/assemble/communicate/im/user/search?q=' + q)
-    searchResults.value = (r.data ?? []) as any[]
-    showSearchResults.value = true
-  } catch {}
-}
-async function pinConversation(conv: any) {
-  try {
-    await api.post('/jaxrs/message/assemble/communicate/im/conversation/pin', { id: conv.id })
-    loadConversations()
-  } catch {}
-}
-
-async function searchConversations() {
-  const q = prompt('搜索会话:')
-  if (!q) return
-  const r = await api.get('/jaxrs/message/assemble/communicate/im/conversation/search?q=' + encodeURIComponent(q))
-  searchResults.value = r.data ?? []
-}
-
-const call_message_data = ref<any[]>([])
-const call_assembl_467_data = ref<any[]>([])
-const call_communi_409_data = ref<any[]>([])
-const call_communi_913_data = ref<any[]>([])
-const call_communi_139_data = ref<any[]>([])
-const call_assembl_906_data = ref<any[]>([])
-const call_communi_130_data = ref<any[]>([])
-const call_communi_981_data = ref<any[]>([])
-const call_assembl_273_data = ref<any[]>([])
-const call_communi_545_data = ref<any[]>([])
-const api_assemble_673_data = ref<any[]>([])
-const api_message__877_data = ref<any[]>([])
-const api_currentp_290_data = ref<any[]>([])
-const api_msg_coll_356_data = ref<any[]>([])
-const api_ws_count_854_data = ref<any[]>([])
-const api_instant__972_data = ref<any[]>([])
-const api_message__195_data = ref<any[]>([])
-const api_conversa_95_data = ref<any[]>([])
-const api_mass_lis_914_data = ref<any[]>([])
-const api_communic_978_data = ref<any[]>([])
-const api_consume__570_data = ref<any[]>([])
-const testuser_count_10_ref = ref<any[]>([])
-const api_im_msg_clear_data = ref<any[]>([])
-const api_im_manag_716_data = ref<any[]>([])
-const unread_count_testuser_ref = ref<any[]>([])
-const api_mass_ena_457_data = ref<any[]>([])
-const api_ws_list_person_data = ref<any[]>([])
-const message_assemble_send_ref = ref<any[]>([])
-const message_core_entity_list_ref = ref<any[]>([])
-const message_assemble_communicate_ws_ref = ref<any[]>([])
-const message_custom_create_ref = ref<any[]>([])
-const message_send_ref = ref<any[]>([])
-const api_communic_135_data = ref<any[]>([])
-const api_communic_834_data = ref<any[]>([])
-const api_entity_l_587_data = ref<any[]>([])
-const api_entity_unread_co_868_data = ref<any[]>([])
-const api_message_assemble_322_data = ref<any[]>([])
-const api_communicate_mess_152_data = ref<any[]>([])
-const api_communicate_mess_489_data = ref<any[]>([])
-const api_communicate_inst_776_data = ref<any[]>([])
-const api_communicate_mess_252_data = ref<any[]>([])
-const api_message_assemble_930_data = ref<any[]>([])
-const api_jaxrs_message_as_616_data = ref<any[]>([])
-const api_jaxrs_message_as_170_data = ref<any[]>([])
-const api_jaxrs_message_as_552_data = ref<any[]>([])
-const api_jaxrs_message_as_622_data = ref<any[]>([])
-const api_jaxrs_message_as_978_data = ref<any[]>([])
-const api_jaxrs_message_as_734_data = ref<any[]>([])
-const api_jaxrs_message_as_380_data = ref<any[]>([])
-const api_jaxrs_message_as_913_data = ref<any[]>([])
-const api_jaxrs_message_as_491_data = ref<any[]>([])
-const api_jaxrs_message_as_711_data = ref<any[]>([])
-const api_jaxrs_message_as_318_data = ref<any[]>([])
 </script>
 
 <style scoped>
@@ -515,6 +576,16 @@ const api_jaxrs_message_as_318_data = ref<any[]>([])
 .chat-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .chat-status { font-size: 11px; color: var(--text-muted); }
 .chat-status.online { color: var(--color-success); }
+.chat-presence {
+  display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-success);
+}
+.presence-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--color-success);
+}
+.call-chip {
+  font-size: 11px; color: var(--color-primary); background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary); border-radius: 10px; padding: 1px 8px;
+}
 .chat-actions { display: flex; gap: 4px; }
 .icon-btn {
   background: none; border: none; color: var(--text-muted); font-size: 18px;
@@ -572,6 +643,9 @@ const api_jaxrs_message_as_318_data = ref<any[]>([])
 }
 .send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px var(--color-primary-glow); }
 .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.receipt-indicator {
+  font-size: 11px; color: var(--text-muted); white-space: nowrap; align-self: center;
+}
 
 .no-chat-placeholder {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;

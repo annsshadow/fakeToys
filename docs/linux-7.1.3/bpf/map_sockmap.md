@@ -1,3 +1,5 @@
+# map_sockmap
+
 ﻿
 ## BPF_MAP_TYPE_SOCKMAP 涓?BPF_MAP_TYPE_SOCKHASH
 
@@ -39,7 +41,7 @@
 
 ### 内核 BPF
 
-##### bpf_msg_redirect_map()
+#### bpf_msg_redirect_map()
 
 
 	long bpf_msg_redirect_map(struct sk_msg_buff **msg, struct bpf_map **map, u32 key, u64 flags)
@@ -158,7 +160,7 @@ sockmap sockhash 中删除一个套接字条目
 成功时返0，失败时返回一个负的错误码
 ### 用户空间
 
-##### bpf_map_update_elem()
+#### bpf_map_update_elem()
 
 
 	int bpf_map_update_elem(int fd, const void **key, const void **value, __u64 flags)

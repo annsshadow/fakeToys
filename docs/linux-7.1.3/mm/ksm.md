@@ -1,3 +1,5 @@
+# ksm
+
 ﻿## 内核同页合并（Kernel Samepage Merging
 
 KSM 是一项节省内存的去重特性，CONFIG_KSM=y 启用，在 2.6.32 加入 Linux 内核。其实现请参`mm/ksm.c`，另http://lwn.net/Articles/306704/ https://lwn.net/Articles/330589/

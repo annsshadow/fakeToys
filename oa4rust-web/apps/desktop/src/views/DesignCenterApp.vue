@@ -4,7 +4,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>设计中心</h1>
-        <p class="subtitle">快速导航到各个设计器 · /jaxrs/* 全链路覆盖</p>
+        <p class="subtitle">快速导航到各个设计器 · /api/* 全链路覆盖</p>
       </div>
       <div class="header-actions">
         <button class="btn-sm" @click="refreshAll">🔄 刷新状态</button>

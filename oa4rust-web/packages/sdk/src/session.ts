@@ -39,7 +39,7 @@ export const useSessionStore = defineStore('session', () => {
 
   async function restoreCurrentUser(): Promise<void> {
     try {
-      const resp = await api.get<O2User>('/jaxrs/authentication/who', { requireAuth: false })
+      const resp = await api.get<O2User>('/api/authentication/who', { requireAuth: false })
       state.value.user = isAuthenticatedUser(resp.data) ? resp.data : null
     } catch {
       state.value.user = null
@@ -67,7 +67,7 @@ export const useSessionStore = defineStore('session', () => {
     captchaAnswer?: string,
   ): Promise<O2User> {
     await api.post<never>(
-      '/jaxrs/authentication/login',
+      '/api/authentication/login',
       { credential, password, captchaId, captchaAnswer },
       { requireAuth: false, discardResponse: true },
     )
@@ -78,7 +78,7 @@ export const useSessionStore = defineStore('session', () => {
 
   async function logout(): Promise<void> {
     try {
-      await api.post('/jaxrs/authentication/logout', null, {
+      await api.post('/api/authentication/logout', null, {
         requireAuth: false,
         discardResponse: true,
       })
@@ -97,7 +97,7 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function switchUser(targetUnique: string): Promise<O2User> {
-    await api.post('/jaxrs/authentication/switchuser', { targetUnique }, { discardResponse: true })
+    await api.post('/api/authentication/switchuser', { targetUnique }, { discardResponse: true })
     await init(true)
     if (!state.value.user) throw new AuthenticationError('User switch did not create a session')
     return state.value.user

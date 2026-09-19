@@ -1,3 +1,5 @@
+# acpi-lid
+
 ﻿
 ## Special Usage Model of the ACPI Control Method Lid Device
 

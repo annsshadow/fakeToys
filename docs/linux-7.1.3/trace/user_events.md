@@ -1,9 +1,11 @@
+# user_events
+
 ﻿## user_events：基于用户的事件跟踪
 
 
 :Author: Beau Belgrave
 
-### 概述
+## 概述
 
 基于用户的跟踪事件允许用户进程创建事件并跟踪数据，这些数据可以通过现有工具（例ftrace perf）查看
 要启用此特性，请在构建内核时设CONFIG_USER_EVENTS=y
@@ -86,7 +88,7 @@ struct user_reg 要求正确设置上述所有输入字段
 
 **注意* 事件子系统名称默认是 "user_events"。调用者不应假设它将永远是 "user_events"。运维方保留将来为支持事件隔离而按进程更改子系统名称的权利。此外，如果使用 USER_EVENT_REG_MULTI_FORMAT 标志，tracepoint 名称将被附加一个唯一 id，且系统名称将如上所述变"user_events_multi"
 
-##### 命令格式
+#### 命令格式
 
 ```
 

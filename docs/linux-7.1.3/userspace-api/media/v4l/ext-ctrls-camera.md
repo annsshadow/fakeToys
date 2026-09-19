@@ -1,6 +1,8 @@
+# ext-ctrls-camera
+
 ﻿
 
-######## 相机控制参
+## 相机控制参
 
 
 Camera 类包含用于设备机械（或等效的数字）特性的控制，例如可控镜头或传感器
@@ -371,6 +373,7 @@ enum v4l2_scene_mode -
     V4L2_CID_CAMERA_SENSOR_ROTATION control is 180 degrees, as images will
     result rotated when captured to memory. ::
 
+
                  +--------------------------------------+
                  !                                      !
                  !                                      !
@@ -385,6 +388,7 @@ enum v4l2_scene_mode -
 
     A software rotation correction of 180 degrees has to be applied to correctly
     display the image on the user screen. ::
+
 
                  +--------------------------------------+
                  !                                      !
@@ -414,6 +418,7 @@ enum v4l2_scene_mode -
     V4L2_CID_CAMERA_SENSOR_ROTATION will report a 90 degree rotation. ::
 
 
+
                  +-------------------------------------+
                  |                 _ _                 |
                  |                \   /                |
@@ -429,6 +434,7 @@ enum v4l2_scene_mode -
     A correction of 90 degrees in counter-clockwise direction has to be
     applied to correctly display the image in portrait mode on the device
     screen. ::
+
 
                           +--------------------+
                           |                    |

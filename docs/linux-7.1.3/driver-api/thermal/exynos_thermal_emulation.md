@@ -1,10 +1,12 @@
+# exynos_thermal_emulation
+
 ﻿## Exynos 仿真模式（Emulation Mode
 
 Copyright (C) 2012 Samsung Electronics
 
 Written by Jonghwa Lee <jonghwa3.lee@samsung.com>
 
-### 描述
+## 描述
 
 
 Exynos 4x12212412）与 5 系列为热管理单元（TMU）提供仿真模式。热仿真模式支持TMU 操作的软件调试。用户可以借助软件代码手动设置温度，TMU 将从用户值而非传感器值读取当前温度

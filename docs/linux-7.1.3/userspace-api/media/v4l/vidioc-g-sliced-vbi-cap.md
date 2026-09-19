@@ -1,6 +1,8 @@
+# vidioc-g-sliced-vbi-cap
+
 ﻿
 
-######## ioctl VIDIOC_G_SLICED_VBI_CAP
+## ioctl VIDIOC_G_SLICED_VBI_CAP
 
 
 ## 名称
@@ -115,7 +117,7 @@ VIDIOC_G_SLICED_VBI_CAP <VIDIOC_G_SLICED_VBI_CAP> ioctl。驱动填充其余字�
     \normalsize
 
 
-#### V4L2_SLICED_VBI_CAP WSS_625 载荷
+## V4L2_SLICED_VBI_CAP WSS_625 载荷
 
 
 `V4L2_SLICED_WSS_625` 的载荷为

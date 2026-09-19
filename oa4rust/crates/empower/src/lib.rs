@@ -76,7 +76,7 @@ async fn check_owner(
 
 // --- 处理器 ---
 
-/// POST /jaxrs/person/empower — 创建授权
+/// POST /api/person/empower — 创建授权
 #[allow(non_snake_case)]
 pub async fn create(
     pool: Extension<Pool>,
@@ -127,7 +127,7 @@ pub async fn create(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// GET /jaxrs/person/empower/{id} — 查询授权（需 owner 验证）
+/// GET /api/person/empower/{id} — 查询授权（需 owner 验证）
 #[allow(non_snake_case)]
 pub async fn get(
     pool: Extension<Pool>,
@@ -167,7 +167,7 @@ pub async fn get(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// PUT /jaxrs/person/empower/{id} — 更新授权（需 owner 验证）
+/// PUT /api/person/empower/{id} — 更新授权（需 owner 验证）
 #[allow(non_snake_case)]
 pub async fn update(
     pool: Extension<Pool>,
@@ -214,7 +214,7 @@ pub async fn update(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// DELETE /jaxrs/person/empower/{id} — 删除授权（需 owner 验证）
+/// DELETE /api/person/empower/{id} — 删除授权（需 owner 验证）
 #[allow(non_snake_case)]
 pub async fn delete(
     pool: Extension<Pool>,
@@ -249,7 +249,7 @@ pub async fn delete(
     )))
 }
 
-/// POST /jaxrs/person/empower/{id}/enable — 启用授权（需 owner 验证）
+/// POST /api/person/empower/{id}/enable — 启用授权（需 owner 验证）
 #[allow(non_snake_case)]
 pub async fn enable(
     pool: Extension<Pool>,
@@ -292,7 +292,7 @@ pub async fn enable(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// POST /jaxrs/person/empower/{id}/disable — 禁用授权（需 owner 验证）
+/// POST /api/person/empower/{id}/disable — 禁用授权（需 owner 验证）
 #[allow(non_snake_case)]
 pub async fn disable(
     pool: Extension<Pool>,
@@ -335,7 +335,7 @@ pub async fn disable(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// POST /jaxrs/person/empower/manager — 管理员创建授权
+/// POST /api/person/empower/manager — 管理员创建授权
 #[allow(non_snake_case)]
 pub async fn manager_create(
     pool: Extension<Pool>,
@@ -390,7 +390,7 @@ pub async fn manager_create(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// PUT /jaxrs/person/empower/manager/{id} — 管理员更新授权
+/// PUT /api/person/empower/manager/{id} — 管理员更新授权
 #[allow(non_snake_case)]
 pub async fn manager_update(
     pool: Extension<Pool>,
@@ -441,7 +441,7 @@ pub async fn manager_update(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// DELETE /jaxrs/person/empower/manager/{id} — 管理员删除授权
+/// DELETE /api/person/empower/manager/{id} — 管理员删除授权
 #[allow(non_snake_case)]
 pub async fn manager_delete(
     pool: Extension<Pool>,
@@ -474,7 +474,7 @@ pub async fn manager_delete(
     )))
 }
 
-/// POST /jaxrs/person/empower/manager/list/paging/{page}/size/{size} — 管理员分页查询
+/// POST /api/person/empower/manager/list/paging/{page}/size/{size} — 管理员分页查询
 #[allow(non_snake_case)]
 pub async fn manager_list_paging(
     pool: Extension<Pool>,
@@ -503,9 +503,9 @@ pub async fn manager_list_paging(
 
     let rows = client
         .query(
-             "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
-              FROM x_empower WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $2::int OFFSET $1::int",
-             &[&offset, &size],
+            "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
+              FROM x_empower WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $2 OFFSET $1",
+            &[&offset, &size],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -524,10 +524,10 @@ pub async fn manager_list_paging(
         .collect();
     let data_len = data.len() as i64;
 
-    Ok(Json(ActionResult::java_success(data, total, data_len)))
+    Ok(Json(ActionResult::legacy_success(data, total, data_len)))
 }
 
-/// GET /jaxrs/person/empower/list/currentperson — 我的授权列表
+/// GET /api/person/empower/list/currentperson — 我的授权列表
 #[allow(non_snake_case)]
 pub async fn list_current_person(
     pool: Extension<Pool>,
@@ -570,10 +570,10 @@ pub async fn list_current_person(
         .collect();
 
     let data_len = data.len() as i64;
-    Ok(Json(ActionResult::java_success(data, total, data_len)))
+    Ok(Json(ActionResult::legacy_success(data, total, data_len)))
 }
 
-/// GET /jaxrs/person/empower/list/currentperson/enable — 我的生效授权列表
+/// GET /api/person/empower/list/currentperson/enable — 我的生效授权列表
 #[allow(non_snake_case)]
 pub async fn list_current_person_enable(
     pool: Extension<Pool>,
@@ -616,10 +616,10 @@ pub async fn list_current_person_enable(
         .collect();
 
     let data_len = data.len() as i64;
-    Ok(Json(ActionResult::java_success(data, total, data_len)))
+    Ok(Json(ActionResult::legacy_success(data, total, data_len)))
 }
 
-/// GET /jaxrs/person/empower/list/to — 我拥有的被授权列表（我授权给他人的）
+/// GET /api/person/empower/list/to — 我拥有的被授权列表（我授权给他人的）
 #[allow(non_snake_case)]
 pub async fn list_to(
     pool: Extension<Pool>,
@@ -662,10 +662,10 @@ pub async fn list_to(
         .collect();
 
     let data_len = data.len() as i64;
-    Ok(Json(ActionResult::java_success(data, total, data_len)))
+    Ok(Json(ActionResult::legacy_success(data, total, data_len)))
 }
 
-/// GET /jaxrs/person/empower/list/to/enable — 我生效的被授权列表
+/// GET /api/person/empower/list/to/enable — 我生效的被授权列表
 #[allow(non_snake_case)]
 pub async fn list_to_enable(
     pool: Extension<Pool>,
@@ -708,7 +708,7 @@ pub async fn list_to_enable(
         .collect();
 
     let data_len = data.len() as i64;
-    Ok(Json(ActionResult::java_success(data, total, data_len)))
+    Ok(Json(ActionResult::legacy_success(data, total, data_len)))
 }
 
 #[cfg(test)]

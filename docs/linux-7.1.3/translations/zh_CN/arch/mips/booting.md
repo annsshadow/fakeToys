@@ -1,13 +1,16 @@
 
 
+# booting
+
 :Original: Documentation/arch/mips/booting.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 
-### BMIPS设备树引导
+## BMIPS设备树引导
 
 
   一些bootloaders只支持在内核镜像开始地址处的单一入口点。而其它
@@ -16,6 +19,7 @@
   会立即跳转到kernel_entry()入口处执行。
 
   与arch/arm情况(b)类似，dt感知的引导加载程序需要设置以下寄存器:
+
 
          a0 : 0
 

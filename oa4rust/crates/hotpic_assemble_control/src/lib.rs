@@ -7,7 +7,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/hotpic_assemble_control";
+pub const API_BASE: &str = "/api/hotpic_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -66,7 +66,7 @@ pub async fn list_control_panels(
         .iter()
         .enumerate()
         .map(|(i, row)| {
-            let creator: String = row.get("creator");
+            let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(format!("panel-{}", i))),
                 ("name".to_string(), Value::String(creator.clone())),
@@ -77,7 +77,7 @@ pub async fn list_control_panels(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -151,7 +151,7 @@ pub async fn list_control_applications(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -175,7 +175,7 @@ pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
         )
         .await
@@ -187,7 +187,13 @@ pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -201,7 +207,7 @@ pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -217,7 +223,7 @@ pub async fn get_hotpic(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -228,7 +234,13 @@ pub async fn get_hotpic(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -343,7 +355,7 @@ pub async fn cipher_hotpic_bbs_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -354,7 +366,13 @@ pub async fn cipher_hotpic_bbs_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -378,7 +396,7 @@ pub async fn cipher_hotpic_cms_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -389,7 +407,13 @@ pub async fn cipher_hotpic_cms_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -414,7 +438,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
     let offset = (page - 1) * count;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
@@ -426,7 +450,13 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -440,7 +470,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -455,7 +485,7 @@ pub async fn cipher_hotpic_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -466,7 +496,13 @@ pub async fn cipher_hotpic_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -561,7 +597,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
     let offset = (page - 1) * count;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $1",
             &[&offset, &count],
         )
         .await
@@ -573,7 +609,13 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -587,7 +629,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -602,7 +644,7 @@ pub async fn user_hotpic_application_infoId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&info_id],
         )
         .await
@@ -613,7 +655,13 @@ pub async fn user_hotpic_application_infoId(
             let mut result = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),
@@ -656,7 +704,7 @@ pub async fn user_hotpic_id(
 
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -667,7 +715,13 @@ pub async fn user_hotpic_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("imageUrl".to_string(), Value::String(row.get("image_url"))),
+                (
+                    "imageUrl".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("image_url")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "creator".to_string(),
                     row.get::<_, Option<String>>("creator").into(),

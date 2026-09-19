@@ -1,3 +1,5 @@
+# ring-buffer
+
 ﻿##  环形缓冲区（Ring Buffer
 
 为了处理用户空间与内核空间之间的通信，AMD GPU 使用环形缓冲区设计来为各个引擎（GFX、Compute、SDMA、UVD、VCE、VCN、VPE 等）
@@ -26,3 +28,4 @@ GFX11 之前的所ASIC 都使用所谓的内核队列（kernel queue），这意
 ## 环形操作（Ring Operations
 
    :internal:
+

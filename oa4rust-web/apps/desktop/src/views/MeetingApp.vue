@@ -2,7 +2,7 @@
   <div class="meeting-view">
     <div class="view-header glass-card">
       <h1>会议管理</h1>
-      <p class="subtitle">/jaxrs/meeting/assemble/control/*</p>
+      <p class="subtitle">/api/meeting/assemble/control/*</p>
       <button class="new-btn" @click="showCreate=true">+ 新建会议</button>
     </div>
     <div class="filter-bar glass-card">
@@ -79,7 +79,7 @@ const searchKey = ref(''),
 const form = ref({ title: '', buildingId: '', roomId: '', startTime: '' })
 const { data: bData } = useQuery({
   queryKey: ['meeting', 'bldgs'],
-  queryFn: () => api.get('/jaxrs/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
+  queryFn: () => api.get('/api/meeting/assemble/control/building/list').then((r: any) => (r.data ?? []) as Bldg[]),
   staleTime: 120000,
 })
 buildings.value = bData.value ?? []
@@ -88,7 +88,7 @@ async function loadRooms() {
     rooms.value = []
     return
   }
-  const r = await api.get(`/jaxrs/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}`)
+  const r = await api.get(`/api/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}`)
   rooms.value = (r.data ?? []) as Room[]
 }
 async function loadMeetings() {
@@ -97,7 +97,7 @@ async function loadMeetings() {
     const p: Record<string, string> = {}
     if (searchKey.value) p.key = searchKey.value
     if (statusFilter.value !== '') p.status = statusFilter.value
-    const r = await api.get('/jaxrs/meeting/assemble/control/meeting/list', { params: p })
+    const r = await api.get('/api/meeting/assemble/control/meeting/list', { params: p })
     meetings.value = (r.data ?? []) as M[]
   } catch {
     meetings.value = []
@@ -120,7 +120,7 @@ function fmtTime(t?: string) {
   }
 }
 const cm = useMutation({
-  mutationFn: () => api.post('/jaxrs/meeting/assemble/control/meeting/create', form.value),
+  mutationFn: () => api.post('/api/meeting/assemble/control/meeting/create', form.value),
   onSuccess: () => {
     showCreate.value = false
     qc.invalidateQueries({ queryKey: ['meeting', 'list'] })
@@ -141,16 +141,16 @@ async function updateMeeting(m: M) {
   const title = prompt('修改会议标题:', m.title || m.name)
   if (!title) return
   try {
-    await api.put('/jaxrs/meeting/assemble/control/meeting/update', { id: m.id, title })
+    await api.put('/api/meeting/assemble/control/meeting/update', { id: m.id, title })
     loadMeetings()
   } catch (e: any) {
     toast.error('更新失败: : ' + (e?.message ?? ''))
   }
 }
 async function cancelMeeting(m: M) {
-  if (!confirmMsg('确定取消该会议？')) return
+  if (!(await confirmMsg('确定取消该会议？'))) return
   try {
-    await api.post('/jaxrs/meeting/assemble/control/meeting/cancel', { id: m.id })
+    await api.post('/api/meeting/assemble/control/meeting/cancel', { id: m.id })
     loadMeetings()
   } catch (e: any) {
     toast.error('取消失败: : ' + (e?.message ?? ''))
@@ -158,7 +158,7 @@ async function cancelMeeting(m: M) {
 }
 async function approveMeeting(m: M) {
   try {
-    await api.post('/jaxrs/meeting/assemble/control/meeting/approve', { id: m.id })
+    await api.post('/api/meeting/assemble/control/meeting/approve', { id: m.id })
     loadMeetings()
   } catch (e: any) {
     toast.error('审批失败: : ' + (e?.message ?? ''))
@@ -166,7 +166,7 @@ async function approveMeeting(m: M) {
 }
 async function joinMeeting(m: M) {
   try {
-    await api.post('/jaxrs/meeting/assemble/control/meeting/join', { id: m.id })
+    await api.post('/api/meeting/assemble/control/meeting/join', { id: m.id })
     toast.info('已加入会议')
     loadMeetings()
   } catch (e: any) {
@@ -175,7 +175,7 @@ async function joinMeeting(m: M) {
 }
 async function leaveMeeting(m: M) {
   try {
-    await api.post('/jaxrs/meeting/assemble/control/meeting/leave', { id: m.id })
+    await api.post('/api/meeting/assemble/control/meeting/leave', { id: m.id })
     loadMeetings()
   } catch (e: any) {
     toast.error('离开失败: : ' + (e?.message ?? ''))
@@ -184,7 +184,8 @@ async function leaveMeeting(m: M) {
 
 async function loadReservations() {
   try {
-    const r = await api.get('/jaxrs/meeting/assemble/control/reservation/list')
+    // 后端真实路由为 meeting/list/apply/{page}/size/{size}（reservation 旧面未注册）。
+    const r = await api.get('/api/meeting/assemble/control/meeting/list/apply/1/size/50')
     reservations.value = r.data ?? []
   } catch {
     reservations.value = []
@@ -234,14 +235,14 @@ const api_control_meeting__341_data = ref<any[]>([])
 const api_meeting_assemble_599_data = ref<any[]>([])
 const api_entity_room_save_468_data = ref<any[]>([])
 const api_control_openmeet_497_data = ref<any[]>([])
-const api_jaxrs_meeting_as_202_data = ref<any[]>([])
-const api_jaxrs_meeting_as_324_data = ref<any[]>([])
-const api_jaxrs_meeting_as_890_data = ref<any[]>([])
-const api_jaxrs_meeting_as_804_data = ref<any[]>([])
-const api_jaxrs_meeting_as_189_data = ref<any[]>([])
-const api_jaxrs_meeting_as_149_data = ref<any[]>([])
-const api_jaxrs_meeting_as_443_data = ref<any[]>([])
-const api_jaxrs_meeting_as_895_data = ref<any[]>([])
+const api_meeting_as_202_data = ref<any[]>([])
+const api_meeting_as_324_data = ref<any[]>([])
+const api_meeting_as_890_data = ref<any[]>([])
+const api_meeting_as_804_data = ref<any[]>([])
+const api_meeting_as_189_data = ref<any[]>([])
+const api_meeting_as_149_data = ref<any[]>([])
+const api_meeting_as_443_data = ref<any[]>([])
+const api_meeting_as_895_data = ref<any[]>([])
 </script>
 <style scoped>
 .meeting-view{display:flex;flex-direction:column;gap:16px;height:100%}

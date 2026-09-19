@@ -1,3 +1,5 @@
+# core
+
 ﻿## 核心要素
 
 
@@ -5,7 +7,7 @@
 统一的框架，也为操作用户空间传感器应用程序提供了标准接口。其实现可在
 `drivers/iio/industrialio-*` 下找到
 
-### 工业 I/O 设备
+## 工业 I/O 设备
 
 
 - struct iio_dev - 工业 I/O 设备
@@ -152,3 +154,4 @@ struct iio_chan_spec - 单个通道的规格说
 ## 更多细节
 
    :export:
+

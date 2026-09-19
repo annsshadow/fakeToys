@@ -1,8 +1,11 @@
 
 
+# reporting-regressions
+
 :Original: Documentation/admin-guide/reporting-regressions.rst
 
 :译者:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -114,13 +117,13 @@ Linux内核回归列表 <https://linux-regtracking.leemhuis.info/regzbot/>`_ 和
 regzbot发送的每周回归报告，可能会出现延迟。 这样的延误会导致Linus Torvalds
 在决定“继续开发还是发布新版本？”时忽略严重的回归。
 
-#### 真的修复了所有的回归吗？
+## 真的修复了所有的回归吗？
 
 
 几乎所有都是，只要引起问题的变更（肇事提交）被可靠定位。也有些回归可以不用这
 样，但通常是必须的。
 
-#### 谁需要找出回归的根本原因？
+### 谁需要找出回归的根本原因？
 
 
 受影响代码区域的开发者应该自行尝试定位问题所在。但仅靠他们的努力往往是不可
@@ -340,18 +343,22 @@ Regzbot通过监视跟踪的回归报告的回复来工作。此外，它还查�
 
  * 设置或更新标题::
 
+
        #regzbot title: foo
 
  * 监视讨论或bugzilla.kernel.org上有关讨论或修复的工单::
+
 
        #regzbot monitor: https://lore.kernel.org/r/30th.anniversary.repost@klaava.Helsinki.FI/
        #regzbot monitor: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * 标记一个有更多相关细节的地方，例如有关但主题不同的邮件列表帖子或缺陷追踪器中的工单::
 
+
        #regzbot link: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * 标记回归已失效::
+
 
        #regzbot invalid: wasn't a regression, problem has always existed
 

@@ -61,7 +61,7 @@ async fn test_send_message_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/message/assemble/communicate/send")
+                .uri("/api/message/assemble/communicate/send")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -81,7 +81,7 @@ async fn test_receive_list_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/message/assemble/communicate/receive/consumer1")
+                .uri("/api/message/assemble/communicate/receive/consumer1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -100,7 +100,7 @@ async fn test_mark_read_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/message/assemble/communicate/mark_read/msg-1")
+                .uri("/api/message/assemble/communicate/mark_read/msg-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -118,13 +118,13 @@ mod tests {
     use tower::util::ServiceExt;
 
     #[tokio::test]
-    async fn test_delete_jaxrs_message_assemble_communicate_im_co() {
+    async fn test_delete_message_assemble_communicate_im_co() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
                     .method(Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -135,13 +135,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_jaxrs_message_assemble_communicate_mass_() {
+    async fn test_delete_message_assemble_communicate_mass_() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/test-id/mockdeletetoget")
+                    .uri("/api/message/assemble/communicate/mass/test-id/mockdeletetoget")
                     .method(Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -152,13 +152,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_consu() {
+    async fn test_get_message_assemble_communicate_consu() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/list/test-id/count/test-id")
+                    .uri("/api/message/assemble/communicate/consume/list/test-id/count/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -169,13 +169,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_im_co() {
+    async fn test_get_message_assemble_communicate_im_co() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation/business/test-id")
+                    .uri("/api/message/assemble/communicate/im/conversation/business/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -186,13 +186,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_im_ma() {
+    async fn test_get_message_assemble_communicate_im_ma() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/manager/config")
+                    .uri("/api/message/assemble/communicate/im/manager/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -203,13 +203,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_im_ms() {
+    async fn test_get_message_assemble_communicate_im_ms() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/collection/list/test-id/size/test-id")
+                    .uri("/api/message/assemble/communicate/im/msg/collection/list/test-id/size/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -220,13 +220,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_insta() {
+    async fn test_get_message_assemble_communicate_insta() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed")
+                    .uri("/api/message/assemble/communicate/instant/currentperson/consumed")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -237,13 +237,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_mass_() {
+    async fn test_get_message_assemble_communicate_mass_() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/list/test-id/next/test-id")
+                    .uri("/api/message/assemble/communicate/mass/list/test-id/next/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -254,13 +254,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_messa() {
+    async fn test_get_message_assemble_communicate_messa() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/message/list/paging/test-id/size/test-id")
+                    .uri("/api/message/assemble/communicate/message/list/paging/test-id/size/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -271,13 +271,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_message_assemble_communicate_recei() {
+    async fn test_get_message_assemble_communicate_recei() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/receive/test-id")
+                    .uri("/api/message/assemble/communicate/receive/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -288,13 +288,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_consu() {
+    async fn test_post_message_assemble_communicate_consu() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/consume/type/test-id/mockputtopost")
+                    .uri("/api/message/assemble/communicate/consume/type/test-id/mockputtopost")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -305,13 +305,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_im_co() {
+    async fn test_post_message_assemble_communicate_im_co() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                    .uri("/api/message/assemble/communicate/im/conversation")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -322,13 +322,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_im_ms() {
+    async fn test_post_message_assemble_communicate_im_ms() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg")
+                    .uri("/api/message/assemble/communicate/im/msg")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -339,13 +339,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_insta() {
+    async fn test_post_message_assemble_communicate_insta() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost")
+                    .uri("/api/message/assemble/communicate/instant/currentperson/consumed/mockputtopost")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -356,13 +356,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_mark_() {
+    async fn test_post_message_assemble_communicate_mark_() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mark_read/test-id")
+                    .uri("/api/message/assemble/communicate/mark_read/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -373,13 +373,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_mass_() {
+    async fn test_post_message_assemble_communicate_mass_() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/mass/enable/type")
+                    .uri("/api/message/assemble/communicate/mass/enable/type")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -390,13 +390,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_messa() {
+    async fn test_post_message_assemble_communicate_messa() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/message/custom/create")
+                    .uri("/api/message/assemble/communicate/message/custom/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -407,13 +407,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_message_assemble_communicate_send() {
+    async fn test_post_message_assemble_communicate_send() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/send")
+                    .uri("/api/message/assemble/communicate/send")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -431,7 +431,7 @@ async fn test_u2_put_im_conversation_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                .uri("/api/message/assemble/communicate/im/conversation")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -449,7 +449,7 @@ async fn test_u2_delete_im_conversation_group_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group")
+                .uri("/api/message/assemble/communicate/im/conversation/test-id/group")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -466,7 +466,7 @@ async fn test_u2_post_im_conversation_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                .uri("/api/message/assemble/communicate/im/conversation")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))

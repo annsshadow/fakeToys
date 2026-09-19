@@ -160,12 +160,12 @@
 **目标端点：**
 | 路由路径 | HTTP 方法 | Handler | 实现状态 |
 |----------|-----------|---------|---------|
-| /jaxrs/attendance/record/list | GET | list_check_in_records | 待实现 |
-| /jaxrs/attendance/rule/list | GET | list_schedule_rules | 待实现 |
-| /jaxrs/attendance/appeal/list | GET | list_appeal_records | 待实现 |
-| /jaxrs/attendance/appeal/submit | POST | submit_appeal | 待实现 |
-| /jaxrs/attendance/appeal/audit | POST | audit_appeal | 待实现 |
-| /jaxrs/attendance/appeal/archive/{id} | POST | archive_appeal | 待实现 |
+| /api/attendance/record/list | GET | list_check_in_records | 待实现 |
+| /api/attendance/rule/list | GET | list_schedule_rules | 待实现 |
+| /api/attendance/appeal/list | GET | list_appeal_records | 待实现 |
+| /api/attendance/appeal/submit | POST | submit_appeal | 待实现 |
+| /api/attendance/appeal/audit | POST | audit_appeal | 待实现 |
+| /api/attendance/appeal/archive/{id} | POST | archive_appeal | 待实现 |
 
 **验收标准：**
 - 打卡记录查询返回真实数据
@@ -205,13 +205,13 @@
 **目标端点：**
 | 路由路径 | HTTP 方法 | Handler | 实现状态 |
 |----------|-----------|---------|---------|
-| /jaxrs/calendar/calendar/create | POST | calendar_create | 待实现 |
-| /jaxrs/calendar/calendar/update | POST | calendar_update | 待实现 |
-| /jaxrs/calendar/calendar/remove | POST | calendar_remove | 待实现 |
-| /jaxrs/calendar/event/create | POST | event_create | 待实现 |
-| /jaxrs/calendar/event/update | POST | event_update | 待实现 |
-| /jaxrs/calendar/event/remove | POST | event_remove | 待实现 |
-| /jaxrs/calendar/event/list/{calendarId} | GET | event_list | 待实现 |
+| /api/calendar/calendar/create | POST | calendar_create | 待实现 |
+| /api/calendar/calendar/update | POST | calendar_update | 待实现 |
+| /api/calendar/calendar/remove | POST | calendar_remove | 待实现 |
+| /api/calendar/event/create | POST | event_create | 待实现 |
+| /api/calendar/event/update | POST | event_update | 待实现 |
+| /api/calendar/event/remove | POST | event_remove | 待实现 |
+| /api/calendar/event/list/{calendarId} | GET | event_list | 待实现 |
 
 **验收标准：**
 - 日历 CRUD 正常
@@ -231,12 +231,12 @@
 **目标端点：**
 | 路由路径 | HTTP 方法 | Handler | 实现状态 |
 |----------|-----------|---------|---------|
-| /jaxrs/file/upload | POST | file_upload | 待实现 |
-| /jaxrs/file/download/{id} | GET | file_download | 待实现 |
-| /jaxrs/file/folder/create | POST | folder_create | 待实现 |
-| /jaxrs/file/folder/update/{id} | POST | folder_update | 待实现 |
-| /jaxrs/file/folder/delete/{id} | POST | folder_delete | 待实现 |
-| /jaxrs/file/permission/set | POST | set_permission | 待实现 |
+| /api/file/upload | POST | file_upload | 待实现 |
+| /api/file/download/{id} | GET | file_download | 待实现 |
+| /api/file/folder/create | POST | folder_create | 待实现 |
+| /api/file/folder/update/{id} | POST | folder_update | 待实现 |
+| /api/file/folder/delete/{id} | POST | folder_delete | 待实现 |
+| /api/file/permission/set | POST | set_permission | 待实现 |
 
 **验收标准：**
 - 文件上传（multipart、MIME 白名单、5MB 限制）
@@ -632,67 +632,67 @@ U1 (Axum 0.8 + CORS + security headers)
 ### Wave 1 端点清单（6 个 crate）
 
 #### auth（已完成）
-- POST /jaxrs/authentication/login
-- DELETE /jaxrs/authentication/logout
-- GET /jaxrs/authentication/who
-- GET /jaxrs/authentication/captcha
-- POST /jaxrs/authentication/oauth/{provider}
-- POST /jaxrs/authentication/refresh
-- POST /jaxrs/authentication/code
-- POST /jaxrs/secret/check
-- POST /jaxrs/secret/set
-- POST /jaxrs/secret/set/cancel
+- POST /api/authentication/login
+- DELETE /api/authentication/logout
+- GET /api/authentication/who
+- GET /api/authentication/captcha
+- POST /api/authentication/oauth/{provider}
+- POST /api/authentication/refresh
+- POST /api/authentication/code
+- POST /api/secret/check
+- POST /api/secret/set
+- POST /api/secret/set/cancel
 
 #### control（已完成）
-- POST /jaxrs/person
-- GET|PUT|DELETE /jaxrs/person/{flag}
-- GET /jaxrs/person/list/{flag}/next/{count}
-- GET /jaxrs/person/list/{flag}/prev/{count}
-- POST /jaxrs/group
-- GET|PUT|DELETE /jaxrs/group/{flag}
-- GET /jaxrs/group/list/{flag}/next/{count}
-- GET /jaxrs/group/list/{flag}/prev/{count}
-- POST /jaxrs/role
-- GET|PUT|DELETE /jaxrs/role/{flag}
-- GET /jaxrs/role/list/{flag}/next/{count}
-- GET /jaxrs/role/list/{flag}/prev/{count}
-- POST /jaxrs/unit
-- GET /jaxrs/unit/list
-- GET|PUT|DELETE /jaxrs/unit/{flag}
-- GET /jaxrs/unit/list/{flag}/next/{count}
-- GET /jaxrs/unit/list/{flag}/prev/{count}
+- POST /api/person
+- GET|PUT|DELETE /api/person/{flag}
+- GET /api/person/list/{flag}/next/{count}
+- GET /api/person/list/{flag}/prev/{count}
+- POST /api/group
+- GET|PUT|DELETE /api/group/{flag}
+- GET /api/group/list/{flag}/next/{count}
+- GET /api/group/list/{flag}/prev/{count}
+- POST /api/role
+- GET|PUT|DELETE /api/role/{flag}
+- GET /api/role/list/{flag}/next/{count}
+- GET /api/role/list/{flag}/prev/{count}
+- POST /api/unit
+- GET /api/unit/list
+- GET|PUT|DELETE /api/unit/{flag}
+- GET /api/unit/list/{flag}/next/{count}
+- GET /api/unit/list/{flag}/prev/{count}
 
 #### personal（已完成）
-- GET /jaxrs/person
-- PUT /jaxrs/person
-- POST /jaxrs/person/mockputtopost
-- PUT /jaxrs/password
-- POST /jaxrs/password/mockputtopost
-- POST /jaxrs/reset/code
-- POST /jaxrs/reset/check
-- POST /jaxrs/reset/set
+- GET /api/person
+- PUT /api/person
+- POST /api/person/mockputtopost
+- PUT /api/password
+- POST /api/password/mockputtopost
+- POST /api/reset/code
+- POST /api/reset/check
+- POST /api/reset/set
 
 #### personal_extend（已完成）
-- GET /jaxrs/personal/info
-- PUT /jaxrs/personal/update
-- GET /jaxrs/personal/detail/{id}
-- POST /jaxrs/password/change
-- POST /jaxrs/password/reset
-- POST /jaxrs/password/verify
-- POST /jaxrs/personal/avatar/upload
-- GET /jaxrs/personal/avatar/{id}
+- GET /api/personal/info
+- PUT /api/personal/update
+- GET /api/personal/detail/{id}
+- POST /api/password/change
+- POST /api/password/reset
+- POST /api/password/verify
+- POST /api/personal/avatar/upload
+- GET /api/personal/avatar/{id}
 
 #### message（已完成）
-- GET /jaxrs/message/consume/list/{consume}/count/{count}
-- GET /jaxrs/message/consume/{id}/type/{type}
-- POST /jaxrs/message/custom/create
-- POST /jaxrs/message/mark_read/{id}
-- GET /jaxrs/message/unread/count/{consume}
+- GET /api/message/consume/list/{consume}/count/{count}
+- GET /api/message/consume/{id}/type/{type}
+- POST /api/message/custom/create
+- POST /api/message/mark_read/{id}
+- GET /api/message/unread/count/{consume}
 
 #### program_init（已完成）
-- GET /jaxrs/secret/check
-- POST /jaxrs/secret/set
-- GET /jaxrs/secret/set/cancel
+- GET /api/secret/check
+- POST /api/secret/set
+- GET /api/secret/set/cancel
 
 ---
 

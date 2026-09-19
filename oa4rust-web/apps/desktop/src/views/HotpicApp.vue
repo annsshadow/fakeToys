@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>热帖管理</h1>
-      <p class="subtitle">/jaxrs/hotpic/core/entity/*</p>
+      <p class="subtitle">/api/hotpic/core/entity/*</p>
     </div>
     <div class="content-panel glass-card">
       <div class="stats-row">
@@ -52,7 +52,7 @@ const stats = computed(() => [
 async function doSearch() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/hotpic/core/entity/list')
+    const r = await api.get('/api/hotpic/core/entity/list')
     items.value = r.data ?? []
   } catch {
     items.value = []
@@ -62,9 +62,9 @@ async function doSearch() {
 }
 
 async function onDelete(item: any) {
-  if (!confirmMsg(`确定删除热帖「${item.title || item.id}」？`)) return
+  if (!(await confirmMsg(`确定删除热帖「${item.title || item.id}」？`))) return
   try {
-    await api.delete(`/jaxrs/hotpic/core/entity/delete/${item.id}`)
+    await api.delete(`/api/hotpic/core/entity/delete/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? '未知错误'))
@@ -111,11 +111,11 @@ const api_control__542_data = ref<any[]>([])
 const api_control_list_con_641_data = ref<any[]>([])
 const api_control_user_hot_220_data = ref<any[]>([])
 const api_control_list_con_584_data = ref<any[]>([])
-const api_jaxrs_hotpic_ass_634_data = ref<any[]>([])
-const api_jaxrs_hotpic_ass_799_data = ref<any[]>([])
-const api_jaxrs_hotpic_ass_316_data = ref<any[]>([])
-const api_jaxrs_hotpic_cor_130_data = ref<any[]>([])
-const api_jaxrs_hotpic_cor_93_data = ref<any[]>([])
+const api_hotpic_ass_634_data = ref<any[]>([])
+const api_hotpic_ass_799_data = ref<any[]>([])
+const api_hotpic_ass_316_data = ref<any[]>([])
+const api_hotpic_cor_130_data = ref<any[]>([])
+const api_hotpic_cor_93_data = ref<any[]>([])
 </script>
 
 <style scoped>

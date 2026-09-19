@@ -1,3 +1,5 @@
+# marvell
+
 ﻿## ARM Marvell SoC
 
 本文档梳Linux 内核主线所支持ARM Marvell SoC（含 Orion、Kirkwood、Discovery 等系列），列出各型号、对应内mach/plat 目录及公开数据手册链接，帮助开发者确认具体芯片的支持情况
@@ -5,7 +7,7 @@
 
 本文档列出了当前Linux 内核主线所支持的全ARM Marvell SoC。由Marvell SoC 系列规模庞大且复杂，很难弄清某个特定 SoC Linux 内核中的支持情况。本文档试图帮助理解这些 SoC 在何处得到支持，并在有公开数据手册时将其与对应的公开数据手册相匹配
 
-### Orion 系列
+## Orion 系列
 
 
   型号

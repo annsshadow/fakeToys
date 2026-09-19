@@ -1,4 +1,6 @@
 
+# sphinx
+
 :Original: Documentation/doc-guide/sphinx.rst
 
 :译者: 吴想成 Wu XiangCheng <bobwxc@email.cn>
@@ -53,7 +55,7 @@ sphinx-pre-install_zh 。
 环境。如果您打开了一个新的shell，那么在构建文档之前，您需要重新运行此命令以再
 次进入虚拟环境中。
 
-### 图片输出
+## 图片输出
 
 
 内核文档构建系统包含一个扩展，可以处理GraphViz和SVG格式的图像（参见
@@ -84,6 +86,7 @@ sphinx_kfigure_zh ）。
 	Checking if the needed tools for Fedora release 26 (Twenty Six) are available
 	Warning: better to also install "texlive-luatex85".
 	You should run:
+
 
 		sudo dnf install -y texlive-luatex85
 		/usr/bin/virtualenv sphinx_2.4.4
@@ -167,15 +170,18 @@ sphinx_kfigure_zh ）。
 
   2. ``=`` 章::
 
+
        章标题
        ======
 
   3. ``-`` 节::
 
+
        节标题
        ------
 
   4. ``~`` 小节::
+
 
        小节标题
        ~~~~~~~~
@@ -265,6 +271,7 @@ sphinx_kfigure_zh ）。
 
       - .. _`last row_zh`:
 
+
         - 行3
 
 渲染效果：
@@ -286,6 +293,7 @@ sphinx_kfigure_zh ）。
         - `1` `1` 字段2.2~3.3
 
       - .. _`last row_zh`:
+
 
         - 行3
 

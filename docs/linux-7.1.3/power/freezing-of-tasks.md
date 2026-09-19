@@ -1,3 +1,5 @@
+# freezing-of-tasks
+
 ﻿锘?# Freezing 鐨?tasks
 
 
@@ -115,6 +117,7 @@ suitable place.
 
 Generally speaking, 存在 一?couple ?reasons ?使用 the freezing ?tasks:
 
+
 1. The principal reason ??prevent 文件系统 来自 正在 damaged 之后
    hibernation.  ?the moment 我们 具有 ?简?means ?checkpointing
    文件系统, 因此 ?存在 任何 modifications made ?文件系统 数据 ??
@@ -147,6 +150,7 @@ Generally speaking, 存在 一?couple ?reasons ?使用 the freezing ?tasks:
 
 尽管 Linus Torvalds doesn't 类似 the freezing ?tasks, he said ??one
 鐨?the discussions 鍦?LKML (https://lore.kernel.org/r/alpine.LFD.0.98.0704271801020.9964@woody.linux-foundation.org):
+
 
 "RJW:> 为何 我们 freeze tasks ?全部 ?为何 我们 freeze 内核 线程。
 
@@ -193,6 +197,7 @@ TASK_UNINTERRUPTIBLE 状? ?needs ??已完??freezable 内核 线程 B
 
 Second, 存在 the 以下 two problems related ?the freezing ?用户
 space 进程:
+
 
 1. Putting 进程 进入 一?uninterruptible sleep distorts the 加载 average.
 2. 现在 ?我们 具有 FUSE, 增强?the framework 用于 doing 设备 驱动 ?

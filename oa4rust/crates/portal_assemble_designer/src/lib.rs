@@ -81,11 +81,20 @@ pub async fn get_design(
         Some(row) => {
             let content: Option<String> = row.get("content");
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
             map.insert(
                 "description".to_string(),
-                Value::String(row.get("description")),
+                Value::String(
+                    row.get::<_, Option<String>>("description")
+                        .unwrap_or_default(),
+                ),
             );
             if let Some(val) =
                 option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
@@ -114,19 +123,34 @@ pub async fn list_designs(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -199,13 +223,19 @@ pub async fn list_pages_by_category(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("category".to_string(), Value::String(row.get("category")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
             if let Some(val) =
                 option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
             {
                 map.insert("content".to_string(), val);
             }
-            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
             map.insert(
                 "createTime".to_string(),
                 Value::String(row.get("create_time")),
@@ -250,13 +280,19 @@ pub async fn get_page(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("category".to_string(), Value::String(row.get("category")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
             if let Some(val) =
                 option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
             {
                 map.insert("content".to_string(), val);
             }
-            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
             map.insert(
                 "createTime".to_string(),
                 Value::String(row.get("create_time")),
@@ -418,286 +454,327 @@ pub async fn design_save(
 pub fn portal_assemble_designer_router() -> Router {
     Router::new()
         .route(
-            "/jaxrs/portal/assemble/designer/page/list/{category}",
+            "/api/portal/assemble/designer/page/list/{category}",
             get(list_pages_by_category),
         )
-        .route("/jaxrs/portal/assemble/designer/page/{id}", get(get_page))
+        .route("/api/portal/assemble/designer/page/{id}", get(get_page))
         .route(
-            "/jaxrs/portal/assemble/designer/page/create",
+            "/api/portal/assemble/designer/page/create",
             post(create_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/save/{id}",
+            "/api/portal/assemble/designer/page/save/{id}",
             post(save_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/delete/{id}",
+            "/api/portal/assemble/designer/page/delete/{id}",
             post(delete_page),
         )
+        .route("/api/portal/assemble/designer/create", post(create_design))
+        .route("/api/portal/assemble/designer/get/{id}", get(get_design))
+        .route("/api/portal/assemble/designer/list", get(list_designs))
+        // 裸根（桌面 PortalDesignerApp 配置串引用）：返回门户设计器列表
+        .route("/api/portal/assemble/designer", get(list_designs))
+        .route("/api/portal/assemble/designer/save/{id}", post(save_design))
+        .route("/api/portal/design/list", get(design_list))
+        .route("/api/portal/design/{id}", get(design_get))
+        .route("/api/portal/design/save", post(design_save))
         .route(
-            "/jaxrs/portal/assemble/designer/create",
-            post(create_design),
-        )
-        .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
-        .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
-        .route(
-            "/jaxrs/portal/assemble/designer/save/{id}",
-            post(save_design),
-        )
-        .route("/jaxrs/portal/design/list", get(design_list))
-        .route("/jaxrs/portal/design/{id}", get(design_get))
-        .route("/jaxrs/portal/design/save", post(design_save))
-        .route(
-            "/jaxrs/portal/assemble/designer/dict/{id}",
+            "/api/portal/assemble/designer/dict/{id}",
             get(crate::dict_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}",
+            "/api/portal/assemble/designer/dict/list/paging/{page}/{size}/{size}",
             get(crate::dict_list_paging_page_size_size),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/dict/list/portal/{portalId}",
+            "/api/portal/assemble/designer/dict/list/portal/{portalId}",
             get(crate::dict_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/{flag}",
+            "/api/portal/assemble/designer/file/{flag}",
             get(crate::file_flag),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/download/{id}",
+            "/api/portal/assemble/designer/file/download/{id}",
             get(crate::file_id_download),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/upload/{id}",
+            "/api/portal/assemble/designer/file/upload/{id}",
             post(crate::file_id_upload),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/list/application/{applicationFlag}",
+            "/api/portal/assemble/designer/file/list/application/{applicationFlag}",
             get(crate::file_list_application_applicationFlag),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/list/{id}/{next}/{count}",
+            "/api/portal/assemble/designer/file/list/{id}/{next}/{count}",
             get(crate::file_list_id_next_count),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/{id}/{count}",
+            "/api/portal/assemble/designer/{id}/{count}",
             get(crate::id_count),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/output/select/file/{flag}",
+            "/api/portal/assemble/designer/output/select/file/{flag}",
             get(crate::output_flag_select_file),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/output/select/{portalFlag}",
+            "/api/portal/assemble/designer/output/select/{portalFlag}",
             get(crate::output_portalFlag_select),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/list/portal/{page}/{portalId}",
+            "/api/portal/assemble/designer/list/portal/{page}/{portalId}",
             get(crate::page_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/pageversion/{id}",
+            "/api/portal/assemble/designer/pageversion/{id}",
             get(crate::pageversion_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/pageversion/list/{page}/{pageId}",
+            "/api/portal/assemble/designer/pageversion/list/{page}/{pageId}",
             get(crate::pageversion_list_page_pageId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}",
+            "/api/portal/assemble/designer/portal/{id}",
             get(crate::portal_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/icon/{id}",
+            "/api/portal/assemble/designer/portal/icon/{id}",
             get(crate::portal_id_icon),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/permission/{id}",
+            "/api/portal/assemble/designer/portal/permission/{id}",
             get(crate::portal_id_permission),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/portalcategory/{portalCategory}",
+            "/api/portal/assemble/designer/portal/list/portalcategory/{portalCategory}",
             get(crate::portal_list_portalcategory_portalCategory),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
+            "/api/portal/assemble/designer/portal/list/summary/portalcategory/{portalCategory}",
             get(crate::portal_list_summary_portalcategory_portalCategory),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/{id}",
+            "/api/portal/assemble/designer/script/{id}",
             get(crate::script_id)
                 .put(crate::u2_script::update)
                 .delete(crate::u2_script::delete),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script",
+            "/api/portal/assemble/designer/script",
             post(crate::u2_script::create),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
+            "/api/portal/assemble/designer/script/list/paging/{page}/{size}/{size}",
             get(crate::script_list_paging_page_size_size),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/list/portal/{portalId}",
+            "/api/portal/assemble/designer/script/list/portal/{portalId}",
             get(crate::script_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/scriptversion/{id}",
+            "/api/portal/assemble/designer/scriptversion/{id}",
             get(crate::scriptversion_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/scriptversion/list/script/{scriptId}",
+            "/api/portal/assemble/designer/scriptversion/list/script/{scriptId}",
             get(crate::scriptversion_list_script_scriptId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/{id}",
+            "/api/portal/assemble/designer/templatepage/{id}",
             get(crate::templatepage_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/{id}",
+            "/api/portal/assemble/designer/widget/{id}",
             get(crate::widget_id),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/list/portal/{portalId}",
+            "/api/portal/assemble/designer/widget/list/portal/{portalId}",
             get(crate::widget_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/delete/{id}",
+            "/api/portal/assemble/designer/page/delete/{id}",
             delete(delete_page),
         )
-        .route("/jaxrs/portal/design/save", put(design_save))
+        .route("/api/portal/design/save", put(design_save))
+        .route("/api/portal/assemble/designer/save/{id}", put(save_design))
         .route(
-            "/jaxrs/portal/assemble/designer/save/{id}",
-            put(save_design),
-        )
-        .route(
-            "/jaxrs/portal/assemble/designer/page/save/{id}",
+            "/api/portal/assemble/designer/page/save/{id}",
             put(save_page),
         )
         // ── plan002 U2: page/file/import 族 + 动词差 缺口 (20) ──
         .route(
-            "/jaxrs/portal/assemble/designer/page",
+            "/api/portal/assemble/designer/page",
             post(crate::create_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/list/portal/{portalId}",
+            "/api/portal/assemble/designer/page/list/portal/{portalId}",
             get(crate::page_list_portal_portalId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/{id}",
+            "/api/portal/assemble/designer/page/{id}",
             delete(crate::delete_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/page/{id}",
+            "/api/portal/assemble/designer/page/{id}",
             put(crate::save_page),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/pageversion/list/page/{pageId}",
+            "/api/portal/assemble/designer/pageversion/list/page/{pageId}",
             get(crate::pageversion_list_page_pageId),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal",
+            "/api/portal/assemble/designer/portal",
             post(crate::create_portal),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/summary",
+            "/api/portal/assemble/designer/portal/list/summary",
             get(crate::portal_list_summary),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list/summary/v2",
+            "/api/portal/assemble/designer/portal/list/summary/v2",
             post(crate::portal_list_summary_v2),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}",
+            "/api/portal/assemble/designer/portal/{id}",
             delete(crate::delete_portal),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}",
+            "/api/portal/assemble/designer/portal/{id}",
             put(crate::update_portal),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}/icon",
+            "/api/portal/assemble/designer/portal/{id}/icon",
             put(crate::update_portal_icon),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/{id}/permission",
+            "/api/portal/assemble/designer/portal/{id}/permission",
             post(crate::portal_id_permission_post),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage",
+            "/api/portal/assemble/designer/templatepage",
             post(crate::create_templatepage),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/list",
+            "/api/portal/assemble/designer/templatepage/list",
             get(crate::templatepage_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+            "/api/portal/assemble/designer/templatepage/list/category",
             get(crate::templatepage_list_category),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/list/category",
+            "/api/portal/assemble/designer/templatepage/list/category",
             put(crate::update_templatepage_category),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/templatepage/{id}",
+            "/api/portal/assemble/designer/templatepage/{id}",
             delete(crate::delete_templatepage),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget",
+            "/api/portal/assemble/designer/widget",
             post(crate::create_widget),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/{id}",
+            "/api/portal/assemble/designer/widget/{id}",
             delete(crate::delete_widget),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/widget/{id}",
+            "/api/portal/assemble/designer/widget/{id}",
             put(crate::update_widget),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/designer/search",
+            "/api/portal/assemble/designer/designer/search",
             post(crate::designer_search),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/file/list/{id}/prev/{count}",
+            "/api/portal/assemble/designer/file/list/{id}/prev/{count}",
             get(crate::file_list_id_prev_count),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/compare",
+            "/api/portal/assemble/designer/input/compare",
             put(crate::input_compare),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/cover",
+            "/api/portal/assemble/designer/input/cover",
             put(crate::input_cover),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/create",
+            "/api/portal/assemble/designer/input/create",
             put(crate::input_create),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/prepare/cover",
+            "/api/portal/assemble/designer/input/prepare/cover",
             put(crate::input_prepare_cover),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/input/prepare/create",
+            "/api/portal/assemble/designer/input/prepare/create",
             put(crate::input_prepare_create),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/output/list",
+            "/api/portal/assemble/designer/output/list",
             get(crate::output_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portal/list",
+            "/api/portal/assemble/designer/portal/list",
             get(crate::portal_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/portalcategory/list",
+            "/api/portal/assemble/designer/portalcategory/list",
             get(crate::portalcategory_list),
         )
         .route(
-            "/jaxrs/portal/assemble/designer/script/list/manager",
+            "/api/portal/assemble/designer/script/list/manager",
             post(crate::script_list_manager),
+        )
+        // ── dict / page / widget 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
+        // 注：page/create、page/save/{id}、page/delete/{id} 已被 U2 类型化 handler 占用
+        .route("/api/portal/assemble/designer/dict/list", get(dict_list))
+        .route(
+            "/api/portal/assemble/designer/dict/create",
+            post(dict_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/save/{id}",
+            put(dict_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/save/{id}",
+            post(dict_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/delete/{id}",
+            delete(dict_delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/dict/delete/{id}",
+            post(dict_delete),
+        )
+        .route("/api/portal/assemble/designer/page/list", get(page_list))
+        .route(
+            "/api/portal/assemble/designer/widget/list",
+            get(widget_list),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/create",
+            post(widget_create),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/save/{id}",
+            put(widget_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/save/{id}",
+            post(widget_save),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/delete/{id}",
+            delete(widget_delete),
+        )
+        .route(
+            "/api/portal/assemble/designer/widget/delete/{id}",
+            post(widget_delete),
         )
 }
 
@@ -726,16 +803,31 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -755,14 +847,13 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(_page): Path<i64>,
-    Path(_size): Path<i64>,
+    Path((_page, _size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&_page, &_size],
         )
         .await
@@ -772,12 +863,24 @@ pub async fn dict_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -813,12 +916,24 @@ pub async fn dict_list_portal_portalId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -853,14 +968,32 @@ pub async fn dict_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("appData".to_string(), Value::String(row.get("app_data"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "appData".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -888,14 +1021,35 @@ pub async fn file_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -915,8 +1069,7 @@ pub async fn file_list_application_applicationFlag(
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -932,14 +1085,35 @@ pub async fn file_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -959,8 +1133,7 @@ pub async fn file_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -976,14 +1149,35 @@ pub async fn file_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1018,14 +1212,35 @@ pub async fn file_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1052,14 +1267,35 @@ pub async fn file_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1086,11 +1322,29 @@ pub async fn file_id_download(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("fileType".to_string(), Value::String(row.get("file_type"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "fileType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("file_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1344,14 +1598,32 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1386,12 +1658,24 @@ pub async fn output_flag_select_file(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "selectFile".to_string(),
-                    Value::String(row.get("select_file")),
+                    Value::String(
+                        row.get::<_, Option<String>>("select_file")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1419,14 +1703,32 @@ pub async fn output_portalFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1464,8 +1766,14 @@ pub async fn page_list_portal_portalId(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -1510,13 +1818,19 @@ pub async fn page_id(
             let mut map = serde_json::Map::new();
             map.insert("id".to_string(), Value::String(row.get("id")));
             map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("category".to_string(), Value::String(row.get("category")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
             if let Some(val) =
                 option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
             {
                 map.insert("content".to_string(), val);
             }
-            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
             map.insert(
                 "createTime".to_string(),
                 Value::String(row.get("create_time")),
@@ -1551,13 +1865,28 @@ pub async fn pageversion_list_page_pageId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("pageId".to_string(), Value::String(row.get("page_id"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "pageId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("page_id").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1592,14 +1921,29 @@ pub async fn pageversion_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("pageId".to_string(), Value::String(row.get("page_id"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "pageId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("page_id").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1626,12 +1970,24 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1669,12 +2025,24 @@ pub async fn portal_list_portalcategory_portalCategory(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1711,8 +2079,14 @@ pub async fn portal_list_summary(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1749,8 +2123,14 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -1786,16 +2166,28 @@ pub async fn portal_list_summary_v2(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
                     Value::String(row.get("description")),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1832,16 +2224,28 @@ pub async fn portal_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
                     Value::String(row.get("description")),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
@@ -1873,7 +2277,10 @@ pub async fn portal_id_icon(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("logo".to_string(), Value::String(row.get("logo"))),
+                (
+                    "logo".to_string(),
+                    Value::String(row.get::<_, Option<String>>("logo").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1902,7 +2309,10 @@ pub async fn portal_id_permission(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1930,7 +2340,7 @@ pub async fn portalcategory_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([(
                 "category".to_string(),
-                Value::String(row.get("category")),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
             )]))
         })
         .collect();
@@ -1964,14 +2374,32 @@ pub async fn script_list_manager(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1991,14 +2419,13 @@ pub async fn script_list_manager(
 #[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -2008,14 +2435,32 @@ pub async fn script_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2051,14 +2496,32 @@ pub async fn script_list_portal_portalId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2093,15 +2556,36 @@ pub async fn script_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2129,17 +2613,35 @@ pub async fn scriptversion_list_script_scriptId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("scriptId".to_string(), Value::String(row.get("script_id"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "scriptId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 (
                     "content".to_string(),
                     option_to_json(row.get::<_, Option<String>>("content")).unwrap_or(Value::Null),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2174,14 +2676,35 @@ pub async fn scriptversion_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("scriptId".to_string(), Value::String(row.get("script_id"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "scriptId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("script_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2208,14 +2731,32 @@ pub async fn templatepage_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2251,7 +2792,7 @@ pub async fn templatepage_list_category(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([(
                 "category".to_string(),
-                Value::String(row.get("category")),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
             )]))
         })
         .collect();
@@ -2286,18 +2827,33 @@ pub async fn templatepage_id(
         Some(row) => {
             let content: Option<String> = row.get("content");
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
-            map.insert("name".to_string(), Value::String(row.get("name")));
-            map.insert("category".to_string(), Value::String(row.get("category")));
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+            );
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
             if let Some(val) =
                 option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
             {
                 map.insert("content".to_string(), val);
             }
-            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
             map.insert(
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
@@ -2325,15 +2881,39 @@ pub async fn widget_list_portal_portalId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("portalId".to_string(), Value::String(row.get("portal_id"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("config".to_string(), Value::String(row.get("config"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "portalId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("portal_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2368,19 +2948,46 @@ pub async fn widget_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("portalId".to_string(), Value::String(row.get("portal_id"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("config".to_string(), Value::String(row.get("config"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "portalId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("portal_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2634,9 +3241,18 @@ pub async fn update_templatepage_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -2791,6 +3407,308 @@ pub async fn update_widget(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dict / page / widget 斜杠路径家族（桌面设计器视图 list + shared::crud 通用参数化写）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── dict/list（门户字典，查 x_portal_dict）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── dict 家族 CRUD（x_portal_dict，通用参数化写）──
+fn dict_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_portal_dict",
+        columns: &[
+            ("name", "name"),
+            ("appName", "app_name"),
+            ("appData", "app_data"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── page/list（门户页面设计器，查 x_portal_page；注意：page/create、page/save/{id}、
+//    page/delete/{id} 已被 U2 类型化 handler（create_page/save_page/delete_page，
+//    含 IDOR 门禁与 content JSON 序列化）占用，不能再重复注册同 path+method）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, content, creator, create_time, update_time \
+             FROM x_portal_page WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let content: Option<String> = row.get("content");
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert(
+                "category".to_string(),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+            );
+            if let Some(val) =
+                option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok()))
+            {
+                map.insert("content".to_string(), val);
+            }
+            map.insert(
+                "creator".to_string(),
+                Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+            );
+            map.insert(
+                "createTime".to_string(),
+                Value::String(row.get("create_time")),
+            );
+            map.insert(
+                "updateTime".to_string(),
+                Value::String(row.get("update_time")),
+            );
+            Value::Object(map)
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── widget/list（门户小部件设计器，查 x_portal_widget）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, portal_id, category, config, creator, create_time \
+             FROM x_portal_widget WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "portalId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("portal_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── widget 家族 CRUD（x_portal_widget，通用参数化写）──
+fn widget_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_portal_widget",
+        columns: &[
+            ("name", "name"),
+            ("portalId", "portal_id"),
+            ("category", "category"),
+            ("config", "config"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &widget_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &widget_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn widget_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &widget_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
         ]),
     ))))
 }

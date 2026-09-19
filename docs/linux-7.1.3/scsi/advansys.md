@@ -1,3 +1,5 @@
+# advansys
+
 ﻿
 ## AdvanSys Driver Notes
 
@@ -74,9 +76,11 @@ Multi-Channel Products:
    defined when the driver is loaded. The following insmod command
    will set the debug level to one::
 
+
       insmod advansys.o asc_dbglvl=1
 
    Debugging Message Levels:
+
 
 
       ==== ==================
@@ -87,9 +91,11 @@ Multi-Channel Products:
 
    To enable debug output to console, please make sure that:
 
+
    a. System and kernel logging is enabled (syslogd, klogd running).
    b. Kernel messages are routed to console output. Check
       /etc/syslog.conf for an entry similar to this::
+
 
            kern.*                  /dev/console
 
@@ -106,6 +112,7 @@ Multi-Channel Products:
    Debug output is logged in /var/log/messages.
 
    ::
+
 
      main()
      {
@@ -129,6 +136,7 @@ Multi-Channel Products:
 
    This information can be displayed with cat. For example::
 
+
       cat /proc/scsi/advansys/0
 
    When ADVANSYS_STATS is not defined the AdvanSys /proc files only
@@ -148,17 +156,22 @@ Multi-Channel Products:
 
      or::
 
+
 	boot: linux advansys=0x0
 
   2. Limit I/O port scanning to one I/O port:
 
+
      boot::
+
 
 	linux advansys=0x110
 
   3. Limit I/O port scanning to four I/O ports:
 
+
      boot::
+
 
 	linux advansys=0x110,0x210,0x230,0x330
 

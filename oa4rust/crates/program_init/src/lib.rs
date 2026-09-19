@@ -19,7 +19,7 @@ use shared::{error::AppError, response::ActionResult};
 // 加密密钥来源：环境变量 `SECRET_ENCRYPTION_KEY`（生产环境必须显式配置）
 // 未配置时返回错误，拒绝使用默认密钥。
 //
-// "已初始化"判定（与 Java 侧一致）：auth_person 存在任意启用用户
+// "已初始化"判定（与 o2server 侧一致）：auth_person 存在任意启用用户
 // 或 secret_config 存在配置记录。
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ pub struct SecretCipher;
 
 impl SecretCipher {
     /// 从环境变量读取加密密钥，经 md5 归一化为 16 字节（AES-128-GCM 密钥长度）。
-    /// 轮换机制：更换 SECRET_ENCRYPTION_KEY 并重跑 POST /jaxrs/secret/set
+    /// 轮换机制：更换 SECRET_ENCRYPTION_KEY 并重跑 POST /api/secret/set
     /// 即可用新密钥重写密文（密文格式 base64(nonce || ciphertext+tag)，含随机 nonce）。
     fn key() -> Result<[u8; 16], AppError> {
         let raw = std::env::var("SECRET_ENCRYPTION_KEY").map_err(|_| {
@@ -103,7 +103,7 @@ pub struct SetSecretRequest {
     pub secret: String,
 }
 
-/// GET /jaxrs/secret/check —— 返回系统初始化状态（从数据库读取）
+/// GET /api/secret/check —— 返回系统初始化状态（从数据库读取）
 #[allow(non_snake_case)]
 pub async fn check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -131,7 +131,7 @@ pub async fn check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, A
     }))))
 }
 
-/// POST /jaxrs/secret/set —— 设置初始化密钥并持久化到数据库（AES-GCM 加密存储）
+/// POST /api/secret/set —— 设置初始化密钥并持久化到数据库（AES-GCM 加密存储）
 #[allow(non_snake_case)]
 pub async fn set(
     pool: Extension<Pool>,
@@ -212,10 +212,10 @@ pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 端点闭合（对照 x_program_init jaxrs 全集 15 条，补齐 12 条）：
+// plan002 U2 端点闭合（对照 x_program_init o2server 全集 15 条，补齐 12 条）：
 //
 // - externaldatasources 域（5 条）：外部数据源配置持久化到 init_external_datasource
-//   （migration 074），set 在"已配置"时拒绝（对齐 Java ExceptionMissionExecute）；
+//   （migration 074），set 在"已配置"时拒绝（对齐 o2server ExceptionMissionExecute）；
 //   validate 对每个数据源做真实 TCP 连通性探测。
 // - h2/check（1 条）：Rust 侧无 H2，等价语义为检查 Postgres 核心表是否就绪并回报版本。
 // - restore 域（2 条）：上传包落盘到临时目录并登记 init_restore_upload；cancel 作废。
@@ -223,7 +223,7 @@ pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 //   stop 记录停机命令（进程级停机由宿主 main.rs 接线，库内不直接 kill）；
 //   license 从 x_program_config(key='license') 读取。
 //
-// IDOR 门禁说明：本 crate 为引导期模块，Java 侧由 CipherManagerJaxrsFilter
+// IDOR 门禁说明：本 crate 为引导期模块，o2server 侧由 CipherManager 过滤器
 // （管理员过滤器）统一把关；Rust 侧沿用本 crate 既有约定——初始化域端点
 // 仅在系统未完成初始化时可写（见 secret/set 的 has_person 先例），
 // 会话级鉴权由全局 auth 中间件层负责。
@@ -279,7 +279,7 @@ pub fn parse_jdbc_host_port(url: &str) -> Option<(String, i32)> {
     Some((host.to_string(), port))
 }
 
-/// GET /jaxrs/externaldatasources/check —— 是否已配置及配置内容
+/// GET /api/externaldatasources/check —— 是否已配置及配置内容
 #[allow(non_snake_case)]
 pub async fn external_datasources_check(
     pool: Extension<Pool>,
@@ -296,7 +296,7 @@ pub async fn external_datasources_check(
     }))))
 }
 
-/// GET /jaxrs/externaldatasources/list —— 已配置数据源列表
+/// GET /api/externaldatasources/list —— 已配置数据源列表
 #[allow(non_snake_case)]
 pub async fn external_datasources_list(
     pool: Extension<Pool>,
@@ -333,7 +333,7 @@ pub async fn external_datasources_list(
     }))))
 }
 
-/// POST /jaxrs/externaldatasources/set —— 写入数据源配置（已配置时拒绝，对齐 Java）
+/// POST /api/externaldatasources/set —— 写入数据源配置（已配置时拒绝，对齐 o2server）
 #[allow(non_snake_case)]
 pub async fn external_datasources_set(
     pool: Extension<Pool>,
@@ -387,7 +387,7 @@ pub async fn external_datasources_set(
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-/// GET /jaxrs/externaldatasources/set/cancel —— 清除尚未落实的配置
+/// GET /api/externaldatasources/set/cancel —— 清除尚未落实的配置
 #[allow(non_snake_case)]
 pub async fn external_datasources_set_cancel(
     pool: Extension<Pool>,
@@ -405,7 +405,7 @@ pub async fn external_datasources_set_cancel(
     )))
 }
 
-/// POST /jaxrs/externaldatasources/validate —— 逐个数据源做真实 TCP 连通性探测
+/// POST /api/externaldatasources/validate —— 逐个数据源做真实 TCP 连通性探测
 #[allow(non_snake_case)]
 pub async fn external_datasources_validate(
     Json(req): Json<ExternalDataSourcesRequest>,
@@ -446,7 +446,7 @@ pub async fn external_datasources_validate(
         }
     }
     let total_results = results.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(results),
         total_results as i64,
         0,
@@ -455,7 +455,7 @@ pub async fn external_datasources_validate(
 
 // --- h2 域 ---
 
-/// GET /jaxrs/h2/check —— Rust 侧等价语义：核心表就绪性 + 数据库版本
+/// GET /api/h2/check —— Rust 侧等价语义：核心表就绪性 + 数据库版本
 #[allow(non_snake_case)]
 pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -483,7 +483,7 @@ pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
 
 const RESTORE_MAX_BYTES: usize = 200 * 1024 * 1024;
 
-/// POST /jaxrs/restore/upload —— 上传恢复包（原始字节流），落盘临时目录并登记
+/// POST /api/restore/upload —— 上传恢复包（原始字节流），落盘临时目录并登记
 #[allow(non_snake_case)]
 pub async fn restore_upload(
     pool: Extension<Pool>,
@@ -498,7 +498,7 @@ pub async fn restore_upload(
         )));
     }
 
-    // stamp 对齐 Java DateTools compact 格式 yyyyMMddHHmmss
+    // stamp 对齐 o2server DateTools compact 格式 yyyyMMddHHmmss
     let stamp = chrono::Utc::now().format("%Y%m%d%H%M%S").to_string();
     let dir = std::env::temp_dir().join("oa4rust_restore");
     std::fs::create_dir_all(&dir).map_err(|_| AppError::Internal)?;
@@ -523,7 +523,7 @@ pub async fn restore_upload(
     )))
 }
 
-/// GET /jaxrs/restore/upload/cancel —— 作废最近一次未落实的上传
+/// GET /api/restore/upload/cancel —— 作废最近一次未落实的上传
 #[allow(non_snake_case)]
 pub async fn restore_upload_cancel(
     pool: Extension<Pool>,
@@ -545,7 +545,7 @@ pub async fn restore_upload_cancel(
 
 // --- server 域 ---
 
-/// GET /jaxrs/server/execute —— 落实待执行的初始化状态并记录命令
+/// GET /api/server/execute —— 落实待执行的初始化状态并记录命令
 #[allow(non_snake_case)]
 pub async fn server_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -591,7 +591,7 @@ pub async fn server_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-/// GET /jaxrs/server/execute/status —— 最近一次命令的执行状态
+/// GET /api/server/execute/status —— 最近一次命令的执行状态
 #[allow(non_snake_case)]
 pub async fn server_execute_status(
     pool: Extension<Pool>,
@@ -623,7 +623,7 @@ pub async fn server_execute_status(
     }
 }
 
-/// GET /jaxrs/server/license —— 从 x_program_config(key='license') 读取授权信息
+/// GET /api/server/license —— 从 x_program_config(key='license') 读取授权信息
 #[allow(non_snake_case)]
 pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -650,7 +650,7 @@ pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     Ok(Json(ActionResult::success(Value::Object(info))))
 }
 
-/// GET /jaxrs/server/stop —— 记录停机命令（进程停机由宿主接线执行）
+/// GET /api/server/stop —— 记录停机命令（进程停机由宿主接线执行）
 #[allow(non_snake_case)]
 pub async fn server_stop(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -671,40 +671,40 @@ pub async fn server_stop(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 /// 构建系统初始化模块路由（main.rs 接线时传入共享数据库连接池）
 pub fn program_init_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/secret/check", get(check))
-        .route("/jaxrs/secret/set", post(set))
-        .route("/jaxrs/secret/set/cancel", get(set_cancel))
+        .route("/api/secret/check", get(check))
+        .route("/api/secret/set", post(set))
+        .route("/api/secret/set/cancel", get(set_cancel))
         // plan002 U2：externaldatasources 域（5 条）
         .route(
-            "/jaxrs/externaldatasources/check",
+            "/api/externaldatasources/check",
             get(external_datasources_check),
         )
         .route(
-            "/jaxrs/externaldatasources/list",
+            "/api/externaldatasources/list",
             get(external_datasources_list),
         )
         .route(
-            "/jaxrs/externaldatasources/set",
+            "/api/externaldatasources/set",
             post(external_datasources_set),
         )
         .route(
-            "/jaxrs/externaldatasources/set/cancel",
+            "/api/externaldatasources/set/cancel",
             get(external_datasources_set_cancel),
         )
         .route(
-            "/jaxrs/externaldatasources/validate",
+            "/api/externaldatasources/validate",
             post(external_datasources_validate),
         )
         // h2 域（1 条）
-        .route("/jaxrs/h2/check", get(h2_check))
+        .route("/api/h2/check", get(h2_check))
         // restore 域（2 条）
-        .route("/jaxrs/restore/upload", post(restore_upload))
-        .route("/jaxrs/restore/upload/cancel", get(restore_upload_cancel))
+        .route("/api/restore/upload", post(restore_upload))
+        .route("/api/restore/upload/cancel", get(restore_upload_cancel))
         // server 域（4 条）
-        .route("/jaxrs/server/execute", get(server_execute))
-        .route("/jaxrs/server/execute/status", get(server_execute_status))
-        .route("/jaxrs/server/license", get(server_license))
-        .route("/jaxrs/server/stop", get(server_stop))
+        .route("/api/server/execute", get(server_execute))
+        .route("/api/server/execute/status", get(server_execute_status))
+        .route("/api/server/license", get(server_license))
+        .route("/api/server/stop", get(server_stop))
         .layer(Extension(pool))
 }
 

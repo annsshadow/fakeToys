@@ -1,3 +1,5 @@
+# namespace
+
 ﻿
 ## ACPI 设备—ACPI 命名空间的表
 

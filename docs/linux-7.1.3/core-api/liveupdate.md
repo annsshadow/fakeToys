@@ -1,3 +1,5 @@
+# liveupdate
+
 ﻿## 实时更新协调器（Live Update Orchestrator
 
 :Author: Pasha Tatashin <pasha.tatashin@soleen.com>
@@ -33,22 +35,30 @@
 
    :functions:
 
-   :export:
 
    :export:
 
+
    :export:
+
+
+   :export:
+
 
 ## 内部 API
 
 
    :internal:
 
-   :internal:
 
    :internal:
 
+
    :internal:
+
+
+   :internal:
+
 
 ## 另请参阅
 

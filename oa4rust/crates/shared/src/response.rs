@@ -91,8 +91,8 @@ pub enum AppError {
 //   - Unauthorized         → 401 Unauthorized
 //   - NotFound             → 404 Not Found
 //
-// 错误体与 Java 错误信封实测形状一致：无 data 字段，元数据字段恒填充，
-// prompt 承载 Java 异常类名风格字符串（见 java_exception_for）。
+// 错误体与 o2server 错误信封实测形状一致：无 data 字段，元数据字段恒填充，
+// prompt 承载 o2server 异常类名风格字符串（见 legacy_exception_for）。
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         let (status, prompt_kind) = match &self {
@@ -115,12 +115,12 @@ impl IntoResponse for AppError {
         let body = Json(serde_json::json!({
             "type": "error",
             "message": self.to_string(),
-            "date": java_date_now(),
+            "date": legacy_date_now(),
             "spent": 0,
             "size": -1,
             "count": 0,
             "position": 0,
-            "prompt": java_exception_for(prompt_kind),
+            "prompt": legacy_exception_for(prompt_kind),
         }));
 
         (status, body).into_response()
@@ -131,13 +131,13 @@ impl IntoResponse for AppError {
 // error_response
 //
 // 中间件层（认证/授权/限流）统一生成 ActionResult 格式的错误响应。
-// 与 AppError::IntoResponse 保持相同 JSON 结构（Java 实测形状）。
+// 与 AppError::IntoResponse 保持相同 JSON 结构（o2server 实测形状）。
 // ──────────────────────────────────────────────────────────────────────────────
 pub fn error_response(
     status: axum::http::StatusCode,
     message: impl Into<String>,
 ) -> axum::response::Response {
-    // 恒填 prompt（Java ResponseFactory 多数路径行为，净差异最小策略）。
+    // 恒填 prompt（o2server ResponseFactory 多数路径行为，净差异最小策略）。
     let prompt_kind = match status.as_u16() {
         401 => "ExceptionUnauthorized",
         404 => "ExceptionEntityNotExist",
@@ -146,12 +146,12 @@ pub fn error_response(
     let body = Json(serde_json::json!({
         "type": "error",
         "message": message.into(),
-        "date": java_date_now(),
+        "date": legacy_date_now(),
         "spent": 0,
         "size": -1,
         "count": 0,
         "position": 0,
-        "prompt": java_exception_for(prompt_kind),
+        "prompt": legacy_exception_for(prompt_kind),
     }));
 
     (status, body).into_response()
@@ -163,21 +163,21 @@ pub fn error_response(
 // 所有 API 响应的统一 JSON 结构。前端据此字段区分成功/错误并读取数据。
 //
 // 序列化对齐（2026-08-25 行为对比实跑结论，基准 o2server v9 Gson 实测）：
-// Java (Gson) 对 null 字段一律省略不输出，因此所有 Option 字段在 None 时
+// o2server (Gson) 对 null 字段一律省略不输出，因此所有 Option 字段在 None 时
 // 跳过序列化；成功信封的元数据字段（message/date/spent/size/count/position）
-// 由 Java 恒填充，故 success() 默认填充同形状默认值（对比器只比较字段名与
+// 由 o2server 恒填充，故 success() 默认填充同形状默认值（对比器只比较字段名与
 // 标量类型，spent/date 的具体值本就随请求变化）。
 //
 // 字段说明：
 //   data      — 业务数据（成功时填充，失败时省略）
 //   type      — "success" 或 "error"，前端用于分支处理
-//   message   — 错误描述或额外提示（成功时为空串，与 Java 一致）
-//   date      — 服务器时间戳 "yyyy-MM-dd HH:mm:ss"（Java 恒填）
+//   message   — 错误描述或额外提示（成功时为空串，与 o2server 一致）
+//   date      — 服务器时间戳 "yyyy-MM-dd HH:mm:ss"（o2server 恒填）
 //   spent     — 处理耗时毫秒数（此处恒 0，精确值属 R1 影子流量范畴）
-//   size      — 分页页大小（Java 默认 -1 表示未分页 / 0）
+//   size      — 分页页大小（o2server 默认 -1 表示未分页 / 0）
 //   count     — 记录总数（用于分页）
 //   position  — O2OA v9 信封中为数字（实测恒为 0），用 Value 承载
-//   prompt    — 仅错误信封携带的 Java 异常类名；成功信封无此字段
+//   prompt    — 仅错误信封携带的 o2server 异常类名；成功信封无此字段
 // ──────────────────────────────────────────────────────────────────────────────
 #[derive(Serialize)]
 pub struct ActionResult<T> {
@@ -189,24 +189,24 @@ pub struct ActionResult<T> {
     pub spent: Option<i64>,
     pub size: Option<i64>,
     pub count: Option<i64>,
-    /// O2OA v9 Java 信封中 position 为数字（实测恒为 0），因此用 Value 承载。
+    /// O2OA v9 o2server 信封中 position 为数字（实测恒为 0），因此用 Value 承载。
     pub position: Option<Value>,
-    /// Java 仅在错误信封携带 prompt（异常类名）；成功信封无此字段，
+    /// o2server 仅在错误信封携带 prompt（异常类名）；成功信封无此字段，
     /// 故 None 时跳过序列化（plan002 U2 行为对齐）。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prompt: Option<String>,
 }
 
 impl<T> ActionResult<T> {
-    // 构造一个成功响应：元数据默认值与 Java 成功信封实测形状一致
+    // 构造一个成功响应：元数据默认值与 o2server 成功信封实测形状一致
     // （message 为空串、date 为服务器时间、count/position 为 0、size 为 0）。
-    // 分页端点应优先使用 java_success(count, size) 提供真实计数。
+    // 分页端点应优先使用 legacy_success(count, size) 提供真实计数。
     pub fn success(data: T) -> Self {
         Self {
             data: Some(data),
             r#type: Some("success".to_string()),
             message: Some(String::new()),
-            date: Some(java_date_now()),
+            date: Some(legacy_date_now()),
             spent: Some(0),
             size: Some(0),
             count: Some(0),
@@ -215,37 +215,37 @@ impl<T> ActionResult<T> {
         }
     }
 
-    // 构造一个错误响应：与 Java 错误信封实测形状一致——无 data 字段，
-    // prompt 承载 Java 异常类名风格字符串。实测 O2OA ResponseFactory 在
+    // 构造一个错误响应：与 o2server 错误信封实测形状一致——无 data 字段，
+    // prompt 承载 o2server 异常类名风格字符串。实测 O2OA ResponseFactory 在
     // 绝大多数 war 的错误路径填充 prompt（个别模块省略，见 allowlist 留档
-    // 「java-error-prompt-inconsistent」），恒填为净差异最小的对齐策略。
+    // 「legacy-error-prompt-inconsistent」），恒填为净差异最小的对齐策略。
     pub fn error(message: impl Into<String>) -> Self {
         Self {
             data: None,
             r#type: Some("error".to_string()),
             message: Some(message.into()),
-            date: Some(java_date_now()),
+            date: Some(legacy_date_now()),
             spent: Some(0),
             size: Some(-1),
             count: Some(0),
             position: Some(Value::Number(serde_json::Number::from(0))),
-            prompt: Some(java_exception_for("ExceptionEntityNotExist")),
+            prompt: Some(legacy_exception_for("ExceptionEntityNotExist")),
         }
     }
 
-    /// O2OA v9 Java 兼容成功信封（plan002 U2 行为对齐，基准实测见
+    /// O2OA v9 o2server 兼容成功信封（plan002 U2 行为对齐，基准实测见
     /// docs/audits/behavior-compare-first-run.md）。
     ///
-    /// Java 信封所有元数据字段恒存在：message 为空串、date 为服务器时间
+    /// o2server 信封所有元数据字段恒存在：message 为空串、date 为服务器时间
     /// （"yyyy-MM-dd HH:mm:ss"）、spent 为耗时毫秒数（此处置 0）、size/count
     /// 为数字、position 为数字 0。分页端点传 (total, data.len())，
-    /// 非分页端点按 Java 实测传 (0, -1)。
-    pub fn java_success(data: T, count: i64, size: i64) -> Self {
+    /// 非分页端点按 o2server 实测传 (0, -1)。
+    pub fn legacy_success(data: T, count: i64, size: i64) -> Self {
         Self {
             data: Some(data),
             r#type: Some("success".to_string()),
             message: Some(String::new()),
-            date: Some(java_date_now()),
+            date: Some(legacy_date_now()),
             spent: Some(0),
             size: Some(size),
             count: Some(count),
@@ -255,14 +255,14 @@ impl<T> ActionResult<T> {
     }
 }
 
-/// O2OA v9 Java 信封 date 字段格式："yyyy-MM-dd HH:mm:ss"
-pub fn java_date_now() -> String {
+/// O2OA v9 o2server 信封 date 字段格式："yyyy-MM-dd HH:mm:ss"
+pub fn legacy_date_now() -> String {
     chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
-/// 按 Rust 错误类别返回 O2OA 风格的 Java 异常类名（错误信封 prompt 字段）。
-/// Java 将异常类全名放入 prompt（如 ExceptionUnauthorized / ExceptionEntityNotExist）。
-pub fn java_exception_for(kind: &str) -> String {
+/// 按 Rust 错误类别返回 O2OA 风格的 o2server 异常类名（错误信封 prompt 字段）。
+/// o2server 将异常类全名放入 prompt（如 ExceptionUnauthorized / ExceptionEntityNotExist）。
+pub fn legacy_exception_for(kind: &str) -> String {
     let class = match kind {
         "ExceptionEntityNotExist" => "ExceptionEntityNotExist",
         "ExceptionBadRequest" => "ExceptionBadRequest",
@@ -272,4 +272,143 @@ pub fn java_exception_for(kind: &str) -> String {
         _ => "ExceptionInternal",
     };
     format!("com.x.base.core.project.exception.{class}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 收集 axum 响应体为 JSON 值。
+    async fn response_json(resp: axum::response::Response) -> (axum::http::StatusCode, Value) {
+        let status = resp.status();
+        let bytes = axum::body::to_bytes(resp.into_body(), 1 << 20)
+            .await
+            .unwrap();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    #[test]
+    fn legacy_date_now_matches_o2server_format() {
+        // "yyyy-MM-dd HH:mm:ss"（o2server 信封 date 字段实测格式），19 字符定长。
+        let s = legacy_date_now();
+        assert_eq!(s.len(), 19);
+        chrono::NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S").unwrap();
+    }
+
+    #[test]
+    fn legacy_exception_for_maps_known_kinds_and_falls_back_to_internal() {
+        for kind in [
+            "ExceptionEntityNotExist",
+            "ExceptionBadRequest",
+            "ExceptionUnauthorized",
+            "ExceptionAccessDenied",
+            "ExceptionNotImplemented",
+        ] {
+            assert_eq!(
+                legacy_exception_for(kind),
+                format!("com.x.base.core.project.exception.{kind}")
+            );
+        }
+        // 未知类别收敛到 ExceptionInternal，不得泄漏内部枚举名。
+        assert_eq!(
+            legacy_exception_for("SomethingElse"),
+            "com.x.base.core.project.exception.ExceptionInternal"
+        );
+    }
+
+    #[test]
+    fn option_to_json_serializes_some_and_drops_none() {
+        assert_eq!(option_to_json(Some(42)), Some(Value::from(42)));
+        assert_eq!(option_to_json(Some("x")), Some(Value::from("x")));
+        assert_eq!(option_to_json::<i32>(None), None);
+    }
+
+    #[test]
+    fn success_envelope_has_no_prompt_and_fills_legacy_metadata() {
+        let v = serde_json::to_value(ActionResult::<i32>::success(1)).unwrap();
+        assert_eq!(v["data"], 1);
+        assert_eq!(v["type"], "success");
+        assert_eq!(v["message"], ""); // o2server 成功信封 message 恒为空串
+        assert!(v["date"].is_string());
+        assert_eq!(v["spent"], 0);
+        assert_eq!(v["size"], 0);
+        assert_eq!(v["count"], 0);
+        assert_eq!(v["position"], 0);
+        assert!(v.get("prompt").is_none(), "成功信封不得携带 prompt");
+    }
+
+    #[test]
+    fn error_envelope_omits_data_and_carries_prompt() {
+        let v = serde_json::to_value(ActionResult::<i32>::error("nope")).unwrap();
+        assert!(v.get("data").is_none());
+        assert_eq!(v["type"], "error");
+        assert_eq!(v["message"], "nope");
+        assert_eq!(v["size"], -1);
+        assert_eq!(
+            v["prompt"],
+            "com.x.base.core.project.exception.ExceptionEntityNotExist"
+        );
+    }
+
+    #[test]
+    fn legacy_success_passes_through_real_counts() {
+        // 分页端点 (total=200, size=20) 必须原样透传（前端按 count/size 算总页数）。
+        let v = serde_json::to_value(ActionResult::<i32>::legacy_success(5, 200, 20)).unwrap();
+        assert_eq!(v["data"], 5);
+        assert_eq!(v["count"], 200);
+        assert_eq!(v["size"], 20);
+        assert!(v.get("prompt").is_none());
+    }
+
+    #[tokio::test]
+    async fn app_error_variants_map_to_their_status_codes() {
+        let cases: Vec<(AppError, u16)> = vec![
+            (AppError::Internal, 500),
+            (AppError::BadRequest("bad".into()), 400),
+            (AppError::Unauthorized, 401),
+            (AppError::NotFound, 404),
+        ];
+        for (err, want) in cases {
+            let label = format!("{err:?}");
+            let (status, body) = response_json(err.into_response()).await;
+            assert_eq!(status.as_u16(), want, "status for {label}");
+            assert_eq!(body["type"], "error");
+            assert_eq!(body["size"], -1);
+            assert!(body["prompt"]
+                .as_str()
+                .unwrap()
+                .starts_with("com.x.base.core.project.exception."));
+        }
+    }
+
+    #[tokio::test]
+    async fn error_response_picks_prompt_kind_by_status() {
+        let (status, body) = response_json(error_response(
+            axum::http::StatusCode::UNAUTHORIZED,
+            "login",
+        ))
+        .await;
+        assert_eq!(status, axum::http::StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            body["prompt"],
+            "com.x.base.core.project.exception.ExceptionUnauthorized"
+        );
+
+        let (status, body) =
+            response_json(error_response(axum::http::StatusCode::NOT_FOUND, "gone")).await;
+        assert_eq!(status, axum::http::StatusCode::NOT_FOUND);
+        assert_eq!(
+            body["prompt"],
+            "com.x.base.core.project.exception.ExceptionEntityNotExist"
+        );
+
+        // 其它状态码收敛到 ExceptionInternal（如 400 参数错误）。
+        let (status, body) =
+            response_json(error_response(axum::http::StatusCode::BAD_REQUEST, "x")).await;
+        assert_eq!(status, axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(
+            body["prompt"],
+            "com.x.base.core.project.exception.ExceptionInternal"
+        );
+    }
 }

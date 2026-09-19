@@ -1,3 +1,5 @@
+# tty_buffer
+
 ﻿## TTY 缓冲
 
 
@@ -35,3 +37,4 @@
 
 
    :internal:
+

@@ -109,7 +109,7 @@ pub(crate) fn des_encrypt(plain: &str, key: &str) -> Result<Vec<u8>, ()> {
 // ──────────────────────────────────────────────────────────────────────────────
 // 3DES EDE (Encrypt-Decrypt-Encrypt) for SSO token encryption
 //
-// Java SSO uses 3DES with a 16-byte (EDE2) or 24-byte (EDE3) key.
+// o2server SSO uses 3DES with a 16-byte (EDE2) or 24-byte (EDE3) key.
 // Token format: base64(3DES_encrypt(credential#timestamp))
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -158,4 +158,90 @@ pub(crate) fn des3_decrypt_ede2(encrypted: &[u8], key: &str) -> Result<Vec<u8>, 
     let len = decrypted.len();
     let trimmed = &decrypted[..len - decrypted.iter().rev().take_while(|&&b| b == 0).count()];
     Ok(trimmed.to_vec())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hash_password_produces_bcrypt_prefixed_hash() {
+        let h = hash_password("hunter2");
+        assert!(h.starts_with(BCRYPT_PREFIX));
+        // bcrypt 输出形如 $2b$10$...，总长 60，前缀 8 → 68。
+        assert_eq!(h.len(), BCRYPT_PREFIX.len() + 60);
+    }
+
+    #[test]
+    fn verify_password_bcrypt_roundtrip() {
+        let h = hash_password("s3cret!");
+        assert!(verify_password("s3cret!", &h, "", None));
+        // bcrypt 分支不读 key（key 只用于遗留 DES 路径）。
+        assert!(verify_password("s3cret!", &h, "ignored-key", None));
+        // 错误明文不得通过。
+        assert!(!verify_password("nope", &h, "", None));
+    }
+
+    #[test]
+    fn verify_password_accepts_legacy_md5_hex() {
+        // 存量数据是 MD5 十六进制：必须继续可登录（双算法兼容是登录可用性底线）。
+        let legacy = format!("{:x}", md5::compute(b"oldpass"));
+        assert!(verify_password("oldpass", &legacy, "k", None));
+        assert!(!verify_password("newpass", &legacy, "k", None));
+    }
+
+    #[test]
+    fn verify_password_accepts_legacy_des_urlencoded_base64() {
+        // 存量 DES 格式：base64url(url-encoded) 比对，必须精确复现 o2server 算法。
+        let key = "secreckey"; // >= 8 字节
+        let binding = URL_SAFE.encode(des_encrypt("despass", key).unwrap());
+        let stored = urlencoding::encode(&binding);
+        assert!(verify_password("despass", &stored, key, None));
+        assert!(!verify_password("despass", &stored, "anotherkey8", None));
+        // 空 key 走不到 DES 分支：仅 MD5 匹配可过，否则 false。
+        assert!(!verify_password("despass", &stored, "", None));
+    }
+
+    #[test]
+    fn verify_password_unknown_formats_reject() {
+        assert!(!verify_password("x", "not-a-real-hash", "", None));
+    }
+
+    #[test]
+    fn needs_rehash_flags_non_bcrypt_formats() {
+        assert!(!needs_rehash(&hash_password("p")));
+        assert!(needs_rehash(&format!("{:x}", md5::compute(b"p"))));
+        assert!(needs_rehash("legacy-des-value"));
+    }
+
+    #[test]
+    fn rehash_password_upgrades_to_bcrypt() {
+        let upgraded = rehash_password("legacy");
+        assert!(!needs_rehash(&upgraded));
+        assert!(verify_password("legacy", &upgraded, "", None));
+    }
+
+    #[test]
+    fn des_encrypt_pads_to_block_boundary_and_rejects_short_keys() {
+        assert_eq!(des_encrypt("abcdefgh", "12345678").unwrap().len(), 8);
+        assert_eq!(des_encrypt("abcdefghi", "12345678").unwrap().len(), 16);
+        assert!(des_encrypt("x", "short").is_err()); // < 8 字节 key
+    }
+
+    #[test]
+    fn des3_ede2_roundtrip() {
+        let key = "1234567890abcdef"; // 16 字节 EDE2
+        let ct = des3_encrypt_ede2("token#1700000000", key).unwrap();
+        assert_eq!(ct.len(), 16); // 16 字节明文 + 0 填充 = 2 个块
+        let pt = des3_decrypt_ede2(&ct, key).unwrap();
+        assert_eq!(pt, "token#1700000000".as_bytes());
+        // 短 key 必须拒绝（o2server 3DES 密钥 ≥ 16 字节）。
+        assert!(des3_encrypt_ede2("x", "short").is_err());
+        assert!(des3_decrypt_ede2(&[0u8; 8], "short").is_err());
+        // 密文非 8 字节倍数：尾部不足块被忽略（chunks_exact 语义，不 panic）。
+        let ct2 = des3_encrypt_ede2("abcdefghi", key).unwrap(); // 9 字节 → 补 8 = 16 字节密文
+        assert_eq!(ct2.len(), 16);
+        let partial = des3_decrypt_ede2(&ct2[..12], key).unwrap();
+        assert_eq!(partial.len(), 8); // 仅前一个完整块被解密
+    }
 }

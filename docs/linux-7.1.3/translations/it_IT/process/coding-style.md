@@ -1,4 +1,6 @@
 
+# coding-style
+
 :Original: Documentation/process/coding-style.rst <codingstyle>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -17,6 +19,7 @@ La prima cosa che suggerisco è quella di stamparsi una copia degli standard
 di codifica GNU e di NON leggerla.  Bruciatela, è un grande gesto simbolico.
 
 Comunque, ecco i punti:
+
 
 ### 1) Indentazione
 
@@ -47,6 +50,7 @@ subordinati `case`. In questo modo si evita una doppia indentazione per
 i `case`.  Un esempio.:
 
 
+
 	switch (suffix) {
 	case 'G':
 	case 'g':
@@ -68,10 +72,12 @@ A meno che non vogliate nascondere qualcosa, non mettete più istruzioni sulla
 stessa riga:
 
 
+
 	if (condition) do_this;
 	  do_something_everytime;
 
 Non usate le virgole per evitare le parentesi:
+
 
 
 	if (condition)
@@ -132,12 +138,14 @@ posizionare la parentesi graffa di apertura per ultima sulla riga, e quella
 di chiusura per prima su una nuova riga, così:
 
 
+
 	if (x is true) {
 		we do y
 	}
 
 Questo è valido per tutte le espressioni che non siano funzioni (if, switch,
 for, while, do).  Per esempio:
+
 
 
 	switch (action) {
@@ -155,6 +163,7 @@ Tuttavia, c'è il caso speciale, le funzioni: queste hanno la parentesi graffa
 di apertura all'inizio della riga successiva, quindi:
 
 
+
 	int function(int x)
 	{
 		body of function
@@ -169,6 +178,7 @@ Notate che la graffa di chiusura è da sola su una riga propria, ad
 **eccezione** di quei casi dove è seguita dalla continuazione della stessa
 espressione, in pratica `while` nell'espressione do-while, oppure `else`
 nell'espressione if-else, come questo:
+
 
 
 	do {
@@ -213,6 +223,7 @@ contiene una sola espressione; in quest'ultimo caso usate le graffe per
 entrambe i rami:
 
 
+
 	if (condition) {
 		do_this();
 		do_that();
@@ -223,12 +234,13 @@ entrambe i rami:
 Inoltre, usate le graffe se un ciclo contiene più di una semplice istruzione:
 
 
+
 	while (condition) {
 		if (test)
 			do_something();
 	}
 
-######## 3.1) Spazi
+#### 3.1) Spazi
 
 
 Lo stile del kernel Linux per quanto riguarda gli spazi, dipende
@@ -255,11 +267,13 @@ esempio è **brutto**:
 
 
 
+
 	s = sizeof( struct file );
 
 Quando dichiarate un puntatore ad una variabile o una funzione che ritorna un
 puntatore, il posto suggerito per l'asterisco `*` è adiacente al nome della
 variabile o della funzione, e non adiacente al nome del tipo. Esempi:
+
 
 
 
@@ -271,6 +285,7 @@ Usate uno spazio attorno (da ogni parte) alla maggior parte degli operatori
 ```
 
 	=  +  -  <  >  *  /  %  |  &  ^  <=  >=  ==  !=  ?  :
+
 
 ```
 ```
@@ -343,10 +358,12 @@ Per favore non usate cose come `vps_t`.
 Usare il typedef per strutture e puntatori è uno **sbaglio**. Quando vedete:
 
 
+
 	vps_t a;
 
 nei sorgenti, cosa significa?
 Se, invece, dicesse:
+
 
 
 	struct virtual_container *a;
@@ -355,6 +372,7 @@ potreste dire cos'è effettivamente `a`.
 
 Molte persone pensano che la definizione dei tipi `migliori la leggibilità`.
 Non molto. Sono utili per:
+
 
  (a) gli oggetti completamente opachi (dove typedef viene proprio usato allo
      scopo di **nascondere** cosa sia davvero l'oggetto).
@@ -375,8 +393,10 @@ Non molto. Sono utili per:
 
      .. note::
 
+
        Ancora - dev'esserci una **ragione** per farlo. Se qualcosa è
        ``unsigned long``, non c'è alcun bisogno di avere:
+
 
         typedef unsigned long myfalgs_t;
 
@@ -445,13 +465,14 @@ esportata, la macro **EXPORT** per questa funzione deve seguire immediatamente
 la riga della parentesi graffa di chiusura. Ad esempio:
 
 
+
 	int system_is_up(void)
 	{
 		return system_state == SYSTEM_RUNNING;
 	}
 	EXPORT_SYMBOL(system_is_up);
 
-######## 6.1) Prototipi di funzione
+#### 6.1) Prototipi di funzione
 
 
 Nei prototipi di funzione, includete i nomi dei parametri e i loro tipi.
@@ -471,6 +492,7 @@ Quando scrivete i prototipi di funzione mantenete `l'ordine degli elementi <http
 
 ```
 L'ordine suggerito per gli elementi di un prototipo di funzione è il seguente:
+
 
 - classe d'archiviazione (in questo caso `static __always_inline`. Da notare
   che `__always_inline` è tecnicamente un attributo ma che viene trattato come
@@ -517,6 +539,7 @@ punti d'uscita, e inoltre rende difficile verificarne la correttezza.
 
 I motivo per usare le goto sono:
 
+
 - i salti incondizionati sono più facili da capire e seguire
 - l'annidamento si riduce
 - si evita di dimenticare, per errore, di aggiornare un singolo punto d'uscita
@@ -549,6 +572,7 @@ Un baco abbastanza comune di cui bisogna prendere nota è il `one err bugs`
 che assomiglia a questo:
 
 
+
 	err:
 		kfree(foo->bar);
 		kfree(foo);
@@ -557,6 +581,7 @@ che assomiglia a questo:
 Il baco in questo codice è che in alcuni punti d'uscita la variabile `foo` è
 NULL.  Normalmente si corregge questo baco dividendo la gestione dell'errore in
 due parti `err_free_bar:` e `err_free_foo:`:
+
 
 
 	err_free_bar:
@@ -595,6 +620,7 @@ formato kernel-doc.  Per maggiori dettagli, leggete i file in
 Lo stile preferito per i commenti più lunghi (multi-riga) è:
 
 
+
 	/*
   - This is the preferred style for multi-line
   - comments in the Linux kernel source code.
@@ -623,6 +649,7 @@ GNU emacs non faranno mai un buon programma).
 Quindi, potete sbarazzarvi di GNU emacs, o riconfigurarlo con valori più
 sensati.  Per fare quest'ultima cosa, potete appiccicare il codice che
 segue nel vostro file .emacs:
+
 
 
   (defun c-lineup-arglist-tabs-only (ignored)
@@ -792,6 +819,7 @@ Le macro che contengono più istruzioni dovrebbero essere sempre chiuse in un
 blocco do - while:
 
 
+
 	#define macrofun(a, b, c)			\
 		do {					\
 			if (a == 5)			\
@@ -821,7 +849,9 @@ meglio.
 
 Cose da evitare quando si usano le macro:
 
+
 1) le macro che hanno effetti sul flusso del codice:
+
 
 
 	#define FOO(x)					\
@@ -835,6 +865,7 @@ la funzione chiamante; non cercate di rompere il decodificatore interno di
 chi legge il codice.
 
 2) le macro che dipendono dall'uso di una variabile locale con un nome magico:
+
 
 
 	#define FOO(val) bar(index, val)
@@ -858,6 +889,7 @@ parametrizzate.
 una macro che sembra una funzione:
 
 
+
 	#define FOO(x)				\
 	({					\
 		typeof(x) ret;			\
@@ -872,7 +904,7 @@ Il manuale di cpp si occupa esaustivamente delle macro. Il manuale di sviluppo
 di gcc copre anche l'RTL che viene usato frequentemente nel kernel per il
 linguaggio assembler.
 
-### 13) Visualizzare i messaggi del kernel
+## 13) Visualizzare i messaggi del kernel
 
 
 Agli sviluppatori del kernel piace essere visti come dotti. Tenete un occhio
@@ -919,6 +951,7 @@ Documentation/translations/it_IT/core-api/memory-allocation.rst <it_memory_alloc
 Il modo preferito per passare la dimensione di una struttura è il seguente:
 
 
+
 	p = kmalloc(sizeof(*p), ...);
 
 La forma alternativa, dove il nome della struttura viene scritto interamente,
@@ -932,9 +965,11 @@ di puntatore è garantito dal linguaggio di programmazione C.
 Il modo preferito per assegnare un vettore è il seguente:
 
 
+
 	p = kmalloc_array(n, sizeof(...), ...);
 
 Il modo preferito per assegnare un vettore a zero è il seguente:
+
 
 
 	p = kcalloc(n, sizeof(...), ...);
@@ -1049,6 +1084,7 @@ Per esempio, se dovete calcolare la lunghezza di un vettore, sfruttate la
 macro:
 
 
+
 	#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[^0^]))
 
 Analogamente, se dovete calcolare la dimensione di un qualche campo di una
@@ -1062,7 +1098,7 @@ rigido sui tipi.  Sentitevi liberi di leggere attentamente questo file
 d'intestazione per scoprire cos'altro è stato definito che non dovreste
 reinventare nel vostro codice.
 
-### 19) Linee di configurazione degli editor e altre schifezze
+## 19) Linee di configurazione degli editor e altre schifezze
 
 
 Alcuni editor possono interpretare dei parametri di configurazione integrati
@@ -1070,9 +1106,11 @@ nei file sorgenti e indicati con dai marcatori speciali.  Per esempio, emacs
 interpreta le linee marcate nel seguente modo:
 
 
+
 	-**- mode: c -**-
 
 O come queste:
+
 
 
 	/*
@@ -1082,6 +1120,7 @@ O come queste:
 	*/
 
 Vim interpreta i marcatori come questi:
+
 
 
 	/** vim:set sw=8 noet **/
@@ -1121,6 +1160,7 @@ ad eccezione dell'ultima stringa/istruzione, ognuna deve terminare con `\n\t`
 al fine di allineare correttamente l'assembler che verrà generato:
 
 
+
 	asm ("magic %reg1, #42\n\t"
 	     "more_magic %reg2, %reg3"
 	     : /** outputs **/ : /** inputs **/ : /** clobbers **/);
@@ -1152,6 +1192,7 @@ simboli Kconfig in espressioni booleane C, e quindi usatela nelle classiche
 condizioni C:
 
 
+
 	if (IS_ENABLED(CONFIG_SOMETHING)) {
 		...
 	}
@@ -1169,11 +1210,12 @@ mettete un commento sulla stessa riga di #endif, annotando la condizione
 che termina.  Per esempio:
 
 
+
 	#ifdef CONFIG_SOMETHING
 	...
 	#endif /** CONFIG_SOMETHING **/
 
-### Appendice I) riferimenti
+## Appendice I) riferimenti
 
 
 The C Programming Language, Second Edition

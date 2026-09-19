@@ -1,3 +1,5 @@
+# opp
+
 ﻿## 运行性能点（OPP）库
 
 
@@ -47,7 +49,7 @@ OPP 库提供了一组辅助函数，用于组织与查OPP 信息。该库位dri
 ```
 OPP 层期望每个域由一个唯一的设备指针表示。SoC 框架OPP 层注册每个设备的一组初OPP。该列表预期为最优的小数目，通常每个设备5 个。这个初始列表包含框架期望在系统中默认安全启用的一OPP
 
-##### 关于 OPP 可用性的说明
+#### 关于 OPP 可用性的说明
 
 
 随着系统开始运行，SoC 框架可以基于各种外部因素选择使某OPP 在每个设备上可用或不可用。示例用法：热管理或其他异常情况，此SoC 框架可能选择禁用一个较高频率的 OPP，以安全地继续运行，直到OPP 在可能时重新启用
@@ -130,6 +132,7 @@ dev_pm_opp_find_freq_ceil
 	 dev_pm_opp_put(opp);
 
 	Example 2: A simplified implementation of a SoC cpufreq_driver->target::
+
 
 	 soc_cpufreq_target(..)
 	 {

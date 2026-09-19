@@ -1,11 +1,15 @@
 
+# paravirt_ops
+
 :Original: Documentation/virt/paravirt_ops.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  陈飞杨 Feiyang Chen <chenfeiyang@loongson.cn>
  时奎亮 Alex Shi <alexs@kernel.org>
@@ -24,6 +28,7 @@ pv_ops提供了一组函数指针，代表了与低级关键指令和各领域�
 pv-ops允许在运行时进行优化，在启动时对低级关键操作进行二进制修补。
 
 pv_ops操作被分为三类:
+
 
 - 简单的间接调用
    这些操作对应于高水平的函数，众所周知，间接调用的开销并不十分重要。

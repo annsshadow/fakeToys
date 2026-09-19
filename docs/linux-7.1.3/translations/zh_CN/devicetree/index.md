@@ -1,11 +1,15 @@
 
+# index
+
 :Original: Documentation/devicetree/index.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## Open Firmware 和 Devicetree
@@ -29,5 +33,6 @@
 ## Devicetree Bindings
 
 Todolist:
+
 
 - bindings/index

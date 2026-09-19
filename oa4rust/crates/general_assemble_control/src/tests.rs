@@ -14,7 +14,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/status")
+                    .uri("/api/general/assemble/control/status")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -31,7 +31,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/status/update")
+                    .uri("/api/general/assemble/control/status/update")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -52,7 +52,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/permissions/mind")
+                    .uri("/api/general/assemble/control/permissions/mind")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -69,7 +69,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/status/update")
+                    .uri("/api/general/assemble/control/status/update")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -84,13 +84,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_area_list() {
+    async fn test_get_general_assemble_control_area_list() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/area/list")
+                    .uri("/api/general/assemble/control/area/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -102,13 +102,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_area_id() {
+    async fn test_get_general_assemble_control_area_id() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/area/test-id")
+                    .uri("/api/general/assemble/control/area/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -120,13 +120,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_attendsco() {
+    async fn test_get_general_assemble_control_attendsco() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/attendscope/list")
+                    .uri("/api/general/assemble/control/attendscope/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -138,13 +138,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_ecnet_che() {
+    async fn test_get_general_assemble_control_ecnet_che() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/ecnet/check")
+                    .uri("/api/general/assemble/control/ecnet/check")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -156,13 +156,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_excel_res() {
+    async fn test_get_general_assemble_control_excel_res() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/excel/result/flag/test-id")
+                    .uri("/api/general/assemble/control/excel/result/flag/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -174,13 +174,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_excel_exc() {
+    async fn test_get_general_assemble_control_excel_exc() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/excel/test-id")
+                    .uri("/api/general/assemble/control/excel/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -192,13 +192,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_generalfi() {
+    async fn test_get_general_assemble_control_generalfi() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/generalfile/download/flag/test-id")
+                    .uri("/api/general/assemble/control/generalfile/download/flag/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -210,13 +210,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_invoice_d() {
+    async fn test_get_general_assemble_control_invoice_d() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/invoice/download/flag/test-id")
+                    .uri("/api/general/assemble/control/invoice/download/flag/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -228,13 +228,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_invoice_g() {
+    async fn test_get_general_assemble_control_invoice_g() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/invoice/get/test-id")
+                    .uri("/api/general/assemble/control/invoice/get/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -246,13 +246,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_invoice_l() {
+    async fn test_get_general_assemble_control_invoice_l() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/invoice/list/paging/test-id/size/test-id")
+                    .uri("/api/general/assemble/control/invoice/list/paging/test-id/size/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -264,13 +264,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_office_ht() {
+    async fn test_get_general_assemble_control_office_ht() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/office/html/to/word/result/flag/test-id")
+                    .uri("/api/general/assemble/control/office/html/to/word/result/flag/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -282,13 +282,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_permissio() {
+    async fn test_get_general_assemble_control_permissio() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/permissions/test-id")
+                    .uri("/api/general/assemble/control/permissions/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -300,13 +300,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_qrcode_li() {
+    async fn test_get_general_assemble_control_qrcode_li() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/qrcode/list")
+                    .uri("/api/general/assemble/control/qrcode/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -318,13 +318,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_qrcode_id() {
+    async fn test_get_general_assemble_control_qrcode_id() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/qrcode/test-id")
+                    .uri("/api/general/assemble/control/qrcode/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -336,13 +336,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_securityc() {
+    async fn test_get_general_assemble_control_securityc() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/securityclearance/object")
+                    .uri("/api/general/assemble/control/securityclearance/object")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -354,13 +354,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_status() {
+    async fn test_get_general_assemble_control_status() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/status")
+                    .uri("/api/general/assemble/control/status")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -372,13 +372,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_upgrade_2() {
+    async fn test_get_general_assemble_control_upgrade_2() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/upgrade/2021090901")
+                    .uri("/api/general/assemble/control/upgrade/2021090901")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -390,13 +390,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_general_assemble_control_worktime_() {
+    async fn test_get_general_assemble_control_worktime_() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/worktime/between/holiday/count/start/test-id/end/test-id")
+                    .uri("/api/general/assemble/control/worktime/between/holiday/count/start/test-id/end/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -408,13 +408,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_area_crea() {
+    async fn test_post_general_assemble_control_area_crea() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/area/create")
+                    .uri("/api/general/assemble/control/area/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -426,13 +426,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_area_dele() {
+    async fn test_post_general_assemble_control_area_dele() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/area/delete/test-id")
+                    .uri("/api/general/assemble/control/area/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -444,13 +444,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_area_upda() {
+    async fn test_post_general_assemble_control_area_upda() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/area/update/test-id")
+                    .uri("/api/general/assemble/control/area/update/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -462,13 +462,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_attendsco() {
+    async fn test_post_general_assemble_control_attendsco() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/attendscope/create")
+                    .uri("/api/general/assemble/control/attendscope/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -480,13 +480,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_excel_upl() {
+    async fn test_post_general_assemble_control_excel_upl() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/excel/upload")
+                    .uri("/api/general/assemble/control/excel/upload")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -498,13 +498,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_invoice_c() {
+    async fn test_post_general_assemble_control_invoice_c() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/invoice/create")
+                    .uri("/api/general/assemble/control/invoice/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -516,13 +516,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_invoice_d() {
+    async fn test_post_general_assemble_control_invoice_d() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/invoice/delete/test-id")
+                    .uri("/api/general/assemble/control/invoice/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -534,13 +534,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_invoice_u() {
+    async fn test_post_general_assemble_control_invoice_u() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/invoice/update/apply/status/test-id")
+                    .uri("/api/general/assemble/control/invoice/update/apply/status/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -552,13 +552,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_office_ht() {
+    async fn test_post_general_assemble_control_office_ht() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/office/html/to/word")
+                    .uri("/api/general/assemble/control/office/html/to/word")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -570,13 +570,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_qrcode_de() {
+    async fn test_post_general_assemble_control_qrcode_de() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/qrcode/delete/test-id")
+                    .uri("/api/general/assemble/control/qrcode/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -588,13 +588,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_qrcode_wi() {
+    async fn test_post_general_assemble_control_qrcode_wi() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/qrcode/width/test-id/height/test-id/text/test-id")
+                    .uri("/api/general/assemble/control/qrcode/width/test-id/height/test-id/text/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -606,13 +606,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_securityc() {
+    async fn test_post_general_assemble_control_securityc() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/securityclearance/create")
+                    .uri("/api/general/assemble/control/securityclearance/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -624,13 +624,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_general_assemble_control_status_up() {
+    async fn test_post_general_assemble_control_status_up() {
         let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/status/update")
+                    .uri("/api/general/assemble/control/status/update")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -646,7 +646,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/ecnet/check")
+                    .uri("/api/general/assemble/control/ecnet/check")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -662,7 +662,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/worktime/isholiday/2024-01-01")
+                    .uri("/api/general/assemble/control/worktime/isholiday/2024-01-01")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -679,7 +679,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/assemble/control/office")
+                    .uri("/api/general/assemble/control/office")
                     .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))

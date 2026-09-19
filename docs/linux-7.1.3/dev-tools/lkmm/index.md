@@ -1,4 +1,4 @@
-## Linux 内核内存一致性模型（LKMM）
+# Linux 内核内存一致性模型（LKMM）
 
 
 本节直接渲染 `tools/memory-model/` 与 `tools/memory-model/Documentation/` 下的文档，

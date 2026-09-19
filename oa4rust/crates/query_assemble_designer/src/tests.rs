@@ -73,7 +73,7 @@ async fn test_create_designer_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/create")
+                .uri("/api/query/assemble/designer/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -93,7 +93,7 @@ async fn test_get_designer_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/get/designer-1")
+                .uri("/api/query/assemble/designer/get/designer-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -112,7 +112,7 @@ async fn test_list_designers_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/list/default")
+                .uri("/api/query/assemble/designer/list/default")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -137,7 +137,7 @@ async fn test_save_designer_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/save/designer-1")
+                .uri("/api/query/assemble/designer/save/designer-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -157,7 +157,7 @@ async fn test_delete_designer_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/delete/designer-1")
+                .uri("/api/query/assemble/designer/delete/designer-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -179,7 +179,7 @@ async fn test_u2_designer_search_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/search")
+                .uri("/api/query/assemble/designer/search")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -197,7 +197,7 @@ async fn test_u2_input_compare_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/input/compare")
+                .uri("/api/query/assemble/designer/input/compare")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -215,7 +215,7 @@ async fn test_u2_neural_model_create_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/neural/model")
+                .uri("/api/query/assemble/designer/neural/model")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -233,7 +233,7 @@ async fn test_u2_output_list_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/output/list")
+                .uri("/api/query/assemble/designer/output/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -250,7 +250,7 @@ async fn test_u2_query_list_all_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/list/all")
+                .uri("/api/query/assemble/designer/list/all")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -267,7 +267,7 @@ async fn test_u2_table_list_manage_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/table/list/manage")
+                .uri("/api/query/assemble/designer/table/list/manage")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -284,7 +284,7 @@ async fn test_u2_view_get_by_id_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/view/view-1")
+                .uri("/api/query/assemble/designer/view/view-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -301,7 +301,7 @@ async fn test_u2_statement_get_flag_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/statement/st-1")
+                .uri("/api/query/assemble/designer/statement/st-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -318,7 +318,7 @@ async fn test_u2_statement_execute_v2_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/statement/execute/st-1/page/1/size/20")
+                .uri("/api/query/assemble/designer/statement/execute/st-1/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -336,7 +336,9 @@ async fn test_u2_statement_execute_mode_v2_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20")
+                .uri(
+                    "/api/query/assemble/designer/statement/execute/st-1/mode/count/page/1/size/20",
+                )
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -376,7 +378,7 @@ fn test_u2_validate_single_select_rejects_empty() {
 
 #[test]
 fn test_u2_validate_single_select_accepts_select() {
-    // Java statement.data 为 JPQL 风格，Rust 侧存储可直接执行的 SQL；
+    // o2server statement.data 为 JPQL 风格，Rust 侧存储可直接执行的 SQL；
     // 此处验证合法 SELECT 通过安全校验。
     assert!(u2_closures::validate_single_select(
         "SELECT id, name FROM x_query_table WHERE table_flag = 't1'"
@@ -431,13 +433,13 @@ fn test_u2_normalize_identifier_for_dedup() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 v9 缺口闭合测试：Java 精确路径/动词注册 + 纯函数契约
+// plan002 U2 v9 缺口闭合测试：o2server 精确路径/动词注册 + 纯函数契约
 // 路由存在性口径：空 Config 池 → handler 执行到池获取失败 → 500（404 即路由缺失）
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[test]
 fn test_v9_id_generate_clamps_count_and_generates_uuids() {
-    // Java ActionGet: 0 < count < 200 逐一生成，越界截断
+    // o2server ActionGet: 0 < count < 200 逐一生成，越界截断
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
         let resp = u2_closures::id_generate(axum::extract::Path(3i64))
@@ -461,13 +463,13 @@ fn test_v9_id_generate_clamps_count_and_generates_uuids() {
 }
 
 #[tokio::test]
-async fn test_v9_designer_search_java_path_route_exists() {
+async fn test_v9_designer_search_legacy_path_route_exists() {
     let pool = build_test_pool();
     let app = crate::router(pool);
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/designer/search")
+                .uri("/api/query/assemble/designer/designer/search")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"key":"test"}"#))
@@ -485,7 +487,7 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
     let get = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1")
+                .uri("/api/query/assemble/designer/importmodel/im-flag-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -501,7 +503,7 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
     let put = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1")
+                .uri("/api/query/assemble/designer/importmodel/im-flag-1")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"name":"n1"}"#))
@@ -518,7 +520,7 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
     let del = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1")
+                .uri("/api/query/assemble/designer/importmodel/im-flag-1")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -533,12 +535,12 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
 }
 
 #[tokio::test]
-async fn test_v9_importmodel_permission_java_path_route_exists() {
+async fn test_v9_importmodel_permission_legacy_path_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/importmodel/im-flag-1/permission")
+                .uri("/api/query/assemble/designer/importmodel/im-flag-1/permission")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"permissionList":[]}"#))
@@ -550,12 +552,12 @@ async fn test_v9_importmodel_permission_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_neural_model_reset_status_java_path_route_exists() {
+async fn test_v9_neural_model_reset_status_legacy_path_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/neural/model/m1/reset/status")
+                .uri("/api/query/assemble/designer/neural/model/m1/reset/status")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -566,13 +568,13 @@ async fn test_v9_neural_model_reset_status_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_query_put_delete_java_verb_routes_exist() {
+async fn test_v9_query_put_delete_legacy_verb_routes_exist() {
     let pool = build_test_pool();
 
     let put = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/query/q-flag-1")
+                .uri("/api/query/assemble/designer/query/q-flag-1")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"name":"q1"}"#))
@@ -589,7 +591,7 @@ async fn test_v9_query_put_delete_java_verb_routes_exist() {
     let del = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/query/q-flag-1")
+                .uri("/api/query/assemble/designer/query/q-flag-1")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -604,12 +606,12 @@ async fn test_v9_query_put_delete_java_verb_routes_exist() {
 }
 
 #[tokio::test]
-async fn test_v9_query_list_all_java_path_route_exists() {
+async fn test_v9_query_list_all_legacy_path_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/query/list/all")
+                .uri("/api/query/assemble/designer/query/list/all")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -620,12 +622,12 @@ async fn test_v9_query_list_all_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_stat_simulate_java_verb_route_exists() {
+async fn test_v9_stat_simulate_legacy_verb_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/stat/s1/simulate")
+                .uri("/api/query/assemble/designer/stat/s1/simulate")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -637,14 +639,14 @@ async fn test_v9_stat_simulate_java_verb_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_statement_execute_java_path_route_exists() {
+async fn test_v9_statement_execute_legacy_path_route_exists() {
     let pool = build_test_pool();
     let app = crate::router(pool);
-    // Java 精确段序：statement/{{flag}}/execute/page/{{page}}/size/{{size}}
+    // o2server 精确段序：statement/{{flag}}/execute/page/{{page}}/size/{{size}}
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/statement/st-1/execute/page/1/size/20")
+                .uri("/api/query/assemble/designer/statement/st-1/execute/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -657,7 +659,9 @@ async fn test_v9_statement_execute_java_path_route_exists() {
     let mode_response = crate::router(build_test_pool())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20")
+                .uri(
+                    "/api/query/assemble/designer/statement/st-1/execute/mode/count/page/1/size/20",
+                )
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -669,13 +673,13 @@ async fn test_v9_statement_execute_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_table_row_java_paths_route_exists() {
+async fn test_v9_table_row_legacy_paths_route_exists() {
     let pool = build_test_pool();
 
     let get_row = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/table/tf-1/row/r-1")
+                .uri("/api/query/assemble/designer/table/tf-1/row/r-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -687,7 +691,7 @@ async fn test_v9_table_row_java_paths_route_exists() {
     let insert = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/table/tf-1/row")
+                .uri("/api/query/assemble/designer/table/tf-1/row")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"k":"v"}"#))
@@ -700,7 +704,7 @@ async fn test_v9_table_row_java_paths_route_exists() {
     let count_where = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/table/tf-1/row/count/where/name='x'")
+                .uri("/api/query/assemble/designer/table/tf-1/row/count/where/name='x'")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -711,13 +715,13 @@ async fn test_v9_table_row_java_paths_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_view_bundle_simulate_java_verb_routes_exist() {
+async fn test_v9_view_bundle_simulate_legacy_verb_routes_exist() {
     let pool = build_test_pool();
 
     let bundle = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/view/v-1/bundle")
+                .uri("/api/query/assemble/designer/view/v-1/bundle")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"grid":[]}"#))
@@ -734,7 +738,7 @@ async fn test_v9_view_bundle_simulate_java_verb_routes_exist() {
     let simulate = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/designer/view/v-1/simulate")
+                .uri("/api/query/assemble/designer/view/v-1/simulate")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))

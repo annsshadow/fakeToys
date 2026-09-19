@@ -1,3 +1,5 @@
+# kdump
+
 ﻿## arm64 上的 crashkernel 内存预留
 
 

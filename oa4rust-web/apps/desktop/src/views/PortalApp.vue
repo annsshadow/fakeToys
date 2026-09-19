@@ -2,7 +2,7 @@
   <div class="portal-view">
     <div class="view-header glass-card">
       <h1>门户管理</h1>
-      <p class="subtitle">接入 /jaxrs/portal/* — 页面设计与发布</p>
+      <p class="subtitle">接入 /api/portal/* — 页面设计与发布</p>
       <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
     </div>
     <div class="page-grid glass-card">
@@ -47,7 +47,7 @@ const queryClient = useQueryClient()
 const { data } = useQuery({
   queryKey: ['portal', 'pages'],
   queryFn: async () => {
-    const resp = await api.get('/jaxrs/portal/assemble/surface/page/list/default')
+    const resp = await api.get('/api/portal/assemble/surface/page/list/portal/default')
     return ((resp as any)?.data ?? []) as PortalPage[]
   },
   staleTime: 60_000,
@@ -55,7 +55,7 @@ const { data } = useQuery({
 pages.value = data.value ?? []
 
 const deleteMutation = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/portal/assemble/surface/page/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/portal/assemble/surface/page/${id}`),
   onSuccess: () => {
     pages.value = pages.value.filter((p) => p.id !== id)
     queryClient.invalidateQueries({ queryKey: ['portal', 'pages'] })
@@ -68,8 +68,8 @@ function editPage(_page: PortalPage): void {
 
 function publishPage(_page: PortalPage): void {}
 
-function deletePage(id: string): void {
-  if (confirmMsg('确定删除此页面？')) deleteMutation.mutate(id)
+async function deletePage(id: string): void {
+  if (await confirmMsg('确定删除此页面？')) deleteMutation.mutate(id)
 }
 </script>
 

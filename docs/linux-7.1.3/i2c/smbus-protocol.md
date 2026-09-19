@@ -1,3 +1,5 @@
+# smbus-protocol
+
 ﻿## The SMBus Protocol（SMBus 协议
 
 以下是对 SMBus 协议的概要说明，适用于该协议的所有修订版本（1.0.1 2.0）。某些不被本软件包支持的协议特性，将在本文档末尾简要说明

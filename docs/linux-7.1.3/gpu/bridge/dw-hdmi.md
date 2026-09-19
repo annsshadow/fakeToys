@@ -1,4 +1,4 @@
-## drm/bridge/dw-hdmi Synopsys DesignWare HDMI 控制器
+# drm/bridge/dw-hdmi Synopsys DesignWare HDMI 控制器
 
 
 ## Synopsys DesignWare HDMI 控制器

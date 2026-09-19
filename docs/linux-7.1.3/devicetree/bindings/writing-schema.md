@@ -1,3 +1,5 @@
+# writing-schema
+
 ﻿
 ## json-schema 编写 Devicetree 绑定
 

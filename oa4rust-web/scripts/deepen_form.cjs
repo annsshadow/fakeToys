@@ -280,7 +280,7 @@ async function submitPreview() {
     if (currentForm.value.submitUrl) {
       await api.post(currentForm.value.submitUrl, payload)
     } else {
-      await api.post('/jaxrs/form/submit', payload)
+      await api.post('/api/form/submit', payload)
     }
     alert('提交成功！')
     previewData.value = {}

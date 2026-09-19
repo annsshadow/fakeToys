@@ -62,23 +62,23 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_document_read_routes_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/document/d-1").await,
+            status_of("GET", "/api/document/d-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/document/d-1/document/data").await,
+            status_of("GET", "/api/document/d-1/document/data").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/document/document/fields").await,
+            status_of("GET", "/api/document/document/fields").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/document/d-1/top").await,
+            status_of("GET", "/api/document/d-1/top").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/document/d-1/unTop").await,
+            status_of("GET", "/api/document/d-1/unTop").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -87,56 +87,56 @@ mod u2_tests {
     async fn u2_document_write_routes_reachable() {
         // 带 Json 提取器的写端点：空 body → 415，仍 ≠404/405
         assert_ne!(
-            status_of("POST", "/jaxrs/document").await,
+            status_of("POST", "/api/document").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/d-1/update").await,
+            status_of("POST", "/api/document/d-1/update").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/document/category/change").await,
+            status_of("PUT", "/api/document/category/change").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/category/change/mockputtopost").await,
+            status_of("POST", "/api/document/category/change/mockputtopost").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/list/document").await,
+            status_of("POST", "/api/document/list/document").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("PUT", "/jaxrs/document/filter/count").await,
+            status_of("PUT", "/api/document/filter/count").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/filter/count/mockputtopost").await,
+            status_of("POST", "/api/document/filter/count/mockputtopost").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/document/publish/d-1/mockputtopost").await,
+            status_of("POST", "/api/document/publish/d-1/mockputtopost").await,
             StatusCode::NOT_FOUND
         );
         // DELETE / publish / cancel：会话缺失在 handler 前被拒（500），证明已注册
         assert_eq!(
-            status_of("DELETE", "/jaxrs/document/d-1").await,
+            status_of("DELETE", "/api/document/d-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("PUT", "/jaxrs/document/publish/d-1").await,
+            status_of("PUT", "/api/document/publish/d-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("PUT", "/jaxrs/document/publish/d-1/cancel").await,
+            status_of("PUT", "/api/document/publish/d-1/cancel").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/document/d-1/commend").await,
+            status_of("GET", "/api/document/d-1/commend").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/document/d-1/uncommend").await,
+            status_of("GET", "/api/document/d-1/uncommend").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -144,19 +144,19 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_comment_routes_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/comment").await,
+            status_of("POST", "/api/comment").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/comment/c-1").await,
+            status_of("DELETE", "/api/comment/c-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("PUT", "/jaxrs/comment/list/1/size/10").await,
+            status_of("PUT", "/api/comment/list/1/size/10").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/comment/list/1/size/10/mockputtopost").await,
+            status_of("POST", "/api/comment/list/1/size/10/mockputtopost").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -164,31 +164,28 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_correlation_file_fileinfo_routes_reachable() {
         assert_ne!(
-            status_of("POST", "/jaxrs/correlation/doc/doc-9/delete").await,
+            status_of("POST", "/api/correlation/doc/doc-9/delete").await,
             StatusCode::NOT_FOUND
         );
+        assert_ne!(status_of("POST", "/api/file").await, StatusCode::NOT_FOUND);
         assert_ne!(
-            status_of("POST", "/jaxrs/file").await,
-            StatusCode::NOT_FOUND
-        );
-        assert_ne!(
-            status_of("POST", "/jaxrs/file/f-1/mockputtopost").await,
+            status_of("POST", "/api/file/f-1/mockputtopost").await,
             StatusCode::NOT_FOUND
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/fileinfo/fi-1").await,
+            status_of("DELETE", "/api/fileinfo/fi-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/fileinfo/list/filter").await,
+            status_of("POST", "/api/fileinfo/list/filter").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/fileinfo/copy/to/doc/doc-9").await,
+            status_of("POST", "/api/fileinfo/copy/to/doc/doc-9").await,
             StatusCode::NOT_FOUND
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/fileinfo/replace/to/doc/doc-9").await,
+            status_of("POST", "/api/fileinfo/replace/to/doc/doc-9").await,
             StatusCode::NOT_FOUND
         );
     }
@@ -196,12 +193,12 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_design_resource_routes_reachable() {
         for uri in [
-            "/jaxrs/form",
-            "/jaxrs/script",
-            "/jaxrs/templateform",
-            "/jaxrs/view",
-            "/jaxrs/viewcategory",
-            "/jaxrs/viewfieldconfig",
+            "/api/form",
+            "/api/script",
+            "/api/templateform",
+            "/api/view",
+            "/api/viewcategory",
+            "/api/viewfieldconfig",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -210,16 +207,16 @@ mod u2_tests {
             );
         }
         for (method, uri) in [
-            ("PUT", "/jaxrs/form/f-1"),
-            ("DELETE", "/jaxrs/form/f-1"),
-            ("PUT", "/jaxrs/script/s-1"),
-            ("DELETE", "/jaxrs/script/s-1"),
-            ("DELETE", "/jaxrs/templateform/tf-1"),
-            ("PUT", "/jaxrs/view/v-1"),
-            ("DELETE", "/jaxrs/view/v-1"),
-            ("DELETE", "/jaxrs/viewcategory/vc-1"),
-            ("PUT", "/jaxrs/viewfieldconfig/vfc-1"),
-            ("DELETE", "/jaxrs/viewfieldconfig/vfc-1"),
+            ("PUT", "/api/form/f-1"),
+            ("DELETE", "/api/form/f-1"),
+            ("PUT", "/api/script/s-1"),
+            ("DELETE", "/api/script/s-1"),
+            ("DELETE", "/api/templateform/tf-1"),
+            ("PUT", "/api/view/v-1"),
+            ("DELETE", "/api/view/v-1"),
+            ("DELETE", "/api/viewcategory/vc-1"),
+            ("PUT", "/api/viewfieldconfig/vfc-1"),
+            ("DELETE", "/api/viewfieldconfig/vfc-1"),
         ] {
             assert_ne!(
                 status_of(method, uri).await,
@@ -233,7 +230,7 @@ mod u2_tests {
             );
         }
         assert_eq!(
-            status_of("POST", "/jaxrs/script/list/manager").await,
+            status_of("POST", "/api/script/list/manager").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -241,12 +238,12 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_appinfo_categoryinfo_permission_appconfig_designer_reachable() {
         for uri in [
-            "/jaxrs/appinfo",
-            "/jaxrs/categoryinfo",
-            "/jaxrs/appinfo/a-1/permission",
-            "/jaxrs/categoryinfo/c-1/permission",
-            "/jaxrs/appconfig/app-1",
-            "/jaxrs/designer/search",
+            "/api/appinfo",
+            "/api/categoryinfo",
+            "/api/appinfo/a-1/permission",
+            "/api/categoryinfo/c-1/permission",
+            "/api/appconfig/app-1",
+            "/api/designer/search",
         ] {
             assert_ne!(
                 status_of("POST", uri).await,
@@ -255,15 +252,15 @@ mod u2_tests {
             );
         }
         assert_eq!(
-            status_of("DELETE", "/jaxrs/appinfo/a-1").await,
+            status_of("DELETE", "/api/appinfo/a-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("DELETE", "/jaxrs/categoryinfo/c-1").await,
+            status_of("DELETE", "/api/categoryinfo/c-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_eq!(
-            status_of("GET", "/jaxrs/appconfig/a-1").await,
+            status_of("GET", "/api/appconfig/a-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -473,7 +470,7 @@ mod u2_tests {
         }
 
         // 读：无会话可读
-        let (status, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
+        let (status, json) = call("GET", &format!("/api/document/{doc_id}"), None, None).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"]["title"], "U2 Lifecycle");
@@ -481,7 +478,7 @@ mod u2_tests {
         // 发布（所有者）：状态真实落库
         let (status, json) = call(
             "PUT",
-            &format!("/jaxrs/document/publish/{doc_id}"),
+            &format!("/api/document/publish/{doc_id}"),
             None,
             Some(session(OWNER)),
         )
@@ -489,13 +486,13 @@ mod u2_tests {
         assert_eq!(status, StatusCode::OK, "publish: {json}");
         assert_eq!(json["data"]["published"], true);
 
-        let (_, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
+        let (_, json) = call("GET", &format!("/api/document/{doc_id}"), None, None).await;
         assert_eq!(json["data"]["status"], "published");
 
         // 过滤计数命中刚发布的文档（此时仍是 published）
         let (status, json) = call(
             "PUT",
-            "/jaxrs/document/filter/count",
+            "/api/document/filter/count",
             Some(json!({"status": "published"})),
             None,
         )
@@ -506,19 +503,19 @@ mod u2_tests {
         // mockputtopost 别名与 PUT 共用同一发布语义：cancel 恢复草稿
         let (status, _) = call(
             "PUT",
-            &format!("/jaxrs/document/publish/{doc_id}/cancel"),
+            &format!("/api/document/publish/{doc_id}/cancel"),
             None,
             Some(session(OWNER)),
         )
         .await;
         assert_eq!(status, StatusCode::OK);
-        let (_, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
+        let (_, json) = call("GET", &format!("/api/document/{doc_id}"), None, None).await;
         assert_eq!(json["data"]["status"], "draft");
 
         // top 标记真实落库
         let (status, json) = call(
             "GET",
-            &format!("/jaxrs/document/{doc_id}/top"),
+            &format!("/api/document/{doc_id}/top"),
             None,
             Some(session(OWNER)),
         )
@@ -529,13 +526,13 @@ mod u2_tests {
         // 删除后再读 → 明确 not found 语义
         let (status, json) = call(
             "DELETE",
-            &format!("/jaxrs/document/{doc_id}"),
+            &format!("/api/document/{doc_id}"),
             None,
             Some(session(OWNER)),
         )
         .await;
         assert_eq!(status, StatusCode::OK, "delete: {json}");
-        let (status, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
+        let (status, json) = call("GET", &format!("/api/document/{doc_id}"), None, None).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(json["type"], "error");
         assert_eq!(json["message"], "document not found");
@@ -566,20 +563,20 @@ mod u2_tests {
         // 非所有者删除 → 403，且文档未被删除
         let (status, _) = call(
             "DELETE",
-            &format!("/jaxrs/document/{doc_id}"),
+            &format!("/api/document/{doc_id}"),
             None,
             Some(session(STRANGER)),
         )
         .await;
         assert_eq!(status, StatusCode::FORBIDDEN);
-        let (status, json) = call("GET", &format!("/jaxrs/document/{doc_id}"), None, None).await;
+        let (status, json) = call("GET", &format!("/api/document/{doc_id}"), None, None).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(json["type"], "success");
 
         // 所有者删除成功
         let (status, json) = call(
             "DELETE",
-            &format!("/jaxrs/document/{doc_id}"),
+            &format!("/api/document/{doc_id}"),
             None,
             Some(session(OWNER)),
         )
@@ -616,7 +613,7 @@ mod u2_tests {
 
         let (status, json) = call(
             "POST",
-            "/jaxrs/comment",
+            "/api/comment",
             Some(json!({"docId": doc_id, "content": "hello u2"})),
             Some(session(OWNER)),
         )
@@ -625,14 +622,14 @@ mod u2_tests {
         assert_eq!(json["type"], "success");
         let comment_id = json["data"]["id"].as_str().unwrap().to_string();
 
-        let (status, json) = call("PUT", "/jaxrs/comment/list/1/size/50", None, None).await;
+        let (status, json) = call("PUT", "/api/comment/list/1/size/50", None, None).await;
         assert_eq!(status, StatusCode::OK, "paging: {json}");
         assert!(json["data"]["count"].as_i64().unwrap() >= 1);
         assert_eq!(json["data"]["page"], 1);
 
         let (status, json) = call(
             "DELETE",
-            &format!("/jaxrs/comment/{comment_id}"),
+            &format!("/api/comment/{comment_id}"),
             None,
             Some(session(OWNER)),
         )
@@ -686,7 +683,7 @@ mod u2_tests {
         });
         let (status, created) = call(
             "POST",
-            "/jaxrs/form",
+            "/api/form",
             Some(json!({
                 "appId": app_id,
                 "name": "Contract Form",
@@ -700,12 +697,12 @@ mod u2_tests {
         assert_eq!(created["data"]["definition"], definition);
         let form_id = created["data"]["id"].as_str().unwrap().to_string();
 
-        let (_, fetched) = call("GET", &format!("/jaxrs/form/{form_id}"), None, None).await;
+        let (_, fetched) = call("GET", &format!("/api/form/{form_id}"), None, None).await;
         assert_eq!(fetched["data"]["appId"], app_id);
         assert_eq!(fetched["data"]["definition"], definition);
         assert!(fetched["data"].get("app_id").is_none());
 
-        let (_, listed) = call("GET", &format!("/jaxrs/form/list/app/{app_id}"), None, None).await;
+        let (_, listed) = call("GET", &format!("/api/form/list/app/{app_id}"), None, None).await;
         let listed_form = listed["data"]
             .as_array()
             .unwrap()
@@ -714,7 +711,7 @@ mod u2_tests {
             .unwrap();
         assert_eq!(listed_form["definition"], definition);
 
-        let (_, desktop) = call("GET", &format!("/jaxrs/form/v2/{form_id}"), None, None).await;
+        let (_, desktop) = call("GET", &format!("/api/form/v2/{form_id}"), None, None).await;
         assert_eq!(desktop["data"]["form"]["definition"], definition);
         assert_eq!(desktop["data"]["form"]["hasMobile"], true);
         assert!(desktop["data"]["relatedFormMap"].is_object());
@@ -723,13 +720,7 @@ mod u2_tests {
             serde_json::from_str(desktop["data"]["form"]["data"].as_str().unwrap()).unwrap();
         assert_eq!(desktop_data, definition["pcData"]);
 
-        let (_, mobile) = call(
-            "GET",
-            &format!("/jaxrs/form/v2/{form_id}/mobile"),
-            None,
-            None,
-        )
-        .await;
+        let (_, mobile) = call("GET", &format!("/api/form/v2/{form_id}/mobile"), None, None).await;
         let mobile_data: serde_json::Value =
             serde_json::from_str(mobile["data"]["form"]["data"].as_str().unwrap()).unwrap();
         assert_eq!(mobile_data, definition["mobileData"]);
@@ -742,7 +733,7 @@ mod u2_tests {
         });
         let (status, updated) = call(
             "PUT",
-            &format!("/jaxrs/form/{form_id}"),
+            &format!("/api/form/{form_id}"),
             Some(json!({"definition": updated_definition})),
             Some(session(OWNER)),
         )
@@ -786,7 +777,7 @@ mod u2_tests {
         }
         let (status, json) = call(
             "POST",
-            "/jaxrs/designer/search",
+            "/api/designer/search",
             Some(json!({"keyword": "U2SearchProbe"})),
             None,
         )
@@ -831,7 +822,7 @@ mod u2_tests {
         // 非管理者写配置 → 403
         let (status, _) = call(
             "POST",
-            &format!("/jaxrs/appconfig/{app_id}"),
+            &format!("/api/appconfig/{app_id}"),
             Some(json!({"maxDocs": 5})),
             Some(session(STRANGER)),
         )
@@ -841,7 +832,7 @@ mod u2_tests {
         // 管理者写配置并回读
         let (status, json) = call(
             "POST",
-            &format!("/jaxrs/appconfig/{app_id}"),
+            &format!("/api/appconfig/{app_id}"),
             Some(json!({"maxDocs": 5})),
             Some(session(OWNER)),
         )
@@ -849,7 +840,7 @@ mod u2_tests {
         assert_eq!(status, StatusCode::OK, "appconfig save: {json}");
         assert_eq!(json["data"]["saved"], true);
 
-        let (status, json) = call("GET", &format!("/jaxrs/appconfig/{app_id}"), None, None).await;
+        let (status, json) = call("GET", &format!("/api/appconfig/{app_id}"), None, None).await;
         assert_eq!(status, StatusCode::OK, "appconfig get: {json}");
         assert_eq!(json["data"]["maxDocs"], 5);
 
@@ -890,7 +881,7 @@ mod u2_tests {
         // 视图非所有者不能挂字段配置 → 403
         let (status, _) = call(
             "POST",
-            "/jaxrs/viewfieldconfig",
+            "/api/viewfieldconfig",
             Some(json!({"viewId": view_id, "fieldName": "f1"})),
             Some(session(STRANGER)),
         )
@@ -900,7 +891,7 @@ mod u2_tests {
         // 所有者可以创建，随后按 id 更新与删除
         let (status, json) = call(
             "POST",
-            "/jaxrs/viewfieldconfig",
+            "/api/viewfieldconfig",
             Some(json!({"viewId": view_id, "fieldName": "f1"})),
             Some(session(OWNER)),
         )
@@ -910,7 +901,7 @@ mod u2_tests {
 
         let (status, json) = call(
             "PUT",
-            &format!("/jaxrs/viewfieldconfig/{vfc_id}"),
+            &format!("/api/viewfieldconfig/{vfc_id}"),
             Some(json!({"sortOrder": 3})),
             Some(session(OWNER)),
         )
@@ -919,7 +910,7 @@ mod u2_tests {
 
         let (status, _) = call(
             "DELETE",
-            &format!("/jaxrs/viewfieldconfig/{vfc_id}"),
+            &format!("/api/viewfieldconfig/{vfc_id}"),
             None,
             Some(session(OWNER)),
         )
@@ -967,7 +958,7 @@ mod u2_tests {
         // 复制附件到目标文档
         let (status, json) = call(
             "POST",
-            &format!("/jaxrs/fileinfo/copy/to/doc/{d2}"),
+            &format!("/api/fileinfo/copy/to/doc/{d2}"),
             Some(json!({"attachmentIds": [fi]})),
             Some(session(OWNER)),
         )
@@ -978,7 +969,7 @@ mod u2_tests {
         // 移动原附件到目标文档
         let (status, json) = call(
             "POST",
-            &format!("/jaxrs/fileinfo/replace/to/doc/{d2}"),
+            &format!("/api/fileinfo/replace/to/doc/{d2}"),
             Some(json!({"attachmentIds": [fi]})),
             Some(session(OWNER)),
         )

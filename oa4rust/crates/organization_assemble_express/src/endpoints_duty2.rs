@@ -1,6 +1,6 @@
 //! plan002 U2 收尾 (part 7): role 剩余 2 个 + unitduty 剩余 5 个端点。
 //!
-//! 对齐 Java RoleAction / UnitDutyAction 其余方法。约定见 endpoints.rs。
+//! 对齐 o2server RoleAction / UnitDutyAction 其余方法。约定见 endpoints.rs。
 
 use axum::{
     extract::{Extension, Json},
@@ -11,11 +11,11 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    capped, named_list, normalize_flags, ok_java_list, ok_json, row_to_map, string_field,
+    capped, named_list, normalize_flags, ok_json, ok_legacy_list, row_to_map, string_field,
     string_list, PICK_ANY,
 };
 
-/// POST /jaxrs/role/list/object (Java ActionListObject)：批量角色对象。
+/// POST /api/role/list/object (o2server ActionListObject)：批量角色对象。
 pub async fn role_list_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -23,7 +23,7 @@ pub async fn role_list_object(
     let flags = normalize_flags(string_list(&body, "roleList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str = "SELECT id, name, description FROM x_org_role \
          WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) ORDER BY id";
@@ -33,10 +33,10 @@ pub async fn role_list_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/role/list/person/object (Java ActionListWithPersonObject)。
+/// POST /api/role/list/person/object (o2server ActionListWithPersonObject)。
 pub async fn role_list_person_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -44,7 +44,7 @@ pub async fn role_list_person_object(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str = "SELECT DISTINCT p.id, p.name, p.unit_id FROM x_org_person p \
          JOIN x_org_group_member m ON m.person_id = p.id \
@@ -57,7 +57,7 @@ pub async fn role_list_person_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 // ── unitduty ──────────────────────────────────────────────────────────────────
@@ -68,10 +68,10 @@ fn finish_duty_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("identityList", &list),
             list.len() as i64,
             0,
@@ -98,7 +98,7 @@ async fn duty_identities_by_unit_name(
     capped(&names)?;
     capped(&units)?;
     if names.is_empty() || units.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let recursive = body
         .get("recursiveUnit")
@@ -138,8 +138,8 @@ async fn duty_identities_by_unit_name(
     finish_duty_rows(rows, objects)
 }
 
-/// POST /jaxrs/unitduty/list/identity/unit/name
-/// (Java ActionListIdentityWithUnitWithName)：按职务名称+组织范围取身份。
+/// POST /api/unitduty/list/identity/unit/name
+/// (o2server ActionListIdentityWithUnitWithName)：按职务名称+组织范围取身份。
 pub async fn unitduty_list_identity_unit_name(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -147,7 +147,7 @@ pub async fn unitduty_list_identity_unit_name(
     duty_identities_by_unit_name(pool, body, false).await
 }
 
-/// POST /jaxrs/unitduty/list/identity/unit/name/object。
+/// POST /api/unitduty/list/identity/unit/name/object。
 pub async fn unitduty_list_identity_unit_name_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -155,7 +155,7 @@ pub async fn unitduty_list_identity_unit_name_object(
     duty_identities_by_unit_name(pool, body, true).await
 }
 
-/// POST /jaxrs/unitduty/list/name/identity (Java ActionListNameWithIdentity，
+/// POST /api/unitduty/list/name/identity (o2server ActionListNameWithIdentity，
 /// Wi{identityList})：身份持有的职务名称集合。
 pub async fn unitduty_list_name_identity(
     pool: Extension<Pool>,
@@ -176,7 +176,7 @@ async fn named_list_duty(
     flags: Vec<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             named_list("nameList", &[]),
             0,
             0,
@@ -188,14 +188,14 @@ async fn named_list_duty(
         .await
         .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         named_list("nameList", &list),
         list.len() as i64,
         0,
     )))
 }
 
-/// POST /jaxrs/unitduty/list/unit/object (Java ActionListWithUnitObject，
+/// POST /api/unitduty/list/unit/object (o2server ActionListWithUnitObject，
 /// Wi{unitList})：组织的职务对象（直接所属）。
 pub async fn unitduty_list_unit_object(
     pool: Extension<Pool>,
@@ -204,7 +204,7 @@ pub async fn unitduty_list_unit_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str = "SELECT d.id, d.name, d.unit_id, d.identity_id FROM x_org_duty d \
          JOIN x_org_unit u ON u.id = d.unit_id AND u.deleted_at IS NULL \
@@ -215,10 +215,10 @@ pub async fn unitduty_list_unit_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/unitduty/find/by/unit/name (Java ActionGetWithUnitWithName，
+/// POST /api/unitduty/find/by/unit/name (o2server ActionGetWithUnitWithName，
 /// Wi{name, unit})：按组织+职务名精确取单个职务对象或 null。
 pub async fn unitduty_find_by_unit_name(
     pool: Extension<Pool>,

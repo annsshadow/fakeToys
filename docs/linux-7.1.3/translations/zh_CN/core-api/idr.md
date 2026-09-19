@@ -1,12 +1,16 @@
 
 
+# idr
+
 :Original: Documentation/core-api/idr.rst
 
 :翻译:
 
+
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  吴想成 Wu Xiangcheng <bobwxc@email.cn>
@@ -71,6 +75,7 @@ IDA的用法的相关内容请见lib/idr.c文件中的“DOC: IDA description”
 
 
 该API在以下内核代码中:
+
 
 include/linux/idr.h
 

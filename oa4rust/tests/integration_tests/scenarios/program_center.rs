@@ -55,7 +55,7 @@ pub async fn program_center_flow() {
 
     // ── Step 1: Create an application (DB write) ──────────────────────────────
     let create_resp = client
-        .post(format!("{}/jaxrs/program_center/application/create", base))
+        .post(format!("{}/api/program_center/application/create", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": "PC Integration App",
@@ -81,7 +81,7 @@ pub async fn program_center_flow() {
 
     // ── Step 2: List applications — created app must be visible (DB read) ─────
     let list_resp = client
-        .get(format!("{}/jaxrs/program/applications", base))
+        .get(format!("{}/api/program/applications", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -97,7 +97,7 @@ pub async fn program_center_flow() {
 
     // ── Step 3: modules_all reflects the seeded module (DB read) ──────────────
     let mod_resp = client
-        .get(format!("{}/jaxrs/program/datastructure/modules/all", base))
+        .get(format!("{}/api/program/datastructure/modules/all", base))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -113,7 +113,7 @@ pub async fn program_center_flow() {
 
     // ── Step 4: Save a config (DB write) ─────────────────────────────────────
     let cfg_save_resp = client
-        .post(format!("{}/jaxrs/program_center/config/save", base))
+        .post(format!("{}/api/program_center/config/save", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "key": cfg_key,
@@ -131,7 +131,7 @@ pub async fn program_center_flow() {
 
     // ── Step 5: Get config — reflects the write (DB read) ─────────────────────
     let cfg_get_resp = client
-        .get(format!("{}/jaxrs/program_center/config/{}", base, cfg_key))
+        .get(format!("{}/api/program_center/config/{}", base, cfg_key))
         .header("Authorization", &auth_header)
         .send()
         .await

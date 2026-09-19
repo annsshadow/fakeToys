@@ -22,7 +22,7 @@ mod tests_generated;
 /// - `Ok(Json<ActionResult<Value>>)`: 成功响应，内容为 pong 消息
 #[utoipa::path(
     get,
-    path = "/jaxrs/base/echo/get",
+    path = "/api/base/echo/get",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -52,7 +52,7 @@ pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
 /// - `Ok(Json<ActionResult<Value>>)`: 包含 `status`（"running"）和 `cacheCount`（缓存表数量）
 #[utoipa::path(
     get,
-    path = "/jaxrs/base/cache/detail",
+    path = "/api/base/cache/detail",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -94,7 +94,7 @@ pub async fn cache_detail(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 /// - `Ok(Json<ActionResult<Value>>)`: 包含 `version`（"3.0.3"）和 `title`（"OA4Rust API"）
 #[utoipa::path(
     get,
-    path = "/jaxrs/base/openapi/info",
+    path = "/api/base/openapi/info",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -109,22 +109,22 @@ pub async fn openapi_info() -> Result<Redirect, AppError> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 端点闭合（对照 x_base_core_project jaxrs 全集 8 条，补齐 5 条）：
+// plan002 U2 端点闭合（对照 x_base_core_project o2server 全集 8 条，补齐 5 条）：
 //
-// - POST /jaxrs/base/cache（receive）：接收缓存刷新指令。Java 侧为进程内
+// - POST /api/base/cache（receive）：接收缓存刷新指令。o2server 侧为进程内
 //   CacheManager 广播，无持久化语义；Rust 侧校验 className 后回显并记录日志。
-// - GET /jaxrs/base/cache/config/flush、/cache/commonscript/flush：刷新指令确认。
-// - GET /jaxrs/base/fireschedule/classname/{className}：触发定时任务。
-//   Java 通过类加载器反射实例化 AbstractJob；Rust 无类加载机制，校验 className
+// - GET /api/base/cache/config/flush、/cache/commonscript/flush：刷新指令确认。
+// - GET /api/base/fireschedule/classname/{className}：触发定时任务。
+//   o2server 通过类加载器反射实例化 AbstractJob；Rust 无类加载机制，校验 className
 //   合法性后记录触发事件并返回成功（与 bbs U2 对不可落地依赖的处理一致）。
-// - GET /jaxrs/base/sysresource/filePath/{filePath}：列出 Web 静态资源目录，
+// - GET /api/base/sysresource/filePath/{filePath}：列出 Web 静态资源目录，
 //   带路径穿越防护（拒绝 ".."、绝对路径、反斜杠、盘符）与遍历深度/条目上限。
 //
-// IDOR 门禁说明：本模块端点在 Java 侧均为 system scope 的管理面接口，由
+// IDOR 门禁说明：本模块端点在 o2server 侧均为 system scope 的管理面接口，由
 // 管理员过滤器把关；sysresource 的目录遍历以 Web 根为硬边界做白名单式防护。
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// Java 侧 EMPTY_SYMBOL："（0）" 表示根目录
+/// o2server 侧 EMPTY_SYMBOL："（0）" 表示根目录
 const EMPTY_SYMBOL: &str = "(0)";
 
 /// 校验并归一化 sysresource 的相对路径；非法（穿越企图）返回 None。
@@ -160,7 +160,7 @@ fn web_root() -> std::path::PathBuf {
         .unwrap_or_else(|_| std::path::PathBuf::from("deploy"))
 }
 
-/// POST /jaxrs/base/cache —— 接收缓存刷新指令（回显 className）
+/// POST /api/base/cache —— 接收缓存刷新指令（回显 className）
 #[allow(non_snake_case)]
 pub async fn cache_receive(Json(body): Json<Value>) -> Result<Json<ActionResult<Value>>, AppError> {
     let class_name = body
@@ -179,21 +179,21 @@ pub async fn cache_receive(Json(body): Json<Value>) -> Result<Json<ActionResult<
     }
 }
 
-/// GET /jaxrs/base/cache/config/flush —— 刷新 Config 配置文件指令确认
+/// GET /api/base/cache/config/flush —— 刷新 Config 配置文件指令确认
 #[allow(non_snake_case)]
 pub async fn cache_config_flush() -> Result<Json<ActionResult<Value>>, AppError> {
     tracing::info!("config flush instruction received");
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-/// GET /jaxrs/base/cache/commonscript/flush —— 刷新 CommonScript 指令确认
+/// GET /api/base/cache/commonscript/flush —— 刷新 CommonScript 指令确认
 #[allow(non_snake_case)]
 pub async fn cache_commonscript_flush() -> Result<Json<ActionResult<Value>>, AppError> {
     tracing::info!("common script flush instruction received");
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-/// GET /jaxrs/base/fireschedule/classname/{className} —— 触发定时任务指令
+/// GET /api/base/fireschedule/classname/{className} —— 触发定时任务指令
 #[allow(non_snake_case)]
 pub async fn fireschedule_execute(
     Path(class_name): Path<String>,
@@ -213,7 +213,7 @@ pub async fn fireschedule_execute(
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-/// GET /jaxrs/base/sysresource/filePath/{filePath} —— 列出静态资源（带穿越防护）
+/// GET /api/base/sysresource/filePath/{filePath} —— 列出静态资源（带穿越防护）
 #[allow(non_snake_case)]
 pub async fn sysresource_list(
     Path(file_path): Path<String>,

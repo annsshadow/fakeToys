@@ -1,3 +1,5 @@
+# vidioc-g-audioout
+
 ﻿######## ioctl VIDIOC_G_AUDOUT, VIDIOC_S_AUDOUT
 
 

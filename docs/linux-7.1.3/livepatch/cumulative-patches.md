@@ -1,3 +1,5 @@
+# cumulative-patches
+
 ﻿## 原子替换与累积补
 
 livepatch（热补丁）之间可能存在依赖关系。如果多个补丁需要对同一函数做不同的
@@ -6,7 +8,7 @@ livepatch（热补丁）之间可能存在依赖关系。如果多个补丁需�
 一个名为“原子替换（Atomic Replace）”的特性提供了一种优雅的解决方案。它允许
 创建所谓的“累积补丁（Cumulative Patches）”。累积补丁包含了所有旧 livepatch
 中所需的修改，并在一次切换（transition）中完全替换它们
-### 用法
+## 用法
 
 
 可以通过struct klp_patch 中的 "replace" 标志置位来启用原子替换：

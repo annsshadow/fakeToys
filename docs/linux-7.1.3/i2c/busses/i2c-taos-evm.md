@@ -1,3 +1,5 @@
+# i2c-taos-evm
+
 ﻿## 内核驱动 i2c-taos-evm
 
 
@@ -13,7 +15,7 @@ Author: Jean Delvare <jdelvare@suse.de>
   http://www.taosinc.com/
 
 
-### 使用该驱
+## 使用该驱
 
 
 为了使用该驱动，你需serport 驱动以及 inputattach 工具，后者是 input-utils 软件包的一部分。以下命令将告诉内核你在第一个串口上有一TAOS EVM
@@ -23,7 +25,7 @@ Author: Jean Delvare <jdelvare@suse.de>
 
 
 ```
-### 技术细
+## 技术细
 
 
 TAOS 评估模块仅支4 SMBus 事务类型

@@ -30,19 +30,31 @@ pub async fn content_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
                 (
                     "categoryId".to_string(),
-                    Value::String(row.get("category_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("category_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -65,13 +77,25 @@ pub async fn content_detail(
         .map_err(|_| AppError::NotFound)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("id"))),
-        ("title".to_string(), Value::String(row.get("title"))),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        ),
+        (
+            "title".to_string(),
+            Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+        ),
         (
             "categoryId".to_string(),
-            Value::String(row.get("category_id")),
+            Value::String(
+                row.get::<_, Option<String>>("category_id")
+                    .unwrap_or_default(),
+            ),
         ),
-        ("status".to_string(), Value::String(row.get("status"))),
+        (
+            "status".to_string(),
+            Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+        ),
         (
             "content".to_string(),
             row.get::<_, Option<String>>("content")
@@ -85,13 +109,13 @@ pub async fn content_detail(
 
 /// 创建 CMS 核心服务路由
 /// 注册以下路由：
-/// - /jaxrs/cms/core/express/content/list - 内容列表
-/// - /jaxrs/cms/core/express/content/detail/{id} - 内容详情
+/// - /api/cms/core/express/content/list - 内容列表
+/// - /api/cms/core/express/content/detail/{id} - 内容详情
 pub fn cms_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/cms/core/express/content/list", get(content_list))
+        .route("/api/cms/core/express/content/list", get(content_list))
         .route(
-            "/jaxrs/cms/core/express/content/detail/{id}",
+            "/api/cms/core/express/content/detail/{id}",
             get(content_detail),
         )
         .layer(Extension(pool))

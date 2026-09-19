@@ -54,7 +54,10 @@ pub async fn get_express_info(
         Value::Object(serde_json::Map::from_iter([
             ("code".to_string(), Value::String(code)),
             ("company".to_string(), Value::String(company)),
-            ("status".to_string(), Value::String(row.get("xstatus"))),
+            (
+                "status".to_string(),
+                Value::String(row.get::<_, Option<String>>("xstatus").unwrap_or_default()),
+            ),
             ("traces".to_string(), Value::Array(vec![])),
         ]))
     };
@@ -78,8 +81,14 @@ pub async fn list_express_companies(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("code".to_string(), Value::String(row.get("xcode"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "code".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xcode").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();

@@ -1,9 +1,11 @@
+# nouveau
+
 ﻿##  drm/nouveau NVIDIA GPU 驱动
 
 
 drm/nouveau 驱动支持广泛NVIDIA GPU，涵GeForce、Quadro Tesla 系列，从 NV04 架构到最新的 Turing、Ampere、Ada 系列
 
-## NVKM: NVIDIA 鍐呮牳绠＄悊鍣。
+## NVKM: NVIDIA 内呮核绠＄悊鍣。
 
 
 NVKM 组件nouveau 驱动内部的核心抽象层，负责在内核层面管理 NVIDIA GPU 硬件。NVKM 为处理各GPU 架构提供了统一接口

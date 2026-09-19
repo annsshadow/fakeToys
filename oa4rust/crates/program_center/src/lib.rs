@@ -47,16 +47,28 @@ pub async fn applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -79,8 +91,14 @@ pub async fn current_style(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .take(3)
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -114,7 +132,7 @@ pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let entity: String = row.get("entity");
+            let entity: String = row.get::<_, Option<String>>("entity").unwrap_or_default();
             let class_name = if entity == "Process" {
                 format!("com.x.process.core.entity.{}", entity)
             } else {
@@ -123,7 +141,10 @@ pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             let field_count: i64 = row.get("field_count");
 
             Value::Object(serde_json::Map::from_iter([
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 ("className".to_string(), Value::String(class_name)),
                 (
                     "entityCount".to_string(),
@@ -134,7 +155,7 @@ pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -161,10 +182,25 @@ pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -181,7 +217,7 @@ pub async fn collect_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -240,6 +276,65 @@ pub async fn collect_remove(
     ))))
 }
 
+// ── collect 家族 CRUD（x_program_collect 032+037，通用参数化写；order_number BIGINT 不映射）──
+fn collect_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_program_collect",
+        columns: &[
+            ("personId", "person_id"),
+            ("title", "title"),
+            ("url", "url"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn collect_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &collect_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn collect_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &collect_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn collect_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &collect_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
 #[allow(non_snake_case)]
 pub async fn config_get(
     pool: Extension<Pool>,
@@ -258,9 +353,18 @@ pub async fn config_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -305,8 +409,14 @@ pub async fn agent_flag(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -341,8 +451,14 @@ pub async fn agent_flag_disable(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -377,8 +493,14 @@ pub async fn agent_flag_enable(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -413,8 +535,14 @@ pub async fn agent_flag_execute(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -449,8 +577,14 @@ pub async fn agent_flag_file(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -507,10 +641,22 @@ pub async fn appstyle_current_style(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::success(Value::Object(
@@ -541,10 +687,22 @@ pub async fn appstyle_current_update(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::success(Value::Object(
@@ -575,16 +733,28 @@ pub async fn appstyle_image_application_top(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -643,16 +813,28 @@ pub async fn appstyle_image_launch_logo(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -711,16 +893,28 @@ pub async fn appstyle_image_login_avatar(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -779,16 +973,28 @@ pub async fn appstyle_image_menu_logo_blur(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -847,16 +1053,28 @@ pub async fn appstyle_image_menu_logo_focus(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -915,16 +1133,28 @@ pub async fn appstyle_image_process_default(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -983,16 +1213,28 @@ pub async fn appstyle_image_setup_about_logo(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1052,16 +1294,28 @@ pub async fn appstyle_index_portal(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1086,9 +1340,18 @@ pub async fn bar_create_mass_from_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1105,7 +1368,7 @@ pub async fn bar_create_mass_from_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1130,9 +1393,18 @@ pub async fn bar_select1_field_field_value_value_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1149,7 +1421,7 @@ pub async fn bar_select1_field_field_value_value_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1174,9 +1446,18 @@ pub async fn bar_select2_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1193,7 +1474,7 @@ pub async fn bar_select2_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1218,9 +1499,18 @@ pub async fn bar_select3_field_field_value_value_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1237,7 +1527,7 @@ pub async fn bar_select3_field_field_value_value_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1262,9 +1552,18 @@ pub async fn bar_select4_field_field_value_value_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1281,7 +1580,7 @@ pub async fn bar_select4_field_field_value_value_count_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1304,9 +1603,18 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1323,7 +1631,7 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1333,8 +1641,7 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn captcha_v2_create_width_width_height_height(
     pool: Extension<Pool>,
-    Path(width): Path<i64>,
-    Path(height): Path<i64>,
+    Path((width, height)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1353,8 +1660,7 @@ pub async fn captcha_v2_create_width_width_height_height(
 #[allow(non_snake_case)]
 pub async fn captcha_id_validate_answer_answer(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(answer): Path<String>,
+    Path((id, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1366,10 +1672,13 @@ pub async fn captcha_id_validate_answer_answer(
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
-            let valid = row.get::<_, String>("flag") == answer;
+            let valid = row.get::<_, Option<String>>("flag").unwrap_or_default() == answer;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
                     ("valid".to_string(), Value::Bool(valid)),
                 ]),
             ))))
@@ -1396,16 +1705,28 @@ pub async fn center_applications(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1430,16 +1751,28 @@ pub async fn center_regist_applications(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1493,9 +1826,18 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -1516,7 +1858,7 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1541,9 +1883,18 @@ pub async fn code_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -1564,7 +1915,7 @@ pub async fn code_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1574,8 +1925,7 @@ pub async fn code_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn code_validate_mobile_mobile_answer_answer(
     pool: Extension<Pool>,
-    Path(mobile): Path<String>,
-    Path(answer): Path<String>,
+    Path((mobile, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1586,7 +1936,7 @@ pub async fn code_validate_mobile_mobile_answer_answer(
         .await
         .map_err(|_| AppError::Internal)?;
     let valid = match row {
-        Some(row) => row.get::<_, String>("flag") == answer,
+        Some(row) => row.get::<_, Option<String>>("flag").unwrap_or_default() == answer,
         None => false,
     };
     Ok(Json(ActionResult::success(Value::Object(
@@ -1597,8 +1947,7 @@ pub async fn code_validate_mobile_mobile_answer_answer(
 #[allow(non_snake_case)]
 pub async fn code_validate_mobile_mobile_answer_answer_cascade(
     pool: Extension<Pool>,
-    Path(mobile): Path<String>,
-    Path(answer): Path<String>,
+    Path((mobile, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
@@ -1609,7 +1958,7 @@ pub async fn code_validate_mobile_mobile_answer_answer_cascade(
         .await
         .map_err(|_| AppError::Internal)?;
     let valid = match row {
-        Some(row) => row.get::<_, String>("flag") == answer,
+        Some(row) => row.get::<_, Option<String>>("flag").unwrap_or_default() == answer,
         None => false,
     };
     Ok(Json(ActionResult::success(Value::Object(
@@ -1633,10 +1982,25 @@ pub async fn collect_code_mobile_mobile(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1670,10 +2034,25 @@ pub async fn collect_connect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1707,10 +2086,25 @@ pub async fn collect_controllebbs(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1744,10 +2138,25 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1781,10 +2190,25 @@ pub async fn collect_disconnect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1818,10 +2242,25 @@ pub async fn collect_login(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1855,10 +2294,25 @@ pub async fn collect_mobile_check_connect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1892,10 +2346,25 @@ pub async fn collect_name_name_exist(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1929,10 +2398,25 @@ pub async fn collect_name_name_mobile_mobile_code_code(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1966,10 +2450,25 @@ pub async fn collect_person(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2003,10 +2502,25 @@ pub async fn collect_resetpassword(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2040,10 +2554,25 @@ pub async fn collect_sync_area(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2077,10 +2606,25 @@ pub async fn collect_updateUnit(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2114,10 +2658,25 @@ pub async fn collect_urlMapping(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2151,10 +2710,25 @@ pub async fn collect_validate(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2188,10 +2762,25 @@ pub async fn collect_validate_codeanswer(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2225,10 +2814,25 @@ pub async fn collect_validate_direct(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2262,10 +2866,25 @@ pub async fn collect_validate_password(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("person_id".to_string(), Value::String(row.get("person_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("url".to_string(), Value::String(row.get("url"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "person_id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "url".to_string(),
+                    Value::String(row.get::<_, Option<String>>("url").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2286,7 +2905,7 @@ pub async fn collect_validate_password(
 #[allow(non_snake_case)]
 pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -2298,7 +2917,7 @@ pub async fn command_list_node(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -2321,9 +2940,18 @@ pub async fn config_open_get_disable_export_enable(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2361,9 +2989,18 @@ pub async fn config_centerserver(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2401,9 +3038,18 @@ pub async fn config_change_password(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2441,9 +3087,18 @@ pub async fn config_collect(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2481,9 +3136,18 @@ pub async fn config_license(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2519,9 +3183,18 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2541,7 +3214,7 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2564,9 +3237,18 @@ pub async fn config_list_application(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2586,7 +3268,7 @@ pub async fn config_list_application(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2609,9 +3291,18 @@ pub async fn config_list_dump_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2631,7 +3322,7 @@ pub async fn config_list_dump_data(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2654,9 +3345,18 @@ pub async fn config_list_dump_data_current_node(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2676,7 +3376,7 @@ pub async fn config_list_dump_data_current_node(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2699,9 +3399,18 @@ pub async fn config_list_entity(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2721,7 +3430,7 @@ pub async fn config_list_entity(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2744,9 +3453,18 @@ pub async fn config_open(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2784,9 +3502,18 @@ pub async fn config_open_run_time_config(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2824,9 +3551,18 @@ pub async fn config_person(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2864,9 +3600,18 @@ pub async fn config_portal(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2904,9 +3649,18 @@ pub async fn config_proxy(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -2977,9 +3731,18 @@ pub async fn config_ternary_management(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -3000,7 +3763,7 @@ pub async fn config_ternary_management(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3022,9 +3785,18 @@ pub async fn config_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3060,19 +3832,34 @@ pub async fn datastructure_fileds_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "fieldName".to_string(),
-                    Value::String(row.get("field_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldLabel".to_string(),
-                    Value::String(row.get("field_label")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_label")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldType".to_string(),
-                    Value::String(row.get("field_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -3086,7 +3873,7 @@ pub async fn datastructure_fileds_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3111,9 +3898,18 @@ pub async fn datastructure_modules_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3130,7 +3926,7 @@ pub async fn datastructure_modules_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3155,12 +3951,21 @@ pub async fn datastructure_tables_all(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableName".to_string(),
-                    Value::String(row.get("table_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3177,7 +3982,7 @@ pub async fn datastructure_tables_all(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3187,14 +3992,13 @@ pub async fn datastructure_tables_all(
 #[allow(non_snake_case)]
 pub async fn deploy_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -3204,9 +4008,18 @@ pub async fn deploy_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3223,7 +4036,7 @@ pub async fn deploy_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3250,9 +4063,15 @@ pub async fn deploy_server_o2(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "serverUrl".to_string(),
-                    Value::String(row.get("server_url")),
+                    Value::String(
+                        row.get::<_, Option<String>>("server_url")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3324,7 +4143,7 @@ pub async fn deploy_server_resource(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3375,9 +4194,18 @@ pub async fn deploy_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
                 (
                     "creator".to_string(),
@@ -3413,8 +4241,14 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -3435,7 +4269,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3448,7 +4282,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
     let rows = client
         .query(
-            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, key_name, flag, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
         )
         .await
@@ -3458,11 +4292,29 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
+                ),
+                // flag 列 = 创建时 dictFlag 写入的唯一标识；前端字典卡片/「数据」按钮读 flag，
+                // 故一并回传（旧数据以 key_name 兜底），否则按钮恒 disabled。
+                (
+                    "flag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("flag")
+                            .filter(|f| !f.is_empty())
+                            .unwrap_or_else(|| {
+                                row.get::<_, Option<String>>("key_name").unwrap_or_default()
+                            }),
+                    ),
                 ),
                 (
                     "appName".to_string(),
@@ -3484,7 +4336,7 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3494,14 +4346,13 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 #[allow(non_snake_case)]
 pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -3511,8 +4362,14 @@ pub async fn dict_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
@@ -3537,7 +4394,7 @@ pub async fn dict_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3562,8 +4419,14 @@ pub async fn dict_dictFlag_data(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("data".to_string(), Value::String(row.get("app_data"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("dict not found"))),
@@ -3573,8 +4436,7 @@ pub async fn dict_dictFlag_data(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, _path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3589,9 +4451,15 @@ pub async fn dict_dictFlag_path_data(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 ("path".to_string(), Value::String(_path)),
-                ("data".to_string(), Value::String(row.get("app_data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("dict not found"))),
@@ -3601,8 +4469,7 @@ pub async fn dict_dictFlag_path_data(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, _path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -3618,7 +4485,10 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "data".to_string(),
                     Value::String({
@@ -3641,8 +4511,7 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(_path): Path<String>,
+    Path((dict_flag, _path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -3690,8 +4559,14 @@ pub async fn dict_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "keyName".to_string(),
                     Value::String(row.get::<_, Option<String>>("key_name").unwrap_or_default()),
@@ -3700,7 +4575,10 @@ pub async fn dict_id(
                     "appName".to_string(),
                     Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
                 ),
-                ("appData".to_string(), Value::String(row.get("app_data"))),
+                (
+                    "appData".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3874,9 +4752,18 @@ pub async fn distribute_assemble_source_source(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3893,7 +4780,7 @@ pub async fn distribute_assemble_source_source(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3918,9 +4805,18 @@ pub async fn distribute_webserver_assemble_source_source(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3937,7 +4833,7 @@ pub async fn distribute_webserver_assemble_source_source(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -3962,13 +4858,25 @@ pub async fn foo_create_mass_from_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "cronExpression".to_string(),
-                    Value::String(row.get("cron_expression")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cron_expression")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -3985,7 +4893,7 @@ pub async fn foo_create_mass_from_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4008,9 +4916,18 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4027,7 +4944,7 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4050,9 +4967,18 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4069,7 +4995,7 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4092,9 +5018,18 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4111,7 +5046,7 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4136,9 +5071,18 @@ pub async fn input_prepare_cover(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4155,7 +5099,7 @@ pub async fn input_prepare_cover(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4180,9 +5124,18 @@ pub async fn input_prepare_create(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4199,7 +5152,7 @@ pub async fn input_prepare_create(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4224,9 +5177,18 @@ pub async fn invoke_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4243,7 +5205,7 @@ pub async fn invoke_list_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4268,9 +5230,18 @@ pub async fn invoke_list_with_category_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4287,7 +5258,7 @@ pub async fn invoke_list_with_category_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4309,9 +5280,18 @@ pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("key".to_string(), Value::String(row.get("key"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "key".to_string(),
+                    Value::String(row.get::<_, Option<String>>("key").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4345,11 +5325,20 @@ pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "description".to_string(),
-                    Value::String(row.get("description")),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "creator".to_string(),
@@ -4371,8 +5360,7 @@ pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn invoke_flag_client_client_token_token_execute(
     pool: Extension<Pool>,
-    Path(client): Path<String>,
-    Path(token): Path<String>,
+    Path((client, token)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let db_client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = db_client
@@ -4485,9 +5473,18 @@ pub async fn invoke_flag_file(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4507,7 +5504,7 @@ pub async fn invoke_flag_file(
 
 #[allow(non_snake_case)]
 pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -4557,9 +5554,18 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -4580,7 +5586,7 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4612,9 +5618,18 @@ pub async fn market_cloud_unit_is_vip(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 ("vip".to_string(), Value::Bool(row.get("vip"))),
                 (
                     "creator".to_string(),
@@ -4669,9 +5684,18 @@ pub async fn market_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4688,7 +5712,7 @@ pub async fn market_list_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4713,17 +5737,32 @@ pub async fn market_list_install_log_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -4736,7 +5775,7 @@ pub async fn market_list_install_log_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4761,9 +5800,18 @@ pub async fn market_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4780,7 +5828,7 @@ pub async fn market_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4805,9 +5853,18 @@ pub async fn market_list_paging_page_size_size_category_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4824,7 +5881,7 @@ pub async fn market_list_paging_page_size_size_category_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4849,9 +5906,18 @@ pub async fn market_list_top_three(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4868,7 +5934,7 @@ pub async fn market_list_top_three(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -4890,9 +5956,18 @@ pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4927,16 +6002,28 @@ pub async fn market_flag_cover_pic(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "resourceName".to_string(),
-                    Value::String(row.get("resource_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "resourceType".to_string(),
-                    Value::String(row.get("resource_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("resource_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("path".to_string(), Value::String(row.get("path"))),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -4972,17 +6059,32 @@ pub async fn market_flag_install_log(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -4995,7 +6097,7 @@ pub async fn market_flag_install_log(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5044,9 +6146,18 @@ pub async fn market_flag_installed_version(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("version".to_string(), Value::String(row.get("version"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
                 ("status".to_string(), Value::String(row.get("status"))),
                 (
                     "creator".to_string(),
@@ -5103,8 +6214,14 @@ pub async fn market_id_download(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("module not found"))),
@@ -5127,9 +6244,18 @@ pub async fn module_compare_upload(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5161,9 +6287,18 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5179,7 +6314,7 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5202,9 +6337,18 @@ pub async fn module_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5220,7 +6364,7 @@ pub async fn module_list_category(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5243,9 +6387,18 @@ pub async fn module_output(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5265,7 +6418,11 @@ pub async fn module_output(
 
 #[allow(non_snake_case)]
 pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(Value::Array(vec![]), 0, 0)))
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(vec![]),
+        0,
+        0,
+    )))
 }
 
 #[allow(non_snake_case)]
@@ -5284,9 +6441,18 @@ pub async fn module_output_structure(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5320,9 +6486,18 @@ pub async fn module_output_flag_file(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5356,9 +6531,18 @@ pub async fn module_remove_structure_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5392,9 +6576,18 @@ pub async fn module_write_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5428,9 +6621,18 @@ pub async fn module_id_compare(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("entity".to_string(), Value::String(row.get("entity"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "entity".to_string(),
+                    Value::String(row.get::<_, Option<String>>("entity").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -5588,7 +6790,7 @@ pub async fn mpweixin_menu_delete_id(
 
 #[allow(non_snake_case)]
 pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -5695,9 +6897,18 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "appName".to_string(),
                     Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
@@ -5718,7 +6929,7 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5744,9 +6955,18 @@ pub async fn output_appInfoFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "appName".to_string(),
                     Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
@@ -5767,7 +6987,7 @@ pub async fn output_appInfoFlag_select(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5792,9 +7012,18 @@ pub async fn output_flag_select_file(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "selectFile".to_string(),
                     Value::String(row.get("select_file")),
@@ -5825,7 +7054,10 @@ pub async fn prompterrorlog_count_exceptionclass(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("count".to_string(), {
                     let __val: i64 = row.get("cnt");
@@ -5836,7 +7068,7 @@ pub async fn prompterrorlog_count_exceptionclass(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5863,7 +7095,10 @@ pub async fn prompterrorlog_count_loggername(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 ("count".to_string(), {
                     let __val: i64 = row.get("cnt");
@@ -5874,7 +7109,7 @@ pub async fn prompterrorlog_count_loggername(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5884,14 +7119,13 @@ pub async fn prompterrorlog_count_loggername(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -5901,16 +7135,28 @@ pub async fn prompterrorlog_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -5923,7 +7169,7 @@ pub async fn prompterrorlog_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5933,15 +7179,13 @@ pub async fn prompterrorlog_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3",
             &[&id, &date, &count],
         )
         .await
@@ -5951,16 +7195,28 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -5973,7 +7229,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -5983,15 +7239,13 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(exception_class): Path<String>,
+    Path((id, count, exception_class)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND exception_class = $2 ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND exception_class = $2 ORDER BY id ASC LIMIT $3",
             &[&id, &exception_class, &count],
         )
         .await
@@ -6001,16 +7255,28 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6023,7 +7289,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6033,15 +7299,13 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(logger_name): Path<String>,
+    Path((id, count, logger_name)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND logger_name = $2 ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id > $1 AND logger_name = $2 ORDER BY id ASC LIMIT $3",
             &[&id, &logger_name, &count],
         )
         .await
@@ -6051,16 +7315,28 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6073,7 +7349,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6083,14 +7359,13 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -6100,16 +7375,28 @@ pub async fn prompterrorlog_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6122,7 +7409,7 @@ pub async fn prompterrorlog_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6132,15 +7419,13 @@ pub async fn prompterrorlog_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3",
             &[&id, &date, &count],
         )
         .await
@@ -6150,16 +7435,28 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6172,7 +7469,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6182,15 +7479,13 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(exception_class): Path<String>,
+    Path((id, count, exception_class)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND exception_class = $2 ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND exception_class = $2 ORDER BY id DESC LIMIT $3",
             &[&id, &exception_class, &count],
         )
         .await
@@ -6200,16 +7495,28 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6222,7 +7529,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6232,15 +7539,13 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(logger_name): Path<String>,
+    Path((id, count, logger_name)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND logger_name = $2 ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id < $1 AND logger_name = $2 ORDER BY id DESC LIMIT $3",
             &[&id, &logger_name, &count],
         )
         .await
@@ -6250,16 +7555,28 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6272,7 +7589,7 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6297,16 +7614,28 @@ pub async fn prompterrorlog_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "exceptionClass".to_string(),
-                    Value::String(row.get("exception_class")),
+                    Value::String(
+                        row.get::<_, Option<String>>("exception_class")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "loggerName".to_string(),
-                    Value::String(row.get("logger_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("logger_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6499,9 +7828,18 @@ pub async fn application_get_by_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appId".to_string(), Value::String(row.get("app_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
                 ("description".to_string(), Value::Null),
             ]),
         )))),
@@ -6560,6 +7898,72 @@ pub async fn application_save(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
+}
+
+/// GET /api/program_center/application/list —— 应用列表（list 风格，查 x_applications 032/037/038）
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn application_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, app_id, description, disable, creator, create_time \
+             FROM x_applications WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default()),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("description")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 #[derive(Debug, Deserialize)]
@@ -6658,13 +8062,25 @@ pub async fn schedule_list_schedule(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "cronExpression".to_string(),
-                    Value::String(row.get("cron_expression")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cron_expression")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6681,7 +8097,7 @@ pub async fn schedule_list_schedule(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6706,17 +8122,32 @@ pub async fn schedule_list_schedulelocal(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "cronExpression".to_string(),
-                    Value::String(row.get("cron_expression")),
+                    Value::String(
+                        row.get::<_, Option<String>>("cron_expression")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "serverNode".to_string(),
-                    Value::String(row.get("server_node")),
+                    Value::String(
+                        row.get::<_, Option<String>>("server_node")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6733,7 +8164,7 @@ pub async fn schedule_list_schedulelocal(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6759,17 +8190,32 @@ pub async fn schedule_list_schedulelog_application_application(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6782,7 +8228,7 @@ pub async fn schedule_list_schedulelog_application_application(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6805,13 +8251,25 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "scheduleId".to_string(),
-                    Value::String(row.get("schedule_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("schedule_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -6824,7 +8282,7 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6867,9 +8325,18 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -6890,7 +8357,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6900,14 +8367,13 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::int OFFSET ($1 - 1) * $2",
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
             &[&page, &size],
         )
         .await
@@ -6917,9 +8383,18 @@ pub async fn script_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
@@ -6940,7 +8415,7 @@ pub async fn script_list_paging_page_size_size(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -6965,10 +8440,22 @@ pub async fn script_name_name(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -7005,9 +8492,18 @@ pub async fn script_name_name_imported(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "importedContent".to_string(),
                     Value::String(row.get("imported_content")),
@@ -7048,10 +8544,22 @@ pub async fn script_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -7088,10 +8596,22 @@ pub async fn script_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -7113,7 +8633,7 @@ pub async fn script_id(
 #[allow(non_snake_case)]
 pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7123,7 +8643,7 @@ pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 #[allow(non_snake_case)]
 pub async fn test_test2(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7172,14 +8692,13 @@ pub async fn tokenthreshold_update(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -7189,15 +8708,27 @@ pub async fn unexpectederrorlog_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7211,7 +8742,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7221,15 +8752,13 @@ pub async fn unexpectederrorlog_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id > $1 AND DATE(create_time) = $2::date ORDER BY id ASC LIMIT $3",
             &[&id, &date, &count],
         )
         .await
@@ -7239,15 +8768,27 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7261,7 +8802,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7271,14 +8812,13 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -7288,15 +8828,27 @@ pub async fn unexpectederrorlog_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7310,7 +8862,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7320,15 +8872,13 @@ pub async fn unexpectederrorlog_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id < $1 AND DATE(create_time) = $2::date ORDER BY id DESC LIMIT $3",
             &[&id, &date, &count],
         )
         .await
@@ -7338,15 +8888,27 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7360,7 +8922,7 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7385,15 +8947,27 @@ pub async fn unexpectederrorlog_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "errorType".to_string(),
-                    Value::String(row.get("error_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("error_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("message".to_string(), Value::String(row.get("message"))),
+                (
+                    "message".to_string(),
+                    Value::String(row.get::<_, Option<String>>("message").unwrap_or_default()),
+                ),
                 (
                     "stackTrace".to_string(),
-                    Value::String(row.get("stack_trace")),
+                    Value::String(
+                        row.get::<_, Option<String>>("stack_trace")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
@@ -7412,7 +8986,7 @@ pub async fn unexpectederrorlog_id(
 #[allow(non_snake_case)]
 pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7424,7 +8998,7 @@ pub async fn validation_scripting_benchmark(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
         0,
@@ -7548,7 +9122,7 @@ pub async fn zhengwudingding_sync_organization_callback(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// plan002 U2 — Java 对齐缺口端点
+// plan002 U2 — o2server 对齐缺口端点
 //
 // 表：x_program_warn_log / x_program_app_pack（migration 062 幂等补建），
 // 其余沿用既有表。写操作按 IDOR 文档门禁
@@ -7673,7 +9247,7 @@ async fn warnlog_list(
     let data: Vec<Value> = rows.iter().map(warnlog_row_to_value).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7683,8 +9257,7 @@ async fn warnlog_list(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(&pool, "WHERE id < $1", &[&id, &count]).await
 }
@@ -7692,9 +9265,7 @@ pub async fn warnlog_list_next_count(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_next_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(
         &pool,
@@ -7707,8 +9278,7 @@ pub async fn warnlog_list_next_count_date_date(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(&pool, "WHERE id > $1", &[&id, &count]).await
 }
@@ -7716,9 +9286,7 @@ pub async fn warnlog_list_prev_count(
 #[allow(non_snake_case)]
 pub async fn warnlog_list_prev_count_date_date(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
-    Path(date): Path<String>,
+    Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     warnlog_list(
         &pool,
@@ -7769,7 +9337,7 @@ pub async fn storagemappings_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -7828,7 +9396,11 @@ pub async fn authentication_who(
             );
             map.insert("token".to_string(), Value::String(String::new()));
             map.insert("person".to_string(), Value::String(String::new()));
-            Ok(Json(ActionResult::java_success(Value::Object(map), 0, -1)))
+            Ok(Json(ActionResult::legacy_success(
+                Value::Object(map),
+                0,
+                -1,
+            )))
         }
     }
 }
@@ -7885,18 +9457,18 @@ pub async fn center_regist_applications_update(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// plan002 U2 残余闭合（9 条，路径对齐 Java v9 全集）：
+// plan002 U2 残余闭合（9 条，路径对齐 o2server v9 全集）：
 //
 // - config PUT 家族（3 条）：centerserver / person / token 的写回。
-//   Java 侧为 Config 对象保存（ActionEditConfig），Rust 侧以
+//   o2server 侧为 Config 对象保存（ActionEditConfig），Rust 侧以
 //   x_program_config 键值域持久化；管理员门禁（require_admin）。
 // - invoke CRUD（4 条）：POST/GET/PUT/DELETE /invoke[/{flag}]，
-//   表 x_program_invoke（migration 074），flag 语义对齐 Java emc.flag
+//   表 x_program_invoke（migration 074），flag 语义对齐 o2server emc.flag
 //   （id 或 name 或 alias）；写操作 serviceControlAble ≈ 管理员门禁；
 //   name/alias 归一化查重（trim 后比对，排除自身 id）。
-// - appstyle erase GET 家族（2 条）：GET .../erase 为 Java 原生方法，
+// - appstyle erase GET 家族（2 条）：GET .../erase 为 o2server 原生方法，
 //   语义是"清除当前该类图片"（无 id 参数）；补挂在既有 DELETE 注册上，
-//   管理员门禁（对齐 Java ExceptionAccessDenied）。
+//   管理员门禁（对齐 o2server ExceptionAccessDenied）。
 // ══════════════════════════════════════════════════════════════════
 
 /// config PUT 家族的公共实现：按 key 域 upsert 配置 JSON
@@ -7947,7 +9519,7 @@ async fn u2_config_domain_put(
     ))))
 }
 
-/// PUT /jaxrs/program_center/config/centerserver —— 保存中心服务器配置
+/// PUT /api/program_center/config/centerserver —— 保存中心服务器配置
 #[allow(non_snake_case)]
 pub async fn u2_config_centerserver_put(
     pool: Extension<Pool>,
@@ -7957,7 +9529,7 @@ pub async fn u2_config_centerserver_put(
     u2_config_domain_put(&pool, &session, "centerserver", body).await
 }
 
-/// PUT /jaxrs/program_center/config/person —— 人员配置保存
+/// PUT /api/program_center/config/person —— 人员配置保存
 #[allow(non_snake_case)]
 pub async fn u2_config_person_put(
     pool: Extension<Pool>,
@@ -7967,7 +9539,7 @@ pub async fn u2_config_person_put(
     u2_config_domain_put(&pool, &session, "person", body).await
 }
 
-/// PUT /jaxrs/program_center/config/token —— 令牌配置保存
+/// PUT /api/program_center/config/token —— 令牌配置保存
 #[allow(non_snake_case)]
 pub async fn u2_config_token_put(
     pool: Extension<Pool>,
@@ -8024,7 +9596,7 @@ async fn u2_invoke_find_by_flag(
     client: &deadpool_postgres::tokio_postgres::Client,
     flag: &str,
 ) -> Result<Option<String>, AppError> {
-    // 对齐 Java emc.flag：id 或 name 或 alias 命中
+    // 对齐 o2server emc.flag：id 或 name 或 alias 命中
     let row = client
         .query_opt(
             "SELECT id FROM x_program_invoke \
@@ -8039,7 +9611,7 @@ async fn u2_invoke_find_by_flag(
     Ok(row.map(|r| r.get::<_, String>("id")))
 }
 
-/// POST /jaxrs/program_center/invoke —— 创建服务调用
+/// POST /api/program_center/invoke —— 创建服务调用
 #[allow(non_snake_case)]
 pub async fn u2_invoke_create(
     pool: Extension<Pool>,
@@ -8121,7 +9693,7 @@ pub async fn u2_invoke_create(
     ))))
 }
 
-/// GET /jaxrs/program_center/invoke/{flag} —— 按 id/name/alias 查询
+/// GET /api/program_center/invoke/{flag} —— 按 id/name/alias 查询
 #[allow(non_snake_case)]
 pub async fn u2_invoke_get(
     pool: Extension<Pool>,
@@ -8158,7 +9730,7 @@ pub async fn u2_invoke_get(
     }))))
 }
 
-/// PUT /jaxrs/program_center/invoke/{flag} —— 更新服务调用
+/// PUT /api/program_center/invoke/{flag} —— 更新服务调用
 #[allow(non_snake_case)]
 pub async fn u2_invoke_update(
     pool: Extension<Pool>,
@@ -8226,7 +9798,7 @@ pub async fn u2_invoke_update(
     ))))
 }
 
-/// DELETE /jaxrs/program_center/invoke/{flag} —— 删除服务调用
+/// DELETE /api/program_center/invoke/{flag} —— 删除服务调用
 #[allow(non_snake_case)]
 pub async fn u2_invoke_delete(
     pool: Extension<Pool>,
@@ -8248,7 +9820,7 @@ pub async fn u2_invoke_delete(
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 
-// --- appstyle erase（GET，清除当前类图，对齐 Java 无 id 参数语义）---
+// --- appstyle erase（GET，清除当前类图，对齐 o2server 无 id 参数语义）---
 
 async fn u2_appstyle_erase_current(
     pool: &Pool,
@@ -8278,7 +9850,7 @@ async fn u2_appstyle_erase_current(
     }))))
 }
 
-/// GET /jaxrs/program_center/appstyle/image/login/avatar/erase —— 清除当前登录头像
+/// GET /api/program_center/appstyle/image/login/avatar/erase —— 清除当前登录头像
 #[allow(non_snake_case)]
 pub async fn u2_appstyle_login_avatar_erase_get(
     pool: Extension<Pool>,
@@ -8287,7 +9859,7 @@ pub async fn u2_appstyle_login_avatar_erase_get(
     u2_appstyle_erase_current(&pool, &session, "login_avatar").await
 }
 
-/// GET /jaxrs/program_center/appstyle/image/launch/logo/erase —— 清除当前启动 Logo
+/// GET /api/program_center/appstyle/image/launch/logo/erase —— 清除当前启动 Logo
 #[allow(non_snake_case)]
 pub async fn u2_appstyle_launch_logo_erase_get(
     pool: Extension<Pool>,
@@ -8296,7 +9868,7 @@ pub async fn u2_appstyle_launch_logo_erase_get(
     u2_appstyle_erase_current(&pool, &session, "launch_logo").await
 }
 
-// ── agent list / delete（Java: GET/DELETE /agent）──────────────────────
+// ── agent list / delete（o2server: GET/DELETE /agent）──────────────────────
 
 #[allow(non_snake_case)]
 pub async fn agent_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -8329,7 +9901,7 @@ pub async fn agent_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -8366,7 +9938,7 @@ pub async fn agent_delete_flag(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// plan002 U2 终扫闭合（U3 批次，对齐 java-endpoint-inventory.json
+// plan002 U2 终扫闭合（U3 批次，对齐 o2server-endpoint-inventory.json
 // x_program_center 剩余 method+path 缺口）。沿用 U2 约定：
 //   - 真实参数化 SQL（复用 032/037/038/062/074 表 + migration 082 的
 //     x_program_agent.enable）；
@@ -8553,7 +10125,7 @@ fn appstyle_resource_type_of(path: &'static str) -> &'static str {
     path
 }
 
-/// GET /appstyle/current/update —— 读取当前样式配置（Java 该端点为 GET）
+/// GET /appstyle/current/update —— 读取当前样式配置（o2server 该端点为 GET）
 #[allow(non_snake_case)]
 pub async fn u3_appstyle_current_update_get(
     pool: Extension<Pool>,
@@ -8579,7 +10151,7 @@ pub async fn u3_appstyle_current_update_get(
     }
 }
 
-/// PUT /jaxrs/program_center/appstyle —— 保存当前样式（复用 config 键值域，管理员门禁）
+/// PUT /api/program_center/appstyle —— 保存当前样式（复用 config 键值域，管理员门禁）
 #[allow(non_snake_case)]
 pub async fn u3_appstyle_put(
     pool: Extension<Pool>,
@@ -8809,8 +10381,7 @@ async fn u3_bar_mass_page(
 #[allow(non_snake_case)]
 pub async fn u3_bar_create_mass_from_count(
     pool: Extension<Pool>,
-    Path(from): Path<i64>,
-    Path(count): Path<i64>,
+    Path((from, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_mass_page(&pool, from, count, "bar").await
 }
@@ -8818,8 +10389,7 @@ pub async fn u3_bar_create_mass_from_count(
 #[allow(non_snake_case)]
 pub async fn u3_foo_create_mass_from_count(
     pool: Extension<Pool>,
-    Path(from): Path<i64>,
-    Path(count): Path<i64>,
+    Path((from, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_mass_page(&pool, from, count, "foo").await
 }
@@ -8861,9 +10431,7 @@ async fn u3_bar_select_grouped(
 #[allow(non_snake_case)]
 pub async fn u3_bar_select1_field_value_count(
     pool: Extension<Pool>,
-    Path(field): Path<String>,
-    Path(value): Path<String>,
-    Path(count): Path<i64>,
+    Path((field, value, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_select_grouped(&pool, &field, &value, count, "select1").await
 }
@@ -8879,9 +10447,7 @@ pub async fn u3_bar_select2_count(
 #[allow(non_snake_case)]
 pub async fn u3_bar_select3_field_value_count(
     pool: Extension<Pool>,
-    Path(field): Path<String>,
-    Path(value): Path<String>,
-    Path(count): Path<i64>,
+    Path((field, value, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_select_grouped(&pool, &field, &value, count, "select3").await
 }
@@ -8889,9 +10455,7 @@ pub async fn u3_bar_select3_field_value_count(
 #[allow(non_snake_case)]
 pub async fn u3_bar_select4_field_value_count(
     pool: Extension<Pool>,
-    Path(field): Path<String>,
-    Path(value): Path<String>,
-    Path(count): Path<i64>,
+    Path((field, value, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_bar_select_grouped(&pool, &field, &value, count, "select4").await
 }
@@ -8947,13 +10511,11 @@ pub async fn u3_collect_update(
 pub async fn u3_collect_delete_name_mobile_code(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    Path(name): Path<String>,
-    Path(mobile): Path<String>,
-    Path(code): Path<String>,
+    Path((name, mobile, code)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    // 对齐 Java emc.flag 语义：三元组任一命中即视为匹配记录
+    // 对齐 o2server emc.flag 语义：三元组任一命中即视为匹配记录
     let n = client
         .execute(
             "DELETE FROM x_program_collect WHERE person_id = $1 OR title = $2 OR creator = $3",
@@ -8973,8 +10535,7 @@ pub async fn u3_collect_delete_name_mobile_code(
 #[allow(non_snake_case)]
 pub async fn u3_collect_controllermobile_get(
     pool: Extension<Pool>,
-    Path(name): Path<String>,
-    Path(mobile): Path<String>,
+    Path((name, mobile)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -9000,7 +10561,7 @@ pub async fn u3_collect_controllermobile_get(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9077,7 +10638,7 @@ pub async fn u3_config_dump(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9379,7 +10940,7 @@ pub async fn u3_invoke_list_all(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9414,11 +10975,106 @@ pub async fn u3_invoke_list_by_category(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
+}
+
+/// GET /api/program_center/invoke/list —— 服务调用列表（list 风格，查 x_program_invoke 074；与 u3_invoke_list_all 同输出键）
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            json!({
+                "id": opt("id"),
+                "name": opt("name"),
+                "alias": opt("alias"),
+                "category": opt("category"),
+                "enable": row.get::<_, bool>("enable"),
+                "enableAnonymous": row.get::<_, bool>("enable_anonymous"),
+                "validated": row.get::<_, bool>("validated"),
+                "createTime": opt("create_time"),
+            })
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── invoke 家族 CRUD（x_program_invoke 074，通用参数化写；无 deleted_at → 硬删，BOOLEAN/JSONB 列不映射）──
+fn invoke_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_program_invoke",
+        columns: &[
+            ("name", "name"),
+            ("alias", "alias"),
+            ("category", "category"),
+        ],
+        soft_delete: false,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &invoke_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &invoke_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn invoke_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &invoke_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }
 
 async fn u3_invoke_execute_inner(
@@ -9474,9 +11130,7 @@ pub async fn u3_invoke_execute(
 #[allow(non_snake_case)]
 pub async fn u3_invoke_execute_with_token(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
-    Path(_client): Path<String>,
-    Path(token): Path<String>,
+    Path((flag, _client, token)): Path<(String, String, String)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_invoke_execute_inner(&pool, &flag, Some(&token)).await
@@ -9608,7 +11262,7 @@ pub async fn u3_market_install_log_flag(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(schedule_log_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9670,7 +11324,7 @@ async fn u3_market_list_paged(
         })
         .collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -9681,8 +11335,7 @@ async fn u3_market_list_paged(
 #[allow(non_snake_case)]
 pub async fn u3_market_list_paging_post(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_market_list_paged(&pool, page, size, None).await
@@ -9692,9 +11345,7 @@ pub async fn u3_market_list_paging_post(
 #[allow(non_snake_case)]
 pub async fn u3_market_list_paging_category(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
-    Path(category): Path<String>,
+    Path((page, size, category)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u3_market_list_paged(&pool, page, size, Some(category.trim())).await
 }
@@ -9703,8 +11354,7 @@ pub async fn u3_market_list_paging_category(
 #[allow(non_snake_case)]
 pub async fn u3_market_install_log_paging_post(
     pool: Extension<Pool>,
-    Path(page): Path<i64>,
-    Path(size): Path<i64>,
+    Path((page, size)): Path<(i64, i64)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -9719,14 +11369,14 @@ pub async fn u3_market_install_log_paging_post(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(schedule_log_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /module/output/structure —— 最新模块结构（Java 该端点无参数）
+/// GET /module/output/structure —— 最新模块结构（o2server 该端点无参数）
 #[allow(non_snake_case)]
 pub async fn u3_module_output_structure_latest(
     pool: Extension<Pool>,
@@ -9798,7 +11448,7 @@ pub async fn u3_module_compare_upload_put(
     u3_module_sync_action(&pool, "compare_upload").await
 }
 
-/// GET /mpweixin/menu/create/to/weixin —— 读取最新菜单（Java GET 无参数变体）
+/// GET /mpweixin/menu/create/to/weixin —— 读取最新菜单（o2server GET 无参数变体）
 #[allow(non_snake_case)]
 pub async fn u3_mpweixin_menu_latest(
     pool: Extension<Pool>,
@@ -10144,7 +11794,7 @@ pub async fn u3_welink_request_pull_sync_post(
     )))
 }
 
-// ── apppack 家族（Java AppPackAction / AppPackAnonymousAction，migration 062 建表）──
+// ── apppack 家族（o2server AppPackAction / AppPackAnonymousAction，migration 062 建表）──
 
 #[derive(Debug, Deserialize)]
 pub struct AppPackStartRequest {
@@ -10188,7 +11838,7 @@ pub async fn apppack_info_list(
 
     let data: Vec<Value> = rows.iter().map(apppack_row_to_value).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -10380,7 +12030,7 @@ pub async fn apppack_server_connect(
     ))))
 }
 
-// ── dict 家族写端点（Java DictAction POST "" / PUT|POST|DELETE {dictFlag}/{path}/data / DELETE {id}）──
+// ── dict 家族写端点（o2server DictAction POST "" / PUT|POST|DELETE {dictFlag}/{path}/data / DELETE {id}）──
 
 #[derive(Debug, Deserialize)]
 pub struct DictCreateRequest {
@@ -10463,8 +12113,7 @@ async fn dict_data_write(
 #[allow(non_snake_case)]
 pub async fn dict_data_save_put(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(path): Path<String>,
+    Path((dict_flag, path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     dict_data_write(pool, dict_flag, path, body).await
@@ -10473,8 +12122,7 @@ pub async fn dict_data_save_put(
 #[allow(non_snake_case)]
 pub async fn dict_data_delete_path(
     pool: Extension<Pool>,
-    Path(dict_flag): Path<String>,
-    Path(path): Path<String>,
+    Path((dict_flag, path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let n = client

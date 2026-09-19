@@ -1,7 +1,10 @@
 
+# kernel-api
+
 :Original: Documentation/core-api/kernel-api.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
@@ -15,6 +18,7 @@
 
 
 该API在以下内核代码中:
+
 
 include/linux/list.h
 
@@ -30,6 +34,7 @@ include/linux/list.h
 
 该API在以下内核代码中:
 
+
 lib/vsprintf.c
 
 include/linux/kernel.h
@@ -44,6 +49,7 @@ lib/string_helpers.c
 
 
 该API在以下内核代码中:
+
 
 include/linux/fortify-string.h
 
@@ -63,6 +69,7 @@ Linux内核提供了很多实用的基本函数。
 
 该API在以下内核代码中:
 
+
 include/asm-generic/bitops/instrumented-atomic.h
 
 include/asm-generic/bitops/instrumented-non-atomic.h
@@ -73,6 +80,7 @@ include/asm-generic/bitops/instrumented-lock.h
 
 
 该API在以下内核代码中:
+
 
 lib/bitmap.c
 
@@ -93,12 +101,14 @@ include/linux/bitmap.h
 
 该API在以下内核代码中:
 
+
 lib/cmdline.c
 
 ### 排序
 
 
 该API在以下内核代码中:
+
 
 lib/sort.c
 
@@ -108,6 +118,7 @@ lib/list_sort.c
 
 
 该API在以下内核代码中:
+
 
 lib/textsearch.c
 
@@ -123,6 +134,7 @@ include/linux/textsearch.h
 
 该API在以下内核代码中:
 
+
 include/linux/overflow.h
 
 ### CRC函数
@@ -131,6 +143,7 @@ include/linux/overflow.h
 **译注：CRC，Cyclic Redundancy Check，循环冗余校验**
 
 该API在以下内核代码中:
+
 
 lib/crc4.c
 
@@ -151,12 +164,14 @@ lib/crc-itu-t.c
 
 该API在以下内核代码中:
 
+
 include/linux/log2.h
 
 ### 整数幂函数
 
 
 该API在以下内核代码中:
+
 
 lib/math/int_pow.c
 
@@ -166,6 +181,7 @@ lib/math/int_sqrt.c
 
 
 该API在以下内核代码中:
+
 
 include/asm-generic/div64.h
 
@@ -178,6 +194,7 @@ lib/math/gcd.c
 
 该API在以下内核代码中:
 
+
 lib/uuid.c
 
 ## 内核IPC设备
@@ -188,6 +205,7 @@ lib/uuid.c
 
 该API在以下内核代码中:
 
+
 ipc/util.c
 
 ## FIFO 缓冲区
@@ -197,6 +215,7 @@ ipc/util.c
 
 
 该API在以下内核代码中:
+
 
 include/linux/kfifo.h
 
@@ -211,6 +230,7 @@ include/linux/kfifo.h
 
 该API在以下内核代码中:
 
+
 kernel/relay.c
 
 kernel/relay.c
@@ -222,6 +242,7 @@ kernel/relay.c
 
 
 该API在以下内核代码中:
+
 
 kernel/module/kmod.c
 
@@ -236,12 +257,14 @@ kernel/module/kmod.c
 
 该API在以下内核代码中:
 
+
 kernel/dma.c
 
 ### 资源管理
 
 
 该API在以下内核代码中:
+
 
 kernel/resource.c
 
@@ -252,12 +275,14 @@ kernel/resource.c
 
 该API在以下内核代码中:
 
+
 arch/x86/kernel/cpu/mtrr/mtrr.c
 
 ## 安全框架
 
 
 该API在以下内核代码中:
+
 
 security/security.c
 
@@ -267,6 +292,7 @@ security/inode.c
 
 
 该API在以下内核代码中:
+
 
 kernel/audit.c
 
@@ -279,12 +305,14 @@ kernel/auditfilter.c
 
 该API在以下内核代码中:
 
+
 kernel/acct.c
 
 ## 块设备
 
 
 该API在以下内核代码中:
+
 
 include/linux/bio.h
 
@@ -315,6 +343,7 @@ block/genhd.c
 
 该API在以下内核代码中:
 
+
 fs/char_dev.c
 
 ## 时钟框架
@@ -342,6 +371,7 @@ fs/char_dev.c
 
 该API在以下内核代码中:
 
+
 include/linux/clk.h
 
 ## 同步原语
@@ -351,6 +381,7 @@ include/linux/clk.h
 
 
 该API在以下内核代码中:
+
 
 include/linux/rcupdate.h
 

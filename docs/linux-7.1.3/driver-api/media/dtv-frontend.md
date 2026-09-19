@@ -1,8 +1,10 @@
+# dtv-frontend
+
 ﻿
-### 数字电视前端 kABI
+## 数字电视前端 kABI
 
 
-#### 数字电视前端
+### 数字电视前端
 
 
 数字电视前端 kABI 定义了将底层、与硬件相关的驱动注册到一个与硬件无关的前端层时所需的驱动内部接口。它仅对数字电视设备驱动开发者有意义。此 API 的头文件名为 `dvb_frontend.h`，位`include/media/`
@@ -93,7 +95,7 @@
 如果硬件内部自带某种之字形算法，则应定义一个返`DVBFE_ALGO_HW` `.get_frontend_algo` 函数
 
    核心前端支持还提供了第三种类型（`DVBFE_ALGO_CUSTOM`），以允许驱动定义自己的硬件辅助算法。如今几乎不需要使用它。使`DVBFE_ALGO_CUSTOM` 需要在 struct dvb_frontend_ops 中提供其他函数回调
-##### 将前端驱动挂接到桥接驱动
+## 将前端驱动挂接到桥接驱动
 
 
 在使用数字电视前端核心之前，桥接驱动应先挂接前端解调器、调谐器SEC 设备，并调用
@@ -102,7 +104,7 @@
 驱动还应`dvb_frontend_suspend()` 作为`device_driver` `suspend()` 处理函数的一部分来调用，并将 `dvb_frontend_resume()` 作为`device_driver` `resume()` 处理函数的一部分来调用
 还提供了一些其他的可选函数，用于处理某些特殊情况
 
-#### 数字电视前端统计信息
+### 数字电视前端统计信息
 
 
 ##### 简

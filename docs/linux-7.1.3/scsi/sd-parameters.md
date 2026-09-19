@@ -1,7 +1,9 @@
+# sd-parameters
+
 ﻿## Linux SCSI 磁盘驱动（sd）参
 
 
-### cache_type（RW
+## cache_type（RW
 
 
 启用/禁用驱动器写缓存与读缓存

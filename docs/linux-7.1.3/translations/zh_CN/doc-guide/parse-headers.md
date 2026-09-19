@@ -1,5 +1,7 @@
 
 
+# parse-headers
+
 :Original: Documentation/doc-guide/parse-headers.rst
 
 :译者: 吴想成 Wu XiangCheng <bobwxc@email.cn>
@@ -132,7 +134,7 @@ The \ **replace**\  味着它将为 \ **type**\ 类型的 \ **name**\ 符号生�
  \ **symbol**\ 类型的  :ref: 。引用的类型也可以在replace语句中显式定义。
 
 
-#### 示例
+## 示例
 
 
 
@@ -162,7 +164,7 @@ enum foo { BAR1, BAR2, PRIVATE };
 
 
 
-#### 缺陷
+### 缺陷
 
 
 

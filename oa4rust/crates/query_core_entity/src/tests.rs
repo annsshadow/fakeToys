@@ -25,7 +25,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/item/list")
+                    .uri("/api/query/item/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -45,7 +45,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/view/list")
+                    .uri("/api/query/view/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -65,7 +65,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/view/test-view-id")
+                    .uri("/api/query/view/test-view-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -85,7 +85,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/view/create")
+                    .uri("/api/query/view/create")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"name":"test"}"#))
@@ -106,7 +106,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/import/list")
+                    .uri("/api/query/import/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

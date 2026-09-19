@@ -1,3 +1,5 @@
+# extcon-intel-int3496
+
 ﻿## Intel INT3496 ACPI 设备 extcon 驱动文档
 
 

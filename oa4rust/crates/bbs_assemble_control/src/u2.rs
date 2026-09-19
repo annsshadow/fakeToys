@@ -1,4 +1,4 @@
-//! plan002 U2 — BBS 端点全量闭合（对照 jaxrs 静态提取的 106 条 Java 全集补齐）。
+//! plan002 U2 — BBS 端点全量闭合（对照 o2server 静态提取的 106 条 o2server 全集补齐）。
 //!
 //! 分层约定（沿用 cms_assemble_control U2 先例）：
 //! - 读操作公开；写操作按 IDOR 门禁：
@@ -9,7 +9,7 @@
 //!   缺列由 migrations/067_bbs_u2_tables.sql 幂等补齐；全新域建表见同 migration。
 //! - 无法落地的端点（二进制上传下载依赖 shared::storage 接线、图片引擎、
 //!   外部 x_program_center 同步）注册为显式 501 + tracing::warn。
-//! - normalize_java_path 归一化类级+方法级路径并折叠相邻重复段，
+//! - normalize_legacy_path 归一化类级+方法级路径并折叠相邻重复段，
 //!   防止 `{page}/{page}` 型畸形与通配吞并。
 
 use axum::{
@@ -32,10 +32,10 @@ type PgClient = deadpool_postgres::tokio_postgres::Client;
 // 路径归一化（防通配冲突 / 畸形重复段）
 // ══════════════════════════════════════════════════════════════════
 
-/// 拼接类级与方法级 @Path 并归一化：去空段与首尾斜杠；折叠相邻重复段
+/// 拼接类级与方法级 路径注解 并归一化：去空段与首尾斜杠；折叠相邻重复段
 /// （历史事故形态 `reply/filter/list/{page}/{page}/{count}/{count}`），
 /// 使同一参数名不会在同一路由中出现两次。
-pub fn normalize_java_path(class_path: &str, method_path: &str) -> String {
+pub fn normalize_legacy_path(class_path: &str, method_path: &str) -> String {
     let raw = format!(
         "{}/{}",
         class_path.trim_matches('/'),
@@ -254,7 +254,7 @@ macro_rules! unimplemented_endpoint {
     };
 }
 
-// Java AttachmentAction.downloadWithSubject：附件二进制流下载，
+// o2server AttachmentAction.downloadWithSubject：附件二进制流下载，
 // 依赖 shared::storage 接线（见 lib.rs U6b 注释），当前显式 501。
 unimplemented_endpoint!(
     attachment_download_501,
@@ -272,7 +272,7 @@ unimplemented_endpoint!(
     attachment_upload_callback_501,
     "multipart upload pending shared::storage wiring (plan002 U6b)"
 );
-// Java PictureAction.pictureEncode：图片解码缩放后转 base64，需要图像引擎。
+// o2server PictureAction.pictureEncode：图片解码缩放后转 base64，需要图像引擎。
 unimplemented_endpoint!(
     picture_encode_501,
     "image decode/resize engine not available"
@@ -281,7 +281,7 @@ unimplemented_endpoint!(
     picture_section_icon_501,
     "icon upload pending shared::storage wiring (plan002 U6b)"
 );
-// Java SectionInfoAction.syn（ActionSynApplicationsFromMarket）调用外部
+// o2server SectionInfoAction.syn（ActionSynApplicationsFromMarket）调用外部
 // x_program_center market/list/paging 同步，属外部服务依赖。
 unimplemented_endpoint!(
     section_syn_501,
@@ -427,11 +427,15 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
                 ("completed".to_string(), Value::Bool(r.get("completed"))),
                 (
                     "viewCount".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i32>("view_count"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i32>>("view_count").unwrap_or(0),
+                    )),
                 ),
                 (
                     "replyCount".to_string(),
-                    Value::Number(serde_json::Number::from(r.get::<_, i32>("reply_count"))),
+                    Value::Number(serde_json::Number::from(
+                        r.get::<_, Option<i32>>("reply_count").unwrap_or(0),
+                    )),
                 ),
             ]);
             Ok(Json(ActionResult::success(Value::Object(map))))
@@ -440,7 +444,7 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
     }
 }
 
-/// POST user/subject — 发表主题（Java SubjectInfoManagerUserAction.save）。
+/// POST user/subject — 发表主题（o2server SubjectInfoManagerUserAction.save）。
 #[allow(non_snake_case)]
 pub async fn u2_subject_save(pool: Extension<Pool>, body: axum::extract::Json<Value>) -> ApiResult {
     let title = match body_str(&body, &["title"]) {
@@ -981,7 +985,7 @@ pub async fn u2_reply_filter_list(
     ))))
 }
 
-/// POST user/reply — 发表回复（Java ReplyInfoManagerUserAction.save）。
+/// POST user/reply — 发表回复（o2server ReplyInfoManagerUserAction.save）。
 #[allow(non_snake_case)]
 pub async fn u2_user_reply_save(
     pool: Extension<Pool>,
@@ -1209,7 +1213,7 @@ pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "parent_id = $1", &id).await?;
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1225,7 +1229,7 @@ pub async fn u2_user_section_forum(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_sections(&client, "forum_id = $1", &forum_id).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1368,7 +1372,7 @@ pub async fn u2_role_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
     }
 }
 
-/// GET user/role/all — BBS 角色全量（对齐 Java RoleInfoAction.listAll，读 x_bbs_role）。
+/// GET user/role/all — BBS 角色全量（对齐 o2server RoleInfoAction.listAll，读 x_bbs_role）。
 #[allow(non_snake_case)]
 pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1382,7 +1386,7 @@ pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1472,7 +1476,7 @@ async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) 
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1728,7 +1732,7 @@ pub async fn u2_role_by_unit(pool: Extension<Pool>, body: axum::extract::Json<Va
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = roles_bound_to(&client, "unit", &unit).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1745,7 +1749,7 @@ pub async fn u2_role_by_user(pool: Extension<Pool>, body: axum::extract::Json<Va
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = roles_bound_to(&client, "person", &person).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1806,7 +1810,7 @@ pub async fn u2_permission_root(pool: Extension<Pool>) -> ApiResult {
                 "count".to_string(),
                 Value::Number(serde_json::Number::from(total_row.get::<_, i64>(0))),
             ),
-            // 无显式权限配置时与 Java 默认一致：登录即可发帖回帖。
+            // 无显式权限配置时与 o2server 默认一致：登录即可发帖回帖。
             ("defaultPublishable".to_string(), Value::Bool(true)),
             ("defaultReplyPublishable".to_string(), Value::Bool(true)),
         ]),
@@ -1827,7 +1831,7 @@ async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str)
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(permission_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1938,7 +1942,7 @@ pub async fn u2_setting_all(pool: Extension<Pool>) -> ApiResult {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, None).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -1991,7 +1995,7 @@ pub async fn u2_setting_update(
     ))))
 }
 
-/// PUT user/setting/code — 按 code 查配置（Java getByCode）。
+/// PUT user/setting/code — 按 code 查配置（o2server getByCode）。
 #[allow(non_snake_case)]
 pub async fn u2_setting_get_by_code(
     pool: Extension<Pool>,
@@ -2004,7 +2008,7 @@ pub async fn u2_setting_get_by_code(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let data = query_settings(&client, Some(("code", &code))).await?;
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -2142,7 +2146,7 @@ pub async fn u2_userinfo_filter(
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -2223,7 +2227,7 @@ pub async fn u2_attachment_list_by_subject(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -2292,7 +2296,7 @@ pub async fn u2_subjectattach_list(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,
@@ -2300,7 +2304,7 @@ pub async fn u2_subjectattach_list(
 }
 
 /// GET subjectattach/{id}/binary/base64/{size} — 存量字节转 base64。
-/// Java 版会按 size 缩放图片；无图像引擎时返回原始字节 base64（size 仅透传）。
+/// o2server 版会按 size 缩放图片；无图像引擎时返回原始字节 base64（size 仅透传）。
 #[allow(non_snake_case)]
 pub async fn u2_subjectattach_base64(
     pool: Extension<Pool>,
@@ -2395,7 +2399,10 @@ pub async fn u2_shutup_get_mine(
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(r.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "person".to_string(),
                     r.get::<_, Option<String>>("person")
@@ -2408,13 +2415,16 @@ pub async fn u2_shutup_get_mine(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(r.get("create_time")),
+                    Value::String(
+                        r.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
     let total_data = data.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total_data as i64,
         0,

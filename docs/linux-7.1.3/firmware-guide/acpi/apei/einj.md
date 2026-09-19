@@ -1,3 +1,5 @@
+# einj
+
 ﻿
 ## APEI 错误注入（Error INJection
 
@@ -85,9 +87,11 @@ CXL 错误类型ACPI 6.5 起得到支持（前提是存CXL 端口）。用CXL �
 
 - einj_types:
 
+
   提供与上available_error_types 相同的功能，但针CXL 错误类型
 
 - $dport_dev/einj_inject:
+
 
   将一CXL 错误类型注入到由 $dport_dev 表示CXL 端口，其$dport_dev
   CXL 端口的名称（通常是一PCIe 设备名）。针CXL 2.0+ 端口的错误注  可以使用位于 <debugfs 挂载/apei/einj 下的传统接口，CXL 1.1/1.0 端口

@@ -2,7 +2,7 @@
   <div class="role-view">
     <div class="view-header glass-card">
       <h1>角色管理</h1>
-      <p class="subtitle">/jaxrs/role/* — 角色CRUD与权限分配</p>
+      <p class="subtitle">/api/role/* — 角色CRUD与权限分配</p>
     </div>
     <div class="content-panel glass-card">
       <div class="toolbar">
@@ -73,7 +73,7 @@ const form = ref({ name: '', flag: '', desc: '' })
 async function loadRoles() {
   loading.value = true
   try {
-    const r = await api.get('/jaxrs/role/list')
+    const r = await api.get('/api/role/list')
     roles.value = r.data ?? []
   } catch {
     roles.value = []
@@ -96,9 +96,9 @@ async function onSave() {
   creating.value = true
   try {
     if (editingRole.value) {
-      await api.put(`/jaxrs/role/${form.value.flag}`, form.value)
+      await api.put(`/api/role/${form.value.flag}`, form.value)
     } else {
-      await api.post('/jaxrs/role', form.value)
+      await api.post('/api/role', form.value)
     }
     showCreate.value = false
     editingRole.value = null
@@ -112,9 +112,9 @@ async function onSave() {
 }
 
 async function deleteRole(r: Role) {
-  if (!confirmMsg(`确定删除角色「${r.name || r.flag}」？`)) return
+  if (!(await confirmMsg(`确定删除角色「${r.name || r.flag}」？`))) return
   try {
-    await api.delete(`/jaxrs/role/${r.flag || r.id}`)
+    await api.delete(`/api/role/${r.flag || r.id}`)
     roles.value = roles.value.filter((x) => x.flag !== r.flag)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))

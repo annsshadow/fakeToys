@@ -1,4 +1,7 @@
+# exporting
+
 ﻿:orphan:
+
 
 ## 使文件系统可导出
 
@@ -46,6 +49,7 @@ c. 用于分配匿名 dentry、以及在查找时帮助挂载松散目dentry 的
       Similarly, d_splice_alias(ERR_PTR(err), dentry) = ERR_PTR(err)
 
       Typically the ->lookup routine will simply end with a::
+
 
 		return d_splice_alias(inode, dentry);
 	}

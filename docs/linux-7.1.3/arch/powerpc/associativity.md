@@ -1,3 +1,5 @@
+# associativity
+
 ﻿## NUMA 资源亲和
 
 亲和性（associativity）表示将各种平台资源分组为一些域，这些域相对于该域之的资源具有实质上相近的平均性能。某个给定域中、彼此之间相比域外其它资源子表现出更好性能的资源子集，被表示为某个子分组域的成员。这一性能特征Linux
@@ -6,7 +8,7 @@ PAPR 接口目前支持以不同方式将这些资源分组细节传达给操作
 Form 0、Form 1 Form2 关联分组。Form 0 是最旧的格式，现在已被认为过时
 Hypervisor 通过 "ibm,architecture-vec-5 property" 指示所使用的关联类格式"ibm,architecture-vec-5" 属性中5 字节的第 0 位指示使Form 0 还是 Form 1值为 1 表示使用 Form 1 关联。对Form 2 关联，使"ibm,architecture-vec-5"
 属性中5 字节的第 2 位
-### Form 0
+## Form 0
 
 Form 0 关联仅支持两NUMA 距离（LOCAL REMOTE）
 ### Form 1

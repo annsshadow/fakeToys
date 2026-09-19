@@ -1,3 +1,5 @@
+# imx-ddr
+
 ﻿## Freescale i.MX8 DDR 性能监控单元（PMU
 
 DRAM 控制器内部没有性能计数器，因此性能信号被引出到控制器的边缘，在那里
@@ -36,6 +38,7 @@ AXI 过滤仅被 CSV 模式 0x41（axid-read）和 0x42（axid-write）使用，
       perf stat -a -e imx8_ddr0/axid-write,axi_mask=0xMMMM,axi_id=0xDDDD/ cmd
 
   .. note::
+
 
       axi_mask is inverted in userspace(i.e. set bits are bits to mask), and
       it will be reverted in driver automatically. so that the user can just specify

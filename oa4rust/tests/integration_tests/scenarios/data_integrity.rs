@@ -139,7 +139,7 @@ pub async fn soft_delete_isolation() {
 
     // Step 1: Create a document through the real HTTP layer (for field entries).
     let create_resp = client
-        .post(format!("{}/jaxrs/data/document/{}", base, doc_id))
+        .post(format!("{}/api/data/document/{}", base, doc_id))
         .header("Authorization", &auth_header)
         .header("Content-Type", "application/json")
         .json(&json!({

@@ -1,7 +1,9 @@
+# vidioc-subdev-g-client-cap
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBDEV_G_CLIENT_CAP, VIDIOC_SUBDEV_S_CLIENT_CAP
+## ioctl VIDIOC_SUBDEV_G_CLIENT_CAP, VIDIOC_SUBDEV_S_CLIENT_CAP
 
 
 ## 名称

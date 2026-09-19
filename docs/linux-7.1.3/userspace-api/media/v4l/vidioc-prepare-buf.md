@@ -1,6 +1,8 @@
+# vidioc-prepare-buf
+
 ﻿
 
-######## ioctl VIDEO_PREPARE_BUF
+## ioctl VIDEO_PREPARE_BUF
 
 
 ## 姓名

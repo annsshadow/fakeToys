@@ -1,3 +1,5 @@
+# sharedsubtree
+
 ﻿
 ## 共享子树（Shared Subtrees
 
@@ -43,12 +45,14 @@ a) **共享挂载（shared mount* 可以被复制到任意多个挂载点，并�
 
    ::
 
+
      # mount --bind /mnt /tmp
 
    The above command replicates the mount at /mnt to the mountpoint /tmp
    and the contents of both the mounts remain identical.
 
    ::
+
 
      #ls /mnt
      a b c
@@ -57,6 +61,7 @@ a) **共享挂载（shared mount* 可以被复制到任意多个挂载点，并�
      a b c
 
    Now let's say we mount a device at /tmp/a::
+
 
      # mount /dev/sd0  /tmp/a
 
@@ -86,6 +91,7 @@ b) **从属挂载（slave mount* 类似于共享挂载，但挂载（mount）和
 
    Let's bind mount /mnt to /tmp::
 
+
      # mount --bind /mnt /tmp
 
    the new mount at /tmp becomes a shared mount and it is a replica of
@@ -93,9 +99,11 @@ b) **从属挂载（slave mount* 类似于共享挂载，但挂载（mount）和
 
    Now let's make the mount at /tmp; a slave of /mnt::
 
+
      # mount --make-slave /tmp
 
    let's mount /dev/sd0 on /mnt/a::
+
 
      # mount /dev/sd0 /mnt/a
 
@@ -109,6 +117,7 @@ b) **从属挂载（slave mount* 类似于共享挂载，但挂载（mount）和
 
    However let's see what happens if we mount something on the mount at
    /tmp::
+
 
      # mount /dev/sd1 /tmp/b
 
@@ -136,6 +145,7 @@ d) **不可绑定挂载（unbindable mount* 顾名思义，是一种无法被绑
 
    Let's try to bind mount this mount somewhere else::
 
+
      # mount --bind /mnt /tmp mount: wrong fs type, bad option, bad
      superblock on /mnt, or too many mounted file systems
 
@@ -143,7 +153,7 @@ d) **不可绑定挂载（unbindable mount* 顾名思义，是一种无法被绑
 
 
 ```
-### 3) 设置挂载状态（Setting mount states
+## 3) 设置挂载状态（Setting mount states
 
 
 可以使用 mount 命令（util-linux 软件包）来设置挂载状态：
@@ -193,6 +203,7 @@ B) 某个进程希望自己的挂载对其他任何进程不可见，但仍能�
 
    A new process can clone off a new namespace. And mark some part
    of its namespace as slave::
+
 
      mount --make-rslave /myprivatetree
 
@@ -273,6 +284,7 @@ a) 挂载状态（Mount states
        the slave mount to the master.  Only a shared mount can be made
        a slave by executing the following command::
 
+
          mount --make-slave mount
 
        A shared mount that is made as a slave is no more shared unless
@@ -293,6 +305,7 @@ a) 挂载状态（Mount states
        Only a slave vfsmount can be made as 'shared and slave' by
        either executing the following command::
 
+
          mount --make-shared mount
 
        or by moving the slave vfsmount under a shared vfsmount.
@@ -311,8 +324,10 @@ a) 挂载状态（Mount states
 
        State diagram:
 
+
        The state diagram below explains the state transition of a mount,
        in response to various commands::
+
 
             -----------------------------------------------------------------------
             |             |make-shared |  make-slave  | make-private |make-unbindab|
@@ -355,6 +370,7 @@ b) 绑定语义（Bind semantics
    The outcome depends on the type of mount of 'A' and 'B'. The table
    below contains quick reference::
 
+
             --------------------------------------------------------------------------
             |         BIND MOUNT OPERATION                                           |
             |************************************************************************|
@@ -369,6 +385,7 @@ b) 绑定语义（Bind semantics
             **************************************************************************
 
    Details:
+
 
    1. 'A' is a shared mount and 'B' is a shared mount. A new mount 'C'
       which is clone of 'A', is created. Its root dentry is 'a' . 'C' is
@@ -445,6 +462,7 @@ c) 递归绑定语义（Rbind semantics
 
    We will have the following tree at the new location::
 
+
                 Z
                 |
                 A'
@@ -469,6 +487,7 @@ d) 移动语义（Move semantics
    The outcome depends on the type of the mount of 'A' and 'B'. The table
    below is a quick reference::
 
+
             ---------------------------------------------------------------------------
             |                   MOVE MOUNT OPERATION                                 |
             |**************************************************************************
@@ -485,6 +504,7 @@ d) 移动语义（Move semantics
    .. Note:: moving a mount residing under a shared mount is invalid.
 
    Details follow:
+
 
    1. 'A' is a shared mount and 'B' is a shared mount.  The mount 'A' is
       mounted on mount 'B' at dentry 'b'.  Also new mounts 'A1', 'A2'...'An'
@@ -659,6 +679,7 @@ C. 以下命令序列的结果是什么？
 
    at this point if we execute the following command::
 
+
      mount --bind /bin /tmp/test
 
    The mount is attempted on 'A'
@@ -703,6 +724,7 @@ C. 以下命令序列的结果是什么？
       ::
 
 
+
                         mount --make-shared /root
 
                         mkdir -p /tmp/m1
@@ -710,6 +732,7 @@ C. 以下命令序列的结果是什么？
                         mount --rbind /root /tmp/m1
 
       the new tree now looks like this::
+
 
                                     root
                                    /    \
@@ -726,10 +749,12 @@ C. 以下命令序列的结果是什么？
    step 3:
       ::
 
+
                             mkdir -p /tmp/m2
                             mount --rbind /root /tmp/m2
 
       the new tree now looks like this::
+
 
                                       root
                                      /    \
@@ -754,6 +779,7 @@ C. 以下命令序列的结果是什么？
    step 4:
       ::
 
+
                           mkdir -p /tmp/m3
                           mount --rbind /root /tmp/m3
 
@@ -772,6 +798,7 @@ C. 以下命令序列的结果是什么？
       let's say the root tree has just two directories with
       one vfsmount::
 
+
                                     root
                                    /    \
                                   tmp    usr
@@ -781,6 +808,7 @@ C. 以下命令序列的结果是什么？
 
    step 2:
       ::
+
 
 
                         mount --bind /root/tmp /root/tmp
@@ -794,6 +822,7 @@ C. 以下命令序列的结果是什么？
 
       the new tree now looks like this::
 
+
                                     root
                                    /    \
                                  tmp    usr
@@ -805,10 +834,12 @@ C. 以下命令序列的结果是什么？
    step 3:
       ::
 
+
                             mkdir -p /tmp/m2
                             mount --rbind /root /tmp/m2
 
       the new tree now looks like this::
+
 
                                     root
                                    /    \
@@ -821,10 +852,12 @@ C. 以下命令序列的结果是什么？
    step 4:
       ::
 
+
                             mkdir -p /tmp/m3
                             mount --rbind /root /tmp/m3
 
       the new tree now looks like this::
+
 
                                           root
                                       /           \
@@ -873,6 +906,7 @@ A) 数据结构（Datastructure
       mounts as a conceptual entity called 'pnode', it becomes a tree.
 
    ::
+
 
 
                         A <--> B <--> C <---> D

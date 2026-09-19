@@ -1,7 +1,7 @@
 
-### Chinese translator: Huang Jianghui <huangjianghui@uniontech.com>
+# Chinese translator: Huang Jianghui <huangjianghui@uniontech.com>
 
-### 以下为正文
+## 以下为正文
 
 ## 高清音频编解码器特定混音器控件
 

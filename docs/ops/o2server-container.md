@@ -12,13 +12,13 @@ v9 首次启动进入 init 向导模式，全程 REST API 可完成：
 
 ```powershell
 # 1. 查询初始化状态
-Invoke-WebRequest http://localhost:18080/jaxrs/secret/check -UseBasicParsing
+Invoke-WebRequest http://localhost:18080/api/secret/check -UseBasicParsing
 # 2. 设置 xadmin 密码
-Invoke-WebRequest http://localhost:18080/jaxrs/secret/set `
+Invoke-WebRequest http://localhost:18080/api/secret/set `
   -Method Post -ContentType "application/json" `
   -Body '{"secret":"o2oa@2022"}' -UseBasicParsing
 # 3. 触发部署建表（注意是 GET）
-Invoke-WebRequest http://localhost:18080/jaxrs/server/execute -UseBasicParsing
+Invoke-WebRequest http://localhost:18080/api/server/execute -UseBasicParsing
 ```
 
 - 冷启动/首次建表约 **10 分钟**；重启约 7-8 分钟（JVM 固定 3G 堆）
@@ -38,6 +38,6 @@ cargo test --test behavior_compare
 
 ## 已知问题
 
-1. **comparator 登录路径错位**：`tests/behavior_comparison/comparator.rs` 使用 `{base}/jaxrs/authentication/login`，而 O2OA v9 真实路径为 `/x_organization_assemble_authentication/jaxrs/authentication`——裸 `/jaxrs/*` 在 O2OA 上会挂起。需改 comparator 或加路径重写反代
+1. **comparator 登录路径错位**：`tests/behavior_comparison/comparator.rs` 使用 `{base}/api/authentication/login`，而 O2OA v9 真实路径为 `/x_organization_assemble_authentication/api/authentication`——裸 `/api/*` 在 O2OA 上会挂起。需改 comparator 或加路径重写反代
 2. 新库中不存在普通测试账户 testadmin；需要普通账户语义时用管理 API 创建
 3. CI 等待逻辑需留足冷启动超时（≥10 分钟）

@@ -1,3 +1,5 @@
+# drm-internals
+
 ﻿## DRM 内部机制
 
 
@@ -32,9 +34,12 @@ char \**name; char \**desc; char \*date;
 
    :internal:
 
+
    :internal:
 
+
    :export:
+
 
 ### 驱动加载
 
@@ -57,7 +62,9 @@ char \**name; char \**desc; char \*date;
 
    :export:
 
+
    :internal:
+
 
 ## 打开/关闭、文件操作与 IOCTL
 
@@ -69,7 +76,9 @@ char \**name; char \**desc; char \*date;
 
    :internal:
 
+
    :export:
+
 
 ## 杂项工具
 
@@ -80,7 +89,9 @@ char \**name; char \**desc; char \*date;
 
    :internal:
 
+
    :export:
+
 
 ### 工具函数
 
@@ -88,6 +99,7 @@ char \**name; char \**desc; char \*date;
    :doc: drm utils
 
    :internal:
+
 
 
 ## 单元测试

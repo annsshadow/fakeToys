@@ -1,4 +1,6 @@
 
+# email-clients
+
 :Original: Documentation/process/email-clients.rst <email_clients>
 :Translator: Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 
@@ -80,15 +82,18 @@ detalle de configuración de los paquetes de software.
 
 Leyenda:
 
+
 - TUI = text-based user interface (interfaz de usuario basada en texto)
 - GUI = graphical user interface (interfaz de usuario gráfica)
 
-######## Alpine (TUI)
+#### Alpine (TUI)
 
 
 Opciones de configuración:
 
+
 En la sección `Sending Preferences`:
+
 
 - :menuselection: `Do Not Send Flowed Text` debe estar `enabled`
 - `Strip Whitespace Before Sending` debe estar `disabled`
@@ -97,7 +102,7 @@ Al redactar el mensaje, el cursor debe colocarse donde el parche debería
 aparecer, y luego presionando `CTRL-R` se le permite especificar e
 archivo de parche a insertar en el mensaje.
 
-######## Claws Mail (GUI)
+##### Claws Mail (GUI)
 
 
 Funciona. Algunos usan esto con éxito para los parches.
@@ -229,8 +234,10 @@ También puedes generar parches con `git format-patch` y luego usar Mutt
 ```
 Opciones de configuración:
 
+
 Debería funcionar con la configuración predeterminada.
 Sin embargo, es una buena idea establecer `send_charset` en:
+
 
   set send_charset="us-ascii:utf-8"
 
@@ -265,11 +272,12 @@ Mutt es altamente personalizable. Aquí tiene una configuración mínima para
 ```
 Los documentos Mutt tienen mucha más información:
 
+
     https://gitlab.com/muttmua/mutt/-/wikis/UseCases/Gmail
 
     http://www.mutt.org/doc/manual/
 
-######## Pine (TUI)
+## Pine (TUI)
 
 
 Pine ha tenido algunos problemas de truncamiento de espacios en blanco en
@@ -279,11 +287,12 @@ Use alpine (sucesor de pino) si puede.
 
 Opciones de configuración:
 
+
 - `quell-flowed-text` necesitado para versiones actuales
 - la opción `no-strip-whitespace-before-send` es necesaria
 
 
-######## Sylpheed (GUI)
+### Sylpheed (GUI)
 
 
 - Funciona bien para insertar texto (o usar archivos adjuntos).
@@ -304,6 +313,7 @@ Después de hacer las modificaciones, que incluye instalar las extensiones,
 necesita reiniciar Thunderbird.
 
 - Permitir el uso de un editor externo:
+
 
   Lo más fácil de hacer con Thunderbird y los parches es usar extensiones
   que abran su editor externo favorito.
@@ -340,6 +350,7 @@ necesita reiniciar Thunderbird.
     lea su manual para saber cómo hacer esto.
 
 Para sacarle algo de sentido al editor interno, haga esto:
+
 
 - Edite sus ajustes de configuración de Thunderbird para que no utilice `format=flowed`!
   Vaya a su ventana principal y busque el botón de su menú desplegable principal.

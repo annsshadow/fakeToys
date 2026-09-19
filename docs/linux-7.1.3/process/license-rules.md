@@ -1,3 +1,5 @@
+# license-rules
+
 ﻿## Linux 内核许可规则
 
 
@@ -28,7 +30,7 @@ COPYING 文件中描述的许可证适用于整个内核源代码，不过单个
 
 Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核中使用的有效标识符`License identifiers`_ 一节中说明，它们与许可证文本一起从 https://spdx.org/licenses/ 的官SPDX 许可证列表中获取
 
-### 许可证标识符语法
+## 许可证标识符语法
 
 
 1. 位置
@@ -75,10 +77,12 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
    WITH should be used when there is a modifier to a license needed.
    For example, the linux kernel UAPI files use the expression::
 
+
       // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
       // SPDX-License-Identifier: GPL-2.0+ WITH Linux-syscall-note
 
    Other examples using WITH exceptions found in the kernel are::
+
 
       // SPDX-License-Identifier: GPL-2.0 WITH mif-exception
       // SPDX-License-Identifier: GPL-2.0+ WITH GCC-exception-2.0
@@ -92,9 +96,11 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
    to be selected.  For example, some dtsi files are available under dual
    licenses::
 
+
       // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 
    Examples from the kernel for license expressions in dual licensed files::
+
 
       // SPDX-License-Identifier: GPL-2.0 OR MIT
       // SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
@@ -108,10 +114,12 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
    project and permission has been given to put it in the kernel, but the
    original license terms need to remain in effect::
 
+
       // SPDX-License-Identifier: (GPL-2.0 WITH Linux-syscall-note) AND MIT
 
    Another other example where both sets of license terms need to be
    adhered to is::
+
 
       // SPDX-License-Identifier: GPL-1.0+ AND LGPL-2.1+
 
@@ -134,9 +142,11 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    Examples::
 
+
       LICENSES/preferred/GPL-2.0
 
    Contains the GPL version 2 license text and the required metatags::
+
 
       LICENSES/preferred/MIT
 
@@ -164,6 +174,7 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    File format examples::
 
+
       Valid-License-Identifier: GPL-2.0
       Valid-License-Identifier: GPL-2.0+
       SPDX-URL: https://spdx.org/licenses/GPL-2.0.html
@@ -179,6 +190,7 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
         Full license text
 
    ::
+
 
       SPDX-License-Identifier: MIT
       SPDX-URL: https://spdx.org/licenses/MIT.html
@@ -206,10 +218,12 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    Examples::
 
+
       LICENSES/deprecated/ISC
 
    Contains the Internet Systems Consortium license text and the required
    metatags::
+
 
       LICENSES/deprecated/GPL-1.0
 
@@ -217,9 +231,11 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    Metatags:
 
+
    'other'（其他）许可证的元标签要求与 `Preferred licenses`_（首选许可证）的要求相同
 
    File format example::
+
 
       Valid-License-Identifier: ISC
       SPDX-URL: https://spdx.org/licenses/ISC.html
@@ -250,10 +266,12 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    Examples::
 
+
       LICENSES/dual/MPL-1.1
 
    Contains the Mozilla Public License version 1.1 license text and the
    required metatags::
+
 
       LICENSES/dual/Apache-2.0
 
@@ -262,9 +280,11 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    Metatags:
 
+
    'other' 许可证的元标签要求与 `Preferred licenses`_ 的要求相同
 
    File format example::
+
 
       Valid-License-Identifier: MPL-1.1
       SPDX-URL: https://spdx.org/licenses/MPL-1.1.html
@@ -294,11 +314,13 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    Examples::
 
+
       LICENSES/exceptions/Linux-syscall-note
 
    Contains the Linux syscall exception as documented in the COPYING
    file of the Linux kernel, which is used for UAPI header files.
    e.g. /\* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note \*/::
+
 
       LICENSES/exceptions/GCC-exception-2.0
 
@@ -333,6 +355,7 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
 
    File format examples::
 
+
       SPDX-Exception-Identifier: Linux-syscall-note
       SPDX-URL: https://spdx.org/licenses/Linux-syscall-note.html
       SPDX-Licenses: GPL-2.0, GPL-2.0+, GPL-1.0+, LGPL-2.0, LGPL-2.0+, LGPL-2.1, LGPL-2.1+
@@ -347,6 +370,7 @@ Linux 内核要求在所有源文件中使用精确的 SPDX 标识符。内核�
         Full exception text
 
    ::
+
 
       SPDX-Exception-Identifier: GCC-exception-2.0
       SPDX-URL: https://spdx.org/licenses/GCC-exception-2.0.html

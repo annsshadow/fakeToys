@@ -1,3 +1,5 @@
+# handling-regressions
+
 ﻿
 处理回归问题
 ++++++++++++
@@ -23,6 +25,7 @@
 
     * When forwarding reports from a bug tracker to the regressions list (see
       above), include a paragraph like the following::
+
 
        #regzbot introduced: v5.13..v5.14-rc1
        #regzbot from: Some N. Ice Human <some.human@example.com>
@@ -73,6 +76,7 @@
  * When forwarding a regression reported to a bug tracker, include a paragraph
    with these regzbot commands::
 
+
        #regzbot introduced: 1f2e3d4c5b6a
        #regzbot from: Some N. Ice Human <some.human@example.com>
        #regzbot monitor: http://some.bugtracker.example.com/ticket?id=123456789
@@ -81,7 +85,7 @@
    contain "Closes:" tags pointing to your mail or the mentioned ticket.
 
 ```
-#### 修复回归时的重要事项
+## 修复回归时的重要事项
 
 
 在提交回归修复时，你不需要做任何特殊的事情，只需记得遵循
@@ -105,7 +109,7 @@ Documentation/process/stable-kernel-rules.rst 中已经详细解释的那些要�
 ```
 所有这些都是对你的最低要求，并且在回归问题上非常重要，因为这些标签对于数周、数月或数年后可能还在查看该问题的所有人（包括你自己）都极有价值。这些标签对于其他内核开发者或 Linux 发行版所使用的工具和脚本也至关重要；其中之一就是 regzbot，它高度依赖“Closes:”标签来将回归报告与解决它们的变更关联起来
 
-#### 修复回归的期望与最佳实
+### 修复回归的期望与最佳实
 
 
 作为一Linux 内核开发者，你应当尽力避免这样一种局面：由你最近的改动引起的回归，让用户只剩下如下几种选择
@@ -270,6 +274,7 @@ regzbot 正在监视最重要Linux 邮件列表，以linux-next、mainline stabl
    the issue or a fix are discussed -- for example the posting of a patch fixing
    the regression::
 
+
        #regzbot monitor: https://lore.kernel.org/all/30th.anniversary.repost@klaava.Helsinki.FI/
 
    Monitoring only works for lore.kernel.org and bugzilla.kernel.org; regzbot
@@ -280,23 +285,27 @@ regzbot 正在监视最重要Linux 邮件列表，以linux-next、mainline stabl
    or a ticket in a bug tracker that are slightly related, but about a different
    topic::
 
+
        #regzbot link: https://bugzilla.kernel.org/show_bug.cgi?id=123456789
 
  * Mark a regression as fixed by a commit that is heading upstream or already
    landed::
 
+
        #regzbot fix: 1f2e3d4c5d
 
  * Mark a regression as a duplicate of another one already tracked by regzbot::
+
 
        #regzbot dup-of: https://lore.kernel.org/all/30th.anniversary.repost@klaava.Helsinki.FI/
 
  * Mark a regression as invalid::
 
+
        #regzbot invalid: wasn't a regression, problem has always existed
 
 ```
-#### 关于 regzbot 及其命令还有什么可说的吗？
+## 关于 regzbot 及其命令还有什么可说的吗？
 
 
 关于 Linux 内核回归跟踪机器人的更详细、更及时的信息可以在
@@ -319,6 +328,7 @@ regzbot 正在监视最重要Linux 邮件列表，以linux-next、mainline stabl
     possibly a "revert and rethink".
 
   With a later clarification on `2026-01-28 <https://lore.kernel.org/all/CAHk-%3Dwi86AosXs66-yi54%2BmpQjPu0upxB8ZAfG%2BLsMyJmcuMSA@mail.gmail.com/>`_::
+
 
     It's also worth noting that "immediate" obviously doesn't mean "right
     this *second* when the problem has been reported".

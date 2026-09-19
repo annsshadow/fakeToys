@@ -77,20 +77,20 @@ Phase 2 U6 backlog 分析识别了215个深层逻辑缺口，其中~50个在 Exp
 
 **Approach:**
 - 端点清单：
-  - `GET /jaxrs/organization/assemble/control/group/list/{flag}/sub/direct` — 直属下级组
-  - `GET /jaxrs/organization/assemble/control/group/list/{flag}/sub/nested` — 嵌套下级组
-  - `GET /jaxrs/organization/assemble/control/group/list/{flag}/sup/direct` — 直属上级组
-  - `GET /jaxrs/organization/assemble/control/group/list/{flag}/sup/nested` — 嵌套上级组
-  - `GET /jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/direct` — 人员直属上级组
-  - `GET /jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/nested` — 人员嵌套上级组
-  - `GET /jaxrs/organization/assemble/control/group/list/role/{roleFlag}` — 按角色查组
-  - `GET /jaxrs/organization/assemble/control/identity/list/person/{personFlag}` — 按人员查身份
-  - `GET /jaxrs/organization/assemble/control/identity/list/unit/{unitFlag}` — 按单位查身份
-  - `GET /jaxrs/organization/assemble/control/person/check/password/{password}` — 密码检查
-  - `GET /jaxrs/organization/assemble/control/personattribute/list/person/{personFlag}` — 人员属性
-  - `GET /jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}` — 个人名片VCF
-  - `GET /jaxrs/organization/assemble/control/personcard/listVCf/{idList}` — 名片VCF
-  - `GET /jaxrs/organization/assemble/control/role/list/group/{groupFlag}` — 按组查角色
+  - `GET /api/organization/assemble/control/group/list/{flag}/sub/direct` — 直属下级组
+  - `GET /api/organization/assemble/control/group/list/{flag}/sub/nested` — 嵌套下级组
+  - `GET /api/organization/assemble/control/group/list/{flag}/sup/direct` — 直属上级组
+  - `GET /api/organization/assemble/control/group/list/{flag}/sup/nested` — 嵌套上级组
+  - `GET /api/organization/assemble/control/group/list/person/{personFlag}/sup/direct` — 人员直属上级组
+  - `GET /api/organization/assemble/control/group/list/person/{personFlag}/sup/nested` — 人员嵌套上级组
+  - `GET /api/organization/assemble/control/group/list/role/{roleFlag}` — 按角色查组
+  - `GET /api/organization/assemble/control/identity/list/person/{personFlag}` — 按人员查身份
+  - `GET /api/organization/assemble/control/identity/list/unit/{unitFlag}` — 按单位查身份
+  - `GET /api/organization/assemble/control/person/check/password/{password}` — 密码检查
+  - `GET /api/organization/assemble/control/personattribute/list/person/{personFlag}` — 人员属性
+  - `GET /api/organization/assemble/control/personcard/listPersonalVCf/{idList}` — 个人名片VCF
+  - `GET /api/organization/assemble/control/personcard/listVCf/{idList}` — 名片VCF
+  - `GET /api/organization/assemble/control/role/list/group/{groupFlag}` — 按组查角色
 - 组织树查询需要递归遍历 `org_unit` 表的 `superior` 字段
 - 复用现有 `org_unit` 查询函数，扩展层级遍历逻辑
 
@@ -120,19 +120,19 @@ Phase 2 U6 backlog 分析识别了215个深层逻辑缺口，其中~50个在 Exp
 
 **Approach:**
 - 端点清单：
-  - `DELETE /jaxrs/categoryinfo/erase/category/{id}` — 分类物理删除
-  - `DELETE /jaxrs/document/batch/{id}` — 批量删除文档
-  - `GET /jaxrs/categoryinfo/list/manage/app/{appId}` — 应用下分类管理列表
-  - `GET /jaxrs/correlation/list/doc/{docId}` — 文档关联列表
-  - `GET /jaxrs/correlation/list/doc/{docId}/site/{site}` — 文档站点关联
-  - `GET /jaxrs/design/appdict/list/appInfo/{appId}` — 应用字典设计列表
-  - `GET /jaxrs/file/list/appInfo/{appInfoFlag}` — 应用文件列表
-  - `GET /jaxrs/fileinfo/batch/download/doc/{docId}/site/{site}` — 批量下载
-  - `GET /jaxrs/fileinfo/download/document/{id}` — 文件下载
-  - `GET /jaxrs/fileinfo/download/document/{id}/stream` — 文件流下载
-  - `GET /jaxrs/form/list/formfield/appInfo/{appId}` — 应用表单字段列表
-  - `GET /jaxrs/form/list/{id}/formfield` — 表单字段列表
-  - `POST /jaxrs/file` — 文件上传
+  - `DELETE /api/categoryinfo/erase/category/{id}` — 分类物理删除
+  - `DELETE /api/document/batch/{id}` — 批量删除文档
+  - `GET /api/categoryinfo/list/manage/app/{appId}` — 应用下分类管理列表
+  - `GET /api/correlation/list/doc/{docId}` — 文档关联列表
+  - `GET /api/correlation/list/doc/{docId}/site/{site}` — 文档站点关联
+  - `GET /api/design/appdict/list/appInfo/{appId}` — 应用字典设计列表
+  - `GET /api/file/list/appInfo/{appInfoFlag}` — 应用文件列表
+  - `GET /api/fileinfo/batch/download/doc/{docId}/site/{site}` — 批量下载
+  - `GET /api/fileinfo/download/document/{id}` — 文件下载
+  - `GET /api/fileinfo/download/document/{id}/stream` — 文件流下载
+  - `GET /api/form/list/formfield/appInfo/{appId}` — 应用表单字段列表
+  - `GET /api/form/list/{id}/formfield` — 表单字段列表
+  - `POST /api/file` — 文件上传
 - 权限查询需关联 `x_cms_appinfo` + 权限表
 - 文件下载需实现 StreamingBody 响应
 
@@ -160,19 +160,19 @@ Phase 2 U6 backlog 分析识别了215个深层逻辑缺口，其中~50个在 Exp
 
 **Approach:**
 - 端点清单：
-  - `DELETE /jaxrs/processplatform/assemble/surface/data/work/{id}` — 删除工作数据
-  - `GET /jaxrs/processplatform/assemble/surface/applicationdict/list/application/{applicationFlag}` — 应用字典列表
-  - `GET /jaxrs/processplatform/assemble/surface/attachment/list/work/{workId}` — 工作附件
-  - `GET /jaxrs/processplatform/assemble/surface/attachment/list/workcompleted/{workCompletedId}` — 已完成工作附件
-  - `GET /jaxrs/processplatform/assemble/surface/data/workcompleted/{id}` — 已完成工作数据
-  - `GET /jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/from/data` — 从数据获取
-  - `GET /jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/from/item` — 从条目获取
-  - `GET /jaxrs/processplatform/assemble/surface/file/list/application/{applicationFlag}` — 应用文件列表
-  - `GET /jaxrs/processplatform/assemble/surface/process/list/application/{applicationFlag}` — 应用流程列表
-  - `GET /jaxrs/processplatform/assemble/surface/process/list/available/identity/process/{flag}` — 可用身份流程
-  - `GET /jaxrs/processplatform/assemble/surface/process/list/controllable/application/{applicationFlag}` — 可控流程
-  - `GET /jaxrs/processplatform/assemble/surface/serialnumber/list/application/{applicationFlag}` — 流水号列表
-  - `GET /jaxrs/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}` — 前一个手动已完成任务
+  - `DELETE /api/processplatform/assemble/surface/data/work/{id}` — 删除工作数据
+  - `GET /api/processplatform/assemble/surface/applicationdict/list/application/{applicationFlag}` — 应用字典列表
+  - `GET /api/processplatform/assemble/surface/attachment/list/work/{workId}` — 工作附件
+  - `GET /api/processplatform/assemble/surface/attachment/list/workcompleted/{workCompletedId}` — 已完成工作附件
+  - `GET /api/processplatform/assemble/surface/data/workcompleted/{id}` — 已完成工作数据
+  - `GET /api/processplatform/assemble/surface/data/workcompleted/{id}/from/data` — 从数据获取
+  - `GET /api/processplatform/assemble/surface/data/workcompleted/{id}/from/item` — 从条目获取
+  - `GET /api/processplatform/assemble/surface/file/list/application/{applicationFlag}` — 应用文件列表
+  - `GET /api/processplatform/assemble/surface/process/list/application/{applicationFlag}` — 应用流程列表
+  - `GET /api/processplatform/assemble/surface/process/list/available/identity/process/{flag}` — 可用身份流程
+  - `GET /api/processplatform/assemble/surface/process/list/controllable/application/{applicationFlag}` — 可控流程
+  - `GET /api/processplatform/assemble/surface/serialnumber/list/application/{applicationFlag}` — 流水号列表
+  - `GET /api/processplatform/assemble/surface/taskcompleted/list/prev/manual/{flag}` — 前一个手动已完成任务
 - 附件/文件列表查询相对简单（查表返回数组）
 - 工作流数据查询需要关联多个表
 
@@ -201,16 +201,16 @@ Phase 2 U6 backlog 分析识别了215个深层逻辑缺口，其中~50个在 Exp
 
 **Approach:**
 - query_assemble_designer（10条）：
-  - `DELETE /jaxrs/query/assemble/designer/table/{flag}/row/delete/all` — 删除所有行
-  - `GET /jaxrs/query/assemble/designer/importmodel/list/query/{flag}` — 导入模型列表
-  - `GET /jaxrs/query/assemble/designer/stat/list/query/{queryFlag}` — 统计列表
-  - `GET /jaxrs/query/assemble/designer/table/list/query/{flag}` — 表列表
-  - `GET /jaxrs/query/assemble/designer/table/{flag}/build/dispatch` — 表构建调度
-  - `GET /jaxrs/query/assemble/designer/view/list/query/{queryFlag}` — 视图列表
-  - `POST /jaxrs/query/assemble/designer/search` — 搜索
-  - `POST /jaxrs/query/assemble/designer/statement/list/query/{queryFlag}` — SQL语句列表
-  - `POST /jaxrs/query/assemble/designer/table/{flag}/row` — 表行数据
-  - `POST /jaxrs/query/assemble/designer/table/{flag}/row/save` — 保存行数据
+  - `DELETE /api/query/assemble/designer/table/{flag}/row/delete/all` — 删除所有行
+  - `GET /api/query/assemble/designer/importmodel/list/query/{flag}` — 导入模型列表
+  - `GET /api/query/assemble/designer/stat/list/query/{queryFlag}` — 统计列表
+  - `GET /api/query/assemble/designer/table/list/query/{flag}` — 表列表
+  - `GET /api/query/assemble/designer/table/{flag}/build/dispatch` — 表构建调度
+  - `GET /api/query/assemble/designer/view/list/query/{queryFlag}` — 视图列表
+  - `POST /api/query/assemble/designer/search` — 搜索
+  - `POST /api/query/assemble/designer/statement/list/query/{queryFlag}` — SQL语句列表
+  - `POST /api/query/assemble/designer/table/{flag}/row` — 表行数据
+  - `POST /api/query/assemble/designer/table/{flag}/row/save` — 保存行数据
 - query_assemble_surface（8条）：类似结构的前端查询端点
 
 **Test scenarios:**

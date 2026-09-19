@@ -1,11 +1,15 @@
 
+# index
+
 :Original: Documentation/scsi/index.rst
 
 :翻译:
 
+
  郝栋栋 doubled <doubled@leap-io-kernel.com>
 
 :校译:
+
 
 
 
@@ -37,6 +41,7 @@
 - [wd719x](wd719x)
 
 Todolist:
+
 
 - 53c700
 - aacraid

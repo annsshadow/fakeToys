@@ -28,9 +28,9 @@ testadmin/testadmin 创建成功并可正常登录（tokenType=user）。所用 
 
 | 步骤 | API | 说明 |
 |------|-----|------|
-| 1. 创建 person | `POST /x_organization_assemble_control/jaxrs/person`，body `{"name":"testadmin","employee":"90001","mobile":"13800000001","mail":"testadmin@o2oa.net"}` | 返回 `data.id`（f474dae3-5744-49fd-97b6-8357cadc5e34）；unique 为随机 UUID |
-| 2. 设置密码 | `PUT /x_organization_assemble_control/jaxrs/person/{id}/set/password`，body `{"value":"testadmin"}` | v9 的 Wi 继承 WrapString，密码放在 `value` 字段（从 war 内 describe/sources 反查确认） |
-| 3. 解锁（如触发） | `GET /x_organization_assemble_control/jaxrs/person/unlock/{id}` | **只认 id，不认 name** |
+| 1. 创建 person | `POST /x_organization_assemble_control/api/person`，body `{"name":"testadmin","employee":"90001","mobile":"13800000001","mail":"testadmin@o2oa.net"}` | 返回 `data.id`（f474dae3-5744-49fd-97b6-8357cadc5e34）；unique 为随机 UUID |
+| 2. 设置密码 | `PUT /x_organization_assemble_control/api/person/{id}/set/password`，body `{"value":"testadmin"}` | v9 的 Wi 继承 WrapString，密码放在 `value` 字段（从 war 内 describe/sources 反查确认） |
+| 3. 解锁（如触发） | `GET /x_organization_assemble_control/api/person/unlock/{id}` | **只认 id，不认 name** |
 
 排错记录：
 - `PUT person/{id}` 带 password 字段：成功但被忽略（不是改密通道）
@@ -41,13 +41,13 @@ testadmin/testadmin 创建成功并可正常登录（tokenType=user）。所用 
 
 | # | Method | 端点（rust_path=java_action 映射） | Rust HTTP | Java HTTP | 判定 | 主要差异 |
 |---|--------|-----------------------------------|-----------|-----------|------|----------|
-| 1 | GET | `/jaxrs/unit/list/(0)/next/20` ↔ control `unit/list/(0)/next/20` | 200 | 200 | **不一致** | 根因 A/B/C + 数据集差异 |
-| 2 | GET | `/jaxrs/person/list/(0)/next/20` ↔ control `person/list/(0)/next/20` | 200 | 200 | **不一致** | 根因 A/B/C + 数据集差异 |
-| 3 | GET | `/jaxrs/role/list/(0)/next/20` ↔ control `role/list/(0)/next/20` | 200 | 200 | **不一致** | 根因 A/B/C（Java 25 个系统角色 vs Rust 3 条测试角色） |
-| 4 | GET | `/jaxrs/group/list/(0)/next/20` ↔ control `group/list/(0)/next/20` | 200 | 200 | **不一致** | 数据两侧均为空数组，仍 FAIL → 纯结构差异（根因 A/B/C） |
-| 5 | GET | `/jaxrs/person/xadmin` ↔ control `person/xadmin` | 200（error envelope "person not found"） | 200（person 详情） | **不一致** | 根因 D + 测试数据不对齐（Rust 库无 xadmin person） |
-| 6 | GET | `/jaxrs/unit/list` ↔ control `unit/list` | 200（3 units） | 500（"组织:list, 不存在."） | **不一致** | 根因 E：Java 将其解析为 `unit/{flag}=list`，无独立路由；Rust 有独立路由 |
-| 7 | GET | `/jaxrs/authentication` ↔ authentication war `authentication` | 200 | 200 | **不一致** | 根因 F：whoami 字段覆盖悬殊（Rust data 4 字段 vs Java 30+ 字段） |
+| 1 | GET | `/api/unit/list/(0)/next/20` ↔ control `unit/list/(0)/next/20` | 200 | 200 | **不一致** | 根因 A/B/C + 数据集差异 |
+| 2 | GET | `/api/person/list/(0)/next/20` ↔ control `person/list/(0)/next/20` | 200 | 200 | **不一致** | 根因 A/B/C + 数据集差异 |
+| 3 | GET | `/api/role/list/(0)/next/20` ↔ control `role/list/(0)/next/20` | 200 | 200 | **不一致** | 根因 A/B/C（Java 25 个系统角色 vs Rust 3 条测试角色） |
+| 4 | GET | `/api/group/list/(0)/next/20` ↔ control `group/list/(0)/next/20` | 200 | 200 | **不一致** | 数据两侧均为空数组，仍 FAIL → 纯结构差异（根因 A/B/C） |
+| 5 | GET | `/api/person/xadmin` ↔ control `person/xadmin` | 200（error envelope "person not found"） | 200（person 详情） | **不一致** | 根因 D + 测试数据不对齐（Rust 库无 xadmin person） |
+| 6 | GET | `/api/unit/list` ↔ control `unit/list` | 200（3 units） | 500（"组织:list, 不存在."） | **不一致** | 根因 E：Java 将其解析为 `unit/{flag}=list`，无独立路由；Rust 有独立路由 |
+| 7 | GET | `/api/authentication` ↔ authentication war `authentication` | 200 | 200 | **不一致** | 根因 F：whoami 字段覆盖悬殊（Rust data 4 字段 vs Java 30+ 字段） |
 
 统计：实测 7 / 一致 0 / 不一致 7 / SKIP 0。
 
@@ -68,7 +68,7 @@ testadmin/testadmin 创建成功并可正常登录（tokenType=user）。所用 
 
 **D. 错误语义不一致**：资源不存在时 Rust 返回 HTTP 200 + `type:error` envelope；Java 返回 HTTP 4xx/5xx + error envelope。影响所有 not-found 类断言。
 
-**E. 路由歧义**：Java `GET /jaxrs/unit/list` 被 `unit/{flag}` 吞掉（flag="list" 报"组织不存在"），Rust 注册了独立精确路由。同类风险适用于所有"短名词恰好撞 {flag}"的路径（如 role/list、group/list）。
+**E. 路由歧义**：Java `GET /api/unit/list` 被 `unit/{flag}` 吞掉（flag="list" 报"组织不存在"），Rust 注册了独立精确路由。同类风险适用于所有"短名词恰好撞 {flag}"的路径（如 role/list、group/list）。
 
 **F. whoami 字段覆盖**：Rust data 仅 authenticated/id/name/unique；Java 另有 tokenType/roleList/identityList/distinguishedName/mobile/mail/failureCount/topUnitList 等 30+ 字段。
 
@@ -77,7 +77,7 @@ testadmin/testadmin 创建成功并可正常登录（tokenType=user）。所用 
 ## 五、框架遗留问题清单（U3 前待办）
 
 1. `tests/behavior_comparison/endpoints.rs`（自动生成）所有条目 `java_war`/`java_action` 为空字符串 → 全量 `behavior_compare.rs` 目前产出的 Java URL 全部无效。生成器需补 war/action 映射（本次手工映射的 7 条可作种子）。
-2. `is_service_reachable` 探测 `GET /health`：O2OA 无此端点（404），全量跑会把 Java 判为不可达而全部 SKIP。建议改为探测已知 200 端点（如登录或 `/x_organization_assemble_authentication/jaxrs/authentication`）。
+2. `is_service_reachable` 探测 `GET /health`：O2OA 无此端点（404），全量跑会把 Java 判为不可达而全部 SKIP。建议改为探测已知 200 端点（如登录或 `/x_organization_assemble_authentication/api/authentication`）。
 3. `JAVA_SERVICE_URL` 默认值仍为 8080（tests/behavior_compare.rs:23）——本次通过环境变量绕过，建议改默认值为 18080。
 4. comparator diff 文本把整个 JSON 子树打进每条差异（报告单行截断到 2000 字符仍超长），可读性差，建议改为仅打印路径与两侧类型摘要。
 5. comparator.rs:197 存在死代码 `let status = ...`（编译警告 unused variable，原有问题，未动）。

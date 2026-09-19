@@ -2,8 +2,8 @@
 
 ## Endpoints
 
-- `POST /jaxrs/component` — createComponent
-- `GET /jaxrs/component/{id}` — getComponent
-- `PUT /jaxrs/component/{id}` — updateComponent
-- `DELETE /jaxrs/component/{id}` — removeComponent
-- `GET /jaxrs/component/list/all` — listComponent
+- `POST /api/component` — createComponent
+- `GET /api/component/{id}` — getComponent
+- `PUT /api/component/{id}` — updateComponent
+- `DELETE /api/component/{id}` — removeComponent
+- `GET /api/component/list/all` — listComponent

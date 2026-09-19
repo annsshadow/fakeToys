@@ -1,9 +1,11 @@
+# arm-cmn
+
 ﻿## Arm 一致性网格网络（Coherent Mesh Network）PMU
 
 
 CMN-600 是一种可配置的网格互连（mesh interconnect），由矩形的交叉点（crosspoint，XP）网格组成，每个交叉点最多支持两个设备端口，各类 AMBA CHI 代理（agent）连接到这些端口上
 CMN 在其调试与跟踪（debug and trace）功能中实现了一种分布式 PMU 设计。这包含位于每个 XP 的本地监视器（DTM），它对来自所连接设备节点XP 本身的至4 个事件信号进行计数。这些本地计数器的溢出被累加到由主控制器（DTC）实现的至多 8 个全局计数器中，DTC 提供整体PMU 控制，并在全局计数器溢出时产生中断
-### PMU 事件
+## PMU 事件
 
 
 PMU 驱动为整个互连注册一个单一PMU 设备，参/sys/bus/event_source/devices/arm_cmn_0。多芯片系统可能通过外部 CCIX 链路将多CMN 连接在一起——在这种情况下，每个网格完全独立地统计自身的事件，并且额外的 PMU 设备将被命名arm_cmn_{1..n}

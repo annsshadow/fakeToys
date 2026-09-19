@@ -1,6 +1,6 @@
 //! plan002 U2 收尾 (part 6): group 剩余 13 个端点。
 //!
-//! 对齐 Java GroupAction 其余方法。群组层级依赖迁移 071 提供的
+//! 对齐 o2server GroupAction 其余方法。群组层级依赖迁移 071 提供的
 //! x_org_group.parent_id（o2 Group.groupList 的关系化表达）。
 
 use axum::{
@@ -12,7 +12,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    capped, normalize_flags, ok_java_list, row_to_map, string_field, string_list, wrap_bool,
+    capped, normalize_flags, ok_legacy_list, row_to_map, string_field, string_list, wrap_bool,
     PICK_ANY,
 };
 
@@ -24,11 +24,11 @@ fn finish_group_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
         let count = list.len() as i64;
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 "groupList".to_string(),
                 Value::Array(list.into_iter().map(Value::String).collect()),
@@ -39,7 +39,7 @@ fn finish_group_rows(
     }
 }
 
-/// POST /jaxrs/group/has/role (Java ActionHasRole，Wi{group, roleList})：
+/// POST /api/group/has/role (o2server ActionHasRole，Wi{group, roleList})：
 /// 群组是否拥有指定角色之一（WrapBoolean）。
 pub async fn group_has_role(
     pool: Extension<Pool>,
@@ -78,7 +78,7 @@ async fn group_tree_scope(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let scope_sql = match (direction, nested) {
         ("sub", false) => {
@@ -137,24 +137,24 @@ macro_rules! group_tree_endpoint {
     };
 }
 
-// POST /jaxrs/group/list/group/sub/direct。
+// POST /api/group/list/group/sub/direct。
 group_tree_endpoint!(group_list_group_sub_direct, "sub", false, false);
-// POST /jaxrs/group/list/group/sub/direct/object。
+// POST /api/group/list/group/sub/direct/object。
 group_tree_endpoint!(group_list_group_sub_direct_object, "sub", false, true);
-// POST /jaxrs/group/list/group/sub/nested。
+// POST /api/group/list/group/sub/nested。
 group_tree_endpoint!(group_list_group_sub_nested, "sub", true, false);
-// POST /jaxrs/group/list/group/sub/nested/object。
+// POST /api/group/list/group/sub/nested/object。
 group_tree_endpoint!(group_list_group_sub_nested_object, "sub", true, true);
-// POST /jaxrs/group/list/group/sup/direct。
+// POST /api/group/list/group/sup/direct。
 group_tree_endpoint!(group_list_group_sup_direct, "sup", false, false);
-// POST /jaxrs/group/list/group/sup/direct/object。
+// POST /api/group/list/group/sup/direct/object。
 group_tree_endpoint!(group_list_group_sup_direct_object, "sup", false, true);
-// POST /jaxrs/group/list/group/sup/nested。
+// POST /api/group/list/group/sup/nested。
 group_tree_endpoint!(group_list_group_sup_nested, "sup", true, false);
-// POST /jaxrs/group/list/group/sup/nested/object。
+// POST /api/group/list/group/sup/nested/object。
 group_tree_endpoint!(group_list_group_sup_nested_object, "sup", true, true);
 
-/// POST /jaxrs/group/list/person/object (Java ActionListWithPersonObject)。
+/// POST /api/group/list/person/object (o2server ActionListWithPersonObject)。
 pub async fn group_list_person_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -162,7 +162,7 @@ pub async fn group_list_person_object(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     const SQL: &str = "SELECT DISTINCT p.id, p.name, p.unit_id FROM x_org_person p \
          JOIN x_org_group_member m ON m.person_id = p.id \
@@ -174,10 +174,10 @@ pub async fn group_list_person_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
-/// POST /jaxrs/group/list/identity (Java ActionListWithIdentity)：成员(person)→身份解析。
+/// POST /api/group/list/identity (o2server ActionListWithIdentity)：成员(person)→身份解析。
 pub async fn group_list_identity(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -192,7 +192,7 @@ pub async fn group_list_identity(
     named_list_response_group(pool, "identityList", SQL, flags).await
 }
 
-/// POST /jaxrs/group/list/identity/object。
+/// POST /api/group/list/identity/object。
 pub async fn group_list_identity_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -205,7 +205,7 @@ pub async fn group_list_identity_object(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -213,7 +213,7 @@ pub async fn group_list_identity_object(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 async fn named_list_response_group(
@@ -223,7 +223,7 @@ async fn named_list_response_group(
     flags: Vec<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 key.to_string(),
                 Value::Array(vec![]),
@@ -239,7 +239,7 @@ async fn named_list_response_group(
         .map_err(|_| AppError::Internal)?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     let count = list.len() as i64;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Object(serde_json::Map::from_iter([(
             key.to_string(),
             Value::Array(list.into_iter().map(Value::String).collect()),
@@ -249,7 +249,7 @@ async fn named_list_response_group(
     )))
 }
 
-/// POST /jaxrs/group/list/group/tree (Java ActionListWithGroupTree，Wi{groupList})：
+/// POST /api/group/list/group/tree (o2server ActionListWithGroupTree，Wi{groupList})：
 /// 以种子群组为根的嵌套树（真实递归子树 + 直接成员计数）。
 pub async fn group_list_group_tree(
     pool: Extension<Pool>,
@@ -275,7 +275,7 @@ pub async fn group_list_group_tree(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -289,7 +289,7 @@ pub async fn group_list_group_tree(
     let mut root_ids: Vec<String> = Vec::new();
     let mut all_ids: Vec<String> = Vec::new();
     for row in &rows {
-        let id: String = row.get("id");
+        let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         let mut obj = row_to_map(row);
         if let Value::Object(ref mut m) = obj {
             m.insert("subGroups".to_string(), Value::Array(vec![]));
@@ -305,7 +305,7 @@ pub async fn group_list_group_tree(
     }
     // 第二遍分类：parent 在集合内 → 子节点；否则为根
     for row in &rows {
-        let id: String = row.get("id");
+        let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         let parent: Option<String> = row.get("parent_id");
         match parent.as_deref() {
             Some(pid) if pid != id.as_str() && base.contains_key(pid) => {
@@ -376,5 +376,5 @@ pub async fn group_list_group_tree(
             roots.push(assemble(id, &base, &children_map, &mut seen));
         }
     }
-    ok_java_list(roots.len(), roots)
+    ok_legacy_list(roots.len(), roots)
 }

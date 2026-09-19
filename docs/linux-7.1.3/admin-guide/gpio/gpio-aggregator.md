@@ -1,3 +1,5 @@
+# gpio-aggregator
+
 ﻿
 ## GPIO 鑱氬悎鍣。
 GPIO 聚合器提供了一种将 GPIO 聚合，并以一个新gpio_chip 暴露出来的机制。它支持
@@ -109,7 +111,7 @@ GPIO 聚合器通过将一组一个或多个 GPIO 聚合为一个新gpio_chip，
     $ echo 1         > /sys/kernel/config/gpio-aggregator/agg0/live
 
 
-### 通用 GPIO 驱动
+## 通用 GPIO 驱动
 
 GPIO 聚合器也可以用作 DT 中描述的、由简GPIO 操作的设备的通用驱动，而无需
 专用的内核内驱动。这在工业控制中很有用，并且与例spidev 并无不同，后者允用户从用户空间与 SPI 设备通信

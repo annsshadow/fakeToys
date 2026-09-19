@@ -1,9 +1,11 @@
+# vgxy61
+
 ﻿## ST VGXY61 鐩告満浼犳劅鍣ㄩ┍鍔。
 
 
 ST VGXY61 驱动实现了以下控制：
 
-### ``V4L2_CID_HDR_SENSOR_MODE``
+## ``V4L2_CID_HDR_SENSOR_MODE``
 
 
     更改传感器的 HDR 模式。HDR 图像通过合并使用两个不同曝光周期对同一场景的两次捕获得到

@@ -1,10 +1,12 @@
+# plip
+
 ﻿## PLIP：并行口 Internet 协议（Parallel Line Internet Protocol）设
 
 作者：Donald Becker <becker@super.org>
 机构：Supercomputing Research Center, Bowie MD 20715
 文本贡献：Tommy Thorn <tthorn@daimi.aau.dk>
 
-### PLIP 简
+## PLIP 简
 
 本文档描述并行口数据包推送器（Net/LGX）。该设备接口允许将两个并行口以点对点方式连接，并呈现为一IP 网络接口
 

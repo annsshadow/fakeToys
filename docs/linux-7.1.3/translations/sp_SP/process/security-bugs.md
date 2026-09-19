@@ -1,4 +1,6 @@
 
+# security-bugs
+
 :Original: Documentation/process/security-bugs.rst
 :Translator: Avadhut Naik <avadhut.naik@amd.com>
 

@@ -1,3 +1,5 @@
+# 2026-07-08-001-feat-test-coverage-expansion-plan
+
 ﻿---
 title: feat: Multi-engine full-codebase branch coverage 鈮?0%
 type: feat
@@ -86,7 +88,7 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
 
 - `Documentation/dev-tools/testing-strategy.rst` 测试策略文档（KUnit/kselftest 选型、优先级、checklist- `Documentation/dev-tools/testing-overview.rst` 框架概述
 - `Documentation/fault-injection/fault-injection.rst` 内核故障注入框架文档
-- `tools/testing/selftests/kselftest_harness.h` 鈥?kselftest  harness
+- `tools/testing/selftests/kselftest_harness.h` kselftest  harness
 
 ---
 
@@ -163,7 +165,7 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
   - `run()`：启syzkaller fuzzing 会话，支持超时控  - `collect_coverage()`：收kcov 覆盖率数- `test_orchestrator.py` 中确syzkaller 引擎可被 `--engines` 参数选中
 
 **Patterns to follow:**
-- `tools/testing/orchestrator/syzkaller_runner.py` 鈥，鐜版湁 stub 缁撴瀯
+- `tools/testing/orchestrator/syzkaller_runner.py` 鈥，鐜版湁 stub 统撴瀯
 - `tools/testing/orchestrator/base_runner.py` 基类接口
 - `tools/testing/orchestrator/kunit_runner.py` 成熟 runner 参
 **Test scenarios:**
@@ -198,7 +200,7 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
   - `tools/testing/fault-injection/subsystem_profiles/mm.yaml`
 - 每个配置文件定义：目标内核模块、故障类型、注入概率、预期测
 **Patterns to follow:**
-- `tools/testing/orchestrator/faultinj_runner.py` 鈥，鐜版湁缁撴瀯
+- `tools/testing/orchestrator/faultinj_runner.py` 鈥，鐜版湁统撴瀯
 - `Documentation/fault-injection/fault-injection.rst` 故障注入框架文档
 - `tools/testing/fault-injection/failcmd.sh` 命令行工具参
 **Test scenarios:**
@@ -229,7 +231,7 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
 **Patterns to follow:**
 - `tools/testing/coverage/coverage_harness.py` 覆盖率收集和报告生成
 - `tools/testing/coverage/gcov_parser.py` gcov 数据解析
-- `tools/testing/orchestrator/base_runner.py` 鈥?SuiteResult 鏁版嵁缁撴瀯
+- `tools/testing/orchestrator/base_runner.py` SuiteResult 鏁版嵁统撴瀯
 
 **Test scenarios:**
 - Happy path: `--coverage` 运行时，四引擎数据合并输出为单个 lcov 文件
@@ -364,5 +366,5 @@ origin: docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md
 
 - **Origin document:** [docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md](docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md)
 - Related code: [tools/testing/orchestrator/test_orchestrator.py](tools/testing/orchestrator/test_orchestrator.py), [tools/testing/orchestrator/syzkaller_runner.py](tools/testing/orchestrator/syzkaller_runner.py), [tools/testing/orchestrator/faultinj_runner.py](tools/testing/orchestrator/faultinj_runner.py), [tools/testing/coverage/coverage_harness.py](tools/testing/coverage/coverage_harness.py), [.gitlab-ci-coverage.yml](.gitlab-ci-coverage.yml)
-- Related docs: [Documentation/dev-tools/testing-strategy.rst](Documentation/dev-tools/testing-strategy.rst), [Documentation/fault-injection/fault-injection.rst](Documentation/fault-injection/fault-injection.rst)
+- Related docs: [Documentation/dev-tools/testing-strategy.rst](Documentation/dev-tools/testing-strategy.md), [Documentation/fault-injection/fault-injection.rst](Documentation/fault-injection/fault-injection.md)
 - Existing tests: [net/core_kunit_test.c](net/core_kunit_test.c), [fs/super_kunit_test.c](fs/super_kunit_test.c), [kernel/sysctl-test.c](kernel/sysctl-test.c), [mm/page_alloc_kunit_test.c](mm/page_alloc_kunit_test.c)

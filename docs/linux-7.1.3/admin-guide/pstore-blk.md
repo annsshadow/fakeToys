@@ -1,6 +1,8 @@
+# pstore-blk
+
 ﻿## pstore block oops/panic 记录
 
-### 简
+## 简
 
 pstore block（pstore/blk）是一oops/panic 记录器，它在系统崩溃前将其日志写块设备和非块设备。你可以获取
 
@@ -37,13 +39,13 @@ pstore/blk 被构建进内核时，“blkdev接受以下变体
 它接受以下用MTD 设备的变体：
 
 1. <device name> MTD 设备名。推荐使“pstore”#. <device number> MTD 设备号
-#### kmsg_size
+## kmsg_size
 
 
 用于 oops/panic 前端（front-end）的块大小（KB 为单位）。它**必须**4 的倍数如果你不关心 oops/panic 日志，它是可选的
 根据除其pstore 前端外剩余的空间，oops/panic 前端有多个块
 pstore/blk 会逐个记录oops/panic 块，并且如果没有更多空闲块，总是覆盖最旧的块
-#### pmsg_size
+### pmsg_size
 
 
 用于 pmsg 前端（front-end）的块大小（KB 为单位）。它**必须**4 的倍数如果你不关心 pmsg 日志，它是可选的
@@ -80,7 +82,7 @@ ftrace 的所有日志将被追加到该块。重启后内容被合并并**/sys/
  CPU:1 ts:5916723 c05c813d  c05ca630  yield_to <- __mutex_lock_slowpath+0x314/0x358
  CPU:1 ts:5916724 c05ca2d1  c05ca638  __ww_mutex_lock <- __mutex_lock_slowpath+0x31c/0x358
 ```
-#### max_reason
+## max_reason
 
 
 限制存储哪些类型kmsg 转储可以通过 `max_reason` 值来控制，如 include/linux/kmsg_dump.h 中的
@@ -92,6 +94,7 @@ ftrace 的所有日志将被追加到该块。重启后内容被合并并**/sys/
 
 设备驱动使用 `register_pstore_device` `struct pstore_device_info` pstore/blk 注册
    :export:
+
 
 ### 压缩与头
 
@@ -125,6 +128,9 @@ pstore/blk 支持 psblk_blkdev_info()，它定义**linux/pstore_blk.h** 中，�
 供开发者参考，以下是所有重要的结构API
    :internal:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+

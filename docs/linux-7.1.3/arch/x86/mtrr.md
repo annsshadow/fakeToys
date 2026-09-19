@@ -1,3 +1,5 @@
+# mtrr
+
 ﻿
 ## MTRR（Memory Type Range Register，内存类型范围寄存器）控
 :Authors: - Richard Gooch <rgooch@atnf.csiro.au> - 1999 骞?6 鏈?3 鏃?          - Luis R. Rodriguez <mcgrof@do-not-panic.com> - 2015 骞?4 鏈?9 鏃。

@@ -1,5 +1,5 @@
 
-## Il sottosistema I2C/SMBus
+# Il sottosistema I2C/SMBus
 
 
 ## Introduzione

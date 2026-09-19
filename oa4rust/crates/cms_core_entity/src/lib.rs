@@ -1,6 +1,6 @@
 use axum::{
     extract::{Extension, Json, Path},
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use sea_orm::{
@@ -53,7 +53,7 @@ pub async fn category_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -190,7 +190,7 @@ pub async fn article_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -296,14 +296,572 @@ pub async fn article_create(
     ))))
 }
 
-pub fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+// ── cms/core/entity/* 斜杠路径家族（前端 o2server 斜杠口径补齐，查真实表 093 迁移）──
+/// 每表显式列映射：键名与 create/save payload 的 camelCase 口径一致；
+/// 时间戳走 ::text（tokio-postgres 在本栈里 NaiveDateTime 不实现 FromSql）。
+async fn list_cms_entity_table(
+    pool: &deadpool_postgres::Pool,
+    table: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = match table {
+        "x_cms_column" => {
+            "SELECT id, name, parent_id AS parentId, sort_order AS sortOrder, \
+             description, status, create_time::text AS createTime, update_time::text AS updateTime \
+             FROM x_cms_column WHERE deleted_at IS NULL ORDER BY sort_order, id"
+        }
+        "x_cms_index" => {
+            "SELECT id, name, target, sort_order AS sortOrder, \
+             description, status, create_time::text AS createTime, update_time::text AS updateTime \
+             FROM x_cms_index WHERE deleted_at IS NULL ORDER BY sort_order, id"
+        }
+        "x_cms_module" => {
+            "SELECT id, name, app_id AS appId, module_type AS moduleType, \
+             description, status, create_time::text AS createTime, update_time::text AS updateTime \
+             FROM x_cms_module WHERE deleted_at IS NULL ORDER BY id"
+        }
+        "x_cms_note" => {
+            "SELECT id, title, content, person_id AS personId, \
+             status, create_time::text AS createTime, update_time::text AS updateTime \
+             FROM x_cms_note WHERE deleted_at IS NULL ORDER BY create_time DESC, id"
+        }
+        _ => {
+            "SELECT id, column_id AS columnId, person_id AS personId, role, \
+             create_time::text AS createTime, update_time::text AS updateTime \
+             FROM x_cms_column_manager WHERE deleted_at IS NULL ORDER BY id"
+        }
+    };
+    let rows = client
+        .query(sql, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(shared::response::row_to_json).collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_list(
+    pool: Extension<deadpool_postgres::Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_cms_entity_table(&pool, "x_cms_column").await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_manager_list(
+    pool: Extension<deadpool_postgres::Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_cms_entity_table(&pool, "x_cms_column_manager").await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_index_list(
+    pool: Extension<deadpool_postgres::Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_cms_entity_table(&pool, "x_cms_index").await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_module_list(
+    pool: Extension<deadpool_postgres::Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_cms_entity_table(&pool, "x_cms_module").await
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_note_list(
+    pool: Extension<deadpool_postgres::Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_cms_entity_table(&pool, "x_cms_note").await
+}
+
+// ── cms/core/entity/* 的 create/save/delete（参数化写操作，表 093）──
+async fn cms_entity_soft_delete(
+    pool: &deadpool_postgres::Pool,
+    table: &str,
+    id: &str,
+) -> Result<bool, AppError> {
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let owned = id.to_string();
+    let refs: Vec<&(dyn ToSql + Sync)> = vec![&owned as &(dyn ToSql + Sync)];
+    let n = client
+        .execute(
+            &format!("UPDATE {table} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL"),
+            &refs,
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(n > 0)
+}
+
+/// 参数化 create：table 是内部常量（非用户输入），命名列按表取；值全部走 $ 占位防注入。
+async fn cms_entity_create(
+    pool: &deadpool_postgres::Pool,
+    table: &str,
+    payload: &Value,
+) -> Result<String, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    let id = uuid::Uuid::new_v4().to_string();
+    let s = |k: &str| {
+        payload
+            .get(k)
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string()
+    };
+    let (sql, values): (String, Vec<String>) = match table {
+        "x_cms_column" => (
+            "INSERT INTO x_cms_column (id, name, parent_id, description, status, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,'active',NOW(),NOW())".to_string(),
+            vec![id.clone(), s("name"), s("parentId"), s("description")],
+        ),
+        "x_cms_index" => (
+            "INSERT INTO x_cms_index (id, name, target, description, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,NOW(),NOW())".to_string(),
+            vec![id.clone(), s("name"), s("target"), s("description")],
+        ),
+        "x_cms_module" => (
+            "INSERT INTO x_cms_module (id, name, app_id, module_type, description, status, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,$5,'active',NOW(),NOW())".to_string(),
+            vec![id.clone(), s("name"), s("appId"), s("moduleType"), s("description")],
+        ),
+        "x_cms_note" => (
+            "INSERT INTO x_cms_note (id, title, content, person_id, status, create_time, update_time) \
+             VALUES ($1,$2,$3,$4,'active',NOW(),NOW())".to_string(),
+            vec![id.clone(), s("title"), s("content"), s("personId")],
+        ),
+        _ => (
+            "INSERT INTO x_cms_column_manager (id, column_id, person_id, role, create_time, update_time) \
+             VALUES ($1,$2,$3,'manager',NOW(),NOW())".to_string(),
+            vec![id.clone(), s("columnId"), s("personId")],
+        ),
+    };
+    let params: Vec<&(dyn ToSql + Sync)> =
+        values.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
+    client
+        .execute(&sql, &params)
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(id)
+}
+
+/// 参数化 save：更新该表命名列（写入传入字段），值走 $ 占位防注入。
+async fn cms_entity_save(
+    pool: &deadpool_postgres::Pool,
+    table: &str,
+    id: &str,
+    payload: &Value,
+) -> Result<bool, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+    let s = |k: &str| {
+        payload
+            .get(k)
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string()
+    };
+    let (sql, values): (String, Vec<String>) = match table {
+        "x_cms_column" => (
+            "UPDATE x_cms_column SET name=$1, description=$2, update_time=NOW() WHERE id=$3 AND deleted_at IS NULL".to_string(),
+            vec![s("name"), s("description"), id.to_string()],
+        ),
+        "x_cms_index" => (
+            "UPDATE x_cms_index SET name=$1, target=$2, description=$3, update_time=NOW() WHERE id=$4 AND deleted_at IS NULL".to_string(),
+            vec![s("name"), s("target"), s("description"), id.to_string()],
+        ),
+        "x_cms_module" => (
+            "UPDATE x_cms_module SET name=$1, app_id=$2, module_type=$3, description=$4, update_time=NOW() WHERE id=$5 AND deleted_at IS NULL".to_string(),
+            vec![s("name"), s("appId"), s("moduleType"), s("description"), id.to_string()],
+        ),
+        "x_cms_note" => (
+            "UPDATE x_cms_note SET title=$1, content=$2, person_id=$3, update_time=NOW() WHERE id=$4 AND deleted_at IS NULL".to_string(),
+            vec![s("title"), s("content"), s("personId"), id.to_string()],
+        ),
+        _ => (
+            "UPDATE x_cms_column_manager SET column_id=$1, person_id=$2, role=$3, update_time=NOW() WHERE id=$4 AND deleted_at IS NULL".to_string(),
+            vec![s("columnId"), s("personId"), s("role"), id.to_string()],
+        ),
+    };
+    let params: Vec<&(dyn ToSql + Sync)> =
+        values.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
+    let n = client
+        .execute(&sql, &params)
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(n > 0)
+}
+
+// ── 5 家族 × (create/save/delete) 薄 handler ──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_create(
+    pool: Extension<deadpool_postgres::Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = cms_entity_create(&pool, "x_cms_column", &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_save(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_save(&pool, "x_cms_column", &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_delete(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_soft_delete(&pool, "x_cms_column", &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_manager_create(
+    pool: Extension<deadpool_postgres::Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = cms_entity_create(&pool, "x_cms_column_manager", &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_manager_save(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_save(&pool, "x_cms_column_manager", &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_column_manager_delete(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_soft_delete(&pool, "x_cms_column_manager", &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_index_create(
+    pool: Extension<deadpool_postgres::Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = cms_entity_create(&pool, "x_cms_index", &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_index_save(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_save(&pool, "x_cms_index", &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_index_delete(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_soft_delete(&pool, "x_cms_index", &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_module_create(
+    pool: Extension<deadpool_postgres::Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = cms_entity_create(&pool, "x_cms_module", &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_module_save(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_save(&pool, "x_cms_module", &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_module_delete(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_soft_delete(&pool, "x_cms_module", &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_note_create(
+    pool: Extension<deadpool_postgres::Pool>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = cms_entity_create(&pool, "x_cms_note", &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_note_save(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_save(&pool, "x_cms_note", &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn cms_entity_note_delete(
+    pool: Extension<deadpool_postgres::Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ok = cms_entity_soft_delete(&pool, "x_cms_note", &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(ok)),
+        ]),
+    ))))
+}
+
+pub fn cms_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/cms/category/list", get(category_list))
-        .route("/jaxrs/cms/category/{id}", get(category_get))
-        .route("/jaxrs/cms/category/create", post(category_create))
-        .route("/jaxrs/cms/article/list", get(article_list))
-        .route("/jaxrs/cms/article/{id}", get(article_get))
-        .route("/jaxrs/cms/article/create", post(article_create))
+        .route("/api/cms/category/list", get(category_list))
+        .route("/api/cms/category/{id}", get(category_get))
+        .route("/api/cms/category/create", post(category_create))
+        .route("/api/cms/article/list", get(article_list))
+        .route("/api/cms/article/{id}", get(article_get))
+        .route("/api/cms/article/create", post(article_create))
+        // ── cms/core/entity/* 斜杠路径家族（补齐 KNOWN_BACKEND_GAPS）──
+        .route(
+            "/api/cms/core/entity/column/list",
+            get(cms_entity_column_list),
+        )
+        .route(
+            "/api/cms/core/entity/column_manager/list",
+            get(cms_entity_column_manager_list),
+        )
+        .route(
+            "/api/cms/core/entity/index/list",
+            get(cms_entity_index_list),
+        )
+        .route(
+            "/api/cms/core/entity/module/list",
+            get(cms_entity_module_list),
+        )
+        .route("/api/cms/core/entity/note/list", get(cms_entity_note_list))
+        // ── 5 家族的 create/save/delete（真实写操作，支撑桌面 CRUD 视图）──
+        .route(
+            "/api/cms/core/entity/column/create",
+            post(cms_entity_column_create),
+        )
+        .route(
+            "/api/cms/core/entity/column/save/{id}",
+            put(cms_entity_column_save),
+        )
+        .route(
+            "/api/cms/core/entity/column/save/{id}",
+            post(cms_entity_column_save),
+        )
+        .route(
+            "/api/cms/core/entity/column/delete/{id}",
+            delete(cms_entity_column_delete),
+        )
+        .route(
+            "/api/cms/core/entity/column/delete/{id}",
+            post(cms_entity_column_delete),
+        )
+        .route(
+            "/api/cms/core/entity/column_manager/create",
+            post(cms_entity_column_manager_create),
+        )
+        .route(
+            "/api/cms/core/entity/column_manager/save/{id}",
+            put(cms_entity_column_manager_save),
+        )
+        .route(
+            "/api/cms/core/entity/column_manager/save/{id}",
+            post(cms_entity_column_manager_save),
+        )
+        .route(
+            "/api/cms/core/entity/column_manager/delete/{id}",
+            delete(cms_entity_column_manager_delete),
+        )
+        .route(
+            "/api/cms/core/entity/column_manager/delete/{id}",
+            post(cms_entity_column_manager_delete),
+        )
+        .route(
+            "/api/cms/core/entity/index/create",
+            post(cms_entity_index_create),
+        )
+        .route(
+            "/api/cms/core/entity/index/save/{id}",
+            put(cms_entity_index_save),
+        )
+        .route(
+            "/api/cms/core/entity/index/save/{id}",
+            post(cms_entity_index_save),
+        )
+        .route(
+            "/api/cms/core/entity/index/delete/{id}",
+            delete(cms_entity_index_delete),
+        )
+        .route(
+            "/api/cms/core/entity/index/delete/{id}",
+            post(cms_entity_index_delete),
+        )
+        .route(
+            "/api/cms/core/entity/module/create",
+            post(cms_entity_module_create),
+        )
+        .route(
+            "/api/cms/core/entity/module/save/{id}",
+            put(cms_entity_module_save),
+        )
+        .route(
+            "/api/cms/core/entity/module/save/{id}",
+            post(cms_entity_module_save),
+        )
+        .route(
+            "/api/cms/core/entity/module/delete/{id}",
+            delete(cms_entity_module_delete),
+        )
+        .route(
+            "/api/cms/core/entity/module/delete/{id}",
+            post(cms_entity_module_delete),
+        )
+        .route(
+            "/api/cms/core/entity/note/create",
+            post(cms_entity_note_create),
+        )
+        .route(
+            "/api/cms/core/entity/note/save/{id}",
+            put(cms_entity_note_save),
+        )
+        .route(
+            "/api/cms/core/entity/note/save/{id}",
+            post(cms_entity_note_save),
+        )
+        .route(
+            "/api/cms/core/entity/note/delete/{id}",
+            delete(cms_entity_note_delete),
+        )
+        .route(
+            "/api/cms/core/entity/note/delete/{id}",
+            post(cms_entity_note_delete),
+        )
+        .layer(Extension(pool))
 }
 
 #[cfg(test)]

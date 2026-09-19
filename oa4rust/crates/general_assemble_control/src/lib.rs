@@ -8,7 +8,7 @@ use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
-pub const JAVA_BASE: &str = "/jaxrs/general_assemble_control";
+pub const API_BASE: &str = "/api/general_assemble_control";
 pub mod routes;
 
 #[cfg(test)]
@@ -31,20 +31,35 @@ pub async fn get_general_control_status(
 
     let data = match row {
         Ok(r) => serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(r.get("id"))),
+            (
+                "id".to_string(),
+                Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()),
+            ),
             (
                 "systemName".to_string(),
-                Value::String(r.get("system_name")),
+                Value::String(
+                    r.get::<_, Option<String>>("system_name")
+                        .unwrap_or_default(),
+                ),
             ),
             (
                 "\"maintenanceMode\"".to_string(),
-                Value::Bool(r.get("maintenance_mode")),
+                Value::Bool(
+                    r.get::<_, Option<bool>>("maintenance_mode")
+                        .unwrap_or(false),
+                ),
             ),
             (
                 "\"allowRegistration\"".to_string(),
-                Value::Bool(r.get("allow_registration")),
+                Value::Bool(
+                    r.get::<_, Option<bool>>("allow_registration")
+                        .unwrap_or(false),
+                ),
             ),
-            ("version".to_string(), Value::String(r.get("version"))),
+            (
+                "version".to_string(),
+                Value::String(r.get::<_, Option<String>>("version").unwrap_or_default()),
+            ),
         ]),
         Err(_) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(String::new())),
@@ -56,6 +71,133 @@ pub async fn get_general_control_status(
     };
 
     Ok(Json(ActionResult::success(Value::Object(data))))
+}
+
+// ── general/assemble/control/list（裸路径，桌面 CommonApp「公共组件库」引用）──
+#[allow(non_snake_case)]
+pub async fn general_control_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, system_name, maintenance_mode, allow_registration, version, \
+                    create_time::text AS create_time \
+             FROM x_general_assemble_control_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "systemName".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("system_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "maintenanceMode".to_string(),
+                    Value::Bool(
+                        row.get::<_, Option<bool>>("maintenance_mode")
+                            .unwrap_or(false),
+                    ),
+                ),
+                (
+                    "allowRegistration".to_string(),
+                    Value::Bool(
+                        row.get::<_, Option<bool>>("allow_registration")
+                            .unwrap_or(false),
+                    ),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── general control 家族 CRUD（x_general_assemble_control_config 032/037，通用参数化写）──
+fn general_control_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_general_assemble_control_config",
+        columns: &[
+            ("systemName", "system_name"),
+            ("maintenanceMode", "maintenance_mode"),
+            ("allowRegistration", "allow_registration"),
+            ("version", "version"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn general_control_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &general_control_spec(), &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn general_control_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &general_control_spec(), &id, &payload).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn general_control_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &general_control_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -116,21 +258,39 @@ pub async fn get_module_permissions(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "moduleName".to_string(),
-                    Value::String(row.get("module_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("module_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
-                ("canView".to_string(), Value::Bool(row.get("can_view"))),
-                ("canEdit".to_string(), Value::Bool(row.get("can_edit"))),
-                ("canDelete".to_string(), Value::Bool(row.get("can_delete"))),
+                (
+                    "\"userId\"".to_string(),
+                    Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
+                ),
+                (
+                    "canView".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("can_view").unwrap_or(false)),
+                ),
+                (
+                    "canEdit".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("can_edit").unwrap_or(false)),
+                ),
+                (
+                    "canDelete".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("can_delete").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -171,9 +331,18 @@ pub async fn attendscope_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -190,7 +359,7 @@ pub async fn attendscope_list(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -215,9 +384,18 @@ pub async fn attendscope_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "unitId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -339,16 +517,37 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "\"parentId\"".to_string(),
-                    Value::String(row.get("parent_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("province".to_string(), Value::String(row.get("province"))),
-                ("city".to_string(), Value::String(row.get("city"))),
-                ("district".to_string(), Value::String(row.get("district"))),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                ),
+                (
+                    "province".to_string(),
+                    Value::String(row.get::<_, Option<String>>("province").unwrap_or_default()),
+                ),
+                (
+                    "city".to_string(),
+                    Value::String(row.get::<_, Option<String>>("city").unwrap_or_default()),
+                ),
+                (
+                    "district".to_string(),
+                    Value::String(row.get::<_, Option<String>>("district").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -365,7 +564,7 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -391,16 +590,37 @@ pub async fn area_list_province_province(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "\"parentId\"".to_string(),
-                    Value::String(row.get("parent_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("province".to_string(), Value::String(row.get("province"))),
-                ("city".to_string(), Value::String(row.get("city"))),
-                ("district".to_string(), Value::String(row.get("district"))),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                ),
+                (
+                    "province".to_string(),
+                    Value::String(row.get::<_, Option<String>>("province").unwrap_or_default()),
+                ),
+                (
+                    "city".to_string(),
+                    Value::String(row.get::<_, Option<String>>("city").unwrap_or_default()),
+                ),
+                (
+                    "district".to_string(),
+                    Value::String(row.get::<_, Option<String>>("district").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -417,7 +637,7 @@ pub async fn area_list_province_province(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -444,16 +664,37 @@ pub async fn area_list_province_province_city_city(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "\"parentId\"".to_string(),
-                    Value::String(row.get("parent_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("province".to_string(), Value::String(row.get("province"))),
-                ("city".to_string(), Value::String(row.get("city"))),
-                ("district".to_string(), Value::String(row.get("district"))),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                ),
+                (
+                    "province".to_string(),
+                    Value::String(row.get::<_, Option<String>>("province").unwrap_or_default()),
+                ),
+                (
+                    "city".to_string(),
+                    Value::String(row.get::<_, Option<String>>("city").unwrap_or_default()),
+                ),
+                (
+                    "district".to_string(),
+                    Value::String(row.get::<_, Option<String>>("district").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -470,7 +711,7 @@ pub async fn area_list_province_province_city_city(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -498,16 +739,37 @@ pub async fn area_list_province_province_city_city_district_district(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "\"parentId\"".to_string(),
-                    Value::String(row.get("parent_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("province".to_string(), Value::String(row.get("province"))),
-                ("city".to_string(), Value::String(row.get("city"))),
-                ("district".to_string(), Value::String(row.get("district"))),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                ),
+                (
+                    "province".to_string(),
+                    Value::String(row.get::<_, Option<String>>("province").unwrap_or_default()),
+                ),
+                (
+                    "city".to_string(),
+                    Value::String(row.get::<_, Option<String>>("city").unwrap_or_default()),
+                ),
+                (
+                    "district".to_string(),
+                    Value::String(row.get::<_, Option<String>>("district").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -524,7 +786,7 @@ pub async fn area_list_province_province_city_city_district_district(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -616,16 +878,37 @@ pub async fn area_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "\"parentId\"".to_string(),
-                    Value::String(row.get("parent_id")),
+                    Value::String(
+                        row.get::<_, Option<String>>("parent_id")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("province".to_string(), Value::String(row.get("province"))),
-                ("city".to_string(), Value::String(row.get("city"))),
-                ("district".to_string(), Value::String(row.get("district"))),
+                (
+                    "level".to_string(),
+                    Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                ),
+                (
+                    "province".to_string(),
+                    Value::String(row.get::<_, Option<String>>("province").unwrap_or_default()),
+                ),
+                (
+                    "city".to_string(),
+                    Value::String(row.get::<_, Option<String>>("city").unwrap_or_default()),
+                ),
+                (
+                    "district".to_string(),
+                    Value::String(row.get::<_, Option<String>>("district").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -744,9 +1027,18 @@ pub async fn ecnet_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "value".to_string(),
+                    Value::String(row.get::<_, Option<String>>("value").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -763,7 +1055,7 @@ pub async fn ecnet_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -788,7 +1080,10 @@ pub async fn excel_excelName_excelName(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
                     "\"excelName\"".to_string(),
@@ -831,12 +1126,21 @@ pub async fn excel_excelName_excelName_sheetList(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "sheetName".to_string(),
-                    Value::String(row.get("sheet_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("sheet_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("excelId".to_string(), Value::String(row.get("excel_id"))),
+                (
+                    "excelId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("excel_id").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -853,7 +1157,7 @@ pub async fn excel_excelName_excelName_sheetList(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -879,8 +1183,14 @@ pub async fn excel_result_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("result".to_string(), Value::String(row.get("result"))),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "result".to_string(),
+                    Value::String(row.get::<_, Option<String>>("result").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1004,8 +1314,14 @@ pub async fn generalfile_download_flag_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "size".to_string(),
                     Value::String(row.get::<_, i64>("size").to_string()),
@@ -1047,8 +1363,14 @@ pub async fn generalfile_flag_flag(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "size".to_string(),
                     Value::String(row.get::<_, i64>("size").to_string()),
@@ -1091,8 +1413,14 @@ pub async fn generalfile_flag_flag_binary_base64(
             let content: Option<String> = row.get("content");
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "content".to_string(),
                     Value::String(content.unwrap_or_default()),
@@ -1208,10 +1536,22 @@ pub async fn invoice_download_flag_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1248,10 +1588,22 @@ pub async fn invoice_get_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1291,7 +1643,7 @@ pub async fn invoice_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1::int OFFSET $2::int",
+            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await
@@ -1301,10 +1653,22 @@ pub async fn invoice_list_paging_page_size_size(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1320,7 +1684,7 @@ pub async fn invoice_list_paging_page_size_size(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size as i64,
@@ -1650,7 +2014,10 @@ pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "width".to_string(),
                     Value::Number(serde_json::Number::from(
@@ -1683,7 +2050,7 @@ pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1708,7 +2075,10 @@ pub async fn qrcode_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "width".to_string(),
                     Value::Number(serde_json::Number::from(
@@ -1725,7 +2095,10 @@ pub async fn qrcode_get(
                     "text".to_string(),
                     Value::String(row.get::<_, Option<String>>("text").unwrap_or_default()),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -1798,7 +2171,7 @@ pub async fn securityclearance_enable(
 
     match row {
         Some(row) => {
-            let id: String = row.get("id");
+            let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
             client
                 .execute(
                     "UPDATE x_general_assemble_security_clearance SET enabled = $1 WHERE id = $2",
@@ -1850,8 +2223,8 @@ pub async fn securityclearance_object(
 
     let mut map = serde_json::Map::new();
     for row in &rows {
-        let name: String = row.get("name");
-        let id: String = row.get("id");
+        let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
+        let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         map.insert(name, Value::String(id));
     }
 
@@ -1874,8 +2247,8 @@ pub async fn securityclearance_subject(
 
     let mut map = serde_json::Map::new();
     for row in &rows {
-        let name: String = row.get("name");
-        let id: String = row.get("id");
+        let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
+        let id: String = row.get::<_, Option<String>>("id").unwrap_or_default();
         map.insert(name, Value::String(id));
     }
 
@@ -1887,8 +2260,8 @@ pub async fn securityclearance_system(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    // W12 收敛：对齐 Java ActionSystem——Wo extends WrapInteger（仅 value 键）。
-    // Java 值来自 ternary 配置 Config.ternaryManagement().getSystemSecurityClearance()，
+    // W12 收敛：对齐 o2server ActionSystem——Wo extends WrapInteger（仅 value 键）。
+    // o2server 值来自 ternary 配置 Config.ternaryManagement().getSystemSecurityClearance()，
     // 无自定义配置时回 O2OA 默认 400（TernaryManagement.DEFAULT_SYSTEMSECURITYCLEARANCE）。
     // 干净参考种子无 securityclearance 覆盖 → 双侧恒 400，返回默认值即可闭合。
     Ok(Json(ActionResult::success(Value::Object(
@@ -1975,12 +2348,30 @@ pub async fn securityclearance_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
-                ("subject".to_string(), Value::String(row.get("subject"))),
-                ("object".to_string(), Value::String(row.get("object"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "enabled".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("enabled").unwrap_or(false)),
+                ),
+                (
+                    "subject".to_string(),
+                    Value::String(row.get::<_, Option<String>>("subject").unwrap_or_default()),
+                ),
+                (
+                    "object".to_string(),
+                    Value::String(row.get::<_, Option<String>>("object").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -2203,13 +2594,25 @@ pub async fn worktime_forwarddays_start_start_days_days(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("date".to_string(), Value::String(row.get("date"))),
-                ("isHoliday".to_string(), Value::Bool(row.get("is_holiday"))),
-                ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
+                (
+                    "isHoliday".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("is_holiday").unwrap_or(false)),
+                ),
+                (
+                    "isWorkday".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("is_workday").unwrap_or(false)),
+                ),
                 (
                     "isWorktime".to_string(),
-                    Value::Bool(row.get("is_worktime")),
+                    Value::Bool(row.get::<_, Option<bool>>("is_worktime").unwrap_or(false)),
                 ),
                 (
                     "minutes".to_string(),
@@ -2231,7 +2634,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2261,13 +2664,25 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
         let record_minutes: i64 = row.get("minutes");
         accumulated += record_minutes;
         worktime_records.push(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("date".to_string(), Value::String(row.get("date"))),
-            ("isHoliday".to_string(), Value::Bool(row.get("is_holiday"))),
-            ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+            (
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            ),
+            (
+                "date".to_string(),
+                Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+            ),
+            (
+                "isHoliday".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("is_holiday").unwrap_or(false)),
+            ),
+            (
+                "isWorkday".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("is_workday").unwrap_or(false)),
+            ),
             (
                 "isWorktime".to_string(),
-                Value::Bool(row.get("is_worktime")),
+                Value::Bool(row.get::<_, Option<bool>>("is_worktime").unwrap_or(false)),
             ),
             (
                 "minutes".to_string(),
@@ -2280,7 +2695,7 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     }
 
     let count = worktime_records.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(worktime_records),
         count,
         0,
@@ -2306,7 +2721,10 @@ pub async fn worktime_indefinedholiday_date(
         Some(row) => {
             let is_holiday: bool = row.get("is_holiday");
             Ok(Json(Value::Object(serde_json::Map::from_iter([
-                ("date".to_string(), Value::String(row.get("date"))),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
                 ("indefined".to_string(), Value::Bool(false)),
             ]))))
@@ -2355,7 +2773,10 @@ pub async fn worktime_indefinedworkday_date(
         Some(row) => {
             let is_workday: bool = row.get("is_workday");
             Ok(Json(Value::Object(serde_json::Map::from_iter([
-                ("date".to_string(), Value::String(row.get("date"))),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
                 ("indefined".to_string(), Value::Bool(false)),
             ]))))
@@ -2404,7 +2825,10 @@ pub async fn worktime_isholiday_date(
         Some(row) => {
             let is_holiday: bool = row.get("is_holiday");
             Ok(Json(Value::Object(serde_json::Map::from_iter([
-                ("date".to_string(), Value::String(row.get("date"))),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
                 ("indefined".to_string(), Value::Bool(false)),
             ]))))
@@ -2452,7 +2876,10 @@ pub async fn worktime_isworkday_date(
         Some(row) => {
             let is_workday: bool = row.get("is_workday");
             Ok(Json(Value::Object(serde_json::Map::from_iter([
-                ("date".to_string(), Value::String(row.get("date"))),
+                (
+                    "date".to_string(),
+                    Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                ),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
                 ("indefined".to_string(), Value::Bool(false)),
             ]))))
@@ -2501,7 +2928,10 @@ pub async fn worktime_isworktime_date(
             let is_worktime: bool = row.get("is_worktime");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("date".to_string(), Value::String(row.get("date"))),
+                    (
+                        "date".to_string(),
+                        Value::String(row.get::<_, Option<String>>("date").unwrap_or_default()),
+                    ),
                     ("isWorktime".to_string(), Value::Bool(is_worktime)),
                     ("indefined".to_string(), Value::Bool(false)),
                 ]),
@@ -2522,8 +2952,8 @@ pub async fn worktime_minutesofworkday(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
-    // W12 收敛：对齐 Java ActionMinutesOfWorkDay——Wo extends WrapInteger（仅 value 键）。
-    // Java 值 = Config.workTime().minutesOfWorkDay()，干净参考默认 420 分钟
+    // W12 收敛：对齐 o2server ActionMinutesOfWorkDay——Wo extends WrapInteger（仅 value 键）。
+    // o2server 值 = Config.workTime().minutesOfWorkDay()，干净参考默认 420 分钟
     // （上午 09:00-11:30=150 + 下午 13:00-17:30=270，O2OA WorkTime 缺省配置）。
     // 种子无 worktime 自定义 → 双侧恒 420，返回缺省值即可闭合。
     Ok(Json(ActionResult::success(Value::Object(

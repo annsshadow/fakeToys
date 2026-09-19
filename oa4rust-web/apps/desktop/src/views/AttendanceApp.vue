@@ -2,10 +2,10 @@
   <div class="attendance-view">
     <div class="view-header glass-card">
       <h1>考勤管理</h1>
-      <p class="subtitle">/jaxrs/attendance/assemble/control/*</p>
+      <p class="subtitle">/api/attendance/assemble/control/*</p>
       <div class="hr">
         <input v-model="month" type="month" class="mi" @change="loadData" />
-        <button class="eb" @click="exportData">📤 导出</button>
+        <button class="eb" :disabled="exporting" @click="exportData">{{ exporting ? '导出中…' : '📤 导出' }}</button>
       </div>
     </div>
     <div class="stats-row">
@@ -51,10 +51,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { toast } from '../utils/toast'
+
+const session = useSession()
 
 interface R {
   id: string
@@ -93,7 +95,7 @@ const { data } = useQuery({
   queryKey: ['att', 'recs', month, page],
   queryFn: () =>
     api
-      .get(`/jaxrs/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`)
+      .get(`/api/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`)
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)
@@ -102,7 +104,7 @@ const { data } = useQuery({
 })
 useQuery({
   queryKey: ['att', 'apps'],
-  queryFn: () => api.get('/jaxrs/attendance/appeal/list').then((r: any) => (appeals.value = (r.data ?? []) as A[])),
+  queryFn: () => api.get('/api/attendance/appeal/list').then((r: any) => (appeals.value = (r.data ?? []) as A[])),
   staleTime: 120000,
 })
 function loadData() {
@@ -130,14 +132,43 @@ function appealStatus(s?: string) {
 }
 const am = useMutation({
   mutationFn: ({ id, status }: { id: string; status: string }) =>
-    api.post('/jaxrs/attendance/appeal/audit', { id, status }),
+    api.post('/api/attendance/appeal/audit', { id, status }),
   onSuccess: () => qc.invalidateQueries({ queryKey: ['att', 'apps'] }),
 })
 function audit(a: A, action: string) {
   am.mutate({ id: a.id, status: action })
 }
-function exportData() {
-  window.open('/jaxrs/attendance/assemble/control/export')
+const exporting = ref(false)
+async function exportData() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    // 按所选月份区间调后端 v2 统计导出端点，返回 {status,count} 聚合行，
+    // 前端落成 CSV（带 BOM 保证 Excel 中文不乱码）本地下载。
+    const ym = month.value || new Date().toISOString().slice(0, 7)
+    const [y, m] = ym.split('-')
+    const endDate = new Date(Number(y), Number(m), 0).toISOString().slice(0, 10)
+    const r: any = await api.post('/api/attendance/assemble/control/v2/detail/statistic/export/filter', {
+      startDate: `${ym}-01`,
+      endDate,
+      person: '',
+    })
+    const rows: Array<{ status?: string; count?: number }> = r.data?.data ?? []
+    const label: Record<string, string> = { '1': '正常', '2': '迟到' }
+    const csv =
+      '\uFEFF状态,次数\n' + rows.map((x) => `${label[x.status ?? ''] ?? x.status ?? '未知'},${x.count ?? 0}`).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `attendance-stat-${ym}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    toast.success(`已导出 ${rows.length} 条统计`)
+  } catch {
+    toast.error('考勤导出失败，请稍后重试')
+  } finally {
+    exporting.value = false
+  }
 }
 onMounted(loadData)
 
@@ -145,7 +176,7 @@ onMounted(loadData)
 const ruleList = ref<Array<{ id: string; name?: string; type?: string; config?: string }>>([])
 async function loadRules() {
   try {
-    const r = await api.get('/jaxrs/attendance/assemble/control/rule/list')
+    const r = await api.get('/api/attendance/assemble/control/rule/list')
     ruleList.value = (r.data ?? []) as any[]
   } catch {
     ruleList.value = []
@@ -155,16 +186,16 @@ async function createRule() {
   const name = prompt('规则名称:')
   if (!name) return
   try {
-    await api.post('/jaxrs/attendance/assemble/control/rule/create', { name })
+    await api.post('/api/attendance/assemble/control/rule/create', { name })
     loadRules()
   } catch (e: any) {
     toast.error('创建失败: ' + (e?.message ?? ''))
   }
 }
 async function deleteRule(rule: any) {
-  if (!confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？')) return
+  if (!(await confirmMsg('确定删除规则「' + (rule.name || rule.id) + '」？'))) return
   try {
-    await api.delete('/jaxrs/attendance/assemble/control/rule/' + rule.id)
+    await api.delete('/api/attendance/assemble/control/rule/' + rule.id)
     loadRules()
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))
@@ -177,7 +208,12 @@ async function submitAppeal() {
   const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
   if (!start || !end) return
   try {
-    await api.post('/jaxrs/attendance/appeal/create', { type, startDate: start, endDate: end })
+    // 后端 appeal/submit 契约：personId + appealDate + reason（单日期，无结束日字段）
+    await api.post('/api/attendance/appeal/submit', {
+      personId: session.state.user?.unique ?? '',
+      appealDate: start,
+      reason: type,
+    })
     loadAppeals()
   } catch (e: any) {
     toast.error('申请失败: : ' + (e?.message ?? ''))
@@ -185,7 +221,7 @@ async function submitAppeal() {
 }
 async function loadAppeals() {
   try {
-    const r = await api.get('/jaxrs/attendance/appeal/list')
+    const r = await api.get('/api/attendance/appeal/list')
     appeals.value = (r.data ?? []) as A[]
   } catch {
     appeals.value = []
@@ -195,7 +231,7 @@ loadRules()
 
 async function loadStatistics() {
   try {
-    const r = await api.get('/jaxrs/attendance/assemble/control/statistics/list?month=' + month.value)
+    const r = await api.get('/api/attendance/assemble/control/statistics/list?month=' + month.value)
     attStats.value = r.data ?? []
   } catch {
     attStats.value = []

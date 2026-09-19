@@ -1,3 +1,5 @@
+# omap_pm
+
 ﻿## OMAP PM 接口
 
 
@@ -31,7 +33,7 @@
 
 所OMAP PM 接口函数的进一步文档可arch/arm/plat-omap/include/mach/omap-pm.h 中找到
 
-### OMAP PM 层设计为临时方案
+## OMAP PM 层设计为临时方案
 
 
 目标是最终由 Linux PM QoS 层支OMAP3 中存在的电源管理特性范围。随着这一目标实现，使OMAP PM 接口的既有驱动可以修改为使用 Linux PM QoS 代码；届OMAP PM 接口便可被移除

@@ -1,3 +1,5 @@
+# procfile
+
 ﻿## ALSA 驱动程序Proc 文件
 
 
@@ -85,6 +87,7 @@ OSS-Emulation.txt銆。
 		 # echo 5 > /proc/asound/card0/pcm0p/xrun_debug
 
 	The value consists of the following bit flags:
+
 
 	* bit 0 = Enable XRUN/jiffies debug messages
 	* bit 1 = Show stack trace at XRUN / jiffies check

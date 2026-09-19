@@ -1,3 +1,5 @@
+# iaa-crypto
+
 ﻿
 ## IAA 压缩加速器加密驱动
 
@@ -182,7 +184,7 @@ IAA 工作队列绑定iaa_crypto 驱动
 当没IAA 工作队列绑定到驱动时，可以通过移除模块来注销 IAA 加密算法
 
 
-### 驱动属
+## 驱动属
 
 
 有若干用户可配置的驱动属性可用于配置各种操作模式。它们及其默认值如下所列。要设置
@@ -605,7 +607,7 @@ IAA 工作队列和设备
 一zswap 被禁用且不再使用 iaa_crypto，就可以禁用 IAA 工作队列和设备
 
 
-### IAA 禁用脚本
+## IAA 禁用脚本
 
 
 ```
@@ -845,15 +847,18 @@ IAA 设备是奇数编号的设备；偶数编号的设备DSA 设备，对IAA �
   1) Disable any workqueues enabled on the device.  For example to
      disable workques 0 and 1 on IAA device 3::
 
+
        # echo wq3.0 > /sys/bus/dsa/drivers/crypto/unbind
        # echo wq3.1 > /sys/bus/dsa/drivers/crypto/unbind
 
   2) Disable the device. For example to disable IAA device 3::
 
+
        # echo iax3 > /sys/bus/dsa/drivers/idxd/unbind
 
   3) configure the desired workqueues.  For example, to configure
      workqueue 3 on IAA device 3::
+
 
        # echo dedicated > /sys/bus/dsa/devices/iax3/wq3.3/mode
        # echo 128 > /sys/bus/dsa/devices/iax3/wq3.3/size
@@ -865,10 +870,12 @@ IAA 设备是奇数编号的设备；偶数编号的设备DSA 设备，对IAA �
 
   4) Enable the device. For example to enable IAA device 3::
 
+
        # echo iax3 > /sys/bus/dsa/drivers/idxd/bind
 
   5) Enable the desired workqueues on the device.  For example to
      enable workques 0 and 1 on IAA device 3::
+
 
        # echo wq3.0 > /sys/bus/dsa/drivers/crypto/bind
        # echo wq3.1 > /sys/bus/dsa/drivers/crypto/bind

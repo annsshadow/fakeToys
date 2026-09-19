@@ -58,7 +58,7 @@ async fn test_portal_get_returns_internal_error() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/test-id")
+                .uri("/api/portal/test-id")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -77,7 +77,7 @@ async fn test_portal_list_returns_internal_error() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/list")
+                .uri("/api/portal/list")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),

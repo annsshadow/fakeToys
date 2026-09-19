@@ -1,3 +1,5 @@
+# devmem
+
 ﻿
 ## 设备内存 TCP（Device Memory TCP
 
@@ -90,7 +92,7 @@ netlink API 返回一dmabuf_id：一个引用此已绑dmabuf 的唯一 ID
 用户可以通过关闭建立绑定netlink 套接字来dmabuf 从网络设备解绑。我们这样做是为了即userspace 进程崩溃，绑定也会自动解除
 请注意，任何来自任意导出方（exporter）的行为良好dmabuf 都应该能devmem TCP 配合工作，即使该 dmabuf 实际上并非由设备内存支持。udmabuf 就是这样一个例子，它将用户内存（非设备内存）包装在 dmabuf 中
 
-### 套接字设
+## 套接字设
 
 ```
 
