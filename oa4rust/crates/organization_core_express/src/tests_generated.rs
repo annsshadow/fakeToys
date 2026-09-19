@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/core/express/status")
+                    .uri("/api/organization/core/express/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/core/express/sync")
+                    .uri("/api/organization/core/express/sync")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/core/express/config")
+                    .uri("/api/organization/core/express/config")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

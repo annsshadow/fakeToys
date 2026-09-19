@@ -1,8 +1,10 @@
+# acpi-interface
+
 ﻿## ACPI WMI 接口
 
 
 ACPI WMI 接口Microsoft ACPI 规范的私有扩展，用于允许硬件厂商在其 ACPI 固件中嵌WMI（Windows Management Instrumentation，Windows 管理规范）对象。通过 ACPI WMI 实现的典型功能包括现代笔记本上的热键（hotkey）事件以BIOS 选项的配置
-### PNP0C14 ACPI 设备
+## PNP0C14 ACPI 设备
 
 
 WMI 对象的发现是通过定义具有 PNP ID `PNP0C14` ACPI 设备来处理的。这些设备会包含一组用于映射和执行 WMI 方法（methods）及/或查询的 ACPI 缓冲区和方法的集合。如果存在多个此类设备，则每个设备都必须具有唯一ACPI UID

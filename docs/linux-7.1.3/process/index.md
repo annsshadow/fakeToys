@@ -1,3 +1,5 @@
+# index
+
 ﻿
 
 ## 与内核开发社区协
@@ -62,7 +64,7 @@
 - [cve](cve)
 - [embargoed-hardware-issues](embargoed-hardware-issues)
 
-### 缁存姢鑰呬俊鎭。
+### 统存姢鑰呬俊鎭。
 
 
 如何找到会接收您补丁的人

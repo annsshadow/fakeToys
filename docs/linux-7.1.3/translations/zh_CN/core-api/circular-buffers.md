@@ -1,12 +1,16 @@
 
 
+# circular-buffers
+
 :Original: Documentation/core-api/circular-buffers.rst
 
 :翻译:
 
+
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
  吴想成 Wu Xiangcheng <bobwxc@email.cn>
@@ -83,6 +87,7 @@ Linux 提供了许多可用于实现循环缓冲的特性。有两组这样的�
 
  (#) 测量缓冲区中的最大连续立即可用空间::
 
+
 	CIRC_SPACE_TO_END(head_index, tail_index, buffer_size);
 
      返回缓冲区[1]中剩余的连续空间的大小，元素可以立即插入其中，而不必绕回到缓冲
@@ -91,12 +96,14 @@ Linux 提供了许多可用于实现循环缓冲的特性。有两组这样的�
 
  (#) 测量缓冲区的使用数::
 
+
 	CIRC_CNT(head_index, tail_index, buffer_size);
 
      返回当前占用缓冲区[2]的元素数量。
 
 
  (#) 测量缓冲区的连续使用数::
+
 
 	CIRC_CNT_TO_END(head_index, tail_index, buffer_size);
 

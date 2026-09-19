@@ -1,11 +1,15 @@
 
+# highmem
+
 :Original: Documentation/mm/highmem.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## 高内存处理
 
@@ -128,6 +132,7 @@
 
 在某些情况下，i386 架构将允许你在 32 位机器上安装多达 64GiB 的内存。但这有一些后果:
 
+
 - Linux需要为系统中的每个页面建立一个页帧结构，而且页帧需要驻在永久映射中，这意味着：
 
 - 你最多可以有896M/sizeof(struct page)页帧；由于页结构体是32字节的，所以最终会有
@@ -143,6 +148,7 @@
 
 
 该API在以下内核代码中:
+
 
 include/linux/highmem.h
 

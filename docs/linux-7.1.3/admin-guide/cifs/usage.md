@@ -1,3 +1,5 @@
+# usage
+
 ﻿## 用法
 
 本模块支SMB3 系列高级网络协议（以及较旧的方言，最初称"CIFS" SMB1）
@@ -144,6 +146,7 @@ CIFS 客户端可以获取并设置 POSIX ACL（getfacl、setfacl）到 Samba �
 
 		could be passed instead with period as the separator by::
 
+
 			-o sep=.user=myname.password=mypassword.domain=mydom
 
 		this might be useful when comma is contained within username
@@ -179,6 +182,7 @@ CIFS 客户端可以获取并设置 POSIX ACL（getfacl、setfacl）到 Samba �
 		将七个保留字符中的六个（反斜杠除外）翻译为：
 
 			*?<>|:
+
 
 		重映射范围（0xF000 以上），这也允许 CIFS 客户端识别由 Windows POSIX 模拟以这些字符创建的文件。当挂载到大多版本的 Samba（它也禁止创建和打开名称包含这七个字符中任何一个的文件）时，这也很有用。如果服务器不支持线路上Unicode，则这不起作用  nomapchars
 		不翻译这七个字符中的任何一个（默认）  nocase
@@ -224,6 +228,7 @@ CIFS 客户端可以获取并设置 POSIX ACL（getfacl、setfacl）到 Samba �
 ```
 The mount.cifs mount helper also accepts a few mount options before -o
 including:
+
 
 =============== ===============================================================
 	-S      take password from stdin (equivalent to setting the environment

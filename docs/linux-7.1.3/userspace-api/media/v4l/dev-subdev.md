@@ -1,6 +1,8 @@
+# dev-subdev
+
 ﻿
 
-######## 子设备接口（Sub-device Interface
+## 子设备接口（Sub-device Interface
 
 
 V4L2 设备的复杂性在于，其硬件通常
@@ -374,7 +376,7 @@ sink pad 上的 COMPOSE 矩形。在 sink source pads 上，
 
 
 
-##### 实际目标（Actual targets
+#### 实际目标（Actual targets
 
 
 实际目标（不带后缀）反映任意时刻实际的硬件

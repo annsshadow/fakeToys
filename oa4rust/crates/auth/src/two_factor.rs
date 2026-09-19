@@ -11,7 +11,7 @@ use tracing::warn;
 // ──────────────────────────────────────────────────────────────────────────────
 // two_factor — 双因素登录第一阶段（短信验证码发送）
 //
-// 流程：POST /jaxrs/authentication/two_factor
+// 流程：POST /api/authentication/two_factor
 //   1. 验证第一因子：credential + password
 //   2. 发送短信验证码
 //   3. 签发临时 token（绑定到 credential，防止凭证交换攻击）
@@ -33,7 +33,7 @@ pub struct TwoFactorPhase1Response {
     pub temp_token: String,
 }
 
-/// POST /jaxrs/authentication/two_factor —— 双因素登录第一阶段
+/// POST /api/authentication/two_factor —— 双因素登录第一阶段
 ///
 /// 验证 credential + password，发送短信验证码，签发临时 token（阶段绑定）
 pub async fn two_factor_login(
@@ -46,17 +46,18 @@ pub async fn two_factor_login(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let d = dialect();
-    let sql = format!(
-        "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
-         password_hash, locked, {}, {} FROM auth_person \
-         WHERE unique_id = {} AND deleted_at IS NULL",
-        d.cast_text("change_password_time"),
-        d.cast_text("password_expired_time"),
-        d.param(1),
-    );
+    // 同 login：传入 PG 风格 SQL 交由 format_sql 整串重写，
+    // 不可手工拼接 d.param(n)（会生成绕过重写的 MySQL `?` 占位符）。
     let row = client
-        .query_one(&sql, &[&req.credential])
+        .query_one(
+            &dialect().format_sql(
+                "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+                 password_hash, locked, change_password_time::text, password_expired_time::text \
+                 FROM auth_person \
+                 WHERE unique_id = $1 AND deleted_at IS NULL",
+            ),
+            &[&req.credential],
+        )
         .await
         .map_err(|_| AppError::Unauthorized)?;
 

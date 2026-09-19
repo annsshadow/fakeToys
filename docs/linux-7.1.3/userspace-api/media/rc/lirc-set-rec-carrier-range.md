@@ -1,3 +1,5 @@
+# lirc-set-rec-carrier-range
+
 ﻿######## ioctl LIRC_SET_REC_CARRIER_RANGE
 
 

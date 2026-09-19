@@ -1,3 +1,5 @@
+# active_mm
+
 ﻿## active_mm
 
 娉ㄦ剰锛屽湪寮€鍚簡 CONFIG_MMU_LAZY_TLB_REFCOUNT=n 鐨勫唴鏍镐笂锛宮m_count 寮曠敤璁℃暟
@@ -21,6 +23,7 @@
  > wasn't able to follow linux-kernel for a while).
 
  Basically, the new setup is:
+
 
   - we have "real address spaces" and "anonymous address spaces". The
     difference is that an anonymous address space doesn't care about the

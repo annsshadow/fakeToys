@@ -1,3 +1,5 @@
+# userio
+
 ﻿
 ## userio 协议
 
@@ -37,7 +39,7 @@ Red Hat 赞助
 ## 命令
 
 
-#### USERIO_CMD_REGISTER
+### USERIO_CMD_REGISTER
 
 
 serio 驱动注册该端口，并开始来回传输数据。只有在USERIO_CMD_SET_PORT_TYPE 设置了端口类型后才能执行注册。该命令没有参数

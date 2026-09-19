@@ -1,3 +1,5 @@
+# kvm-nested
+
 ﻿
 ## POWER 上的嵌套 KVM
 
@@ -225,7 +227,7 @@ L1 GSB 中写入所有值，L0 只读GSB 中的
       flags:
          Bit 0: generateExternalInterrupt: Generate an external interrupt
          Bit 1: generatePrivilegedDoorbell: Generate a Privileged Doorbell
-         Bit 2: sendToSystemReset鈥? Generate a System Reset Interrupt
+         Bit 2: sendToSystemReset Generate a System Reset Interrupt
          Bits 3-63: Reserved
       guestId: ID obtained from H_GUEST_CREATE
       vcpuId: ID of the vCPU pass to H_GUEST_CREATE_VCPU

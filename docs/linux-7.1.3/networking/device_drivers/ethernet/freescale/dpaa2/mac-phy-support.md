@@ -1,3 +1,5 @@
+# mac-phy-support
+
 ﻿
 ## DPAA2 MAC / PHY 支持
 
@@ -52,7 +54,7 @@ DPAA2 MAC / PHY 支持由一API 组成，这API 帮助 DPAA2 网络驱动（dpaa
   注册 phylink 实例，dpaa2-eth 驱动根本不会绑定到所连接dpmac 对象
 - DPMAC_LINK_TYPE_PHY：MC 固件处于等待链路状态更新事件的状态，但这些事件实际上
   严格dpaa2-mac（基phylink）与其所连接net_device 驱动（dpaa2-eth  dpaa2-ethsw）之间传递，有效地绕过了固件
-### 实现
+## 实现
 
 
 在探测时或当 DPNI 的端点被动态更改时，dpaa2-eth 负责查明对端对象是否DPMAC如果是，则使dpaa2_mac_connect() API 将其PHYLINK 集成，该 API 将执行以操作

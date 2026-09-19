@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/list")
+                    .uri("/api/correlation/core/entity/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/create")
+                    .uri("/api/correlation/core/entity/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/delete/test-id")
+                    .uri("/api/correlation/core/entity/delete/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),

@@ -1,3 +1,5 @@
+# descore-readme
+
 ﻿
 ## 快速且可移植的 DES 加密与解
 

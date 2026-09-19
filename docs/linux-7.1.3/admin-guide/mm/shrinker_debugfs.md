@@ -1,10 +1,12 @@
+# shrinker_debugfs
+
 ﻿## Shrinker Debugfs 接口
 
 
 Shrinker debugfs 接口提供了对内核内存 shrinker（内存回收器）子系统可见性，并允许获取单shrinker 的信息以及与之交互
 系统中注册的每个 shrinker 都会**<debugfs>/shrinker/** 下创建一个目录目录名由 shrinker 的名称和一个唯一 id 组成：例**kfree_rcu-0** **sb-xfs:vda1-36**
 每个 shrinker 目录包含 **count** **scan** 文件，用于为每个 memcg numa 节点（如适用）触**count_objects()** **scan_objects()** 回调
-### 用法
+## 用法
 
 1. **列出已注册的 shrinker**
 
@@ -48,6 +50,7 @@ Shrinker debugfs 接口提供了对内核内存 shrinker（内存回收器）子
   as cgroup inode id. If the shrinker is not numa-aware, 0's are printed
   for all nodes except the first one.
   ::
+
 
     $ cat count
     1 224 2
@@ -100,6 +103,7 @@ Shrinker debugfs 接口提供了对内核内存 shrinker（内存回收器）子
   For a non-memcg-aware shrinker or on a system with no memory
   cgrups **0** should be passed as cgroup id.
   ::
+
 
     $ cd /sys/kernel/debug/shrinker/
     $ cd sb-btrfs\:vda2-24/

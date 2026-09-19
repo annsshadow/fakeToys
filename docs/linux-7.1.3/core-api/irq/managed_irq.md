@@ -1,3 +1,5 @@
+# managed_irq
+
 ﻿
 ## 亲和性受管中
 
@@ -54,6 +56,7 @@ managed_irq 子参数指定一CPU 掩码，受管中断应当尽量避免。这�
   This indicates that the interrupt is served only by CPU7. Shutting down CPU7
   does not migrate the interrupt to another CPU::
 
+
     /proc/irq/48/effective_affinity_list:0
     /proc/irq/48/smp_affinity_list:7
 
@@ -73,10 +76,11 @@ managed_irq 子参数指定一CPU 掩码，受管中断应当尽量避免。这�
     /proc/irq/48/smp_affinity_list:4-7
 
   The two queue interrupts are evenly distributed. Interrupt 48 is placed on CPU4
-  because the managed_irq mask avoids CPUs 5鈥? when possible.
+  because the managed_irq mask avoids CPUs 5 when possible.
 
   Replacing the managed_irq argument with "isolcpus=managed_irq,1-3,4-5,7"
   results in::
+
 
     /proc/irq/48/effective_affinity_list:6
     /proc/irq/48/smp_affinity_list:4-7
@@ -84,6 +88,7 @@ managed_irq 子参数指定一CPU 掩码，受管中断应当尽量避免。这�
   Interrupt 48 is now served on CPU6 because the system avoids CPUs 4, 5 and
   7. If CPU6 is taken offline, the interrupt migrates to one of the "isolated"
   CPUs::
+
 
     /proc/irq/48/effective_affinity_list:7
     /proc/irq/48/smp_affinity_list:4-7

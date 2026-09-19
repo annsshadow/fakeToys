@@ -43,4 +43,4 @@ oa4rust/
 ## 端口
 
 - Rust 服务：3000
-- Java 服务：20020
+- o2server（legacy）服务：20020

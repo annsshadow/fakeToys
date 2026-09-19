@@ -1,3 +1,5 @@
+# autofdo
+
 ﻿
 AutoFDO 用于 Linux 内核
 
@@ -70,13 +72,16 @@ AutoFDO 剖析文件通常封装了程序的行为。如果性能关键代码是
 
     Turn on AutoFDO build config::
 
+
       CONFIG_AUTOFDO_CLANG=y
 
     With a configuration that with LLVM enabled, use the following command::
 
+
       $ scripts/config -e AUTOFDO_CLANG
 
     After getting the config, build with ::
+
 
       $ make LLVM=1
 
@@ -91,17 +96,21 @@ AutoFDO 剖析文件通常封装了程序的行为。如果性能关键代码是
 
    - For AMD platforms:
 
+
      The supported systems are: Zen3 with BRS, or Zen4 with amd_lbr_v2. To check,
 
      For Zen3::
+
 
       $ cat /proc/cpuinfo | grep " brs"
 
      For Zen4::
 
+
       $ cat /proc/cpuinfo | grep amd_lbr_v2
 
      The following command generated the perf data file::
+
 
       $ perf record --pfm-events RETIRED_TAKEN_BRANCH_INSTRUCTIONS:k -a -N -b -c <count> -o <perf_file> -- <loadtest>
 
@@ -115,9 +124,11 @@ AutoFDO 剖析文件通常封装了程序的行为。如果性能关键代码是
 
    or ::
 
+
       $ create_llvm_prof --binary=<vmlinux> --profile=<perf_file> --format=extbinary --out=<profile_file>
 
    Note that multiple AutoFDO profile files can be merged into one via::
+
 
       $ llvm-profdata merge -o <profile_file> <profile_1> <profile_2> ... <profile_n>
 

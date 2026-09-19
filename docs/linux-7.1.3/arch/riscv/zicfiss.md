@@ -1,3 +1,5 @@
+# zicfiss
+
 ﻿
 :Author: Deepak Gupta <debug@rivosinc.com>
 :Date:   12 January 2024
@@ -29,6 +31,7 @@ control the program counter. 鍦?RISC-V, the `zicfiss` extension
 retrieved 鍦?the epilogue.  The `zicfiss` extension makes the
 以下 changes:
 
+
 - PTE encodings 用于 shadow 虚拟 内存
   一更早 reserved encoding 第一 stage translation i.e.
   PTE.R=0, PTE.W=1, PTE.X=0  becomes the PTE encoding 用于 shadow 
@@ -53,6 +56,7 @@ regular   Similarly, 函数 epilogues 具有 ``ld x5,
 具有 一特殊 properties assigned them, along instructions
 璇?operate 鍦?the shadow stacks:
 
+
 - Regular stores shadow 内存 raise store access faults. 
   protects shadow 内存 来自 stray writes.
 
@@ -66,7 +70,7 @@ regular   Similarly, 函数 epilogues 具有 ``ld x5,
 - Shadow loads stores read-only 内存 raise AMO/store
   faults. 从两`sspush x1/x5` `sspopchk x1/x5` 
   raise AMO/store fault. simplies COW handling 内核
-  鏈熼棿 fork(). The 鍐呮牳 鍙?convert shadow 鏍，椤，杩涘叆
+  鏈熼棿 fork(). The 内呮核 鍙?convert shadow 鏍，椤，杩涘叆
   read-only 内存 (作为 执行 用于 regular read-write 内存).  作为
   soon 作为 后续 `sspush` `sspopchk` instructions 
   userspace encountered, the 内核 perform COW.

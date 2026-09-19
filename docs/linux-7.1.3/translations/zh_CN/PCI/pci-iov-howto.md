@@ -1,11 +1,15 @@
 
+# pci-iov-howto
+
 :Original: Documentation/PCI/pci-iov-howto.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 
@@ -60,6 +64,7 @@ PCI SRIOV核心支持确保启用/禁用操作是有效的，以减少同一检�
 
 用来开启SR-IOV功能:
 
+
 ```
 
 	int pci_enable_sriov(struct pci_dev *dev, int nr_virtfn);
@@ -74,6 +79,7 @@ nr_virtfn'是要启用的VF的编号。
 
 ```
 用来关闭SR-IOV功能:
+
 
 ```
 

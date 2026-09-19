@@ -1,5 +1,5 @@
 
-## Xtensa 架构
+# Xtensa 架构
 
 
 - [原子操作控制](atomctl)

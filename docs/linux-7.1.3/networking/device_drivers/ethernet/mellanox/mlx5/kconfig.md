@@ -1,3 +1,5 @@
+# kconfig
+
 ﻿
 ## Enabling the driver and kconfig options
 
@@ -18,6 +20,7 @@
 |    选择此选项将提供具有所有标rx/tx 卸载的基本以太网络网络设备支持|    mlx5e 是提供网络设备内核接口的 mlx5 ulp 驱动，选中mlx5e 将内建到 mlx5_core.ko 中
 
 **CONFIG_MLX5_CORE_EN_DCB=(y/n)**:
+
 
 |    启用 `Data Center Bridging (DCB) Support <https://enterprise-support.nvidia.com/s/article/howto-auto-config-pfc-and-ets-on-connectx-4-via-lldp-dcbx>`_
 

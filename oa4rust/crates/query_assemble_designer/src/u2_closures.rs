@@ -383,7 +383,7 @@ pub async fn statement_manage_list(
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -408,7 +408,7 @@ pub async fn statement_list_with_query(
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1268,22 +1268,31 @@ pub async fn designer_search_v2(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 Java ActionGet）。
+/// GET /id/{count} —— 生成唯一标识列表（0 < count < 200，对齐 o2server ActionGet）。
 #[allow(non_snake_case)]
 pub async fn id_generate(Path(count): Path<i64>) -> Result<Json<ActionResult<Value>>, AppError> {
     let n = count.clamp(0, 199);
@@ -1291,7 +1300,7 @@ pub async fn id_generate(Path(count): Path<i64>) -> Result<Json<ActionResult<Val
         .map(|_| Value::String(uuid::Uuid::new_v4().to_string()))
         .collect();
     let count = ids.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(ids),
         count,
         0,
@@ -1318,11 +1327,20 @@ pub async fn importmodel_get_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
@@ -1335,10 +1353,16 @@ pub async fn importmodel_get_flag(
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -2000,7 +2024,10 @@ pub async fn stat_simulate_put(
     let (calculated, mut payload_map) = execute_configured_sql(&client, &config_raw).await?;
 
     if let Some(payload) = payload_map.as_object_mut() {
-        payload.insert("id".to_string(), Value::String(row.get("id")));
+        payload.insert(
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+        );
         payload.insert(
             "name".to_string(),
             Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
@@ -2107,7 +2134,7 @@ pub async fn view_simulate_put(
     Ok(Json(ActionResult::success(payload_map)))
 }
 
-/// POST /jaxrs/query/assemble/designer/execute
+/// POST /api/query/assemble/designer/execute
 ///
 /// W6 ③ 后端补缺：设计器即时 SQL 执行（QueryStatementDesigner/QueryManagerDeep
 /// 的单条执行与批量执行）。与 statement/table 执行链路同轨：sqlparser 仅放行
@@ -2128,14 +2155,14 @@ pub async fn designer_execute(
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
     )))
 }
 
-/// POST /jaxrs/query/assemble/designer/stat/do
+/// POST /api/query/assemble/designer/stat/do
 ///
 /// W6 ③ 后端补缺：执行统计聚合。数据链路 x_query_stat.query_flag
 /// → x_query_table.table_flag → x_query_table_data.data(JSON 文本行)，
@@ -2163,7 +2190,9 @@ pub async fn stat_do(
         .await
         .map_err(|_| AppError::Internal)?
         .ok_or_else(|| AppError::BadRequest("stat not found".to_string()))?;
-    let query_flag: String = stat.get("query_flag");
+    let query_flag: String = stat
+        .get::<_, Option<String>>("query_flag")
+        .unwrap_or_default();
     let table = client
         .query_opt(
             "SELECT table_flag FROM x_query_table WHERE query_flag = $1 AND deleted_at IS NULL \
@@ -2173,7 +2202,9 @@ pub async fn stat_do(
         .await
         .map_err(|_| AppError::Internal)?
         .ok_or_else(|| AppError::BadRequest("no query table bound to this stat".to_string()))?;
-    let table_flag: String = table.get("table_flag");
+    let table_flag: String = table
+        .get::<_, Option<String>>("table_flag")
+        .unwrap_or_default();
 
     // 维度/指标均为数据键名，走绑定参数，无拼接注入面
     let rows = client

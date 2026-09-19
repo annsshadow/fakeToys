@@ -1,7 +1,10 @@
 
+# mutex-design
+
 :Original: Documentation/locking/mutex-design.rst
 
 :翻译:
+
 
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -10,9 +13,11 @@
 
 :初稿:
 
+
   Ingo Molnar <mingo@redhat.com>
 
 :更新:
+
 
   Davidlohr Bueso <davidlohr@hp.com>
 
@@ -72,6 +77,7 @@ kernel/locking/mutex.c中实现。这些锁使用一个原子变量（->owner）
 
 
 互斥锁子系统检查并强制执行以下规则:
+
 
     - 每次只有一个任务可以持有该互斥锁。
     - 只有锁的所有者可以解锁该互斥锁。

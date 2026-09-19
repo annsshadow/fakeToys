@@ -1,3 +1,5 @@
+# arm-acpi
+
 ﻿## Arm 系统上的 ACPI
 
 
@@ -10,7 +12,7 @@ Arm 内核实现ACPI 5.1 或更高版本的精简硬件模型（reduced hardware
 尽管上述文档规定了构建行业标准的 Arm 系统的要求，它们同样适用于不止一个操作系统。本文档的目的仅在于描述Arm 系统ACPI Linux 之间的交互——也就是说，Linux ACPI 有何期望，以ACPI Linux 有何期望
 
 
-### 为何Arm 上使ACPI
+## 为何Arm 上使ACPI
 
 在考察 ACPI Linux 之间接口的诸多细节之前，先理解为何要使用 ACPI 是有益的。毕竟，Linux 中早已存在多种用于描述不可枚举（non-enumerable）硬件的技术。本节我们概括了 Grant Likely 的一篇博客文[^3^]，其中概述了Arm 系统上使ACPI 的缘由。老实说，我们几乎直接摘录了其中的大部分总结文字
 

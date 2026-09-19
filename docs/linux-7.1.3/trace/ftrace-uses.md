@@ -1,3 +1,5 @@
+# ftrace-uses
+
 ﻿## 使用 ftrace 钩挂到函
 4.14 撰写
 

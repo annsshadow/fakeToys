@@ -1,3 +1,5 @@
+# openrisc_port
+
 ﻿## OpenRISC Linux
 
 这是Linux 移植OpenRISC 系列微处理器的成果；具体而言，最初的目标架构32 位的 OpenRISC 1000 家族（or1k）

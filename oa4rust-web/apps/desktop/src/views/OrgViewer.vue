@@ -2,7 +2,7 @@
   <div class="org-view">
     <div class="view-header glass-card">
       <h1>组织架构</h1>
-      <p class="subtitle">/jaxrs/organization/assemble/control/*</p>
+      <p class="subtitle">/api/organization/assemble/control/*</p>
     </div>
     <div class="org-layout">
       <aside class="org-tree glass-card">
@@ -73,7 +73,7 @@ let timer: ReturnType<typeof setTimeout>
 const { data } = useQuery({
   queryKey: ['org', 'tree'],
   queryFn: () =>
-    api.get('/jaxrs/organization/assemble/control/group/list').then((r: any) => {
+    api.get('/api/organization/assemble/control/group/list').then((r: any) => {
       nodes.value = (r.data ?? []) as N[]
       return r
     }),
@@ -83,7 +83,7 @@ function toggleNode(n: N) {
   n._exp = !n._exp
   if (n._exp && !n.children) {
     const id = n.id
-    api.get('/jaxrs/organization/assemble/control/group/' + id + '/sub/nested').then((r: any) => {
+    api.get('/api/organization/assemble/control/group/' + id + '/sub/nested').then((r: any) => {
       n.children = (r.data ?? []) as N[]
     })
   }
@@ -97,7 +97,7 @@ async function handleSearch() {
     return
   }
   try {
-    const r = await api.get('/jaxrs/organization/assemble/control/group/list/like', {
+    const r = await api.get('/api/organization/assemble/control/group/list/like', {
       params: { keyword: keyword.value },
     })
     nodes.value = (r.data ?? []) as N[]

@@ -47,10 +47,10 @@
 
 
 
-- `POST /jaxrs/console/cache/clear/{type}`
-- `POST /jaxrs/console/command/execute`
-- `GET /jaxrs/console/logs/{type}`
-- `GET /jaxrs/console/metric/{name}`
-- `POST /jaxrs/console/send/message`
-- `GET /jaxrs/console/status`
-- `GET /jaxrs/console/system/info`
+- `POST /api/console/cache/clear/{type}`
+- `POST /api/console/command/execute`
+- `GET /api/console/logs/{type}`
+- `GET /api/console/metric/{name}`
+- `POST /api/console/send/message`
+- `GET /api/console/status`
+- `GET /api/console/system/info`

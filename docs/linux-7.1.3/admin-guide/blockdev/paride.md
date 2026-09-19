@@ -1,3 +1,5 @@
+# paride
+
 ﻿## Linux 并行 端口 IDE 设备
 
 
@@ -37,6 +39,7 @@ The document describes the 支持 Linux 用于 并行 端口 IDE
 drives scanners.  许多 不同 设备 受支the
 并行 端口 IDE 子系 including:
 
+
  - MicroSolutions backpack CD-ROM
  - MicroSolutions backpack PD/CD
  - MicroSolutions backpack hard-drives
@@ -60,6 +63,7 @@ The second component 一set low-level 协议 驱动 用于 每个 the
 并行 端口 IDE adapter chips.  Thanks the interest encouragement 
 Linux users 来自 许多 parts the world, 支持 可用 用于 almost 全部
 known adapter 协议:
+
 
 	====    ====================================== ====
         aten    ATEN EH-100                            (HK)
@@ -99,6 +103,7 @@ correct 设备.
 用于 the "brand-name" products listed 上文, 此处 the 协议
 high-level 驱动 将会 使用:
 
+
 	================	============	========
 	Manufacturer		型号		协议
 	================	============	========
@@ -127,6 +132,7 @@ drive 鍒?work.
 ```
 何处:
 
+
 	======== ================================================
 	端口	 parport name ("auto" 用于 全部 parports)
 	协议 协议 name ("auto" 用于 全部 协议)
@@ -141,6 +147,7 @@ the 最two digits the drive's 串行 数字 (读取 MicroSolutions'
 documentation 鍏充簬 姝?.
 
 omit the 参数 来自 the end, defaults 使用, e.g.:
+
 
 ```
 

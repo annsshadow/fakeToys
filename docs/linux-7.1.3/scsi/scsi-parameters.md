@@ -1,9 +1,11 @@
+# scsi-parameters
+
 ﻿
-## SCSI 鍐呮牳鍙傛暟
+## SCSI 内呮核鍙傛暟
 
 
 鏈夊叧鎸囧畾妯″潡鍙傛暟鐨勪竴鑸俊鎭紝璇峰弬闃?Documentation/admin-guide/kernel-parameters.rst銆?
-鏈枃妗ｅ彲鑳藉苟闈炲畬鍏ㄦ渶鏂板拰鍏ㄩ潰銆俙modinfo -p ${modulename}` 鍛戒护浼氭樉绀哄彲鍔犺浇妯″潡鐨勬墍鏈夊弬鏁板綋鍓嶅垪琛ㄣ€傚彲鍔犺浇妯″潡鍦ㄥ姞杞藉埌杩愯涓殑鍐呮牳涔嬪悗锛屼篃浼氬湪 /sys/module/${modulename}/parameters/ 涓毚闇插叾鍙傛暟銆傚叾涓儴鍒嗗弬鏁板彲閫氳繃鍛戒护 `echo -n ${value} > /sys/module/${modulename}/parameters/${parm}` 鍦ㄨ繍琛屾椂淇敼銆?
+鏈枃妗ｅ彲鑳藉苟闈炲畬鍏ㄦ渶鏂板拰鍏ㄩ潰銆俙modinfo -p ${modulename}` 鍛戒护浼氭樉绀哄彲鍔犺浇妯″潡鐨勬墍鏈夊弬鏁板綋鍓嶅垪琛ㄣ€傚彲鍔犺浇妯″潡鍦ㄥ姞杞藉埌杩愯涓殑内呮核涔嬪悗锛屼篃浼氬湪 /sys/module/${modulename}/parameters/ 涓毚闇插叾鍙傛暟銆傚叾涓儴鍒嗗弬鏁板彲閫氳繃鍛戒护 `echo -n ${value} > /sys/module/${modulename}/parameters/${parm}` 鍦ㄨ繍琛屾椂淇敼銆?
 ```
 
 	advansys=	[HW,SCSI]

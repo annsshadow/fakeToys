@@ -1,3 +1,5 @@
+# srat
+
 ﻿
 ## SRAT - 静态资源亲和性表（Static Resource Affinity Table
 

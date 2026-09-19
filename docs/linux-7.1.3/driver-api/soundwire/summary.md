@@ -1,3 +1,5 @@
+# summary
+
 ﻿## SoundWire 子系统概
 
 SoundWire MIPI 联盟2015 年批准的一种新接口。SoundWire 用于传输通常与音功能相关的数据。SoundWire 接口经过优化，适用于在移动或受移动设备启发的系统中

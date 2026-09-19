@@ -1,3 +1,5 @@
+# code-of-conduct-interpretation
+
 ﻿
 ## Linux 内核 Contributor Covenant Code Conduct Interpretation
 
@@ -221,6 +223,7 @@ approval.
   ban.
 
 The scope the ban 用于 一period time 可以 包含:
+
 
     一 denying patch contributions pull requests
     b. pausing collaboration the violator ignoring 它们

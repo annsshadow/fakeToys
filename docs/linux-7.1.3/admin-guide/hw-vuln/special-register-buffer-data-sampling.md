@@ -1,3 +1,5 @@
+# special-register-buffer-data-sampling
+
 ﻿
 ## SRBDS - 特殊寄存器缓冲区数据采样
 
@@ -58,7 +60,7 @@ Intel 将发布微码更新，修改 RDRAND、RDSEED EGETKEY 指令，在秘密�
 微码更新提供了一种退出机制（RNGDS_MITG_DIS），用于Intel Software Guard Extensions
 （Intel SGX）外enclave 中执RDRAND RDSEED 指令时禁用缓解。在使用此退出机制禁缓解的逻辑处理器上，RDRAND RDSEED 执行不会花费更长时间，也不会影响兄弟逻辑处理器的
 内存访问性能。该退出机制不影响 Intel SGX enclave（包括在 enclave 内执RDRAND RDSEED以及 EGETKEY 的执行）
-### IA32_MCU_OPT_CTRL MSR 定义
+## IA32_MCU_OPT_CTRL MSR 定义
 
 
 除了针对此问题的缓解措施外，Intel 还新增了一个线程作用域IA32_MCU_OPT_CTRL MSR

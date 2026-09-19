@@ -1,3 +1,5 @@
+# md-cluster
+
 ﻿## MD 集群
 
 
@@ -45,7 +47,7 @@
 
 
  共有六种传递的消息类型
-##### 3.1.1 METADATA_UPDATED
+#### 3.1.1 METADATA_UPDATED
 
 
    通知其他节点元数据已更新，该节点必须重新读取 md 超级块。这是同步执行的。它主要用于发出设备故障信号
@@ -62,15 +64,17 @@
    一个故障设备或备用设备正从阵列中移除。消息中包含该设备的槽号
  3.1.5 RE_ADD:
 
+
    正重新激活一个故障设备——其前提是已确认该设备恢复正常工作
  3.1.6 BITMAP_NEEDS_SYNC:
+
 
    如果一个节点在本地停止但位图不干净，则通知另一个节点接管重新同步的所有权
 ### 3.2 通信机制
 
 
  DLM LVB 用于在集群节点之间通信。用于此目的的有三个资源
-##### 3.2.1 token
+#### 3.2.1 token
 
    保护整个通信系统的资源。持token 资源的节点才允许通信
 ##### 3.2.2 message
@@ -89,6 +93,7 @@
  2. sender get EX on "token",
     sender get EX on "message"::
 
+
 	sender                        receiver                 receiver
 	"token":EX                    "ack":CR                 "ack":CR
 	"message":EX
@@ -105,6 +110,7 @@
     sender try to get EX of "ack"
 
     ::
+
 
       [ wait until all receivers have *processed* the "message" ]
 
@@ -131,6 +137,7 @@
     sender releases "token"
 
     ::
+
 
                                  receiver upconvert to PR on "message"
                                  receiver get CR of "ack"

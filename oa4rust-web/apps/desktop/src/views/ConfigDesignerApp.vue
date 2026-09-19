@@ -4,7 +4,7 @@
     <div class="view-header glass-card">
       <div>
         <h1>配置设计器</h1>
-        <p class="subtitle">/jaxrs/config/* — 系统配置与参数管理</p>
+        <p class="subtitle">/api/config/* — 系统配置与参数管理</p>
       </div>
       <div class="header-actions">
         <button class="btn-outline" @click="showFormat=true">📐 格式化</button>
@@ -232,9 +232,9 @@ function editItem(item: ConfigItem) {
   selectItem(item)
 }
 async function deleteItem(item: ConfigItem) {
-  if (!confirmMsg(`删除配置「${item.name || item.flag}」？`)) return
+  if (!(await confirmMsg(`删除配置「${item.name || item.flag}」？`))) return
   try {
-    await api.delete('/jaxrs/config/delete/' + item.id)
+    await api.delete('/api/config/delete/' + item.id)
   } catch {}
   items.value = items.value.filter((i) => i.id !== item.id)
   if (selected.value?.id === item.id) selected.value = null
@@ -243,7 +243,7 @@ async function deleteItem(item: ConfigItem) {
 async function save() {
   if (!selected.value) return
   try {
-    await api.put('/jaxrs/config/update/' + selected.value.id, { ...selected.value, config: config.value })
+    await api.put('/api/config/update/' + selected.value.id, { ...selected.value, config: config.value })
     qc.invalidateQueries({ queryKey: ['config', 'list'] })
     addHistory(true)
   } catch (e: any) {
@@ -253,8 +253,8 @@ async function save() {
 async function preview() {
   toast.info('配置预览: ' + config.value)
 }
-function clearConfig() {
-  if (confirmMsg('清空配置？')) config.value = '{}'
+async function clearConfig() {
+  if (await confirmMsg('清空配置？')) config.value = '{}'
 }
 function formatConfig() {
   try {
@@ -311,7 +311,7 @@ function importConfigs() {
     if (Array.isArray(data)) {
       for (const item of data) {
         try {
-          api.post('/jaxrs/config/create', item)
+          api.post('/api/config/create', item)
         } catch {}
       }
       importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 项' }

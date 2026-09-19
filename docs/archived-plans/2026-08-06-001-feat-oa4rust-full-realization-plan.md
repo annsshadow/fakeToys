@@ -134,8 +134,8 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 - **单一信息源原则**：`docs/brainstorms/oa4rust-migration-status.md` 是迁移进度的权威来源，每完成一个模块后必须立即更新（see origin: `docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md`）
 - **Axum 0.8 升级**：约 19 个 crate 仍使用 `:param` 旧语法，升级后路由会静默 404，必须在全量接入前统一转换为 `{param}`
 - **会话持久化缺失**：当前 `SessionManager` 为纯内存 HashMap，重启即失效，生产环境需持久化（Redis 或 DB 表），多实例部署必现问题
-- **路由冲突**：`control` 与 `auth` 重复注册 `/jaxrs/person/list`、`/jaxrs/unit/list` 等；`GET /jaxrs/person/{flag}` 与 `GET /jaxrs/person/{id}` 路径规范化后冲突
-- **认证绕过漏洞**：现有 `POST /jaxrs/authentication/bind` 直接按 `unique_id` 查询并签发会话，无密码/授权校验，必须在完整流程实现前从路由中移除
+- **路由冲突**：`control` 与 `auth` 重复注册 `/api/person/list`、`/api/unit/list` 等；`GET /api/person/{flag}` 与 `GET /api/person/{id}` 路径规范化后冲突
+- **认证绕过漏洞**：现有 `POST /api/authentication/bind` 直接按 `unique_id` 查询并签发会话，无密码/授权校验，必须在完整流程实现前从路由中移除
 - **密码哈希双算法兼容**：新写入使用 bcrypt（带方案前缀），校验路径同时支持 bcrypt 与既有 MD5/DES，登录成功后自动 rehash
 - **响应格式硬约束**：前端 `action.js` 依赖 `ActionResult<T>` 的 9 字段 JSON 结构（`data, type, message, date, spent, size, count, position, prompt`），业务错误返回 HTTP 200 + `type=error`，HTTP 状态码仅用于传输层错误（401/403/429）
 - **幂等迁移模式**：数据迁移使用 `INSERT ON CONFLICT` 支持幂等重跑；四步切换流程（数据迁移 → 部署 → 切流 → 观察），每步之间允许回滚
@@ -206,7 +206,7 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 - 加固 `security_headers_middleware`：确保 `FORCE_HTTPS=true` 时执行 307 跳转；添加 `Referrer-Policy: strict-origin-when-cross-origin`
 - 创建 `detect_route_conflicts.rs` 脚本：启动 Router 前扫描同 path+method 重复注册，CI 中运行
 - 清理迁移文件：**将 003/004 移动到 `migrations/archive/` 目录**（而非删除），创建 008 记录清理操作；保留 001 + 005 + 006 + 007 作为权威 schema
-- 修复 `auth` crate 中 `POST /jaxrs/authentication/bind` 认证绕过漏洞：**立即移除该路由**，确保漏洞在 U1 即被消除；U3 实现完整扫码流程后重新启用
+- 修复 `auth` crate 中 `POST /api/authentication/bind` 认证绕过漏洞：**立即移除该路由**，确保漏洞在 U1 即被消除；U3 实现完整扫码流程后重新启用
 - 修复 RateLimiter 内存泄漏：为滑动窗口添加定期清理机制（如 TTL 过期条目自动移除），防止长期运行内存线性增长
 
 **Technical design:**
@@ -222,7 +222,7 @@ trace → security_headers → cors → rate_limit → auth → authorize → ha
 
 **Test scenarios:**
 - Happy: CORS preflight (`OPTIONS`) 返回 204 + `Access-Control-Allow-Origin`
-- Happy: 升级后所有参数化路由（`/jaxrs/person/{flag}` 等）正常匹配
+- Happy: 升级后所有参数化路由（`/api/person/{flag}` 等）正常匹配
 - Error: 重复路由注册被 `detect_route_conflicts` 脚本捕获并报告
 - Error: `FORCE_HTTPS=true` 时 HTTP 请求返回 307 到 HTTPS
 - Integration: 中间件栈按正确顺序执行（outer → inner）
@@ -252,21 +252,21 @@ trace → security_headers → cors → rate_limit → auth → authorize → ha
 
 **Approach:**
 - `control` 与 `auth` 重复注册的路径：保留 `control` 的 CRUD 实现（更完整），`auth` 中移除重复的 list/get 路由；`auth` 保留登录/组织查询等专属路径
-- `GET /jaxrs/person/{flag}`（auth）与 `GET /jaxrs/person/{id}`（control）路径冲突：统一为 `GET /jaxrs/person/{flag}` 由 control 实现，auth 移除重复
-- `cms_control` 与 `cms_express` 重复注册 `GET /jaxrs/cms/view/list/all`：保留 `cms_express` 实现，`cms_control` 移除
+- `GET /api/person/{flag}`（auth）与 `GET /api/person/{id}`（control）路径冲突：统一为 `GET /api/person/{flag}` 由 control 实现，auth 移除重复
+- `cms_control` 与 `cms_express` 重复注册 `GET /api/cms/view/list/all`：保留 `cms_express` 实现，`cms_control` 移除
 - `control` 自身重复注册的 `/health`：移除 control 中的 health 路由（由 shared 提供）
 - 添加集成冒烟测试：启动 Router，验证所有路由可正常匹配且无 panic
 
 **Technical design:**
 ```
 路由归属决策：
-- /jaxrs/person/* (CRUD) → control
-- /jaxrs/unit/* (CRUD) → control
-- /jaxrs/role/* (CRUD) → control
-- /jaxrs/group/* (CRUD) → control
-- /jaxrs/authentication/* (登录/登出/验证码/OAuth) → auth
-- /jaxrs/person (当前用户信息) → personal
-- /jaxrs/personal/* → personal_extend
+- /api/person/* (CRUD) → control
+- /api/unit/* (CRUD) → control
+- /api/role/* (CRUD) → control
+- /api/group/* (CRUD) → control
+- /api/authentication/* (登录/登出/验证码/OAuth) → auth
+- /api/person (当前用户信息) → personal
+- /api/personal/* → personal_extend
 ```
 
 **Patterns to follow:**
@@ -306,7 +306,7 @@ trace → security_headers → cors → rate_limit → auth → authorize → ha
 
 **Approach:**
 - 会话持久化：将 `SessionManager` 从纯内存 HashMap 迁移到 PostgreSQL `auth_session` 表（已建未用），支持多实例部署和重启恢复；保留内存缓存层做热读
-- 修复认证绕过：`POST /jaxrs/authentication/bind` 在 U1 已移除，U3 实现完整扫码流程后重新启用（`GET /jaxrs/authentication/bind` 返回二维码 + `GET/POST /jaxrs/authentication/bind/meta/{meta}` 轮询确认）
+- 修复认证绕过：`POST /api/authentication/bind` 在 U1 已移除，U3 实现完整扫码流程后重新启用（`GET /api/authentication/bind` 返回二维码 + `GET/POST /api/authentication/bind/meta/{meta}` 轮询确认）
 - 密码哈希 rehash：登录成功后检测旧算法（MD5/DES），自动 rehash 为 bcrypt；写入新用户统一使用 bcrypt
 - OAuth 安全加固：验证 `state` 参数、支持 PKCE（若提供者支持）、验证提供者签名、添加备用认证方案（短信验证码）
 - 验证码安全加固：一次性使用（验证后立即删除）、验证失败不泄露是用户名不存在还是验证码错误
@@ -367,7 +367,7 @@ auth_session 表结构：
 - `control`：已有完整 CRUD，补充边界情况处理（软删除过滤、空结果分页、非法 flag 参数校验）；确保 `deleted_at IS NULL` 过滤在所有查询中生效
 - `personal`：已有个人信息查询/更新/密码修改/重置，补充密码规则校验（长度 6-64、复杂度）、头像上传 MIME 白名单加固
 - `personal_extend`：已有头像上传/个人详情，补充头像大小限制（5MB）、格式验证
-- `program_init`：`/jaxrs/secret/*` 端点从内存状态迁移到 `secret_config` 表持久化，添加系统初始化状态检查（`auth_person` 表是否为空）
+- `program_init`：`/api/secret/*` 端点从内存状态迁移到 `secret_config` 表持久化，添加系统初始化状态检查（`auth_person` 表是否为空）
 - 统一分页行为：确保所有 list 端点返回 `count`（总数）、`size`（当前页大小）、`position`（`next`/`prev`）字段
 - 为每个 crate 补充至少 2 个集成测试（happy path + error path）
 - **Java 写入禁用策略**：本波次开始前，对 wave 1 涉及的 crate（control, personal, personal_extend, program_init）对应的数据库表，通过 DB 触发器或应用层特性开关禁用 Java 写入，U9 完善监控和回滚
@@ -380,7 +380,7 @@ auth_session 表结构：
 **Test scenarios:**
 - Happy: 创建人员 → 查询 → 更新 → 删除 → 确认软删除后不可见
 - Happy: 游标分页 `list_next` / `list_prev` 正确返回 `count`、`size`、`position`
-- Edge: `GET /jaxrs/person/{flag}` 传入不存在的 flag 返回空
+- Edge: `GET /api/person/{flag}` 传入不存在的 flag 返回空
 - Error: 删除不存在的记录返回 404
 - Error: 密码长度不足返回 400
 - Integration: 登录后修改个人信息，再次登录验证变更生效
@@ -641,7 +641,7 @@ auth_session 表结构：
 - Create: `oa4rust/scripts/toggle_module.sh`
 
 **Approach:**
-- nginx 配置：按 URL 前缀路由，`/jaxrs/attendance/*` → Rust，`/jaxrs/message/*` → Java（通过 `map` 或 `upstream` 切换）
+- nginx 配置：按 URL 前缀路由，`/api/attendance/*` → Rust，`/api/message/*` → Java（通过 `map` 或 `upstream` 切换）
 - 特性开关：环境变量 `MODULE_ROUTING=attendance:rust,calendar:java,...` 控制每个模块路由到 Rust 还是 Java
 - 回滚程序：定义触发条件（数据损坏、性能下降、错误率飙升）、回滚流程（nginx 切回 Java）、RTO 目标（5 分钟）
 - 双轨运行数据校验：对正在迁移的表定期对比 Rust 与 Java 的查询结果一致性
@@ -652,7 +652,7 @@ auth_session 表结构：
 - 现有 `shared/middleware.rs` 的环境变量读取模式
 
 **Test scenarios:**
-- Happy: nginx 将 `/jaxrs/control/*` 路由到 Rust，`/jaxrs/message/*` 路由到 Java
+- Happy: nginx 将 `/api/control/*` 路由到 Rust，`/api/message/*` 路由到 Java
 - Happy: 切换 `MODULE_ROUTING` 后流量立即切到 Java
 - Integration: Rust 和 Java 同时运行，数据库事务隔离级别防止数据竞争
 - Drill: 模拟数据损坏，回滚程序在 5 分钟内完成切流

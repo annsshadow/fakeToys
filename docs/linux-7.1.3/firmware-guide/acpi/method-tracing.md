@@ -1,3 +1,5 @@
+# method-tracing
+
 ﻿
 ## ACPICA 跟踪机制（Trace Facility
 
@@ -46,7 +48,7 @@ c. 当指定的控制方法求值时，过滤掉匹配 debug layer/level 的日�
 其中   0xXXXXXXXX/0xYYYYYYYY
      有关可能debug layer/level 掩码取值，请参Documentation/firmware-guide/acpi/debug.rst   \PPPP.AAAA.TTTT.HHHH
      ACPI 命名空间中某个控制方法的完整路径     它不必是控制方法求值的入口
-### AML 跟踪器（AML tracer
+## AML 跟踪器（AML tracer
 
 方法跟踪机制会在 AML 解释器开停止执行某个控制方法或某AML 操作码（opcode）的“跟踪点”处添加特殊的日志条目。注意这些日志条目的格式```
 

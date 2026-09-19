@@ -137,14 +137,14 @@ const tabs = [
 const activeTab = ref<TabKey>('pending')
 const queryClient = useQueryClient()
 const endpoints: Record<TabKey, string> = {
-  pending: '/jaxrs/processplatform/assemble/surface/task/list/my/paging/1/size/20',
-  completed: '/jaxrs/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20',
-  started: '/jaxrs/processplatform/assemble/surface/work/list/my/paging/1/size/20',
+  pending: '/api/processplatform/assemble/surface/task/list/my/paging/1/size/20',
+  completed: '/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20',
+  started: '/api/processplatform/assemble/surface/work/list/my/paging/1/size/20',
 }
 const query = useQuery({
   queryKey: ['process-work', activeTab],
   queryFn: async () => {
-    // 「我发起的」work 列表在 Java 契约为 POST（task/taskcompleted 为 GET），按 tab 分流
+    // 「我发起的」work 列表在 o2server 契约为 POST（task/taskcompleted 为 GET），按 tab 分流
     const response: any =
       activeTab.value === 'started'
         ? await api.post(endpoints[activeTab.value])
@@ -178,8 +178,8 @@ async function openWork(item: TaskItem): Promise<void> {
   try {
     const id = workId(item)
     const [formResponse, dataResponse] = await Promise.all([
-      api.get(`/jaxrs/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}`),
-      api.get(`/jaxrs/processplatform/assemble/surface/data/work/${id}`),
+      api.get(`/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}`),
+      api.get(`/api/processplatform/assemble/surface/data/work/${id}`),
     ])
     formDefinition.value = parseFormDefinition((formResponse as any)?.data)
     const payload = (dataResponse as any)?.data
@@ -235,7 +235,7 @@ async function openStart(): Promise<void> {
   startValues.value = {}
   startErrors.value = {}
   try {
-    const r: any = await api.get('/jaxrs/processplatform/assemble/designer/list/all')
+    const r: any = await api.get('/api/processplatform/assemble/designer/list/all')
     // 该端点返回分页包裹 {count, data:[rows], page, size}（兼容直接数组形态）
     const payload = r?.data ?? {}
     const rows: unknown[] = Array.isArray(payload) ? payload : (payload.data ?? [])
@@ -265,7 +265,7 @@ async function onStartProcessChange(): Promise<void> {
   if (!startProcessId.value) return
   try {
     const detail: any = await api.get(
-      `/jaxrs/processplatform/assemble/designer/get/${encodeURIComponent(startProcessId.value)}`,
+      `/api/processplatform/assemble/designer/get/${encodeURIComponent(startProcessId.value)}`,
     )
     const definition = detail?.data?.processDefinition as Record<string, unknown> | undefined
     const formFlag = (() => {
@@ -276,7 +276,7 @@ async function onStartProcessChange(): Promise<void> {
       return fromBegin || fromManual
     })()
     if (!formFlag) return
-    const form: any = await api.get(`/jaxrs/form/${encodeURIComponent(formFlag)}`)
+    const form: any = await api.get(`/api/form/${encodeURIComponent(formFlag)}`)
     startDefinition.value = parseFormDefinition(form?.data)
     startValues.value = initialFormValues(startDefinition.value, {})
   } catch (error: any) {
@@ -295,14 +295,14 @@ async function submitStart(): Promise<void> {
   }
   startSubmitting.value = true
   try {
-    const created: any = await api.post('/jaxrs/processplatform/service/processing/work', {
+    const created: any = await api.post('/api/processplatform/service/processing/work', {
       process: startProcessId.value,
       title: startTitle.value.trim(),
     })
     const workId = String(created?.data?.id ?? '')
     if (!workId) throw new Error('后端未返回工作 ID')
     if (startDefinition.value && Object.keys(startValues.value).length) {
-      await api.put(`/jaxrs/processplatform/service/processing/data/work/${workId}`, startValues.value)
+      await api.put(`/api/processplatform/service/processing/data/work/${workId}`, startValues.value)
     }
     toast.success('流程已发起')
     closeStart()
@@ -326,12 +326,12 @@ async function submit(action: 'approve' | 'reject'): Promise<void> {
   const id = workId(opened.value)
   const payload = { data: formValues.value, opinion: opinion.value, action }
   try {
-    await api.put(`/jaxrs/processplatform/service/processing/data/work/${id}`, formValues.value)
+    await api.put(`/api/processplatform/service/processing/data/work/${id}`, formValues.value)
     const taskId = activeTab.value === 'started' ? handleTaskId.value : opened.value.id
     if (action === 'approve') {
-      await api.post(`/jaxrs/task/${taskId}/complete`, payload)
+      await api.post(`/api/task/${taskId}/complete`, payload)
     } else {
-      await api.post(`/jaxrs/task/${taskId}/reject`, payload)
+      await api.post(`/api/task/${taskId}/reject`, payload)
     }
     toast.success(action === 'approve' ? '审批通过' : '已驳回')
     closeWork()

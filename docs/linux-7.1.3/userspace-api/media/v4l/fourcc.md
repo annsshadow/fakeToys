@@ -1,3 +1,5 @@
+# fourcc
+
 ﻿## Video4Linux 像素格式 4CC 指南
 
 
@@ -6,7 +8,7 @@
 
 已有4CC 可能不遵循这些指南
 
-### 原始 bayer
+## 原始 bayer
 
 
 原始 bayer 格式使用以下首字符：

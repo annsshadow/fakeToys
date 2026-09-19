@@ -1,6 +1,8 @@
+# security
+
 ﻿## NVDIMM 瀹夊叏鎬。
 
-### 1. 引言
+## 1. 引言
 
 
 随着 Intel Device Specific Methods（DSM，设备特定方法）v1.8 规范 [^1^] 的引入，
@@ -30,7 +32,7 @@ nvdimm:<bus-provider-specific-unique-id>
 
 创建 enc32 格式encrypted-keys 请参见文`Documentation/security/keys/trusted-encrypted.rst`。使用主可信密钥（master
 trusted key）配TPM 来封装（sealing）encrypted-keys 是推荐做法
-### 4. 解锁
+## 4. 解锁
 
 
 当内核枚DIMM 时，内核会尝试从内核用户密钥环中检索密钥。这是解锁一个已锁定

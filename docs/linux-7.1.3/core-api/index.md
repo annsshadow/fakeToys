@@ -1,3 +1,5 @@
+# index
+
 ﻿## 核心 API 文档
 
 本页是核心内API 文档手册的索引，汇总了核心工具、数据结构与底层库，以及内存管理、锁与并发等通用内核机制各章节的入口，便于开发者按主题查阅内核核心 API
@@ -19,7 +21,7 @@
 - [symbol-namespaces](symbol-namespaces)
 - [asm-annotations](asm-annotations)
 - [real-time/index](real-time/index)
-- [housekeeping.rst](housekeeping.rst)
+- [housekeeping.rst](housekeeping.md)
 
 ## 数据结构与底层工
 
@@ -64,7 +66,7 @@ Linux 如何避免所有事情同时发生。更多相关文档请参阅 Documen
 - [local_ops](local_ops)
 - [padata](padata)
 - [../RCU/index](../RCU/index)
-- [wrappers/memory-barriers.rst](wrappers/memory-barriers.rst)
+- [wrappers/memory-barriers.rst](wrappers/memory-barriers.md)
 
 ## 底层硬件管理
 

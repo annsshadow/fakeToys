@@ -14,11 +14,11 @@ use crate::reset::{is_password_acceptable, ResetCodeStore};
 // regist — 用户注册
 //
 // 端点：
-//   POST /jaxrs/person/regist              — 注册新用户
-//   GET  /jaxrs/person/regist/check/name/{name}       — 检查用户名唯一性
-//   GET  /jaxrs/person/regist/check/mobile/{mobile}   — 检查手机号唯一性
-//   GET  /jaxrs/person/regist/check/email/{email}     — 检查邮箱唯一性
-//   POST /jaxrs/person/regist/code            — 发送注册验证码
+//   POST /api/person/regist              — 注册新用户
+//   GET  /api/person/regist/check/name/{name}       — 检查用户名唯一性
+//   GET  /api/person/regist/check/mobile/{mobile}   — 检查手机号唯一性
+//   GET  /api/person/regist/check/email/{email}     — 检查邮箱唯一性
+//   POST /api/person/regist/code            — 发送注册验证码
 //
 // 权限：Public（无需认证）
 // ──────────────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ pub struct RegisterRequest {
     pub code: String,
 }
 
-/// POST /jaxrs/person/regist — 注册新用户
+/// POST /api/person/regist — 注册新用户
 pub async fn register(
     pool: Extension<Pool>,
     reset_store: Extension<ResetCodeStore>,
@@ -140,7 +140,7 @@ pub async fn register(
     }))))
 }
 
-/// GET /jaxrs/person/regist/check/name/{name}
+/// GET /api/person/regist/check/name/{name}
 pub async fn check_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
@@ -158,7 +158,7 @@ pub async fn check_name(
     }))))
 }
 
-/// GET /jaxrs/person/regist/check/mobile/{mobile}
+/// GET /api/person/regist/check/mobile/{mobile}
 pub async fn check_mobile(
     pool: Extension<Pool>,
     Path(mobile): Path<String>,
@@ -176,7 +176,7 @@ pub async fn check_mobile(
     }))))
 }
 
-/// GET /jaxrs/person/regist/check/email/{email}
+/// GET /api/person/regist/check/email/{email}
 pub async fn check_email(
     pool: Extension<Pool>,
     Path(email): Path<String>,
@@ -194,7 +194,7 @@ pub async fn check_email(
     }))))
 }
 
-/// POST /jaxrs/person/regist/code — 发送注册验证码
+/// POST /api/person/regist/code — 发送注册验证码
 pub async fn send_regist_code(
     reset_store: Extension<ResetCodeStore>,
     Json(req): Json<serde_json::Value>,

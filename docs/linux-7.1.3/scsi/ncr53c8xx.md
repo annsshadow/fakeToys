@@ -1,3 +1,5 @@
+# ncr53c8xx
+
 ﻿锘。
 ## NCR53C8XX/SYM53C8XX 驱动
 
@@ -492,6 +494,7 @@ ms_post
 
     :order:    3 possible values:
 
+
                simple:
 			use SIMPLE TAG for all operations (read and write)
 
@@ -510,6 +513,7 @@ ms_post
     setdebug <list of debug flags>
 
     Available debug flags:
+
 
 	======== ========================================================
         alloc    print info about memory allocations (ccb, lcb)
@@ -545,9 +549,11 @@ ms_post
 
     For the moment, only one flag is available:
 
+
         no_disc:   not allow target to disconnect.
 
     Do not specify any flag in order to reset the flag. For example:
+
 
     setflag 4
       will reset no_disc flag for target 4, so will allow it disconnections.
@@ -690,7 +696,7 @@ ncr53c8xx（sym53c8xx）驱动的启动设置命令以驱动名 "ncr53c8xx="（s
 ### 10.2 可用参数
 
 
-##### 10.2.1  主设备奇偶校
+#### 10.2.1  主设备奇偶校
 
 
 	======     ========
@@ -756,13 +762,14 @@ ncr53c8xx（sym53c8xx）驱动的启动设置命令以驱动名 "ncr53c8xx="（s
 
   will set devices queue depth as follow:
 
+
       - controller #0 target #2 and target #3                  -> 16 commands,
       - controller #0 target #5                                -> 24 commands,
       - controller #1 target #1 logical unit #2                -> 32 commands,
       - all other logical units (all targets, all controllers) -> 10 commands.
 
 ```
-##### 10.2.7  默认同步周期因子
+## 10.2.7  默认同步周期因子
 
 
 ============ ========================================================
@@ -779,7 +786,7 @@ sync:#factor
   在所有情况下，驱动都将根NCR53C8XX 芯片类型使用控制器所支持的最
   传输周期
 
-##### 10.2.8  与所有设备协商同步传
+## 10.2.8  与所有设备协商同步传
 
 
         (force sync nego)
@@ -789,7 +796,7 @@ sync:#factor
         fsn:n      disabled
         =====      =========
 
-##### 10.2.9  详细输出级别
+### 10.2.9  详细输出级别
 
 
         ======     =========
@@ -806,6 +813,7 @@ debug:0    clear debug flags
 debug:#x   set debug flags
 
 	    #x is an integer value combining the following power-of-2 values:
+
 
 	    =============  ======
 	    DEBUG_ALLOC       0x1
@@ -827,7 +835,7 @@ debug:#x   set debug flags
   你可以安全地试用 DEBUG_NEGO。但是，其中某些标志可能会产生大
   syslog 消息
 
-##### 10.2.11 突发最大长
+## 10.2.11 突发最大长
 
 
 =========  ==================================================================
@@ -845,7 +853,7 @@ burst:#x   burst enabled (1<<#x burst transfers max)
 	   驱动使用芯片所支持的最大值
 =========  ==================================================================
 
-##### 10.2.12 LED 支持
+## 10.2.12 LED 支持
 
 
         =====      ===================
@@ -856,7 +864,7 @@ burst:#x   burst enabled (1<<#x burst transfers max)
   如果你的 SCSI 板卡不使SDMS BIOS，请勿启LED 支持
   （参配置参数"
 
-##### 10.2.13 最大总线宽度
+### 10.2.13 最大总线宽度
 
 
         ======     ===================
@@ -905,6 +913,7 @@ burst:#x   burst enabled (1<<#x burst transfers max)
 
     Available option bits:
 
+
 	===    ===============================================================
         0x0    No attempt to fix PCI configuration space registers values.
         0x1    Set PCI cache-line size register if not set.
@@ -939,6 +948,7 @@ burst:#x   burst enabled (1<<#x burst transfers max)
         buschk:<option bits>
 
     Available option bits:
+
 
         ====   ================================================
         0x0:   No check.
@@ -976,6 +986,7 @@ burst:#x   burst enabled (1<<#x burst transfers max)
 =======   =================================================================
 iarb:0    do not use this feature.
 iarb:#x   use this feature according to bit fields as follow:
+
 
 	  ========= =======================================================
 	  bit 0 (1) enable IARB each time the initiator has been reselected
@@ -1048,6 +1059,7 @@ Boot fail safe
 pcifix:<option bits>
 
 Available option bits:
+
 
     ===      =====================================================
     0x1      Set PCI cache-line size register if not set.
@@ -1142,7 +1154,7 @@ ncr53c8xx 始终尝试挂载所有控制器。选项 0x80 没有被加ncr53c8xx 
 因为据报告它会让长期使用该驱动的用户感到困惑。如果你希望Linux 启动
 不让 ncr53c8xx 驱动挂载某个控制器，必须使用 'excl' 驱动启动选项
 
-##### 10.6 SCSI 总线检查启动选项
+#### 10.6 SCSI 总线检查启动选项
 
 
 当此选项被设为非零值时，驱动会在断言 SCSI RESET 100 微秒后检SCSI

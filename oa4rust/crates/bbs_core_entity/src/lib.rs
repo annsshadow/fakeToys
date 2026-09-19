@@ -724,39 +724,30 @@ pub async fn search_subjects(
 
 pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
-        .route("/jaxrs/bbs/core/entity/forum/list", get(forum_list))
-        .route("/jaxrs/bbs/core/entity/forum", post(create_forum))
-        .route("/jaxrs/bbs/core/entity/forum/{id}", post(update_forum))
-        .route("/jaxrs/bbs/core/entity/forum/{id}", delete(delete_forum))
+        .route("/api/bbs/core/entity/forum/list", get(forum_list))
+        .route("/api/bbs/core/entity/forum", post(create_forum))
+        .route("/api/bbs/core/entity/forum/{id}", post(update_forum))
+        .route("/api/bbs/core/entity/forum/{id}", delete(delete_forum))
         .route(
-            "/jaxrs/bbs/core/entity/section/list/{forumId}",
+            "/api/bbs/core/entity/section/list/{forumId}",
             get(section_list),
         )
-        .route("/jaxrs/bbs/core/entity/section", post(create_section))
-        .route("/jaxrs/bbs/core/entity/section/{id}", post(update_section))
+        .route("/api/bbs/core/entity/section", post(create_section))
+        .route("/api/bbs/core/entity/section/{id}", post(update_section))
+        .route("/api/bbs/core/entity/section/{id}", delete(delete_section))
         .route(
-            "/jaxrs/bbs/core/entity/section/{id}",
-            delete(delete_section),
-        )
-        .route(
-            "/jaxrs/bbs/core/entity/subject/top/{sectionId}",
+            "/api/bbs/core/entity/subject/top/{sectionId}",
             get(subject_top_list),
         )
         .route(
-            "/jaxrs/bbs/core/entity/subject/list/{sectionId}",
+            "/api/bbs/core/entity/subject/list/{sectionId}",
             get(subject_list),
         )
-        .route("/jaxrs/bbs/core/entity/subject", post(create_subject))
-        .route("/jaxrs/bbs/core/entity/subject/{id}", post(update_subject))
-        .route(
-            "/jaxrs/bbs/core/entity/subject/{id}",
-            delete(delete_subject),
-        )
-        .route("/jaxrs/bbs/core/entity/reply", post(create_reply))
-        .route(
-            "/jaxrs/bbs/core/entity/subject/search",
-            get(search_subjects),
-        )
+        .route("/api/bbs/core/entity/subject", post(create_subject))
+        .route("/api/bbs/core/entity/subject/{id}", post(update_subject))
+        .route("/api/bbs/core/entity/subject/{id}", delete(delete_subject))
+        .route("/api/bbs/core/entity/reply", post(create_reply))
+        .route("/api/bbs/core/entity/subject/search", get(search_subjects))
 }
 
 #[cfg(test)]

@@ -20,7 +20,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/get")
+                    .uri("/api/ai/config/get")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -40,7 +40,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/base/config")
+                    .uri("/api/ai/config/base/config")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/list/model/paging/1/size/10")
+                    .uri("/api/ai/config/list/model/paging/1/size/10")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -75,7 +75,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/get/model/test-model")
+                    .uri("/api/ai/config/get/model/test-model")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -92,7 +92,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/list/mcp/paging/1/size/10")
+                    .uri("/api/ai/config/list/mcp/paging/1/size/10")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -109,7 +109,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/get/mcp/test-mcp")
+                    .uri("/api/ai/config/get/mcp/test-mcp")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -126,7 +126,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/chat/list/paging/1/size/10")
+                    .uri("/api/ai/chat/list/paging/1/size/10")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -143,7 +143,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/chat/list/completion/test-clue/paging/1/size/10")
+                    .uri("/api/ai/chat/list/completion/test-clue/paging/1/size/10")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -160,7 +160,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/chat/delete/test-clue")
+                    .uri("/api/ai/chat/delete/test-clue")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -177,7 +177,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/index/cms/doc/test-doc")
+                    .uri("/api/ai/index/cms/doc/test-doc")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -194,7 +194,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/index/cms/doc/with/app/test-app")
+                    .uri("/api/ai/index/cms/doc/with/app/test-app")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -211,7 +211,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/index/delete/test-flag")
+                    .uri("/api/ai/index/delete/test-flag")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -228,7 +228,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/file/test-flag")
+                    .uri("/api/ai/file/test-flag")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -245,7 +245,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/file/test-id/download")
+                    .uri("/api/ai/file/test-id/download")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -262,7 +262,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/file/test-id/download/scale")
+                    .uri("/api/ai/file/test-id/download/scale")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -279,7 +279,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/file/delete/test-flag")
+                    .uri("/api/ai/file/delete/test-flag")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -297,7 +297,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/config/list/enable/model")
+                    .uri("/api/ai/config/list/enable/model")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -316,7 +316,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/index/sync/to/knowledge")
+                    .uri("/api/ai/index/sync/to/knowledge")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -338,7 +338,7 @@ mod tests {
         let result: ActionResult<String> = ActionResult::success("test".to_string());
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some("test".to_string()));
-        // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+        // o2server 成功信封 message 恒为空串（2026-08-25 行为对比结论）
         assert_eq!(result.message, Some(String::new()));
     }
 
@@ -355,7 +355,7 @@ mod tests {
         let json = serde_json::to_value(&result).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"], 42);
-        // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+        // o2server 成功信封 message 恒为空串（2026-08-25 行为对比结论）
         assert_eq!(json["message"], "");
     }
 
@@ -396,7 +396,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/app/list")
+                    .uri("/api/ai/app/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -413,7 +413,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/model/list")
+                    .uri("/api/ai/model/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -430,7 +430,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/conversation/list")
+                    .uri("/api/ai/conversation/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -447,7 +447,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai/nonexistent")
+                    .uri("/api/ai/nonexistent")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

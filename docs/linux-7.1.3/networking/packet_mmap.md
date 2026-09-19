@@ -1,3 +1,5 @@
+# packet_mmap
+
 ﻿## Packet MMAP（Packet 内存映射
 
 ## 摘要
@@ -108,6 +110,7 @@ bind(2) 绑定。否则，例如使用 htons(ETH_P_ALL) 或任何其他协议
 
  Initialization example::
 
+
     struct sockaddr_ll my_addr;
     struct ifreq s_ifr;
     ...
@@ -151,6 +154,7 @@ bind(2) 绑定。否则，例如使用 htons(ETH_P_ALL) 或任何其他协议
      setsockopt(fd, SOL_PACKET, PACKET_RX_RING, (void *) &req, sizeof(req))
 
  - Transmission process::
+
 
      setsockopt(fd, SOL_PACKET, PACKET_TX_RING, (void *) &req, sizeof(req))
 
@@ -306,6 +310,7 @@ i386 内核，内存大小限制为 1GiB
  /*
    Frame structure:
 
+
    - Start. Frame must be aligned to TPACKET_ALIGNMENT=16
    - struct tpacket_hdr
    - pad to TPACKET_ALIGNMENT=16
@@ -348,7 +353,7 @@ i386 内核，内存大小限制为 1GiB
 ```
 RX 必须在前，因为内核紧接着 RX 之后映射 TX 环内存
 在每个帧的开头有一个状态字段（参见 struct tpacket_hdr）。如果该字段0，表示该可供内核使用；否则，存在一个用户可读的帧，适用以下标志
-##### 捕获过程
+#### 捕获过程
 ```
 
      #define TP_STATUS_COPY          (1 << 1)
@@ -408,7 +413,7 @@ TP_STATUS_CSUM_VALID	This flag indicates that at least the transport
 
 ```
 先检查状态值再 poll 等待帧，并不会产生竞争条件
-##### 发送过```
+## 发送过```
 
      #define TP_STATUS_AVAILABLE        0 // Frame is available
      #define TP_STATUS_SEND_REQUEST     1 // Frame will be sent on next send()

@@ -1,3 +1,5 @@
+# vlocks
+
 ﻿## vlocks 用于裸机互斥
 
 
@@ -11,7 +13,7 @@ vlocks 利用了内存系统对写入单一内存位置的原子性。为了仲�
 为了确保选举能在有限时间内产生明确的结果，只有当尚未选出胜者且选举看起来尚未开始时，CPU 才会首先进入选举
 
 
-### Algorithm
+## Algorithm
 
 
 ```
@@ -97,6 +99,7 @@ currently_voting[] 数组为各 CPU 提供了一种判断选举是否正在进�
 	CMP	Rt, #0
 
    ...in place of code equivalent to::
+
 
 	LDRB	Rt, [Rn]
 	CMP	Rt, #0

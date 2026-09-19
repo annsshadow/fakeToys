@@ -41,6 +41,27 @@ pub async fn is_db_available() -> bool {
     )
 }
 
+/// 尝试连接默认测试 Redis（redis://127.0.0.1:6379），超时 2s。
+///
+/// Redis 在本项目中是**可选依赖**（见 `crate::redis` 顶部注释：不可达时降级为
+/// 进程内内存实现）。CI 的 unit-tests job 只起了 postgres service，没有任何
+/// Redis 服务，因此凡是以「能连上 Redis」为前提的测试都必须在缺服务时优雅跳过，
+/// 否则会断言失败 -> panic -> `cargo test` 以 exit code 101 结束。
+///
+/// 与 `is_db_available()` 对称，供测试做运行时守卫。
+pub async fn is_redis_available() -> bool {
+    let url =
+        crate::redis::redis_url_from_env().unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
+    matches!(
+        tokio::time::timeout(
+            Duration::from_secs(2),
+            crate::redis::RedisPool::from_url(&url)
+        )
+        .await,
+        Ok(Ok(_))
+    )
+}
+
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，
 /// 用于 Extension<DatabaseConnection> 类型的 handler 测试。
 /// 若 PG 不可达，返回 Err。
@@ -55,10 +76,10 @@ pub fn test_app_with(state: SecurityState, pool: Pool) -> Router {
     use axum::routing::{get, post};
     Router::new()
         .route("/health", get(|| async { "ok" }))
-        .route("/jaxrs/unit/list", get(|| async { "ok" }))
-        .route("/jaxrs/authentication/login", post(|| async { "ok" }))
-        .route("/jaxrs/reset", post(|| async { "ok" }))
-        .route("/jaxrs/person", post(|| async { "ok" }))
+        .route("/api/unit/list", get(|| async { "ok" }))
+        .route("/api/authentication/login", post(|| async { "ok" }))
+        .route("/api/reset", post(|| async { "ok" }))
+        .route("/api/person", post(|| async { "ok" }))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             crate::middleware::authorize_middleware,

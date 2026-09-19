@@ -58,10 +58,10 @@ mod tests {
     fn test_app(state: SecurityState) -> Router {
         Router::new()
             .route("/health", get(|| async { "ok" }))
-            .route("/jaxrs/unit/list", get(|| async { "ok" }))
-            .route("/jaxrs/authentication/login", post(|| async { "ok" }))
-            .route("/jaxrs/reset", post(|| async { "ok" }))
-            .route("/jaxrs/person", post(|| async { "ok" }))
+            .route("/api/unit/list", get(|| async { "ok" }))
+            .route("/api/authentication/login", post(|| async { "ok" }))
+            .route("/api/reset", post(|| async { "ok" }))
+            .route("/api/person", post(|| async { "ok" }))
             .layer(middleware::from_fn_with_state(
                 state.clone(),
                 authorize_middleware,
@@ -130,7 +130,7 @@ mod tests {
     #[tokio::test]
     async fn test_protected_route_requires_token() {
         let app = test_app(security_state());
-        let status = send(&app, Method::GET, "/jaxrs/unit/list", None, None).await;
+        let status = send(&app, Method::GET, "/api/unit/list", None, None).await;
         assert_eq!(status, StatusCode::UNAUTHORIZED);
     }
 
@@ -140,7 +140,7 @@ mod tests {
         let status = send(
             &app,
             Method::GET,
-            "/jaxrs/unit/list",
+            "/api/unit/list",
             Some("bogus-token"),
             None,
         )
@@ -153,7 +153,7 @@ mod tests {
         let state = security_state();
         let token = make_token(&state.session_manager, "admin").await;
         let app = test_app(state);
-        let status = send(&app, Method::GET, "/jaxrs/unit/list", Some(&token), None).await;
+        let status = send(&app, Method::GET, "/api/unit/list", Some(&token), None).await;
         assert_eq!(status, StatusCode::OK);
     }
 
@@ -164,7 +164,7 @@ mod tests {
         let app = test_app(state);
         let req = Request::builder()
             .method(Method::GET)
-            .uri("/jaxrs/unit/list")
+            .uri("/api/unit/list")
             .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
             .body(Body::empty())
             .unwrap();
@@ -179,7 +179,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/unit/list")
+                    .uri("/api/unit/list")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -235,7 +235,7 @@ mod tests {
 
         let request = Request::builder()
             .method(Method::POST)
-            .uri("/jaxrs/reset")
+            .uri("/api/reset")
             .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
             .body(Body::empty())
             .unwrap();
@@ -246,7 +246,7 @@ mod tests {
 
         let request = Request::builder()
             .method(Method::POST)
-            .uri("/jaxrs/reset")
+            .uri("/api/reset")
             .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
             .header(header::ORIGIN, "http://localhost:3000")
             .body(Body::empty())
@@ -258,7 +258,7 @@ mod tests {
 
         let request = Request::builder()
             .method(Method::POST)
-            .uri("/jaxrs/reset")
+            .uri("/api/reset")
             .header(header::AUTHORIZATION, format!("Bearer {}", token))
             .body(Body::empty())
             .unwrap();
@@ -486,7 +486,7 @@ mod tests {
 
         let req = Request::builder()
             .method(Method::GET)
-            .uri("/jaxrs/unit/list")
+            .uri("/api/unit/list")
             .header(header::COOKIE, format!("{}=bogus", SESSION_COOKIE_NAME))
             .header(header::AUTHORIZATION, format!("Bearer {good}"))
             .body(Body::empty())
@@ -506,14 +506,7 @@ mod tests {
     async fn test_auth_path_rate_limited() {
         let app = test_app(security_state());
         for i in 0..11 {
-            let status = send(
-                &app,
-                Method::POST,
-                "/jaxrs/authentication/login",
-                None,
-                None,
-            )
-            .await;
+            let status = send(&app, Method::POST, "/api/authentication/login", None, None).await;
             if i < 10 {
                 assert_eq!(status, StatusCode::OK, "第 {} 次认证请求应成功", i + 1);
             } else {
@@ -532,7 +525,7 @@ mod tests {
     async fn test_reset_path_counted_in_auth_rate_limit() {
         let app = test_app(security_state());
         for i in 0..11 {
-            let status = send(&app, Method::POST, "/jaxrs/reset", None, None).await;
+            let status = send(&app, Method::POST, "/api/reset", None, None).await;
             if i < 10 {
                 assert_eq!(status, StatusCode::OK, "第 {} 次重置请求应成功", i + 1);
             } else {
@@ -555,7 +548,7 @@ mod tests {
             let status = send(
                 &app,
                 Method::POST,
-                "/jaxrs/authentication/login",
+                "/api/authentication/login",
                 None,
                 Some("203.0.113.1"),
             )
@@ -567,7 +560,7 @@ mod tests {
             let status = send(
                 &app,
                 Method::POST,
-                "/jaxrs/authentication/login",
+                "/api/authentication/login",
                 None,
                 Some("198.51.100.7"),
             )
@@ -582,7 +575,7 @@ mod tests {
         let status = send(
             &app,
             Method::POST,
-            "/jaxrs/authentication/login",
+            "/api/authentication/login",
             None,
             Some("203.0.113.1"),
         )
@@ -642,7 +635,7 @@ mod tests {
         let state = security_state();
         let token = make_token(&state.session_manager, "user-1").await;
         let app = test_app(state);
-        let status = send(&app, Method::POST, "/jaxrs/person", Some(&token), None).await;
+        let status = send(&app, Method::POST, "/api/person", Some(&token), None).await;
         assert_eq!(status, StatusCode::FORBIDDEN);
     }
 
@@ -651,7 +644,7 @@ mod tests {
         let state = security_state();
         let token = make_token(&state.session_manager, "person-admin").await;
         let app = test_app(state);
-        let status = send(&app, Method::POST, "/jaxrs/person", Some(&token), None).await;
+        let status = send(&app, Method::POST, "/api/person", Some(&token), None).await;
         assert!(
             status == StatusCode::OK || status == StatusCode::FORBIDDEN,
             "DB 可达时 admin 应通过，不可达时 fail-closed 403，实际 {}",
@@ -666,7 +659,7 @@ mod tests {
         let state = security_state();
         let token = make_token(&state.session_manager, "admin").await;
         let app = test_app(state);
-        let status = send(&app, Method::POST, "/jaxrs/person", Some(&token), None).await;
+        let status = send(&app, Method::POST, "/api/person", Some(&token), None).await;
         assert!(
             status == StatusCode::OK || status == StatusCode::FORBIDDEN,
             "DB 可达时 admin 应通过，不可达时 fail-closed 403，实际 {}",
@@ -679,7 +672,7 @@ mod tests {
         let state = security_state();
         let token = make_token(&state.session_manager, "user-1").await;
         let app = test_app(state);
-        let status = send(&app, Method::GET, "/jaxrs/unit/list", Some(&token), None).await;
+        let status = send(&app, Method::GET, "/api/unit/list", Some(&token), None).await;
         assert_eq!(status, StatusCode::OK);
     }
 
@@ -720,9 +713,9 @@ mod tests {
         let result: ActionResult<String> = ActionResult::success("test".to_string());
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some("test".to_string()));
-        // Java 成功信封实测恒填空串 message（Gson 对齐）
+        // o2server 成功信封实测恒填空串 message（Gson 对齐）
         assert_eq!(result.message, Some(String::new()));
-        // Java 成功信封无 prompt 字段（仅错误信封携带异常类名）
+        // o2server 成功信封无 prompt 字段（仅错误信封携带异常类名）
         assert_eq!(result.prompt, None);
     }
 
@@ -740,9 +733,9 @@ mod tests {
 
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"], 42);
-        // Java 成功信封实测 message 为空串而非 null
+        // o2server 成功信封实测 message 为空串而非 null
         assert_eq!(json["message"], serde_json::Value::String(String::new()));
-        // Java 成功信封无 prompt 字段（skip_serializing_if = "Option::is_none"）
+        // o2server 成功信封无 prompt 字段（skip_serializing_if = "Option::is_none"）
         assert!(json.get("prompt").is_none());
     }
 
@@ -829,5 +822,48 @@ mod tests {
         // 若 PG 不可达，连接会返回 Err；仅验证函数可调用
         let result = crate::testing::test_sea_orm_pool().await;
         let _ = result;
+    }
+    #[tokio::test]
+    async fn test_crud_create_placeholder_count_live() {
+        // 回归钉：crud_create 曾少算 1 个占位符（1..values.len()），导致
+        // INSERT 字段数 N+1 多于表达式 N → 42601，所有 ≥1 列家族 create 全 500。
+        // 用临时表实跑，钉死「id + 列数」占位符语义。
+        use crate::testing::{is_db_available, test_pool};
+        if !is_db_available().await {
+            eprintln!("skipping test_crud_create_placeholder_count_live: DB not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute("DROP TABLE IF EXISTS x_crud_probe", &[])
+            .await
+            .unwrap();
+        client
+            .execute(
+                "CREATE TABLE x_crud_probe (id TEXT PRIMARY KEY, a TEXT, b TEXT, c TEXT)",
+                &[],
+            )
+            .await
+            .unwrap();
+        let spec = crate::CrudSpec {
+            table: "x_crud_probe",
+            columns: &[("a", "a"), ("b", "b"), ("c", "c")],
+            soft_delete: false,
+        };
+        // 3 列：必须生成 $1(id)..$4(c) 共 4 占位符
+        let payload = serde_json::json!({ "a": "1", "b": "2", "c": "3" });
+        let id = crate::crud_create(&pool, &spec, &payload).await.unwrap();
+        let row = client
+            .query_one("SELECT a, b, c FROM x_crud_probe WHERE id = $1", &[&id])
+            .await
+            .unwrap();
+        assert_eq!(row.get::<_, String>("a"), "1");
+        assert_eq!(row.get::<_, String>("b"), "2");
+        assert_eq!(row.get::<_, String>("c"), "3");
+        client
+            .execute("DROP TABLE x_crud_probe", &[])
+            .await
+            .unwrap();
     }
 }

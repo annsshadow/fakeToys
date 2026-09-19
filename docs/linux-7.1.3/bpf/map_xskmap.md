@@ -1,3 +1,5 @@
+# map_xskmap
+
 ﻿
 ## BPF_MAP_TYPE_XSKMAP
 
@@ -36,7 +38,7 @@
 
 ### 内核 BPF
 
-##### bpf_redirect_map()
+#### bpf_redirect_map()
 
 
     long bpf_redirect_map(struct bpf_map *map, u32 key, u64 flags)
@@ -52,7 +54,7 @@
 ### 用户空间
 
     XSK 条目只能从用户空间更删除，而不能从 BPF 程序中更删除。尝试从内核 BPF 程序调用这些函数将导致程序加载失败并发出验证器警告
-##### bpf_map_update_elem()
+#### bpf_map_update_elem()
 
 
 	int bpf_map_update_elem(int fd, const void **key, const void **value, __u64 flags)

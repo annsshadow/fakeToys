@@ -1,11 +1,15 @@
 
+# memory-allocation
+
 :Original: Documentation/core-api/memory-allocation.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  时奎亮 <alexs@kernel.org>
 
@@ -36,6 +40,7 @@ Linux为内存分配提供了多种API。你可以使用 `kmalloc` 或 `kmem_cac
 GFP标志控制分配器的行为。它们告诉我们哪些内存区域可以被使用，分配器应该多努力寻
 找空闲的内存，这些内存是否可以被用户空间访问等等。内存管理API为GFP标志和它们的
 组合提供了参考文件，这里我们简要介绍一下它们的推荐用法:
+
 
   - 大多数时候， `GFP_KERNEL` 是你需要的。内核数据结构的内存，DMA可用内存，inode
     缓存，所有这些和其他许多分配类型都可以使用 `GFP_KERNEL` 。注意，使用 `GFP_KERNEL`

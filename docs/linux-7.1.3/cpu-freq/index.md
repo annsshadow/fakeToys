@@ -1,3 +1,5 @@
+# index
+
 ﻿## CPUFreq - Linux(TM) 内核中的 CPU 频率与电压调节代
 
 
@@ -10,7 +12,7 @@ Author: Dominik Brodowski  <linux@brodo.de>
 - [cpu-drivers](cpu-drivers)
 - [cpufreq-stats](cpufreq-stats)
 
-### 邮件列表
+## 邮件列表
 
 有一CPU 频率通用邮件列表，你可以在其中报告错误、问题或提交补丁。要发消息，请发送邮件至 linux-pm@vger.kernel.org
 

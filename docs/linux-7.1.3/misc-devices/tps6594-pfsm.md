@@ -1,3 +1,5 @@
+# tps6594-pfsm
+
 ﻿
 ## Texas Instruments TPS6594 PFSM 驱动
 
@@ -59,7 +61,7 @@ PMIC 中不需要常开的数字与模拟功能被关闭（低功耗）
     # cat /proc/interrupts
 
 ```
-### 用户空间代码示例
+## 用户空间代码示例
 
 
 samples/pfsm/pfsm-wakeup.c

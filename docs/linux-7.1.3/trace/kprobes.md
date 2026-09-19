@@ -1,3 +1,5 @@
+# kprobes
+
 ﻿## 内核探针（Kprobes
 
 :Author: Jim Keniston <jkenisto@us.ibm.com>
@@ -42,7 +44,7 @@ CPU 命中这条断点指令时，会发生一次陷阱，CPU 的寄存器被保
 ### Return Probes
 
 
-##### Return Probe 是如何工作的
+#### Return Probe 是如何工作的
 
 当你调用 register_kretprobe() 时，Kprobes 会在该函数的入口处建立一kprobe当被探测的函数被调用且命中该探针时，Kprobes 保存一份返回地址的副本，并将返回地址替换"trampoline"（蹦床）的地址trampoline 是一段任意代码——通常只是一nop 指令在启动阶段，Kprobes trampoline 处注册一kprobe
 当被探测的函数执行其返回指令时，控制权传递给 trampoline，并命中该探针Kprobes trampoline 处理例程调用与该 kretprobe 关联的、用户指定的返回处理例程，然后将保存的指令指针设置为保存的返回地址，从陷阱返回时就在那里恢复执行
@@ -58,7 +60,7 @@ Kretprobes 还提供一个可选的、用户指定的处理例程，它在函数
 ### 跳转优化是如何工作的
 
 如果你的内核CONFIG_OPTPROBES=y 构建（目前该标志x86/x86-64、非抢占式内核上自动设为 'y'），并且 "debug.kprobes_optimization" 内核参数被设1（参sysctl(8)），Kprobes 会尝试在每个探测点使用跳转指令取代断点指令，以降低探针命中开销
-##### 初始化一Kprobe
+#### 初始化一Kprobe
 
 
 当注册一个探针时，在尝试此优化之前，Kprobes 会在指定地址插入一个普通的、基于断点的 kprobe因此，即便无法优化这个特定的探测点，那里仍会有一个探针
@@ -174,7 +176,7 @@ p 指向与断点关联的 kprobe，regs 指向保存断点命中时寄存器的
 ```
 
 p regs 的描述与 pre_handler 相同。flags 似乎总是为零
-### register_kretprobe
+## register_kretprobe
 
 
 ```
@@ -199,7 +201,7 @@ regs 的描述同 kprobe.pre_handler。ri 指向 kretprobe_instance 对象，其
 - data：指向每个返回实例的私有数据；详"Kretprobe entry-handler"
 regs_return_value(regs) 宏提供了一个简单的抽象，用于按照体系结ABI 的定义，从适当的寄存器中提取返回值
 该处理例程的返回值目前被忽略
-### unregister_*probe
+## unregister_*probe
 
 
 ```
@@ -213,7 +215,7 @@ regs_return_value(regs) 宏提供了一个简单的抽象，用于按照体系�
    If the functions find an incorrect probe (ex. an unregistered probe),
    they clear the addr field of the probe.
 
-### register_*probes
+## register_*probes
 
 
 ```
@@ -228,7 +230,7 @@ regs_return_value(regs) 宏提供了一个简单的抽象，用于按照体系�
    You have to allocate(or define) an array of pointers and set all
    of the array entries before using these functions.
 
-### unregister_*probes
+## unregister_*probes
 
 
 ```
@@ -244,7 +246,7 @@ regs_return_value(regs) 宏提供了一个简单的抽象，用于按照体系�
    incorrect probes. However, other probes in the array are
    unregistered correctly.
 
-### disable_*probe
+## disable_*probe
 
 
 ```
@@ -254,7 +256,7 @@ regs_return_value(regs) 宏提供了一个简单的抽象，用于按照体系�
 ```
 
 临时禁用指定`*probe`。你可以通过 enable_*probe() 再次启用它。你必须指定已被注册的探针
-### enable_*probe
+## enable_*probe
 
 
 ```

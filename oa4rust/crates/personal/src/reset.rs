@@ -139,9 +139,9 @@ pub struct ResetPasswordRequest {
     pub password: String,
 }
 
-// --- 处理器（Java ResetAction 契约路径） ---
+// --- 处理器（o2server ResetAction 契约路径） ---
 
-/// GET /jaxrs/reset/check/credential/{credential}
+/// GET /api/reset/check/credential/{credential}
 ///
 /// 校验凭据（unique_id）是否存在且可用。
 #[allow(non_snake_case)]
@@ -163,7 +163,7 @@ pub async fn check_credential(
     Ok(Json(ActionResult::success(json!({ "value": registered }))))
 }
 
-/// GET /jaxrs/reset/check/password/{password}
+/// GET /api/reset/check/password/{password}
 ///
 /// 校验新密码是否符合安全规则（原型规则：长度 6 至 64）。
 ///
@@ -189,7 +189,7 @@ pub fn is_password_acceptable(password: &str) -> bool {
     has_letter && has_digit
 }
 
-/// GET /jaxrs/reset/code/credential/{credential}
+/// GET /api/reset/code/credential/{credential}
 ///
 /// 校验凭据后生成一次性重置验证码（5 分钟有效、尝试上限 5 次）。
 /// 原型阶段未接入短信/邮件渠道，验证码在响应中返回以便联调。
@@ -218,7 +218,7 @@ pub async fn send_code(
     }))))
 }
 
-/// PUT /jaxrs/reset —— 校验验证码并重置当前凭据密码
+/// PUT /api/reset —— 校验验证码并重置当前凭据密码
 #[allow(non_snake_case)]
 pub async fn reset_password(
     pool: Extension<Pool>,
@@ -228,7 +228,7 @@ pub async fn reset_password(
     apply_reset(pool, store, &req.credential, &req.code, &req.password).await
 }
 
-/// POST /jaxrs/reset/password/anonymous —— 匿名重置密码（校验验证码）
+/// POST /api/reset/password/anonymous —— 匿名重置密码（校验验证码）
 #[allow(non_snake_case)]
 pub async fn reset_password_anonymous(
     pool: Extension<Pool>,

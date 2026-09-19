@@ -1,4 +1,4 @@
-import { expect, type Page, type Response } from '@playwright/test'
+import { type APIRequestContext, type APIResponse, expect, type Page, type Response } from '@playwright/test'
 
 export type ResponseAudit = {
   failures: string[]
@@ -22,7 +22,7 @@ export function auditApiResponses(page: Page): ResponseAudit {
   const failures: string[] = []
   page.on('response', (response) => {
     const url = new URL(response.url())
-    if (!url.pathname.startsWith('/jaxrs/')) return
+    if (!url.pathname.startsWith('/api/')) return
     if (response.status() === 404 || response.status() >= 500) failures.push(`${response.status()} ${url.pathname}`)
   })
 
@@ -44,9 +44,20 @@ export async function expectSuccessfulWrite(response: Response): Promise<unknown
 }
 
 export async function assertNo404OrServerErrors(audit: ResponseAudit): Promise<void> {
-  expect(audit.failures, 'Every exercised /jaxrs route must exist and avoid server errors').toEqual([])
+  expect(audit.failures, 'Every exercised /api route must exist and avoid server errors').toEqual([])
 }
 
 export function uniqueFlag(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+/**
+ * 带 CSRF Origin 头的 API 写请求（会话 Cookie 认证）。
+ * 后端 csrf_middleware：Cookie 认证的写请求必须携带与 APP_PUBLIC_ORIGIN 一致的
+ * Origin 头，而 page.request（APIRequestContext）不是真实浏览器 fetch、不会自动
+ * 附带 Origin → 403 forbidden。这里按当前 BASE_URL 手动补 Origin。
+ */
+export function apiPost(request: APIRequestContext, path: string, data: unknown): Promise<APIResponse> {
+  const origin = process.env.BASE_URL ?? 'http://127.0.0.1:5173'
+  return request.post(path, { data, headers: { origin } })
 }

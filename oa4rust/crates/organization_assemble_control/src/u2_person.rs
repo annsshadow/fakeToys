@@ -252,7 +252,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     let limit = count.clamp(1, MAX_BATCH_IDS as i64).to_string();
     let rows = if flag == "0" || flag == "(0)" {
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1::int"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC LIMIT $1"
         );
         client
             .query(&sql, &[&limit])
@@ -261,7 +261,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     } else {
         let op = if next { ">" } else { "<" };
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time::text DESC LIMIT $2::int"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time::text DESC LIMIT $2"
         );
         client
             .query(&sql, &[&flag.to_string(), &limit])
@@ -360,7 +360,7 @@ pub async fn person_list_pinyininitial(
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return list_ok_java(rows.iter().map(person_row_json).collect());
+        return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
@@ -370,7 +370,7 @@ pub async fn person_list_pinyininitial(
         .query(&sql, &[&initials])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
@@ -383,7 +383,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return list_ok_java(rows.iter().map(person_row_json).collect());
+        return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("%{key}%");
     let sql = format!(
@@ -393,7 +393,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
         .query(&sql, &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
@@ -409,7 +409,7 @@ pub async fn person_list_like_pinyin(
             .query(&sql, &[])
             .await
             .map_err(|_| AppError::Internal)?;
-        return list_ok_java(rows.iter().map(person_row_json).collect());
+        return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("{}%", key.to_lowercase());
     let sql = format!(
@@ -420,7 +420,7 @@ pub async fn person_list_like_pinyin(
         .query(&sql, &[&pattern])
         .await
         .map_err(|_| AppError::Internal)?;
-    list_ok_java(rows.iter().map(person_row_json).collect())
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
@@ -703,7 +703,7 @@ pub async fn person_list_filter_paging(
     let total: i64 = total_row.get("cnt");
 
     let data_sql = format!(
-        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6::int OFFSET $7::int"
+        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time::text DESC LIMIT $6 OFFSET $7"
     );
     let rows = client
         .query(
@@ -739,11 +739,88 @@ pub async fn person_list_delete_paging(
     let offset = ((page - 1) * size).to_string();
     let size_str = size.to_string();
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1::int OFFSET $2::int"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time::text DESC LIMIT $1 OFFSET $2"
     );
     let rows = client
         .query(&sql, &[&size_str, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
     list_ok(rows.iter().map(person_row_json).collect())
+}
+
+// ── threemember/list（桌面 ThreeMemberApp「三方成员管理」引用，列组织成员 x_org_person）──
+#[allow(non_snake_case)]
+pub async fn threemember_list(pool: Extension<Pool>) -> HandlerResult {
+    let client = client_of(&pool).await?;
+    let sql = format!(
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time::text DESC"
+    );
+    let rows = client
+        .query(&sql, &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    list_ok_legacy(rows.iter().map(person_row_json).collect())
+}
+
+// ── threemember 家族 CRUD（x_org_person 022+069，通用参数化写；BIGINT/TIMESTAMP/状态列不映射）──
+fn threemember_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_org_person",
+        columns: &[
+            ("name", "name"),
+            ("mobile", "mobile"),
+            ("email", "email"),
+            ("unitId", "unit_id"),
+            ("icon", "icon"),
+            ("status", "status"),
+            ("statusDes", "status_des"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn threemember_create(pool: Extension<Pool>, body: Json<Value>) -> HandlerResult {
+    let id = shared::crud_create(&pool, &threemember_spec(), &body.0).await?;
+    ok(Value::Object(
+        vec![
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]
+        .into_iter()
+        .collect(),
+    ))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn threemember_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> HandlerResult {
+    let saved = shared::crud_save(&pool, &threemember_spec(), &id, &body.0).await?;
+    ok(Value::Object(
+        vec![
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]
+        .into_iter()
+        .collect(),
+    ))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn threemember_delete(pool: Extension<Pool>, Path(id): Path<String>) -> HandlerResult {
+    let deleted = shared::crud_delete(&pool, &threemember_spec(), &id).await?;
+    ok(Value::Object(
+        vec![
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]
+        .into_iter()
+        .collect(),
+    ))
 }

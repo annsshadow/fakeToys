@@ -1,3 +1,5 @@
+# specs
+
 ﻿
 ## Netlink 协议规范（以 YAML 描述
 
@@ -226,7 +228,7 @@ family 有表达数组的特殊方式。`sub-type` 可用于定义数组成员�
 
 
 `genetlink` `mcast-groups` 的唯一属性，持有组的列表
-### 澶氭挱缁勫睘鎬。
+### 澶氭挱统勫睘鎬。
 
 #### name
 

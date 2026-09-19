@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/terminate/test-id")
+                    .uri("/api/processplatform/work/terminate/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/retract/test-id")
+                    .uri("/api/processplatform/work/retract/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/processing/test-id")
+                    .uri("/api/processplatform/work/processing/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/task/processing/test-id")
+                    .uri("/api/processplatform/task/processing/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/count/with/person/test-id")
+                    .uri("/api/processplatform/work/count/with/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -118,7 +118,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/task/count/with/person/test-id")
+                    .uri("/api/processplatform/task/count/with/person/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

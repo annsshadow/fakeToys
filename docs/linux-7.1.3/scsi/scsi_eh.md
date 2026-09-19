@@ -1,3 +1,5 @@
+# scsi_eh
+
 ﻿
 ## SCSI EH（SCSI 错误处理
 
@@ -29,7 +31,7 @@
 
 一LLDD 取得一scmd，要么由 LLDD 调用在调hostt->queuecommand() 从中间层传入scsi_done 回调来完成命令，要么由块层将其超时
 
-##### 1.2.1 scsi_done 完成一scmd
+#### 1.2.1 scsi_done 完成一scmd
 
 
 对于所有非 EH 命令，scsi_done() 是完成回调。它只是调用
@@ -110,7 +112,7 @@ LLDD 可以通过以下两种方式之一来实SCSI EH 动作
 
 ### 2.1 EH through fine-grained callbacks（通过细粒度回调的 EH
 
-##### 2.1.1 概述
+#### 2.1.1 概述
 
 
 如果不存eh_strategy_handler()，SCSI 中间层负责驱动错误处理。EH 有两个目标—LLDD、主机与设备遗忘超时scmd，并让它们准备好接受新命令。当一scmd 底层遗忘、且底层准备好再次处理或失败scmd 时，称该 scmd 已被恢复
@@ -243,7 +245,7 @@ LLDD 可以通过以下两种方式之一来实SCSI EH 动作
 transportt->eh_strategy_handler() scsi_unjam_host() 的位置被调用，它负责
 整个恢复过程。在完成后，该处理程序应当已经让底层遗忘了所有失败的 scmd，并要么准备好接受新命令，要么已下线。此外，它应当执SCSI EH 维护杂务以维SCSI 中间层的完整性。换言之，[2-1-2] 描述的步骤中，除了第 1 步之外的所步骤都必须由 eh_strategy_handler() 实现
 
-##### 2.2.1 Pre transportt->eh_strategy_handler() SCSI midlayer conditions（transportt->eh_strategy_handler() 之前SCSI 中间层条件）
+#### 2.2.1 Pre transportt->eh_strategy_handler() SCSI midlayer conditions（transportt->eh_strategy_handler() 之前SCSI 中间层条件）
 
 
  进入处理程序时，以下条件为真

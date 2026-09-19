@@ -64,7 +64,7 @@ pub struct Participant {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/room/list",
+    path = "/api/meeting/room/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -119,7 +119,7 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -128,7 +128,7 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/building/list",
+    path = "/api/meeting/building/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -172,7 +172,7 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -181,7 +181,7 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/openmeeting/list/room",
+    path = "/api/meeting/openmeeting/list/room",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -217,7 +217,7 @@ pub async fn openmeeting_list_room(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -226,7 +226,7 @@ pub async fn openmeeting_list_room(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/meeting/create",
+    path = "/api/meeting/create",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -297,7 +297,7 @@ pub async fn create_meeting(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/{id}",
+    path = "/api/meeting/{id}",
     params(
         ("id" = String, Path, description = "Meeting ID")
     ),
@@ -332,7 +332,10 @@ pub async fn get_meeting(
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("roomId".to_string(), Value::String(row.get("room_id"))),
+                (
+                    "roomId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+                ),
                 (
                     "\"startTime\"".to_string(),
                     Value::String(row.get("start_time")),
@@ -341,7 +344,10 @@ pub async fn get_meeting(
                     "\"endTime\"".to_string(),
                     Value::String(row.get("end_time")),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -355,7 +361,7 @@ pub async fn get_meeting(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/list",
+    path = "/api/meeting/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -411,7 +417,7 @@ pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -420,7 +426,7 @@ pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/meeting/{\"meetingId\"}/participant/add",
+    path = "/api/meeting/{\"meetingId\"}/participant/add",
     params(
         ("\"meetingId\"" = String, Path, description = "Meeting ID")
     ),
@@ -466,7 +472,7 @@ pub async fn add_participant(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/{\"meetingId\"}/participant/list",
+    path = "/api/meeting/{\"meetingId\"}/participant/list",
     params(
         ("\"meetingId\"" = String, Path, description = "Meeting ID")
     ),
@@ -502,7 +508,10 @@ pub async fn list_participants(
                     Value::String(row.get("meeting_id")),
                 ),
                 ("invitee".to_string(), Value::String(row.get("invitee"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -512,7 +521,7 @@ pub async fn list_participants(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -521,7 +530,7 @@ pub async fn list_participants(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/schedule/days/{days}",
+    path = "/api/meeting/schedule/days/{days}",
     params(
         ("days" = i64, Path, description = "Number of days to look ahead")
     ),
@@ -557,7 +566,10 @@ pub async fn list_schedule(
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("roomId".to_string(), Value::String(row.get("room_id"))),
+                (
+                    "roomId".to_string(),
+                    Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+                ),
                 (
                     "\"startTime\"".to_string(),
                     Value::String(row.get("start_time")),
@@ -566,7 +578,10 @@ pub async fn list_schedule(
                     "\"endTime\"".to_string(),
                     Value::String(row.get("end_time")),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -576,7 +591,7 @@ pub async fn list_schedule(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

@@ -20,7 +20,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/express/config/get")
+                    .uri("/api/organization/assemble/express/config/get")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -39,7 +39,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/express/units/list")
+                    .uri("/api/organization/assemble/express/units/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/express/data/sync")
+                    .uri("/api/organization/assemble/express/data/sync")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/express/status/get")
+                    .uri("/api/organization/assemble/express/status/get")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

@@ -115,25 +115,21 @@ pub fn redis_url_from_env() -> Option<String> {
 #[cfg(test)]
 mod redis_tests {
 
+    // 三个断言共享全局 REDIS_URL 环境变量，拆成独立 #[test] 在并行执行下会互相
+    // 竞态（一个线程 set_var 时另一个 remove_var 尚未生效），故合并为单一顺序测试。
     #[test]
-    fn test_redis_url_from_env_none() {
+    fn test_redis_url_from_env() {
         std::env::remove_var("REDIS_URL");
-        assert!(super::redis_url_from_env().is_none());
-    }
+        assert!(super::redis_url_from_env().is_none(), "absent → None");
 
-    #[test]
-    fn test_redis_url_from_env_empty() {
         std::env::set_var("REDIS_URL", "   ");
-        assert!(super::redis_url_from_env().is_none());
-        std::env::remove_var("REDIS_URL");
-    }
+        assert!(super::redis_url_from_env().is_none(), "whitespace → None");
 
-    #[test]
-    fn test_redis_url_from_env_valid() {
         std::env::set_var("REDIS_URL", "redis://127.0.0.1:6379");
         assert_eq!(
             crate::redis::redis_url_from_env(),
-            Some("redis://127.0.0.1:6379".to_string())
+            Some("redis://127.0.0.1:6379".to_string()),
+            "valid → Some"
         );
         std::env::remove_var("REDIS_URL");
     }

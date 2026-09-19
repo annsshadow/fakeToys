@@ -1,3 +1,5 @@
+# drm-vm-bind-locking
+
 ﻿
 ## VM_BIND 锁机
 
@@ -240,6 +242,7 @@ userptr gpu_vma MMU interval seqlock 按如下方式使用：
    down_write(&gpu_vm->lock);
    retry:
 
+
    // Note: mmu_interval_read_begin() blocks until there is no
    // invalidation notifier running anymore.
    seq = mmu_interval_read_begin(&gpu_vma->userptr_interval);
@@ -285,6 +288,7 @@ userptr gpu_vma MMU 失效 notifier 可能从回收（reclaim）上下文中被�
   {
           // Make sure the exec function either sees the new sequence
           // and backs off or we wait for the dma-fence:
+
 
           down_write(&gpu_vm->userptr_notifier_lock);
           mmu_interval_set_seq(userptr_interval, cur_seq);

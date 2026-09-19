@@ -34,7 +34,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/folder/list/top")
+                    .uri("/api/file/core/entity/folder/list/top")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -54,7 +54,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/folder/list/test-folder-id")
+                    .uri("/api/file/core/entity/folder/list/test-folder-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file/list")
+                    .uri("/api/file/core/entity/file/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/complex/top")
+                    .uri("/api/file/core/entity/complex/top")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -117,7 +117,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/nonexistent")
+                    .uri("/api/file/core/entity/nonexistent")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -137,7 +137,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/folder")
+                    .uri("/api/file/core/entity/folder")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -164,7 +164,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/folder")
+                    .uri("/api/file/core/entity/folder")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -191,7 +191,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/folder/folder-001")
+                    .uri("/api/file/core/entity/folder/folder-001")
                     .method(axum::http::Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -211,7 +211,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file")
+                    .uri("/api/file/core/entity/file")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -239,7 +239,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/file/core/entity/file")
+                    .uri("/api/file/core/entity/file")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(

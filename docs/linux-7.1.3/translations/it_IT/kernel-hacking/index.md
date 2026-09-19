@@ -1,4 +1,6 @@
 
+# index
+
 :Original: Documentation/kernel-hacking/index.rst <kernel_hacking>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 

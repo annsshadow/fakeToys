@@ -7,7 +7,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/organization_assemble_personal";
+pub const API_BASE: &str = "/api/organization_assemble_personal";
 pub mod routes;
 
 #[cfg(test)]
@@ -70,8 +70,14 @@ pub async fn user_role_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
@@ -84,15 +90,15 @@ pub async fn user_role_list(
 pub fn organization_assemble_personal_router() -> Router {
     Router::new()
         .route(
-            "/jaxrs/organization/assemble/personal/{id}/setting",
+            "/api/organization/assemble/personal/{id}/setting",
             get(user_setting),
         )
         .route(
-            "/jaxrs/organization/assemble/personal/{id}/role/list",
+            "/api/organization/assemble/personal/{id}/role/list",
             get(user_role_list),
         )
         .route(
-            "/jaxrs/organization/assemble/personal/custom/{id}/mockputtopost",
+            "/api/organization/assemble/personal/custom/{id}/mockputtopost",
             post(custom_mockputtopost),
         )
 }

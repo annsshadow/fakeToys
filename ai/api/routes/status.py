@@ -1,0 +1,42 @@
+"""服务状态 API 路由
+
+综合报告健康、版本、模型后端可用性与可选依赖诊断。
+"""
+
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+from ..deps import get_pipeline
+from augmentor.diagnostics import check_dependencies
+
+router = APIRouter(tags=["status"])
+
+
+class StatusResponse(BaseModel):
+    """状态响应结构"""
+    status: str
+    version: str
+    model_default: str
+    model_available: bool
+    dependencies: dict
+
+
+@router.get("/api/status")
+async def get_status():
+    """获取服务综合状态"""
+    try:
+        p = get_pipeline()
+        default_model = p.config.default_model
+        model_available = p.model_backend is not None
+    except Exception:
+        default_model = "unknown"
+        model_available = False
+
+    deps = check_dependencies()
+    return StatusResponse(
+        status="ok",
+        version="2.0.0",
+        model_default=default_model,
+        model_available=model_available,
+        dependencies=deps.to_dict(),
+    ).model_dump()

@@ -1,7 +1,10 @@
 
+# bug-bisect
+
 :Original: [../../../admin-guide/bug-bisect](../../../admin-guide/bug-bisect)
 
 :译者:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 
@@ -56,6 +59,7 @@
 	$ git bisect good
 
   或::
+
 
 	$ git bisect bad
 

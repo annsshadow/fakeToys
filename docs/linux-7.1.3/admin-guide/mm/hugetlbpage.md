@@ -1,3 +1,5 @@
+# hugetlbpage
+
 ﻿## HugeTLB 椤。
 
 ## 概述
@@ -65,6 +67,7 @@ hugepages
 	被忽略。如hugepages 参数前面是一个无效的 hugepagesz 参数，它将被
 	忽略
 	Node format example::
+
 
 		hugepagesz=2M hugepages=0:1,1:2
 

@@ -1,3 +1,5 @@
+# sysfs-platform_profile
+
 ﻿## 平台配置档选择（例/sys/firmware/acpi/platform_profile
 
 在现代系统中，平台的性能、温度、风扇及其他与硬件相关的特性通常可以动态调整。平台配置常常由某种自动机制（很可能位于内核之外）根据当前状况自动调整

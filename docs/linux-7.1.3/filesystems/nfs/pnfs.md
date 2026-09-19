@@ -1,3 +1,5 @@
+# pnfs
+
 ﻿## pnfs 中的引用计数
 
 
@@ -16,7 +18,7 @@ lseg 引用 device id，这id nfs_client 和布局驱动类型来解析。device
 使用 RCU 是因deviceid 基本上是一个一次写入、多次读取（write once, read many）的数据结构2 个桶（bucket）的 hlist 大小需要更好的理由，但鉴于每个文件系统可以有多deviceid，而每nfs_client 又可以有多个文件系统，这似乎是合理的
 哈希代码是从 nfsd 代码库复制过来的。关于哈希及该算法各种变体的讨论可以`这里<http://groups.google.com/group/comp.lang.c/browse_thread/thread/9522965e2b8d3809>`_ 找到
 
-## 鏁版嵁鏈嶅姟鍣ㄧ紦瀛。
+## 鏁版嵁鏈嶅姟鍣ㄧ紦子。
 
 文件驱动（file driver）设备引用数据服务器，这些数据服务器保存在一个模块级缓存中。其引用在指向它deviceid 的生命周期内被持有
 ## lseg

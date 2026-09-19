@@ -23,7 +23,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/express/status")
+                    .uri("/api/correlation/core/express/status")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -43,7 +43,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/express/sync")
+                    .uri("/api/correlation/core/express/sync")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

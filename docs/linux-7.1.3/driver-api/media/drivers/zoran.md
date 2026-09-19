@@ -1,3 +1,5 @@
+# zoran
+
 ﻿
 ## Zoran 驱动
 
@@ -107,7 +109,7 @@ Iomega Buz、Linux Media Labs LML33/LML33R10、Pinnacle/Miro DC10/DC10+/DC30/DC3
 
 
     #) 目前还没mse3000 的模    #) 目前还没vpx3224 的模
-### 1.1 TV 解码器能做什么、不能做什
+## 1.1 TV 解码器能做什么、不能做什
 最广为人知的电视标准是 NTSC/PAL/SECAM，但仅此信息不足以解码一帧画面。电视标准有多种格式，而且并非每个 TV 解码器都能处理每种格式。驱动也并非支持每种组合。目前全球共11 种不同的电视广播格式
 CCIR 定义了广播信号所需的参数。CCIR 定义了不同的标准：A、B、D、E、F、G、H、I、K、K1、L、M、N…CCIR 对所使用的彩色制式几乎没有规定！！！而谈论彩色制式时，也不能说明它是如何广播的
 CCIR 标准 A、E、F 已不再使用
@@ -127,7 +129,7 @@ http://info.electronicwerkstatt.de/bereiche/fernsehtechnik/frequenzen_und_normen
 
 其它怪异之处：NTSC 4.43 是一种修改过NTSC，主要用于能够播NTSC PAL 录像机。PAL 60 似乎NTSC 4.43 相同。数据手册还提到 NTSC 44，它似乎NTSC 4.43 相同NTSC Comb 似乎是一种解码器模式，其中解码器使用梳状滤波器来分离色度与亮度，而不是使用延迟线
 但我始终没能确切弄清 NTSC Comb 是什么
-#### Philips saa7111 TV 解码
+### Philips saa7111 TV 解码
 - 1997 年推出，用于 BUZ，且
 - 可处理：PAL B/G/H/I、PAL N、PAL M、NTSC M、NTSC N、NTSC 4.43 SECAM
 

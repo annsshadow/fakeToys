@@ -1,3 +1,5 @@
+# nfc
+
 ﻿### MEI NFC
 
 本文介绍 Intel 管理引擎（MEI）总线后挂接的 NFC 设备支持，说MEI 客户端总线如何NFC 芯片暴露phy 设备，并Linux NFC 子系统的 Microread、PN544 驱动绑定的协议栈结构

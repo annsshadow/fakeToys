@@ -1,3 +1,5 @@
+# msr
+
 ﻿
 ## KVM 专用MSR
 
@@ -31,6 +33,7 @@ data:
 	guaranteed to update this data at the moment of MSR write.
 	Users that want to reliably query this information more than once have
 	to write more than once to this MSR. Fields have the following meanings:
+
 
 	version:
 		guest has to check version before and after grabbing
@@ -80,6 +83,7 @@ data:
 
 	Fields have the following meanings:
 
+
 	version:
 		guest has to check version before and after grabbing
 		time information and check that they are both equal and even.
@@ -111,6 +115,7 @@ data:
 		right shift by 32 bits. With this information, guests can
 		derive per-CPU time by doing::
 
+
 			time = (current_tsc - tsc_timestamp)
 			if (tsc_shift >= 0)
 				time <<= tsc_shift;
@@ -124,6 +129,7 @@ data:
 		coordinated between the guest and the hypervisor. Availability
 		of specific flags has to be checked in 0x40000001 cpuid leaf.
 		Current flags are:
+
 
 
 		+-----------+--------------+----------------------------------+
@@ -279,6 +285,7 @@ data:
 	this structure is initialized to zero.
 
 	Fields have the following meanings:
+
 
 	version:
 		a sequence counter. In other words, guest has to check

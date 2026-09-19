@@ -1,3 +1,5 @@
+# aic79xx
+
 ﻿
 ## Adaptec Ultra320 系列管理套件
 
@@ -134,6 +136,7 @@ Linux 操作系统自述文件
    ``command`` is one or more of the following:
 
 
+
 ```
 verbose
     :Definition: 在驱动运行期间启用额外的信息性消息    :Possible Values: 该选项为一个标    :Default Value: 禁用
@@ -169,6 +172,7 @@ tag_info:{{value[,value...]}[,{value[,value...]}...]}
     Examples:
 
 
+
 ```
 
 	    tag_info:{{16,32,32,64,8,8,,32,32,32,32,32,32,32,32,32}
@@ -181,6 +185,7 @@ tag_info:{{value[,value...]}[,{value[,value...]}...]}
 
 	所有其他目标保留默认深度
 	::
+
 
 	    tag_info:{{},{32,,32}}
 
@@ -196,6 +201,7 @@ rd_strm: {rd_strm_bitmask[,rd_strm_bitmask...]}
 		 默认的读流式设置
     Examples:
 
+
 ```
 
 		rd_strm:{0x0041}
@@ -204,6 +210,7 @@ rd_strm: {rd_strm_bitmask[,rd_strm_bitmask...]}
 		- 为目0 6 启用读流式		- 对目1-5,7-15 禁用读流式
 	    所有其他目标保留默认的读流式设置
 	    ::
+
 
 		rd_strm:{0x0023,,0xFFFF}
 
@@ -220,6 +227,7 @@ dv: {value[,value...]}
     :Definition: 基于每个控制器设Domain Validation 策略                 控制器可以省略，表示它们应保留默认的读流式设置
      :Possible Values:
 
+
 		      ==== ===============================
 		       < 0 使用来自串行 EEPROM 的设置                         0 禁用 DV
 		       > 0 启用 DV
@@ -227,6 +235,7 @@ dv: {value[,value...]}
 
     :Default Value: DV 串行 EEPROM 配置设置
     Example:
+
 
 ```
 
@@ -247,12 +256,14 @@ precomp: {value[,value...]}
     :Default Value: 随芯片修订版本而不
     Examples:
 
+
 ```
 
 	    precomp:{0x1}
 
 	在控制器 0 上将预补偿设1
 	::
+
 
 	    precomp:{1,,7}
 
@@ -264,12 +275,14 @@ slewrate: {value[,value...]}
     :Default Value: 随芯片修订版本而不
     Examples:
 
+
 ```
 
 	    slewrate:{0x1}
 
 	- 在控制器 0 上将压摆率设1
 	::
+
 
 	    slewrate :{1,,8}
 
@@ -281,12 +294,14 @@ amplitude: {value[,value...]}
     :Default Value: 随芯片修订版本而不
     Examples:
 
+
 ```
 
 	amplitude:{0x1}
 
     在控制器 0 上将幅度设为 1
     ::
+
 
 	amplitude :{1,,7}
 
@@ -343,6 +358,7 @@ All rights reserved.
 You are permitted to redistribute, use and modify this README file in whole
 or in part in conjunction with redistribution of software governed by the
 General Public License, provided that the following conditions are met:
+
 
 1. Redistributions of README file must retain the above copyright
    notice, this list of conditions, and the following disclaimer,

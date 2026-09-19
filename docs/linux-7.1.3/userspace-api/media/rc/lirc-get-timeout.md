@@ -1,6 +1,8 @@
+# lirc-get-timeout
+
 ﻿
 
-######## ioctl LIRC_GET_MIN_TIMEOUT 鍜?LIRC_GET_MAX_TIMEOUT
+## ioctl LIRC_GET_MIN_TIMEOUT 鍜?LIRC_GET_MAX_TIMEOUT
 
 
 ## 姓名

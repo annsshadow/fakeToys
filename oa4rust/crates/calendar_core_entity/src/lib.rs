@@ -697,43 +697,31 @@ pub async fn event_list_by_calendar(
 pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     Router::new()
         .route(
-            "/jaxrs/calendar/core/entity/calendar/list/public",
+            "/api/calendar/core/entity/calendar/list/public",
             get(calendar_list_public),
         )
         .route(
-            "/jaxrs/calendar/core/entity/calendar/list/my",
+            "/api/calendar/core/entity/calendar/list/my",
             get(calendar_list_my),
         )
+        .route("/api/calendar/core/entity/calendar/{id}", get(calendar_get))
         .route(
-            "/jaxrs/calendar/core/entity/calendar/{id}",
-            get(calendar_get),
-        )
-        .route(
-            "/jaxrs/calendar/core/entity/calendar/create",
+            "/api/calendar/core/entity/calendar/create",
             post(calendar_create),
         )
         .route(
-            "/jaxrs/calendar/core/entity/calendar/update",
+            "/api/calendar/core/entity/calendar/update",
             post(calendar_update),
         )
         .route(
-            "/jaxrs/calendar/core/entity/calendar/remove",
+            "/api/calendar/core/entity/calendar/remove",
             post(calendar_remove),
         )
+        .route("/api/calendar/core/entity/event/create", post(event_create))
+        .route("/api/calendar/core/entity/event/update", post(event_update))
+        .route("/api/calendar/core/entity/event/remove", post(event_remove))
         .route(
-            "/jaxrs/calendar/core/entity/event/create",
-            post(event_create),
-        )
-        .route(
-            "/jaxrs/calendar/core/entity/event/update",
-            post(event_update),
-        )
-        .route(
-            "/jaxrs/calendar/core/entity/event/remove",
-            post(event_remove),
-        )
-        .route(
-            "/jaxrs/calendar/core/entity/event/list/{calendarId}",
+            "/api/calendar/core/entity/event/list/{calendarId}",
             get(event_list_by_calendar),
         )
 }

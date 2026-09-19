@@ -1,3 +1,5 @@
+# snp-tdx-threat-model
+
 ﻿## Confidential Computing Linux 用于 x86 virtualization
 
 
@@ -99,7 +101,7 @@ technologies. 例如, 一cases, implemented HW
                                     +-------------------+
 
 ```
-瀛樺湪 涔?communication 涔嬮棿 the bootloader 鍜?the 鍐呮牳 鏈熼棿
+子樺湪 涔?communication 涔嬮棿 the bootloader 鍜?the 内呮核 鏈熼棿
 the boot 进程, diagram 执行 represent explicitly. The
 "Interfaces" box represents the 各种 interfaces 允许
 communication 之间 内核 userspace. 包含 系统 calls,
@@ -166,6 +168,7 @@ integrity protection. threat 型号 assumes 那些 特
 
 The **Linux 内核 CoCo VM 安全 objectives** summarized 作为 follows:
 
+
 1. Preserve the confidentiality integrity CoCo guest's 私有
 内存 寄存
 
@@ -177,6 +180,7 @@ preventing privileged escalation ensure 这些 操作 执行
 
 The 上文 安全 objectives result two primary **Linux 内核 CoCo
 VM assets**:
+
 
 1. Guest 内核 execution 上下
 2. Guest 内核 私有 内存.
@@ -216,6 +220,7 @@ CoCo-特定 versions the guest, host platform.
    - - Guest malicious 配置
      - 一misbehaving host modifies one the 以下 guest's
        配置:
+
 
        1. Guest 固件 bootloader
 

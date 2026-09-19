@@ -1,7 +1,10 @@
 
+# index
+
 :Original: Documentation/arch/parisc/index.rst
 
 :翻譯:
+
 
  司延騰 Yanteng Si <siyanteng@loongson.cn>
 
@@ -13,6 +16,7 @@
 - [registers](registers)
 
 Todolist:
+
 
    features
 

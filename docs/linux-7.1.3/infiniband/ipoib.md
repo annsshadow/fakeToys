@@ -1,3 +1,5 @@
+# ipoib
+
 ﻿## 基于 InfiniBand IP（IPoIB
 
   ib_ipoib 驱动实现了在 InfiniBand 之上IP（IP over InfiniBand）协议，符合
@@ -14,6 +16,7 @@
     echo 0x8001 > /sys/class/net/ib0/create_child
 
   这将创建一个名ib0.8001、P_Key 0x8001 的接口。要删除一个子接口，使  "delete_child" 文件::
+
 
     echo 0x8001 > /sys/class/net/ib0/delete_child
 

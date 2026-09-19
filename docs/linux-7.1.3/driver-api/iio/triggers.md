@@ -1,3 +1,5 @@
+# triggers
+
 ﻿## 触发器（Triggers
 
 - struct iio_trigger 工业 I/O 触发器设- `devm_iio_trigger_alloc` 资源托管iio_trigger_alloc
@@ -51,3 +53,4 @@ sysfs 中与触发器相关的位置有两处：
 
 
    :export:
+

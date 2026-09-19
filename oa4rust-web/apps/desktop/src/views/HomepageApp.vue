@@ -1,7 +1,7 @@
 <template>
   <div class="editor-view">
     <div class="view-header glass-card">
-      <div><h1>首页配置</h1><p class="subtitle">/jaxrs/portal/assemble/surface/homepage/list</p></div>
+      <div><h1>首页配置</h1><p class="subtitle">/api/portal/assemble/surface/homepage/list</p></div>
       <div class="header-actions">
         <button class="btn-secondary" @click="preview">预览</button>
         <button class="btn-primary" @click="save">💾 保存</button>
@@ -42,7 +42,7 @@ const loading = ref(false),
   items = ref<Item[]>([]),
   selected = ref<Item | null>(null),
   config = ref('')
-const ep = '/jaxrs/portal/assemble/surface/homepage/list'
+const ep = '/api/portal/assemble/surface/homepage/list'
 const { data } = useQuery({
   queryKey: ['Homepage', 'list'],
   queryFn: async () => {

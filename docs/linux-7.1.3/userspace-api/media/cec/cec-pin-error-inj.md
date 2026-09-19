@@ -1,3 +1,5 @@
+# cec-pin-error-inj
+
 ﻿
 
 
@@ -51,7 +53,7 @@ AllWinner A10/A20 drm 驱动支持该框架
 ```
 您可以使`echo 'cmd' >error-inj` `cat cmd.txt >error-inj` 将错误注入命写入 `error-inj`。`cat error-inj` 的输出包含当前生效的错误命令。您可以将该输出
 保存到一个文件，并在以后作为 `error-inj` 的输入使用
-### 基本语法
+## 基本语法
 
 
 前导空格/制表符会被忽略。如果下一个字符是 `#` 或已到达行尾，则整行被忽略否则预期为一个命令

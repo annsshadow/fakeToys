@@ -7,7 +7,7 @@ use shared::{error::AppError, response::ActionResult};
 
 /// 查询服务处理模块
 /// 提供查询服务的业务逻辑处理
-pub const JAVA_BASE: &str = "/jaxrs/query_service_processing";
+pub const API_BASE: &str = "/api/query_service_processing";
 pub mod routes;
 pub mod u2;
 
@@ -52,11 +52,20 @@ pub async fn process_query(
                 .unwrap_or(1);
             let processed = count > 0;
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryType".to_string(),
-                    Value::String(row.get("query_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
@@ -120,11 +129,20 @@ pub async fn batch_process(
                     .unwrap_or(1);
                 let processed = count > 0;
                 results.push(Value::Object(serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("name".to_string(), Value::String(row.get("name"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
                     (
                         "queryType".to_string(),
-                        Value::String(row.get("query_type")),
+                        Value::String(
+                            row.get::<_, Option<String>>("query_type")
+                                .unwrap_or_default(),
+                        ),
                     ),
                     (
                         "count".to_string(),
@@ -250,22 +268,19 @@ pub async fn reset_service(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 }
 
 /// 查询服务处理路由
-/// 路由前缀: /jaxrs/query/service/processing/*
+/// 路由前缀: /api/query/service/processing/*
 pub fn query_service_processing_router(pool: Pool) -> Router {
     use u2 as u2h;
-    let p = "/jaxrs/query/service/processing";
+    let p = "/api/query/service/processing";
     Router::new()
+        .route("/api/query/service/processing/process", post(process_query))
+        .route("/api/query/service/processing/batch", post(batch_process))
         .route(
-            "/jaxrs/query/service/processing/process",
-            post(process_query),
-        )
-        .route("/jaxrs/query/service/processing/batch", post(batch_process))
-        .route(
-            "/jaxrs/query/service/processing/status",
+            "/api/query/service/processing/status",
             get(get_service_status),
         )
-        .route("/jaxrs/query/service/processing/reset", post(reset_service))
-        // ── Java x_query_service_processing 契约（u2）───────────────────────
+        .route("/api/query/service/processing/reset", post(reset_service))
+        // ── o2server x_query_service_processing 契约（u2）───────────────────────
         .route(
             format!("{p}/design/search").as_str(),
             post(u2h::design_search),

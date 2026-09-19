@@ -1,4 +1,6 @@
 
+# kernel-enforcement-statement
+
 :Original: Documentation/process/kernel-enforcement-statement.rst <process_statement_kernel>
 :Translator: Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 
@@ -21,6 +23,7 @@ Con el fin de disuadir la aplicación inútil de acciones, estamos de acuerdo
 en que es en el mejor interés de nuestro desarrollo como comunidad asumir
 el siguiente compromiso con los usuarios del kernel Linux, en nombre
 nuestro y de cualquier sucesor de nuestros derechos de autor (copyright):
+
 
     Sin perjuicio de las disposiciones de terminación de GPL-2.0, aceptamos
     que es en el mejor interés de nuestra comunidad de desarrollo adoptar

@@ -1,4 +1,6 @@
 
+# changes
+
 :Original: Documentation/process/changes.rst <changes>
 :Translator: Federico Vaga <federico.vaga@vaga.pv.it>
 
@@ -16,7 +18,7 @@ Questo documento è basato sul file "Changes" del kernel 2.0.x e quindi le
 persone che lo scrissero meritano credito (Jared Mauch, Axel Boldt,
 Alessandro Sigala, e tanti altri nella rete).
 
-######## Requisiti minimi correnti
+### Requisiti minimi correnti
 
 
 Prima di pensare d'avere trovato un baco, aggiornate i seguenti programmi
@@ -67,7 +69,7 @@ Python (opzionale)     3.5.x              python3 --version
 ====================== =================  ========================================
 
 
-######## Compilazione del kernel
+#### Compilazione del kernel
 
 
 ### GCC
@@ -193,7 +195,7 @@ U-Boot. Consultate le istruzioni
 https://docs.u-boot.org/en/latest/build/tools.html#building-tools-for-linux
 
 
-######## Strumenti di sistema
+#### Strumenti di sistema
 
 
 ### Modifiche architetturali
@@ -250,6 +252,7 @@ Ovviamente, aggiornarlo è una buona idea.
 
 Il pacchetto `jfsutils` contiene programmi per il file-system JFS.
 Sono disponibili i seguenti strumenti:
+
 
 - `fsck.jfs` - avvia la ripetizione del log delle transizioni, e verifica e
   ripara una partizione formattata secondo JFS
@@ -315,7 +318,7 @@ Serve libfuse 2.4.0 o successiva.  Il requisito minimo assoluto è 2.3.0 ma
 le opzioni di mount `direct_io` e `kernel_cache` non funzioneranno.
 
 
-######## Rete
+#### Rete
 
 
 ### Cambiamenti generali
@@ -382,7 +385,7 @@ gli eventi **machine check**.  Gli eventi **machine check** sono errori riportat
 dalla CPU.  Incoraggiamo l'analisi di questi errori.
 
 
-######## Documentazione del kernel
+#### Documentazione del kernel
 
 
 ### Sphinx
@@ -394,7 +397,7 @@ in Documentation/translations/it_IT/doc-guide/sphinx.rst <it_sphinxdoc>
 ## Ottenere software aggiornato
 
 
-######## Compilazione del kernel
+### Compilazione del kernel
 
 
 ### gcc
@@ -437,7 +440,7 @@ in Documentation/translations/it_IT/doc-guide/sphinx.rst <it_sphinxdoc>
 
 - <https://www.openssl.org/>
 
-######## Strumenti di sistema
+#### Strumenti di sistema
 
 
 ### Util-linux
@@ -514,7 +517,7 @@ in Documentation/translations/it_IT/doc-guide/sphinx.rst <it_sphinxdoc>
 
 - <https://www.gnu.org/software/cpio/>
 
-######## Rete
+#### Rete
 
 
 ### PPP
@@ -546,7 +549,7 @@ in Documentation/translations/it_IT/doc-guide/sphinx.rst <it_sphinxdoc>
 
 - <https://oprofile.sf.net/download/>
 
-######## Documentazione del kernel
+#### Documentazione del kernel
 
 
 ### Sphinx

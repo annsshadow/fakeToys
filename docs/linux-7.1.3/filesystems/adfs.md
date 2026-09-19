@@ -1,3 +1,5 @@
+# adfs
+
 ﻿
 ## Acorn Disc Filing System - ADFS
 
@@ -47,13 +49,16 @@ ADFS 模块支持具有以下特征的以Filecore 格式
 
   因此，在默认掩码下，如果一个文件是属主写，且不UnixExec 文件类型  则其权限将为::
 
+
 			-rw-------
 
   然而，如果掩码ownmask=0770,othmask=0007，则会被修改:
 
+
 			-rw-rw----
 
   对这些掩码的使用没有任何限制。你可能希望任一种读位都向所有人授予文件的读访问  但保留默认的写保护（ownmask=0755,othmask=0577:
+
 
 			-rw-r--r--
 

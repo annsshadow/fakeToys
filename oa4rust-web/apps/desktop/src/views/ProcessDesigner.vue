@@ -4,7 +4,7 @@
     <div class="pd-header glass-card">
       <div class="pd-title">
         <h1>流程设计器</h1>
-        <p class="subtitle">/jaxrs/processplatform/assemble/designer/* — 可视化流程编排</p>
+        <p class="subtitle">/api/processplatform/assemble/designer/* — 可视化流程编排</p>
       </div>
       <div class="pd-actions">
         <button class="btn" @click="undo" :disabled="!canUndo" title="撤销">↩</button>
@@ -5700,8 +5700,8 @@ function subOnWheel(e: WheelEvent) {
     subPanY.value += e.deltaY
   }
 }
-function subClearCanvas() {
-  if (!confirmMsg('清空子流程画布？')) return
+async function subClearCanvas() {
+  if (!(await confirmMsg('清空子流程画布？'))) return
   subprocessDef.value = { nodes: [], edges: [] }
   subSelectedNode.value = null
   subSelectedEdge.value = null
@@ -5733,7 +5733,7 @@ function subPushHistory() {
 // ── Process CRUD ──────────────────────────────────────────────────────
 async function loadProcess(p: ProcDef) {
   try {
-    const r: any = await api.get(`/jaxrs/processplatform/assemble/designer/get/${p.id}`)
+    const r: any = await api.get(`/api/processplatform/assemble/designer/get/${p.id}`)
     const data = r?.data ?? p
     const parsed = parseProcessDefinition(data)
     currentProcess.value = {
@@ -5795,13 +5795,13 @@ async function createProcess() {
   try {
     const definition = currentO2Definition(newForm.value)
     const created: any = await api.post(
-      '/jaxrs/processplatform/assemble/designer/create',
+      '/api/processplatform/assemble/designer/create',
       processCreatePayload(definition),
     )
     const id = created?.data?.id
     if (!id) throw new Error('后端未返回流程 ID')
     const savedDefinition = currentO2Definition(newForm.value, id)
-    await api.post(`/jaxrs/processplatform/assemble/designer/save/${id}`, { processDefinition: savedDefinition })
+    await api.post(`/api/processplatform/assemble/designer/save/${id}`, { processDefinition: savedDefinition })
     showNewModal.value = false
     await loadProcesses()
     toast.success('流程已创建')
@@ -5813,7 +5813,7 @@ async function saveProcess() {
   if (!currentProcess.value?.id) return
   try {
     const definition = currentO2Definition(currentProcess.value)
-    await api.post(`/jaxrs/processplatform/assemble/designer/save/${currentProcess.value.id}`, {
+    await api.post(`/api/processplatform/assemble/designer/save/${currentProcess.value.id}`, {
       processDefinition: definition,
     })
     currentProcess.value.definition = definition
@@ -5825,7 +5825,7 @@ async function saveProcess() {
 async function loadProcesses() {
   plLoading.value = true
   try {
-    const r: any = await api.get('/jaxrs/processplatform/assemble/designer/list/all?page=1&size=100')
+    const r: any = await api.get('/api/processplatform/assemble/designer/list/all?page=1&size=100')
     procList.value = r?.data?.data ?? r?.data?.list ?? r?.data ?? []
   } catch {
     procList.value = []
@@ -11857,7 +11857,7 @@ function dbgStepClass(status: string): Record<string, boolean> {
 async function exportProcess() {
   if (!selectedProcess.value?.id) return
   try {
-    const r = await api.get(`/jaxrs/processplatform/assemble/designer/get/${selectedProcess.value.id}`)
+    const r = await api.get(`/api/processplatform/assemble/designer/get/${selectedProcess.value.id}`)
     const blob = new Blob([JSON.stringify(r.data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)

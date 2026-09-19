@@ -74,15 +74,24 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             Value::Object(serde_json::Map::from_iter([
                 (
                     "processKey".to_string(),
-                    Value::String(row.get("process_key")),
+                    Value::String(
+                        row.get::<_, Option<String>>("process_key")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "processName".to_string(),
-                    Value::String(row.get("process_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("process_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(
+                        row.get::<_, Option<String>>("application")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -127,14 +136,25 @@ pub async fn state_organization(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("organization_id"))),
+                (
+                    "id".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("organization_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "name".to_string(),
-                    Value::String(row.get("organization_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("organization_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "count".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("process_count"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("process_count").unwrap_or(0),
+                    )),
                 ),
             ]))
         })

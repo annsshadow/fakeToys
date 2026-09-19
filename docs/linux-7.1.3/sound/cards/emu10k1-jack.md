@@ -1,3 +1,5 @@
+# emu10k1-jack
+
 ﻿## 使用 JACK emu10k1/emu10k2 实现低延迟、多声道音频
 
 

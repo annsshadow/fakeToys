@@ -1,3 +1,5 @@
+# media-committers
+
 ﻿
 
 ## Media 提交者（Committers
@@ -39,6 +41,7 @@ Maintainer 必须拥有 patchwork 访问权限，曾一段时间审阅来自第�
    As Media Maintainer I accept commit rights for the following areas of
    the media subsystem:
 
+
    ...
 
    For the purpose of committing patches to the media-committers tree,
@@ -49,6 +52,7 @@ Maintainer 必须拥有 patchwork 访问权限，曾一段时间审阅来自第�
 
 ```
    I agree to follow the Kernel development rules described at:
+
 
    https://www.kernel.org/doc/html/latest/driver-api/media/media-committers.rst
 

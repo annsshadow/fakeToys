@@ -1,11 +1,15 @@
 
+# sched-capacity
+
 :Original: Documentation/scheduler/sched-capacity.rst
 
 :翻译:
 
+
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
 :校译:
+
 
   时奎亮 Alex Shi <alexs@kernel.org>
 
@@ -25,6 +29,7 @@
 做过归一化处理。异构系统也被称为非对称CPU算力系统，因为它们由不同算力的CPU组成。
 
 最大可达性能（换言之，最大CPU算力）的差异有两个主要来源:
+
 
 - 不是所有CPU的微架构都相同。
 - 在动态电压频率升降（Dynamic Voltage and Frequency Scaling，DVFS）框架中，不是所有的CPU都
@@ -62,6 +67,7 @@ CPU的 `capacity` 是 `capacity_orig` 扣除了一些性能损失（比如处理
 
 根据上文对算力的定义:
 
+
 - capacity(CPU0) = C
 - capacity(CPU1) = C/2
 
@@ -88,6 +94,7 @@ CPU0在系统中具有最高算力（C），它使用T个单位时间完成固�
 
 具有不同算力值的CPU，通常来说最大操作性能值也不同。考虑上一小节提到的CPU（也就是说，
 work_per_hz()相同）:
+
 
 - max_freq(CPU0) = F
 - max_freq(CPU1) = 2/3 * F

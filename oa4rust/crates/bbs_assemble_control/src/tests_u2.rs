@@ -1,7 +1,7 @@
 //! plan002 U2 — BBS 端点闭合测试。
 //!
 //! 覆盖三层意图：
-//! 1. 全集注册：Java 106 条端点矩阵逐条打到路由器，断言无一 404（防漏挂）；
+//! 1. 全集注册：o2server 106 条端点矩阵逐条打到路由器，断言无一 404（防漏挂）；
 //! 2. 归一化红线：通配权限路由与 {page}/{page} 畸形路由必须已消失；
 //! 3. 行为契约（live-gated）：IDOR 门禁（owner 放行 / 非所有者 403）、
 //!    真实 SQL 往返（toggle/配置/角色绑定/投票），DB 不可达时显式跳过并输出。
@@ -50,26 +50,26 @@ async fn status_json(method: Method, uri: &str, body: serde_json::Value) -> Stat
 // ────────────────────────────────────────────────────────────────
 
 #[test]
-fn test_normalize_java_path_joins_class_and_method() {
-    assert_eq!(u2::normalize_java_path("forum", "{id}"), "forum/{id}");
+fn test_normalize_legacy_path_joins_class_and_method() {
+    assert_eq!(u2::normalize_legacy_path("forum", "{id}"), "forum/{id}");
     assert_eq!(
-        u2::normalize_java_path("user/forum", "all"),
+        u2::normalize_legacy_path("user/forum", "all"),
         "user/forum/all"
     );
 }
 
 #[test]
-fn test_normalize_java_path_trims_trailing_slash() {
-    // Java @Path("login") 类级 + 方法级无子路径，不得产出尾斜杠。
-    assert_eq!(u2::normalize_java_path("login", ""), "login");
-    assert_eq!(u2::normalize_java_path("logout", ""), "logout");
-    assert_eq!(u2::normalize_java_path("permission", ""), "permission");
+fn test_normalize_legacy_path_trims_trailing_slash() {
+    // o2server 路径注解("login") 类级 + 方法级无子路径，不得产出尾斜杠。
+    assert_eq!(u2::normalize_legacy_path("login", ""), "login");
+    assert_eq!(u2::normalize_legacy_path("logout", ""), "logout");
+    assert_eq!(u2::normalize_legacy_path("permission", ""), "permission");
 }
 
 #[test]
-fn test_normalize_java_path_collapses_adjacent_duplicate_segments() {
+fn test_normalize_legacy_path_collapses_adjacent_duplicate_segments() {
     // 历史事故形态：{page}/{page}/{count}/{count} 必须被折叠成单参数段。
-    let got = u2::normalize_java_path("reply/filter/list", "{page}/{page}/{count}/{count}");
+    let got = u2::normalize_legacy_path("reply/filter/list", "{page}/{page}/{count}/{count}");
     assert_eq!(got, "reply/filter/list/{page}/{count}");
 }
 
@@ -126,10 +126,10 @@ fn test_like_escape_neutralizes_wildcards() {
 // 3. 全集注册矩阵（106 条）——防漏挂的权威断言
 // ────────────────────────────────────────────────────────────────
 
-const BASE: &str = "/jaxrs/bbs/assemble/control";
+const BASE: &str = "/api/bbs/assemble/control";
 
-/// Java x_bbs_assemble_control jaxrs 全集（类级+方法级拼接、归一化后 106 条）。
-const JAVA_ENDPOINTS: &[(&str, &str)] = &[
+/// o2server x_bbs_assemble_control o2server 全集（类级+方法级拼接、归一化后 106 条）。
+const LEGACY_ENDPOINTS: &[(&str, &str)] = &[
     ("DELETE", "attachment/{id}"),
     ("GET", "attachment/{id}"),
     ("GET", "attachment/download/{id}"),
@@ -251,9 +251,9 @@ const JAVA_ENDPOINTS: &[(&str, &str)] = &[
 ];
 
 #[test]
-fn test_java_endpoint_matrix_has_no_duplicates() {
+fn test_legacy_endpoint_matrix_has_no_duplicates() {
     let mut seen = std::collections::HashSet::new();
-    for (method, sub) in JAVA_ENDPOINTS {
+    for (method, sub) in LEGACY_ENDPOINTS {
         assert!(
             seen.insert(format!("{} {}", method, sub)),
             "矩阵内重复端点：{} {}",
@@ -261,21 +261,29 @@ fn test_java_endpoint_matrix_has_no_duplicates() {
             sub
         );
     }
-    assert_eq!(JAVA_ENDPOINTS.len(), 106, "应与 Java HTTP 注解总数一致");
+    assert_eq!(
+        LEGACY_ENDPOINTS.len(),
+        106,
+        "应与 o2server HTTP 注解总数一致"
+    );
 }
 
 /// 权威对齐断言：106 条逐一请求，任何一条 404 即视为未闭合。
 #[tokio::test]
-async fn test_all_java_endpoints_registered() {
+async fn test_all_legacy_endpoints_registered() {
     let mut misses: Vec<String> = Vec::new();
-    for (method, sub) in JAVA_ENDPOINTS {
-        let path = format!("{}/{}", BASE, u2::normalize_java_path("", sub));
+    for (method, sub) in LEGACY_ENDPOINTS {
+        let path = format!("{}/{}", BASE, u2::normalize_legacy_path("", sub));
         let st = status(Method::from_bytes(method.as_bytes()).unwrap(), &path).await;
         if st == StatusCode::NOT_FOUND {
             misses.push(format!("{} {}", method, sub));
         }
     }
-    assert!(misses.is_empty(), "以下 Java 端点未注册(404): {:?}", misses);
+    assert!(
+        misses.is_empty(),
+        "以下 o2server 端点未注册(404): {:?}",
+        misses
+    );
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -304,7 +312,7 @@ async fn test_malformed_dup_param_reply_filter_route_removed() {
         &format!("{}/reply/filter/list/page/2/count/5", BASE),
     )
     .await;
-    assert_ne!(new_st, StatusCode::NOT_FOUND, "Java 精确路径应已注册");
+    assert_ne!(new_st, StatusCode::NOT_FOUND, "o2server 精确路径应已注册");
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -403,7 +411,7 @@ async fn test_shutup_list_db_failure_returns_internal_error_without_panicking() 
 
 #[tokio::test]
 async fn test_legacy_extended_routes_survive() {
-    // 扩展端点（非 Java 全集成员）不得因本轮改造丢失。
+    // 扩展端点（非 o2server 全集成员）不得因本轮改造丢失。
     for (method, uri) in [
         ("GET", format!("{}/config", BASE)),
         ("GET", format!("{}/forum/list", BASE)),
@@ -794,4 +802,103 @@ async fn test_vote_submit_persists_record_and_count() {
     let _ = client
         .execute("DELETE FROM x_bbs_topic WHERE id = $1", &[&topic_id])
         .await;
+}
+
+/// 版块发布/管理写路由行为契约（W14 x_component_ForumSection）：
+/// create → rename（save）→ 库内可见 → 硬删。无 deleted_at 列，删除即硬删。
+#[tokio::test]
+async fn test_section_crud_roundtrip() {
+    use shared::testing::{is_db_available, test_pool};
+    if !is_db_available().await {
+        eprintln!("skipping test_section_crud_roundtrip: DB not reachable");
+        return;
+    }
+    let pool = test_pool();
+    let session = make_session("w14-section-iter", "section");
+    let app = crate::router(pool.clone()).layer(axum::extract::Extension(session));
+
+    // 1) 新建版块（creator 缺省取会话登录人）
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        "/api/bbs/assemble/control/section/create",
+        Some(json!({ "name": "w14-section-it" })),
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "section create 必须 200: {body}");
+    let id = body["data"]["id"].as_str().unwrap().to_string();
+    assert!(!id.is_empty(), "section create 必须返回新 id");
+
+    let client = pool.get().await.unwrap();
+    let row = client
+        .query_one(
+            "SELECT name, creator FROM x_bbs_assemble_control_section WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(row.get::<_, String>("name"), "w14-section-it");
+    assert_eq!(row.get::<_, String>("creator"), "w14-section-iter");
+
+    // 2) 重命名（POST 别名；update spec 只写 name 列）
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("/api/bbs/assemble/control/section/save/{}", id),
+        Some(json!({ "name": "w14-section-it-renamed" })),
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "section save 必须 200: {body}");
+    assert_eq!(body["data"]["saved"], Value::Bool(true));
+    let renamed = client
+        .query_one(
+            "SELECT name FROM x_bbs_assemble_control_section WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(renamed.get::<_, String>("name"), "w14-section-it-renamed");
+
+    // 3) section/list 可见
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::GET,
+        "/api/bbs/assemble/control/section/list",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let names: Vec<&str> = body["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|s| s["name"].as_str())
+        .collect();
+    assert!(
+        names.contains(&"w14-section-it-renamed"),
+        "list 必须含新建版块: {names:?}"
+    );
+
+    // 4) 硬删（无 deleted_at 列 → DELETE）
+    let (st, body) = send_with_session(
+        app.clone(),
+        Method::POST,
+        &format!("/api/bbs/assemble/control/section/delete/{}", id),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "section delete 必须 200: {body}");
+    assert_eq!(body["data"]["deleted"], Value::Bool(true));
+    let gone = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_bbs_assemble_control_section WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .unwrap();
+    assert_eq!(gone.get::<_, i64>(0), 0, "硬删后行必须不存在");
 }

@@ -1,4 +1,6 @@
 
+# submitting-patches
+
 :Original: Documentation/process/submitting-patches.rst <submittingpatches>
 :Translator: Carlos Bilbao <carlos.bilbao.osdev@gmail.com>
 
@@ -315,6 +317,7 @@ disponible en https://git-send-email.io.
 Si elige no usar `git send-email`:
 
 
+
   Tenga cuidado con el ajuste de palabras de su editor que corrompe su
   parche, si elige cortar y pegar su parche.
 
@@ -439,10 +442,12 @@ que certifica que usted lo escribió o que tiene derecho a enviarlo como un
 parche de código abierto. Las reglas son bastante simples: si usted puede
 certificar lo siguiente:
 
-##### Certificado de Origen del Desarrollador 1.1
+
+#### Certificado de Origen del Desarrollador 1.1
 
 
 Al hacer una contribución a este proyecto, certifico que:
+
 
         (a) La contribución fue creada en su totalidad o en parte por mí y
             tengo derecho a enviarlo bajo la licencia de código abierto
@@ -490,6 +495,7 @@ la primera entrada de SoB que señala la autoría principal de un solo autor.
 
 
 ### Cuándo usar Acked-by:, Cc: y Co-developed-by por:
+
 
 
 La etiqueta Signed-off-by: indica que el firmante estuvo involucrado en el
@@ -566,6 +572,7 @@ encabezado del correo electrónico.
 ### Uso de Reported-by:, Tested-by:, Reviewed-by:, Suggested-by: y Fixes:
 
 
+
 La etiqueta Reported-by (Reportado-por) otorga crédito a las personas que
 encuentran errores y los reportan. Por favor, tenga en cuenta que si se
 informó de un error en privado, debe pedir primero permiso antes de usar la
@@ -581,10 +588,12 @@ para los testers.
 Reviewed-by: en cambio, indica que el parche ha sido revisado y encontrado
 aceptable de acuerdo con la Declaración del Revisor:
 
-##### Declaración de Supervisión del Revisor
+
+#### Declaración de Supervisión del Revisor
 
 
 Al ofrecer mi etiqueta Reviewed-by:, afirmo que:
+
 
 (a) He llevado a cabo una revisión técnica de este parche para
 evaluar su idoneidad y preparación para su inclusión en
@@ -659,6 +668,7 @@ las instrucciones a continuación de todos modos.
 
 ```
 El cuerpo del mensaje del parche canónico contiene lo siguiente:
+
 
   - Una línea `from` que especifica el autor del parche, seguida de una
     línea vacía (solo es necesario si la persona que envía el parche no es
@@ -801,7 +811,7 @@ Revise más detalles sobre el formato de parche adecuado en las siguientes
 referencias
 
 
-##### Retrocesos en mensajes de confirmación
+#### Retrocesos en mensajes de confirmación
 
 
 Los "backtraces" (deshacer el camino) ayuda a documentar la cadena de

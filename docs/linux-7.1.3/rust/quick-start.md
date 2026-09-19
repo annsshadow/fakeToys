@@ -1,3 +1,5 @@
+# quick-start
+
 ﻿
 ## 快速开始（Quick Start
 
@@ -21,7 +23,7 @@ Rust 的独立安装程序，或自行构建来安装它们
 ### 发行
 
 
-######## Arch Linux
+#### Arch Linux
 
 
 Arch Linux 提供较新Rust 版本，因此通常可以直接使用
@@ -31,7 +33,7 @@ Arch Linux 提供较新Rust 版本，因此通常可以直接使用
 
 
 ```
-######## Debian
+##### Debian
 
 
 Debian 13（Trixie），以及 Testing Debian Unstable（Sid）提供较新的
@@ -135,7 +137,7 @@ Ubuntu 25.10 26.04 LTS 提供较新Rust 版本，因
 这会触发Kconfig 相同的逻辑，以判断是否需要启`RUST_IS_AVAILABLE`；如果不是，
 它还会解释原因
 
-######## rustc
+#### rustc
 
 
 需要使用较新版本的 Rust 编译器
@@ -153,7 +155,7 @@ Ubuntu 25.10 26.04 LTS 提供较新Rust 版本，因
 
 	https://forge.rust-lang.org/infra/other-installation-methods.html#standalone
 
-######## Rust 鏍囧噯搴撴簮鐮。
+##### Rust 鏍囧噯搴撴簮鐮。
 
 
 需Rust 标准库源码，因为构建系统会对 `core` 进行交叉编译
@@ -215,7 +217,7 @@ Documentation/kbuild/llvm.rst銆。
 
 本节解释如何获取开发所需的工具。也就是说，仅在构建内核时并不需要这些工具
 
-######## rustfmt
+#### rustfmt
 
 
 `rustfmt` 工具用于自动格式化所Rust 内核代码，包括生成的 C 绑定（详情请参阅
@@ -228,7 +230,7 @@ coding-guidelines.rst）
 ```
 独立安装程序也随`rustfmt`
 
-######## clippy
+##### clippy
 
 
 `clippy` 是一Rust linter。运行它可以提供 Rust 代码的额外警告。可以通过`make`

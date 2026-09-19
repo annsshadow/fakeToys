@@ -1,10 +1,12 @@
+# pwm-fan
+
 ﻿## 内核驱动 pwm-fan
 
 
 该驱动支持使PWM 模块驱动风扇。它使用通用 PWM 接口，因此与硬件无关只要 SoC 提供暴露通用 PWM API PWM 线路驱动器，即可在许SoC 上使用
 作者：Kamil Debski <k.debski@samsung.com>
 
-### 描述
+## 描述
 
 
 该驱动实现了一个用于驱动连接到 PWM 输出的风扇的简单接口。它使用通用

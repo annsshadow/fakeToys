@@ -1,7 +1,9 @@
+# sched-energy
+
 ﻿## 能量感知调度
 
 
-### 1. 引言
+## 1. 引言
 
 
 能量感知调度（Energy Aware Scheduling，简EAS）使调度器能够预测其决策CPU 能耗的影响。EAS 依赖CPU 的能量模型（Energy Model，简EM），为每项任务选择一个高能效CPU，同时将对吞吐量的影响降到最低。本文旨在介EAS 的工作原理、其背后的主要设计决策，并说明使其运行所需的要素
@@ -99,6 +101,7 @@ find_energy_efficient_cpu() 使用 compute_energy() 来估计若唤醒的任务�
 
     **Case 1. P is migrated to CPU1**::
 
+
       1024                 - - - - - - -
 
                                             Energy calculation:
@@ -117,6 +120,7 @@ find_energy_efficient_cpu() 使用 compute_energy() 来估计若唤醒的任务�
 
     **Case 2. P is migrated to CPU3**::
 
+
       1024                 - - - - - - -
 
                                             Energy calculation:
@@ -134,6 +138,7 @@ find_energy_efficient_cpu() 使用 compute_energy() 来估计若唤醒的任务�
 
 
     **Case 3. P stays on prev_cpu / CPU 0**::
+
 
       1024                 - - - - - - -
 
@@ -172,7 +177,7 @@ find_energy_efficient_cpu() 使用 compute_energy() 来估计若唤醒的任务�
 
 能量感知调度依赖于系CPU 具备特定的硬件属性，并依赖于内核其他特性的启用。本节列出这些依赖项，并给出如何满足它们的提示
 
-##### 6.1 - 非对CPU 拓扑
+#### 6.1 - 非对CPU 拓扑
 
 
 如引言所述，目前 EAS 仅在具有非对CPU 拓扑的平台上受支持。该要求在运行时通过在构建调度域时查SD_ASYM_CPUCAPACITY_FULL 标志的存在来校验

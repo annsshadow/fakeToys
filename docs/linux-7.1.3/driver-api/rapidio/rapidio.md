@@ -1,3 +1,5 @@
+# rapidio
+
 ﻿## 简
 RapidIO 标准是一种基于数据包的互连结构（fabric interconnect）标准，设计用于
 嵌入式系统。RapidIO 标准的开发由 RapidIO Trade Association（RTA，RapidIO 贸易
@@ -38,7 +40,7 @@ RapidIO 网络是互连的端点和交换机设备的组合。系统所知的每
 
 RapidIO 设备特有的驱动遵Linux 内核驱动模型，旨在支持挂接在 RapidIO 网络
 上的特定 RapidIO 设备
-### 2.6 瀛愮郴缁熸帴鍙。
+### 2.6 子愮系统熸帴鍙。
 RapidIO 互连规范定义了可用于为所有参与的 RapidIO 设备提供一个或多个通用
 服务层（service layer）的特性。这些通用服务可以独立于设备特有的驱动运行也可以被设备特有的驱动使用。此类服务提供者的一个例子是 RIONET 驱动，它
 实现Ethernet-over-RapidIO（基RapidIO 的以太网）接口。因为对于一个设只能注册一个驱动，所有通用RapidIO 服务都必须注册为子系统接口。这允许
@@ -145,6 +147,7 @@ RapidIO 交换机驱动被构建为可加载模块的情况下，用户必须确
   softdep rapidio post: idt_gen2 idtcps tsi57x
 
   # OR :
+
 
   # Load RapidIO switch drivers just before rio-scan enumerator module is loaded
   softdep rio-scan pre: idt_gen2 idtcps tsi57x

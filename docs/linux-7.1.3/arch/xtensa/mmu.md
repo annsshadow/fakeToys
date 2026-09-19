@@ -1,3 +1,5 @@
+# mmu
+
 ﻿## MMUv3 初始化序
 
 initialize_mmu 宏中的代码设MMUv3 内存映射，与 MMUv2 固定内存映射完全相同。根CONFIG_INITIALIZE_XTENSA_MMU_INSIDE_VMLINUX 符号，这段代码位于它被链接到的地址处（符号未定义），或不位于（符号已定义），因此它需要是位置无关的（position-independent）

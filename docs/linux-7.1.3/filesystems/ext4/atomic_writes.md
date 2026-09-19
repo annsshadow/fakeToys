@@ -1,7 +1,9 @@
-﻿
-### 原子块写入（Atomic Block Writes
+# atomic_writes
 
-#### 简
+﻿
+## 原子块写入（Atomic Block Writes
+
+### 简
 
 原子（untorn，不撕裂）块写入确保整个写入要么全部提交到磁盘，要么都不提交。这可以防止在断电或系统崩溃期间出现 “torn writes（撕裂写入）”。ext4 文件系统支持在带extents 的常规文件上进行原子写入（仅Direct I/O），前提是底层存储设备支持硬件原子写入。这通过以下两种方式支持
 1. **fsblock 原子写入**   EXT4 v6.13 起支持以单个文件系统块为单位的原子写入操作。在此情况下，原子写入单元的最小和最大尺寸都设置为文件系统块大小   例如，在页面大小64KB 的系统上，使16KB 文件系统块大小进16KB 的原子写入是可行的
@@ -16,7 +18,7 @@ ext4 中原子写入的基本要求
  4. 对于fsblock 原子写入
     1. 必须启用 bigalloc 特    2. 必须适当配置簇大
 注意：EXT4 不支持基于软件或 COW 的原子写入，这意味着只有当底层存储设备支持时，ext4 上的原子写入才受支持
-#### 澶?fsblock 瀹炵幇缁嗚妭
+#### 澶?fsblock 瀹炵幇统嗚妭
 
 
 bigalloc 特性将 ext4 改为以多个文件系统块（也称为簇）为单位进行分配。使bigalloc 时，块位图中的每个位代表一个簇 的幂个块），而不是单个文件系统块EXT4 通过 bigalloc 支持fsblock 原子写入，但受以下约束。最小原子写入尺寸是 fs 块大小和最小硬件原子写入单元中较大的一个；最大原子写入尺寸是 bigalloc 簇大小和最大硬件原子写入单元中较小的一个。Bigalloc 确保所有分配都与簇大小对齐，如果分逻辑卷的起始本身正确对齐，这就满足了硬件设备LBA 对齐要求
@@ -67,7 +69,7 @@ bigalloc 特性将 ext4 改为以多个文件系统块（也称为簇）为单�
     mkfs.ext4 -F -O bigalloc -b 4096 -C 65536 /dev/device
 
 其中 `-b` 指定块大小，`-C` 指定簇大小（字节），`-O bigalloc` 启用 bigalloc 特性
-##### 应用程序接口
+## 应用程序接口
 
 
 应用程序可以使用RWF_ATOMIC 标志pwritev2() 系统调用来执行原子写入：
@@ -80,7 +82,7 @@ STATX_WRITE_ATOMIC 标志statx() 系统调用可以提供以下详情
  - `stx_atomic_write_unit_min`：原子写入请求的最小尺寸 - `stx_atomic_write_unit_max`：原子写入请求的最大尺寸 - `stx_atomic_write_segments_max`：段的上限。可以聚集到一个写入操作中的独立内存缓冲区的数量（例如 IOV_ITER iovcnt 参数）。目前始终设置为 1
 如果支持原子写入，则会设statx->attributes 中的 STATX_ATTR_WRITE_ATOMIC 标志
 
-#### 硬件支持
+### 硬件支持
 
 
 底层存储设备必须支持原子写入操作现代 NVMe SCSI 设备通常提供此能力Linux 内核通过 sysfs 暴露此信息：

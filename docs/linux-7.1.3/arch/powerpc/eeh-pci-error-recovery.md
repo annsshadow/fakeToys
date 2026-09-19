@@ -1,3 +1,5 @@
+# eeh-pci-error-recovery
+
 ﻿## PCI 总线 EEH 错误恢复
 
 
@@ -5,7 +7,7 @@ Linas Vepstas <linas@austin.ibm.com>
 
 2005 骞?1 鏈?12 鏃。
 
-### 概述
+## 概述
 基于 IBM POWER pSeries iSeries 计算机包PCI 总线控制器芯片，这些芯片具有
 检测和报告各种 PCI 总线错误条件的扩展能力。这些特性被统称为“EEH”，即“Enhanced
 Error Handling（增强错误处理）”。EEH 硬件特性允许清PCI 总线错误并“重启”PCI

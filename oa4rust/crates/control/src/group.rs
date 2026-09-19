@@ -8,7 +8,7 @@ use shared::response::ActionResult;
 
 use crate::pagination::page_result;
 
-/// 创建用户组请求体（契约路径 POST /jaxrs/group）
+/// 创建用户组请求体（契约路径 POST /api/group）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct GroupCreateRequest {
     /// 用户组名称
@@ -17,7 +17,7 @@ pub struct GroupCreateRequest {
     pub description: Option<String>,
 }
 
-/// 更新用户组请求体（契约路径 PUT /jaxrs/group/{flag}）
+/// 更新用户组请求体（契约路径 PUT /api/group/{flag}）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct GroupUpdateRequest {
     /// 用户组名称
@@ -30,7 +30,7 @@ pub struct GroupUpdateRequest {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/group/{flag}",
+    path = "/api/group/{flag}",
     params(
         ("flag" = String, Path, description = "Group flag (id or name)")
     ),
@@ -71,7 +71,10 @@ pub async fn get(
                     .unwrap_or_default(),
             ),
         ),
-        ("disable".to_string(), Value::Bool(row.get("disable"))),
+        (
+            "disable".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -93,7 +96,7 @@ async fn query_page(
             .query(
                 "SELECT id, name, description, disable FROM auth_group \
                  WHERE deleted_at IS NULL AND (name > $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY name ASC LIMIT $2::int",
+                 ORDER BY name ASC LIMIT $2",
                 &[&flag, &count],
             )
             .await
@@ -103,7 +106,7 @@ async fn query_page(
             .query(
                 "SELECT id, name, description, disable FROM auth_group \
                  WHERE deleted_at IS NULL AND (name < $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY name DESC LIMIT $2::int",
+                 ORDER BY name DESC LIMIT $2",
                 &[&flag, &count],
             )
             .await
@@ -132,7 +135,10 @@ async fn query_page(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("disable".to_string(), Value::Bool(row.get("disable"))),
+                (
+                    "disable".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -146,7 +152,7 @@ async fn query_page(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/group/list/{flag}/next/{count}",
+    path = "/api/group/list/{flag}/next/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -170,7 +176,7 @@ pub async fn list_next(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/group/list/{flag}/prev/{count}",
+    path = "/api/group/list/{flag}/prev/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -194,7 +200,7 @@ pub async fn list_prev(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/group",
+    path = "/api/group",
     request_body = GroupCreateRequest,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -250,7 +256,7 @@ pub async fn create(
 
 #[utoipa::path(
     put,
-    path = "/jaxrs/group/{flag}",
+    path = "/api/group/{flag}",
     params(
         ("flag" = String, Path, description = "Group flag (id or name)")
     ),
@@ -307,7 +313,10 @@ pub async fn update(
                     .unwrap_or_default(),
             ),
         ),
-        ("disable".to_string(), Value::Bool(row.get("disable"))),
+        (
+            "disable".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("disable").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -315,7 +324,7 @@ pub async fn update(
 
 #[utoipa::path(
     delete,
-    path = "/jaxrs/group/{flag}",
+    path = "/api/group/{flag}",
     params(
         ("flag" = String, Path, description = "Group flag (id or name)")
     ),

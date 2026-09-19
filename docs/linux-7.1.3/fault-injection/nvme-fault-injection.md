@@ -1,3 +1,5 @@
+# nvme-fault-injection
+
 ﻿## NVMe 故障注入
 
 Linux 的故障注入框架提供了一种系统化的方式，通过 /sys/kernel/debug 目录下的
@@ -10,7 +12,7 @@ debugfs 来支持错误注入。启用后，默认的 NVME_SC_INVALID_OPCODE（�
 首先，启CONFIG_FAULT_INJECTION_DEBUG_FS 内核配置，重新编译内核。启动该
 内核后，执行以下操作
 
-### 1：注入默认状态码且不重试
+## 1：注入默认状态码且不重试
 
 
 ```
@@ -23,7 +25,7 @@ debugfs 来支持错误注入。启用后，默认的 NVME_SC_INVALID_OPCODE（�
 ```
 ```
 
-  cp: cannot stat 鈥?mnt/a.file鈥? Input/output error
+  cp: cannot stat mnt/a.file Input/output error
 
 ```
 ```

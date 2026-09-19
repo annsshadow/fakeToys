@@ -1,0 +1,38 @@
+# 构建上下文为 ai/，以下内容不进入镜像
+
+# ---------- 依赖与缓存 ----------
+web/node_modules
+**/node_modules
+**/__pycache__
+**/*.py[cod]
+.venv
+venv
+.pytest_cache
+.mypy_cache
+
+# ---------- 测试与覆盖率产物 ----------
+.coverage
+coverage.xml
+htmlcov
+
+# ---------- 运行时产物 ----------
+checkpoints/
+experiments/
+visualizations/
+data/vectors/
+data/versions/
+*.log
+
+# ---------- 旧版脚本与备份 ----------
+bak/
+
+# ---------- 版本控制与编辑器 ----------
+.git
+.gitignore
+.idea
+.vscode
+
+# ---------- Docker 自身 ----------
+docker/
+Dockerfile
+.dockerignore

@@ -1,3 +1,5 @@
+# ioctl-number
+
 ﻿## Ioctl 编号
 
 本页是内ioctl 编号分配登记表，列出从用户空间可见的ioctl 命令（按标识字母/数字与序列号归类），并注明其所在头文件与用途。它为驱动开发者在新增 ioctl 时选择唯一编号、避免冲突提供参考，也是 strace 等工具解ioctl 编号的依据
@@ -80,13 +82,13 @@ Code  Seq#    Include File                                             Comments
              linux/blkzoned.h
              linux/blk-crypto.h
 0x15  all    linux/fs.h                                                FS_IOC_* ioctl 命令
-0x1b  all                                                              InfiniBand 瀛愮郴缁。
+0x1b  all                                                              InfiniBand 子愮系统。
                                                                        <http://infiniband.sourceforge.net/>
 0x20  all    drivers/cdrom/cm206.h
 0x22  all    scsi/sg.h
 0x3E  00-0F  linux/counter.h                                           <mailto:linux-iio@vger.kernel.org>
 '!'   00-1F  uapi/linux/seccomp.h
-'#'   00-3F                                                            IEEE 1394 瀛愮郴缁。
+'#'   00-3F                                                            IEEE 1394 子愮系统。
                                                                        整个子系统的区块
 '$'   00-0F  linux/perf_counter.h, linux/perf_event.h
 '%'   00-0F  include/uapi/linux/stm.h                                  系统跟踪模块（STM）子系统
@@ -331,7 +333,7 @@ Code  Seq#    Include File                                             Comments
 0xA3  80-8F                                                            端口 ACL 开发中
                                                                        <mailto:tlewis@mindspring.com>
 0xA3  90-9F  linux/dtlk.h
-0xA4  00-1F  uapi/linux/tee.h                                          閫氱敤 TEE 瀛愮郴缁。
+0xA4  00-1F  uapi/linux/tee.h                                          閫氱敤 TEE 子愮系统。
 0xA4  00-1F  uapi/asm/sgx.h                                            <mailto:linux-sgx@vger.kernel.org>
 0xA5  01-05  linux/surface_aggregator/cdev.h                           Microsoft Surface 骞冲彴绯荤粺鑱氬悎鍣。
                                                                        <mailto:luzmaximilian@gmail.com>

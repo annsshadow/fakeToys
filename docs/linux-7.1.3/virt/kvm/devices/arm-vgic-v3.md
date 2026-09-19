@@ -1,3 +1,5 @@
+# arm-vgic-v3
+
 ﻿
 ## ARM 虚拟通用中断控制v3 及更高版本（VGICv3
 
@@ -74,6 +76,7 @@
 
     kvm_device_attr attr 字段编码两个:
 
+
       bits:     | 63   ....  32  |  31   ....    0 |
       values:   |      mpidr     |      offset     |
 
@@ -93,6 +96,7 @@
     mpidr 字段用于指定访问的是哪个重分发器。对于分配器，mpidr 被忽略
 
     mpidr 编码基于架构定义MPIDR 中的亲和性（affinity）信息，字段编码如下::
+
 
       | 63 .... 56 | 55 .... 48 | 47 .... 40 | 39 .... 32 |
       |    Aff3    |    Aff2    |    Aff1    |    Aff0    |
@@ -146,16 +150,19 @@
 
     kvm_device_attr attr 字段编码两个:
 
+
       bits:     | 63      ....       32 | 31  ....  16 | 15  ....  0 |
       values:   |         mpidr         |      RES     |    instr    |
 
     mpidr 字段基于架构定义MPIDR 中的亲和性信息编CPU ID，字段编码如:
+
 
       | 63 .... 56 | 55 .... 48 | 47 .... 40 | 39 .... 32 |
       |    Aff3    |    Aff2    |    Aff1    |    Aff0    |
 
     instr 字段基于 A64 指令集对系统寄存器访问的编码（RES 表示该位为未来保留，应为零）编码要访问的
     绯荤粺瀵勫瓨鍣?:
+
 
       | 15 ... 14 | 13 ... 11 | 10 ... 7 | 6 ... 3 | 2 ... 0 |
       |   Op 0    |    Op1    |    CRn   |   CRm   |   Op2   |
@@ -269,6 +276,7 @@
 
     kvm_device_attr attr 字段编码以下:
 
+
       bits:     | 63      ....       32 | 31   ....    10 | 9  ....  0 |
       values:   |         mpidr         |      info       |   vINTID   |
 
@@ -291,6 +299,7 @@
     PPI mpidr 字段指定的那样VCPU 报告，SPI 不论指定mpidr 如何都报告相同的值
 
     mpidr 字段基于架构定义MPIDR 中的亲和性信息编CPU ID，字段编码如:
+
 
       | 63 .... 56 | 55 .... 48 | 47 .... 40 | 39 .... 32 |
       |    Aff3    |    Aff2    |    Aff1    |    Aff0    |

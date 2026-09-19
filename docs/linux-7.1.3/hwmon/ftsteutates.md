@@ -1,3 +1,5 @@
+# ftsteutates
+
 ﻿## 内核驱动 ftsteutates
 
 
@@ -12,7 +14,7 @@
 Author: Thilo Cestonaro <thilo.cestonaro@ts.fujitsu.com>
 
 
-### 描述
+## 描述
 
 
 BMC Teutates Superior System 监控和热管理的第十一代解决方案。它建立BMC Theseus 的基本功能之上，并包含若干新特性和增强。它可以监控最4 路电压6 个温度和 8 个风扇。它还包含一个当前由该驱动实现的集成看门狗

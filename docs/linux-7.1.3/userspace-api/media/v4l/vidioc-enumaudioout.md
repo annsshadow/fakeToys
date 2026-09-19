@@ -1,7 +1,9 @@
+# vidioc-enumaudioout
+
 ﻿
 
 
-######## ioctl VIDIOC_ENUMAUDOUT
+## ioctl VIDIOC_ENUMAUDOUT
 
 
 ## 名称

@@ -1,4 +1,6 @@
-﻿## aty128fb - ATI Rage128 甯х紦鍐查┍鍔。
+# aty128fb
+
+﻿## aty128fb - ATI Rage128 甯х紦内查┍鍔。
 
 这是一款面向基ATI Rage128 设备的图形帧缓冲驱动，适用Intel PPC 机器
 优点

@@ -1,6 +1,6 @@
 
 
-## Statistiche sui blocchi
+# Statistiche sui blocchi
 
 
 ## Cosa
@@ -20,7 +20,7 @@ significativamente le prestazioni.
 
 **Lockdep** ha punti di collegamento nelle funzioni di blocco e inoltre
 mappa le istanze di blocco con le relative classi. Partiamo da questo punto
-(vedere Documentation/translations/it_IT/locking/lockdep-design.rst).
+(vedere Documentation/translations/it_IT/locking/lockdep-design.md).
 Il grafico sottostante mostra la relazione che intercorre fra le
 funzioni di blocco e i vari punti di collegamenti che ci sono al loro
 ```
@@ -51,6 +51,7 @@ funzioni di blocco e i vari punti di collegamenti che ci sono al loro
 
 ```
 Grazie a questi punti di collegamento possiamo fornire le seguenti statistiche:
+
 
 con-bounces
   - numero di contese su un blocco che riguarda dati di un processore

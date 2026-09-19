@@ -1,11 +1,15 @@
 
+# sched-domains
+
 :Original: Documentation/scheduler/sched-domains.rst
 
 :翻译:
 
+
   唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
 :校译:
+
 
   司延腾 Yanteng Si <siyanteng@loongson.cn>
 

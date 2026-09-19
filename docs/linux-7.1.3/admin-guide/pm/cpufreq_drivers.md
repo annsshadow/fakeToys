@@ -1,3 +1,5 @@
+# cpufreq_drivers
+
 ﻿
 ## CPU 鎬ц兘璋冭妭椹卞姩鐨勫巻鍙叉枃妗?
 
@@ -58,6 +60,7 @@
  can be controlled independently from the PCI/AGP clock.
 
  The module has two options:
+
 
  	fid: 	 multiplier * 10 (for example 8.5 = 85)
  	min_fsb: minimum FSB
@@ -210,6 +213,7 @@
  The following is a brief discussion on some of the fields exported via the
  /sys filesystem and how their values are affected by the PCC driver:
 
+
  2.1 scaling_available_frequencies:
  ----------------------------------
  scaling_available_frequencies is not created in /sys. No intermediate
@@ -230,6 +234,7 @@
  conditions are met the BIOS can achieve a slightly higher speed than requested
  by OSPM. An example:
 
+
  scaling_cur_freq	: 2933000
  cpuinfo_cur_freq	: 3196000
 
@@ -238,11 +243,13 @@
  nominal frequency from the BIOS, sometimes, the values displayed by
  scaling_cur_freq and cpuinfo_cur_freq may not match. An example:
 
+
  scaling_cur_freq	: 1600000
  cpuinfo_cur_freq	: 1583000
 
  In this example, the nominal frequency is 2933 MHz. The driver obtains the
  current frequency, cpuinfo_cur_freq, as 54% of the nominal frequency:
+
 
  	54% of 2933 MHz = 1583 MHz
 

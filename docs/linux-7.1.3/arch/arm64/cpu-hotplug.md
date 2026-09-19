@@ -1,3 +1,5 @@
+# cpu-hotplug
+
 ﻿
 ## CPU 热插拔与 ACPI
 

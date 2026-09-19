@@ -2,8 +2,8 @@
 
 ## Endpoints
 
-- `GET /jaxrs/user/hotpic/{application}/{infoId}` — getHotPic
-- `POST /jaxrs/user/hotpic` — saveHotPic
-- `DELETE /jaxrs/user/hotpic/{id}` — removeHotPic
-- `DELETE /jaxrs/user/hotpic/{application}/{infoId}` — removeHotPicByInfor
-- `PUT /jaxrs/user/hotpic/filter/list/page/{page}/count/{count}` — listHotPicFilterPage
+- `GET /api/user/hotpic/{application}/{infoId}` — getHotPic
+- `POST /api/user/hotpic` — saveHotPic
+- `DELETE /api/user/hotpic/{id}` — removeHotPic
+- `DELETE /api/user/hotpic/{application}/{infoId}` — removeHotPicByInfor
+- `PUT /api/user/hotpic/filter/list/page/{page}/count/{count}` — listHotPicFilterPage

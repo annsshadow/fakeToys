@@ -8,7 +8,7 @@ use shared::response::ActionResult;
 
 use crate::pagination::page_result;
 
-/// 创建人员请求体（契约路径 POST /jaxrs/person）
+/// 创建人员请求体（契约路径 POST /api/person）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct PersonCreateRequest {
     /// 唯一标识（如工号）
@@ -23,7 +23,7 @@ pub struct PersonCreateRequest {
     pub password: String,
 }
 
-/// 更新人员请求体（契约路径 PUT /jaxrs/person/{flag}）
+/// 更新人员请求体（契约路径 PUT /api/person/{flag}）
 #[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct PersonUpdateRequest {
     /// 姓名
@@ -46,7 +46,7 @@ fn person_flag_clause(param_index: usize) -> String {
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/person/{flag}",
+    path = "/api/person/{flag}",
     params(
         ("flag" = String, Path, description = "Person flag (id, unique_id, or name)")
     ),
@@ -63,7 +63,7 @@ pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // xadmin 是 O2OA 内置超级管理员，非数据库 person 记录；Java 侧返回虚拟详情
+    // xadmin 是 O2OA 内置超级管理员，非数据库 person 记录；o2server 侧返回虚拟详情
     // （实测基准见 docs/audits/behavior-compare-first-run.md），此处对齐该语义。
     if flag == "xadmin" {
         let data = Value::Object(serde_json::Map::from_iter([
@@ -89,7 +89,7 @@ pub async fn get(
             ("qq".to_string(), Value::String(String::new())),
             ("mobile".to_string(), Value::String(String::new())),
         ]));
-        return Ok(Json(ActionResult::java_success(data, 0, -1)));
+        return Ok(Json(ActionResult::legacy_success(data, 0, -1)));
     }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -115,7 +115,10 @@ pub async fn get(
             "email".to_string(),
             Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
         ),
-        ("locked".to_string(), Value::Bool(row.get("locked"))),
+        (
+            "locked".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("locked").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -142,7 +145,7 @@ async fn query_page(
             .query(
                 "SELECT id, unique_id, name, mobile, email, locked FROM auth_person \
                  WHERE deleted_at IS NULL AND (unique_id > $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY unique_id ASC LIMIT $2::int",
+                 ORDER BY unique_id ASC LIMIT $2",
                 &[&flag, &limit],
             )
             .await
@@ -154,7 +157,7 @@ async fn query_page(
             .query(
                 "SELECT id, unique_id, name, mobile, email, locked FROM auth_person \
                  WHERE deleted_at IS NULL AND (unique_id < $1 OR $1 = '' OR $1 = '-') \
-                 ORDER BY unique_id DESC LIMIT $2::int",
+                 ORDER BY unique_id DESC LIMIT $2",
                 &[&flag, &limit],
             )
             .await
@@ -186,7 +189,10 @@ async fn query_page(
                     "email".to_string(),
                     Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
                 ),
-                ("locked".to_string(), Value::Bool(row.get("locked"))),
+                (
+                    "locked".to_string(),
+                    Value::Bool(row.get::<_, Option<bool>>("locked").unwrap_or(false)),
+                ),
             ]))
         })
         .collect();
@@ -200,7 +206,7 @@ async fn query_page(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/person/list/{flag}/next/{count}",
+    path = "/api/person/list/{flag}/next/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -224,7 +230,7 @@ pub async fn list_next(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/person/list/{flag}/prev/{count}",
+    path = "/api/person/list/{flag}/prev/{count}",
     params(
         ("flag" = String, Path, description = "Pagination cursor flag"),
         ("count" = i64, Path, description = "Number of items to return")
@@ -248,7 +254,7 @@ pub async fn list_prev(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/person",
+    path = "/api/person",
     request_body = PersonCreateRequest,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -317,7 +323,7 @@ pub async fn create(
 
 #[utoipa::path(
     put,
-    path = "/jaxrs/person/{flag}",
+    path = "/api/person/{flag}",
     params(
         ("flag" = String, Path, description = "Person flag (id, unique_id, or name)")
     ),
@@ -379,7 +385,10 @@ pub async fn update(
             "email".to_string(),
             Value::String(row.get::<_, Option<String>>("email").unwrap_or_default()),
         ),
-        ("locked".to_string(), Value::Bool(row.get("locked"))),
+        (
+            "locked".to_string(),
+            Value::Bool(row.get::<_, Option<bool>>("locked").unwrap_or(false)),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -387,7 +396,7 @@ pub async fn update(
 
 #[utoipa::path(
     delete,
-    path = "/jaxrs/person/{flag}",
+    path = "/api/person/{flag}",
     params(
         ("flag" = String, Path, description = "Person flag (id, unique_id, or name)")
     ),

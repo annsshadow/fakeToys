@@ -74,7 +74,7 @@ async fn test_create_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/surface/create")
+                .uri("/api/query/assemble/surface/create")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -94,7 +94,7 @@ async fn test_get_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/surface/get/surface-1")
+                .uri("/api/query/assemble/surface/get/surface-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -113,7 +113,7 @@ async fn test_list_surfaces_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/surface/list/default")
+                .uri("/api/query/assemble/surface/list/default")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -138,7 +138,7 @@ async fn test_save_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/surface/save/surface-1")
+                .uri("/api/query/assemble/surface/save/surface-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req))
@@ -158,7 +158,7 @@ async fn test_delete_surface_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/query/assemble/surface/delete/surface-1")
+                .uri("/api/query/assemble/surface/delete/surface-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -180,7 +180,7 @@ async fn test_u2_importmodel_uuid_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/uuid")
+                .uri("/api/queryview/importmodel/uuid")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -198,7 +198,7 @@ async fn test_u2_query_list_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/list")
+                .uri("/api/queryview/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -215,7 +215,7 @@ async fn test_u2_stat_get_id_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/stat/stat-1")
+                .uri("/api/queryview/stat/stat-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -232,7 +232,7 @@ async fn test_u2_stat_list_with_query_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/stat/list/query/query-1")
+                .uri("/api/queryview/stat/list/query/query-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -249,7 +249,7 @@ async fn test_u2_statement_get_format_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/statement/st-1/format")
+                .uri("/api/queryview/statement/st-1/format")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -266,7 +266,7 @@ async fn test_u2_statement_execute_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/statement/execute/st-1/page/1/size/20")
+                .uri("/api/queryview/statement/execute/st-1/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -284,7 +284,7 @@ async fn test_u2_search_post_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/search")
+                .uri("/api/queryview/search")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -302,7 +302,7 @@ async fn test_u2_morelikethis_post_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/morelikethis")
+                .uri("/api/queryview/morelikethis")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -320,7 +320,7 @@ async fn test_u2_table_row_delete_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/table/row/delete/tbl-1/row-1")
+                .uri("/api/queryview/table/row/delete/tbl-1/row-1")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -337,7 +337,7 @@ async fn test_u2_table_row_insert_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/table/row/insert/tbl-1")
+                .uri("/api/queryview/table/row/insert/tbl-1")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -400,7 +400,7 @@ async fn test_u2_importmodel_record_delete_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/record/delete/record-1")
+                .uri("/api/queryview/importmodel/record/delete/record-1")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -417,7 +417,7 @@ async fn test_u2_importmodel_reexecute_record_route_exists() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/execute/record/record-1")
+                .uri("/api/queryview/importmodel/execute/record/record-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -428,17 +428,17 @@ async fn test_u2_importmodel_reexecute_record_route_exists() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 v9 缺口闭合测试：Java 精确路径/动词注册 + 纯函数契约
+// plan002 U2 v9 缺口闭合测试：o2server 精确路径/动词注册 + 纯函数契约
 // 路由存在性口径：空 Config 池 → handler 执行到池获取失败 → 500（404 即路由缺失）
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[tokio::test]
-async fn test_v9_importmodel_flag_query_java_path_route_exists() {
+async fn test_v9_importmodel_flag_query_legacy_path_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/flag/im-1/query/qf-1")
+                .uri("/api/queryview/importmodel/flag/im-1/query/qf-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -449,13 +449,13 @@ async fn test_v9_importmodel_flag_query_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_importmodel_record_family_java_paths_exist() {
+async fn test_v9_importmodel_record_family_legacy_paths_exist() {
     let pool = build_test_pool();
 
     let get = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/record/r-1")
+                .uri("/api/queryview/importmodel/record/r-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -471,7 +471,7 @@ async fn test_v9_importmodel_record_family_java_paths_exist() {
     let status = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/record/r-1/status")
+                .uri("/api/queryview/importmodel/record/r-1/status")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -487,7 +487,7 @@ async fn test_v9_importmodel_record_family_java_paths_exist() {
     let del = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/record/r-1")
+                .uri("/api/queryview/importmodel/record/r-1")
                 .method(Method::DELETE)
                 .body(Body::empty())
                 .unwrap(),
@@ -502,12 +502,12 @@ async fn test_v9_importmodel_record_family_java_paths_exist() {
 }
 
 #[tokio::test]
-async fn test_v9_importmodel_execute_java_path_route_exists() {
+async fn test_v9_importmodel_execute_legacy_path_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/importmodel/im-1/execute")
+                .uri("/api/queryview/importmodel/im-1/execute")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -519,13 +519,13 @@ async fn test_v9_importmodel_execute_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_query_flag_and_list_java_paths_exist() {
+async fn test_v9_query_flag_and_list_legacy_paths_exist() {
     let pool = build_test_pool();
 
     let get_flag = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/query/qf-1")
+                .uri("/api/queryview/query/qf-1")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -537,7 +537,7 @@ async fn test_v9_query_flag_and_list_java_paths_exist() {
     let list_key = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/query/list/key/kw")
+                .uri("/api/queryview/query/list/key/kw")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -548,13 +548,13 @@ async fn test_v9_query_flag_and_list_java_paths_exist() {
 }
 
 #[tokio::test]
-async fn test_v9_stat_execute_with_query_java_verb_route_exists() {
+async fn test_v9_stat_execute_with_query_legacy_verb_route_exists() {
     let pool = build_test_pool();
 
     let put = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute")
+                .uri("/api/queryview/stat/flag/s-1/query/qf-1/execute")
                 .method(Method::PUT)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -571,7 +571,7 @@ async fn test_v9_stat_execute_with_query_java_verb_route_exists() {
     let mock = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/stat/flag/s-1/query/qf-1/execute/mockputtopost")
+                .uri("/api/queryview/stat/flag/s-1/query/qf-1/execute/mockputtopost")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -583,13 +583,13 @@ async fn test_v9_stat_execute_with_query_java_verb_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_statement_execute_java_path_route_exists() {
+async fn test_v9_statement_execute_legacy_path_route_exists() {
     let pool = build_test_pool();
-    // Java 精确段序：statement/{{flag}}/execute/page/{{page}}/size/{{size}}
+    // o2server 精确段序：statement/{{flag}}/execute/page/{{page}}/size/{{size}}
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/statement/st-1/execute/page/1/size/20")
+                .uri("/api/queryview/statement/st-1/execute/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -601,13 +601,13 @@ async fn test_v9_statement_execute_java_path_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_table_paging_post_java_verb_routes_exist() {
+async fn test_v9_table_paging_post_legacy_verb_routes_exist() {
     let pool = build_test_pool();
 
     let paging = crate::router(pool.clone())
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/table/list/paging/1/size/20")
+                .uri("/api/queryview/table/list/paging/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -624,7 +624,7 @@ async fn test_v9_table_paging_post_java_verb_routes_exist() {
     let row_paging = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/table/list/table/tf-1/row/paging/1/size/20")
+                .uri("/api/queryview/table/list/table/tf-1/row/paging/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))
@@ -636,12 +636,12 @@ async fn test_v9_table_paging_post_java_verb_routes_exist() {
 }
 
 #[tokio::test]
-async fn test_v9_table_row_select_post_java_verb_route_exists() {
+async fn test_v9_table_row_select_post_legacy_verb_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/table/list/tf-1/row/select")
+                .uri("/api/queryview/table/list/tf-1/row/select")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"where":"k"}"#))
@@ -653,15 +653,12 @@ async fn test_v9_table_row_select_post_java_verb_route_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_view_bundle_excel_execute_java_verbs_exist() {
+async fn test_v9_view_bundle_excel_execute_legacy_verbs_exist() {
     for (uri, label) in [
+        ("/api/queryview/view/v-1/bundle", "PUT /view/{{id}}/bundle"),
+        ("/api/queryview/view/v-1/excel", "PUT /view/{{id}}/excel"),
         (
-            "/jaxrs/queryview/view/v-1/bundle",
-            "PUT /view/{{id}}/bundle",
-        ),
-        ("/jaxrs/queryview/view/v-1/excel", "PUT /view/{{id}}/excel"),
-        (
-            "/jaxrs/queryview/view/v-1/execute",
+            "/api/queryview/view/v-1/execute",
             "PUT /view/{{id}}/execute",
         ),
     ] {
@@ -686,12 +683,12 @@ async fn test_v9_view_bundle_excel_execute_java_verbs_exist() {
 }
 
 #[tokio::test]
-async fn test_v9_view_flag_query_bundle_mockputtopost_java_path_exists() {
+async fn test_v9_view_flag_query_bundle_mockputtopost_legacy_path_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/view/flag/v-1/query/qf-1/bundle/mockputtopost")
+                .uri("/api/queryview/view/flag/v-1/query/qf-1/bundle/mockputtopost")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"grid":[]}"#))
@@ -703,12 +700,12 @@ async fn test_v9_view_flag_query_bundle_mockputtopost_java_path_exists() {
 }
 
 #[tokio::test]
-async fn test_v9_view_execute_v2_java_path_route_exists() {
+async fn test_v9_view_execute_v2_legacy_path_route_exists() {
     let pool = build_test_pool();
     let response = crate::router(pool)
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20")
+                .uri("/api/queryview/view/flag/v-1/query/qf-1/execute/v2/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from("{}"))

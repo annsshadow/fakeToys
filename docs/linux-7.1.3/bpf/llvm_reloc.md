@@ -1,3 +1,5 @@
+# llvm_reloc
+
 ﻿
 ## BPF LLVM 重定
 
@@ -126,6 +128,7 @@ RuntimeDyld` 的情况，`R_BPF_64_NODYLD32` 类型的重定位不应解析为�
 
   Disassembly of section .text:
 
+
   0000000000000000 <test>:
          0:       bf 26 00 00 00 00 00 00 r6 = r2
          1:       bf 17 00 00 00 00 00 00 r7 = r1
@@ -144,6 +147,7 @@ RuntimeDyld` 的情况，`R_BPF_64_NODYLD32` 类型的重定位不应解析为�
         12:       95 00 00 00 00 00 00 00 exit
 
   Disassembly of section sec1:
+
 
   0000000000000000 <gfunc>:
          0:       bf 20 00 00 00 00 00 00 r0 = r2

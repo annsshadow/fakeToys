@@ -1,3 +1,5 @@
+# tuntap
+
 ﻿
 ## Universal TUN/TAP device driver（通用 TUN/TAP 设备驱动
 
@@ -30,6 +32,7 @@ Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
 
   设置权限::
 
+
      e.g. chmod 0666 /dev/net/tun
 
   允许root 用户访问该设备并无危害，因为创建网络设备或者连接到
@@ -42,6 +45,7 @@ Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
   手动加载
 
      手动插入模块::
+
 
 	modprobe tun
 
@@ -85,7 +89,7 @@ Copyright |copy| 1999-2000 Maxim Krasnyansky <max_mk@yahoo.com>
   }
 
 ```
-### 3.2 帧格式（Frame format
+## 3.2 帧格式（Frame format
 
 ```
 

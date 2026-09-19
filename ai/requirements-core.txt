@@ -1,0 +1,16 @@
+# 运行平台所需的最小依赖集合
+#
+# 用于 Docker 默认镜像与轻量部署：不含 sentence-transformers / chromadb /
+# langchain 等重型可选依赖。缺失的可选能力会自动降级（见 docs/ARCHITECTURE.md）。
+#
+# 需要全部能力时改用 requirements.txt。
+
+requests>=2.28.0,<3.0.0
+pyyaml>=6.0,<7.0.0
+numpy>=1.21.0,<3.0.0
+
+fastapi>=0.78.0,<1.0.0
+uvicorn>=0.18.0,<1.0.0
+# 平台代码使用 pydantic v2 的 model_dump()，必须锁 v2
+pydantic>=2.0.0,<3.0.0
+python-multipart>=0.0.6

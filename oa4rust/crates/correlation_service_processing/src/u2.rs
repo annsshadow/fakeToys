@@ -1,6 +1,6 @@
-//! plan002 U2 收尾：对齐 Java x_correlation_service_processing CorrelationAction 契约。
+//! plan002 U2 收尾：对齐 o2server x_correlation_service_processing CorrelationAction 契约。
 //!
-//! Java 契约（{war}/jaxrs/correlation/**）：
+//! o2server 契约（{war}/api/correlation/**）：
 //!   POST   correlation/type/processplatform/job/{job}          创建关联内容（upsert）
 //!   POST   correlation/type/cms/document/{document}            创建关联内容（upsert）
 //!   POST   correlation/update/type/processplatform/job/{job}   按 site 整体替换
@@ -14,7 +14,7 @@
 //!   GET    correlation/list/type/cms/document/{document}
 //!   GET    correlation/list/type/cms/document/{document}/site/{site}
 //!
-//! 存储列对齐 Java Correlation 实体（migration 077 增量补充）：
+//! 存储列对齐 o2server Correlation 实体（migration 077 增量补充）：
 //!   from_type / from_bundle / target_type / target_bundle / person / site /
 //!   view / target_title / target_category / target_start_time / target_creator_person。
 //! 旧版遗留列（type/target_id/person_id）仅由既有非契约端点继续使用，互不干扰。
@@ -77,7 +77,7 @@ pub struct DeleteWi {
     pub id_list: Vec<String>,
 }
 
-/// Java ActionReadableTypeCmsWi 字段名即为历史拼写 `doucment`
+/// o2server ActionReadableTypeCmsWi 字段名即为历史拼写 `doucment`
 #[derive(Debug, Deserialize)]
 pub struct ReadableCmsWi {
     #[serde(default)]
@@ -130,7 +130,7 @@ async fn upsert_targets(
             failure.push(target_entry(t));
             continue;
         };
-        // 仅接受 processplatform / cms 两类目标，其余按 Java readTarget 语义计入失败列表
+        // 仅接受 processplatform / cms 两类目标，其余按 o2server readTarget 语义计入失败列表
         if ty != TYPE_PROCESSPLATFORM && ty != TYPE_CMS {
             failure.push(target_entry(t));
             continue;
@@ -255,11 +255,11 @@ async fn update_impl(
             .filter(|s| !s.is_empty())
             .map(str::to_string)
         else {
-            // Java：site 为空的分组直接跳过
+            // o2server：site 为空的分组直接跳过
             continue;
         };
 
-        // 先删除该 site 下全部旧关联，再插入新集合（Java ActionUpdate* 语义）
+        // 先删除该 site 下全部旧关联，再插入新集合（o2server ActionUpdate* 语义）
         client
             .execute(
                 "DELETE FROM x_correlation \
@@ -417,7 +417,9 @@ async fn readable_impl(
         let ft: String = row
             .get::<_, Option<String>>("from_type")
             .unwrap_or_default();
-        let fb: String = row.get("from_bundle");
+        let fb: String = row
+            .get::<_, Option<String>>("from_bundle")
+            .unwrap_or_default();
         match ft.to_lowercase().as_str() {
             TYPE_PROCESSPLATFORM => pp_bundles.push(fb),
             TYPE_CMS => cms_bundles.push(fb),
@@ -484,7 +486,7 @@ pub async fn readable_cms(
     pool: Extension<Pool>,
     Json(wi): Json<ReadableCmsWi>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // Java Wi 字段历史拼写即为 doucment
+    // o2server Wi 字段历史拼写即为 doucment
     let document = wi.doucment.unwrap_or_default();
     if document.trim().is_empty() {
         return Ok(Json(ActionResult::error("doucment is required")));
@@ -562,7 +564,7 @@ async fn list_impl(
 
     let data: Vec<Value> = rows.iter().map(row_to_item).collect();
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

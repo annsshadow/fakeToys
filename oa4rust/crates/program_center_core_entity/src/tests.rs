@@ -15,7 +15,7 @@ mod tests {
     }
 
     // ── Route ownership tests ───────────────────────────────────────────────
-    // 留档：35dc00c2 解决跨 crate 路由冲突后，/jaxrs/program_center/* 路由统一由
+    // 留档：35dc00c2 解决跨 crate 路由冲突后，/api/program_center/* 路由统一由
     // crates/program_center 注册；本 crate 各 handlers::_router 返回空 Router，
     // 重复注册会在 create_app 合并时 panic。以下断言固化该让渡决策：
     // 本 crate 的路由器不得再提供这些路径（404 = 未在本 crate 注册）。
@@ -31,7 +31,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/list")
+                    .uri("/api/program_center/application/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -51,7 +51,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/script/list")
+                    .uri("/api/program_center/script/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -71,7 +71,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke/list")
+                    .uri("/api/program_center/invoke/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -91,7 +91,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent/list")
+                    .uri("/api/program_center/agent/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -111,7 +111,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/structure/list")
+                    .uri("/api/program_center/structure/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -136,7 +136,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application")
+                    .uri("/api/program_center/application")
                     .method(axum::http::Method::POST)
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&body).unwrap()))
@@ -161,7 +161,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/some-id")
+                    .uri("/api/program_center/application/some-id")
                     .method(axum::http::Method::PUT)
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&body).unwrap()))
@@ -182,7 +182,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/application/some-id")
+                    .uri("/api/program_center/application/some-id")
                     .method(axum::http::Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -206,7 +206,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/invoke")
+                    .uri("/api/program_center/invoke")
                     .method(axum::http::Method::POST)
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&body).unwrap()))
@@ -231,7 +231,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/agent")
+                    .uri("/api/program_center/agent")
                     .method(axum::http::Method::POST)
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&body).unwrap()))
@@ -257,7 +257,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/structure")
+                    .uri("/api/program_center/structure")
                     .method(axum::http::Method::POST)
                     .header("Content-Type", "application/json")
                     .body(Body::from(serde_json::to_string(&body).unwrap()))
@@ -278,7 +278,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/program_center/unknown")
+                    .uri("/api/program_center/unknown")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

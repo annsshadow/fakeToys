@@ -1,3 +1,5 @@
+# log-writes
+
 ﻿## dm-log-writes
 
 
@@ -118,6 +120,7 @@ iii) 消息
 
   Another option is to do a complicated file system operation and verify the file
   system is consistent during the entire operation.  You could do this with:
+
 
   TABLE="0 $(blockdev --getsz /dev/sdb) log-writes /dev/sdb /dev/sdc"
   dmsetup create log --table "$TABLE"

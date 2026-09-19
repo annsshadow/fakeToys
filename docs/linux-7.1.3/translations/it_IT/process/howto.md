@@ -1,4 +1,6 @@
 
+# howto
+
 :Original: Documentation/process/howto.rst <process_howto>
 :Translator: Alessia Mantegazza <amantegazza@vaga.pv.it>
 
@@ -37,6 +39,7 @@ Sebbene essi non siano un buon sostituto ad un solido studio del
 linguaggio C o ad anni di esperienza, i seguenti libri sono, se non
 altro, utili riferimenti:
 
+
 - "The C Programming Language" di Kernighan e Ritchie [Prentice Hall]
 - "Practical C Programming" di Steve Oualline [O'Reilly]
 - "C:  A Reference Manual" di Harbison and Steele [Prentice Hall]
@@ -72,6 +75,7 @@ e non dovreste basarvi sulle loro dichiarazioni in materia giuridica.
 
 Per domande più frequenti e risposte sulla licenza GPL, guardare:
 
+
 	https://www.gnu.org/licenses/gpl-faq.html
 
 ### Documentazione
@@ -88,6 +92,7 @@ lista linux-api@vger.kernel.org.
 
 Di seguito una lista di file che sono presenti nei sorgente del kernel e che
 è richiesto che voi leggiate:
+
 
   Documentation/translations/it_IT/admin-guide/README.rst <it_readme>
     Questo file da una piccola anteprima del kernel Linux e descrive il
@@ -112,6 +117,7 @@ Di seguito una lista di file che sono presenti nei sorgente del kernel e che
     Questo file descrive dettagliatamente come creare ed inviare una patch
     con successo, includendo (ma non solo questo):
 
+
        - Contenuto delle email
        - Formato delle email
        - I destinatari delle email
@@ -121,6 +127,7 @@ Di seguito una lista di file che sono presenti nei sorgente del kernel e che
     sempre.
 
     Altre ottime descrizioni di come creare buone patch sono:
+
 
 	"The Perfect Patch"
 		https://www.ozlabs.org/~akpm/stuff/tpp.txt
@@ -132,6 +139,7 @@ Di seguito una lista di file che sono presenti nei sorgente del kernel e che
 
     Questo file descrive la motivazioni sottostanti la conscia decisione di
     non avere un API stabile all'interno del kernel, incluso cose come:
+
 
       - Sottosistemi shim-layers (per compatibilità?)
       - Portabilità fra Sistemi Operativi dei driver.
@@ -197,6 +205,7 @@ Documentation/output.
 Se non sapete nulla sullo sviluppo del kernel Linux, dovreste dare uno
 sguardo al progetto **Linux KernelNewbies**:
 
+
 	https://kernelnewbies.org
 
 Esso prevede un'utile lista di discussione dove potete porre più o meno ogni
@@ -233,6 +242,7 @@ il progetto Linux Cross-Reference, che è in grado di presentare codice
 sorgente in un formato autoreferenziale ed indicizzato. Un eccellente ed
 aggiornata fonte di consultazione del codice del kernel la potete trovare qui:
 
+
 	https://elixir.bootlin.com/
 
 
@@ -240,6 +250,7 @@ aggiornata fonte di consultazione del codice del kernel la potete trovare qui:
 
 Il processo di sviluppo del kernel Linux si compone di pochi "rami" principali
 e di molti altri rami per specifici sottosistemi. Questi rami sono:
+
 
   - I sorgenti kernel 4.x
   - I sorgenti stabili del kernel 4.x.y -stable
@@ -252,6 +263,7 @@ e di molti altri rami per specifici sottosistemi. Questi rami sono:
 I kernel 4.x sono amministrati da Linus Torvald, e possono essere trovati
 su https://kernel.org nella cartella pub/linux/kernel/v4.x/. Il processo
 di sviluppo è il seguente:
+
 
   - Non appena un nuovo kernel viene rilasciato si apre una finestra di due
     settimane. Durante questo periodo i manutentori possono proporre a Linus
@@ -283,6 +295,7 @@ di sviluppo è il seguente:
 
 È utile menzionare quanto scritto da Andrew Morton sulla lista di discussione
 kernel-linux in merito ai rilasci del kernel:
+
 
 	*"Nessuno sa quando un kernel verrà rilasciato, poichè questo è
 	legato allo stato dei bachi e non ad una cronologia preventiva."*
@@ -344,6 +357,7 @@ principale 4.x, sarà necessario un test d'integrazione.
 A tale scopo, esiste un repositorio speciale di test nel quale virtualmente
 tutti i rami dei sottosistemi vengono inclusi su base quotidiana:
 
+
 	https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
 
 In questo modo, i kernel -next offrono uno sguardo riassuntivo su quello che
@@ -389,10 +403,12 @@ sviluppatori del kernel partecipano alla lista di discussione Linux Kernel.
 I dettagli su come iscriversi e disiscriversi dalla lista possono essere
 trovati al sito:
 
+
 	https://subspace.kernel.org/subscribing.html
 
 Ci sono diversi archivi della lista di discussione. Usate un qualsiasi motore
 di ricerca per trovarli. Per esempio:
+
 
 	https://lore.kernel.org/linux-kernel/
 
@@ -407,11 +423,13 @@ discussione e il loro uso.
 Molte di queste liste sono gestite su kernel.org. Per informazioni consultate
 la seguente pagina:
 
+
 	https://subspace.kernel.org
 
 Per favore ricordatevi della buona educazione quando utilizzate queste liste.
 Sebbene sia un pò dozzinale, il seguente URL contiene alcune semplici linee
 guida per interagire con la lista (o con qualsiasi altra lista):
+
 
 	https://subspace.kernel.org/etiquette.html
 
@@ -491,7 +509,9 @@ La comunità del kernel funziona diversamente rispetto a molti ambienti di
 sviluppo aziendali.  Qui di seguito una lista di cose che potete provare a
 fare per evitare problemi:
 
+
   Cose da dire riguardanti le modifiche da voi proposte:
+
 
   - "Questo risolve più problematiche."
   - "Questo elimina 2000 stringhe di codice."
@@ -501,6 +521,7 @@ fare per evitare problemi:
   - "Questo aumenta le prestazioni di macchine standard..."
 
  Cose che dovreste evitare di dire:
+
 
     - "Lo abbiamo fatto in questo modo in AIX/ptx/Solaris, di conseguenza
        deve per forza essere giusto..."
@@ -550,6 +571,7 @@ di modifiche dovrebbe essere più piccola.
 
 I motivi per i quali dovreste frammentare le cose sono i seguenti:
 
+
 1) Piccole modifiche aumentano le probabilità che vengano accettate,
    altrimenti richiederebbe troppo tempo o sforzo nel verificarne
    la correttezza.  Una modifica di 5 righe può essere accettata da un
@@ -567,6 +589,7 @@ I motivi per i quali dovreste frammentare le cose sono i seguenti:
    semplificarle (o più semplicemente ordinarle) prima di sottoporle.
 
 Qui un'analogia dello sviluppatore kernel Al Viro:
+
 
 	*"Pensate ad un insegnante di matematica che corregge il compito
 	di uno studente (di matematica). L'insegnante non vuole vedere le
@@ -607,6 +630,7 @@ scrivete nella vostra email.  Questa diventerà il **ChangeLog** per la modifica
 e sarà visibile a tutti per sempre.  Dovrebbe descrivere la modifica nella sua
 interezza, contenendo:
 
+
  - perchè la modifica è necessaria
  - l'approccio d'insieme alla patch
  - dettagli supplementari
@@ -614,6 +638,7 @@ interezza, contenendo:
 
 Per maggiori dettagli su come tutto ciò dovrebbe apparire, riferitevi alla
 sezione ChangeLog del documento:
+
 
  "The Perfect Patch"
       http://www.ozlabs.org/~akpm/stuff/tpp.txt

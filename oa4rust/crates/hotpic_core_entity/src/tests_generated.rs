@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/list")
+                    .uri("/api/hotpic/core/entity/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/list/by/test-id/test-id")
+                    .uri("/api/hotpic/core/entity/list/by/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/create")
+                    .uri("/api/hotpic/core/entity/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/core/entity/delete/test-id")
+                    .uri("/api/hotpic/core/entity/delete/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),

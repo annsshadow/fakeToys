@@ -1,5 +1,7 @@
+# media-func-close
+
 ﻿
-######## media close()
+## media close()
 
 ## 名称
 

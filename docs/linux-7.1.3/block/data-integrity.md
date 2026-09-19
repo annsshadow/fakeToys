@@ -1,3 +1,5 @@
+# data-integrity
+
 ﻿## 数据完整性（Data Integrity
 
 
@@ -123,6 +125,7 @@ bio_free() 会自动释bip
       /sys/block/<bdev>/integrity/write_generate
 
     and::
+
 
       /sys/block/<bdev>/integrity/read_verify
 

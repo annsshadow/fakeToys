@@ -1,7 +1,10 @@
 
+# snp-tdx-threat-model
+
 :Original: Documentation/security/snp-tdx-threat-model.rst
 
 :翻译:
+
 
  毛玉贤 Yuxian Mao <maoyuxian@cqsoftware.com.cn>
 

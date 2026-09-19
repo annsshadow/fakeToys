@@ -46,7 +46,7 @@
 
 
 
-- `POST /jaxrs/query/service/processing/batch`
-- `POST /jaxrs/query/service/processing/process`
-- `POST /jaxrs/query/service/processing/reset`
-- `GET /jaxrs/query/service/processing/status`
+- `POST /api/query/service/processing/batch`
+- `POST /api/query/service/processing/process`
+- `POST /api/query/service/processing/reset`
+- `GET /api/query/service/processing/status`

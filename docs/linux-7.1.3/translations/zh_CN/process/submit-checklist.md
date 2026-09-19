@@ -1,11 +1,13 @@
 
+# submit-checklist
+
 :Original: Documentation/process/submit-checklist.rst
 :Translator:
  - Alex Shi <alexs@kernel.org>
  - Wu XiangCheng <bobwxc@email.cn>
 
 
-#### Linux内核补丁提交检查单
+## Linux内核补丁提交检查单
 
 
 如果开发人员希望看到他们的内核补丁提交更快地被接受，那么他们应该做一些基本

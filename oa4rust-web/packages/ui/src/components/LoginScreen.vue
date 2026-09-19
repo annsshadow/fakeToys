@@ -116,7 +116,7 @@
             </div>
             <div class="stat-item">
               <div class="stat-number">98%</div>
-              <div class="stat-label">Java 兼容</div>
+              <div class="stat-label">旧系统兼容</div>
             </div>
           </div>
         </div>
@@ -159,7 +159,7 @@ const captchaId = ref('')
 
 async function refreshCaptcha(): Promise<void> {
   try {
-    const resp = await fetch('/jaxrs/authentication/captcha', { credentials: 'include' })
+    const resp = await fetch('/api/authentication/captcha', { credentials: 'include' })
     const data = (await resp.json()) as { data: { image: string; id: string } }
     captchaUrl.value = `data:image/png;base64,${data.data.image}`
     captchaId.value = data.data.id
@@ -195,7 +195,7 @@ async function handleLogin(): Promise<void> {
 }
 
 function handleOauth(provider: { id: string; name: string; icon: string; redirect: string }): void {
-  window.location.href = `/jaxrs/authentication/oauth/login/${provider.id}/code/redirect`
+  window.location.href = `/api/authentication/oauth/login/${provider.id}/code/redirect`
 }
 
 // 粒子背景动画

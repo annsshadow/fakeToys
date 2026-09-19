@@ -26,7 +26,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/list")
+                        .uri("/api/mind/core/entity/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -49,7 +49,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/folder/list")
+                        .uri("/api/mind/core/entity/folder/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -72,7 +72,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/version/list/mind-001")
+                        .uri("/api/mind/core/entity/version/list/mind-001")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -99,7 +99,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/mind")
+                        .uri("/api/mind/core/entity/mind")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"测试导图","folderId":"folder-001"}"#))
@@ -126,7 +126,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/mind/mind-001")
+                        .uri("/api/mind/core/entity/mind/mind-001")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"更新名称"}"#))
@@ -153,7 +153,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/mind/mind-001")
+                        .uri("/api/mind/core/entity/mind/mind-001")
                         .method(axum::http::Method::DELETE)
                         .body(Body::empty())
                         .unwrap(),
@@ -179,7 +179,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/folder")
+                        .uri("/api/mind/core/entity/folder")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"测试文件夹","orderNumber":1}"#))
@@ -206,7 +206,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/folder/folder-001")
+                        .uri("/api/mind/core/entity/folder/folder-001")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"name":"更新名称"}"#))
@@ -233,7 +233,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/folder/folder-001")
+                        .uri("/api/mind/core/entity/folder/folder-001")
                         .method(axum::http::Method::DELETE)
                         .body(Body::empty())
                         .unwrap(),
@@ -260,7 +260,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/mind/core/entity/list")
+                        .uri("/api/mind/core/entity/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),

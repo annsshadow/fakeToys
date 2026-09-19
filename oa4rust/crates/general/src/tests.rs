@@ -20,7 +20,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/securityclearance/enable")
+                    .uri("/api/general/securityclearance/enable")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -40,7 +40,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/worktime/isworkday/20240101")
+                    .uri("/api/general/worktime/isworkday/20240101")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -59,7 +59,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/worktime/isworkday/")
+                    .uri("/api/general/worktime/isworkday/")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -78,7 +78,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/area/list")
+                    .uri("/api/general/area/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

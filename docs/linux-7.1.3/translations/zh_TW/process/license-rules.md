@@ -1,5 +1,7 @@
 
 
+# license-rules
+
 :Original: Documentation/process/license-rules.rst <kernel_licensing>
 :Translator: Alex Shi <alex.shi@linux.alibaba.com>
              Hu Haowen <2023002089@link.tyut.edu.cn>
@@ -54,6 +56,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
 1.安置:
 
+
    內核文件中的SPDX許可證標識符應添加到可包含註釋的文件中的第一行。對於大多
    數文件，這是第一行，除了那些在第一行中需要'#!PATH_TO_INTERPRETER'的腳本。
    對於這些腳本，SPDX標識符進入第二行。
@@ -61,6 +64,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 |
 
 2. 風格:
+
 
 ```
 
@@ -81,6 +85,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
 3. 句法:
 
+
    <SPDX許可證表達式>是SPDX許可證列表中的SPDX短格式許可證標識符，或者在許可
    證例外適用時由“WITH”分隔的兩個SPDX短格式許可證標識符的組合。當應用多個許
    可證時，表達式由分隔子表達式的關鍵字“AND”，“OR”組成，並由“（”，“）”包圍。
@@ -93,10 +98,12 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    當需要修正的許可證時，應使用WITH。 例如，linux內核UAPI文件使用表達式::
 
+
       // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
       // SPDX-License-Identifier: GPL-2.0+ WITH Linux-syscall-note
 
    其它在內核中使用WITH例外的事例如下::
+
 
       // SPDX-License-Identifier: GPL-2.0 WITH mif-exception
       // SPDX-License-Identifier: GPL-2.0+ WITH GCC-exception-2.0
@@ -107,9 +114,11 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
    如果文件是雙重許可且只選擇一個許可證，則應使用OR。例如，一些dtsi文件在雙
    許可下可用::
 
+
       // SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 
    內核中雙許可文件中許可表達式的示例::
+
 
       // SPDX-License-Identifier: GPL-2.0 OR MIT
       // SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
@@ -122,9 +131,11 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
    如果代碼是從另一個項目繼承的，並且已經授予了將其放入內核的權限，但原始
    許可條款需要保持有效::
 
+
       // SPDX-License-Identifier: (GPL-2.0 WITH Linux-syscall-note) AND MIT
 
    另一個需要遵守兩套許可條款的例子是::
+
 
       // SPDX-License-Identifier: GPL-1.0+ AND LGPL-2.1+
 
@@ -136,6 +147,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
 1. _`優先許可`:
 
+
    應儘可能使用這些許可證，因爲它們已知完全兼容並廣泛使用。這些許可證在內核
 ```
 
@@ -146,9 +158,11 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    例如::
 
+
       LICENSES/preferred/GPL-2.0
 
    包含GPLv2許可證文本和所需的元標籤::
+
 
       LICENSES/preferred/MIT
 
@@ -156,9 +170,11 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    _`元標記`:
 
+
    許可證文件中必須包含以下元標記：
 
    - Valid-License-Identifier:
+
 
      一行或多行, 聲明那些許可標識符在項目內有效, 以引用此特定許可的文本。通
      常這是一個有效的標識符，但是例如對於帶有'或更高'選項的許可證，兩個標識
@@ -166,18 +182,22 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    - SPDX-URL:
 
+
      SPDX頁面的URL，其中包含與許可證相關的其他信息.
 
    - Usage-Guidance:
+
 
      使用建議的自由格式文本。該文本必須包含SPDX許可證標識符的正確示例，因爲
      它們應根據 `許可標識符語法`_ 指南放入源文件中。
 
    - License-Text:
 
+
      此標記之後的所有文本都被視爲原始許可文本
 
    文件格式示例::
+
 
       Valid-License-Identifier: GPL-2.0
       Valid-License-Identifier: GPL-2.0+
@@ -195,6 +215,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    ::
 
+
       SPDX-License-Identifier: MIT
       SPDX-URL: https://spdx.org/licenses/MIT.html
       Usage-Guide:
@@ -210,6 +231,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
 2. 不推薦的許可證:
 
+
 ```
 
       LICENSES/other/
@@ -219,9 +241,11 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    例如::
 
+
       LICENSES/other/ISC
 
    包含國際系統聯合許可文本和所需的元標籤::
+
 
       LICENSES/other/ZLib
 
@@ -229,9 +253,11 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    元標籤:
 
+
    “其他”許可證的元標籤要求與 `優先許可`_ 的要求相同。
 
    文件格式示例::
+
 
       Valid-License-Identifier: ISC
       SPDX-URL: https://spdx.org/licenses/ISC.html
@@ -251,6 +277,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
 3. _`例外`:
 
+
    某些許可證可以修改，並允許原始許可證不具有的某些例外權利。這些例外在
 ```
 
@@ -260,10 +287,12 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    例如::
 
+
       LICENSES/exceptions/Linux-syscall-note
 
    包含Linux內核的COPYING文件中記錄的Linux系統調用例外，該文件用於UAPI
    頭文件。例如::
+
 
       LICENSES/exceptions/GCC-exception-2.0
 
@@ -272,30 +301,37 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
 
    _`例外元標記`:
 
+
    以下元標記必須在例外文件中可用：
 
    - SPDX-Exception-Identifier:
+
 
      一個可與SPDX許可證標識符一起使用的例外標識符。
 
    - SPDX-URL:
 
+
      SPDX頁面的URL，其中包含與例外相關的其他信息。
 
    - SPDX-Licenses:
 
+
      以逗號分隔的例外可用的SPDX許可證標識符列表。
 
    - Usage-Guidance:
+
 
      使用建議的自由格式文本。必須在文本後面加上SPDX許可證標識符的正確示例，
      因爲它們應根據 `許可標識符語法`_ 指南放入源文件中。
 
    - Exception-Text:
 
+
      此標記之後的所有文本都被視爲原始異常文本
 
    文件格式示例::
+
 
       SPDX-Exception-Identifier: Linux-syscall-note
       SPDX-URL: https://spdx.org/licenses/Linux-syscall-note.html
@@ -311,6 +347,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
         Full exception text
 
    ::
+
 
       SPDX-Exception-Identifier: GCC-exception-2.0
       SPDX-URL: https://spdx.org/licenses/GCC-exception-2.0.html
@@ -342,6 +379,7 @@ https://spdx.org/licenses/ 上的官方SPDX許可證列表中檢索，並附帶�
    載器和用戶空間工具的專有模塊。
 
    MODULE_LICENSE（）的有效許可證字符串是:
+
 
     ============================= =============================================
     "GPL"			  模塊是根據GPL版本2許可的。這並不表示僅限於

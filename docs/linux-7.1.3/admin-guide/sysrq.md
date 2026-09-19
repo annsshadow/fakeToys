@@ -1,9 +1,11 @@
+# sysrq
+
 ﻿## Linux 魔术系统请求键（Magic SysRq Key）技
 sysrq.c 的文
-#### 什么是魔术 SysRq 键？
+## 什么是魔术 SysRq 键？
 
 它是你可以按下的一个“魔术”组合键，内核会对其作出响应，而不管它正在做其他什么事——除非它已完全死锁
-#### 如何启用魔术 SysRq 键？
+### 如何启用魔术 SysRq 键？
 
 在配置内核时，你需要对 “Magic SysRq key (CONFIG_MAGIC_SYSRQ)回答 “yes”。当运行一个编译了 SysRq 的内核时，`/proc/sys/kernel/sysrq` 控制允许通过 SysRq 键调用的功能。该文件的默认值由 `CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE` 配置符号设置，其自身默认值为 1。以下是 `/proc/sys/kernel/sysrq` 中可能的取值列表：
 

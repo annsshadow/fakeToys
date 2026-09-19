@@ -1,7 +1,9 @@
+# kprobetrace
+
 ﻿## 基于 Kprobe 的事件跟踪（Kprobe-based Event Tracing
 :Author: Masami Hiramatsu
 
-### 概述（Overview
+## 概述（Overview
 这些事件与基tracepoint 的事件类似。与 tracepoint 不同，它基于 kprobe（kprobe kretprobe）因此它可以探kprobe 能够探测的任何地方（这意味着，除了带`__kprobes`/`nokprobe_inline` 注解以及
 标记NOKPROBE_SYMBOL 的函数之外的所有函数）。与基于 tracepoint 的事件不同，它可以动态地、在运行添加和移除
 要启用此功能，请以内CONFIG_KPROBE_EVENTS=y 构建你的内核

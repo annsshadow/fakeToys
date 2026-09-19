@@ -1,7 +1,10 @@
 
+# configure-git
+
 :Original: Documentation/maintainer/configure-git.rst
 
 :译者:
+
 
  吴想成 Wu XiangCheng <bobwxc@email.cn>
 

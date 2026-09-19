@@ -32,7 +32,7 @@ onMounted(async () => {
   try {
     const query = new URLSearchParams({ state })
     const response = await fetch(
-      `/jaxrs/authentication/oauth/login/${encodeURIComponent(platform.value)}/code/${encodeURIComponent(code)}?${query}`,
+      `/api/authentication/oauth/login/${encodeURIComponent(platform.value)}/code/${encodeURIComponent(code)}?${query}`,
       { credentials: 'include' },
     )
     if (!response.ok) throw new Error(`OAuth 登录失败 (${response.status})`)

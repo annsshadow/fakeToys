@@ -1,3 +1,5 @@
+# ipe
+
 ﻿
 ## 完整性策略强制执行（Integrity Policy Enforcement，IPE
 
@@ -102,7 +104,7 @@ IPE 评估的默认行为也可以在策略中通过 `DEFAULT` 语句来表达�
 因此，IPE 通过一个称为“启动策略”（boot policy）的概念解决了这个问题。启动策是编译进内核的最小策略。该策略旨在将系统带入用户空间已就绪、可以接收命令的状态，
 此时可以通过 securityfs 部署更复杂的策略。启动策略可以通过 `SECURITY_IPE_BOOT_POLICY`
 配置选项指定，它接受一个指向要应用IPE 策略纯文本版本的路径。该策略将被编译内核。如果未指定，IPE 将被禁用，直到通过 securityfs 部署并激活某个策略
-#### 部署策略
+## 部署策略
 
 
 策略可以通过 securityfs 从用户空间部署。这些策略通过 PKCS#7 消息格式进行签名以强制实现某种程度的策略授权（禁止攻击者获得不受约束的 root 权限并部署一“allow all”策略）。这些策略必须由链接`SYSTEM_TRUSTED_KEYRING` 的证书签名，
@@ -151,7 +153,7 @@ IPE 也提供删除策略的方式。这可以通过 `delete` securityfs 节点�
    If a traditional MAC system is enabled (SELinux, apparmor, smack), all
    writes to ipe's securityfs nodes require `CAP_MAC_ADMIN`.
 
-#### 模式
+### 模式
 
 
 IPE 支持两种运行模式：宽容模式（permissive，类似于 SELinux permissive 模式和强制模式（enforced）。在宽容模式下，所有事件都会被检查，策略违规会被记录，但
@@ -397,6 +399,7 @@ securityfs 文件启用
 
    .. WARNING::
 
+
       This property will trust files from initramfs(rootfs). It should
       only be used during early booting stage. Before mounting the real
       rootfs on top of the initramfs, initramfs script will recursively
@@ -557,6 +560,7 @@ securityfs 文件启用
 Q:
    与其它提供某种基于信任的访问控制LSM 相比，区别在哪里
 A:
+
 
    一般而言，还有另外两LSM 能提供类似功能：IMA Loadpin
    IMA IPE 在功能上非常相似。两者之间的显著区别在于策略。[#devdoc]_

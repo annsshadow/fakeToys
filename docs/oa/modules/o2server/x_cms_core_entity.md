@@ -19,7 +19,7 @@ CMS 核心实体模块，定义栏目、应用、配置等 CMS 数据模型。
 
 ## Key Flows
 
-- 栏目列表：`GET /jaxrs/cms/category/list` → `category_list` 查 `x_cms_category` 过滤 DeletedAt IS NULL，SortOrder 升序 limit 20，输出 id/name/parentId/sortOrder/status/createTime
+- 栏目列表：`GET /api/cms/category/list` → `category_list` 查 `x_cms_category` 过滤 DeletedAt IS NULL，SortOrder 升序 limit 20，输出 id/name/parentId/sortOrder/status/createTime
 - 栏目查询与创建：`GET .../category/{id}`（find_by_id + DeletedAt IS NULL，无则 error("category not found")）；`POST .../category/create` → `category_create` uuid v4、parentId 键名为带引号的 `"\"parentId\""`、status 默认 "active"、create_time=Utc now
 - 文章列表：`GET .../article/list` → `article_list` 查 `x_cms_article` 过滤 DeletedAt IS NULL，CreateTime 倒序 limit 20，输出含 categoryId/title/content/authorId/status/publishTime
 - 文章查询与创建：`GET .../article/{id}`（无则 error("article not found")）；`POST .../article/create` → `article_create` status 默认 "draft"、publish_time 初始 NULL

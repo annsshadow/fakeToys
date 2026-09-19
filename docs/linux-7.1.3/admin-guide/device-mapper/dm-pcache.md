@@ -1,3 +1,5 @@
+# dm-pcache
+
 ﻿
 ## dm-pcache 持久化缓存（Persistent Cache
 
@@ -27,7 +29,7 @@
 
 ```
 =========================  ====================================================
-`cache_dev`               Any DAX-capable block device (`/dev/pmem0`鈥?.
+`cache_dev`               Any DAX-capable block device (`/dev/pmem0`.
                             All metadata **and** cached blocks are stored here.
 
 `backing_dev`             The slow block device to be cached.
@@ -37,9 +39,9 @@
 
 `data_crc`                Optional, default to `false`
 
-                            - `true`  鈥?store CRC32 for every cached entry
+                            - `true`  store CRC32 for every cached entry
 			      and verify on reads
-                            - `false` 鈥?skip CRC (faster)
+                            - `false` skip CRC (faster)
 =========================  ====================================================
 
 ### 示例
@@ -80,9 +82,9 @@
 
 `gc_percent`                   Current GC high-water mark (0-90).
 
-`cache_flags`                  Bit 0 鈥?DATA_CRC enabled
-                                 Bit 1 鈥?INIT_DONE (cache initialised)
-                                 Bits 2-5 鈥?cache mode (0 == WB).
+`cache_flags`                  Bit 0 DATA_CRC enabled
+                                 Bit 1 INIT_DONE (cache initialised)
+                                 Bits 2-5 cache mode (0 == WB).
 
 `key_head`                     Where new key-sets are being written.
 

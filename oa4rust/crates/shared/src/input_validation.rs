@@ -250,4 +250,45 @@ mod tests {
         assert!(validate_mobile("12345").is_err());
         assert!(validate_mobile("23800138000").is_err());
     }
+
+    #[test]
+    fn test_validate_exact_length() {
+        assert!(validate_exact_length("code", "ABCD", 4).is_ok());
+        assert!(validate_exact_length("code", "ABC", 4).is_err());
+        assert!(validate_exact_length("code", "ABCDE", 4).is_err());
+    }
+
+    #[test]
+    fn test_validate_mime_type() {
+        let allowed = ["image/jpeg", "image/png"];
+        assert!(validate_mime_type("avatar", "image/jpeg", &allowed).is_ok());
+        assert!(validate_mime_type("avatar", "application/pdf", &allowed).is_err());
+        assert!(validate_mime_type("avatar", "", &allowed).is_err());
+    }
+
+    #[test]
+    fn test_validate_file_size() {
+        assert!(validate_file_size("attachment", 1024, 2048).is_ok());
+        assert!(validate_file_size("attachment", 2048, 2048).is_ok());
+        assert!(validate_file_size("attachment", 2049, 2048).is_err());
+    }
+
+    #[test]
+    fn test_validate_email() {
+        assert!(validate_email("").is_ok()); // 空值放行，由 required 校验兜底
+        assert!(validate_email("a@b.com").is_ok());
+        assert!(validate_email("no-at-sign").is_err());
+        assert!(validate_email("@b.com").is_err());
+        assert!(validate_email("a@").is_err());
+    }
+
+    #[test]
+    fn test_validation_error_maps_to_bad_request() {
+        let err = ValidationError::Required { field: "name" };
+        assert_eq!(err.status_code(), axum::http::StatusCode::BAD_REQUEST);
+        let app_err = err.to_app_error();
+        assert!(matches!(app_err, crate::error::AppError::BadRequest(_)));
+        // 错误文案必须带上字段名，便于前端定位。
+        assert!(err.to_string().contains("name"));
+    }
 }

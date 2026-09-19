@@ -2,7 +2,7 @@
 //!
 //! 三层：
 //!   1. 路由可达性：mock_pool 无法建连，请求命中路由后返回 500/415，
-//!      断言 ≠404 且 ≠405 即证明路由已按 Java 段序注册且动词正确；
+//!      断言 ≠404 且 ≠405 即证明路由已按 o2server 段序注册且动词正确；
 //!      Router 构建本身校验路径唯一性——通配归一化若产生冲突将直接 panic。
 //!   2. 门禁单元测试：直接调用写 handler，DB 不可用时门禁 fail-closed
 //!      返回 Internal（拒绝放行），证明写端点不存在"未授权直通"。
@@ -67,43 +67,43 @@ mod data_appdict_tests {
     async fn data_wildcard_routes_reachable() {
         // 通配读：深度 0 与深度 3/7 各抽一档；字面 path0 URL 也应被通配捕获
         assert!(reachable(
-            status_of("GET", "/jaxrs/data/document/d-1/anything", None).await
+            status_of("GET", "/api/data/document/d-1/anything", None).await
         ));
         assert!(reachable(
-            status_of("GET", "/jaxrs/data/document/d-1/a/b/c", None).await
+            status_of("GET", "/api/data/document/d-1/a/b/c", None).await
         ));
         assert!(reachable(
-            status_of("GET", "/jaxrs/data/document/d-1/a/b/c/d/e/f/g/h", None).await
+            status_of("GET", "/api/data/document/d-1/a/b/c/d/e/f/g/h", None).await
         ));
         // 字面段名 URL 同样命中通配路由（path0 作为参数值）
         assert!(reachable(
-            status_of("GET", "/jaxrs/data/document/d-1/path0", None).await
+            status_of("GET", "/api/data/document/d-1/path0", None).await
         ));
         // 动词别名：mockdeletetoget(GET) / mockputtopost(POST)，静态段优先于参数段
         assert_eq!(
-            status_of("GET", "/jaxrs/data/document/d-1/x/mockdeletetoget", None).await,
+            status_of("GET", "/api/data/document/d-1/x/mockdeletetoget", None).await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         assert_ne!(
-            status_of("POST", "/jaxrs/data/document/d-1/x/mockputtopost", None).await,
+            status_of("POST", "/api/data/document/d-1/x/mockputtopost", None).await,
             StatusCode::NOT_FOUND
         );
         assert!(reachable(
-            status_of("POST", "/jaxrs/data/document/d-1/array/data", None).await
+            status_of("POST", "/api/data/document/d-1/array/data", None).await
         ));
     }
 
     #[tokio::test]
     async fn data_write_methods_aligned() {
-        // 基座全动词（Java ActionUpdate/Create/DeleteWithDocument）
+        // 基座全动词（o2server ActionUpdate/Create/DeleteWithDocument）
         for method in ["PUT", "POST", "DELETE"] {
-            let st = status_of(method, "/jaxrs/data/document/d-1", Some(json!({"k": "v"}))).await;
-            assert!(reachable(st), "{method} /jaxrs/data/document/d-1 -> {st}");
+            let st = status_of(method, "/api/data/document/d-1", Some(json!({"k": "v"}))).await;
+            assert!(reachable(st), "{method} /api/data/document/d-1 -> {st}");
         }
         // 路径级全动词（深度 0 与深度 2 抽样）
         for uri in [
-            "/jaxrs/data/document/d-1/field",
-            "/jaxrs/data/document/d-1/a/b/c",
+            "/api/data/document/d-1/field",
+            "/api/data/document/d-1/a/b/c",
         ] {
             for method in ["PUT", "POST", "DELETE"] {
                 let st = status_of(method, uri, Some(json!({"k": "v"}))).await;
@@ -114,11 +114,11 @@ mod data_appdict_tests {
 
     #[tokio::test]
     async fn appdict_routes_reachable() {
-        // 认证族：Java 段序 {appDictFlag}/appInfo/{appInfoFlag}[/{pathN}/]{data}
+        // 认证族：o2server 段序 {appDictFlag}/appInfo/{appInfoFlag}[/{pathN}/]{data}
         assert_eq!(
             status_of(
                 "GET",
-                &format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}"),
+                &format!("/api/surface/appdict/{DICT}/appInfo/{APP}"),
                 None
             )
             .await,
@@ -127,16 +127,16 @@ mod data_appdict_tests {
         assert_eq!(
             status_of(
                 "GET",
-                &format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}/data"),
+                &format!("/api/surface/appdict/{DICT}/appInfo/{APP}/data"),
                 None
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
         for depth_uri in [
-            format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}/p0/data"),
-            format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}/p0/p1/p2/p3/data"),
-            format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}/p0/p1/p2/p3/p4/p5/p6/p7/data"),
+            format!("/api/surface/appdict/{DICT}/appInfo/{APP}/p0/data"),
+            format!("/api/surface/appdict/{DICT}/appInfo/{APP}/p0/p1/p2/p3/data"),
+            format!("/api/surface/appdict/{DICT}/appInfo/{APP}/p0/p1/p2/p3/p4/p5/p6/p7/data"),
         ] {
             assert_eq!(
                 status_of("GET", &depth_uri, None).await,
@@ -148,7 +148,7 @@ mod data_appdict_tests {
         assert_eq!(
             status_of(
                 "GET",
-                &format!("/jaxrs/anonymous/surface/appdict/{DICT}/appInfo/{APP}/p0/data"),
+                &format!("/api/anonymous/surface/appdict/{DICT}/appInfo/{APP}/p0/data"),
                 None
             )
             .await,
@@ -157,7 +157,7 @@ mod data_appdict_tests {
         assert!(reachable(
             status_of(
                 "GET",
-                &format!("/jaxrs/anonymous/surface/appdict/list/appInfo/{APP}"),
+                &format!("/api/anonymous/surface/appdict/list/appInfo/{APP}"),
                 None
             )
             .await
@@ -166,7 +166,7 @@ mod data_appdict_tests {
 
     #[tokio::test]
     async fn appdict_write_routes_reachable() {
-        let base = format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}");
+        let base = format!("/api/surface/appdict/{DICT}/appInfo/{APP}");
         // 基座 PUT + mockputtopost 别名
         assert!(reachable(
             status_of("PUT", &base, Some(json!({"dataValue": "v"}))).await
@@ -179,7 +179,7 @@ mod data_appdict_tests {
             )
             .await
         ));
-        // 路径级 PUT/POST/DELETE + 两类别名（Java 仅深度 ≥2 即 3 段起提供 mockputtopost）
+        // 路径级 PUT/POST/DELETE + 两类别名（o2server 仅深度 ≥2 即 3 段起提供 mockputtopost）
         let leaf = format!("{base}/p0/p1/p2/data");
         for method in ["PUT", "POST"] {
             assert!(
@@ -191,7 +191,7 @@ mod data_appdict_tests {
         assert!(reachable(
             status_of("GET", &format!("{leaf}/mockdeletetoget"), None).await
         ));
-        // 深度 1（2 段）不应注册 mockputtopost —— 与 Java 一致无此路由
+        // 深度 1（2 段）不应注册 mockputtopost —— 与 o2server 一致无此路由
         assert_eq!(
             status_of(
                 "POST",
@@ -327,7 +327,7 @@ mod data_appdict_tests {
         // PUT 基座：顶层 key 全量 upsert（owner 会话）
         let (status, json) = call(
             "PUT",
-            &format!("/jaxrs/data/document/{DOC}"),
+            &format!("/api/data/document/{DOC}"),
             Some(json!({"title": "hello", "count": 42})),
             Some(session(OWNER)),
         )
@@ -339,7 +339,7 @@ mod data_appdict_tests {
         // GET 一级路径：精确字段匹配
         let (status, json) = call(
             "GET",
-            &format!("/jaxrs/data/document/{DOC}/title"),
+            &format!("/api/data/document/{DOC}/title"),
             None,
             None,
         )
@@ -351,7 +351,7 @@ mod data_appdict_tests {
         // POST 多级路径：组合键 title.deep.body 插入
         let (status, json) = call(
             "POST",
-            &format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            &format!("/api/data/document/{DOC}/title/deep/body"),
             Some(json!({"v": 1})),
             Some(session(OWNER)),
         )
@@ -361,7 +361,7 @@ mod data_appdict_tests {
 
         let (_, json) = call(
             "GET",
-            &format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            &format!("/api/data/document/{DOC}/title/deep/body"),
             None,
             None,
         )
@@ -384,10 +384,10 @@ mod data_appdict_tests {
 
         // IDOR：非所有者不能写文档数据
         for (method, uri) in [
-            ("PUT", format!("/jaxrs/data/document/{DOC}/title")),
+            ("PUT", format!("/api/data/document/{DOC}/title")),
             (
                 "DELETE",
-                format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+                format!("/api/data/document/{DOC}/title/deep/body"),
             ),
         ] {
             let (status, _) =
@@ -398,7 +398,7 @@ mod data_appdict_tests {
         // 所有者删除深层路径后不可再读（读端点语义：无匹配行返回空数组）
         let (status, json) = call(
             "DELETE",
-            &format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            &format!("/api/data/document/{DOC}/title/deep/body"),
             None,
             Some(session(OWNER)),
         )
@@ -408,7 +408,7 @@ mod data_appdict_tests {
 
         let (status, json) = call(
             "GET",
-            &format!("/jaxrs/data/document/{DOC}/title/deep/body"),
+            &format!("/api/data/document/{DOC}/title/deep/body"),
             None,
             None,
         )
@@ -446,7 +446,7 @@ mod data_appdict_tests {
         // 该用例同时验证旧实现对无唯一约束列使用 ON CONFLICT 的运行期错误已被修复。
         let (status, json) = call(
             "POST",
-            &format!("/jaxrs/data/document/{DOC_MOCK}/mockputtopost"),
+            &format!("/api/data/document/{DOC_MOCK}/mockputtopost"),
             Some(json!({"k1": "v1"})),
             Some(session(OWNER)),
         )
@@ -456,7 +456,7 @@ mod data_appdict_tests {
 
         let (_, json) = call(
             "GET",
-            &format!("/jaxrs/data/document/{DOC_MOCK}/k1"),
+            &format!("/api/data/document/{DOC_MOCK}/k1"),
             None,
             None,
         )
@@ -466,7 +466,7 @@ mod data_appdict_tests {
         // 路径级 mockputtopost：沿用 fieldValue 契约更新同一字段
         let (status, json) = call(
             "POST",
-            &format!("/jaxrs/data/document/{DOC_MOCK}/k1/mockputtopost"),
+            &format!("/api/data/document/{DOC_MOCK}/k1/mockputtopost"),
             Some(json!({"fieldValue": "v2"})),
             Some(session(OWNER)),
         )
@@ -476,7 +476,7 @@ mod data_appdict_tests {
 
         let (_, json) = call(
             "GET",
-            &format!("/jaxrs/data/document/{DOC_MOCK}/k1"),
+            &format!("/api/data/document/{DOC_MOCK}/k1"),
             None,
             None,
         )
@@ -486,7 +486,7 @@ mod data_appdict_tests {
         // 基座 mockdeletetoget：删除的是文档数据（字段行），而非文档实体
         let (status, json) = call(
             "GET",
-            &format!("/jaxrs/data/document/{DOC_MOCK}/mockdeletetoget"),
+            &format!("/api/data/document/{DOC_MOCK}/mockdeletetoget"),
             None,
             Some(session(OWNER)),
         )
@@ -539,7 +539,7 @@ mod data_appdict_tests {
             return;
         }
         clean_dict().await;
-        let base = format!("/jaxrs/surface/appdict/{DICT}/appInfo/{APP}");
+        let base = format!("/api/surface/appdict/{DICT}/appInfo/{APP}");
 
         // 空字典允许创建：owner PUT 根行
         let (status, json) = call(

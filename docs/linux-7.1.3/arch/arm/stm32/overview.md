@@ -1,7 +1,9 @@
+# overview
+
 ﻿## STM32 ARM Linux 概述
 
 
-### 简
+## 简
 
 
 意法半导体（STMicroelectronics）的 STM32 系列 Cortex-A 微处理器（MPU）和 Cortex-M 微控制器（MCU）由 ARM Linux 'STM32' 平台提供支持
@@ -22,6 +24,7 @@
 mach 文件夹中有一个通用board-dt.c，支持扁平设备树（Flattened Device Tree），这意味着它可以与任何兼容的设备树板卡配合工作
 
 :Authors:
+
 
 - Maxime Coquelin <mcoquelin.stm32@gmail.com>
 - Ludovic Barre <ludovic.barre@st.com>

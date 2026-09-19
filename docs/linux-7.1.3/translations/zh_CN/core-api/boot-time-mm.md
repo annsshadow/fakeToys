@@ -1,11 +1,15 @@
 
+# boot-time-mm
+
 :Original: Documentation/core-api/boot-time-mm.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  时奎亮 <alexs@kernel.org>
 
@@ -30,6 +34,7 @@ Memblock还提供了各种控制其自身行为的API。
 
 该API在以下内核代码中:
 
+
 mm/memblock.c
 
 
@@ -41,6 +46,7 @@ mm/memblock.c
 擎盖下真正发生的事情。
 
 该API在以下内核代码中:
+
 
 include/linux/memblock.h
 mm/memblock.c

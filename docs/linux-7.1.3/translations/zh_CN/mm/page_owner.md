@@ -1,10 +1,14 @@
+# page_owner
+
 :Original: Documentation/mm/page_owner.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## page owner: 跟踪谁分配的每个页面
@@ -111,6 +115,7 @@ page owner在默认情况下是禁用的。所以，如果你想使用它，你�
 
    ``page_owner_full.txt`` 的一般输出情况如下::
 
+
 	Page allocated via order XXX, ...
 	PFN XXX ...
 	// 栈详情
@@ -128,6 +133,7 @@ page owner在默认情况下是禁用的。所以，如果你想使用它，你�
 
    在 ``sorted_page_owner.txt`` 中可以看到关于谁分配了每个页面的结果。一般输出::
 
+
 	XXX times, XXX pages:
 	Page allocated via order XXX, ...
 	// Detailed stack
@@ -135,7 +141,9 @@ page owner在默认情况下是禁用的。所以，如果你想使用它，你�
    默认情况下， ``page_owner_sort`` 是根据buf的时间来排序的。如果你想
    按buf的页数排序，请使用-m参数。详细的参数是:
 
+
    基本函数::
+
 
 	排序:
 		-a		按内存分配时间排序
@@ -155,6 +163,7 @@ page owner在默认情况下是禁用的。所以，如果你想使用它，你�
 				./page_owner_sort <input> <output> --sort=at
 
     其它函数::
+
 
 	剔除:
 		--cull <rules>
@@ -196,6 +205,7 @@ page owner在默认情况下是禁用的。所以，如果你想使用它，你�
 
   --sort的选项:
 
+
 	短键		长键		描述
 	p		pid		进程ID
 	tg		tgid		线程组ID
@@ -207,6 +217,7 @@ page owner在默认情况下是禁用的。所以，如果你想使用它，你�
 	ator		allocator	页面的内存分配器
 
   --curl的选项:
+
 
 	短键		长键		描述
 	p		pid		进程ID

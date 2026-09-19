@@ -1,5 +1,7 @@
+# mmap
+
 ﻿
-######## I/O（内存映射，Memory Mapping
+## I/O（内存映射，Memory Mapping
 
 当由 VIDIOC_QUERYCAP ioctl 返回struct `v4l2_capability` `capabilities`
 字段中的 `V4L2_CAP_STREAMING` 标志被置位时，输入和输出设备支持这种 I/O 方法有两类流方法，要确定是否支持内存映射这种方式，应用程序必须将内存类型设为

@@ -1,3 +1,5 @@
+# efi-stub
+
 ﻿## EFI 引导存根（EFI Boot Stub
 
 x86 ARM 平台上，内核 zImage/bzImage 可以伪装PE/COFF 镜像，从而说EFI 固件
@@ -11,7 +13,7 @@ drivers/firmware/efi/libstub銆。
 加载器
 EFI 引导存根通过 CONFIG_EFI_STUB 内核选项启用
 
-### 如何安装 bzImage.efi
+## 如何安装 bzImage.efi
 
 
 位于 arch/x86/boot/bzImage bzImage 必须复制EFI 系统分区（ESP），并改名为扩展efi”。没有该扩展名，EFI 固件加载器会拒绝执行它。无法从常用Linux 文件系统执行

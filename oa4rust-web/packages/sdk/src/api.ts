@@ -63,20 +63,20 @@ export class ApiClient {
 
     const base = this.base.replace(/\/+$/, '')
     let endpoint = path.startsWith('/') ? path : `/${path}`
-    if (base.endsWith('/jaxrs') && endpoint.startsWith('/jaxrs/')) {
-      endpoint = endpoint.slice('/jaxrs'.length)
+    if (base.endsWith('/api') && endpoint.startsWith('/api/')) {
+      endpoint = endpoint.slice('/api'.length)
     }
 
     return new URL(`${base}${endpoint}`, window.location.origin)
   }
 
   private isRefreshRequest(path: string): boolean {
-    return this.resolveUrl(path).pathname === '/jaxrs/authentication/refresh'
+    return this.resolveUrl(path).pathname === '/api/authentication/refresh'
   }
 
   async refreshSession(): Promise<void> {
     if (!this.refreshPromise) {
-      this.refreshPromise = this.request<never>('POST', '/jaxrs/authentication/refresh', {
+      this.refreshPromise = this.request<never>('POST', '/api/authentication/refresh', {
         body: null,
         requireAuth: false,
         discardResponse: true,

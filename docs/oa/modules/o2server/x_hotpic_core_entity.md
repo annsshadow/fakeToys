@@ -12,7 +12,7 @@
 
 ## Key Flows
 
-- 热图列表：`GET /jaxrs/hotpic/core/entity/list` → `list` 查 `x_hotpic`，CreateTime 倒序 limit 20，输出 id/application/infoId/title/base64（NULL 回退空串）
+- 热图列表：`GET /api/hotpic/core/entity/list` → `list` 查 `x_hotpic`，CreateTime 倒序 limit 20，输出 id/application/infoId/title/base64（NULL 回退空串）
 - 按应用与信息查询：`GET .../list/by/{application}/{infoId}` → 过滤 Application+InfoId，CreateTime 倒序 limit 20
 - 存在性检查：`GET .../exists/check/{application}/{infoId}` → `exists_check` 用 PaginatorTrait count，输出 allExists=count>0 与 count
 - 创建热图：`POST .../create` → uuid v4、base64 可选、create_time=Utc now、deleted_at 初始 None

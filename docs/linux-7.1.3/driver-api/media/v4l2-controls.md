@@ -1,3 +1,5 @@
+# v4l2-controls
+
 ﻿
 ## V4L2 控件
 
@@ -169,7 +171,7 @@ V4L2 控件（control）API 看起来足够简单，但要在驱动中正确实�
 会被自动支持
    其余小节涉及更高级的控件主题和场景。实际上，如上所述的基本用法对大多数驱动
    来说已经足够
-### 继承子设备控
+## 继承子设备控
 当通过调用 v4l2_device_register_subdev() 将一个子设备注册V4L2 驱动，并v4l2_subdev v4l2_device ctrl_handler 字段都已设置时，该子设备的控件将
 自动V4L2 驱动中也可用。如果子设备驱动包含的控件在 V4L2 驱动中已经存在，那些控件会被跳过（因V4L2 驱动始终可以覆盖子设备控件）
 这里发生的是，v4l2_device_register_subdev() 调用 v4l2_ctrl_add_handler()，将
@@ -346,7 +348,7 @@ foo_s_ctrl 中你可以直接使用这些指针：state->mute->val
 在极少数情况下，你可能想知道簇中的哪些控件实际上是被用户显式设置的。为此你可以
 检查每个控件的“is_new”标志。例如，volume/mute 簇的情况下，如果只为用户调用VIDIOC_S_CTRL 设置 mute，那mute 控件的“is_new”标志会被设置。如果用户为 mute volume 控件都调用了 VIDIOC_S_EXT_CTRLS，那么两个控件的“is_new”标志都将是 1
 “is_new”标志在v4l2_ctrl_handler_setup() 调用时始终为 1
-### 使用自动簇（Auto Clusters）处autogain/gain 类型控件
+## 使用自动簇（Auto Clusters）处autogain/gain 类型控件
 
 一种常见的控件簇类型处理的是“auto-foo/foo”类型的控件。典型的例子autogain/gain、autoexposure/exposure、autowhitebalance/red balance/blue balance在所有情况下，你都有一个控件决定另一个控件是由硬件自动处理，还是由用户手动控制
 如果簇处于自动模式，那么手动控件应该被标记为非活动（inactive）和易变（volatile）当读取易变控件时，g_volatile_ctrl 操作应该返回由硬件自动模式自动设置的值

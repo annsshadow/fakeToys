@@ -1,3 +1,5 @@
+# maturity-map
+
 ﻿## Compute Express Link 子系统成熟度地图
 
 Linux CXL 子系统跟踪动态的 `CXL specification
@@ -88,7 +90,7 @@ Linux CXL 子系统跟踪动态的 `CXL specification
 - [^0^] 动态容量设备（DCD）支
 ### 澶氫富鏈哄叡浜。
 - [^0^] 硬件一致性共享内- [^0^] 软件管理一致性共享内
-### 澶氫富鏈哄唴瀛。
+### 澶氫富鏈哄唴子。
 - [^0^] 动态容量设备支- [^0^] 共享
 
 ### 加速器

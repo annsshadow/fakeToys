@@ -1,6 +1,6 @@
 
 
-## Funzionamento del test *Kernel Lock Torture*
+# Funzionamento del test *Kernel Lock Torture*
 
 
 ## CONFIG_LOCK_TORTURE_TEST
@@ -29,6 +29,7 @@ allargando la sezione critica e/o creando più thread.
 Questo modulo ha i seguenti parametri:
 
 
+
 ### Specifici di locktorture
 
 
@@ -48,6 +49,7 @@ torture_type
 		  Tipo di blocco da verificare. Di base, solo gli spinlock
 		  verranno verificati. Questo modulo può verificare anche
 		  i seguenti tipi di blocchi:
+
 
        - "lock_busted":
 				Simula un'incorretta implementazione del
@@ -168,6 +170,7 @@ verbose
 	sleep 3600
 	rmmod locktorture
 	dmesg | grep torture:
+
 
 ```
 L'output può essere manualmente ispezionato cercando il marcatore d'errore

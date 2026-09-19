@@ -1,3 +1,5 @@
+# running_tips
+
 ﻿
 ## 运行 KUnit 测试的提
 
@@ -115,7 +117,7 @@
 	    ok 1 - example_simple_test
 	ok 1 - example
 
-### 以模块方式运行测
+## 以模块方式运行测
 
 根据测试的不同，你可以将它们构建为可加载模块
 例如，我们将之前的配置选项改为
@@ -159,7 +161,7 @@
 	$ cat /sys/kernel/debug/kunit/example/results
 	/sys/kernel/debug/kunit/example/results: No such file or directory
 
-### 生成代码覆盖率报
+## 生成代码覆盖率报
 
 详见 Documentation/dev-tools/gcov.rst 了解如何执行此操作
 这里唯一有点 KUnit 特性的建议是，你可能希望将测试构建为模块。这样你可以将测试的覆盖率与启动期间执行的其他代码的覆盖率隔离开，例如：
@@ -223,7 +225,7 @@
 	kunit.py run "example" --list_tests_attr
 
 	在手动运KUnit 时，可以通过传入模块参数 `kunit.action=list_attr` 来访问此报告
-### 过滤
+## 过滤
 
 
 用户可以在运行测试时使用 `--filter` 命令行标志来过滤测试。例如：

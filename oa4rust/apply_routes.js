@@ -42,7 +42,7 @@ fs.writeFileSync('crates/processplatform_service_processing/src/lib.rs', newLib,
 console.log('lib.rs updated');
 
 const routesContent = fs.readFileSync('crates/processplatform_service_processing/src/routes.rs', 'utf8');
-const newRoutes = '        .route("/jaxrs/processplatform/service/processing/task/v2/{id}/remove", delete(crate::task_v2_id_remove))\n        .route("/jaxrs/processplatform/service/processing/task/{id}/add", put(crate::task_add))\n        .route("/jaxrs/processplatform/service/processing/work/reroute/activity/{activityId}/activitytype/{activityType}", put(crate::work_reroute_activity_activitytype))\n        .route("/jaxrs/processplatform/service/processing/work/{id}/rollback", put(crate::work_rollback))';
+const newRoutes = '        .route("/api/processplatform/service/processing/task/v2/{id}/remove", delete(crate::task_v2_id_remove))\n        .route("/api/processplatform/service/processing/task/{id}/add", put(crate::task_add))\n        .route("/api/processplatform/service/processing/work/reroute/activity/{activityId}/activitytype/{activityType}", put(crate::work_reroute_activity_activitytype))\n        .route("/api/processplatform/service/processing/work/{id}/rollback", put(crate::work_rollback))';
 const newRoutesContent = routesContent.replace('        .layer(Extension(pool))', newRoutes + '\n        .layer(Extension(pool))');
 fs.writeFileSync('crates/processplatform_service_processing/src/routes.rs', newRoutesContent, 'utf8');
 console.log('routes.rs updated');

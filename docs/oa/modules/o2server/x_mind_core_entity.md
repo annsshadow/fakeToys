@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 导图列表：`GET /jaxrs/mind/core/entity/list` → `list` 查 mind_mind，CreateTime 倒序 limit 20，可选字段经 `build_json_object` 为 None 时省略键
+- 导图列表：`GET /api/mind/core/entity/list` → `list` 查 mind_mind，CreateTime 倒序 limit 20，可选字段经 `build_json_object` 为 None 时省略键
 - 文件夹列表：`GET .../folder/list` 查 mind_folder，OrderNumber 升序 limit 20
 - 版本列表：`GET .../version/list/{mindId}` 过滤 MindId，CreateTime 倒序 limit 20，输出含 fileVersion/createTime
 - 导图 CRUD：`POST .../mind` 创建（creator 默认 "system"、create_time=Set(None)）；`POST .../mind/{id}` 更新（find_by_id 无则 AppError::NotFound，缺省字段回退原值）；`DELETE .../mind/{id}` 物理删除，rows_affected==0 时 error("mind not found")

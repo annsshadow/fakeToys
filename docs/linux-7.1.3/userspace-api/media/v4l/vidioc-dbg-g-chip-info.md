@@ -1,7 +1,9 @@
+# vidioc-dbg-g-chip-info
+
 ﻿
 
 
-######## ioctl VIDIOC_DBG_G_CHIP_INFO
+## ioctl VIDIOC_DBG_G_CHIP_INFO
 
 
 ## 名称

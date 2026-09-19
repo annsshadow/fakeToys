@@ -23,7 +23,7 @@ for (const file of rustFiles) {
     if (depth !== 0) continue;
     let path = line.substring(pathStart, endIdx);
     path = path.replace(/\\"/g, '');
-    if (path.startsWith('/jaxrs/')) rustPaths.add(path);
+    if (path.startsWith('/api/')) rustPaths.add(path);
   }
 }
 
@@ -65,7 +65,7 @@ while (i < lines.length) {
     while (i < lines.length && depth > 0) {
       if (lines[i].includes('request:')) hasRequest = true;
       if (!prefix) {
-        const pathMatch = lines[i].match(/['"`](\/jaxrs\/[^'"`]+)/);
+        const pathMatch = lines[i].match(/['"`](\/api\/[^'"`]+)/);
         if (pathMatch) prefix = pathMatch[1];
       }
       depth += (lines[i].match(/\{/g) || []).length;

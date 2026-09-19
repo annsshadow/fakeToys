@@ -1,3 +1,5 @@
+# regulatory
+
 ﻿
 ## Linux 无线监管文档
 
@@ -11,7 +13,7 @@ https://wireless.wiki.kernel.org/en/developers/Regulatory
 
 
 由于监管域具有动态性，我们将它们保留在用户空间，并提供一个框架，供用户空向内核上传一个监管域，作为所有无线设备都应遵守的中央核心监管域
-### 濡備綍灏嗙洃绠″煙鎻愪緵缁欏唴鏍。
+### 濡備綍灏嗙洃绠″煙鎻愪緵统欏唴鏍。
 
 当监管域首次建立时，内核会请求一个包含所有监管规则的数据库文（regulatory.db）。随后在需要查询某个国家的规则时，内核会使用这个数据库
 ### 如何将监管域提供给内核（CRDA 方案
@@ -28,7 +30,7 @@ https://wireless.wiki.kernel.org/en/developers/Regulatory/CRDA
 KERNEL=="regulatory*", ACTION=="change", SUBSYSTEM=="platform", RUN+="/sbin/crda"
 
 alpha2 作为环境变量 COUNTRY 传递
-### 谁请求监管域
+## 谁请求监管域
 
 - 用户
 
@@ -53,7 +55,7 @@ struct wiphy 上注册一reg_notifier() 回调来使用这项检查。当核心�
 变更时会调用此通知函数。驱动可以利用它审查所做的更改，并审查是谁做出的更（驱动、用户、国IE），然后根据其内EEPROM 数据决定允许什么。希望具备全漫游能力的设备驱动应使用此回调。随着其支持的启用，本文档会补充更多关于全漫游的内容
 提供自身内置监管域的设备驱动不需要回调，因为由它们注册的信道是唯一被允许的
 信道，因*额外**的信道无法被启用
-### 示例代码——驱动提alpha2
+## 示例代码——驱动提alpha2
 
 本示例来zd1211rw 设备驱动。您可以先建立设EEPROM 国家/监管域的映射
 

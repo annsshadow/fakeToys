@@ -1,6 +1,6 @@
 //! plan002 U2 收尾 (part 5): identity 剩余 9 个端点。
 //!
-//! 对齐 Java IdentityAction 其余方法。x_org_identity.person_id/major 由迁移
+//! 对齐 o2server IdentityAction 其余方法。x_org_identity.person_id/major 由迁移
 //! 066 提供；群组维度经由 x_org_group_member(person) 关联解析。
 
 use axum::{
@@ -11,7 +11,7 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-use crate::endpoints::{capped, normalize_flags, ok_java_list, row_to_map, string_list};
+use crate::endpoints::{capped, normalize_flags, ok_legacy_list, row_to_map, string_list};
 
 /// #[allow(dead_code)]
 #[allow(dead_code)]
@@ -23,10 +23,10 @@ fn finish_identity_rows(
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list_response_key(&list),
             list.len() as i64,
             0,
@@ -49,7 +49,7 @@ async fn identities_of_persons_full(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
          JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
@@ -71,7 +71,7 @@ async fn identities_of_persons_full(
     finish_identity_rows(rows, objects)
 }
 
-/// POST /jaxrs/identity/list/unit/person (Java ActionListWithPersonWithUnit，
+/// POST /api/identity/list/unit/person (o2server ActionListWithPersonWithUnit，
 /// Wi{personList, unitList})：指定人员 ∩ 指定组织（直接所属）的身份。
 pub async fn identity_list_unit_person(
     pool: Extension<Pool>,
@@ -80,7 +80,7 @@ pub async fn identity_list_unit_person(
     unit_person_identities(&pool, body, false).await
 }
 
-/// POST /jaxrs/identity/list/unit/person/object。
+/// POST /api/identity/list/unit/person/object。
 pub async fn identity_list_unit_person_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -98,7 +98,7 @@ async fn unit_person_identities(
     capped(&persons)?;
     capped(&units)?;
     if persons.is_empty() || units.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = if objects {
         "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
@@ -146,7 +146,7 @@ async fn identities_in_groups(
     let flags = normalize_flags(string_list(&body, "groupList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = if objects { SQL_OBJ } else { SQL_IDS };
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -157,7 +157,7 @@ async fn identities_in_groups(
     finish_identity_rows(rows, objects)
 }
 
-/// POST /jaxrs/identity/list/group (Java ActionListWithGroup)：群组(含子群组)包含的身份。
+/// POST /api/identity/list/group (o2server ActionListWithGroup)：群组(含子群组)包含的身份。
 pub async fn identity_list_group(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -165,7 +165,7 @@ pub async fn identity_list_group(
     identities_in_groups(&pool, body, false).await
 }
 
-/// POST /jaxrs/identity/list/group/object。
+/// POST /api/identity/list/group/object。
 pub async fn identity_list_group_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -181,7 +181,7 @@ async fn major_identities_of_persons(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = if objects {
         "SELECT DISTINCT i.id, i.name, i.unit_id, i.person_id FROM x_org_identity i \
@@ -200,7 +200,7 @@ async fn major_identities_of_persons(
     finish_identity_rows(rows, objects)
 }
 
-/// POST /jaxrs/identity/list/major/person (Java ActionListMajorWithPerson)：主身份。
+/// POST /api/identity/list/major/person (o2server ActionListMajorWithPerson)：主身份。
 pub async fn identity_list_major_person(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -208,7 +208,7 @@ pub async fn identity_list_major_person(
     major_identities_of_persons(&pool, body, false).await
 }
 
-/// POST /jaxrs/identity/list/major/person/object。
+/// POST /api/identity/list/major/person/object。
 pub async fn identity_list_major_person_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -216,7 +216,7 @@ pub async fn identity_list_major_person_object(
     major_identities_of_persons(&pool, body, true).await
 }
 
-/// POST /jaxrs/identity/list/person/object (Java ActionListWithPersonObject)。
+/// POST /api/identity/list/person/object (o2server ActionListWithPersonObject)。
 pub async fn identity_list_person_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -224,7 +224,7 @@ pub async fn identity_list_person_object(
     identities_of_persons_full(&pool, body, true).await
 }
 
-/// POST /jaxrs/identity/list/unit/sub/direct/object。
+/// POST /api/identity/list/unit/sub/direct/object。
 pub async fn identity_list_unit_sub_direct_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -236,7 +236,7 @@ pub async fn identity_list_unit_sub_direct_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -246,7 +246,7 @@ pub async fn identity_list_unit_sub_direct_object(
     finish_identity_rows(rows, true)
 }
 
-/// POST /jaxrs/identity/list/unit/sub/nested/object。
+/// POST /api/identity/list/unit/sub/nested/object。
 pub async fn identity_list_unit_sub_nested_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -260,7 +260,7 @@ pub async fn identity_list_unit_sub_nested_object(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client

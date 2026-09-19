@@ -1,3 +1,5 @@
+# cpufreq-stats
+
 ﻿
 ## sysfs CPUFreq 统计通用描述
 

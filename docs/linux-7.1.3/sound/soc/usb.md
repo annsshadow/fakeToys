@@ -1,3 +1,5 @@
+# usb
+
 ﻿## ASoC USB 支持
 
 
@@ -262,6 +264,7 @@ USB 卸载驱动被解绑USB SND 就绪的情况下*snd_usb_rediscover_devices()
   **PCM 设备**
 	::
 
+
 	  card 0: SM8250MTPWCD938 [SM8250-MTP-WCD9380-WSA8810-VA-D], device 0: MultiMedia1 (*) []
 	  Subdevices: 1/1
 	  Subdevice #0: subdevice #0
@@ -278,11 +281,13 @@ USB 卸载驱动被解绑USB SND 就绪的情况下*snd_usb_rediscover_devices()
   **USB 声音* - card#1
 	::
 
+
 	  USB Offload Playback Card Route PCM#0   -1 (range -1->32)
 	  USB Offload Playback PCM Route PCM#0    -1 (range -1->255)
 
   **USB 声音* - card#2
 	::
+
 
 	  USB Offload Playback Card Route PCM#0   0 (range -1->32)
 	  USB Offload Playback PCM Route PCM#0    1 (range -1->255)

@@ -1,3 +1,5 @@
+# mmu
+
 ﻿
 ## x86 kvm 影子 mmu
 
@@ -62,6 +64,7 @@ leaf spte 对应于编码到一个分页结构条目中的一到两个转换。�
   paging, tdp:   (gva->)gpa->hpa
 
  Nested guests::
+
 
   non-tdp:       ngva->gpa->hpa  (*)
   tdp:           (ngva->)ngpa->gpa->hpa

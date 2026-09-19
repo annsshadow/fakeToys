@@ -1,3 +1,5 @@
+# s390_flic
+
 ﻿
 ## FLIC（floating interrupt controller，浮动中断控制器
 
@@ -73,6 +75,7 @@ FLIC 提供以下支持
 
    Currently defined values for 'flags' are:
 
+
    - KVM_S390_ADAPTER_SUPPRESSIBLE: adapter is subject to AIS
      (adapter-interrupt-suppression) facility. This flag only has an effect if
      the AIS capability is enabled.
@@ -84,6 +87,7 @@ FLIC 提供以下支持
     Modifies attributes of an existing I/O adapter interrupt source. Takes
     a kvm_s390_io_adapter_req specifying the adapter and the operation::
 
+
 	struct kvm_s390_io_adapter_req {
 		__u32 id;
 		__u8 type;
@@ -94,6 +98,7 @@ FLIC 提供以下支持
 
     id specifies the adapter and type the operation. The supported operations
     are:
+
 
     KVM_S390_IO_ADAPTER_MASK
       mask or unmask the adapter, as specified in mask
@@ -107,6 +112,7 @@ FLIC 提供以下支持
     modify the adapter-interruption-suppression mode for a given isc if the
     AIS capability is enabled. Takes a kvm_s390_ais_req describing::
 
+
 	struct kvm_s390_ais_req {
 		__u8 isc;
 		__u16 mode;
@@ -115,6 +121,7 @@ FLIC 提供以下支持
     isc contains the target I/O interruption subclass, mode the target
     adapter-interruption-suppression mode. The following modes are
     currently supported:
+
 
     - KVM_S390_AIS_MODE_ALL: ALL-Interruptions Mode, i.e. airq injection
       is always allowed;
@@ -134,6 +141,7 @@ FLIC 提供以下支持
   KVM_DEV_FLIC_AISM_ALL
     Gets or sets the adapter-interruption-suppression mode for all ISCs. Takes
     a kvm_s390_ais_all describing::
+
 
 	struct kvm_s390_ais_all {
 	       __u8 simm; /* Single-Interruption-Mode mask */

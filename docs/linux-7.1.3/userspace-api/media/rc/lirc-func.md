@@ -1,3 +1,5 @@
+# lirc-func
+
 ﻿
 
 ## LIRC 函数参考（LIRC Function Reference

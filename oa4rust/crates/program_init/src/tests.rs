@@ -41,7 +41,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/check")
+                    .uri("/api/secret/check")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -61,7 +61,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/set")
+                    .uri("/api/secret/set")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -82,7 +82,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/set/cancel")
+                    .uri("/api/secret/set/cancel")
                     .body(Body::empty())
                     .unwrap(),
             )

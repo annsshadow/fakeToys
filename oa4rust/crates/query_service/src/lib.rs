@@ -54,21 +54,39 @@ pub async fn neural_list_model(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

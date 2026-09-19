@@ -1,5 +1,7 @@
 
 
+# index
+
 :Original: Documentation/arch/loongarch/index.rst
 :Translator: Huacai Chen <chenhuacai@loongson.cn>
 

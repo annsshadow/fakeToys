@@ -1,3 +1,5 @@
+# timekeeping
+
 ﻿
 ## 面向 X86 架构的时间记录虚拟化
 
@@ -109,6 +111,7 @@ PIT 使用 I/O 端口 0x40 - 0x43。对 16 位计数器的访问通过I/O 端口
 	Bit 1 = Counter 0
 
 	The output of ports 0x40-0x42 following this command will be:
+
 
 	Bit 7 = Output pin
 	Bit 6 = Count loaded (0 if timer has expired)

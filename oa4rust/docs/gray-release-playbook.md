@@ -109,7 +109,7 @@ sudo nginx -s reload
 ./shadow-traffic.sh run
 
 # 或手动发送
-curl -s http://localhost/jaxrs/attendance/admin/list/all \
+curl -s http://localhost/api/attendance/admin/list/all \
      -H "X-Behavior-Comparison: true" \
      -H "Authorization: Bearer $OA4RUST_TOKEN"
 ```
@@ -163,7 +163,7 @@ cd deploy
 sudo nginx -t && sudo nginx -s reload
 
 # 4. 验证灰度生效
-curl -s http://localhost/jaxrs/attendance/admin/list/all \
+curl -s http://localhost/api/attendance/admin/list/all \
      -H "Authorization: Bearer $OA4RUST_TOKEN" \
      -w "\nHTTP %{http_code}\n"
 ```
@@ -202,7 +202,7 @@ curl -s http://localhost/jaxrs/attendance/admin/list/all \
 sudo nginx -s reload
 
 # 3. 验证比例生效
-curl -s http://localhost/jaxrs/control/group/list \
+curl -s http://localhost/api/control/group/list \
      -H "Authorization: Bearer $OA4RUST_TOKEN" \
      -w "\nHTTP %{http_code}\n"
 ```
@@ -280,7 +280,7 @@ sudo nginx -s reload
 # 4. 验证全量切流成功
 for mod in attendance control express meeting; do
     echo "=== Checking $mod ==="
-    curl -s "http://localhost/jaxrs/$mod/admin/list/all" \
+    curl -s "http://localhost/api/$mod/admin/list/all" \
          -H "Authorization: Bearer $OA4RUST_TOKEN" \
          -w "\nHTTP %{http_code}\n"
 done
@@ -377,7 +377,7 @@ sudo nginx -s reload
 
 # 4. 验证 Java 服务健康
 for mod in attendance control express meeting; do
-    curl -s "http://localhost/jaxrs/$mod/admin/list/all" \
+    curl -s "http://localhost/api/$mod/admin/list/all" \
          -H "Authorization: Bearer $OA4RUST_TOKEN" \
          -w "\nHTTP %{http_code}\n"
 done
@@ -546,8 +546,8 @@ sudo nginx -s reload
 
 ```bash
 # 使用 X-Gray-Traffic 头强制切流
-curl -H "X-Gray-Traffic: 1" http://localhost/jaxrs/attendance/admin/list/all
-curl -H "X-Gray-Traffic: 0" http://localhost/jaxrs/attendance/admin/list/all
+curl -H "X-Gray-Traffic: 1" http://localhost/api/attendance/admin/list/all
+curl -H "X-Gray-Traffic: 0" http://localhost/api/attendance/admin/list/all
 ```
 
 ---
@@ -603,7 +603,7 @@ upstream oa4rust_gray {
     server 127.0.0.1:8080 weight=90;
 }
 
-location ^~ /jaxrs/attendance/ {
+location ^~ /api/attendance/ {
     proxy_pass http://oa4rust_gray;
     # ... 其他 proxy 配置
 }

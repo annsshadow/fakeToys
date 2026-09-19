@@ -1,3 +1,5 @@
+# delay_sleep_functions
+
 ﻿
 ## 延迟与睡眠机
 
@@ -29,7 +31,7 @@
 #. 用于非常、非常短的延迟时使用 `*delay()`
 
 关于这些函数“族”的更详细信息，请见后续章节
-### `*delay()` 函数
+## `*delay()` 函数
 
 这些函数利用对时钟速度jiffy 估算，并通过忙等待足够的循环次数来实现所需延迟。udelay() 是基础实现，ndelay() mdelay() 是其变体
 这些函数主要用于在原子上下文中添加延迟。在原子上下文中添加延迟前，请务必先问自己：这真的有必要吗？
@@ -52,7 +54,7 @@
 
 首先请查fsleep() 函数说明；要进一步了解精度，请查msleep() 函数说明
 
-#### `usleep_range*()`
+## `usleep_range*()`
 
 
 	:identifiers: usleep_range usleep_range_idle
@@ -60,7 +62,7 @@
 	:identifiers: usleep_range_state
 
 
-#### `*sleep()`
+### `*sleep()`
 
 
        :identifiers: msleep msleep_interruptible

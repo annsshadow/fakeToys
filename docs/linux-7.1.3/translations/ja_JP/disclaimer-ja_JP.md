@@ -1,6 +1,6 @@
 
 
-## 免責条項 (Disclaimer) 抄訳
+# 免責条項 (Disclaimer) 抄訳
 
 
    この文書は、

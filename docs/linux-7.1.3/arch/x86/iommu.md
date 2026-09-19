@@ -1,3 +1,5 @@
+# iommu
+
 ﻿## x86 IOMMU 支持
 
 
@@ -5,14 +7,14 @@
 
 - Intel：Intel Virtualization Technology for Directed I/O Architecture Specification（ID: D51397- AMD：AMD I/O Virtualization Technology (IOMMU) Specification（ID: 48882
 本指南为一些基本理解提供快速备忘单
-### 基础内容
+## 基础内容
 
 
 ACPI 枚举并列出平台上不同IOMMU，以及设备与哪个 IOMMU 控制它们之间设备作用域（device scope）关系
 一ACPI 关键字：
 
 - DMAR - Intel DMA 重映射表（DMA Remapping table- DRHD - Intel DMA 重映射硬件单元定义（DMA Remapping Hardware Unit Definition- RMRR - Intel 保留内存区域报告结构（Reserved Memory Region Reporting Structure- IVRS - AMD I/O 虚拟化报告结构（I/O Virtualization Reporting Structure- IVDB - AMD I/O 虚拟化定义块（I/O Virtualization Definition Block- IVHD - AMD I/O 虚拟化硬件定义（I/O Virtualization Hardware Definition
-##### 什么是 Intel RMRR
+### 什么是 Intel RMRR
 
 有一些设备由 BIOS 控制，例USB 设备用于执行 PS2 仿真。用于这些设备的内存
 区域e820 映射中被标记为保留。当我们开DMA 转换时，对这些区域的 DMA 失败。因BIOS 使用 RMRR 来指定这些区域以及需要访问这些区域的设备。OS 应当
@@ -34,7 +36,7 @@ IVRS 提供以下关于以下方面的信息：
 ### Intel 特定说明
 
 
-##### 图形问题
+#### 图形问题
 
 如果你遇到图形设备的问题，可以尝试添加选项 intel_iommu=igfx_off 来关闭集图形引擎。如果这修复了任何问题，请确保你提交一bug 报告该问题
 ##### IOVA 的一些例
@@ -44,7 +46,7 @@ IVRS 提供以下关于以下方面的信息：
 ### AMD 特定说明
 
 
-##### 图形问题
+#### 图形问题
 
 如果你遇到集成图形设备的问题，可以尝试在内核命令行上添加选项 iommu=pt，对
 IOMMU 使用 1:1 映射。如果这修复了任何问题，请确保你提交一bug 报告该问题
@@ -55,7 +57,7 @@ IOMMU 使用 1:1 映射。如果这修复了任何问题，请确保你提交一
 ### 内核日志样例
 
 
-##### Intel 启动消息
+#### Intel 启动消息
 
 
 会打印类似以下内容，指示 ACPI 中存DMAR 表：

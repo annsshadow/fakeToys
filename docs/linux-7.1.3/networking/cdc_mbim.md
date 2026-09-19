@@ -1,3 +1,5 @@
+# cdc_mbim
+
 ﻿
 ## cdc_mbim - 用于 CDC MBIM 移动宽带调制解调器的驱动
 
@@ -80,7 +82,7 @@ IOCTL_WDM_MAX_COMMAND：获取最大命令大ioctl 返回 MBIM 设备CDC MBIM �
 	}
 
 ```
-### 自定义设备服
+## 自定义设备服
 MBIM 规范允许供应商自由定义额外的服务。cdc_mbim 驱动完全支持这一点
 对新MBIM 服务（包括供应商指定的服务）的支持，MBIM 控制协议的其余部分一样，完全在用户空间实现
 新的服务应在 MBIM Registry [^5^] 中注册

@@ -1,12 +1,16 @@
 
 
+# watch_queue
+
 :Original: Documentation/core-api/watch_queue.rst
 
 :翻译:
 
+
 周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
 :校译:
+
 
 司延腾 Yanteng Si <siyanteng@loongson.cn>
 吴想成 Wu Xiangcheng <bobwxc@email.cn>
@@ -158,6 +162,7 @@
 
 提供以下函数来管理观测:
 
+
   - `void init_watch(struct watch **watch, struct watch_queue **wqueue);`
 
     初始化一个观测对象，把它的指针设置到观察队列中，使用适当的限制来避免死锁。
@@ -209,6 +214,7 @@
 
 
 任何特定的缓冲区都可以从多个源获取信息。 这些源包括:
+
 
   - WATCH_TYPE_KEY_NOTIFY
 

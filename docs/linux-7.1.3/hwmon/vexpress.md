@@ -1,3 +1,5 @@
+# vexpress
+
 ﻿## 内核驱动 vexpress
 
 
@@ -9,6 +11,7 @@
 
     Datasheets:
 
+
       - Versatile Express 电路板的《技术参考手册》中的“硬件描述”章节：
 
  - http://infocenter.arm.com/help/topic/com.arm.doc.subset.boards.express/index.html
@@ -19,7 +22,7 @@
 
 Author: Pawel Moll
 
-### 描述
+## 描述
 
 
 Versatile Express 平台（http://www.arm.com/versatileexpress/）是 ARM Ltd. 处理器的参考与原型系统。它可由种类繁多的电路板组成，每块电路板（除了主芯片/FPGA 之外）都包含若干个负责平台配置与控制的微控制器。这些微控制器还可以通过多个内部和外部传感器监视电路板及其环境，提供有关电源线电压和电流、电路板温度以及功耗的信息。其中一些还会计算消耗的能源并提供累计使用计数器

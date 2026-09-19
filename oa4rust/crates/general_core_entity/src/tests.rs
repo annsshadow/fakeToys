@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/list")
+                    .uri("/api/general/dict/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/dict/item/list/test-dict-id")
+                    .uri("/api/general/dict/item/list/test-dict-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -64,7 +64,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/general/invoice/list")
+                    .uri("/api/general/invoice/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

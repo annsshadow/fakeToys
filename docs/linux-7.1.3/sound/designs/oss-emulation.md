@@ -1,3 +1,5 @@
+# oss-emulation
+
 ﻿## 关于内核 OSS 模拟的说
 
 Jan. 22, 2004  Takashi Iwai <tiwai@suse.de>

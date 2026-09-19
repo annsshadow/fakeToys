@@ -1,3 +1,5 @@
+# configuration
+
 ﻿
 ## 从用户空间配DSA 交换
 
@@ -132,7 +134,7 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取
     ip link set dev br0 up
 
 
-### 不带标记支持的配
+## 不带标记支持的配
 
 少数交换机无法使用标记协议（DSA_TAG_PROTO_NONE）。这些交换机可以通过基于 VLAN 的配置进行配置
 **单端*
@@ -262,7 +264,7 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取
     # bring up the bridge devices
     ip link set br0 up
 
-### 转发数据库（FDB）管
+## 转发数据库（FDB）管
 
 现有DSA 交换机没有必要的硬件支持来使桥接的软FDB 与硬件表保持同步，因此这两个表是分开
 管理的（`bridge fdb show` 会查询两者，并且根据使用的是 `self` 还是 `master` 标志，``bridge fdb
@@ -307,7 +309,7 @@ add`` `bridge fdb del`` 命令作用于其中一个或两个表里的条目）
     bridge fdb add dev swp0 00:01:02:03:04:05 static
 
 因此，脚本编写者在处理 DSA 交换机接口上的桥FDB 条目时，鼓励使用 `master static` 这组标志
-### 用户端口CPU 端口的亲和
+## 用户端口CPU 端口的亲和
 
 通常，DSA 交换机通过单个以太网接口连接到主机，但在交换机芯片是分立（discrete）的情况下，硬件
 设计可能允许多达 2 个或更多端口连接到主机，以提高终结吞吐量

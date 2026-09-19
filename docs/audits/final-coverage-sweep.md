@@ -149,14 +149,14 @@
 **环境与前置修复**
 
 - 专用库：Docker `bc-postgres`（postgres:16，端口 15432，凭据同 CI 配方），Rust 服务启动自动应用迁移（367 张表）。
-- Java 侧：`oa4rust-o2server` 容器（o2oa/o2server:latest）。关键环境事实：Windows 将 `localhost` 解析为 `::1` 优先，而 Docker Desktop 仅 IPv4 转发可用 → 一切 Java 探测必须使用 `127.0.0.1:18080`。容器曾出现"TCP 存活但 HTTP 不响应"的僵死态，`docker restart` 后恢复；O2OA v9 无 `/health` 端点，对未知裸 `/jaxrs/*` 直接 RST、对未知 war 路径返回 JSON 版路由级 404（`{"servlet","message","url","status":"404"}`）或 Jetty HTML 404。
+- Java 侧：`oa4rust-o2server` 容器（o2oa/o2server:latest）。关键环境事实：Windows 将 `localhost` 解析为 `::1` 优先，而 Docker Desktop 仅 IPv4 转发可用 → 一切 Java 探测必须使用 `127.0.0.1:18080`。容器曾出现"TCP 存活但 HTTP 不响应"的僵死态，`docker restart` 后恢复；O2OA v9 无 `/health` 端点，对未知裸 `/api/*` 直接 RST、对未知 war 路径返回 JSON 版路由级 404（`{"servlet","message","url","status":"404"}`）或 Jetty HTML 404。
 - 测试账户：两侧以 `xadmin/o2oa@2022` 登录成功（Java 为内置 manager；Rust 侧向专用库 seed 同名 bcrypt 账户，框架注释本要求"两侧数据库均有此账户"，属 CI 缺失的前置条件）。
 
 **生成器与测试框架修复（本轮代码变更）**
 
-1. `regen_endpoints.py` 集成 Java 映射回填：扫描 `oa/o2server` 全部 war 源码提取 JAXRS 端点（类级/方法级 `@Path` × HTTP method），按归一化路径段匹配（多级模块前缀剥离 0..3 + 类级前缀剥离变体 + casefold + mock 变体方法转换 + 严格后缀兜底），重生成清单 **4688 条**（较上版净增 1 条真实注册 `/jaxrs/file/complex/top`），其中 **3131 条建立 Java 映射**、1557 条无对应端点（Rust 扩展/实体层/伪影）。
+1. `regen_endpoints.py` 集成 Java 映射回填：扫描 `oa/o2server` 全部 war 源码提取 JAXRS 端点（类级/方法级 `@Path` × HTTP method），按归一化路径段匹配（多级模块前缀剥离 0..3 + 类级前缀剥离变体 + casefold + mock 变体方法转换 + 严格后缀兜底），重生成清单 **4688 条**（较上版净增 1 条真实注册 `/api/file/complex/top`），其中 **3131 条建立 Java 映射**、1557 条无对应端点（Rust 扩展/实体层/伪影）。
 2. `comparator.rs`：`java_war` 为空的端点直接 SKIP（避免对 O2OA 未知路径逐条挂起 15s）；Java 路由级 404（JSON `{servlet,status:404}` 或空体 HTML 404）判定为"Java 无此端点"记 SKIP 而非 FAIL。
-3. `behavior_compare.rs`：Java 可达性探测增加 CI 同款探针兜底（`POST /jaxrs/secret/set` 非 502/503 即就绪；`server/execute` 在本镜像上恒 RST 不能作为必要条件）；**修复 token 分发 bug**——原实现把 Java token 设为全局导致 Rust 侧全程持 Java token 被 401，改为 `with_tokens(rust, java)` 分侧分发。
+3. `behavior_compare.rs`：Java 可达性探测增加 CI 同款探针兜底（`POST /api/secret/set` 非 502/503 即就绪；`server/execute` 在本镜像上恒 RST 不能作为必要条件）；**修复 token 分发 bug**——原实现把 Java token 设为全局导致 Rust 侧全程持 Java token 被 401，改为 `with_tokens(rust, java)` 分侧分发。
 4. 信封层系统性对齐（`shared/src/response.rs` 的 `ActionResult` + `error.rs`/`response.rs` 两条错误路径）：全部字段 None 时省略序列化（对齐 Gson）；成功信封默认填充 message=""、date="yyyy-MM-dd HH:mm:ss"、spent=0、size=0、count=0、position=0（数字）；错误信封无 data 字段、元数据恒填充、prompt 恒填异常类名（实测 O2OA ResponseFactory 多数路径填充，净差异最小策略）。
 
 **实跑结果（首轮基线 → 当日终态）**

@@ -1,7 +1,9 @@
+# cec-ioc-adap-g-log-addrs
+
 ﻿
 
 
-######## ioctl CEC_ADAP_G_LOG_ADDRS 涓?CEC_ADAP_S_LOG_ADDRS
+## ioctl CEC_ADAP_G_LOG_ADDRS 涓?CEC_ADAP_S_LOG_ADDRS
 
 
 ## 名称
@@ -80,14 +82,17 @@ CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
 
     - .. _`CEC-LOG-ADDRS-FL-ALLOW-UNREG-FALLBACK`:
 
+
       - `CEC_LOG_ADDRS_FL_ALLOW_UNREG_FALLBACK`
       - 1
       - 默认情况下，如果无法认领所请求类型的逻辑地址，则它将回到未配置状态。如果设置了此标志，则它会回退到未注册的逻辑地址。注意，如果显式请求了未注册的逻辑地址，则此标志不起作用    - .. _`CEC-LOG-ADDRS-FL-ALLOW-RC-PASSTHRU`:
+
 
       - `CEC_LOG_ADDRS_FL_ALLOW_RC_PASSTHRU`
       - 2
       - 默认情况下，`CEC_MSG_USER_CONTROL_PRESSED` `CEC_MSG_USER_CONTROL_RELEASED`
         消息只传递给 follower（如果有）。如果设置了此标志，则这些消息也会传递给远程控制输入子系统，并作为按键出现。此特性需要显式启用。如CEC 用于输入密码等，你可能不想启用此特性，以避免对按键的简单嗅探    - .. _`CEC-LOG-ADDRS-FL-CDC-ONLY`:
+
 
       - `CEC_LOG_ADDRS_FL_CDC_ONLY`
       - 4
@@ -101,13 +106,16 @@ CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
 
     - .. _`CEC-OP-CEC-VERSION-1-3A`:
 
+
       - `CEC_OP_CEC_VERSION_1_3A`
       - 4
       - 根据 HDMI 1.3a 标准CEC 版本    - .. _`CEC-OP-CEC-VERSION-1-4B`:
 
+
       - `CEC_OP_CEC_VERSION_1_4B`
       - 5
       - 根据 HDMI 1.4b 标准CEC 版本    - .. _`CEC-OP-CEC-VERSION-2-0`:
+
 
       - `CEC_OP_CEC_VERSION_2_0`
       - 6
@@ -120,29 +128,36 @@ CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
 
     - .. _`CEC-OP-PRIM-DEVTYPE-TV`:
 
+
       - `CEC_OP_PRIM_DEVTYPE_TV`
       - 0
       - 用于电视    - .. _`CEC-OP-PRIM-DEVTYPE-RECORD`:
+
 
       - `CEC_OP_PRIM_DEVTYPE_RECORD`
       - 1
       - 用于录像设备    - .. _`CEC-OP-PRIM-DEVTYPE-TUNER`:
 
+
       - `CEC_OP_PRIM_DEVTYPE_TUNER`
       - 3
       - 用于带调谐器的设备    - .. _`CEC-OP-PRIM-DEVTYPE-PLAYBACK`:
+
 
       - `CEC_OP_PRIM_DEVTYPE_PLAYBACK`
       - 4
       - 用于播放设备    - .. _`CEC-OP-PRIM-DEVTYPE-AUDIOSYSTEM`:
 
+
       - `CEC_OP_PRIM_DEVTYPE_AUDIOSYSTEM`
       - 5
       - 用于音频系统（例如音视频接收器）    - .. _`CEC-OP-PRIM-DEVTYPE-SWITCH`:
 
+
       - `CEC_OP_PRIM_DEVTYPE_SWITCH`
       - 6
       - 用于 CEC 开关    - .. _`CEC-OP-PRIM-DEVTYPE-VIDEOPROC`:
+
 
       - `CEC_OP_PRIM_DEVTYPE_VIDEOPROC`
       - 7
@@ -155,29 +170,36 @@ CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
 
     - .. _`CEC-LOG-ADDR-TYPE-TV`:
 
+
       - `CEC_LOG_ADDR_TYPE_TV`
       - 0
       - 用于电视    - .. _`CEC-LOG-ADDR-TYPE-RECORD`:
+
 
       - `CEC_LOG_ADDR_TYPE_RECORD`
       - 1
       - 用于录像设备    - .. _`CEC-LOG-ADDR-TYPE-TUNER`:
 
+
       - `CEC_LOG_ADDR_TYPE_TUNER`
       - 2
       - 用于调谐器设备    - .. _`CEC-LOG-ADDR-TYPE-PLAYBACK`:
+
 
       - `CEC_LOG_ADDR_TYPE_PLAYBACK`
       - 3
       - 用于播放设备    - .. _`CEC-LOG-ADDR-TYPE-AUDIOSYSTEM`:
 
+
       - `CEC_LOG_ADDR_TYPE_AUDIOSYSTEM`
       - 4
       - 用于音频系统设备    - .. _`CEC-LOG-ADDR-TYPE-SPECIFIC`:
 
+
       - `CEC_LOG_ADDR_TYPE_SPECIFIC`
       - 5
       - 用于第二台电视或视频处理器设备    - .. _`CEC-LOG-ADDR-TYPE-UNREGISTERED`:
+
 
       - `CEC_LOG_ADDR_TYPE_UNREGISTERED`
       - 6
@@ -190,25 +212,31 @@ CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
 
     - .. _`CEC-OP-ALL-DEVTYPE-TV`:
 
+
       - `CEC_OP_ALL_DEVTYPE_TV`
       - 0x80
       - 支持 TV 类型    - .. _`CEC-OP-ALL-DEVTYPE-RECORD`:
+
 
       - `CEC_OP_ALL_DEVTYPE_RECORD`
       - 0x40
       - 支持录制类型    - .. _`CEC-OP-ALL-DEVTYPE-TUNER`:
 
+
       - `CEC_OP_ALL_DEVTYPE_TUNER`
       - 0x20
       - 支持调谐器类型    - .. _`CEC-OP-ALL-DEVTYPE-PLAYBACK`:
+
 
       - `CEC_OP_ALL_DEVTYPE_PLAYBACK`
       - 0x10
       - 支持播放类型    - .. _`CEC-OP-ALL-DEVTYPE-AUDIOSYSTEM`:
 
+
       - `CEC_OP_ALL_DEVTYPE_AUDIOSYSTEM`
       - 0x08
       - 支持音频系统类型    - .. _`CEC-OP-ALL-DEVTYPE-SWITCH`:
+
 
       - `CEC_OP_ALL_DEVTYPE_SWITCH`
       - 0x04

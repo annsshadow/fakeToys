@@ -1,7 +1,10 @@
 
+# registers
+
 :Original: Documentation/arch/parisc/registers.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -116,9 +119,11 @@ RETURN FROM INTERRUPTION AND RESTORE指令中使用，通过消
 
 对于通用寄存器:
 
+
 r1,r2,r19-r26,r28,r29 & r31可以在不保存它们的情况下被使用。当然，如果你
 关心它们，在调用另一个程序之前，你也需要保存它们。上面的一些寄存器确实
 有特殊的含义，你应该注意一下:
+
 
     r1:
        addil指令是硬性规定将其结果放在r1中，所以如果你使用这条指令要

@@ -17,7 +17,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/jaxrs/organization/assemble/personal/{}/setting",
+                        "/api/organization/assemble/personal/{}/setting",
                         TEST_PERSON_ID
                     ))
                     .method(axum::http::Method::GET)
@@ -39,7 +39,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri(format!(
-                        "/jaxrs/organization/assemble/personal/{}/role/list",
+                        "/api/organization/assemble/personal/{}/role/list",
                         TEST_PERSON_ID
                     ))
                     .method(axum::http::Method::GET)
@@ -66,7 +66,7 @@ mod tests {
         let response = app
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/custom/test-id/mockputtopost")
+                    .uri("/api/organization/assemble/personal/custom/test-id/mockputtopost")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
@@ -84,7 +84,7 @@ mod tests {
         let response = app
             .oneshot(
                 axum::http::Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/custom/alt-id/mockputtopost")
+                    .uri("/api/organization/assemble/personal/custom/alt-id/mockputtopost")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(axum::body::Body::from(body))

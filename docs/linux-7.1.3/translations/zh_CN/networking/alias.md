@@ -1,12 +1,16 @@
 
 
+# alias
+
 :Original: Documentation/networking/alias.rst
 
 :翻译:
 
+
  邱禹潭 Qiu Yutan <qiu.yutan@zte.com.cn>
 
 :校译:
+
 
 ## IP别名
 

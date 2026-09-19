@@ -2,7 +2,7 @@
   <div class="ai-view">
     <div class="view-header glass-card">
       <h1>AI 助手</h1>
-      <p class="subtitle">/jaxrs/ai_assemble_control/* — 智能对话与配置</p>
+      <p class="subtitle">/api/ai_assemble_control/* — 智能对话与配置</p>
     </div>
     <div class="split-layout">
       <!-- 左侧: 对话列表 -->
@@ -112,7 +112,7 @@ const configData = ref({ base: null, models: [] as any[] })
 
 async function loadConversations() {
   try {
-    const r = await api.get('/jaxrs/ai_assemble_control/chat/list/paging/1/20')
+    const r = await api.get('/api/ai_assemble_control/chat/list/paging/1/size/20')
     conversations.value = r.data?.list ?? r.data ?? []
   } catch {
     conversations.value = []
@@ -123,7 +123,7 @@ async function selectChat(chat: ChatItem) {
   currentChat.value = chat
   messages.value = []
   try {
-    const r = await api.get(`/jaxrs/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/50`)
+    const r = await api.get(`/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50`)
     const list = r.data?.list ?? []
     messages.value = list.map((m: any) => ({
       role: m.type === 'user' ? 'user' : 'assistant',
@@ -137,7 +137,7 @@ async function selectChat(chat: ChatItem) {
 
 async function createNewChat() {
   try {
-    const r = await api.post('/jaxrs/ai_assemble_control/chat/completion', { title: '新对话' })
+    const r = await api.post('/api/ai_assemble_control/chat/completion', { title: '新对话' })
     const newChat = r.data ?? { id: 'new', title: '新对话' }
     conversations.value.unshift(newChat as ChatItem)
     selectChat(newChat as ChatItem)
@@ -147,9 +147,9 @@ async function createNewChat() {
 }
 
 async function deleteChat(chat: ChatItem) {
-  if (!confirmMsg(`删除对话「${chat.title || chat.id}」？`)) return
+  if (!(await confirmMsg(`删除对话「${chat.title || chat.id}」？`))) return
   try {
-    await api.delete(`/jaxrs/ai_assemble_control/chat/delete/${chat.id}`)
+    await api.delete(`/api/ai_assemble_control/chat/delete/${chat.id}`)
     if (currentChat.value?.id === chat.id) {
       currentChat.value = null
       messages.value = []
@@ -167,7 +167,7 @@ async function sendMessage() {
   inputText.value = ''
   loading.value = true
   try {
-    const r = await api.post('/jaxrs/ai_assemble_control/chat/completion', {
+    const r = await api.post('/api/ai_assemble_control/chat/completion', {
       message: text,
       clueId: currentChat.value?.id,
     })
@@ -264,30 +264,30 @@ const api_core_ent_791_data = ref<any[]>([])
 const ai_nonexistent_ref = ref<any[]>([])
 const api_core_ent_245_data = ref<any[]>([])
 const api_core_ent_9_data = ref<any[]>([])
-const api_jaxrs_ai_825_data = ref<any[]>([])
-const jaxrs_ai_chat_list_completion_test_clue_paging_1_size_10_ref = ref<any[]>([])
-const api_jaxrs_ai_570_data = ref<any[]>([])
-const api_jaxrs_ai_742_data = ref<any[]>([])
-const api_jaxrs_ai_373_data = ref<any[]>([])
-const api_jaxrs_ai_814_data = ref<any[]>([])
-const api_jaxrs_ai_703_data = ref<any[]>([])
-const api_jaxrs_ai_43_data = ref<any[]>([])
-const jaxrs_ai_index_cms_doc_with_app_test_app_ref = ref<any[]>([])
-const api_jaxrs_ai_934_data = ref<any[]>([])
-const api_jaxrs_ai_378_data = ref<any[]>([])
-const api_jaxrs_ai_463_data = ref<any[]>([])
-const api_jaxrs_ai_256_data = ref<any[]>([])
-const api_jaxrs_ai_110_data = ref<any[]>([])
-const api_jaxrs_ai_593_data = ref<any[]>([])
-const api_jaxrs_ai_431_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_357_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_232_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_676_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_616_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_13_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_934_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_627_data = ref<any[]>([])
-const api_jaxrs_ai_assembl_83_data = ref<any[]>([])
+const api_ai_825_data = ref<any[]>([])
+const ai_chat_list_completion_test_clue_paging_1_size_10_ref = ref<any[]>([])
+const api_ai_570_data = ref<any[]>([])
+const api_ai_742_data = ref<any[]>([])
+const api_ai_373_data = ref<any[]>([])
+const api_ai_814_data = ref<any[]>([])
+const api_ai_703_data = ref<any[]>([])
+const api_ai_43_data = ref<any[]>([])
+const ai_index_cms_doc_with_app_test_app_ref = ref<any[]>([])
+const api_ai_934_data = ref<any[]>([])
+const api_ai_378_data = ref<any[]>([])
+const api_ai_463_data = ref<any[]>([])
+const api_ai_256_data = ref<any[]>([])
+const api_ai_110_data = ref<any[]>([])
+const api_ai_593_data = ref<any[]>([])
+const api_ai_431_data = ref<any[]>([])
+const api_ai_assembl_357_data = ref<any[]>([])
+const api_ai_assembl_232_data = ref<any[]>([])
+const api_ai_assembl_676_data = ref<any[]>([])
+const api_ai_assembl_616_data = ref<any[]>([])
+const api_ai_assembl_13_data = ref<any[]>([])
+const api_ai_assembl_934_data = ref<any[]>([])
+const api_ai_assembl_627_data = ref<any[]>([])
+const api_ai_assembl_83_data = ref<any[]>([])
 </script>
 
 <style scoped>

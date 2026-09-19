@@ -1,7 +1,10 @@
 
+# general-information
+
 :Original: Documentation/rust/general-information.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -67,6 +70,7 @@ Rust内核代码使用其内置的文档生成器 `rustdoc` 进行记录。
 
 
 Rust代码可以访问基于内核配置的条件性编译:
+
 
 
 	#[cfg(CONFIG_X)]       // Enabled               (`y` or `m`)

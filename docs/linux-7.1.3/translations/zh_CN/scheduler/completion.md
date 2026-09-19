@@ -1,11 +1,15 @@
 
+# completion
+
 :Original: Documentation/scheduler/completion.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  唐艺舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -13,6 +17,7 @@
 
 
 ### 简介:
+
 
 
 如果你有一个或多个线程必须等待某些内核活动达到某个点或某个特定的状态，完成可以为这
@@ -36,7 +41,9 @@
 ### 用法:
 
 
+
 使用完成需要三个主要部分:
+
 
  - 'struct completion' 同步对象的初始化
  - 通过调用wait_for_completion()的一个变体来实现等待部分。
@@ -70,6 +77,7 @@
 
 
 ### 初始化完成:
+
 
 
 动态分配的完成对象最好被嵌入到数据结构中，以确保在函数/驱动的生命周期内存活，以防
@@ -131,6 +139,7 @@ DECLARE_COMPLETION_ONSTACK()来初始化，这不仅仅是为了让lockdep正确
 ### 等待完成:
 
 
+
 对于一个线程来说，要等待一些并发活动的完成，它要在初始化的完成结构体上调用
 ```
 
@@ -169,6 +178,7 @@ try_wait_for_completion()。
 
 
 ### wait_for_completion*()可用的变体:
+
 
 
 下面的变体都会返回状态，在大多数(/所有)情况下都应该检查这个状态--在故意不检查状态的情
@@ -226,6 +236,7 @@ wait_for_completion_io()的_io变体的行为与非_io变体相同，只是将�
 ### 对完成发信号:
 
 
+
 一个线程想要发出信号通知继续的条件已经达到，就会调用complete()，向其中一个等待者发出信
 ```
 
@@ -254,6 +265,7 @@ spin_lock_irqsave()/spin_unlock_irqrestore()执行锁操作
 
 
 ### try_wait_for_completion()/completion_done():
+
 
 
 try_wait_for_completion()函数不会将线程放在等待队列中，而是在需要排队（阻塞）线

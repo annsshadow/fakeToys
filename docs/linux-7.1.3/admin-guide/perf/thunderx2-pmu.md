@@ -1,3 +1,5 @@
+# thunderx2-pmu
+
 ﻿## Cavium ThunderX2 SoC 性能监控单元（PMU UNCORE
 
 ThunderX2 SoC PMU 由独立的、系统范围的、每插槽 PMU 组成，例如三级缓（L3C）、DDR4 内存控制器（DMC）以Cavium 一致性处理器互连（CCPI2）

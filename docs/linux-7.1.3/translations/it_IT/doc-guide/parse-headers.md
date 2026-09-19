@@ -1,4 +1,6 @@
 
+# parse-headers
+
 :Original: Documentation/doc-guide/index.rst
 
 ## Includere gli i file di intestazione uAPI
@@ -17,17 +19,17 @@ documentazione. Per avere un esempio su come utilizzarlo all'interno del kernel
 consultate `Documentation/userspace-api/media/Makefile`.
 
 
-##### parse_headers.py
+### parse_headers.py
 
 
-######## NOME
+#### NOME
 
 
 
 parse_headers.py - analizza i file C al fine di identificare funzioni,
 strutture, enumerati e definizioni, e creare riferimenti per Sphinx
 
-######## SINTASSI
+####### SINTASSI
 
 
 
@@ -78,6 +80,7 @@ Il file EXCEPTIONS_FILE contiene due tipi di dichiarazioni:
 
 La sintassi per ignore è:
 
+
 ignore \ **tipo**\  \ **nome**\
 
 La dichiarazione \ **ignore**\  significa che non verrà generato alcun
@@ -85,6 +88,7 @@ riferimento per il simbolo \ **name**\  di tipo \ **tipo**\ .
 
 
 La sintassi per replace è:
+
 
 replace \ **tipo**\  \ **nome**\  \ **nuovo_valore**\
 
@@ -96,10 +100,12 @@ di utilizzare il valore predefinito, verrà utilizzato il valore
 Per entrambe le dichiarazioni, il \ **tipo**\  può essere uno dei seguenti:
 
 
+
 \ **ioctl**\
 
  La dichiarazione ignore o replace verrà applicata su definizioni di ioctl
  come la seguente:
+
 
  #define	VIDIOC_DBG_S_REGISTER 	 _IOW('V', 79, struct v4l2_dbg_register)
 
@@ -145,7 +151,7 @@ Per entrambe le dichiarazioni, il \ **tipo**\  può essere uno dei seguenti:
  nella dichiarazione stessa.
 
 
-######## ESEMPI
+## ESEMPI
 
 
 
@@ -159,6 +165,7 @@ ignore symbol PRIVATE
 
 In un enumerato come il seguente:
 
+
 enum foo { BAR1, BAR2, PRIVATE };
 
 Non genererà alcun riferimento per \ **PRIVATE**\ .
@@ -169,12 +176,13 @@ replace symbol BAR2 :c:type:\`foo\`
 
 In un enumerato come il seguente:
 
+
 enum foo { BAR1, BAR2, PRIVATE };
 
 Genererà un riferimento ai valori BAR1 e BAR2 dal simbolo foo nel dominio C.
 
 
-######## BUGS
+### BUGS
 
 
 Riferire ogni malfunzionamento a Mauro Carvalho Chehab <mchehab@s-opensource.com>

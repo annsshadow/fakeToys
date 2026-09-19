@@ -1,0 +1,192 @@
+# 注意：本文件位于仓库根 .github/workflows/，而非计划文档中写的 ai/.github/workflows/。
+# 原因同 ai-platform-ci.yml：GitHub Actions 只识别仓库根目录下的 .github/workflows/。
+#
+# 触发方式：推送形如 ai-platform-v2.0.0 的 tag
+#   git tag ai-platform-v2.0.0 && git push origin ai-platform-v2.0.0
+name: AI platform CD
+
+on:
+  push:
+    tags:
+      - "ai-platform-v*"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "镜像标签（留空则使用 dev-<sha>）"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ai-platform-cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ai-data-platform
+
+jobs:
+  # ============================================================
+  # 构建并推送镜像到 GitHub Container Registry
+  # ============================================================
+  publish-image:
+    name: Build & push image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      image_ref: ${{ steps.meta.outputs.image_ref }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Resolve image reference
+        id: meta
+        run: |
+          set -euo pipefail
+          # GHCR 要求镜像名全小写，而 github.repository 可能含大写
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            tag="${{ github.event.inputs.image_tag }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            tag="${GITHUB_REF#refs/tags/ai-platform-v}"
+          else
+            tag="dev-${GITHUB_SHA::12}"
+          fi
+          image_ref="${REGISTRY}/${owner}/${IMAGE_NAME}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=${image_ref}" >> "$GITHUB_OUTPUT"
+          echo "publishing ${image_ref}:${tag}"
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349
+
+      - name: Log in to GHCR
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75
+        with:
+          context: ai
+          file: ai/docker/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image_ref }}:${{ steps.meta.outputs.tag }}
+            ${{ steps.meta.outputs.image_ref }}:sha-${{ github.sha }}
+          build-args: |
+            INSTALL_OPTIONAL=0
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.title=AI Training Data Platform
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+  # ============================================================
+  # 部署到目标主机
+  #
+  # 默认跳过。启用条件：
+  #   1. 在仓库 Settings → Variables 中设置 AI_PLATFORM_DEPLOY_ENABLED=true
+  #   2. 配置 Secrets：DEPLOY_HOST / DEPLOY_USER / DEPLOY_SSH_KEY / DEPLOY_PATH
+  #   3. 目标主机已安装 Docker 与 docker compose
+  # ============================================================
+  deploy:
+    name: Deploy to host
+    needs: publish-image
+    if: ${{ vars.AI_PLATFORM_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.AI_PLATFORM_URL }}
+    steps:
+      - name: Check required secrets
+        run: |
+          set -euo pipefail
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH; do
+            if [ -z "${!name:-}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "缺少必需配置:$missing"
+            exit 1
+          fi
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Install SSH key
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull and restart container
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key \
+              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+              "set -euo pipefail
+               cd '${{ secrets.DEPLOY_PATH }}'
+               echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} -u '${{ github.actor }}' --password-stdin
+               IMAGE_TAG='${{ needs.publish-image.outputs.image_ref }}:${{ github.sha }}' docker compose pull
+               IMAGE_TAG='${{ needs.publish-image.outputs.image_ref }}:${{ github.sha }}' docker compose up -d
+               docker image prune -f"
+
+      - name: Verify deployment health
+        run: |
+          set -euo pipefail
+          url="${{ vars.AI_PLATFORM_URL }}"
+          if [ -z "$url" ]; then
+            echo "未设置 AI_PLATFORM_URL，跳过远程健康检查"
+            exit 0
+          fi
+          for i in $(seq 1 30); do
+            if curl -fsS "${url%/}/api/health"; then
+              echo "deployment healthy after ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "deployment health check timed out"
+          exit 1
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+  # ============================================================
+  # 发布说明
+  # ============================================================
+  release-notes:
+    name: Publish release notes
+    needs: publish-image
+    if: startsWith(github.ref, 'refs/tags/ai-platform-v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" \
+            --title "$tag" \
+            --generate-notes \
+            --notes "Docker 镜像：\`${{ needs.publish-image.outputs.image_ref }}:${tag#ai-platform-v}\`"

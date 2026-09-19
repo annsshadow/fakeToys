@@ -1,3 +1,5 @@
+# firmware-activate
+
 ﻿
 ## NVDIMM 运行时固件激
 

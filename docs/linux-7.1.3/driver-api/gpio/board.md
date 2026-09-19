@@ -1,9 +1,11 @@
+# board
+
 ﻿## GPIO 映射
 
 
 本文档说明如何将 GPIO 分配给指定的设备和功能
 所有平台都可以启用 GPIO 库，但如果某个平台严格要求必须提GPIO 功能，则需要在Kconfig 中选择 GPIOLIB。之后，GPIO 如何映射取决于该平台使用什么方式来描述其硬布局。目前，映射可以通过设备树（device tree）、ACPI 和平台数据（platform data）来定义
-### 设备
+## 设备
 在设备树中，GPIO 可以很方便地映射到设备和功能上。具体的做法取决于提供这GPIO GPIO 控制器，请参考你的控制器对应的设备树绑定（device tree bindings）
 GPIO 映射定义在消费设备（consumer device）的节点中，位于一个名<function>-gpios 的属性里，其<function> 是驱动将请求的那个功```
 
@@ -135,7 +137,7 @@ property_entry 构造一个内存中、类设备树的结构。随后该结构�
 	// 将其&led_device_swnode 关联
 关于如何将板文件转换为使用软件节点的完整指南，请参见
 Documentation/driver-api/gpio/legacy-boards.rst銆。
-### 平台数据
+## 平台数据
 
 最后，GPIO 还可以通过平台数据绑定到设备和功能。板级代```
 
@@ -193,7 +195,7 @@ GPIO 通过查找表（tables of lookups）来映射，表中包含如下实```
 映射为低电平有效"power" GPIO，这段代码执行后其实际信号将0。与旧的整型 GPIO 接口
 不同，低电平有效（active-low）属性是在映射过程中处理的，因此GPIO 消费方是透明的
 一组诸gpiod_set_value() 之类的函数可用于操作这个新的、以描述符为导向的接口
-### 引脚数组
+## 引脚数组
 
 除了逐个请求属于某个功能的引脚外，设备也可以请求分配给该功能的一组引脚。这些引如何映射到设备，决定了该数组是否有资格进行快速的位图处理。如果可以，位图将通过
 get/set 数组函数在调用方GPIO 芯片相应.get/set_multiple() 回调之间直接传递

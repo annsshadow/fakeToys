@@ -1,3 +1,5 @@
+# memory
+
 ﻿## 内存资源控制
 
       本文档已经严重过时，需要完全重写。它仍然包含一些有用的信息，因此暂时保      在这里，但如果你需要更深入的理解，请确保查看当前的代码
@@ -211,6 +213,7 @@ U != 0, K >= U    由于 kmem 记账也会被馈入用户计数器，并且回�
 
    The limit can now be queried::
 
+
 	# cat /sys/fs/cgroup/memory/0/memory.limit_in_bytes
 	4194304
 
@@ -284,7 +287,7 @@ memory.stat 文件给出了记账信息。现在，会展示缓存、RSS 以及�
   可能由于被记账的文件缓存而仍然存在。一些不再使用的页缓存可能一直保持被记账状态，
   直到发生内存压力。如果你想避免这种情况，force_empty 会很有用
 ```
-### 5.2 stat 文件
+## 5.2 stat 文件
 
 
 memory.stat 文件包含以下统计信息
@@ -334,7 +337,7 @@ memory.stat 文件包含以下统计信息
 	# echo 0 > .../memory.failcnt
 
 ```
-### 5.5 usage_in_bytes
+## 5.5 usage_in_bytes
 
 
 为了提高效率，与其他内核组件一样，内存 cgroup 使用一些优化来避免不必要的缓存伪共享。usage_in_bytes 会受该方法影响，不会显示内存（和交换）使用量的“精确”值，

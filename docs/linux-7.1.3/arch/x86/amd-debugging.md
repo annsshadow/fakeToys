@@ -1,3 +1,5 @@
+# amd-debugging
+
 ﻿
 Debugging AMD Zen systems
 +++++++++++++++++++++++++

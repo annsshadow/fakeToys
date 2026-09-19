@@ -1,7 +1,10 @@
 
+# irqflags-tracing
+
 :Original: Documentation/core-api/irq/irqflags-tracing.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -25,9 +28,11 @@ CONFIG_PROVE_RWSEM_LOCKING在一个架构上被提供--这些都是不在IRQ上�
 
 架构如果想支持这个，需要先做一些代码组织上的改变:
 
+
 - 在他们的arch级Kconfig文件中添加并启用TRACE_IRQFLAGS_SUPPORT。
 
 然后还需要做一些功能上的改变来实现对irq-flags-tracing的支持:
+
 
 - 在低级入口代码中增加（构建条件）对trace_hardirqs_off()/trace_hardirqs_on()
   函数的调用。锁验证器会密切关注 “real”的irq-flags是否与 “virtual”的irq-flags

@@ -1,3 +1,5 @@
+# vidioc-dbg-g-register
+
 ﻿######## ioctl VIDIOC_DBG_G_REGISTER, VIDIOC_DBG_S_REGISTER
 
 

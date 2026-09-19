@@ -28,7 +28,7 @@ test('starts, renders, and returns a workflow through visible web controls', asy
   await expect(page.getByLabel(/申请原因/)).toHaveValue('S3 GUI E2E round-trip')
 
   const completeResponse = audit.waitForWrite((response) =>
-    /\/jaxrs\/task\/[^/]+\/complete$/.test(new URL(response.url()).pathname),
+    /\/api\/task\/[^/]+\/complete$/.test(new URL(response.url()).pathname),
   )
   await page.getByLabel(/处理意见/).fill('S3 GUI E2E approved')
   await page.getByRole('button', { name: /审批通过/ }).click()

@@ -1,5 +1,7 @@
 
 
+# bootconfig
+
 :Original: Documentation/admin-guide/bootconfig.rst
 
 :譯者: 吳想成 Wu XiangCheng <bobwxc@email.cn>
@@ -202,7 +204,7 @@ Linux內核在tools/bootconfig下提供了 `bootconfig` 命令來完成此操作
 ```
 然後在內核命令行上添加 `bootconfig` 告訴內核去initrd文件末尾尋找內核配置。
 
-### 將引導配置嵌入內核
+## 將引導配置嵌入內核
 
 
 如果你不能使用initrd，也可以通過Kconfig選項將引導配置文件嵌入內核中。在此情

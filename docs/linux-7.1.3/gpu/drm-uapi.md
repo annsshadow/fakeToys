@@ -1,3 +1,5 @@
+# drm-uapi
+
 ﻿
 ## 用户空间接口
 
@@ -19,7 +21,9 @@ DRM 核心向应用程序导出多个接口，通常旨在通过与之一一对�
 
    :export:
 
+
    :internal:
+
 
 
 
@@ -175,7 +179,7 @@ Recovery Procedure - 用于恢复每种情形的清晰指令与指引。这可�
     echo -n $DEVICE > $DRIVER/unbind
     echo -n $DEVICE > $DRIVER/bind
 ```
-### 定制
+## 定制
 
 
 虽然用简单脚本即可完成基本恢复，但消费者可以围绕恢复定义自定义策略。例如，如果驱动支持多种恢复方法，消费者可以根据场景（如重复犯错或厂商特定故障）选择合适的方法。消费者也可以选择让设备可用于调试或遥测信息收集，并基于发现来做恢复决策。这在驱动对恢复不确定或方法未知时尤其有用
@@ -211,9 +215,12 @@ EINVAL:
 IOCTL 也使用其它错误码，如 ETIME、EFAULT、EBUSY、ENOTTY，但它们的用法符合常见含义。上述清单只是试图记DRM 特定的模式。注ENOTTY 有略微反直觉的含义“此 IOCTL 不存在”，并且DRM 中正是如此使用
    :internal:
 
-   :export:
 
    :export:
+
+
+   :export:
+
 
 ## 测试与验
 
@@ -248,12 +255,15 @@ VKMS 是一个仅软件KMS 驱动模型，对测试与运compositor 很有用。
 
    :export:
 
+
 ### Debugfs 支持
 
 
    :internal:
 
+
    :export:
+
 
 ## Sysfs 支持
 
@@ -261,6 +271,7 @@ VKMS 是一个仅软件KMS 驱动模型，对测试与运compositor 很有用。
    :doc: overview
 
    :export:
+
 
 
 ## Vblank 事件处理
@@ -283,7 +294,9 @@ CRTC 既有对象 ID，也有索引，它们不是同一个东西。索引用于
 `DRM_IOCTL_MODE_GETRESOURCES` 用一个包CRTC ID 数组的结构体填充数据，CRTC 索引就是它在这个数组中的位置
    :internal:
 
+
    :internal:
+
 
 
 ## dma-buf 互操作

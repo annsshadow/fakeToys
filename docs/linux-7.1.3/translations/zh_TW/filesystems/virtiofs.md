@@ -1,5 +1,7 @@
 
 
+# virtiofs
+
 :Original: Documentation/filesystems/virtiofs.rst <virtiofs_index>
 
 譯者
@@ -34,6 +36,7 @@ Linux的virtiofs文件系統實現了一個半虛擬化VIRTIO類型“virtio-fs�
 ## 用法
 
 以`myfs`標籤將文件系統掛載到`/mnt`:
+
 
 
   guest# mount -t virtiofs myfs /mnt

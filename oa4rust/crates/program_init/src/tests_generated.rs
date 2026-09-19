@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/check")
+                    .uri("/api/secret/check")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/set")
+                    .uri("/api/secret/set")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/secret/set/cancel")
+                    .uri("/api/secret/set/cancel")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/externaldatasources/check")
+                    .uri("/api/externaldatasources/check")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/externaldatasources/list")
+                    .uri("/api/externaldatasources/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -117,7 +117,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/externaldatasources/set")
+                    .uri("/api/externaldatasources/set")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -137,7 +137,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/externaldatasources/set/cancel")
+                    .uri("/api/externaldatasources/set/cancel")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -157,7 +157,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/externaldatasources/validate")
+                    .uri("/api/externaldatasources/validate")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -177,7 +177,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/h2/check")
+                    .uri("/api/h2/check")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -197,7 +197,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/restore/upload")
+                    .uri("/api/restore/upload")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -217,7 +217,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/restore/upload/cancel")
+                    .uri("/api/restore/upload/cancel")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -237,7 +237,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/server/execute")
+                    .uri("/api/server/execute")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -257,7 +257,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/server/execute/status")
+                    .uri("/api/server/execute/status")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -277,7 +277,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/server/license")
+                    .uri("/api/server/license")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -297,7 +297,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/server/stop")
+                    .uri("/api/server/stop")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

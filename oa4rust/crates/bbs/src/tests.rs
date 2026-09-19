@@ -40,7 +40,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/forum/view/all")
+                    .uri("/api/bbs/forum/view/all")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/forum/view/1")
+                    .uri("/api/bbs/forum/view/1")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/section/view/all")
+                    .uri("/api/bbs/section/view/all")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -94,7 +94,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/subject/list/1")
+                    .uri("/api/bbs/subject/list/1")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -113,7 +113,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/bbs/subject/create")
+                    .uri("/api/bbs/subject/create")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(body))

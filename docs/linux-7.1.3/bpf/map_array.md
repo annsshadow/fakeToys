@@ -1,3 +1,5 @@
+# map_array
+
 ﻿
 ## BPF_MAP_TYPE_ARRAY and BPF_MAP_TYPE_PERCPU_ARRAY
 
@@ -141,7 +143,7 @@ kernel 5.1 版本起，BPF 基础设施提供 `struct bpf_spin_lock` 来同步�
             return ret;
     }
 
-#### BPF_MAP_TYPE_PERCPU_ARRAY
+## BPF_MAP_TYPE_PERCPU_ARRAY
 
 
 此代码片段展示了如何初始化每 CPU 数组的元素

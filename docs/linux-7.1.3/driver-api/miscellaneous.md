@@ -1,18 +1,25 @@
+# miscellaneous
+
 ﻿## 并行端口设备
 
 
    :internal:
 
-   :export:
 
    :export:
+
+
+   :export:
+
 
    :internal:
+
 
 ## 16x50 UART 驱动
 
 
    :export:
+
 
 相关 API 请参serial/driver.rst
 ## 脉冲宽度调制（PWM
@@ -23,4 +30,6 @@ PWM 框架PWM 信号的提供者与使用者提供了抽象。提供一个或多
 注意，PWM 设备是独占资源：任意时刻只能被一个使用者占用
    :internal:
 
+
    :export:
+

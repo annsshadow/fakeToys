@@ -40,7 +40,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/0/next/10")
+                    .uri("/api/organization/assemble/control/role/list/0/next/10")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -58,7 +58,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/0/next/10")
+                    .uri("/api/organization/assemble/control/unit/list/0/next/10")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-unit/sub/nested")
+                    .uri("/api/organization/assemble/control/unit/list/test-unit/sub/nested")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -94,7 +94,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested")
+                    .uri("/api/organization/assemble/control/unit/list/test-unit/sup/nested")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -112,7 +112,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested/type/company")
+                    .uri("/api/organization/assemble/control/unit/list/test-unit/sup/nested/type/company")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -130,7 +130,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/like")
+                    .uri("/api/organization/assemble/control/group/list/like")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -142,13 +142,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_identity_id() {
+    async fn test_get_identity_id() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/identity/test-id")
+                    .uri("/api/identity/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -159,13 +159,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_expo() {
+    async fn test_get_organization_assemble_control_expo() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/export/export/all")
+                    .uri("/api/organization/assemble/control/export/export/all")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -176,13 +176,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_grou() {
+    async fn test_get_organization_assemble_control_grou() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/group/list/like")
+                    .uri("/api/organization/assemble/control/group/list/like")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -193,13 +193,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_iden() {
+    async fn test_get_organization_assemble_control_iden() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/identity/list/like")
+                    .uri("/api/organization/assemble/control/identity/list/like")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -210,13 +210,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_inpu() {
+    async fn test_get_organization_assemble_control_inpu() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/inputperson/result/flag/test-id")
+                    .uri("/api/organization/assemble/control/inputperson/result/flag/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -227,13 +227,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_logi() {
+    async fn test_get_organization_assemble_control_logi() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/loginrecord/test-id")
+                    .uri("/api/organization/assemble/control/loginrecord/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -244,13 +244,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_perm() {
+    async fn test_get_organization_assemble_control_perm() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/permissionsetting/list")
+                    .uri("/api/organization/assemble/control/permissionsetting/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -261,13 +261,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_pers() {
+    async fn test_get_organization_assemble_control_pers() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/personattribute/list/person/test-id")
+                    .uri("/api/organization/assemble/control/personattribute/list/person/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -278,13 +278,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_role() {
+    async fn test_get_organization_assemble_control_role() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/role/list/group/test-id")
+                    .uri("/api/organization/assemble/control/role/list/group/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -295,13 +295,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_jaxrs_organization_assemble_control_unit() {
+    async fn test_get_organization_assemble_control_unit() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/unit/list/test-id/next/test-id")
+                    .uri("/api/organization/assemble/control/unit/list/test-id/next/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -312,13 +312,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_post_jaxrs_organization_assemble_control_pers() {
+    async fn test_post_organization_assemble_control_pers() {
         let pool = build_test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/control/person/list/like")
+                    .uri("/api/organization/assemble/control/person/list/like")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),

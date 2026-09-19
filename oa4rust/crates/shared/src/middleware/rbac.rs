@@ -166,230 +166,218 @@ impl PermissionRegistry {
         let mut registry = Self::new();
         // 公开端点
         registry.register_exact("/health", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/authentication", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/authentication/captcha", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/authentication/oauth", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/authentication/code", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/authentication/refresh", PermissionLevel::Public);
-        // 新增认证端点：显式覆盖，避免继承 /jaxrs/authentication 的 Public 权限
+        registry.register_prefix("/api/authentication", PermissionLevel::Public);
+        registry.register_prefix("/api/authentication/captcha", PermissionLevel::Public);
+        registry.register_prefix("/api/authentication/oauth", PermissionLevel::Public);
+        registry.register_prefix("/api/authentication/code", PermissionLevel::Public);
+        registry.register_prefix("/api/authentication/refresh", PermissionLevel::Public);
+        // 新增认证端点：显式覆盖，避免继承 /api/authentication 的 Public 权限
         registry.register_prefix(
-            "/jaxrs/authentication/two_factor",
+            "/api/authentication/two_factor",
             PermissionLevel::Authenticated,
         );
         registry.register_exact(
-            "/jaxrs/authentication/safe/logout",
+            "/api/authentication/safe/logout",
             PermissionLevel::Authenticated,
         );
         registry.register_prefix(
-            "/jaxrs/authentication/check/token",
+            "/api/authentication/check/token",
             PermissionLevel::Authenticated,
         );
-        registry.register_exact("/jaxrs/authentication/switchuser", PermissionLevel::Admin);
+        registry.register_exact("/api/authentication/switchuser", PermissionLevel::Admin);
         registry.register_exact(
-            "/jaxrs/authentication/switchuser/mockputtopost",
+            "/api/authentication/switchuser/mockputtopost",
             PermissionLevel::Admin,
         );
-        registry.register_prefix("/jaxrs/authentication/sso", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
+        registry.register_prefix("/api/authentication/sso", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/reset", PermissionLevel::Public);
+        registry.register_prefix("/api/secret/check", PermissionLevel::Public);
+        registry.register_prefix("/api/secret/set", PermissionLevel::Public);
         // organization_assemble_authentication: 认证前置端点（登录模式、验证码密钥、登出）
         registry.register_prefix(
-            "/jaxrs/organization/assemble/authentication/authentication",
+            "/api/organization/assemble/authentication/authentication",
             PermissionLevel::Public,
         );
         // program_center: 认证查询
         registry.register_prefix(
-            "/jaxrs/program_center/authentication",
+            "/api/program_center/authentication",
             PermissionLevel::Public,
         );
         // 自服务端点：改密和头像，登录用户即可操作
-        registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/person/password", PermissionLevel::Authenticated);
         // GET icon is public per R8 (头像端点无权限也可访问)
-        registry.register_prefix("/jaxrs/person/icon", PermissionLevel::Public);
+        registry.register_prefix("/api/person/icon", PermissionLevel::Public);
         // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：Authenticated 级别，
         // 写操作保护由 requires_admin 函数独立处理（仅 person/unit/role/group 需要 admin）
-        registry.register_prefix("/jaxrs/ai", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/cms", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/correlation", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/file", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/program_center", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/query", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/bbs", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/meeting", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/message", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/processplatform", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/portal", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/ai", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/cms", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/correlation", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/file", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/program_center", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/query", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/bbs", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/meeting", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/message", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/processplatform", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/portal", PermissionLevel::Authenticated);
         // express batch query endpoints: no authentication required (R24)
-        registry.register_prefix("/jaxrs/express/person", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/express/unit", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/express/identity", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/express/group", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/express/role", PermissionLevel::Public);
+        registry.register_prefix("/api/express/person", PermissionLevel::Public);
+        registry.register_prefix("/api/express/unit", PermissionLevel::Public);
+        registry.register_prefix("/api/express/identity", PermissionLevel::Public);
+        registry.register_prefix("/api/express/group", PermissionLevel::Public);
+        registry.register_prefix("/api/express/role", PermissionLevel::Public);
         // 与 AUTH_EXEMPT_PATHS 对齐：列表查询端点无需认证（R401J200 消除）
         // 注意：带 {param} 的路径段需逐项注册前缀，以覆盖 get_permission 的 prefix 匹配
-        registry.register_prefix("/jaxrs/person/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/person/detail", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/person/has/role", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/person/custom", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/person/definition", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/group/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/group/has/role", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/role/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/unit/list", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/unit/check", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/unit/identity", PermissionLevel::Public);
-        // 批量查询 / 汇总端点：Java 侧无需认证（R401J200 消除）
-        registry.register_prefix("/jaxrs/document/batch", PermissionLevel::Public);
+        registry.register_prefix("/api/person/list", PermissionLevel::Public);
+        registry.register_prefix("/api/person/detail", PermissionLevel::Public);
+        registry.register_prefix("/api/person/has/role", PermissionLevel::Public);
+        registry.register_prefix("/api/person/custom", PermissionLevel::Public);
+        registry.register_prefix("/api/person/definition", PermissionLevel::Public);
+        registry.register_prefix("/api/group/list", PermissionLevel::Public);
+        registry.register_prefix("/api/group/has/role", PermissionLevel::Public);
+        registry.register_prefix("/api/role/list", PermissionLevel::Public);
+        registry.register_prefix("/api/unit/list", PermissionLevel::Public);
+        registry.register_prefix("/api/unit/check", PermissionLevel::Public);
+        registry.register_prefix("/api/unit/identity", PermissionLevel::Public);
+        // 批量查询 / 汇总端点：o2server 侧无需认证（R401J200 消除）
+        registry.register_prefix("/api/document/batch", PermissionLevel::Public);
         registry.register_prefix(
-            "/jaxrs/file/assemble/control/file/referencetype",
+            "/api/file/assemble/control/file/referencetype",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/meeting/assemble/control/config",
+            "/api/meeting/assemble/control/config",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/attendance/assemble/control/dingding",
+            "/api/attendance/assemble/control/dingding",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/attendance/assemble/control/qywx",
+            "/api/attendance/assemble/control/qywx",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/attendance/assemble/control/statistic",
+            "/api/attendance/assemble/control/statistic",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/attendance/assemble/control/attendancestatisticalcycle",
+            "/api/attendance/assemble/control/attendancestatisticalcycle",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/application/list",
+            "/api/processplatform/assemble/surface/application/list",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage",
+            "/api/processplatform/assemble/surface/attachment/batch/delete/manage",
             PermissionLevel::Public,
         );
-        registry.register_prefix("/jaxrs/program_center/adminlogin", PermissionLevel::Public);
+        registry.register_prefix("/api/program_center/adminlogin", PermissionLevel::Public);
+        registry.register_prefix("/api/program_center/applications", PermissionLevel::Public);
         registry.register_prefix(
-            "/jaxrs/program_center/applications",
+            "/api/program_center/center/applications",
             PermissionLevel::Public,
         );
+        registry.register_prefix("/api/queryview/morelikethis", PermissionLevel::Public);
+        registry.register_prefix("/api/queryview/search", PermissionLevel::Public);
+        registry.register_prefix("/api/script/list/manager", PermissionLevel::Public);
+        // processplatform assemble/surface 查询端点：o2server 侧无需认证（消除 R401/R500）
         registry.register_prefix(
-            "/jaxrs/program_center/center/applications",
-            PermissionLevel::Public,
-        );
-        registry.register_prefix("/jaxrs/queryview/morelikethis", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/queryview/search", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/script/list/manager", PermissionLevel::Public);
-        // processplatform assemble/surface 查询端点：Java 侧无需认证（消除 R401/R500）
-        registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/application/list",
+            "/api/processplatform/assemble/surface/application/list",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/control/workorworkcompleted",
+            "/api/processplatform/assemble/surface/control/workorworkcompleted",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/readrecord/list",
+            "/api/processplatform/assemble/surface/readrecord/list",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/record/list",
+            "/api/processplatform/assemble/surface/record/list",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/sign/list",
+            "/api/processplatform/assemble/surface/sign/list",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/touch/expire",
+            "/api/processplatform/assemble/surface/touch/expire",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/touch/passexpired",
+            "/api/processplatform/assemble/surface/touch/passexpired",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/touch/touchdetained",
+            "/api/processplatform/assemble/surface/touch/touchdetained",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/assemble/surface/work/count",
+            "/api/processplatform/assemble/surface/work/count",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/processplatform/service/processing/touch/mergeitem",
+            "/api/processplatform/service/processing/touch/mergeitem",
             PermissionLevel::Public,
         );
         // program_center 查询端点
+        registry.register_prefix("/api/program_center/datastructure", PermissionLevel::Public);
         registry.register_prefix(
-            "/jaxrs/program_center/datastructure",
+            "/api/program_center/dingding/get/callback",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/program_center/dingding/get/callback",
+            "/api/program_center/jest/clear/cache",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/program_center/jest/clear/cache",
+            "/api/program_center/market/cloud/unit/is/vip",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/program_center/market/cloud/unit/is/vip",
-            PermissionLevel::Public,
-        );
-        registry.register_prefix(
-            "/jaxrs/program_center/market/installed/version",
+            "/api/program_center/market/installed/version",
             PermissionLevel::Public,
         );
         // 剩余 program_center 查询/管理端点
-        registry.register_prefix("/jaxrs/program_center/appstyle", PermissionLevel::Public);
+        registry.register_prefix("/api/program_center/appstyle", PermissionLevel::Public);
+        registry.register_prefix("/api/program_center/cachedispatch", PermissionLevel::Public);
+        registry.register_prefix("/api/ai/chat/delete", PermissionLevel::Public);
         registry.register_prefix(
-            "/jaxrs/program_center/cachedispatch",
+            "/api/calendar/assemble/control/calendar/follow",
             PermissionLevel::Public,
         );
-        registry.register_prefix("/jaxrs/ai/chat/delete", PermissionLevel::Public);
-        registry.register_prefix(
-            "/jaxrs/calendar/assemble/control/calendar/follow",
-            PermissionLevel::Public,
-        );
-        registry.register_prefix("/jaxrs/person/nick/name", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/unit/list/all", PermissionLevel::Public);
-        registry.register_prefix("/jaxrs/person/list/all", PermissionLevel::Public);
+        registry.register_prefix("/api/person/nick/name", PermissionLevel::Public);
+        registry.register_prefix("/api/unit/list/all", PermissionLevel::Public);
+        registry.register_prefix("/api/person/list/all", PermissionLevel::Public);
         // attendance statistic 端点
         registry.register_prefix(
-            "/jaxrs/attendance/assemble/control/dingdingstatistic",
+            "/api/attendance/assemble/control/dingdingstatistic",
             PermissionLevel::Public,
         );
         registry.register_prefix(
-            "/jaxrs/attendance/assemble/control/qywxstatistic",
+            "/api/attendance/assemble/control/qywxstatistic",
             PermissionLevel::Public,
         );
         // 现有管理端点（person/unit/role/group）：注册 Authenticated 保持向后兼容
-        registry.register_prefix("/jaxrs/person", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/unit", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/role", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/group", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/person", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/unit", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/role", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/group", PermissionLevel::Authenticated);
         // 组织核心实体写操作端点
-        registry.register_prefix("/jaxrs/organization/person", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/organization/group", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/organization/person", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/organization/group", PermissionLevel::Authenticated);
         registry.register_prefix(
-            "/jaxrs/organization/definition",
+            "/api/organization/definition",
             PermissionLevel::Authenticated,
         );
-        registry.register_prefix(
-            "/jaxrs/organization/identity",
-            PermissionLevel::Authenticated,
-        );
-        registry.register_prefix("/jaxrs/organization/custom", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/organization/bind", PermissionLevel::Authenticated);
-        // 通用 jaxrs 端点兜底
-        registry.register_prefix("/jaxrs", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/organization/identity", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/organization/custom", PermissionLevel::Authenticated);
+        registry.register_prefix("/api/organization/bind", PermissionLevel::Authenticated);
+        // 通用 o2server 端点兜底
+        registry.register_prefix("/api", PermissionLevel::Authenticated);
         registry
     }
 
@@ -596,4 +584,142 @@ pub async fn rate_limit_middleware(
     }
 
     next.run(request).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn registry_matches_exact_before_prefix() {
+        let mut reg = PermissionRegistry::new();
+        reg.register_prefix("/api/x", PermissionLevel::Authenticated);
+        reg.register_exact("/api/x/y", PermissionLevel::Admin);
+        // 精确注册必须压过任何前缀（switchuser 类端点的权限覆盖依赖此规则）。
+        assert_eq!(reg.get_permission("/api/x/y"), Some(PermissionLevel::Admin));
+        assert_eq!(
+            reg.get_permission("/api/x/z"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn registry_picks_longest_prefix() {
+        let mut reg = PermissionRegistry::new();
+        reg.register_prefix("/api", PermissionLevel::Authenticated);
+        reg.register_prefix("/api/deep", PermissionLevel::Public);
+        assert_eq!(
+            reg.get_permission("/api/deep/r"),
+            Some(PermissionLevel::Public)
+        );
+        assert_eq!(
+            reg.get_permission("/api/other"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn registry_string_prefix_semantics() {
+        // get_permission 用字符串 starts_with（非段边界匹配）：
+        // 前缀 "/api/person" 也命中 "/api/persons"。测试钉死该语义，
+        // 注册端点时必须注册到段边界，避免短段被长段意外放行。
+        let mut reg = PermissionRegistry::new();
+        reg.register_prefix("/api/person", PermissionLevel::Authenticated);
+        assert_eq!(
+            reg.get_permission("/api/persons"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn registry_unregistered_paths_return_none() {
+        let reg = PermissionRegistry::new();
+        assert_eq!(reg.get_permission("/anything"), None);
+    }
+
+    #[test]
+    fn defaults_grant_public_to_health_and_authentication_prefix() {
+        let reg = PermissionRegistry::with_defaults();
+        assert_eq!(reg.get_permission("/health"), Some(PermissionLevel::Public));
+        assert_eq!(
+            reg.get_permission("/api/authentication/login"),
+            Some(PermissionLevel::Public)
+        );
+    }
+
+    #[test]
+    fn defaults_longer_prefix_overrides_authentication_public() {
+        let reg = PermissionRegistry::with_defaults();
+        // /api/authentication 是 Public，但 two_factor 段被更长前缀提升为需登录。
+        assert_eq!(
+            reg.get_permission("/api/authentication/two_factor/status"),
+            Some(PermissionLevel::Authenticated)
+        );
+        // switchuser 精确注册为 Admin，压过 /api/authentication 的 Public 前缀。
+        assert_eq!(
+            reg.get_permission("/api/authentication/switchuser"),
+            Some(PermissionLevel::Admin)
+        );
+    }
+
+    #[test]
+    fn defaults_person_password_requires_auth_but_icon_is_public() {
+        let reg = PermissionRegistry::with_defaults();
+        assert_eq!(
+            reg.get_permission("/api/person/password/change"),
+            Some(PermissionLevel::Authenticated)
+        );
+        // R8：头像端点公开（更长前缀 /api/person/icon 压过 /api/person）。
+        assert_eq!(
+            reg.get_permission("/api/person/icon/u-1"),
+            Some(PermissionLevel::Public)
+        );
+    }
+
+    #[test]
+    fn defaults_module_prefixes_are_authenticated_with_api_fallback() {
+        let reg = PermissionRegistry::with_defaults();
+        for path in [
+            "/api/ai/chat",
+            "/api/cms/article/list",
+            "/api/message/assemble/communicate/im/msg",
+            "/api/processplatform/assemble/surface/task/list",
+        ] {
+            assert_eq!(
+                reg.get_permission(path),
+                Some(PermissionLevel::Authenticated),
+                "path {path}"
+            );
+        }
+        // 未注册任何前缀的模块路径落到 /api 兜底（需登录）。
+        assert_eq!(
+            reg.get_permission("/api/unknown-module/x"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
+    fn defaults_express_and_batch_query_prefixes_are_public() {
+        let reg = PermissionRegistry::with_defaults();
+        assert_eq!(
+            reg.get_permission("/api/express/person/list"),
+            Some(PermissionLevel::Public)
+        );
+        assert_eq!(
+            reg.get_permission("/api/document/batch"),
+            Some(PermissionLevel::Public)
+        );
+    }
+
+    #[test]
+    fn admin_cache_roundtrip() {
+        let mut cache = AdminCache::default();
+        assert_eq!(cache.get("u-1"), None);
+        cache.set("u-1".to_string(), true);
+        cache.set("u-2".to_string(), false);
+        assert_eq!(cache.get("u-1"), Some(true));
+        assert_eq!(cache.get("u-2"), Some(false));
+        // 同一请求内重复查 admin 命中缓存，避免重复 DB 查询。
+        assert_eq!(cache.get("u-1"), Some(true));
+    }
 }

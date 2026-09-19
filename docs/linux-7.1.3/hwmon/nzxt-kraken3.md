@@ -1,3 +1,5 @@
+# nzxt-kraken3
+
 ﻿
 ## 内核驱动 nzxt-kraken3
 

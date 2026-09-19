@@ -1,3 +1,5 @@
+# index
+
 ﻿## BPF 文档
 
 本页BPF（Berkeley Packet Filter，含 eBPF 扩展）子系统文档的索引，汇总了验证器、libbpf、BTF、辅助函数、映射、kfuncs 等主题的说明入口，便于读者按主题系统学习 BPF 技术细节
@@ -23,7 +25,7 @@
 - [programs](programs)
 - [maps](maps)
 - [bpf_prog_run](bpf_prog_run)
-- [classic_vs_extended.rst](classic_vs_extended.rst)
+- [classic_vs_extended.rst](classic_vs_extended.md)
 - [bpf_iterators](bpf_iterators)
 - [bpf_licensing](bpf_licensing)
 - [test_debug](test_debug)

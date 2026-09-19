@@ -1,3 +1,5 @@
+# media_specific_debugging_guide
+
 ﻿
 ## Debugging and tracing in the media subsystem
 
@@ -28,7 +30,7 @@
 ```
 完整文档请参:ref:`driver-api/media/v4l2-dev:video device debugging`
 
-### dev_dbg() / v4l2_dbg()
+## dev_dbg() / v4l2_dbg()
 
 
 两个特定于设备和 v4l2 子系统的调试打印语句，除非它们对调查具有长期价值，否则不要把它们加入你的最终提交中
@@ -78,6 +80,7 @@ media 设备示例
   ...
   Performance counter stats for 'python3 fluster.py run -d
   GStreamer-H.264-V4L2SL-Gst1.0 -ts JVT-AVC_V1 -tv AUD_MW_E -j1 -v':
+
 
          7794.23 msec task-clock:u                     #    0.697 CPUs utilized
                0      context-switches:u               #    0.000 /sec

@@ -23,11 +23,11 @@ use shared::session::SessionManager;
 //   4. 找到则签发会话；未找到则返回 "user not found"
 //
 // 端点：
-//   GET /jaxrs/zhengwudingding/code/{code}     — 登录
-//   GET /jaxrs/zhengwudingding/info            — 配置状态
+//   GET /api/zhengwudingding/code/{code}     — 登录
+//   GET /api/zhengwudingding/info            — 配置状态
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// GET /jaxrs/zhengwudingding/code/{code} — 政务钉钉登录
+/// GET /api/zhengwudingding/code/{code} — 政务钉钉登录
 pub async fn zwdingding_login(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -121,7 +121,7 @@ pub async fn zwdingding_login(
     ))
 }
 
-/// GET /jaxrs/zhengwudingding/info — 配置状态
+/// GET /api/zhengwudingding/info — 配置状态
 pub async fn zwdingding_info() -> Result<Json<ActionResult<Value>>, AppError> {
     let api_base = match std::env::var("ZWDINGDING_API_BASE") {
         Ok(v) => v,
@@ -135,6 +135,6 @@ pub async fn zwdingding_info() -> Result<Json<ActionResult<Value>>, AppError> {
 
 pub fn router() -> Router {
     Router::new()
-        .route("/jaxrs/zhengwudingding/code/{code}", get(zwdingding_login))
-        .route("/jaxrs/zhengwudingding/info", get(zwdingding_info))
+        .route("/api/zhengwudingding/code/{code}", get(zwdingding_login))
+        .route("/api/zhengwudingding/info", get(zwdingding_info))
 }

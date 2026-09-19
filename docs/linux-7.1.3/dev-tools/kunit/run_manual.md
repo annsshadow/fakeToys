@@ -1,3 +1,5 @@
+# run_manual
+
 ﻿
 ## 不使kunit_tool 运行测试
 

@@ -15,7 +15,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/rule/list")
+                    .uri("/api/attendance/assemble/control/rule/list")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -32,7 +32,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/rule/test-id/toggle")
+                    .uri("/api/attendance/assemble/control/rule/test-id/toggle")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"enabled":true}"#))
@@ -84,13 +84,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_attendance_assemble_control_attend() {
+    async fn test_get_attendance_assemble_control_attend() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/attendanceadmin/list/all")
+                    .uri("/api/attendance/assemble/control/attendanceadmin/list/all")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -102,13 +102,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_attendance_assemble_control_rule_l() {
+    async fn test_get_attendance_assemble_control_rule_l() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/rule/list")
+                    .uri("/api/attendance/assemble/control/rule/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -120,13 +120,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_attendance_assemble_control_selfho() {
+    async fn test_get_attendance_assemble_control_selfho() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/selfholidaysimple/docId/test-id")
+                    .uri("/api/attendance/assemble/control/selfholidaysimple/docId/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -138,13 +138,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_attendance_assemble_control_statis() {
+    async fn test_get_attendance_assemble_control_statis() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/test-id/next/test-id")
+                    .uri("/api/attendance/assemble/control/statisticshow/filter/personMonth/list/test-id/next/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -156,13 +156,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_attendance_assemble_control_uuid_r() {
+    async fn test_get_attendance_assemble_control_uuid_r() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/uuid/random")
+                    .uri("/api/attendance/assemble/control/uuid/random")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -174,13 +174,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_get_jaxrs_attendance_assemble_control_workpl() {
+    async fn test_get_attendance_assemble_control_workpl() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/workplace/list/all")
+                    .uri("/api/attendance/assemble/control/workplace/list/all")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -192,13 +192,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_attendance_assemble_control_attend() {
+    async fn test_post_attendance_assemble_control_attend() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/test-id")
+                    .uri("/api/attendance/assemble/control/attendanceappealInfo/appeal/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -210,13 +210,13 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_attendance_assemble_control_rule_i() {
+    async fn test_post_attendance_assemble_control_rule_i() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/rule/test-id/toggle")
+                    .uri("/api/attendance/assemble/control/rule/test-id/toggle")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -228,14 +228,50 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires a running PostgreSQL server"]
-    async fn test_post_jaxrs_attendance_assemble_control_statis() {
+    async fn test_post_attendance_assemble_control_statis() {
         let pool = test_pool();
         let app = crate::attendance_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/attendance/assemble/control/statistic/do")
+                    .uri("/api/attendance/assemble/control/statistic/do")
                     .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_post_attendance_assemble_control_rule_create() {
+        let pool = test_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/attendance/assemble/control/rule/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_get_attendance_assemble_control_statistics_list() {
+        let pool = test_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/attendance/assemble/control/statistics/list")
+                    .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
             )

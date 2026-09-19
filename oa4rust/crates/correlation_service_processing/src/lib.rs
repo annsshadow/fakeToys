@@ -10,7 +10,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-pub const JAVA_BASE: &str = "/jaxrs/correlation_service_processing";
+pub const API_BASE: &str = "/api/correlation_service_processing";
 pub mod routes;
 pub mod u2;
 
@@ -88,8 +88,17 @@ pub async fn get_link(
             serde_json::Map::from_iter([
                 ("sourceType".to_string(), Value::String(source_type)),
                 ("sourceId".to_string(), Value::String(source_id)),
-                ("targetType".to_string(), Value::String(row.get("type"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
+                (
+                    "targetType".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "targetId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("target_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("link not found"))),
@@ -116,20 +125,41 @@ pub async fn list_correlations(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "targetId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("target_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -155,13 +185,34 @@ pub async fn get_correlation(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("targetId".to_string(), Value::String(row.get("target_id"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "personId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("person_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "targetId".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("target_id")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "type".to_string(),
+                    Value::String(row.get::<_, Option<String>>("type").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -296,62 +347,62 @@ pub async fn unlink_service(
 
 pub fn correlation_service_processing_router() -> Router {
     Router::new()
-        .route("/jaxrs/correlation/service/processing/list/{personId}", get(list_correlations))
-        .route("/jaxrs/correlation/service/processing/{id}", get(get_correlation))
-        .route("/jaxrs/correlation/service/processing/create", post(create_correlation))
-        .route("/jaxrs/correlation/service/processing/save/{id}", post(save_correlation))
-        .route("/jaxrs/correlation/service/processing/delete/{id}", post(delete_correlation))
-        .route("/jaxrs/correlation/service/processing/link/{sourceType}/{sourceId}", get(get_link))
-        .route("/jaxrs/correlation/service/processing/link", post(link_service))
-        .route("/jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}", post(unlink_service))
-        // ── Java CorrelationAction 契约（u2）────────────────────────────────
-        // GET 为仓库既有扩展（单条查询），POST 对齐 Java 创建语义
+        .route("/api/correlation/service/processing/list/{personId}", get(list_correlations))
+        .route("/api/correlation/service/processing/{id}", get(get_correlation))
+        .route("/api/correlation/service/processing/create", post(create_correlation))
+        .route("/api/correlation/service/processing/save/{id}", post(save_correlation))
+        .route("/api/correlation/service/processing/delete/{id}", post(delete_correlation))
+        .route("/api/correlation/service/processing/link/{sourceType}/{sourceId}", get(get_link))
+        .route("/api/correlation/service/processing/link", post(link_service))
+        .route("/api/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}", post(unlink_service))
+        // ── o2server CorrelationAction 契约（u2）────────────────────────────────
+        // GET 为仓库既有扩展（单条查询），POST 对齐 o2server 创建语义
         .route(
-            "/jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}",
+            "/api/correlation/service/processing/correlation/type/processplatform/job/{job}",
             get(correlation_type_processplatform_job_job).post(u2::create_pp),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/type/cms/document/{document}",
+            "/api/correlation/service/processing/correlation/type/cms/document/{document}",
             get(correlation_type_cms_document_document).post(u2::create_cms),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}",
+            "/api/correlation/service/processing/correlation/update/type/processplatform/job/{job}",
             post(u2::update_pp),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}",
+            "/api/correlation/service/processing/correlation/update/type/cms/document/{document}",
             post(u2::update_cms),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}",
+            "/api/correlation/service/processing/correlation/delete/type/processplatform/job/{job}",
             post(u2::delete_pp),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}",
+            "/api/correlation/service/processing/correlation/delete/type/cms/document/{document}",
             post(u2::delete_cms),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/readable/type/processplatform",
+            "/api/correlation/service/processing/correlation/readable/type/processplatform",
             post(u2::readable_pp),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/readable/type/cms",
+            "/api/correlation/service/processing/correlation/readable/type/cms",
             post(u2::readable_cms),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}",
+            "/api/correlation/service/processing/correlation/list/type/processplatform/job/{job}",
             get(u2::list_pp),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}",
+            "/api/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}",
             get(u2::list_pp_site),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}",
+            "/api/correlation/service/processing/correlation/list/type/cms/document/{document}",
             get(u2::list_cms),
         )
         .route(
-            "/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}",
+            "/api/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}",
             get(u2::list_cms_site),
         )
 }

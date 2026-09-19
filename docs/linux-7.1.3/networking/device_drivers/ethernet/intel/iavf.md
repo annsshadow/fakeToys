@@ -1,3 +1,5 @@
+# iavf
+
 ﻿
 ## 面向 Intel(R) 以太网自适应虚拟功能（Adaptive Virtual Function）的 Linux 基础驱动
 
@@ -36,7 +38,7 @@ iavf 驱动支持下述虚拟功能设备，并且只能在运行编译CONFIG_PC
 
 ```
 注意  该设置不会在重启后保留
-### ethtool
+## ethtool
 
 该驱动利ethtool 接口进行驱动配置和诊断，以及显示统计信息。此功能需要最新版本的 ethtool。在此处下载https://www.kernel.org/pub/software/network/ethtool/
 
@@ -52,7 +54,7 @@ iavf 驱动支持下述虚拟功能设备，并且只能在运行编译CONFIG_PC
     # ethtool --offload <if_name> rxvlan on/off
 
 ```
-### 自适应虚拟功能（Adaptive Virtual Function
+## 自适应虚拟功能（Adaptive Virtual Function
 自适应虚拟功能（AVF）允许虚拟功能驱动（VF）适应与其关联的物理功能驱动（PF）不断变化的能力集合。这使得系统管理员可以在不必更新与其关联的所VF 的情况下更新 PF。所AVF 都有单一的通用设备 ID 和品牌字符串
 AVF 具有一组被称为 “base mode（基本模式）的最小特性集，但可能根据与其关联PF 中可用的特性提供额外特性。以下是基本模式特性：
 
@@ -73,7 +75,7 @@ IEEE 802.1ad 标准（非正式称为 QinQ）允许在单个以太网帧中包�
 ```
 其中 471是示VLAN ID
 注意  对于 802.1ad（QinQ）数据包，不支持接收校验和卸载、云过滤器（cloud filters）和 VLAN 加速
-### 应用设备队列（ADq，Application Device Queues
+## 应用设备队列（ADq，Application Device Queues
 应用设备队列（ADq）允许你将一个或多个队列专用于特定应用。这可以减少指定应用的延迟，并允许按应用Tx 流量进行限速。按照以下步骤设ADq
 要求
 - 必须加载 sch_mqprio、act_mirred cls_flower 模块
@@ -137,7 +139,7 @@ shaper bw_rlimit：对于每TC，设置最小和最大带宽速率。总和必�
 
 ```
 其中 <PF> 是主机中PF 接口，例如：p5p1。你可能需要多次运行该命令才能在所有虚拟端口上获得链路
-### 虚拟功能MAC 地址意外改变
+## 虚拟功能MAC 地址意外改变
 
 如果虚拟功能MAC 地址未在主机中分配，VF（虚拟功能）驱动将使用随MAC 地址。该随机 MAC 地址可能在每次重新加VF 驱动时改变。你可以在主机机器中分配一个静MAC 地址。该静MAC 地址将在 VF 驱动重新加载后仍然存在
 ### 驱动缓冲区溢出修
@@ -156,7 +158,7 @@ shaper bw_rlimit：对于每TC，设置最小和最大带宽速率。总和必�
 
 ```
 另一种替代方案是将接口安装在独立的广播域中（在不同的交换机中，或在分区为 VLAN 的交换机中）
-### Rx 页分配错
+## Rx 页分配错
 在压力下可能会出‘Page allocation failure. order:0错误。这是由 Linux 内核报告这种压力状况的方式引起的
 
 ## 支持

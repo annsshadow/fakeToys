@@ -1,8 +1,11 @@
 
 
+# bug-hunting
+
 :Original: [../../../admin-guide/bug-hunting](../../../admin-guide/bug-hunting)
 
 :譯者:
+
 
  吳想成 Wu XiangCheng <bobwxc@email.cn>
  胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
@@ -106,7 +109,7 @@ syslog文件，通常是 `/var/log/messages` （取決於 `/etc/syslog.conf` ）
 如果你能指出缺陷在內核源代碼中的位置，則報告缺陷的效果會非常好。這有兩種方法。
 通常來說使用 `gdb` 會比較容易，不過內核需要用調試信息來預編譯。
 
-##### gdb
+#### gdb
 
 
 GNU 調試器（GNU debugger， `gdb` ）是從 `vmlinux` 文件中找出OOPS的確切
@@ -189,6 +192,7 @@ GNU 調試器（GNU debugger， `gdb` ）是從 `vmlinux` 文件中找出OOPS的
 
      上述調用發生的位置可以通過以下方式看到::
 
+
 	$ gdb drivers/media/usb/dvb-usb/dvb-usb.o
 	(gdb) l *dvb_usb_adapter_frontend_exit+0x3a
 
@@ -217,6 +221,7 @@ GNU 調試器（GNU debugger， `gdb` ）是從 `vmlinux` 文件中找出OOPS的
 
      Put the bytes into a "foo.s" file like this:
 
+
             .text
             .globl foo
      foo:
@@ -226,6 +231,7 @@ GNU 調試器（GNU debugger， `gdb` ）是從 `vmlinux` 文件中找出OOPS的
      "objdump --disassemble foo.o".
 
      Output:
+
 
      ip_queue_xmit:
          push       %ebp

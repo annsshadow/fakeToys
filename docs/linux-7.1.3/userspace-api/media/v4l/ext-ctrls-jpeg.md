@@ -1,5 +1,7 @@
+# ext-ctrls-jpeg
+
 ﻿
-######## JPEG 控制参
+## JPEG 控制参
 
 JPEG 类包JPEG 编码器与解码器通用特性的控件。目前它包含实现了使Huffman 熵编码的
 渐进式基DCT 压缩过程的编解码器特性

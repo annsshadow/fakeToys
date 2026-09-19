@@ -41,11 +41,11 @@
 
 
 
-- `GET /jaxrs/mind/assemble/control/config`
-- `POST /jaxrs/mind/assemble/control/config/update`
-- `POST /jaxrs/mind/assemble/control/folder/move/{folderId}`
-- `POST /jaxrs/mind/assemble/control/folder/save`
-- `GET /jaxrs/mind/assemble/control/folder/tree/my`
-- `GET /jaxrs/mind/assemble/control/folder/{id}`
-- `POST /jaxrs/mind/assemble/control/folder/{id}/force`
-- `POST /jaxrs/mind/assemble/control/folder/{id}/update`
+- `GET /api/mind/assemble/control/config`
+- `POST /api/mind/assemble/control/config/update`
+- `POST /api/mind/assemble/control/folder/move/{folderId}`
+- `POST /api/mind/assemble/control/folder/save`
+- `GET /api/mind/assemble/control/folder/tree/my`
+- `GET /api/mind/assemble/control/folder/{id}`
+- `POST /api/mind/assemble/control/folder/{id}/force`
+- `POST /api/mind/assemble/control/folder/{id}/update`

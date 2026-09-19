@@ -1,3 +1,5 @@
+# ftrace
+
 ﻿## ftrace - 函数跟踪
 
 
@@ -15,7 +17,7 @@
 - 更新针对: 4.13 - 版权所2017 VMware 公司 Steven Rostedt
 - 转换rst 格式 - Changbin Du <changbin.du@intel.com>
 
-### 简
+## 简
 
 
 ftrace 是一个内部跟踪器，旨在帮助开发者与系统设计者了解内核内
@@ -88,15 +90,18 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   current_tracer:
 
+
 	该文件用于设置或显示当前已配置的跟踪器。更改当前跟踪器会同
 	清除环形缓冲区的内容以及 "snapshot"（快照）缓冲区
 
   available_tracers:
 
+
 	该文件保存已编译进内核的各种不同类型的跟踪器。这里列出的
 	跟踪器可以通过将它们的名字 echo current_tracer 来配置
 
   tracing_on:
+
 
 	该文件设置或显示是否启用了向跟踪环形缓冲区的写入。向该文
 	echo 0 可禁用跟踪器，echo 1 可启用它。注意，这只会禁用向环形
@@ -111,6 +116,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   trace:
 
+
 	该文件以人类可读的格式（如下所述）保存跟踪的输出。以 O_TRUNC
 	标志打开该文件进行写入会清除环形缓冲区的内容。注意，该文
 	不是一个消费型文件。如果跟踪已关闭（没有跟踪器在运行，
@@ -119,6 +125,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 	结果
 
   trace_pipe:
+
 
 	其输出与 "trace" 文件相同，但该文件用于配合实时跟踪进行流式读取
 	从该文件读取会阻塞，直到获取到新数据。与 "trace" 文件不同，该文件
@@ -129,16 +136,19 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   trace_options:
 
+
 	该文件让用户可以控制上述某个输出文件中所显示的数据量。也有一
 	选项用于修改跟踪器或事件的工作方式（栈回溯、时间戳等）
 
   options:
+
 
 	这是一个目录，其中包含每个可用跟踪选项（同样存在于 trace_options
 	中）对应的一个文件。也可以向对应选项名的文件写入 "1" "0" 
 	设置或清除该选项
 
   tracing_max_latency:
+
 
 	部分跟踪器会记录最大延迟。例如，中断被禁用的最长时间。最大时
 	保存在该文件中。最大跟踪记录也会被保存，并"trace" 显示。只有当
@@ -149,10 +159,12 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   tracing_thresh:
 
+
 	当延迟大于该文件中的数值时，部分延迟跟踪器会记录一条跟踪。仅
 	该文件中的数值大0 时才生效。（以微秒为单位
 
   buffer_percent:
+
 
 	这是环形缓冲区在被唤醒之前需要填充多少的水位线。也就是说，如果一
 	应用程序在一per_cpu trace_pipe_raw 文件上调用阻塞读取系统调用，
@@ -167,6 +179,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   buffer_size_kb:
 
+
 	该文件设置或显示每个 CPU 缓冲区所持有的千字节数。默认情况下，每
 	CPU 的跟踪缓冲区大小相同。显示的数值是 CPU 缓冲区的大小，而不是所
 	缓冲区的总大小。跟踪缓冲区以页（内核用于分配的内存块，通常4 KB
@@ -180,9 +193,11 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   buffer_total_size_kb:
 
+
 	该文件显示所有跟踪缓冲区合并后的总大小
 
   buffer_subbuf_size_kb:
+
 
 	该文件设置或显示子缓冲区的大小。环形缓冲区被划分为若干个相同大小的
 	"子缓冲区"。一个事件不能大于子缓冲区的大小。通常，子缓冲区的大小
@@ -201,6 +216,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   free_buffer:
 
+
 	如果一个进程正在执行跟踪，并且该进程的环形缓冲区应在其结束时（即使
 	它被信号杀死）被收"释放"，则可以使用该文件来实现此目的。在该文
 	关闭时，环形缓冲区会被重置为最小大小。让正在跟踪的进程同时打开该文件，
@@ -211,10 +227,12 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   tracing_cpumask:
 
+
 	这是一个掩码，让用户只能在特定 CPU 上进行跟踪。格式为表示 CPU 
 	十六进制字符串
 
   set_ftrace_filter:
+
 
 	当配置了动ftrace 时（见下面的 "dynamic ftrace" 一节），代码会
 	动态修改（代码文本重写）以禁用对函数性能分析器（mcount）的调用。这使得
@@ -234,11 +252,13 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   set_ftrace_notrace:
 
+
 	该文件的作用set_ftrace_filter 相反。添加到此处的任何函数都不会
 	跟踪。如果一个函数同时存在于 set_ftrace_filter set_ftrace_notrace
 	中，则该函数在_不_会被跟踪
 
   set_ftrace_pid:
+
 
 	让函数跟踪器只跟PID 列在该文件中的线程
 
@@ -247,6 +267,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 	还会导致退出的任务PID 从该文件中被移除
 
   set_ftrace_notrace_pid:
+
 
         让函数跟踪器忽略 PID 列在该文件中的线程
 
@@ -259,6 +280,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   set_event_pid:
 
+
 	让事件只跟踪 PID 列在该文件中的任务。注意，sched_switch sched_wake_up
 	也会跟踪列在该文件中的事件
 
@@ -266,6 +288,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 	"event-fork" 选项。该选项还会导致任务PID 在任务退出时从该文件中被移除
 
   set_event_notrace_pid:
+
 
 	让事件不跟踪 PID 列在该文件中的任务。注意，sched_switch sched_wakeup
 	会跟踪未列在该文件中的线程，即使某个线程PID 在该文件中，如果
@@ -276,16 +299,19 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   set_graph_function:
 
+
 	列在该文件中的函数会使函数图跟踪器只跟踪这些函数以及它们所调用的函数
 	（更多细节见 "dynamic ftrace" 一节。）注意，set_ftrace_filter 
 	set_ftrace_notrace 仍然会影响哪些函数被跟踪
 
   set_graph_notrace:
 
+
 	类似set_graph_function，但在命中该函数时禁用函数图跟踪，直到它退
 	该函数为止。这样可以忽略对某个特定函数所调用函数的跟踪
 
   available_filter_functions:
+
 
 	该文件列ftrace 已处理并且可以跟踪的函数。这些就是你可以传递给
 	"set_ftrace_filter"銆?set_ftrace_notrace"銆?set_graph_function" 鎴。
@@ -294,10 +320,12 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   available_filter_functions_addrs:
 
+
 	类似available_filter_functions，但为每个函数显示地址。显示的地址
 	补丁站点地址，可能与 /proc/kallsyms 中的地址不同
 
   syscall_user_buf_size:
+
 
 	部分系统调用跟踪事件会记录某个参数所指向的用户空间地址中的数据。每
 	事件的数据量是受限的。该文件保存将被记录进环形缓冲区以保存这些数据的最
@@ -305,9 +333,11 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   dyn_ftrace_total_info:
 
+
 	该文件用于调试目的。显示已被转换成 nop 并且可用于跟踪的函数数量
 
   enabled_functions:
+
 
 	该文件更多用于调ftrace，但在查看是否有任何函数挂接了回调时也很有用
 	不仅跟踪基础设施会用ftrace 的函数跟踪功能，其他子系统也可能用到。该文件
@@ -338,6 +368,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   touched_functions:
 
+
 	该文件包含曾通过 ftrace 基础设施挂接过函数回调的所有函数。它的格式与
 	enabled_functions 相同，但显示的是所有曾经被跟踪过的函数
 
@@ -347,6 +378,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   function_profile_enabled:
 
+
 	设置该文件时，它会启用所有函数的 function 跟踪器，如果已配置，则启用函数图
 	跟踪器。它会保存被调用函数数量的直方图，如果配置了函数图跟踪器，它还会记录
 	这些函数所花费的时间。直方图内容可以显示在以下文件中
@@ -355,22 +387,27 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   trace_stat:
 
+
 	一个保存不同跟踪统计信息的目录
 
   kprobe_events:
+
 
 	启用动态跟踪点。请参阅 kprobetrace.rst
 
   kprobe_profile:
 
+
 	动态跟踪点统计信息。请参阅 kprobetrace.rst
 
   max_graph_depth:
+
 
 	与函数图跟踪器配合使用。这是它将跟踪进入函数的深度。将其设置为 1 将只显示
 	从用户空间调用的第一个内核函数
 
   printk_formats:
+
 
 	该文件供读取原始格式文件的工具使用。如果环形缓冲区中的一个事件引用了一
 	字符串，则只把指向该字符串的指针记录进缓冲区，而不是字符串本身。这导致工具
@@ -378,6 +415,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 	到对应的字符串
 
   saved_cmdlines:
+
 
 	除非事件特别保存了任务的 comm，否则在跟踪事件中只记录任务pid。ftrace
 	建立一pid comm 的映射缓存，以尝试为事件显示 comm。如果某comm pid
@@ -388,34 +426,41 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   saved_cmdlines_size:
 
+
 	默认情况下保128 comm（见上面"saved_cmdlines"）。要增加或减少被缓存
 	comm 数量，向该文echo 要缓存的 comm 数量
 
   saved_tgids:
+
 
 	如果设置"record-tgid" 选项，则每次调度上下文切换时，任务的线程ID 会被
 	保存到一个映PID 到其 TGID 的表中。默认情况下record-tgid" 选项是禁用的
 
   snapshot:
 
+
 	该文件显快照"缓冲区，并允许用户对当前正在运行的跟踪拍摄快照。更多细
 	请参阅下面的 "Snapshot"（快照）一节
 
   stack_max_size:
+
 
 	当启用栈跟踪器时，该文件会显示它所遇到的最大栈大小。请参阅下面"Stack Trace"
 	（栈跟踪）一节
 
   stack_trace:
 
+
 	该文件显示启用栈跟踪器时所遇到的最大栈的栈回溯。请参阅下面"Stack Trace"
 	（栈跟踪）一节
 
   stack_trace_filter:
 
+
 	该文件类似于 "set_ftrace_filter"，但它限制栈跟踪器所检查的函数
 
   trace_clock:
+
 
 	每当一个事件被记录进环形缓冲区时，都会添加一时间。该时间戳来自某
 	指定的时钟。默认情况下，ftrace 使用 "local" 时钟。该时钟非常快并且严格按
@@ -491,6 +536,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   trace_marker:
 
+
 	该文件对于将用户空间与内核中发生的事件同步非常有用。向该文件写入字符串
 	被写ftrace 缓冲区
 
@@ -527,23 +573,28 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   trace_marker_raw:
 
+
 	该文件类似于上面trace_marker，但用于向其写入二进制数据，可以用工具从
 	trace_pipe_raw 解析这些数据
 
   uprobe_events:
 
+
 	在程序中添加动态跟踪点。请参阅 uprobetracer.rst
 
   uprobe_profile:
+
 
 	Uprobe 统计信息。请参阅 uprobetrace.txt
 
   instances:
 
+
 	这是一种创建多个跟踪缓冲区的方式，不同的事件可以记录在不同的缓冲区中
 	请参阅下面的 "Instances"（实例）一节
 
   events:
+
 
 	该文件是跟踪事件目录。它保存已编译进内核的事件跟踪点（也称为静态跟踪点）
 	它显示存在哪些事件跟踪点，以及它们如何按系统分组。在不同层级"enable"
@@ -553,11 +604,13 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   set_event:
 
+
 	通过向该文件 echo 事件名，将启用该事件
 
 	更多信息请参events.rst
 
   show_event_filters:
+
 
 	带有过滤器的事件列表。它显示系统/事件对以及挂接在该事件上的过滤器
 
@@ -565,17 +618,20 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   show_event_triggers:
 
+
 	带有触发器的事件列表。它显示系统/事件对以及挂接在该事件上的触发器
 
 	更多信息请参events.rst
 
   available_events:
 
+
 	可以进行跟踪的可用事件列表
 
 	更多信息请参events.rst
 
   timestamp_mode:
+
 
 	某些跟踪器可能会改变将跟踪事件记录进事件缓冲区时所使用的时间戳模式。具
 	不同模式的事件可以在同一缓冲区中共存，但在记录某个事件时生效的模式决定了
@@ -597,20 +653,24 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   hwlat_detector:
 
+
 	硬件延迟探测器的目录。请参阅下面"Hardware Latency Detector"（硬件延
 	探测器）一节
 
   per_cpu:
 
+
 	该目录包per_cpu 的跟踪信息
 
   per_cpu/cpu0/buffer_size_kb:
+
 
 	ftrace 缓冲区是per_cpu 定义的。也就是说，每个 CPU 都有一个独立的缓冲区，
 	以便写入可以原子方式进行，并避免缓存抖动。这些缓冲区可能有不同的大小。该文件
 	类似buffer_size_kb 文件，但它只显示或设置特CPU（此处为 cpu0）的缓冲区大小
 
   per_cpu/cpu0/trace:
+
 
 	该文件类似于 "trace" 文件，但它只显示特定于该 CPU 的数据。如果向其写入，
 	只清除特CPU 的缓冲区
@@ -630,14 +690,17 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   per_cpu/cpu0/snapshot:
 
+
 	该文件类似于"snapshot" 文件，但只会对当CPU 拍摄快照（如果支持）。它
 	显示给定 CPU 的快照内容，如果向其写入，则只清除该 CPU 的缓冲区
 
   per_cpu/cpu0/snapshot_raw:
 
+
 	类似trace_pipe_raw，但会从给定 CPU 的快照缓冲区读取二进制格式
 
   per_cpu/cpu0/stats:
+
 
 	该文件显示有关环形缓冲区的某些统计信息：
 
@@ -667,7 +730,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 		已读取的事件数量
 
 ```
-### 跟踪
+## 跟踪
 
 
 以下是当前可以配置的跟踪器列表
@@ -771,7 +834,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
     # echo > /sys/kernel/tracing/error_log
 
 ```
-### 使用跟踪器的示例
+## 使用跟踪器的示例
 
 
 以下是在仅使tracefs 接口（不使用任何用户态工具）控制跟踪器时的典型示例
@@ -814,7 +877,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 （如下解释）secs>.<usecs> 格式的时间戳、被跟踪的函数名 "sys_close" 以及调用该函数的
 父函"system_call_fastpath"。时间戳是函数被进入的时间
 
-### 延迟跟踪格式
+## 延迟跟踪格式
 
 
 当启用了 latency-format 选项，或者设置了某个延迟跟踪器时，trace 文件会提供更多信
@@ -923,7 +986,7 @@ tracefs 被配置进内核（选择任意 ftrace 选项都会如此）时，会�
 
   注意，延迟跟踪器通常以一个栈回溯结束，以便轻松找到延迟发生的位置
 
-### trace_options
+## trace_options
 
 
 trace_options 文件（或 options 目录）用于控制跟踪输出中打印什么，或者操纵跟踪器
@@ -1066,7 +1129,7 @@ trace_options 文件（或 options 目录）用于控制跟踪输出中打印什
 			  <idle>-0     [001] dNs4 21169.031481: wake_up_idle_cpu <-add_timer_on
 			  <idle>-0     [001] dNs4 21169.031482: _raw_spin_unlock_irqrestore <-add_timer_on
 			  <idle>-0     [001] .Ns4 21169.031484: sub_preempt_count <-_raw_spin_unlock_irqrestore
-		##### CPU 2 buffer started ####
+### CPU 2 buffer started ####
 			  <idle>-0     [002] .N.1 21169.031484: rcu_idle_exit <-cpu_idle
 			  <idle>-0     [001] .Ns3 21169.031484: _raw_spin_unlock <-clocksource_watchdog
 			  <idle>-0     [001] .Ns3 21169.031485: sub_preempt_count <-_raw_spin_unlock
@@ -1246,7 +1309,7 @@ trace_options 文件（或 options 目录）用于控制跟踪输出中打印什
 	显示更精简的输出
 
 
-### irqsoff
+## irqsoff
 
 
 当中断被禁用时，CPU 无法对任何其他外部事件（除了 NMI SMI）做出反应。这会阻
@@ -1445,7 +1508,7 @@ irqsoff 跟踪器跟踪中断被禁用的时间。当达到一个新的最大延
 
 
 ```
-### preemptoff
+## preemptoff
 
 
 当抢占被禁用时，我们可能能接收中断，但任务无法被抢占，更高优先级的任务必须等待抢
@@ -1570,7 +1633,7 @@ preemptoff 跟踪器跟踪禁用抢占的位置。与 irqsoff 跟踪器类似，
 被禁用。irq_enter 代码让我们知道我们进入了一个中'h'。在此之前，被跟踪的函数仍然
 显示它不在中断中，但我们从函数本身可以看出情况并非如此
 
-### preemptirqsoff
+## preemptirqsoff
 
 
 了解中断被禁用或抢占被禁用时间最长的位置很有帮助。但有时我们想知道抢占和/或中
@@ -1757,7 +1820,7 @@ trace_hardirqs_off_thunk x86 上从中断被禁用时由汇编代码调用。没
 但在软中断运行期间，另一个中断被触发了。当中断在软中断内部运行时，标记'H'
 
 
-### wakeup
+## wakeup
 
 
 人们感兴趣的一种常见情况是，一个被唤醒的任务真正被唤醒所花费的时间。对于非实时任务
@@ -1801,7 +1864,7 @@ trace_hardirqs_off_thunk x86 上从中断被禁用时由汇编代码调用。没
 
 非实时任务没那么有趣。更有趣的跟踪是只关注实时任务
 
-### wakeup_rt
+## wakeup_rt
 
 
 在实时环境中，了解被唤醒的最高优先级任务从被唤醒到它执行所花费的唤醒时间非
@@ -1986,7 +2049,7 @@ chrt -r 5 并设function-trace 做同样的事
 中断在系统空闲时触发。在 task_woken_rt() 被调用之前的某处，NEED_RESCHED 标志被设置，
 这由第一次出'N' 标志指示
 
-### 延迟跟踪与事
+## 延迟跟踪与事
 
 
 由于函数跟踪会带来大得多的延迟，但如果不看到延迟期间发生了什么，就很难知道是什
@@ -2034,7 +2097,7 @@ chrt -r 5 并设function-trace 做同样的事
 
 
 ```
-### 硬件延迟探测
+## 硬件延迟探测
 
 
 硬件延迟探测器通过启用 "hwlat" 跟踪器来运行
@@ -2118,7 +2181,7 @@ hwlat 文件
 	之间tracing_cpumask 中列出的 CPU 之间交替。要将测试限制在特定 CPU 上，
 	将该文件中的掩码设置为测试应当运行的那些 CPU
 
-### function
+## function
 
 
 该跟踪器就是函数跟踪器。可以通过调试文件系统启用函数跟踪器。确ftrace_enabled 
@@ -2174,7 +2237,7 @@ hwlat 文件
 	}
 
 ```
-### 鍗曠嚎绋嬭窡韪。
+## 鍗曠嚎绋嬭窡韪。
 
 
 通过set_ftrace_pid 写入，你可以跟踪一
@@ -2204,7 +2267,7 @@ hwlat 文件
   #
   #           TASK-PID    CPU#    TIMESTAMP  FUNCTION
   #              | |       |          |         |
-  ##### CPU 3 buffer started ####
+## CPU 3 buffer started ####
       yum-updatesd-3111  [003]  1701.957688: free_poll_entry <-poll_freewait
       yum-updatesd-3111  [003]  1701.957689: remove_wait_queue <-free_poll_entry
       yum-updatesd-3111  [003]  1701.957691: fput <-free_poll_entry
@@ -2316,7 +2379,7 @@ hwlat 文件
 
 
 ```
-### 函数图跟踪器
+## 函数图跟踪器
 
 
 该跟踪器与函数跟踪器类似，区别在于它在函数的入口和出口处都进行探测。这是通过在每
@@ -2635,7 +2698,7 @@ task_struct 中使用一个动态分配的返回地址栈来实现的。在函�
 你可能会在该跟踪器的以下 "dynamic ftrace"（动ftrace）一节中发现其他有用功能，例
 只跟踪特定函数或任务
 
-### 动ftrace
+## 动ftrace
 
 
 如果设置CONFIG_DYNAMIC_FTRACE，在函数跟踪被禁用时，系统运行的开销几乎为零。其
@@ -2877,7 +2940,7 @@ set_ftrace_notrace 阻止这些函数被跟踪
 ```
 我们可以看到不再lock preempt 跟踪
 
-### 通过索引选择函数过滤
+## 通过索引选择函数过滤
 
 
 由于字符串处理代价高昂（在将传入的字符串与函数地址比较之前，需要先查找函数的地址），
@@ -2909,7 +2972,7 @@ set_ftrace_notrace 阻止这些函数被跟踪
   x86_pmu_commit_txn
 
 ```
-### 函数图跟踪器的动ftrace
+## 函数图跟踪器的动ftrace
 
 
 虽然上面解释的内容同时涉及函数跟踪器和函数图跟踪器，但函数图跟踪器中只有一些特
@@ -3152,7 +3215,7 @@ trace_pipe 输出trace 文件相同的内容，但对跟踪的影响不同。每
 任何进程打开trace 文件进行读取，它实际上会禁用跟踪并阻止添加新条目。trace_pipe 文件
 没有此限制
 
-### 跟踪条目
+## 跟踪条目
 
 
 在内核中诊断问题时，数据过多或过少都会令人困扰。buffer_size_kb 文件用于修改内部跟踪
@@ -3218,7 +3281,7 @@ per_cpu 缓冲区不相同时，顶层buffer_size_kb 只会显示一X
 ```
 写入顶层buffer_size_kb 会将所有缓冲区重置为相同大小
 
-### 快照
+## 快照
 
 
 CONFIG_TRACER_SNAPSHOT 为所有非延迟跟踪器提供一个通用的快照功能。（记录最大延迟的
@@ -3231,6 +3294,7 @@ CONFIG_TRACER_SNAPSHOT 为所有非延迟跟踪器提供一个通用的快照功
 "tracing" 目录中以下与 tracefs 相关的文件与此功能有关：
 
   snapshot:
+
 
 	该文件用于拍摄快照并读取快照的输出。向该文echo 1 以分配一个备用缓冲区
 	拍摄快照（交换），然后以"trace" 相同的格式（在上"文件系统" 一节中描述
@@ -3298,7 +3362,7 @@ CONFIG_TRACER_SNAPSHOT 为所有非延迟跟踪器提供一个通用的快照功
 
 
 ```
-### 实例
+## 实例
 
 
 tracefs tracing 目录中，有一个名"instances" 的目录。可以使mkdir 在该目录
@@ -3419,7 +3483,7 @@ trace_options 对所有实例和顶层缓冲区的影响相同，但这在未来
 注意，如果有进程在某个实例目录中打开了跟踪文件，rmdir 将以 EBUSY 失败
 
 
-### 鏍堣窡韪。
+## 鏍堣窡韪。
 
 
 由于内核拥有固定大小的栈，在函数上浪费栈空间是很重要的。内核开发者必须注意他们在栈上
@@ -3474,7 +3538,7 @@ CONFIG_STACK_TRACER 启用 ftrace 的栈跟踪功能。要启用它，/proc/sys/
 
 目前mfentry 仅由 x86 gcc 4.6.0 及以上版本使用
 
-### 更多
+## 更多
 
 
 更多细节可以在源代码、kernel/trace/*.c 文件中找到

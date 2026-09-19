@@ -76,7 +76,7 @@ processplatform_* (全)          100%/100%  DB 接触率高（已定义口径）
   - `data_document_id_update`（POST，`COALESCE` 仅更新非空字段）
   - `data_document_id_delete`（POST，软删除置 `deleted_at`）
 - 复用既有真实 DB 助手 `list_from_table_filtered` 作为列表端点（原 `data_document_id` 壳虽触库但**未路由**，本次一并接线）。
-- 在 `routes.rs` 接线 5 条端点（`/jaxrs/cms_assemble_control/data/document[/create|/{id}|/{id}/update|/{id}/delete]`）。
+- 在 `routes.rs` 接线 5 条端点（`/api/cms_assemble_control/data/document[/create|/{id}|/{id}/update|/{id}/delete]`）。
 - 新增集成测试 `tests/integration_tests/scenarios/cms_document.rs`：`create→list(可见)→get(真实内容)→update→软删(列表消失 + get 404)`，**连真实 PostgreSQL 跑通**。
 - 验证：`cargo test --test integration_runner -- --ignored` → `integration_scenarios ... ok`（1 passed）。
 

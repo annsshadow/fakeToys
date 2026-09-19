@@ -1,3 +1,5 @@
+# stat
+
 ﻿## 块设备层/sys/block/<dev>/stat 中的统计信息
 
 

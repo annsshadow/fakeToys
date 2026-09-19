@@ -1,3 +1,5 @@
+# modules
+
 ﻿## Building External Modules
 
 本文档介绍如何构建一个树外（out-of-tree）内核模块
@@ -20,10 +22,12 @@
 
 	To build against the running kernel use::
 
+
 		$ make -C /lib/modules/`uname -r`/build M=$PWD
 
 	Then to install the module(s) just built, add the target
 	"modules_install" to the command::
+
 
 		$ make -C /lib/modules/`uname -r`/build M=$PWD modules_install
 
@@ -132,7 +136,7 @@ kbuild 系统会从 <module_name>.c 构建<module_name>.o，并在链接之后�
 
 ```
 
-### 独立Kbuild 文件Makefile
+## 独立Kbuild 文件Makefile
 
 	Kbuild 会首先查找名"Kbuild" 的文件，若未找到，则再去查找 "Makefile"。利"Kbuild" 文件，我们可以将示例 1 中的 "Makefile" 拆分为两个文件：
 
@@ -153,6 +157,7 @@ kbuild 系统会从 <module_name>.c 构建<module_name>.o，并在链接之后�
 	示例 2 中的拆分由于每个文件都很简单而显得多余；不过，有些外部模块使用的 makefile 长达数百行，在这种情况下，将 kbuild 部分与其余部分分离确实大有裨益
 	Linux 6.13 及更高版本支持另一种方式。外部模块的 Makefile 可以直接包含内核 Makefile，而不是调用子 Make
 	Example 3::
+
 
 ```
 
@@ -203,7 +208,7 @@ kbuild 系统会从 <module_name>.c 构建<module_name>.o，并在链接之后�
 
 ```
 
-### Single Subdirectory
+## Single Subdirectory
 
 	外部模块倾向于把头文件放在其源码所在位置下一个独立的
 	include/ 目录中，尽管这并非通常的内核风格。要告知 kbuild 该目录，可使ccflags-y CFLAGS_<filename>.o
@@ -236,6 +241,7 @@ kbuild 系统会从 <module_name>.c 构建<module_name>.o，并在链接之后�
 
 	To build the module complex.ko, we then need the following
 	kbuild file::
+
 
 		--> filename: Kbuild
 		obj-m := complex.o
@@ -315,6 +321,7 @@ Module.symvers 包含一个内核构建中所有已导出符号的列表
 
 	Module.symvers serves two purposes:
 
+
 	1) It lists all exported symbols from vmlinux and all modules.
 	2) It lists the CRC if CONFIG_MODVERSIONS is enabled.
 
@@ -340,10 +347,12 @@ Module.symvers 包含一个内核构建中所有已导出符号的列表
 
 		The top-level kbuild file would then look like::
 
+
 			#./Kbuild (or ./Makefile):
 				obj-m := foo/ bar/
 
 		And executing::
+
 
 			$ make -C $KDIR M=$PWD
 

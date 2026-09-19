@@ -12,7 +12,7 @@ mod tests_generated;
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/{id}",
+    path = "/api/portal/{id}",
     params(
         ("id" = String, Path, description = "Portal ID")
     ),
@@ -50,7 +50,10 @@ pub async fn portal_id(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "config".to_string(),
                     Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
@@ -61,7 +64,10 @@ pub async fn portal_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -72,7 +78,7 @@ pub async fn portal_id(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/list",
+    path = "/api/portal/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -105,17 +111,23 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                             .unwrap_or_default(),
                     ),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -124,7 +136,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portalcategory/list",
+    path = "/api/portalcategory/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -150,7 +162,7 @@ pub async fn list_portal_category(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let category: String = row.get("category");
+            let category: String = row.get::<_, Option<String>>("category").unwrap_or_default();
             let count: i64 = row.get("cnt");
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(category.clone())),
@@ -164,7 +176,7 @@ pub async fn list_portal_category(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -173,7 +185,7 @@ pub async fn list_portal_category(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/page/list",
+    path = "/api/portal/page/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -199,12 +211,18 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -218,7 +236,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -227,7 +245,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/page/{id}",
+    path = "/api/portal/page/{id}",
     params(
         ("id" = String, Path, description = "Page ID")
     ),
@@ -258,12 +276,18 @@ pub async fn get_page(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "content".to_string(),
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -281,7 +305,7 @@ pub async fn get_page(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/portal/page/create",
+    path = "/api/portal/page/create",
     request_body = serde_json::Value,
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -334,7 +358,7 @@ pub async fn create_page(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/portal/page/save/{id}",
+    path = "/api/portal/page/save/{id}",
     params(
         ("id" = String, Path, description = "Page ID")
     ),
@@ -381,7 +405,7 @@ pub async fn save_page(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/portal/page/delete/{id}",
+    path = "/api/portal/page/delete/{id}",
     params(
         ("id" = String, Path, description = "Page ID")
     ),
@@ -420,7 +444,7 @@ pub async fn delete_page(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/widget/list",
+    path = "/api/portal/widget/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -454,7 +478,7 @@ pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -463,7 +487,7 @@ pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/script/list",
+    path = "/api/portal/script/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -496,7 +520,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -505,7 +529,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/portal/dict/list",
+    path = "/api/portal/dict/list",
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
         (status = 400, description = "Bad Request"),
@@ -529,21 +553,39 @@ pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("appData".to_string(), Value::String(row.get("app_data"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "appData".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_data").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

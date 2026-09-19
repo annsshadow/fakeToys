@@ -1,3 +1,5 @@
+# cpu-isolation
+
 ﻿
 ## CPU 隔离
 
@@ -111,7 +113,7 @@ Housekeeping CPU 是那些非隔离CPU，内核噪声会从隔离的 CPU 上迁�
   echo "isolated" > cpuset.cpus.partition
 
 ```
-### 用户空间工作负载
+## 用户空间工作负载
 
 模拟一个纯用户空间工作负载，下面的程序在隔离的 CPU 7 上运行一个空的用户空间循环
 ```
@@ -144,7 +146,7 @@ Housekeeping CPU 是那些非隔离CPU，内核噪声会从隔离的 CPU 上迁�
   # gcc user_loop.c -o user_loop
 
 ```
-### 启动
+## 启动
 下面的启动器运行上述程序 10 秒，并跟踪因抢占任务IRQ 而产生的噪声
 ```
   TRACING=/sys/kernel/tracing/

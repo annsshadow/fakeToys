@@ -1,3 +1,5 @@
+# swp_emulation
+
 ﻿### 已弃用的 SWP 指令的软件模(CONFIG_SWP_EMULATE)
 
 

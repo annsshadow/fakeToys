@@ -1,7 +1,9 @@
+# vidioc-subscribe-event
+
 ﻿
 
 
-######## ioctl VIDIOC_SUBSCRIBE_EVENT, VIDIOC_UNSUBSCRIBE_EVENT
+## ioctl VIDIOC_SUBSCRIBE_EVENT, VIDIOC_UNSUBSCRIBE_EVENT
 
 
 ## 名称

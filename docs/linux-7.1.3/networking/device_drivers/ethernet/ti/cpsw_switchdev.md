@@ -1,3 +1,5 @@
+# cpsw_switchdev
+
 ﻿
 ## 德州仪器（Texas Instruments）CPSW 基于 switchdev 的以太网驱动
 
@@ -137,6 +139,7 @@ mac 模式需要保留两vid 供内部使用，默认情况下它们等CPSW 端�
 	bridge vlan add dev br0 vid 100 pvid untagged self <---- Add cpu port to VLAN100
 
  2. tagged::
+
 
 	bridge vlan add dev sw0p1 vid 100 master
 	bridge vlan add dev sw0p2 vid 100 master

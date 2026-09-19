@@ -1,3 +1,5 @@
+# yealink
+
 ﻿yealink usb-p1k 电话驱动文档
 
 
@@ -197,6 +199,7 @@ get_icons
 
   Example - sound the ringtone for 10 seconds::
 
+
     echo -n RINGTONE > /sys/..../show_icon
     sleep 10
     echo -n RINGTONE > /sys/..../hide_icon
@@ -218,6 +221,7 @@ get_icons
     arecord -v -d 10 -r 8000 -f S16_LE -t wav  foobar.wav
 
   Example - playback test::
+
 
     aplay foobar.wav
 

@@ -256,7 +256,7 @@ fn validate_query(query: &str) -> bool {
 - Modify: `crates/shared/src/middleware.rs`
 
 **Approach:**
-- 将 `ADMIN_WRITE_PREFIXES` 从 15 个前缀回滚到 4 个：`/jaxrs/person`、`/jaxrs/unit`、`/jaxrs/role`、`/jaxrs/group`
+- 将 `ADMIN_WRITE_PREFIXES` 从 15 个前缀回滚到 4 个：`/api/person`、`/api/unit`、`/api/role`、`/api/group`
 - 更新顶部的迁移注释，记录回滚决策
 - **同步更新** `PermissionRegistry::with_defaults()` 中新模块的权限级别（从 Admin 改为 Authenticated）
 - 原子性要求：`ADMIN_WRITE_PREFIXES` 常量与 `PermissionRegistry` 注册必须在一个 PR 内同时提交，避免部署窗口期出现权限不一致
@@ -265,8 +265,8 @@ fn validate_query(query: &str) -> bool {
 **Patterns to follow:** 现有 `ADMIN_WRITE_PREFIXES` 常量定义模式
 
 **Test scenarios:**
-- Happy path: 非 admin 用户可写 /jaxrs/ai、/jaxrs/file 等模块
-- Error path: 非 admin 用户写 /jaxrs/person 仍返回 403
+- Happy path: 非 admin 用户可写 /api/ai、/api/file 等模块
+- Error path: 非 admin 用户写 /api/person 仍返回 403
 - Integration: 前端 o2web 写操作恢复正常
 
 **Verification:**

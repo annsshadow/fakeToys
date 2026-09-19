@@ -49,7 +49,7 @@ async fn test_handler_name() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/.../path")
+                .uri("/api/.../path")
                 .method("GET")
                 .body(Body::empty())
                 .unwrap(),

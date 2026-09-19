@@ -1,3 +1,5 @@
+# osi
+
 ﻿
 ## ACPI _OSI _REV 方法
 

@@ -1,10 +1,12 @@
+# coresight
+
 ﻿## Coresight - ARM 上的硬件辅助追踪
 
 
    :Author:   Mathieu Poirier <mathieu.poirier@linaro.org>
    :Date:     September 11th, 2014
 
-### 简
+## 简
 
 Coresight 是一系列技术的统称，用于调试基ARM SoC。它包括 JTAG 和硬件辅助追踪的解决方案。本文档关注后者
 在处理拥有许SoC 以及 GPU、DMA 引擎等其他组件的系统时，硬件辅助追踪变得越来越有用。ARM 通过不同的组件开发了一套硬件辅助追踪方案，每个组件在综合（synthesis）时加入设计以满足特定的追踪需求。组件通常分类为源（source）、链路（link）和汇（sink），并（通常）通过 AMBA 总线发现
@@ -238,7 +240,7 @@ coresight 框架提供了一个中心点来表示、配置和管理平台上的 
 
 ```
 如下所述，使用 sysfs 时，只需使能一个汇和一个源即可成功追踪。框架会按需正确使能所有中间链路
-注意：`cti_sys0` 出现在上面两个连接列表中。CTI 可以连接到多个设备，并通过 CTM 以星型拓扑排列。详(Documentation/trace/coresight/coresight-ect.rst) [#fourth]_```
+注意：`cti_sys0` 出现在上面两个连接列表中。CTI 可以连接到多个设备，并通过 CTM 以星型拓扑排列。详(Documentation/trace/coresight/coresight-ect.md) [#fourth]_```
 
   linaro-developer:~# ls -l /sys/bus/coresight/devices/cti_sys0/connections
   <file details> nr_links
@@ -366,6 +368,7 @@ Coresight 追踪器使Perf 框架的性能监控单元（PMU）抽象来表示�
 	linaro@linaro-nano:~$ ./perf list pmu
 
 		List of pre-defined events (to be used in -e):
+
 
 		cs_etm//                                    [Kernel PMU event]
 
@@ -507,10 +510,10 @@ perf 总是在相关的 EL 上启PID 追踪，这是通过自动启用 “contex
 
 
 CTI（Cross Trigger Interface，交叉触发接口）在单CTI 与组件之间提供一组触发信号，并可以通过 CTM（Cross Trigger Matrix，交叉触发矩阵）上的通道在所CTI 之间传播这些信号
-提供了一份单独的文档文件来解释这些设备的使用(Documentation/trace/coresight/coresight-ect.rst) [#fourth]_
+提供了一份单独的文档文件来解释这些设备的使用(Documentation/trace/coresight/coresight-ect.md) [#fourth]_
 ### CoreSight 系统配置
 
 
 CoreSight 组件可以是具有许多编程选项的复杂设备。此外，组件可以被编程为在整个系统中相互交互
 提供CoreSight 系统配置管理器，以便能从 perf sysfs 中轻松选择和使用这些复杂的编程配置
-更多信息请参阅单独的文档(Documentation/trace/coresight/coresight-config.rst) [#fifth]_
+更多信息请参阅单独的文档(Documentation/trace/coresight/coresight-config.md) [#fifth]_

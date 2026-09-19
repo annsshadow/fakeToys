@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/view/list")
+                    .uri("/api/query/view/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/view/test-id")
+                    .uri("/api/query/view/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/view/create")
+                    .uri("/api/query/view/create")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/item/list")
+                    .uri("/api/query/item/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +97,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/import/list")
+                    .uri("/api/query/import/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

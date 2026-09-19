@@ -1,10 +1,12 @@
+# sysfs
+
 ﻿## 面向用户空间GPIO Sysfs 接口
 
 
    API 已被 chardev.rst 废弃，其 ABI 文档已移Documentation/ABI/obsolete/sysfs-gpio
    新的开发应使用 chardev.rst，已有的开发也鼓励尽快迁移，因为该 API 未来将被移除
    在迁移期间该接口将继续得到维护，但新特性只会添加到API 中
-### 废弃sysfs ABI
+## 废弃sysfs ABI
 
 
 使用“gpiolib”实现者框架的平台可以选择配置一个面GPIO sysfs 用户接口。这debugfs 接口不同，因为它提供GPIO 方向和值的控制，而不只是显示 GPIO 状态摘要此外，它可以在没有调试支持的生产系统上存在

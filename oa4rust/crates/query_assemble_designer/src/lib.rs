@@ -363,21 +363,42 @@ pub async fn get_designer(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "query".to_string(),
-                    Value::String(row.get("query_definition")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_definition")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -438,23 +459,38 @@ pub async fn list_designers(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -531,161 +567,321 @@ pub async fn delete_designer(
     ))))
 }
 
+// ── 裸路径变体（桌面 QueryQueryApp 以配置串引用 save/delete，list 为无参全量）──
+#[allow(non_snake_case)]
+pub async fn list_designers_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, create_time, update_time FROM x_query_design \
+             WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+#[allow(non_snake_case)]
+pub async fn save_designer_bare(
+    pool: Extension<Pool>,
+    Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let name = req
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let category = req
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let query = req
+        .get("query")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+
+    let updated = client
+        .execute(
+            "UPDATE x_query_design SET name = $1, category = $2, query_definition = $3, update_time = NOW() \
+             WHERE id = $4 AND deleted_at IS NULL",
+            &[&name, &category, &query, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let saved = if updated > 0 {
+        updated
+    } else {
+        // 不存在则新建（upsert 语义），使裸 save 可创建。
+        let new_id = if id.is_empty() {
+            uuid::Uuid::new_v4().to_string()
+        } else {
+            id.clone()
+        };
+        let r = client
+            .execute(
+                "INSERT INTO x_query_design (id, name, category, query_definition, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, NOW(), NOW())",
+                &[&new_id, &name, &category, &query],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        r
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "saved".to_string(),
+                Value::Number(serde_json::Number::from(saved)),
+            ),
+        ]),
+    ))))
+}
+
+#[allow(non_snake_case)]
+pub async fn delete_designer_bare(
+    pool: Extension<Pool>,
+    Json(req): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = req
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let result = client
+        .execute(
+            "UPDATE x_query_design SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error(
+            "query design not found or already deleted",
+        )));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
 pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
     use u2_closures as u2;
     let router = Router::new()
-        .route("/jaxrs/query/assemble/designer/get/{id}", get(get_designer))
-        .route("/jaxrs/query/assemble/designer/create", post(create_designer))
-        .route("/jaxrs/query/assemble/designer/list/{category}", get(list_designers))
-        .route("/jaxrs/query/assemble/designer/save/{id}", post(save_designer))
-        .route("/jaxrs/query/assemble/designer/delete/{id}", post(delete_designer))
-        .route("/jaxrs/query/assemble/designer/{id}/{count}", get(crate::id_count))
-        .route("/jaxrs/query/assemble/designer/importmodel/{id}", post(crate::importmodel_id))
-        .route("/jaxrs/query/assemble/designer/importmodel/permission/{id}", post(crate::importmodel_id_permission))
-        .route("/jaxrs/query/assemble/designer/importmodel/list/{query}/{flag}", post(crate::importmodel_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/neural/generate/model/{modelFlag}", get(crate::neural_generate_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/neural/learn/model/{modelFlag}", get(crate::neural_learn_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}", get(crate::neural_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/neural/model/reset/{modelFlag}/{status}", post(crate::neural_model_modelFlag_reset_status))
-        .route("/jaxrs/query/assemble/designer/neural/stop/generating/model/{modelFlag}", get(crate::neural_stop_generating_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/neural/stop/learn/model/{modelFlag}", get(crate::neural_stop_learn_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/output/select/file/{flag}", get(crate::output_flag_select_file))
-        .route("/jaxrs/query/assemble/designer/output/select/{queryFlag}", get(crate::output_queryFlag_select))
-        .route("/jaxrs/query/assemble/designer/entity/entity/properties/{query}/{category}/{entityCategory}", get(crate::query_entity_entity_category_entityCategory_properties))
-        .route("/jaxrs/query/assemble/designer/icon/{query}/{flag}", get(crate::query_flag_icon))
-        .route("/jaxrs/query/assemble/designer/permission/{query}/{id}", get(crate::query_id_permission))
-        .route("/jaxrs/query/assemble/designer/list/querycategory/{query}/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
-        .route("/jaxrs/query/assemble/designer/list/summary/querycategory/{query}/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
-        .route("/jaxrs/query/assemble/designer/stat/{id}", get(crate::stat_id))
-        .route("/jaxrs/query/assemble/designer/stat/permission/{id}", get(crate::stat_id_permission))
-        .route("/jaxrs/query/assemble/designer/stat/simulate/{id}", get(crate::stat_id_simulate))
-        .route("/jaxrs/query/assemble/designer/stat/list/{id}/{next}/{count}", get(crate::stat_list_id_next_count))
-        .route("/jaxrs/query/assemble/designer/stat/list/{query}/{flag}", get(crate::stat_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/table/export/{tableFlag}/{count}/{count}", get(crate::table_export_tableFlag_count_count))
-        .route("/jaxrs/query/assemble/designer/table/{flag}", get(crate::table_flag))
-        .route("/jaxrs/query/assemble/designer/table/execute/{flag}", post(crate::table_flag_execute))
-        .route("/jaxrs/query/assemble/designer/table/build/{flag}/{status}", get(crate::table_flag_status_build))
-        .route("/jaxrs/query/assemble/designer/table/draft/{flag}/{status}", get(crate::table_flag_status_draft))
-        .route("/jaxrs/query/assemble/designer/table/permission/{id}", get(crate::table_id_permission))
-        .route("/jaxrs/query/assemble/designer/table/list/{query}/{flag}", get(crate::table_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count))
-        .route("/jaxrs/query/assemble/designer/table/list/row/select/where/where/{tableFlag}", get(crate::table_list_tableFlag_row_select_where_where))
-        .route("/jaxrs/query/assemble/designer/table/build/dispatch/{query}", get(crate::table_query_build_dispatch))
-        .route("/jaxrs/query/assemble/designer/table/row/{tableFlag}", get(crate::table_tableFlag_row))
-        .route("/jaxrs/query/assemble/designer/table/row/where/where/{tableFlag}/{count}", get(crate::table_tableFlag_row_count_where_where))
-        .route("/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}", post(crate::table_tableFlag_row_delete_all))
-        .route("/jaxrs/query/assemble/designer/table/row/{tableFlag}/{id}", get(crate::table_tableFlag_row_id))
-        .route("/jaxrs/query/assemble/designer/table/row/save/{tableFlag}", post(crate::table_tableFlag_row_save))
-        .route("/jaxrs/query/assemble/designer/bundle/{view}/{id}", get(crate::view_id_bundle))
-        .route("/jaxrs/query/assemble/designer/simulate/{view}/{id}", get(crate::view_id_simulate))
-        .route("/jaxrs/query/assemble/designer/list/{view}/{id}/{next}/{count}", get(crate::view_list_id_next_count))
-        .route("/jaxrs/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/delete/{id}", delete(delete_designer))
-        .route("/jaxrs/query/assemble/designer/save/{id}", put(save_designer))
-        .route("/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}", delete(table_tableFlag_row_delete_all))
-        .route("/jaxrs/query/assemble/designer/table/row/save/{tableFlag}", put(table_tableFlag_row_save))
+        .route("/api/query/assemble/designer/get/{id}", get(get_designer))
+        .route("/api/query/assemble/designer/create", post(create_designer))
+        .route("/api/query/assemble/designer/list/{category}", get(list_designers))
+        .route("/api/query/assemble/designer/save/{id}", post(save_designer))
+        .route("/api/query/assemble/designer/delete/{id}", post(delete_designer))
+        // 裸路径变体（桌面配置串引用；list 无参全量，save/delete id 走 body）
+        .route("/api/query/assemble/designer/list", get(list_designers_all))
+        .route("/api/query/assemble/designer/save", put(save_designer_bare))
+        .route("/api/query/assemble/designer/save", post(save_designer_bare))
+        .route("/api/query/assemble/designer/delete", delete(delete_designer_bare))
+        .route("/api/query/assemble/designer/delete", post(delete_designer_bare))
+        .route("/api/query/assemble/designer/{id}/{count}", get(crate::id_count))
+        .route("/api/query/assemble/designer/importmodel/{id}", post(crate::importmodel_id))
+        .route("/api/query/assemble/designer/importmodel/permission/{id}", post(crate::importmodel_id_permission))
+        .route("/api/query/assemble/designer/importmodel/list/{query}/{flag}", post(crate::importmodel_list_query_flag))
+        .route("/api/query/assemble/designer/neural/generate/model/{modelFlag}", get(crate::neural_generate_model_modelFlag))
+        .route("/api/query/assemble/designer/neural/learn/model/{modelFlag}", get(crate::neural_learn_model_modelFlag))
+        .route("/api/query/assemble/designer/neural/model/{modelFlag}", get(crate::neural_model_modelFlag))
+        .route("/api/query/assemble/designer/neural/model/reset/{modelFlag}/{status}", post(crate::neural_model_modelFlag_reset_status))
+        .route("/api/query/assemble/designer/neural/stop/generating/model/{modelFlag}", get(crate::neural_stop_generating_model_modelFlag))
+        .route("/api/query/assemble/designer/neural/stop/learn/model/{modelFlag}", get(crate::neural_stop_learn_model_modelFlag))
+        .route("/api/query/assemble/designer/output/select/file/{flag}", get(crate::output_flag_select_file))
+        .route("/api/query/assemble/designer/output/select/{queryFlag}", get(crate::output_queryFlag_select))
+        .route("/api/query/assemble/designer/entity/entity/properties/{query}/{category}/{entityCategory}", get(crate::query_entity_entity_category_entityCategory_properties))
+        .route("/api/query/assemble/designer/icon/{query}/{flag}", get(crate::query_flag_icon))
+        .route("/api/query/assemble/designer/permission/{query}/{id}", get(crate::query_id_permission))
+        .route("/api/query/assemble/designer/list/querycategory/{query}/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
+        .route("/api/query/assemble/designer/list/summary/querycategory/{query}/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
+        .route("/api/query/assemble/designer/stat/{id}", get(crate::stat_id))
+        .route("/api/query/assemble/designer/stat/permission/{id}", get(crate::stat_id_permission))
+        .route("/api/query/assemble/designer/stat/simulate/{id}", get(crate::stat_id_simulate))
+        .route("/api/query/assemble/designer/stat/list/{id}/{next}/{count}", get(crate::stat_list_id_next_count))
+        .route("/api/query/assemble/designer/stat/list/{query}/{flag}", get(crate::stat_list_query_flag))
+        .route("/api/query/assemble/designer/table/export/{tableFlag}/{count}/{count}", get(crate::table_export_tableFlag_count_count))
+        .route("/api/query/assemble/designer/table/{flag}", get(crate::table_flag))
+        .route("/api/query/assemble/designer/table/execute/{flag}", post(crate::table_flag_execute))
+        .route("/api/query/assemble/designer/table/build/{flag}/{status}", get(crate::table_flag_status_build))
+        .route("/api/query/assemble/designer/table/draft/{flag}/{status}", get(crate::table_flag_status_draft))
+        .route("/api/query/assemble/designer/table/permission/{id}", get(crate::table_id_permission))
+        .route("/api/query/assemble/designer/table/list/{query}/{flag}", get(crate::table_list_query_flag))
+        .route("/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/{next}/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/api/query/assemble/designer/table/list/row/select/where/where/{tableFlag}", get(crate::table_list_tableFlag_row_select_where_where))
+        .route("/api/query/assemble/designer/table/build/dispatch/{query}", get(crate::table_query_build_dispatch))
+        .route("/api/query/assemble/designer/table/row/{tableFlag}", get(crate::table_tableFlag_row))
+        .route("/api/query/assemble/designer/table/row/where/where/{tableFlag}/{count}", get(crate::table_tableFlag_row_count_where_where))
+        .route("/api/query/assemble/designer/table/row/delete/all/{tableFlag}", post(crate::table_tableFlag_row_delete_all))
+        .route("/api/query/assemble/designer/table/row/{tableFlag}/{id}", get(crate::table_tableFlag_row_id))
+        .route("/api/query/assemble/designer/table/row/save/{tableFlag}", post(crate::table_tableFlag_row_save))
+        .route("/api/query/assemble/designer/bundle/{view}/{id}", get(crate::view_id_bundle))
+        .route("/api/query/assemble/designer/simulate/{view}/{id}", get(crate::view_id_simulate))
+        .route("/api/query/assemble/designer/list/{view}/{id}/{next}/{count}", get(crate::view_list_id_next_count))
+        .route("/api/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag))
+        .route("/api/query/assemble/designer/delete/{id}", delete(delete_designer))
+        .route("/api/query/assemble/designer/save/{id}", put(save_designer))
+        .route("/api/query/assemble/designer/table/row/delete/all/{tableFlag}", delete(table_tableFlag_row_delete_all))
+        .route("/api/query/assemble/designer/table/row/save/{tableFlag}", put(table_tableFlag_row_save))
         // ── plan002 U2：已实现未注册 handler 补挂 ──
-        .route("/jaxrs/query/assemble/designer/search", post(designer_search))
-        .route("/jaxrs/query/assemble/designer/input/compare", put(input_compare))
-        .route("/jaxrs/query/assemble/designer/input/cover", put(input_cover))
-        .route("/jaxrs/query/assemble/designer/input/create", put(input_create))
-        .route("/jaxrs/query/assemble/designer/input/prepare/cover", put(input_prepare_cover))
-        .route("/jaxrs/query/assemble/designer/input/prepare/create", put(input_prepare_create))
-        .route("/jaxrs/query/assemble/designer/neural/list/model", get(neural_list_model))
-        .route("/jaxrs/query/assemble/designer/neural/model", post(neural_model))
-        .route("/jaxrs/query/assemble/designer/output/list", get(output_list))
-        .route("/jaxrs/query/assemble/designer/query/{flag}", get(query_flag))
-        .route("/jaxrs/query/assemble/designer/list/all", get(query_list_all))
-        .route("/jaxrs/query/assemble/designer/list/summary", get(query_list_summary))
-        .route("/jaxrs/query/assemble/designer/querycategory/list", get(query_querycategory_list))
-        .route("/jaxrs/query/assemble/designer/stat/list/{id}/prev/{count}", get(stat_list_id_prev_count))
-        .route("/jaxrs/query/assemble/designer/table/list/manage", get(table_list_manage))
-        .route("/jaxrs/query/assemble/designer/table/reload/dynamic", get(table_reload_dynamic))
-        .route("/jaxrs/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}", get(table_list_tableFlag_row_id_prev_count))
-        .route("/jaxrs/query/assemble/designer/view/{id}", get(view_id))
-        .route("/jaxrs/query/assemble/designer/view/permission/{id}", get(view_id_permission))
-        .route("/jaxrs/query/assemble/designer/view/list/{id}/prev/{count}", get(view_list_id_prev_count))
+        .route("/api/query/assemble/designer/search", post(designer_search))
+        .route("/api/query/assemble/designer/input/compare", put(input_compare))
+        .route("/api/query/assemble/designer/input/cover", put(input_cover))
+        .route("/api/query/assemble/designer/input/create", put(input_create))
+        .route("/api/query/assemble/designer/input/prepare/cover", put(input_prepare_cover))
+        .route("/api/query/assemble/designer/input/prepare/create", put(input_prepare_create))
+        .route("/api/query/assemble/designer/neural/list/model", get(neural_list_model))
+        .route("/api/query/assemble/designer/neural/model", post(neural_model))
+        .route("/api/query/assemble/designer/output/list", get(output_list))
+        .route("/api/query/assemble/designer/query/{flag}", get(query_flag))
+        .route("/api/query/assemble/designer/list/all", get(query_list_all))
+        .route("/api/query/assemble/designer/list/summary", get(query_list_summary))
+        .route("/api/query/assemble/designer/querycategory/list", get(query_querycategory_list))
+        .route("/api/query/assemble/designer/stat/list/{id}/prev/{count}", get(stat_list_id_prev_count))
+        .route("/api/query/assemble/designer/table/list/manage", get(table_list_manage))
+        .route("/api/query/assemble/designer/table/reload/dynamic", get(table_reload_dynamic))
+        .route("/api/query/assemble/designer/table/list/row/{tableFlag}/{id}/prev/{count}", get(table_list_tableFlag_row_id_prev_count))
+        .route("/api/query/assemble/designer/view/{id}", get(view_id))
+        .route("/api/query/assemble/designer/view/permission/{id}", get(view_id_permission))
+        .route("/api/query/assemble/designer/view/list/{id}/prev/{count}", get(view_list_id_prev_count))
         // ── plan002 U2：statement 全族（CRUD + 执行）──
-        .route("/jaxrs/query/assemble/designer/statement", post(u2::statement_create))
-        .route("/jaxrs/query/assemble/designer/statement/{flag}", get(u2::statement_get_flag).put(u2::statement_edit).delete(u2::statement_delete))
-        .route("/jaxrs/query/assemble/designer/statement/list/manage", get(u2::statement_manage_list))
-        .route("/jaxrs/query/assemble/designer/statement/list/query/{queryFlag}", post(u2::statement_list_with_query))
-        .route("/jaxrs/query/assemble/designer/statement/permission/{id}", post(u2::statement_permission))
-        .route("/jaxrs/query/assemble/designer/statement/execute/{flag}/page/{page}/size/{size}", post(u2::statement_execute_v2))
-        .route("/jaxrs/query/assemble/designer/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        .route("/api/query/assemble/designer/statement", post(u2::statement_create))
+        .route("/api/query/assemble/designer/statement/{flag}", get(u2::statement_get_flag).put(u2::statement_edit).delete(u2::statement_delete))
+        .route("/api/query/assemble/designer/statement/list/manage", get(u2::statement_manage_list))
+        .route("/api/query/assemble/designer/statement/list/query/{queryFlag}", post(u2::statement_list_with_query))
+        .route("/api/query/assemble/designer/statement/permission/{id}", post(u2::statement_permission))
+        .route("/api/query/assemble/designer/statement/execute/{flag}/page/{page}/size/{size}", post(u2::statement_execute_v2))
+        .route("/api/query/assemble/designer/statement/execute/{flag}/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
         // ── plan002 U2：importmodel / neural / stat / table / view CRUD 缺口 ──
-        .route("/jaxrs/query/assemble/designer/importmodel", post(u2::importmodel_create))
-        .route("/jaxrs/query/assemble/designer/importmodel/edit/{id}", put(u2::importmodel_edit))
-        .route("/jaxrs/query/assemble/designer/importmodel/delete/{id}", delete(u2::importmodel_delete))
-        .route("/jaxrs/query/assemble/designer/neural/delete/model/{modelFlag}", delete(u2::neural_delete_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/neural/update/model/{modelFlag}", put(u2::neural_update_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/stat", post(u2::stat_create))
-        .route("/jaxrs/query/assemble/designer/stat/edit/{id}", put(u2::stat_edit))
-        .route("/jaxrs/query/assemble/designer/stat/delete/{id}", delete(u2::stat_delete))
-        .route("/jaxrs/query/assemble/designer/table", post(create_table_definition))
-        .route("/jaxrs/query/assemble/designer/table/edit/{flag}", put(update_table_definition))
-        .route("/jaxrs/query/assemble/designer/table/delete/{flag}", delete(u2::table_delete))
-        .route("/jaxrs/query/assemble/designer/table/row/insert/{tableFlag}", post(u2::table_tableFlag_row_insert))
-        .route("/jaxrs/query/assemble/designer/table/row/update/{tableFlag}/{id}", put(u2::table_tableFlag_row_update))
-        .route("/jaxrs/query/assemble/designer/table/row/delete/{tableFlag}/{id}", delete(u2::table_tableFlag_row_delete))
-        .route("/jaxrs/query/assemble/designer/table/build/query/{query}", get(table_query_query_build))
-        .route("/jaxrs/query/assemble/designer/view", post(u2::view_create))
-        .route("/jaxrs/query/assemble/designer/view/edit/{id}", put(u2::view_edit))
-        .route("/jaxrs/query/assemble/designer/view/delete/{id}", delete(u2::view_delete))
-        .route("/jaxrs/query/assemble/designer/icon/set/{flag}", put(u2::query_set_icon))
-        // ── plan002 U2 v9：Java 精确路径/动词闭合（权威清单 docs/audits/java-endpoint-inventory.json）──
-        .route("/jaxrs/query/assemble/designer/designer/search", post(u2::designer_search_v2))
-        .route("/jaxrs/query/assemble/designer/id/{count}", get(u2::id_generate))
-        .route("/jaxrs/query/assemble/designer/importmodel/list/query/{flag}", get(crate::importmodel_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/importmodel/{id}", get(u2::importmodel_get_flag).put(u2::importmodel_edit_flag).delete(u2::importmodel_delete_flag))
-        .route("/jaxrs/query/assemble/designer/importmodel/{id}/permission", post(u2::importmodel_permission_set))
-        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}", put(u2::neural_update_model_modelFlag).delete(u2::neural_delete_model_modelFlag))
-        .route("/jaxrs/query/assemble/designer/neural/model/{modelFlag}/reset/status", get(crate::neural_model_modelFlag_reset_status))
-        .route("/jaxrs/query/assemble/designer/output/{flag}/select", put(u2::output_select_put))
-        .route("/jaxrs/query/assemble/designer/output/{flag}/select/file", get(crate::output_flag_select_file))
-        .route("/jaxrs/query/assemble/designer/query", post(u2::query_create_v2))
-        .route("/jaxrs/query/assemble/designer/execute", post(u2::designer_execute))
-        .route("/jaxrs/query/assemble/designer/stat/do", post(u2::stat_do))
-        .route("/jaxrs/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties", get(crate::query_entity_entity_category_entityCategory_properties))
-        .route("/jaxrs/query/assemble/designer/query/list/all", get(crate::query_list_all))
-        .route("/jaxrs/query/assemble/designer/query/list/querycategory/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
-        .route("/jaxrs/query/assemble/designer/query/list/summary", get(crate::query_list_summary))
-        .route("/jaxrs/query/assemble/designer/query/list/summary/querycategory/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
-        .route("/jaxrs/query/assemble/designer/query/querycategory/list", get(crate::query_querycategory_list))
-        .route("/jaxrs/query/assemble/designer/query/{flag}", put(u2::query_edit_flag).delete(u2::query_delete_flag))
-        .route("/jaxrs/query/assemble/designer/query/{flag}/icon", put(u2::query_icon_set))
-        .route("/jaxrs/query/assemble/designer/query/{flag}/permission", post(u2::query_permission_set))
-        .route("/jaxrs/query/assemble/designer/stat/list/query/{queryFlag}", get(crate::stat_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/stat/list/{id}/next/{count}", get(crate::stat_list_id_next_count))
-        .route("/jaxrs/query/assemble/designer/stat/{id}", put(u2::stat_edit).delete(u2::stat_delete))
-        .route("/jaxrs/query/assemble/designer/stat/{id}/permission", post(u2::stat_permission_set))
-        .route("/jaxrs/query/assemble/designer/stat/{id}/simulate", put(u2::stat_simulate_put))
-        .route("/jaxrs/query/assemble/designer/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
-        .route("/jaxrs/query/assemble/designer/statement/{flag}/execute/page/{page}/size/{size}", post(u2::statement_execute_v2))
-        .route("/jaxrs/query/assemble/designer/statement/{flag}/permission", post(u2::statement_permission))
-        .route("/jaxrs/query/assemble/designer/table/export/{tableFlag}/count/{count}", get(crate::table_export_tableFlag_count_count))
-        .route("/jaxrs/query/assemble/designer/table/list/query/{flag}", get(crate::table_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/select/where/{where}", get(crate::table_list_tableFlag_row_select_where_where))
-        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
-        .route("/jaxrs/query/assemble/designer/table/list/{flag}/row/{id}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
-        .route("/jaxrs/query/assemble/designer/table/query/{query}/build", get(crate::table_query_build_dispatch))
-        .route("/jaxrs/query/assemble/designer/table/{flag}", put(update_table_definition).delete(u2::table_delete))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/build/dispatch", get(u2::table_build_dispatch_flag))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/execute", post(execute_table_definition))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/permission", post(u2::table_permission_set))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/row", post(u2::table_tableFlag_row_insert))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/row/delete/all", delete(crate::table_tableFlag_row_delete_all))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/row/save", post(crate::table_tableFlag_row_save))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/row/{id}", get(crate::table_tableFlag_row_id).put(u2::table_tableFlag_row_update).delete(u2::table_tableFlag_row_delete))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/status/build", get(crate::table_flag_status_build))
-        .route("/jaxrs/query/assemble/designer/table/{flag}/status/draft", get(crate::table_flag_status_draft))
-        .route("/jaxrs/query/assemble/designer/view/list/query/{queryFlag}", get(crate::view_list_query_flag))
-        .route("/jaxrs/query/assemble/designer/view/list/{id}/next/{count}", get(crate::view_list_id_next_count))
-        .route("/jaxrs/query/assemble/designer/view/{id}", put(u2::view_edit).delete(u2::view_delete))
-        .route("/jaxrs/query/assemble/designer/view/{id}/bundle", put(u2::view_bundle_put))
-        .route("/jaxrs/query/assemble/designer/view/{id}/permission", post(u2::view_permission_set))
-        .route("/jaxrs/query/assemble/designer/view/{id}/simulate", put(u2::view_simulate_put));
+        .route("/api/query/assemble/designer/importmodel", post(u2::importmodel_create))
+        .route("/api/query/assemble/designer/importmodel/edit/{id}", put(u2::importmodel_edit))
+        .route("/api/query/assemble/designer/importmodel/delete/{id}", delete(u2::importmodel_delete))
+        .route("/api/query/assemble/designer/neural/delete/model/{modelFlag}", delete(u2::neural_delete_model_modelFlag))
+        .route("/api/query/assemble/designer/neural/update/model/{modelFlag}", put(u2::neural_update_model_modelFlag))
+        .route("/api/query/assemble/designer/stat", post(u2::stat_create))
+        .route("/api/query/assemble/designer/stat/edit/{id}", put(u2::stat_edit))
+        .route("/api/query/assemble/designer/stat/delete/{id}", delete(u2::stat_delete))
+        .route("/api/query/assemble/designer/table", post(create_table_definition))
+        .route("/api/query/assemble/designer/table/edit/{flag}", put(update_table_definition))
+        .route("/api/query/assemble/designer/table/delete/{flag}", delete(u2::table_delete))
+        .route("/api/query/assemble/designer/table/row/insert/{tableFlag}", post(u2::table_tableFlag_row_insert))
+        .route("/api/query/assemble/designer/table/row/update/{tableFlag}/{id}", put(u2::table_tableFlag_row_update))
+        .route("/api/query/assemble/designer/table/row/delete/{tableFlag}/{id}", delete(u2::table_tableFlag_row_delete))
+        .route("/api/query/assemble/designer/table/build/query/{query}", get(table_query_query_build))
+        .route("/api/query/assemble/designer/view", post(u2::view_create))
+        .route("/api/query/assemble/designer/view/edit/{id}", put(u2::view_edit))
+        .route("/api/query/assemble/designer/view/delete/{id}", delete(u2::view_delete))
+        .route("/api/query/assemble/designer/icon/set/{flag}", put(u2::query_set_icon))
+        // ── plan002 U2 v9：o2server 精确路径/动词闭合（权威清单 docs/audits/o2server-endpoint-inventory.json）──
+        .route("/api/query/assemble/designer/designer/search", post(u2::designer_search_v2))
+        .route("/api/query/assemble/designer/id/{count}", get(u2::id_generate))
+        .route("/api/query/assemble/designer/importmodel/list/query/{flag}", get(crate::importmodel_list_query_flag))
+        .route("/api/query/assemble/designer/importmodel/{id}", get(u2::importmodel_get_flag).put(u2::importmodel_edit_flag).delete(u2::importmodel_delete_flag))
+        .route("/api/query/assemble/designer/importmodel/{id}/permission", post(u2::importmodel_permission_set))
+        .route("/api/query/assemble/designer/neural/model/{modelFlag}", put(u2::neural_update_model_modelFlag).delete(u2::neural_delete_model_modelFlag))
+        .route("/api/query/assemble/designer/neural/model/{modelFlag}/reset/status", get(crate::neural_model_modelFlag_reset_status))
+        .route("/api/query/assemble/designer/output/{flag}/select", put(u2::output_select_put))
+        .route("/api/query/assemble/designer/output/{flag}/select/file", get(crate::output_flag_select_file))
+        .route("/api/query/assemble/designer/query", post(u2::query_create_v2))
+        .route("/api/query/assemble/designer/execute", post(u2::designer_execute))
+        .route("/api/query/assemble/designer/stat/do", post(u2::stat_do))
+        .route("/api/query/assemble/designer/query/entity/{entity}/category/{entityCategory}/properties", get(crate::query_entity_entity_category_entityCategory_properties))
+        .route("/api/query/assemble/designer/query/list/all", get(crate::query_list_all))
+        .route("/api/query/assemble/designer/query/list/querycategory/{queryCategory}", get(crate::query_list_querycategory_queryCategory))
+        .route("/api/query/assemble/designer/query/list/summary", get(crate::query_list_summary))
+        .route("/api/query/assemble/designer/query/list/summary/querycategory/{queryCategory}", get(crate::query_list_summary_querycategory_queryCategory))
+        .route("/api/query/assemble/designer/query/querycategory/list", get(crate::query_querycategory_list))
+        .route("/api/query/assemble/designer/query/{flag}", put(u2::query_edit_flag).delete(u2::query_delete_flag))
+        .route("/api/query/assemble/designer/query/{flag}/icon", put(u2::query_icon_set))
+        .route("/api/query/assemble/designer/query/{flag}/permission", post(u2::query_permission_set))
+        .route("/api/query/assemble/designer/stat/list/query/{queryFlag}", get(crate::stat_list_query_flag))
+        .route("/api/query/assemble/designer/stat/list/{id}/next/{count}", get(crate::stat_list_id_next_count))
+        .route("/api/query/assemble/designer/stat/{id}", put(u2::stat_edit).delete(u2::stat_delete))
+        .route("/api/query/assemble/designer/stat/{id}/permission", post(u2::stat_permission_set))
+        .route("/api/query/assemble/designer/stat/{id}/simulate", put(u2::stat_simulate_put))
+        .route("/api/query/assemble/designer/statement/{flag}/execute/mode/{mode}/page/{page}/size/{size}", post(u2::statement_execute_mode_v2))
+        .route("/api/query/assemble/designer/statement/{flag}/execute/page/{page}/size/{size}", post(u2::statement_execute_v2))
+        .route("/api/query/assemble/designer/statement/{flag}/permission", post(u2::statement_permission))
+        .route("/api/query/assemble/designer/table/export/{tableFlag}/count/{count}", get(crate::table_export_tableFlag_count_count))
+        .route("/api/query/assemble/designer/table/list/query/{flag}", get(crate::table_list_query_flag))
+        .route("/api/query/assemble/designer/table/list/{flag}/row/select/where/{where}", get(crate::table_list_tableFlag_row_select_where_where))
+        .route("/api/query/assemble/designer/table/list/{flag}/row/{id}/next/{count}", get(crate::table_list_tableFlag_row_id_next_count))
+        .route("/api/query/assemble/designer/table/list/{flag}/row/{id}/prev/{count}", get(crate::table_list_tableFlag_row_id_prev_count))
+        .route("/api/query/assemble/designer/table/query/{query}/build", get(crate::table_query_build_dispatch))
+        .route("/api/query/assemble/designer/table/{flag}", put(update_table_definition).delete(u2::table_delete))
+        .route("/api/query/assemble/designer/table/{flag}/build/dispatch", get(u2::table_build_dispatch_flag))
+        .route("/api/query/assemble/designer/table/{flag}/execute", post(execute_table_definition))
+        .route("/api/query/assemble/designer/table/{flag}/permission", post(u2::table_permission_set))
+        .route("/api/query/assemble/designer/table/{flag}/row", post(u2::table_tableFlag_row_insert))
+        .route("/api/query/assemble/designer/table/{flag}/row/count/where/{where}", get(crate::table_tableFlag_row_count_where_where))
+        .route("/api/query/assemble/designer/table/{flag}/row/delete/all", delete(crate::table_tableFlag_row_delete_all))
+        .route("/api/query/assemble/designer/table/{flag}/row/save", post(crate::table_tableFlag_row_save))
+        .route("/api/query/assemble/designer/table/{flag}/row/{id}", get(crate::table_tableFlag_row_id).put(u2::table_tableFlag_row_update).delete(u2::table_tableFlag_row_delete))
+        .route("/api/query/assemble/designer/table/{flag}/status/build", get(crate::table_flag_status_build))
+        .route("/api/query/assemble/designer/table/{flag}/status/draft", get(crate::table_flag_status_draft))
+        .route("/api/query/assemble/designer/view/list/query/{queryFlag}", get(crate::view_list_query_flag))
+        .route("/api/query/assemble/designer/view/list/{id}/next/{count}", get(crate::view_list_id_next_count))
+        .route("/api/query/assemble/designer/view/{id}", put(u2::view_edit).delete(u2::view_delete))
+        .route("/api/query/assemble/designer/view/{id}/bundle", put(u2::view_bundle_put))
+        .route("/api/query/assemble/designer/view/{id}/permission", post(u2::view_permission_set))
+        .route("/api/query/assemble/designer/view/{id}/simulate", put(u2::view_simulate_put))
+        // ── importer / stat 斜杠路径家族（设计器桌面视图，shared::crud 通用参数化写）──
+        .route("/api/query/assemble/designer/importer/list", get(importer_list))
+        .route("/api/query/assemble/designer/importer/create", post(importer_create))
+        .route("/api/query/assemble/designer/importer/save/{id}", put(importer_save))
+        .route("/api/query/assemble/designer/importer/save/{id}", post(importer_save))
+        .route("/api/query/assemble/designer/importer/delete/{id}", delete(importer_delete))
+        .route("/api/query/assemble/designer/importer/delete/{id}", post(importer_delete))
+        .route("/api/query/assemble/designer/stat/list", get(stat_list))
+        .route("/api/query/assemble/designer/stat/create", post(stat_create))
+        .route("/api/query/assemble/designer/stat/save/{id}", put(stat_save))
+        .route("/api/query/assemble/designer/stat/save/{id}", post(stat_save))
+        // DELETE /stat/delete/{id} 已由 U2 的 u2::stat_delete 占用（同表软删），此处仅补 POST
+        .route("/api/query/assemble/designer/stat/delete/{id}", post(stat_delete));
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
@@ -719,23 +915,38 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -792,27 +1003,45 @@ pub async fn importmodel_list_query_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -837,21 +1066,42 @@ pub async fn importmodel_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "modelFlag".to_string(),
-                    Value::String(row.get("model_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -878,10 +1128,16 @@ pub async fn importmodel_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -1146,21 +1402,39 @@ pub async fn neural_list_model(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1224,14 +1498,32 @@ pub async fn neural_model_modelFlag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1348,21 +1640,39 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1387,12 +1697,24 @@ pub async fn output_flag_select_file(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
                 (
                     "selectFile".to_string(),
-                    Value::String(row.get("select_file")),
+                    Value::String(
+                        row.get::<_, Option<String>>("select_file")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1420,21 +1742,39 @@ pub async fn output_queryFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("flag".to_string(), Value::String(row.get("flag"))),
-                ("appName".to_string(), Value::String(row.get("app_name"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "flag".to_string(),
+                    Value::String(row.get::<_, Option<String>>("flag").unwrap_or_default()),
+                ),
+                (
+                    "appName".to_string(),
+                    Value::String(row.get::<_, Option<String>>("app_name").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1444,8 +1784,7 @@ pub async fn output_queryFlag_select(
 #[allow(non_snake_case)]
 pub async fn query_entity_entity_category_entityCategory_properties(
     pool: Extension<Pool>,
-    Path(entity): Path<String>,
-    Path(entity_category): Path<String>,
+    Path((entity, entity_category)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -1463,15 +1802,24 @@ pub async fn query_entity_entity_category_entityCategory_properties(
             Value::Object(serde_json::Map::from_iter([
                 (
                     "fieldName".to_string(),
-                    Value::String(row.get("field_name")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_name")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldLabel".to_string(),
-                    Value::String(row.get("field_label")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_label")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "fieldType".to_string(),
-                    Value::String(row.get("field_type")),
+                    Value::String(
+                        row.get::<_, Option<String>>("field_type")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1498,20 +1846,35 @@ pub async fn query_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1537,20 +1900,35 @@ pub async fn query_list_querycategory_queryCategory(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1575,15 +1953,24 @@ pub async fn query_list_summary(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1609,15 +1996,24 @@ pub async fn query_list_summary_querycategory_queryCategory(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1643,13 +2039,13 @@ pub async fn query_querycategory_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([(
                 "category".to_string(),
-                Value::String(row.get("category")),
+                Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
             )]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1674,17 +2070,35 @@ pub async fn query_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
                 (
                     "query".to_string(),
-                    Value::String(row.get("query_definition")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_definition")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1711,8 +2125,14 @@ pub async fn query_flag_icon(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("icon".to_string(), Value::String(row.get("icon"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "icon".to_string(),
+                    Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default()),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("query not found"))),
@@ -1737,10 +2157,16 @@ pub async fn query_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -1767,24 +2193,45 @@ pub async fn stat_list_query_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1794,14 +2241,13 @@ pub async fn stat_list_query_flag(
 #[allow(non_snake_case)]
 pub async fn stat_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1811,19 +2257,34 @@ pub async fn stat_list_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1833,14 +2294,13 @@ pub async fn stat_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn stat_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -1850,19 +2310,34 @@ pub async fn stat_list_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -1887,18 +2362,42 @@ pub async fn stat_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("statType".to_string(), Value::String(row.get("stat_type"))),
-                ("config".to_string(), Value::String(row.get("config"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1925,10 +2424,16 @@ pub async fn stat_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -1954,9 +2459,18 @@ pub async fn stat_id_simulate(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("config".to_string(), Value::String(row.get("config"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "config".to_string(),
+                    Value::String(row.get::<_, Option<String>>("config").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1967,14 +2481,13 @@ pub async fn stat_id_simulate(
 #[allow(non_snake_case)]
 pub async fn table_export_tableFlag_count_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2",
             &[&table_flag, &count],
         )
         .await
@@ -1984,18 +2497,27 @@ pub async fn table_export_tableFlag_count_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2020,11 +2542,20 @@ pub async fn table_list_manage(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
@@ -2044,10 +2575,16 @@ pub async fn table_list_manage(
                     "status".to_string(),
                     Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
@@ -2061,7 +2598,7 @@ pub async fn table_list_manage(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2087,27 +2624,45 @@ pub async fn table_list_query_flag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2117,8 +2672,7 @@ pub async fn table_list_query_flag(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(_where): Path<String>,
+    Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2134,18 +2688,27 @@ pub async fn table_list_tableFlag_row_select_where_where(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2155,15 +2718,13 @@ pub async fn table_list_tableFlag_row_select_where_where(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_next_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3",
             &[&table_flag, &id, &count],
         )
         .await
@@ -2173,18 +2734,27 @@ pub async fn table_list_tableFlag_row_id_next_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2194,15 +2764,13 @@ pub async fn table_list_tableFlag_row_id_next_count(
 #[allow(non_snake_case)]
 pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3::int",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3",
             &[&table_flag, &id, &count],
         )
         .await
@@ -2212,18 +2780,27 @@ pub async fn table_list_tableFlag_row_id_prev_count(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2302,11 +2879,20 @@ pub async fn table_flag(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "queryFlag".to_string(),
@@ -2326,10 +2912,16 @@ pub async fn table_flag(
                     "status".to_string(),
                     Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
@@ -2366,7 +2958,7 @@ pub async fn table_flag_execute(
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2445,10 +3037,16 @@ pub async fn table_id_permission(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -2501,18 +3099,27 @@ pub async fn table_tableFlag_row(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2522,8 +3129,7 @@ pub async fn table_tableFlag_row(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_count_where_where(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(_where): Path<String>,
+    Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2612,8 +3218,7 @@ pub async fn table_tableFlag_row_save(
 #[allow(non_snake_case)]
 pub async fn table_tableFlag_row_id(
     pool: Extension<Pool>,
-    Path(table_flag): Path<String>,
-    Path(id): Path<String>,
+    Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
@@ -2628,12 +3233,21 @@ pub async fn table_tableFlag_row_id(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "tableFlag".to_string(),
-                    Value::String(row.get("table_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("table_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("data".to_string(), Value::String(row.get("data"))),
+                (
+                    "data".to_string(),
+                    Value::String(row.get::<_, Option<String>>("data").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -2662,12 +3276,24 @@ pub async fn view_list_query_flag(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2677,7 +3303,7 @@ pub async fn view_list_query_flag(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2687,14 +3313,13 @@ pub async fn view_list_query_flag(
 #[allow(non_snake_case)]
 pub async fn view_list_id_next_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::int",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2706,8 +3331,17 @@ pub async fn view_list_id_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2717,7 +3351,7 @@ pub async fn view_list_id_next_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2727,14 +3361,13 @@ pub async fn view_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn view_list_id_prev_count(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Path(count): Path<i64>,
+    Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::int",
+            "SELECT id, name, view_flag, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2",
             &[&id, &count],
         )
         .await
@@ -2746,8 +3379,17 @@ pub async fn view_list_id_prev_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2757,7 +3399,7 @@ pub async fn view_list_id_prev_count(
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,
@@ -2784,13 +3426,28 @@ pub async fn view_id(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "queryFlag".to_string(),
-                    Value::String(row.get("query_flag")),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
                 ),
-                ("content".to_string(), Value::String(row.get("content"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -2821,8 +3478,20 @@ pub async fn view_id_bundle(
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("viewFlag".to_string(), Value::String(row.get("view_flag"))),
-                ("bundle".to_string(), Value::String(row.get("bundle_data"))),
+                (
+                    "viewFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("view_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "bundle".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("bundle_data")
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]),
         )))),
         None => Ok(Json(ActionResult::error("view not found"))),
@@ -2850,7 +3519,10 @@ pub async fn view_id_permission(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "permission".to_string(),
-                    Value::String(row.get("permission")),
+                    Value::String(
+                        row.get::<_, Option<String>>("permission")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -2878,10 +3550,264 @@ pub async fn view_id_simulate(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("view not found"))),
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// importer / stat 斜杠路径家族（设计器桌面视图 + shared::crud 通用参数化写）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── importer/list（查询导入设计器，查 x_query_import_model）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, model_flag, query_flag, creator, create_time FROM x_query_import_model WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "modelFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("model_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── importer 家族 CRUD（x_query_import_model，通用参数化写）──
+fn importer_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_query_import_model",
+        columns: &[
+            ("name", "name"),
+            ("modelFlag", "model_flag"),
+            ("queryFlag", "query_flag"),
+            ("content", "content"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &importer_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &importer_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn importer_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &importer_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── stat/list（查询统计设计器，查 x_query_stat）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "queryFlag".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("query_flag")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "statType".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("stat_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── stat 家族 CRUD（x_query_stat，通用参数化写）──
+fn stat_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_query_stat",
+        columns: &[
+            ("name", "name"),
+            ("queryFlag", "query_flag"),
+            ("statType", "stat_type"),
+            ("creator", "creator"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &stat_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &stat_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn stat_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &stat_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
 }

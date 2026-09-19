@@ -1,9 +1,9 @@
 //! plan002 U2 收尾 (part 3): person 剩余 27 个端点。
 //!
-//! 对齐 Java x_organization_assemble_express PersonAction 其余方法：
+//! 对齐 o2server x_organization_assemble_express PersonAction 其余方法：
 //! login/after、login/recent、pair/identity、detail、各 object 变体、
 //! person sub/sup direct/nested、unit sub/nested(+like)、personattribute 关联查询。
-//! 约定沿用 endpoints.rs 模块注释；GET /jaxrs/person/{flag} 由 control crate
+//! 约定沿用 endpoints.rs 模块注释；GET /api/person/{flag} 由 control crate
 //! 占用（同 method+path 冲突），本模块不注册。
 //!
 //! 契约说明：
@@ -20,7 +20,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 use crate::endpoints::{
-    bool_field, capped, named_list, normalize_flags, ok_java_list, ok_json, resolve_person_ids,
+    bool_field, capped, named_list, normalize_flags, ok_json, ok_legacy_list, resolve_person_ids,
     row_to_map, string_field, string_list, PICK_ANY,
 };
 
@@ -39,8 +39,8 @@ async fn login_after(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(date) = string_field(&body, "date") else {
-        // Java：date 为 null 时返回空 Wo.personList
-        return Ok(AxumJson(ActionResult::java_success(
+        // o2server：date 为 null 时返回空 Wo.personList
+        return Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &[]),
             0,
             0,
@@ -67,10 +67,10 @@ async fn login_after(
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &list),
             list.len() as i64,
             0,
@@ -78,7 +78,7 @@ async fn login_after(
     }
 }
 
-/// POST /jaxrs/person/list/login/after (Java ActionListLoginAfter)。
+/// POST /api/person/list/login/after (o2server ActionListLoginAfter)。
 pub async fn person_list_login_after(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -86,7 +86,7 @@ pub async fn person_list_login_after(
     login_after(pool, body, false).await
 }
 
-/// POST /jaxrs/person/list/login/after/object。
+/// POST /api/person/list/login/after/object。
 pub async fn person_list_login_after_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -137,10 +137,10 @@ async fn login_recent(
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &list),
             list.len() as i64,
             0,
@@ -148,7 +148,7 @@ async fn login_recent(
     }
 }
 
-/// POST /jaxrs/person/list/login/recent (Java ActionListLoginRecent)。
+/// POST /api/person/list/login/recent (o2server ActionListLoginRecent)。
 pub async fn person_list_login_recent(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -156,7 +156,7 @@ pub async fn person_list_login_recent(
     login_recent(pool, body, false).await
 }
 
-/// POST /jaxrs/person/list/login/recent/object。
+/// POST /api/person/list/login/recent/object。
 pub async fn person_list_login_recent_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -166,7 +166,7 @@ pub async fn person_list_login_recent_object(
 
 // ── pair / detail ─────────────────────────────────────────────────────────────
 
-/// POST /jaxrs/person/list/pair/identity (Java ActionListPairIdentity)：
+/// POST /api/person/list/pair/identity (o2server ActionListPairIdentity)：
 /// 输入顺序保持的 identity→person 配对，未命中 person 为 null。
 pub async fn person_list_pair_identity(
     pool: Extension<Pool>,
@@ -175,7 +175,7 @@ pub async fn person_list_pair_identity(
     let flags = normalize_flags(string_list(&body, "identityList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return Ok(AxumJson(ActionResult::java_success(
+        return Ok(AxumJson(ActionResult::legacy_success(
             Value::Object(serde_json::Map::from_iter([(
                 "identityPersonPairList".to_string(),
                 Value::Array(vec![]),
@@ -213,7 +213,7 @@ pub async fn person_list_pair_identity(
         })
         .collect();
     let count = pairs.len() as i64;
-    Ok(AxumJson(ActionResult::java_success(
+    Ok(AxumJson(ActionResult::legacy_success(
         Value::Object(serde_json::Map::from_iter([(
             "identityPersonPairList".to_string(),
             Value::Array(pairs),
@@ -223,7 +223,7 @@ pub async fn person_list_pair_identity(
     )))
 }
 
-/// POST /jaxrs/person/detail/{flag} (Java ActionDetail)：人员 + 身份/组织(含递归上级)/
+/// POST /api/person/detail/{flag} (o2server ActionDetail)：人员 + 身份/组织(含递归上级)/
 /// 职务/群组(含递归上级)/角色/个人属性。fetch* 开关默认 true，显式 false 时清空对应列表。
 pub async fn person_detail_flag(
     pool: Extension<Pool>,
@@ -429,7 +429,7 @@ pub async fn person_detail_flag(
 
 // ── group / identity / role 的 object 变体 ────────────────────────────────────
 
-/// POST /jaxrs/person/list/group/object (Java ActionListWithGroupObject)。
+/// POST /api/person/list/group/object (o2server ActionListWithGroupObject)。
 pub async fn person_list_group_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -441,7 +441,7 @@ pub async fn person_list_group_object(
     person_flag_objects(pool, body, "groupList", SQL).await
 }
 
-/// POST /jaxrs/person/list/identity/object (Java ActionListWithIdentityObject)。
+/// POST /api/person/list/identity/object (o2server ActionListWithIdentityObject)。
 pub async fn person_list_identity_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -452,7 +452,7 @@ pub async fn person_list_identity_object(
     person_flag_objects(pool, body, "identityList", SQL).await
 }
 
-/// POST /jaxrs/person/list/role/object (Java ActionListWithRoleObject)。
+/// POST /api/person/list/role/object (o2server ActionListWithRoleObject)。
 pub async fn person_list_role_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -474,7 +474,7 @@ async fn person_flag_objects(
     let flags = normalize_flags(string_list(&body, key));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -482,7 +482,7 @@ async fn person_flag_objects(
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-    ok_java_list(data.len(), data)
+    ok_legacy_list(data.len(), data)
 }
 
 // ── personattribute 关联查询 ──────────────────────────────────────────────────
@@ -492,7 +492,7 @@ const ATTR_PERSON_BASE: &str = "FROM x_org_person p \
      WHERE p.deleted_at IS NULL AND a.attribute_key = $1 \
        AND ($2::text IS NULL OR a.attribute_value = $2)";
 
-/// POST /jaxrs/person/list/personattribute (Java ActionListWithPersonAttribute，
+/// POST /api/person/list/personattribute (o2server ActionListWithPersonAttribute，
 /// Wi{name, attribute})：拥有指定属性名(与可选属性值)的人员。
 pub async fn person_list_personattribute(
     pool: Extension<Pool>,
@@ -501,7 +501,7 @@ pub async fn person_list_personattribute(
     attr_persons(pool, body, false).await
 }
 
-/// POST /jaxrs/person/list/personattribute/object。
+/// POST /api/person/list/personattribute/object。
 pub async fn person_list_personattribute_object(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
@@ -515,8 +515,8 @@ async fn attr_persons(
     objects: bool,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let Some(name) = string_field(&body, "name") else {
-        // Java：name 为空直接返回空结果
-        return Ok(AxumJson(ActionResult::java_success(
+        // o2server：name 为空直接返回空结果
+        return Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &[]),
             0,
             0,
@@ -536,10 +536,10 @@ async fn attr_persons(
         .map_err(|_| AppError::Internal)?;
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &list),
             list.len() as i64,
             0,
@@ -602,7 +602,7 @@ async fn person_tree_scope(
     let flags = normalize_flags(string_list(&body, "personList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let sql = template.replace("{SEED}", SEED_UNITS_OF_PERSONS);
     let select_sql = if objects {
@@ -621,10 +621,10 @@ async fn person_tree_scope(
         .map_err(|_| AppError::Internal)?;
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &list),
             list.len() as i64,
             0,
@@ -697,7 +697,7 @@ async fn person_of_units(
     let flags = normalize_flags(string_list(&body, "unitList"));
     capped(&flags)?;
     if flags.is_empty() {
-        return ok_java_list(0, vec![]);
+        return ok_legacy_list(0, vec![]);
     }
     let key = if like {
         string_field(&body, "key")
@@ -736,10 +736,10 @@ async fn person_of_units(
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
-        ok_java_list(data.len(), data)
+        ok_legacy_list(data.len(), data)
     } else {
         let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
-        Ok(AxumJson(ActionResult::java_success(
+        Ok(AxumJson(ActionResult::legacy_success(
             named_list("personList", &list),
             list.len() as i64,
             0,

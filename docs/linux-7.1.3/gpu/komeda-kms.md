@@ -1,3 +1,5 @@
+# komeda-kms
+
 ﻿
 ##  drm/komeda Arm 显示驱动
 
@@ -234,6 +236,7 @@ Layer Split 类似，但 Splitter 用于回写，它compiz 的结果切分为两
 因此驱动定义了一个通用头部结构komeda_component 来描述数据流控制，所特定组件都是此基础结构的子类
    :internal:
 
+
 ## 资源发现与初始化
 
 
@@ -248,11 +251,13 @@ CORE 可以通过三个 chip 函数结构访问 CHIP
 
    :internal:
 
+
 ## 格式处理
 
 
    :internal:
    :internal:
+
 
 ## komeda_dev 挂接DRM-KMS
 
@@ -338,11 +343,13 @@ Komeda 有多种类型的组件，但校验过程类似，通常包括以下步�
 
    :internal:
 
+
 ### komde_kms 函数
 
 
    :internal:
    :internal:
+
 
 ## komeda 构建Linux 模块驱动
 

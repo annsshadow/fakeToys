@@ -1,6 +1,8 @@
+# cec-ioc-dqevent
+
 ﻿
 
-######## ioctl CEC_DQEVENT
+## ioctl CEC_DQEVENT
 
 
 ## Name
@@ -102,25 +104,30 @@ CEC 设备可以发送异步事件。可通过调用 `CEC_DQEVENT` 来检索这�
 
     - .. _`CEC-EVENT-STATE-CHANGE`:
 
+
       - `CEC_EVENT_STATE_CHANGE`
       - 1
       - CEC 适配器状态发生变化时生成。调open() 时会为该文件句柄
 	生成一条初始事件，反映当时 CEC 适配器的状态    - .. _`CEC-EVENT-LOST-MSGS`:
+
 
       - `CEC_EVENT_LOST_MSGS`
       - 2
       - 如果由于应用程序未能及时出队 CEC 消息而导致一条或多条
 	CEC 消息丢失，则生成该事件    - .. _`CEC-EVENT-PIN-CEC-LOW`:
 
+
       - `CEC_EVENT_PIN_CEC_LOW`
       - 3
       - CEC 引脚从高电压变为低电压时生成。仅适用于设置了
 	`CEC_CAP_MONITOR_PIN` 能力的适配器    - .. _`CEC-EVENT-PIN-CEC-HIGH`:
 
+
       - `CEC_EVENT_PIN_CEC_HIGH`
       - 4
       - CEC 引脚从低电压变为高电压时生成。仅适用于设置了
 	`CEC_CAP_MONITOR_PIN` 能力的适配器    - .. _`CEC-EVENT-PIN-HPD-LOW`:
+
 
       - `CEC_EVENT_PIN_HPD_LOW`
       - 5
@@ -128,17 +135,20 @@ CEC 设备可以发送异步事件。可通过调用 `CEC_DQEVENT` 来检索这�
 	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 HPD
 	引脚，若 HPD 为低电平，则将为该文件句柄生成一条初始事件    - .. _`CEC-EVENT-PIN-HPD-HIGH`:
 
+
       - `CEC_EVENT_PIN_HPD_HIGH`
       - 6
       - HPD 引脚从低电压变为高电压时生成。仅适用于设置了
 	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 HPD
 	引脚，若 HPD 为高电平，则将为该文件句柄生成一条初始事件    - .. _`CEC-EVENT-PIN-5V-LOW`:
 
+
       - `CEC_EVENT_PIN_5V_LOW`
       - 6
       - 5V 引脚从高电压变为低电压时生成。仅适用于设置了
 	`CEC_CAP_MONITOR_PIN` 能力的适配器。调open() 时可读取 5V
 	引脚，若 5V 为低电平，则将为该文件句柄生成一条初始事件    - .. _`CEC-EVENT-PIN-5V-HIGH`:
+
 
       - `CEC_EVENT_PIN_5V_HIGH`
       - 7
@@ -153,9 +163,11 @@ CEC 设备可以发送异步事件。可通过调用 `CEC_DQEVENT` 来检索这�
 
     - .. _`CEC-EVENT-FL-INITIAL-STATE`:
 
+
       - `CEC_EVENT_FL_INITIAL_STATE`
       - 1
       - 针对设备打开时生成的初始事件设置。哪些事件会这样做，参见上表	这样应用程序可以open() 时了解到 CEC 适配器的初始状态    - .. _`CEC-EVENT-FL-DROPPED-EVENTS`:
+
 
       - `CEC_EVENT_FL_DROPPED_EVENTS`
       - 2

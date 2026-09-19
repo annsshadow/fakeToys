@@ -1,6 +1,6 @@
 -- Component assemble control configuration table.
 -- Stores the single-row control configuration updated via
--- /jaxrs/component_assemble_control/update/control/config and mirrored by
+-- /api/component_assemble_control/update/control/config and mirrored by
 -- get_control_config. Mirrors the other *assemble_control_config tables.
 CREATE TABLE IF NOT EXISTS "x_component_assemble_control_config" (
     "id" TEXT PRIMARY KEY,

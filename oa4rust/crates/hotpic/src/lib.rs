@@ -52,7 +52,7 @@ pub async fn get_by_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -70,10 +70,19 @@ pub async fn get_by_id(
                             .unwrap_or_default(),
                     ),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
                 (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    // create_time 可为 NULL（migrations/053 的 seed 行即未提供该列），
+                    // 故必须按 Option 读取；用非 Option 的 String 会在 NULL 上 panic
+                    // （error deserializing column create_time）。与上方 image_url 同惯例。
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]),
         )))),
@@ -89,7 +98,7 @@ pub async fn list_by_application_and_info_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&application, &info_id],
         )
         .await
@@ -106,17 +115,24 @@ pub async fn list_by_application_and_info_id(
                 ),
                 ("infoId".to_string(), Value::String(info_id.clone())),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
                 (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    // 同上：create_time 可为 NULL，必须按 Option 读取。
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
         .collect();
 
     let count = data.len() as i64;
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         count,
         0,

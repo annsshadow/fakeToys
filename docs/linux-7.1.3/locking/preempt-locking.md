@@ -1,3 +1,5 @@
+# preempt-locking
+
 ﻿## Proper Locking Under a Preemptible Kernel: Keeping Kernel Code Preempt-Safe
 
 
@@ -10,7 +12,7 @@
 可抢占内核带来了新的锁问题。这些问题与 SMP 下的问题相同：并发和重入。值得庆幸的是，Linux 可抢占内核模型利用了现有SMP 锁机制。因此，内核仅在极少数额外情况下才需要显式的额外加锁
 本文档面向所有内核黑客。在内核中开发代码需要保护这些情况
 
-##### RULE #1: Per-CPU data structures need explicit protection
+### RULE #1: Per-CPU data structures need explicit protection
 
 
 ```
@@ -24,7 +26,7 @@
 首先，由于数据是 per-CPU 的，它可能没有明确使SMP 锁，但在其他方面需要它。其次，当一个被抢占的任务最终被重新调度时，smp_processor_id 之前的值可能不等于当前值。你必须通过在这些情况周围禁用抢占来保护它们
 你也可以使用 put_cpu() get_cpu()，它们会禁用抢占
 
-##### RULE #2: CPU state must be protected.
+#### RULE #2: CPU state must be protected.
 
 
 在抢占下，CPU 的状态必须被保护。这与体系架构相关，但包括上下文切换时不被保存的 CPU 结构和状态。例如，x86 上，进入和退FPU 模式现在是一个临界区，必须在禁用抢占的情况下进行。试想一下，如果内核正在执行一条浮点指令，然后被抢占，会发生什么。请记住，内核不会保FPU 状态，只有用户任务才会。因此，一旦被抢占，FPU 寄存器就会卖给（sold to）出价最低者。因此，必须在这些区域周围禁用抢占

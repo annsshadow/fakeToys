@@ -1,7 +1,9 @@
+# pixfmt-yuv-luma
+
 ﻿
 
 
-######## 仅亮度（Luma）格
+## 仅亮度（Luma）格
 本页列出 V4L2 中仅包含亮度（luma/Y）分量的灰度像素格式及其逐字节内存布局，供应用开发者在采集或处理单通道亮度图像时正确选择像素格式
 
 这一系列格式只存Y'CbCr 图像的亮度（luma）分量。它们通常被称为灰度（greyscale格式
@@ -25,6 +27,7 @@
 
     - .. _V4L2-PIX-FMT-GREY:
 
+
       - `V4L2_PIX_FMT_GREY`
       - 'GREY'
 
@@ -37,6 +40,7 @@
       - ...
 
     - .. _V4L2-PIX-FMT-IPU3-Y10:
+
 
       - `V4L2_PIX_FMT_IPU3_Y10`
       - 'ip3y'
@@ -51,6 +55,7 @@
 
     - .. _V4L2-PIX-FMT-Y10:
 
+
       - `V4L2_PIX_FMT_Y10`
       - 'Y10 '
 
@@ -63,6 +68,7 @@
       - ...
 
     - .. _V4L2-PIX-FMT-Y10BPACK:
+
 
       - `V4L2_PIX_FMT_Y10BPACK`
       - 'Y10B'
@@ -77,6 +83,7 @@
 
     - .. _V4L2-PIX-FMT-Y10P:
 
+
       - `V4L2_PIX_FMT_Y10P`
       - 'Y10P'
 
@@ -89,6 +96,7 @@
       - ...
 
     - .. _V4L2-PIX-FMT-Y12:
+
 
       - `V4L2_PIX_FMT_Y12`
       - 'Y12 '
@@ -103,6 +111,7 @@
 
     - .. _V4L2-PIX-FMT-Y012:
 
+
       - `V4L2_PIX_FMT_Y012`
       - 'Y012'
 
@@ -115,6 +124,7 @@
       - ...
 
     - .. _V4L2-PIX-FMT-Y12P:
+
 
       - `V4L2_PIX_FMT_Y12P`
       - 'Y12P'
@@ -129,6 +139,7 @@
 
     - .. _V4L2-PIX-FMT-Y14:
 
+
       - `V4L2_PIX_FMT_Y14`
       - 'Y14 '
 
@@ -141,6 +152,7 @@
       - ...
 
     - .. _V4L2-PIX-FMT-Y14P:
+
 
       - `V4L2_PIX_FMT_Y14P`
       - 'Y14P'
@@ -155,6 +167,7 @@
 
     - .. _V4L2-PIX-FMT-Y16:
 
+
       - `V4L2_PIX_FMT_Y16`
       - 'Y16 '
 
@@ -167,6 +180,7 @@
       - ...
 
     - .. _V4L2-PIX-FMT-Y16-BE:
+
 
       - `V4L2_PIX_FMT_Y16_BE`
       - 'Y16 ' | (1U << 31)

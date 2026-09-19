@@ -1,6 +1,8 @@
+# maintainer-entry-profile
+
 ﻿## LIBNVDIMM 维护者条目档
 
-### 概述
+## 概述
 
 libnvdimm 子系统管理跨多种架构的持久内存。邮件列表由 patchwork 在此跟踪https://patchwork.kernel.org/project/linux-nvdimm/list/
 …该实例被配置为在补丁被接受和上游合并时向提交者反馈。补丁会被合并到

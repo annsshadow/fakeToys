@@ -1,3 +1,5 @@
+# lpit
+
 ﻿## 低功耗空闲表（Low Power Idle Table, LPIT
 
 为了枚举平台的低功耗空闲状态，Intel 平台使用了“低功耗空闲表”（Low Power Idle Table，LPIT）。有关该表的更多细节可从以下地址下载https://www.uefi.org/sites/default/files/resources/Intel_ACPI_Low_Power_S0_Idle.pdf

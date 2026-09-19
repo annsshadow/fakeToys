@@ -20,7 +20,7 @@ for (const file of rustFiles) {
     if (depth !== 0) continue;
     let path = line.substring(pathStart, endIdx);
     path = path.replace(/\\"/g, '');
-    if (path.startsWith('/jaxrs/')) rustPaths.add(path);
+    if (path.startsWith('/api/')) rustPaths.add(path);
   }
 }
 

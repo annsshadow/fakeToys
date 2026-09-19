@@ -59,10 +59,10 @@ def analyze(comp_dir):
     # backend action modules loaded via o2.Actions.load("x_...")
     load_mods = set(re.findall(r'o2\.Actions\.load\(\s*["\']([^"\']+)["\']', full))
     # direct o2.Actions.XxxAction usage
-    # jaxrs url backend modules: ../x_module/jaxrs/...
-    jaxrs_mods = set(re.findall(r'\.\./([a-zA-Z0-9_]+)/jaxrs/', full))
-    # also "/jaxrs/..."  with module prefix captured differently
-    jaxrs_urls = re.findall(r'\.\./([a-zA-Z0-9_]+)/jaxrs/([^\s"\'`]+)', full)
+    # jaxrs url backend modules: ../x_module/api/...
+    jaxrs_mods = set(re.findall(r'\.\./([a-zA-Z0-9_]+)/api/', full))
+    # also "/api/..."  with module prefix captured differently
+    jaxrs_urls = re.findall(r'\.\./([a-zA-Z0-9_]+)/api/([^\s"\'`]+)', full)
     # backend action method calls: this.action.XxxAction.method(
     action_calls = re.findall(r'[.\w]*?([A-Z]\w*Action)\.([a-zA-Z_]\w*)\s*\(', full)
     # fetch/ajax calls with method + url
@@ -102,7 +102,7 @@ def gen_keyflows(comp_name, info, responsibility):
                 verb = "流式请求"
         method = "POST" if verb == "流式请求" or "completion" in path.lower() else "GET"
         bullets.append(
-            f"后端请求：向 `{mod}/jaxrs/{path}` 发起 {method} {verb}，处理返回数据并渲染。"
+            f"后端请求：向 `{mod}/api/{path}` 发起 {method} {verb}，处理返回数据并渲染。"
         )
     # per backend action module flows
     for act, methods in by_action.items():

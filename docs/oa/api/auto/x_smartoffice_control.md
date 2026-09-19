@@ -2,9 +2,9 @@
 
 ## Endpoints
 
-- `GET /jaxrs/device/list` — listDevice
-- `POST /jaxrs/device` — addDevice
-- `PUT /jaxrs/device` — updateDevice
-- `GET /jaxrs/device/{id}` — getDevice
-- `DELETE /jaxrs/device/{id}` — removeDevice
+- `GET /api/device/list` — listDevice
+- `POST /api/device` — addDevice
+- `PUT /api/device` — updateDevice
+- `GET /api/device/{id}` — getDevice
+- `DELETE /api/device/{id}` — removeDevice
 - `UNKNOWN x_smartoffice_control` — clazz

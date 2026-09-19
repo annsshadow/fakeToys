@@ -32,7 +32,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_snap_get_reachable() {
         assert_eq!(
-            status_of("GET", "/jaxrs/processplatform/assemble/surface/snap/snap-1").await,
+            status_of("GET", "/api/processplatform/assemble/surface/snap/snap-1").await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
     }
@@ -42,7 +42,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "DELETE",
-                "/jaxrs/processplatform/assemble/surface/snap/snap-1"
+                "/api/processplatform/assemble/surface/snap/snap-1"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -54,7 +54,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/processplatform/assemble/surface/snap/snap-1/restore"
+                "/api/processplatform/assemble/surface/snap/snap-1/restore"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -63,7 +63,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_snap_cursor_lists_reachable() {
-        let base = "/jaxrs/processplatform/assemble/surface/snap/list";
+        let base = "/api/processplatform/assemble/surface/snap/list";
         assert_eq!(
             status_of("GET", &format!("{}/snap-1/next/20", base)).await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -80,7 +80,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_snap_work_type_routes_reachable() {
-        let base = "/jaxrs/processplatform/assemble/surface/snap";
+        let base = "/api/processplatform/assemble/surface/snap";
         assert_eq!(
             status_of("GET", &format!("{}/work/work-1/type/snap", base)).await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -99,7 +99,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_attachment_list_routes_reachable() {
-        let base = "/jaxrs/processplatform/assemble/surface/attachment/list";
+        let base = "/api/processplatform/assemble/surface/attachment/list";
         for suffix in [
             "/job/job-1",
             "/work/work-1",
@@ -117,7 +117,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_attachment_by_work_verbs_chained_on_same_path() {
-        let uri = "/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1";
+        let uri = "/api/processplatform/assemble/surface/attachment/att-1/work/work-1";
         assert_eq!(
             status_of("GET", uri).await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -133,7 +133,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/processplatform/assemble/surface/attachment/att-1/work/work-1/text"
+                "/api/processplatform/assemble/surface/attachment/att-1/work/work-1/text"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -141,7 +141,7 @@ mod u2_tests {
         assert_eq!(
             status_of(
                 "GET",
-                "/jaxrs/processplatform/assemble/surface/attachment/att-1/available"
+                "/api/processplatform/assemble/surface/attachment/att-1/available"
             )
             .await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -152,7 +152,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_unrouted_handlers_now_wired() {
-        let base = "/jaxrs/processplatform/assemble/surface";
+        let base = "/api/processplatform/assemble/surface";
         for (method, path) in [
             ("GET", "/application/list"),
             ("GET", "/application/list/complex"),
@@ -184,8 +184,8 @@ mod u2_tests {
     // 鈹€鈹€ 婕傜Щ璺緞淇锛圝ava 绮剧‘褰㈢姸娉ㄥ唽锛?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
-    async fn u2_java_exact_paths_take_priority_over_drifted_params() {
-        let base = "/jaxrs/processplatform/assemble/surface";
+    async fn u2_legacy_exact_paths_take_priority_over_drifted_params() {
+        let base = "/api/processplatform/assemble/surface";
         for (method, path) in [
             ("GET", "/anonymous/task/count/user@x"),
             ("GET", "/anonymous/read/count/user@x"),
@@ -205,7 +205,7 @@ mod u2_tests {
             assert_ne!(
                 status_of(method, &format!("{}{}", base, path)).await,
                 StatusCode::NOT_FOUND,
-                "java-exact route missing: {} {}",
+                "legacy-exact route missing: {} {}",
                 method,
                 path
             );
@@ -219,7 +219,7 @@ mod u2_tests {
         let result: ActionResult<serde_json::Value> =
             ActionResult::success(serde_json::json!({ "id": "snap-1" }));
         let json = serde_json::to_value(&result).unwrap();
-        // Java 对齐（11521a43）：成功信封恒携带 8 字段；prompt 仅出现在
+        // o2server 对齐（11521a43）：成功信封恒携带 8 字段；prompt 仅出现在
         // 错误信封（异常类名），None 时整体省略——不得回退为恒输出 9 字段。
         for field in [
             "data", "type", "message", "date", "spent", "size", "count", "position",
@@ -232,7 +232,7 @@ mod u2_tests {
         }
         assert!(
             json.get("prompt").is_none(),
-            "success envelope must omit prompt (Java parity)"
+            "success envelope must omit prompt (o2server parity)"
         );
         assert_eq!(json["type"], "success");
     }
@@ -249,7 +249,7 @@ mod u2_tests {
     #[test]
     fn u2_snap_row_mapper_maps_all_columns_to_camel_case() {
         // 鐩存帴楠岃瘉 mapper 鐨勫瓧娈靛懡鍚嶅绾︼細閫氳繃鏋勯€?JSON 鏂█杈撳嚭閿泦鍚?
-        // 锛圧ow 鏃犳硶鑴辩 PG 杩炴帴鏋勯€狅紝姝ゅ閿佸畾 mapper 杈撳嚭閿笌 Java WO 瀵归綈锛?
+        // 锛圧ow 鏃犳硶鑴辩 PG 杩炴帴鏋勯€狅紝姝ゅ閿佸畾 mapper 杈撳嚭閿笌 o2server WO 瀵归綈锛?
         let keys = [
             "id",
             "title",
@@ -281,11 +281,11 @@ mod u2_tests {
 
     // 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲 plan002 U2 鎵归噺绗簩娉ㄥ唽锛堟紓绉昏矾鐢?+ 缂哄け绔偣琛ラ綈锛?鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲
     // 鏂█璇箟锛?04=璺敱鏈敞鍐岋紱400=璺緞鍙傛暟鎻愬彇澶辫触锛?00=璺敱鍙揪涓旀彁鍙栨垚鍔熴€丏B 杩炴帴澶辫触銆?
-    // 鍥犳銆屾柇瑷€ 500銆嶅悓鏃惰瘉鏄庝簡锛氳矾鐢卞瓨鍦?+ 鍏冪粍鎻愬彇鍣ㄤ笌 Java 璺緞褰㈢姸涓€鑷淬€?
+    // 鍥犳銆屾柇瑷€ 500銆嶅悓鏃惰瘉鏄庝簡锛氳矾鐢卞瓨鍦?+ 鍏冪粍鎻愬彇鍣ㄤ笌 o2server 璺緞褰㈢姸涓€鑷淬€?
 
     #[tokio::test]
     async fn u2r_phase_c_snap_routes_reachable() {
-        let base = "/jaxrs/processplatform/assemble/surface/snap";
+        let base = "/api/processplatform/assemble/surface/snap";
         assert_eq!(
             status_of("GET", &format!("{}/snap-1/mockdeletetoget", base)).await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -326,7 +326,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_phase_c_attachment_routes_reachable() {
-        let base = "/jaxrs/processplatform/assemble/surface/attachment";
+        let base = "/api/processplatform/assemble/surface/attachment";
         assert_eq!(
             status_of("DELETE", &format!("{}/att-1", base)).await,
             StatusCode::INTERNAL_SERVER_ERROR
@@ -356,7 +356,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2r_tuple_extraction_contract_paging_routes() {
         // 鑻?Path<(i64,i64)> 涓庤矾鐢?{page}/size/{size} 涓嶅尮閰嶏紝axum 浼氬洖 400 鑰岄潪 500
-        let base = "/jaxrs/processplatform/assemble/surface";
+        let base = "/api/processplatform/assemble/surface";
         for (method, path) in [
             ("GET", "/task/list/my/paging/3/size/20"),
             ("POST", "/task/list/my/filter/3/size/20"),
@@ -380,7 +380,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_tuple_extraction_contract_cursor_with_filter() {
-        let base = "/jaxrs/processplatform/assemble/surface";
+        let base = "/api/processplatform/assemble/surface";
         for path in [
             "/read/list/r-1/next/20/application/app-1",
             "/read/list/r-1/prev/20/application/app-1",
@@ -398,8 +398,8 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_deep_pathn_extraction_contract() {
-        // applicationdict 10 鍙傚厓缁勩€乨ata 璺緞瀵艰埅鏃忥細璇佹槑闀垮厓缁勬彁鍙栧櫒涓?Java 褰㈢姸涓€鑷?
-        let base = "/jaxrs/processplatform/assemble/surface";
+        // applicationdict 10 鍙傚厓缁勩€乨ata 璺緞瀵艰埅鏃忥細璇佹槑闀垮厓缁勬彁鍙栧櫒涓?o2server 褰㈢姸涓€鑷?
+        let base = "/api/processplatform/assemble/surface";
         for (method, path) in [
             (
                 "GET",
@@ -425,9 +425,8 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_same_path_multi_method_merging() {
-        // 鍚屼竴 Java 璺緞鐨?GET/PUT/POST 澶嶇敤鍚屼竴 handler锛屾柟娉曡矾鐢卞簲鍚堝苟涓斾簰涓嶈鐩?
-        let uri =
-            "/jaxrs/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data";
+        // 鍚屼竴 o2server 璺緞鐨?GET/PUT/POST 澶嶇敤鍚屼竴 handler锛屾柟娉曡矾鐢卞簲鍚堝苟涓斾簰涓嶈鐩?
+        let uri = "/api/processplatform/assemble/surface/applicationdict/d1/application/a1/p0/data";
         for method in ["GET", "PUT", "POST"] {
             assert_eq!(
                 status_of(method, uri).await,
@@ -439,8 +438,8 @@ mod u2_tests {
     }
 
     #[tokio::test]
-    async fn u2r_drifted_java_paths_now_registered_spot_checks() {
-        let base = "/jaxrs/processplatform/assemble/surface";
+    async fn u2r_drifted_legacy_paths_now_registered_spot_checks() {
+        let base = "/api/processplatform/assemble/surface";
         for (method, path) in [
             ("DELETE", "/application/app-1/false"),
             ("GET", "/application/app-1/icon"),
@@ -458,7 +457,7 @@ mod u2_tests {
             assert_ne!(
                 status_of(method, &format!("{}{}", base, path)).await,
                 StatusCode::NOT_FOUND,
-                "java-exact route missing: {} {}",
+                "legacy-exact route missing: {} {}",
                 method,
                 path
             );
@@ -467,7 +466,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_snap_cursor_prev_filtered_routes_reachable() {
-        let base = "/jaxrs/processplatform/assemble/surface/snap/list";
+        let base = "/api/processplatform/assemble/surface/snap/list";
         for path in [
             "/snap-1/prev/20/application/app-1",
             "/snap-1/prev/20/process/pr-1",
@@ -485,8 +484,8 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_data_job_pathn_extraction_contract() {
-        // data/job 璺緞瀵艰埅鏃忥細鍏冪粍鎻愬彇鍣ㄤ笌 Java {job}/{pathN} 褰㈢姸涓€鑷达紙鍚﹀垯 axum 鍥?400锛?
-        let base = "/jaxrs/processplatform/assemble/surface/data/job";
+        // data/job 璺緞瀵艰埅鏃忥細鍏冪粍鎻愬彇鍣ㄤ笌 o2server {job}/{pathN} 褰㈢姸涓€鑷达紙鍚﹀垯 axum 鍥?400锛?
+        let base = "/api/processplatform/assemble/surface/data/job";
         for (method, path) in [
             ("GET", "/j-1/p0"),
             ("GET", "/j-1/p0/p1/p2"),
@@ -506,7 +505,7 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2r_review_v2_and_task_v2_tuple_routes() {
-        let base = "/jaxrs/processplatform/assemble/surface";
+        let base = "/api/processplatform/assemble/surface";
         for (method, path) in [
             ("POST", "/review/v2/list/paging/0/size/20"),
             ("POST", "/task/v2/list/paging/1/size/50"),
@@ -580,7 +579,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_engineless_endpoints_return_exact_501() {
-        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let b = "/api/processplatform/assemble/surface/attachment";
         let cases: Vec<(&str, String)> = vec![
             ("POST", format!("{b}/doc/to/word/work/w-1")),
             ("POST", format!("{b}/doc/to/word/workorworkcompleted/w-1")),
@@ -612,7 +611,7 @@ mod u2b_tests {
     // （无 DB/session 时为 500，但绝不能退回 404）。
     #[tokio::test]
     async fn u2b_invoice_endpoints_are_real_routes_not_stubs() {
-        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let b = "/api/processplatform/assemble/surface/attachment";
         let cases: Vec<(&str, String)> = vec![
             (
                 "GET",
@@ -636,7 +635,7 @@ mod u2b_tests {
     async fn u2b_501_response_body_is_action_result_error_shape() {
         let (status, json) = respond(
             "POST",
-            "/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf",
+            "/api/processplatform/assemble/surface/attachment/html/to/pdf",
             &[],
             Body::empty(),
         )
@@ -654,7 +653,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_multipart_upload_routes_reachable() {
-        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let b = "/api/processplatform/assemble/surface/attachment";
         for (method, path) in [
             ("POST", &format!("{b}/upload/work/w-1")),
             ("POST", &format!("{b}/upload/work/w-1/callback/cb-1")),
@@ -680,7 +679,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_base64_upload_route_reachable() {
-        let path = "/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64";
+        let path = "/api/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64";
         let (status, _) = respond(
             "POST",
             path,
@@ -699,7 +698,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_download_routes_reachable() {
-        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let b = "/api/processplatform/assemble/surface/attachment";
         for path in [
             format!("{b}/download/att-1"),
             format!("{b}/download/att-1/stream"),
@@ -724,7 +723,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_metadata_write_routes_reachable() {
-        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let b = "/api/processplatform/assemble/surface/attachment";
         for (method, path) in [
             ("DELETE", &format!("{b}/att-1/workcompleted/wc-1")),
             ("PUT", &format!("{b}/update/att-1/work/w-1")),
@@ -768,7 +767,7 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2b_online_info_and_mockdelete_routes_reachable() {
-        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let b = "/api/processplatform/assemble/surface/attachment";
         for path in [
             format!("{b}/att-1/online/info"),
             format!("{b}/att-1/work/w-1/mockdeletetoget"),
@@ -834,12 +833,12 @@ mod u2b_tests {
         );
     }
 
-    // 鈹€鈹€ 鏃?2锛歞ata work/workcompleted pathN Java 褰㈢姸鍏冪粍鎻愬彇濂戠害 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+    // 鈹€鈹€ 鏃?2锛歞ata work/workcompleted pathN o2server 褰㈢姸鍏冪粍鎻愬彇濂戠害 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     #[tokio::test]
-    async fn u2r_data_work_pathn_java_shape_extraction_contract() {
-        // 鏂█ 500锛堣€岄潪 400/404锛夎瘉鏄庯細Java 褰㈢姸璺敱瀛樺湪涓?N 鍏冪粍 Path 鎻愬彇鍣ㄥ尮閰嶃€?
-        let base = "/jaxrs/processplatform/assemble/surface/data/work";
+    async fn u2r_data_work_pathn_legacy_shape_extraction_contract() {
+        // 鏂█ 500锛堣€岄潪 400/404锛夎瘉鏄庯細o2server 褰㈢姸璺敱瀛樺湪涓?N 鍏冪粍 Path 鎻愬彇鍣ㄥ尮閰嶃€?
+        let base = "/api/processplatform/assemble/surface/data/work";
         for (method, path) in [
             ("GET", &format!("{base}/w-1/p0")),
             ("GET", &format!("{base}/w-1/p0/p1/p2/p3")),
@@ -859,8 +858,8 @@ mod u2b_tests {
     }
 
     #[tokio::test]
-    async fn u2r_data_workcompleted_pathn_java_shape_extraction_contract() {
-        let base = "/jaxrs/processplatform/assemble/surface/data/workcompleted";
+    async fn u2r_data_workcompleted_pathn_legacy_shape_extraction_contract() {
+        let base = "/api/processplatform/assemble/surface/data/workcompleted";
         for (method, path) in [
             ("GET", &format!("{base}/wc-1/p0")),
             ("GET", &format!("{base}/wc-1/p0/p1/p2/p3/p4/p5/p6/p7")),
@@ -877,8 +876,8 @@ mod u2b_tests {
 
     #[tokio::test]
     async fn u2r_data_pathn_legacy_literal_routes_still_guarded() {
-        // 鍥炲綊淇濇姢锛氭棫瀛楅潰閲忛鏍?URI 涓嶅洜鏂板 Java 褰㈢姸璺敱鑰屾秷澶憋紙tests_generated 鍙ｅ緞 !=404锛?
-        let base = "/jaxrs/processplatform/assemble/surface/data";
+        // 鍥炲綊淇濇姢锛氭棫瀛楅潰閲忛鏍?URI 涓嶅洜鏂板 o2server 褰㈢姸璺敱鑰屾秷澶憋紙tests_generated 鍙ｅ緞 !=404锛?
+        let base = "/api/processplatform/assemble/surface/data";
         for (method, path) in [
             ("GET", &format!("{base}/work/path0/test-id")),
             ("GET", &format!("{base}/work/path0/path1/test-id")),
@@ -915,7 +914,7 @@ mod u2c_tests {
             .status()
     }
 
-    const BASE: &str = "/jaxrs/processplatform/assemble/surface";
+    const BASE: &str = "/api/processplatform/assemble/surface";
 
     // ── 路由可达性：500 = 路由存在 + 提取器匹配（session 缺失先于 DB 失败） ──
 
@@ -964,11 +963,11 @@ mod u2c_tests {
 
     #[tokio::test]
     async fn u2c_review_create_entry_get_and_route_list_post_reachable() {
-        // Java 精确形状：GET /review/filter/create/entry（此前仅漂移的 POST 绑定）
+        // o2server 精确形状：GET /review/filter/create/entry（此前仅漂移的 POST 绑定）
         let status = status_of("GET", &format!("{}/review/filter/create/entry", BASE)).await;
         assert_ne!(status, StatusCode::NOT_FOUND);
         assert_ne!(status, StatusCode::BAD_REQUEST);
-        // Java POST /route/list/mockputtopost（此前仅有漂移的 GET 绑定）
+        // o2server POST /route/list/mockputtopost（此前仅有漂移的 GET 绑定）
         let status = status_of("POST", &format!("{}/route/list/mockputtopost", BASE)).await;
         assert_ne!(status, StatusCode::NOT_FOUND);
         assert_ne!(status, StatusCode::BAD_REQUEST);
@@ -993,12 +992,12 @@ mod u2c_tests {
     }
 
     #[tokio::test]
-    async fn u2c_serialnumber_create_and_java_shape_generate_reachable() {
+    async fn u2c_serialnumber_create_and_legacy_shape_generate_reachable() {
         assert_eq!(
             status_of("POST", &format!("{}/serialnumber", BASE)).await,
             StatusCode::INTERNAL_SERVER_ERROR
         );
-        // Java 精确形状（此前 Rust 侧为漂移的字面量路径 /generate/process/name/name/serial/{id}）
+        // o2server 精确形状（此前 Rust 侧为漂移的字面量路径 /generate/process/name/name/serial/{id}）
         let status = status_of(
             "POST",
             &format!(

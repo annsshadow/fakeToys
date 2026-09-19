@@ -1,7 +1,9 @@
+# ca-get-descr-info
+
 ﻿## CA_GET_DESCR_INFO
 
 
-### Name
+## Name
 
 
 CA_GET_DESCR_INFO

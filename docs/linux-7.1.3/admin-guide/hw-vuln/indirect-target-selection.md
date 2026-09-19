@@ -1,10 +1,12 @@
+# indirect-target-selection
+
 ﻿## 间接目标选择（ITS
 
 ITS 是部分支持增强型 IBRS（Enhanced IBRS）、且Alder Lake 之前发布Intel CPU 中存在的一个漏洞。ITS 可能允许攻击者控制位于缓存行（cacheline）下半部分的间接分支RET 指令的预测目标
 
 ITS 被分配了 CVE-2024-28956，CVSS 评分4.7（中危）
 
-### 影响范围
+## 影响范围
 
 - **eIBRS 客户宿主机隔*：KVM/内核中的间接分支仍可能被预测为对应客户机中某条分支的非预期目标
 

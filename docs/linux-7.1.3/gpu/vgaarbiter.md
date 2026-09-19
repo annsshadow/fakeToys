@@ -1,3 +1,5 @@
+# vgaarbiter
+
 ﻿# VGA 仲裁
 
 
@@ -57,12 +59,14 @@ write
 
 如果 DRM、vgacon 或其他驱动希望使用仲裁器，还提供了一个内核内的仲裁器 API
 
-## 鍐呮牳鍐呮帴鍙。
+## 内呮核内呮帴鍙。
 
 
 ## :internal:
 
+
 ## :export:
+
 
 ## libpciaccess
 

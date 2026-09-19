@@ -1,0 +1,44 @@
+{
+  "name": "oa4rust-mobile",
+  "appid": "",
+  "description": "OA4Rust 跨平台移动端（uni-app）",
+  "versionName": "0.1.0",
+  "versionCode": "1",
+  "transformPx": false,
+  "h5": {
+    "title": "OA4Rust Mobile",
+    "router": {
+      "mode": "hash"
+    },
+    "devServer": {
+      "port": 5174,
+      "https": false
+    },
+    "optimization": {
+      "treeShaking": {
+        "enable": true
+      }
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "app-plus": {
+    "usingComponents": true,
+    "splashscreen": {
+      "alwaysShowBeforeResourceLoad": false
+    },
+    "modules": {},
+    "distribute": {
+      "android": {
+        "permissions": ["<uses-permission android:name=\"android.permission.INTERNET\"/>"]
+      }
+    }
+  }
+}

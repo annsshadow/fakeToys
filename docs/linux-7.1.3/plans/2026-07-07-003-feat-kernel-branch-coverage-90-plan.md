@@ -1,3 +1,5 @@
+# 2026-07-07-003-feat-kernel-branch-coverage-90-plan
+
 ﻿---
 title: feat: Kernel full-codebase branch coverage 鈮?0%
 type: feat
@@ -383,5 +385,5 @@ origin: docs/brainstorms/kernel-branch-coverage-90-requirements.md
 - **kcov 配置:** [lib/Kconfig.debug](../../lib/Kconfig.debug)
 - **Fault Injection:** [lib/fault-inject.c](../../lib/fault-inject.c)
 - **DRM CI 示例:** [drivers/gpu/drm/ci/](../../drivers/gpu/drm/ci/)
-- **gcov 文档:** [Documentation/dev-tools/gcov.rst](../../Documentation/dev-tools/gcov.rst)
-- **kcov 文档:** [Documentation/dev-tools/kcov.rst](../../Documentation/dev-tools/kcov.rst)
+- **gcov 文档:** [Documentation/dev-tools/gcov.rst](../../Documentation/dev-tools/gcov.md)
+- **kcov 文档:** [Documentation/dev-tools/kcov.rst](../../Documentation/dev-tools/kcov.md)

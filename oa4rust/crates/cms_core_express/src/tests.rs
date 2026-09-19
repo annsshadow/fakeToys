@@ -23,7 +23,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/core/express/content/list")
+                    .uri("/api/cms/core/express/content/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -43,7 +43,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/core/express/content/detail/test-id")
+                    .uri("/api/cms/core/express/content/detail/test-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

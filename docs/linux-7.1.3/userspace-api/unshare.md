@@ -1,7 +1,9 @@
+# unshare
+
 ﻿## unshare 系统调用
 
 本文档描述新的系统调unshare()。文档概述了该特性、为何需要它、如何使用、其接口规范、设计、实现以及如何测试
-### Change Log（变更日志）
+## Change Log（变更日志）
 
 version 0.1  初始文档，Janak Desai (janak@us.ibm.com)006 1 11 
 ### Contents（目录）
@@ -68,7 +70,7 @@ CONFORMING TO
 SEE ALSO
 	clone(2), fork(2)
 
-### 6) High Level Design（高层设计）
+## 6) High Level Design（高层设计）
 
 根据 flags 参数，unshare() 系统调用会分配合适的进程上下文结构，用当前共享版本中的值填充它，将新复制出来的结构关联到当前任务结构，并释放相应的共享版本。unshare() 不能直接使用 clone 的辅助函数（copy_*），原因如下
   1) clone 作用于一个新分配的、尚未活动的任务结构，unshare() 作用于当前的活动任务。因unshare() 在关联新复制的上下文结构之前，必须先取得恰当task_lock()

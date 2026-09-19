@@ -1,3 +1,5 @@
+# machine
+
 ﻿## 调节器机器驱动接口（Regulator Machine Driver Interface
 
 调节器机器驱动接口用于板机器特定的初始化代码来配置调节器（regulator）子系统

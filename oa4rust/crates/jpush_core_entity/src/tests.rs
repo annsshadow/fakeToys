@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/core/entity/device/list")
+                    .uri("/api/jpush/core/entity/device/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/jpush/core/entity/template/list")
+                    .uri("/api/jpush/core/entity/template/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

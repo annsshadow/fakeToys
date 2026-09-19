@@ -5,7 +5,7 @@ use axum::{
 };
 use tower::ServiceExt;
 
-const BASE: &str = "/jaxrs/organization/assemble/control";
+const BASE: &str = "/api/organization/assemble/control";
 
 fn build_test_pool() -> deadpool_postgres::Pool {
     deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
@@ -51,7 +51,7 @@ fn batch_limit_allows_100_rejects_101() {
 }
 
 #[test]
-fn password_policy_matches_java_defaults() {
+fn password_policy_matches_legacy_defaults() {
     assert!(!u2_helpers::validate_password_policy("Abc12"));
     assert!(u2_helpers::validate_password_policy("Abc123"));
     assert!(!u2_helpers::validate_password_policy("123456"));
@@ -124,7 +124,7 @@ async fn person_create_route_registered() {
 }
 
 #[tokio::test]
-async fn person_edit_and_delete_routes_use_java_methods() {
+async fn person_edit_and_delete_routes_use_legacy_methods() {
     assert_eq!(
         request(
             Method::PUT,

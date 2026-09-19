@@ -1,8 +1,10 @@
+# dm-raid
+
 ﻿## dm-raid
 
 device-mapper RAID（dm-raid）目标提供了DM MD 的桥梁。它允许使用
 device-mapper 接口来访MD RAID 驱动
-### 映射表接
+## 映射表接
 ```
   <raid_type> <#raid_params> <raid_params> \
     <#raid_devs> <metadata_dev0> <dev0> [.. <metadata_devN> <devN>]
@@ -156,7 +158,7 @@ device-mapper 接口来访MD RAID 驱动
           5 8:17 8:18 8:33 8:34 8:49 8:50 8:65 8:66 8:81 8:82
 ```
 
-### 状态输
+## 状态输
 'dmsetup table' 显示用于构造映射的表。可选参数总是以上面列出的顺序打印sync"
 "nosync" 总是先于其他参数输出，无论最初加载该表时使用的顺序如何。可以重复的
 参数按值排序
@@ -256,7 +258,7 @@ raid10 far：不可能
 # 例如导致 raid 设备大小reshape 完成时翻倍foldraid5_rs reshape 映射表# 检查状态输出（例如 "dmsetup status $RaidDev"）以了解进度
   0 $((2 * 1960886272)) raid raid5 7 0 region_size 2048 data_offset 8192 delta_disk 1 2 /dev/dm-0 /dev/dm-1 /dev/dm-2 /dev/dm-3
 
-### 版本历史
+## 版本历史
 
 ```
  1.0.0	初始版本。支RAID 4/5/6

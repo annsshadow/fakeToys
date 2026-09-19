@@ -1,3 +1,5 @@
+# ipvlan
+
 ﻿
 ## IPVLAN 驱动使用指南
 
@@ -36,13 +38,16 @@
 	  bash# ip link add link eth0 name ipvl0 type ipvlan
     (b) This command will create IPvlan link in L2 bridge mode::
 
+
 	  bash# ip link add link eth0 name ipvl0 type ipvlan mode l2 bridge
 
     (c) This command will create an IPvlan device in L2 private mode::
 
+
 	  bash# ip link add link eth0 name ipvlan type ipvlan mode l2 private
 
     (d) This command will create an IPvlan device in L2 vepa mode::
+
 
 	  bash# ip link add link eth0 name ipvlan type ipvlan mode l2 vepa
 
@@ -150,6 +155,7 @@ IPvlan 有两种工作模式——L2 L3。对于给定的主设备，你可以�
 		(6) ip -4 route add default via $ROUTER dev ipvl0
 
 	- For ns1::
+
 
 		(1) ip netns exec ns1 bash
 		(2) ip link set dev ipvl1 up

@@ -1,3 +1,5 @@
+# mrvl-odyssey-ddr-pmu
+
 ﻿## Marvell Odyssey DDR PMU 性能监控单元（PMU UNCORE
 
 Odyssey DRAM 子系统支持八个计数器用于监控性能，软件可以对这些计数器进编程以监控任何已定义的性能事件。受支持的性能事件包括DDR 控制器与 PHY

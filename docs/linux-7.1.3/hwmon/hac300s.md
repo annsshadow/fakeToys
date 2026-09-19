@@ -1,3 +1,5 @@
+# hac300s
+
 ﻿## 内核驱动 hac300s
 
 
@@ -11,9 +13,10 @@
 
 Author:
 
+
   - Vasileios Amoiridis <vasileios.amoiridis@cern.ch>
 
-### 说明
+## 说明
 
 
 该驱动支HiTRON HAC300S 电源（PSU）。它是一款通用交流输入、谐波校正、交直流热插拔、CompactPCI Serial 双路输出（带 5V 待机）12 瓦主动均流开关电源

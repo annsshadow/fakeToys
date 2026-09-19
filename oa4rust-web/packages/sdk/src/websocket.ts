@@ -10,6 +10,10 @@ type EventMap = {
   im_conversation: MessageHandler
   notification: MessageHandler
   process_task: MessageHandler
+  /** P5：房间在线快照下行 `{room, online: string[], count}` */
+  presence: MessageHandler
+  /** P5：IM 消息回执下行 `{delivered: number}` */
+  receipt: MessageHandler
   [event: string]: MessageHandler
 }
 
@@ -17,6 +21,10 @@ export interface WebSocketMessage {
   type: string
   data: unknown
   timestamp: number
+  /** 下行信封（RealtimeMessage）：发送者身份（presence 声明后为声明值） */
+  sender?: string
+  /** 下行信封（RealtimeMessage）：所在房间 */
+  room?: string
 }
 
 export class O2WebSocketClient {
@@ -57,7 +65,14 @@ export class O2WebSocketClient {
       this.ws.onmessage = (event) => {
         try {
           const msg: WebSocketMessage = JSON.parse(event.data)
-          this.dispatch(msg.type, msg.data)
+          // P5：合并下行信封字段（sender/room），使 IM 消息可归因到已声明身份。
+          const dataObj = (msg.data ?? {}) as Record<string, unknown>
+          const envelope = {
+            sender: msg.sender,
+            room: msg.room,
+            ...dataObj,
+          }
+          this.dispatch(msg.type, envelope)
           this.dispatch('$all', msg.data)
         } catch {
           // raw message, dispatch as-is
@@ -105,6 +120,14 @@ export class O2WebSocketClient {
   /** 离开房间 */
   leaveRoom(roomId: string): void {
     this.send('leave_room', { room_id: roomId })
+  }
+
+  /** P5：声明在线身份（presence 上行）——后端据此登记房间 roster，
+   *  并将该身份作为后续 IM 消息的 sender 标签。sender 一般传 session.user.unique。 */
+  declarePresence(sender: string): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'presence', data: { sender } }))
+    }
   }
 
   /** 断开连接 */

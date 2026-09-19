@@ -1,3 +1,5 @@
+# dscr
+
 ﻿## DSCR（数据流控制寄存器，Data Stream Control Register
 
 powerpc 上的 DSCR 寄存器允许用户对处理器中数据流的预取进行一定的控制。关于如何使用此 DSCR
@@ -10,9 +12,11 @@ powerpc 上的 DSCR 寄存器允许用户对处理器中数据流的预取进行
 
 	(2) PACA::
 
+
 		dscr_default	/* CPU DSCR 默认*/
 
 	(3) sysfs.c::
+
 
 		dscr_default	/* 系统 DSCR 默认*/
 

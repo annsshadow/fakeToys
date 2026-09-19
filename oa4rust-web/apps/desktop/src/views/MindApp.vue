@@ -1,7 +1,7 @@
 <template>
   <div class="mod-view">
     <div class="view-header glass-card">
-      <div><h1>思维导图</h1><p class="subtitle">真实 Minder JSON · /jaxrs/mind/assemble/control/*</p></div>
+      <div><h1>思维导图</h1><p class="subtitle">真实 Minder JSON · /api/mind/assemble/control/*</p></div>
       <div class="header-actions">
         <button class="btn" :disabled="!currentFolder" @click="createMind">新建导图</button>
         <button class="btn secondary" :disabled="loadingFolder" @click="loadFolders">刷新目录</button>
@@ -178,7 +178,7 @@ async function loadFolders() {
   loadingFolder.value = true
   loadError.value = ''
   try {
-    const response = await api.get<unknown>('/jaxrs/mind/folder/tree/my')
+    const response = await api.get<unknown>('/api/mind/folder/tree/my')
     folders.value = normalizeFolders(response.data)
     if (!currentFolder.value && folders.value[0]) await selectFolder(folders.value[0])
   } catch (error) {
@@ -202,7 +202,7 @@ async function loadMinds(folderId: string) {
   loadError.value = ''
   try {
     const response = await api.put<unknown>(
-      `/jaxrs/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`,
+      `/api/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1`,
       {},
     )
     minds.value = responseArray(response.data) as MindItem[]
@@ -242,7 +242,7 @@ function parseContent(content: unknown, fallback: string) {
 async function openMind(item: MindItem) {
   loadError.value = ''
   try {
-    const response = await api.get<MindItem>(`/jaxrs/mind/assemble/control/mind/${encodeURIComponent(item.id)}`)
+    const response = await api.get<MindItem>(`/api/mind/assemble/control/mind/${encodeURIComponent(item.id)}`)
     const detail = response.data
     const parsed = parseContent(detail.content, detail.name || item.name || '中心主题')
     editor.value = {
@@ -414,7 +414,7 @@ async function saveMind() {
     version: editor.value.version,
   })
   try {
-    const response = await api.post<{ id?: string }>('/jaxrs/mind/assemble/control/mind/save', {
+    const response = await api.post<{ id?: string }>('/api/mind/assemble/control/mind/save', {
       id: editor.value.id,
       name: editor.value.name.trim() || editor.value.root.text || '未命名导图',
       folderId: editor.value.folderId,

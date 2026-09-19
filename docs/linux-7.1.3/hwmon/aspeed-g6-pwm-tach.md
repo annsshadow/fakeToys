@@ -1,3 +1,5 @@
+# aspeed-g6-pwm-tach
+
 ﻿## 内核驱动 aspeed-g6-pwm-tach
 
 
@@ -7,7 +9,7 @@
 Authors:
 	<billy_tsai@aspeedtech.com>
 
-### 说明
+## 说明
 
 该驱动为 ASPEED AST2600 风扇测速（Tacho）控制器提供支持。该控制器最多支16 个测速输入
 

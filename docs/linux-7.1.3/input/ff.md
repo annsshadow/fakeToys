@@ -1,11 +1,13 @@
+# ff
+
 ﻿## Linux 力反馈（Force feedback
 
 :Author: Johann Deneux <johann.deneux@gmail.com>锛?001/04/22銆?:Updated: Anssi Hannula <anssi.hannula@gmail.com>锛?006/04/09銆。
 你可以重新分发本文件。请记得同时包含 shape.svg interactive.svg
-#### 简介（Introduction
+## 简介（Introduction
 
 本文档描述如何在 Linux 下使用力反馈设备。目标不是像对待简单的仅输入设备那样支持这些设备（原本已经如此），而是真正启用力效果（force effects）的渲染本文档仅描述 Linux 输入接口的力反馈部分。在进一步阅读本文档之前，请先阅joydev/joystick.rst input.rst
-#### 给用户的使用说明（Instructions to the user
+### 给用户的使用说明（Instructions to the user
 
 要启用力反馈，你必须
 1. 将内核配置为包含 evdev 以及支持你设备的驱动2. 确保已加evdev 模块，并且已创建 /dev/input/event* 设备文件
@@ -52,7 +54,7 @@
     int ioctl(int fd, EVIOCGEFFECTS, int *n);
 ```
 返回设备内存中可保存的效果数量
-### 将效果上传到设备（Uploading effects to the device
+## 将效果上传到设备（Uploading effects to the device
 
 ```
     #include <linux/input.h>
@@ -71,7 +73,7 @@
     Interactive
 
 
-### 从设备中移除效果（Removing an effect from the device
+## 从设备中移除效果（Removing an effect from the device
 
 ```
     int ioctl(int fd, EVIOCRMFF, effect.id);
@@ -107,7 +109,7 @@
 	write(fd, (const void*) &stop, sizeof(stop));
 
 ```
-### 设置增益（Setting the gain
+## 设置增益（Setting the gain
 
 并非所有设备的力度都相同。因此，用户应根据希望效果的强度来设置一个增益因子。该设置在多次访问驱动期间保持有效
 ```

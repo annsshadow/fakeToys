@@ -1,3 +1,5 @@
+# ring-buffer-design
+
 ﻿
 ## 无锁环形缓冲区设
 
@@ -183,6 +185,7 @@ commit page 只由写入者栈中最外层的写入者更新。一个打断了�
 
    Write commit::
 
+
        Buffer page
       +---------+
       |written  |
@@ -194,6 +197,7 @@ commit page 只由写入者栈中最外层的写入者更新。一个打断了�
 
 
  If a write happens after the first reserve::
+
 
        Buffer page
       +---------+
@@ -207,6 +211,7 @@ commit page 只由写入者栈中最外层的写入者更新。一个打断了�
   After second writer commits::
 
 
+
        Buffer page
       +---------+
       |written  |
@@ -218,6 +223,7 @@ commit page 只由写入者栈中最外层的写入者更新。一个打断了�
       +---------+ <--- tail pointer
 
   When the first writer commits::
+
 
        Buffer page
       +---------+

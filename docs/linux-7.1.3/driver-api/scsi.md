@@ -1,3 +1,5 @@
+# scsi
+
 ﻿## SCSI Interfaces Guide
 
 
@@ -91,12 +93,14 @@ ch (ch.c)
 
    :internal:
 
+
 #### 驱动/SCSI/SCSI.c
 
 
 主要 文件 用于 the SCSI midlayer.
 
    :export:
+
 
 #### 驱动/SCSI/scsicam.c
 
@@ -107,12 +111,14 @@ ch (ch.c)
 
    :export:
 
+
 #### 驱动/SCSI/SCSI_错误.c
 
 
 通用 SCSI 错误/超时 handling routines.
 
    :export:
+
 
 #### 驱动/SCSI/SCSI_devinfo.c
 
@@ -122,12 +128,14 @@ Manage SCSI_dev_info_列出, tracks blacklisted whitelisted
 
    :export:
 
+
 #### 驱动/SCSI/SCSI_ioctl.c
 
 
 Handle ioctl() calls 用于 SCSI 设备.
 
    :export:
+
 
 #### 驱动/SCSI/SCSI_lib.c
 
@@ -136,6 +144,7 @@ SCSI queuing 搴。
 
    :export:
 
+
 #### 驱动/SCSI/SCSI_lib_dma.c
 
 
@@ -143,6 +152,7 @@ SCSI 函数 depending DMA (map unmap scatter-gather
 列表).
 
    :export:
+
 
 #### 驱动/SCSI/SCSI_proc.c
 
@@ -164,6 +174,7 @@ transports. 参见 `the original patch submission
 
    :internal:
 
+
 #### 驱动/SCSI/SCSI_scan.c
 
 
@@ -182,6 +193,7 @@ seen cannot 具有 一设备 attached
 
    :export:
 
+
 #### 驱动/SCSI/SCSI_sysctl.c
 
 
@@ -195,6 +207,7 @@ SCSI sysfs 接口 routines.
 
    :export:
 
+
 #### 驱动/SCSI/hosts.c
 
 
@@ -202,12 +215,14 @@ mid lowlevel SCSI 驱动 接口
 
    :export:
 
+
 #### 驱动/SCSI/SCSI_通用.c
 
 
 通用 支持 函数
 
    :export:
+
 
 ### Transport classes
 
@@ -223,6 +238,7 @@ The 文件 驱动/SCSI/SCSI_transport_fc.c defines transport attributes
 
    :export:
 
+
 #### iSCSI transport 绫。
 
 
@@ -231,6 +247,7 @@ attributes 用于 the iSCSI  sends SCSI packets 在…上 TCP/IP
 connections.
 
    :export:
+
 
 #### 串行 Attached SCSI (SAS) transport 
 
@@ -258,6 +275,7 @@ form 一wide 端口 基于 the 端口_identifier attribute, the
 
    :export:
 
+
 #### SATA transport 绫。
 
 
@@ -272,6 +290,7 @@ attributes 用于 traditional (fast/wide/至尊 SCSI buses.
 
    :export:
 
+
 #### SCSI RDMA (SRP) transport 绫。
 
 
@@ -279,6 +298,7 @@ The 文件 驱动/SCSI/SCSI_transport_srp.c defines transport
 attributes 用于 SCSI 在…上 Remote Direct 内存 Access.
 
    :export:
+
 
 ## SCSI lower layer
 

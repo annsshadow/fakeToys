@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/definition/list")
+                    .uri("/api/organization/definition/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -34,7 +34,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/group/list")
+                    .uri("/api/organization/group/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -55,7 +55,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/identity/list")
+                    .uri("/api/organization/identity/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -76,7 +76,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/person/list")
+                    .uri("/api/organization/person/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -98,7 +98,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/bind/list")
+                    .uri("/api/organization/bind/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -119,7 +119,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/definition")
+                    .uri("/api/organization/definition")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -142,7 +142,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/group")
+                    .uri("/api/organization/group")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -163,7 +163,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/group/test-id")
+                    .uri("/api/organization/group/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),
@@ -188,7 +188,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/person")
+                    .uri("/api/organization/person")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -211,7 +211,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/custom")
+                    .uri("/api/organization/custom")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -234,7 +234,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/bind")
+                    .uri("/api/organization/bind")
                     .method("POST")
                     .body(Body::empty())
                     .unwrap(),
@@ -255,7 +255,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/bind/test-id")
+                    .uri("/api/organization/bind/test-id")
                     .method("PUT")
                     .body(Body::empty())
                     .unwrap(),

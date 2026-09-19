@@ -1,11 +1,15 @@
 
+# peci
+
 :Original: Documentation/peci/peci.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 ## 概述
 
@@ -35,6 +39,7 @@ PECI线接口使用单线进行自锁和数据传输。它不需要任何额外�
 
 该API在以下内核代码中:
 
+
 include/linux/peci.h
 
 drivers/peci/internal.h
@@ -47,5 +52,6 @@ drivers/peci/request.c
 
 
 该API在以下内核代码中:
+
 
 drivers/peci/cpu.c

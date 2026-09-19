@@ -1,3 +1,5 @@
+# audiophile-usb
+
 ﻿## ALSA Jack 中使M-Audio Audiophile USB 指南
 
 
@@ -88,13 +90,16 @@ snd-usb-audio 驱动的默认行为是在启动时列出设备能力，并在应
 
  * Ai 端口录制一S24_3BE 编码的裸文件::
 
+
    % arecord -D hw:1,1 -c2  -t raw -r48000 -fS24_3BE test.raw
 
  * Do 端口播放一S16_BE 编码的裸文件::
 
+
    % aplay -D hw:1,1 -c2 -t raw -r48000 -fS16_BE test.raw
 
  * Do 端口播放一ac3 示例文件::
+
 
    % aplay -D hw:1,2 --channels=6 ac3_S16_BE_encoded_file.raw
 
@@ -185,11 +190,12 @@ Audiophile USB 设备而言，此值让用户指定
 
  * 或在你的模块配置文件中配置模块选项时（通常/etc/modprobe.d/ 目录下的一.conf 文件:::
 
+
        alias snd-card-1 snd-usb-audio
        options snd-usb-audio index=1 device_setup=0x09
 
 ```
-### 初始化设备时的注意事
+## 初始化设备时的注意事
 
  - 正确初始化设备要device_setup 在设备通电之前交给模块。因此，如果你使用上述的"手动探测"方法，请务必在初始化之后再给设备上电
  - 未能遵守这一点将导致设备配置错误。此时请关闭设备，卸snd-usb-audio 模块，然后用正确device_setup 参数再次探测，之后（且仅在此之后）重新打开设备

@@ -1,3 +1,5 @@
+# atlantic
+
 ﻿
 ## Marvell(Aquantia) AQtion 驱动
 
@@ -30,6 +32,7 @@
 
   .. note::
 
+
      此设置不会在重启后保留
 ```
 ### Jumbo Frames（巨型帧
@@ -55,6 +58,7 @@
     ethtool <ethX>
 
  Output example::
+
 
   Settings for enp1s0:
     Supported ports: [ TP ]
@@ -88,7 +92,9 @@
 
  .. note::
 
+
     AQrate 速率.5/5 Gb/s）仅会在 linux 内核 > 4.10 时显示    但您仍可使用这些速率::
+
 
 	ethtool -s eth0 autoneg off speed 2500
 
@@ -100,6 +106,7 @@
   ethtool -i <ethX>
 
  Output example::
+
 
   driver: atlantic
   version: 5.2.0-050200rc5-generic-kern
@@ -121,6 +128,7 @@
     ethtool -S <ethX>
 
  Output example::
+
 
   NIC statistics:
      InPackets: 13238607
@@ -176,9 +184,11 @@
 
  and changed with::
 
+
     ethtool -C <ethX> tx-usecs <usecs> rx-usecs <usecs>
 
  To disable coalescing::
+
 
     ethtool -C <ethX> tx-usecs 0 rx-usecs 0 tx-max-frames 1 tx-max-frames 1
 
@@ -191,6 +201,7 @@
     ethtool -s <ethX> wol g
 
  To disable WOL::
+
 
     ethtool -s <ethX> wol d
 
@@ -212,9 +223,11 @@
  检查消息级
  ::
 
+
     ethtool <ethX> | grep "Current message level"
 
  如果您想禁用消息输出::
+
 
     ethtool -s <ethX> msglvl 0
 
@@ -240,6 +253,7 @@
  L3/L4 5 元组（协议、源和目IP 地址、源和目TCP/UDP/SCTP 端口）与 8  过滤器进行比较。对IPv4，最多可匹配 8 个源地址和目的地址。对IPv6 最多支2 对地址。源端口和目的端口仅TCP/UDP/SCTP 数据包进行比较
  要添加一条将数据包导向队5 的过滤器，使 ``<-N|-U|--config-nfc|--config-ntuple>`` 开:
 
+
     ethtool -N <ethX> flow-type udp4 src-ip 10.0.0.1 dst-ip 10.0.0.2 src-port 2000 dst-port 2001 action 5 <loc 32>
 
  - action 为队列号 - loc 为规则号
@@ -249,10 +263,12 @@
  36 目前您不能同时使IPv4 IPv6 过滤器
  IPv6 过滤流量的示:
 
+
     sudo ethtool -N <ethX> flow-type tcp6 src-ip 2001:db8:0:f101::1 dst-ip 2001:db8:0:f101::2 action 1 loc 32
     sudo ethtool -N <ethX> flow-type ip6 src-ip 2001:db8:0:f101::2 dst-ip 2001:db8:0:f101::5 action -1 loc 36
 
  IPv4 过滤流量的示:
+
 
     sudo ethtool -N <ethX> flow-type udp4 src-ip 10.0.0.4 dst-ip 10.0.0.7 src-port 2000 dst-port 2001 loc 32
     sudo ethtool -N <ethX> flow-type tcp4 src-ip 10.0.0.3 dst-ip 10.0.0.9 src-port 2000 dst-port 2001 loc 33
@@ -264,6 +280,7 @@
  VLAN 过滤器（VLAN id）与 16 个过滤器进行比较 VLAN id 必须伴随掩码 0xF000。这是为VLAN 过滤器与带有 UserPriority  L2 EtherType 过滤器区分开，因User Priority VLAN ID 都通过同一 'vlan' 参数传入
  要添加一条将来自 VLAN 2001 的数据包导向队列 5 的过滤器::
 
+
     ethtool -N <ethX> flow-type ip4 vlan 2001 m 0xF000 action 1 loc 0
 
 
@@ -272,13 +289,16 @@
  都通过同一'vlan' 参数传入
  要添加一条将优先3 IP4 数据包导向队3 的过滤器::
 
+
     ethtool -N <ethX> flow-type ether proto 0x800 vlan 0x600 m 0x1FFF action 3 loc 16
 
  要查看当前存在的过滤器列:
 
+
     ethtool <-u|-n|--show-nfc|--show-ntuple> <ethX>
 
  规则可以从表本身删除。使用如下命令完:
+
 
     sudo ethtool <-N|-U|--config-nfc|--config-ntuple> <ethX> delete <loc>
 
@@ -304,6 +324,7 @@
  将导致从单个 6300 字节的用户缓冲区发出 100 字节大小UDP 数据包
  UDP GSO 通过如下方式配置::
 
+
     ethtool -K eth0 tx-udp-segmentation on
 
 ```
@@ -321,6 +342,7 @@
 	PHYExternalLoopback: off
 
  Example::
+
 
 	$ ethtool --set-priv-flags ethX DMASystemLoopback on
 

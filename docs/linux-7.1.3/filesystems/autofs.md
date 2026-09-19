@@ -1,3 +1,5 @@
+# autofs
+
 ﻿
 ## autofs - 工作原理
 
@@ -257,7 +259,7 @@ autofs 文件系统的根目录会响应若ioctl。发ioctl 的进程必须具CA
 链接，但不能在其他目录中创建
 Catatonic 模式只能通过 `/dev/autofs` 上的 **AUTOFS_DEV_IOCTL_OPENMOUNT_CMD** ioctl 离开
 
-## 鈥渋gnore鈥?鎸傝浇閫夐」
+## 鈥渋gnore鎸傝浇閫夐」
 
 
 “ignore”挂载选项可用于向应用程序提供一个通用指示符，表明在显示挂载信息时应当忽略挂载条目

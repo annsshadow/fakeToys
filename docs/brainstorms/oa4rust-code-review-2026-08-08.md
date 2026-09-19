@@ -31,7 +31,7 @@
 | 4 | oa4rust/crates/file_assemble_control/src/lib.rs | 506 | create_file_entity 接受用户提供的 creator 字段，可伪造审计轨迹 | security | gated_auto -> downstream-resolver |
 | 5 | oa4rust/crates/query_service/src/lib.rs | 100 | processing_execute 将用户原始 SQL 存入数据库，存在下游 SQL 注入风险 | security | manual -> downstream-resolver |
 | 6 | oa4rust/migrations/008_person_group_tables.sql | 1 | 重复的 008_ 前缀导致迁移静默跳过，行为因环境而异 | data-migrations | gated_auto -> downstream-resolver |
-| 7 | oa4rust/crates/shared/src/middleware.rs | 221 | ADMIN_WRITE_PREFIXES 从 4 个扩展到 15 个，是静默破坏性变更：非 admin 客户端对 /jaxrs/ai、/jaxrs/file、/jaxrs/program_center 等写操作将收到 403 | api-contract | gated_auto -> downstream-resolver |
+| 7 | oa4rust/crates/shared/src/middleware.rs | 221 | ADMIN_WRITE_PREFIXES 从 4 个扩展到 15 个，是静默破坏性变更：非 admin 客户端对 /api/ai、/api/file、/api/program_center 等写操作将收到 403 | api-contract | gated_auto -> downstream-resolver |
 
 ---
 
@@ -49,7 +49,7 @@
 | 15 | 6+ crates | - | 相同的虚假信心模式在 6+ 个 crate 中重复 | testing | manual -> downstream-resolver |
 | 16 | oa4rust/crates/file_assemble_control/src/tests.rs | 103 | MockControlClient::ctrl_query 对 Rows 变体返回空 vec，mock 完全失效 | testing | manual -> downstream-resolver |
 | 17 | oa4rust/crates/shared/src/middleware.rs | 334 | DB 宕机时所有授权检查降级为 deny，导致管理接口全面不可用 | adversarial | advisory -> human |
-| 18 | oa4rust/crates/shared/src/middleware.rs | 193 | 新 /jaxrs/* 模块未注册时继承 Authenticated 而非 Admin，写操作权限降级 | adversarial | advisory -> human |
+| 18 | oa4rust/crates/shared/src/middleware.rs | 193 | 新 /api/* 模块未注册时继承 Authenticated 而非 Admin，写操作权限降级 | adversarial | advisory -> human |
 | 19 | oa4rust/crates/query_service/src/lib.rs | 109 | ON CONFLICT DO UPDATE 返回新生成的 UUID，但实际 DB 行保留旧 ID | adversarial | advisory -> human |
 | 20 | oa4rust/crates/shared/src/middleware.rs | 677 | authorize_middleware 每请求执行 1-3 次 DB 授权查询，高并发下可能耗尽连接池 | performance | manual -> downstream-resolver |
 | 21 | oa4rust/crates/shared/src/middleware.rs | 693 | check_permission 中 is_admin 被重复调用最多 5 次 | performance | manual -> downstream-resolver |
@@ -73,7 +73,7 @@
 | 32 | oa4rust/crates/file_assemble_control/src/lib.rs | 503 | 用户可控文件路径未过滤，存在路径遍历风险 | security | manual -> downstream-resolver |
 | 33 | oa4rust/crates/ai/src/lib.rs | 280 | 聊天完成端点返回原始 AI 输入/输出，可能包含敏感数据 | security | manual -> downstream-resolver |
 | 34 | oa4rust/crates/program_center/src/tests.rs | - | 4 个新 POST 端点（application_create/save、agent_create/save）无测试 | testing | manual -> downstream-resolver |
-| 35 | oa4rust/crates/query_service/src/tests.rs | 36 | POST /jaxrs/query/service/processing/execute 无测试 | testing | manual -> downstream-resolver |
+| 35 | oa4rust/crates/query_service/src/tests.rs | 36 | POST /api/query/service/processing/execute 无测试 | testing | manual -> downstream-resolver |
 | 36 | oa4rust/crates/ai/src/tests.rs | 18 | AI config_get/config_base_config 空行分支无测试 | testing | manual -> downstream-resolver |
 | 37 | oa4rust/crates/file_assemble_control/src/tests.rs | 228 | 错误路径测试缺失（result==0 分支） | testing | manual -> downstream-resolver |
 | 38 | oa4rust/crates/shared/src/middleware.rs | 1 | 中间件无单元测试（auth、RBAC、rate-limit、CORS） | testing | manual -> downstream-resolver |
@@ -112,7 +112,7 @@
 | 64 | oa4rust/crates/file_assemble_control/src/lib.rs | - | 新端点无 API 版本前缀 | api-contract | advisory -> human |
 | 65 | oa4rust/migrations/008_person_group_tables.sql | - | 无回滚迁移脚本 | data-migrations | gated_auto -> downstream-resolver |
 | 66 | oa4rust/migrations/008_person_group_tables.sql | 11 | 单列索引冗余（复合 PK 已创建隐式索引） | data-migrations | advisory -> human |
-| 67 | oa4rust/crates/shared/src/middleware.rs | 647 | 前缀匹配允许 /jaxrs/ai_extra 匹配 /jaxrs/ai Admin 前缀 | adversarial | advisory -> human |
+| 67 | oa4rust/crates/shared/src/middleware.rs | 647 | 前缀匹配允许 /api/ai_extra 匹配 /api/ai Admin 前缀 | adversarial | advisory -> human |
 
 ---
 
@@ -140,7 +140,7 @@
 
 来自 docs/brainstorms/ 和 docs/plans/ 的相关历史记录：
 
-1. **路由重复注册导致 axum panic** — 曾因 control 与 auth 重复注册 /jaxrs/person/list 等路由导致启动崩溃。当前 Wave 4 新增大量路由，需在合并前验证无重复注册。
+1. **路由重复注册导致 axum panic** — 曾因 control 与 auth 重复注册 /api/person/list 等路由导致启动崩溃。当前 Wave 4 新增大量路由，需在合并前验证无重复注册。
 
 2. **前端强依赖 ActionResult<T> 9 字段 JSON 结构** — 前端 o2web 的 action.js 直接提取 json.data，依赖 9 字段结构。业务错误必须返回 HTTP 200 + type=error。
 

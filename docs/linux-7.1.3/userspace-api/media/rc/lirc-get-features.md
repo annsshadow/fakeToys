@@ -1,6 +1,8 @@
+# lirc-get-features
+
 ﻿
 
-######## ioctl LIRC_GET_FEATURES
+## ioctl LIRC_GET_FEATURES
 
 
 ## 名称

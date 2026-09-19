@@ -1,3 +1,5 @@
+# numastat
+
 ﻿## NUMA 策略命中/未命中统
 
 /sys/devices/system/node/node*/numastat

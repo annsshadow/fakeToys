@@ -2,7 +2,7 @@
 -- The cms_core_entity SeaORM entities map to table_name "x_cms_category" and
 -- "x_cms_article", but migration 023 only created x_cms_categoryinfo (for the
 -- separate cms_assemble_control module) and never created x_cms_article.
--- As a result /jaxrs/cms/category/list and /jaxrs/cms/article/list 500'd on a
+-- As a result /api/cms/category/list and /api/cms/article/list 500'd on a
 -- missing relation. Create both tables here to match the entity column set.
 
 CREATE TABLE IF NOT EXISTS "x_cms_category" (

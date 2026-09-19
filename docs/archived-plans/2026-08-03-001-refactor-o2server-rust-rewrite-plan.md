@@ -74,8 +74,8 @@ origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
 ### Relevant Code and Patterns
 
 - **模块依赖结构**：`oa/o2server/pom.xml` 声明 57 个 Maven 模块，按 `x_base_core_project` → `x_*_core_entity` → `x_*_core_express` → `x_*_assemble_control` → `x_*_assemble_surface` → `x_*_service_processing` 的层级排列。认证模块（`x_organization_assemble_control`、`x_organization_assemble_authentication`）位于中层，依赖 `x_organization_core_entity` 和 `x_base_core_project`。
-- **前端 API 调用模式**：`oa/o2web/source/x_init/src/common/action.js` 定义通用 `get()` / `post()` 方法，统一从响应 JSON 中提取 `json.data` 字段。前端硬编码的认证相关路径包括 `/jaxrs/secret/check`（密码验证，来自 `x_program_init` 模块）和 `/jaxrs/person/*`（人员信息，来自 `x_organization_assemble_control` 模块）。这意味着 Rust 侧必须保持与 Java 侧完全一致的 JSON 响应结构——Java `ActionResult<T>` 实际包含 9 个字段：`data, type, message, date, spent, size, count, position, prompt`。
-- **Java Action 基类**：`oa/o2server/x_base_core_project/src/main/java/com/x/base/core/project/jaxrs/StandardJaxrsAction.java` 定义了统一的异常处理和响应包装逻辑，Rust 侧需要在中间件层复现这一行为。
+- **前端 API 调用模式**：`oa/o2web/source/x_init/src/common/action.js` 定义通用 `get()` / `post()` 方法，统一从响应 JSON 中提取 `json.data` 字段。前端硬编码的认证相关路径包括 `/api/secret/check`（密码验证，来自 `x_program_init` 模块）和 `/api/person/*`（人员信息，来自 `x_organization_assemble_control` 模块）。这意味着 Rust 侧必须保持与 Java 侧完全一致的 JSON 响应结构——Java `ActionResult<T>` 实际包含 9 个字段：`data, type, message, date, spent, size, count, position, prompt`。
+- **Java Action 基类**：`oa/o2server/x_base_core_project/src/main/java/com/x/base/core/project/api/StandardJaxrsAction.java` 定义了统一的异常处理和响应包装逻辑，Rust 侧需要在中间件层复现这一行为。
 - **认证模块结构**：`x_organization_assemble_control` 包含 `jaxrs/` 子目录下的多个 Action 类（如 `PersonAction`），使用 `@Path`、`@GET`、`@POST` 注解，继承 `StandardJaxrsAction`。
 - **部署方式**：当前系统通过 `oa/o2server/start_linux.sh` 启动，使用 bundled JRE，默认 4GB 堆内存，端口 20020。无 Docker 或 K8s 配置，原生裸机 + systemd 部署。
 - **Swagger 覆盖率**：约 20%（11/55 模块），API 文档主要依赖源码阅读和 action JSON 文件。
@@ -96,7 +96,7 @@ origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
 
 - **PostgreSQL 作为 Rust 侧数据库**：与 Java 侧的 MySQL/H2 物理隔离，消除 schema 冲突风险。Rust 侧通过 SQLx 直写 SQL，编译时检查类型安全。
 - **响应格式兼容**：Rust 侧必须输出与 Java `ActionResult<T>` 完全一致的 JSON 结构（9 个字段：`data, type, message, date, spent, size, count, position, prompt`），因为前端 `action.js` 直接提取 `json.data` 字段。这是前端零改动的硬性前提。完整字段列表需在 U3 中实现。
-- **认证端点优先**：`/jaxrs/secret/check` 和 `/jaxrs/person/*` 是前端硬编码的关键认证路径，首批实现必须覆盖这些端点。
+- **认证端点优先**：`/api/secret/check` 和 `/api/person/*` 是前端硬编码的关键认证路径，首批实现必须覆盖这些端点。
 - **Crate 初始划分**：`shared`（公共类型、响应格式、中间件、数据库连接池）+ `auth`（认证模块业务逻辑），预留后续业务域 crate 的扩展空间。
 - **迁移策略**：一次性迁移 + nginx 切流回滚，不在过渡期双写。数据迁移脚本在模块梳理完成后、Rust 实现之前开发，与 Rust 实现并行推进。
 
@@ -112,9 +112,9 @@ origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
 
 ### Resolved Before Implementation
 
-- `/jaxrs/secret/*` 端点归属：**纳入首批**（选择 1-A）。`x_program_init` 模块的 `/jaxrs/secret/*` 端点作为认证模块首批的一部分，一并迁移到 Rust。
+- `/api/secret/*` 端点归属：**纳入首批**（选择 1-A）。`x_program_init` 模块的 `/api/secret/*` 端点作为认证模块首批的一部分，一并迁移到 Rust。
 - ActionResult JSON 字段完整性：**全部实现 9 个字段**（选择 2-A）。Rust 侧 `ActionResult<T>` 包含 `data, type, message, date, spent, size, count, position, prompt`，与 Java 侧完全一致。
-- 首批端点范围：**完整覆盖 30+ 个端点**（选择 3-A）。包括 `/jaxrs/authentication/*`（15+ 个）、`/jaxrs/person/*`（30+ 个）、`/jaxrs/secret/*`（来自 x_program_init）。
+- 首批端点范围：**完整覆盖 30+ 个端点**（选择 3-A）。包括 `/api/authentication/*`（15+ 个）、`/api/person/*`（30+ 个）、`/api/secret/*`（来自 x_program_init）。
 - 认证端点访问控制策略：**速率限制 + 账户锁定**（选择 4-A）。每 IP 每分钟最多 5 次失败尝试，超过后临时锁定。
 - 密码迁移哈希算法兼容：**在 Rust 侧重新实现兼容的哈希算法**（选择 5-B）。分析 Java 的 Crypto 工具类逻辑，在 Rust 侧实现相同的哈希验证。
 - 回滚时数据 diverged 处理：**双写过渡**（选择 6-B）。切换初期双写两边，验证后再完全切到 Rust。
@@ -145,8 +145,8 @@ origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
     │       ├── Cargo.toml
     │       └── src/
     │           ├── lib.rs
-    │           ├── secret.rs      # /jaxrs/secret/* 端点
-    │           ├── person.rs      # /jaxrs/person/* 端点
+    │           ├── secret.rs      # /api/secret/* 端点
+    │           ├── person.rs      # /api/person/* 端点
     │           └── model.rs       # 认证相关数据模型
     ├── src/
     │   └── main.rs                # 入口，组装路由
@@ -290,7 +290,7 @@ pub struct ActionResult<T> {
 
 ### U4. 认证模块 Rust 实现
 
-**Goal:** 将 `x_organization_assemble_authentication` 和 `x_organization_assemble_control` 中的认证相关 Action（`/jaxrs/secret/check`、`/jaxrs/person/*`）用 Rust + Axum 重新实现。
+**Goal:** 将 `x_organization_assemble_authentication` 和 `x_organization_assemble_control` 中的认证相关 Action（`/api/secret/check`、`/api/person/*`）用 Rust + Axum 重新实现。
 
 **Requirements:** R4, R5
 
@@ -305,27 +305,27 @@ pub struct ActionResult<T> {
 - Test: `o2server-rust/crates/auth/src/person.rs`
 
 **Approach:**
-- `secret.rs`：实现 `/jaxrs/secret/check` 端点，接收前端密码验证请求，返回与 Java 侧一致的响应格式
-- `person.rs`：实现 `/jaxrs/person/{flag}` 端点，提供人员信息查询
+- `secret.rs`：实现 `/api/secret/check` 端点，接收前端密码验证请求，返回与 Java 侧一致的响应格式
+- `person.rs`：实现 `/api/person/{flag}` 端点，提供人员信息查询
 - `model.rs`：定义认证模块的数据模型，与 Java JPA 实体对应
-- 路由挂载到 `main.rs`，路径前缀保持 `/jaxrs/` 不变
+- 路由挂载到 `main.rs`，路径前缀保持 `/api/` 不变
 - 认证逻辑参照 `x_organization_assemble_control` 中的 Java Action 实现
 
 **Technical design:**
 ```
 Axum Router
-  ├── POST /jaxrs/secret/check     → secret::check
-  ├── GET  /jaxrs/person/{flag}    → person::get
-  └── POST /jaxrs/person/{flag}    → person::save
+  ├── POST /api/secret/check     → secret::check
+  ├── GET  /api/person/{flag}    → person::get
+  └── POST /api/person/{flag}    → person::save
 ```
 
 **Patterns to follow:**
-- `oa/o2server/x_program_init/src/main/java/com/x/program/init/jaxrs/secret/SecretAction.java`（/jaxrs/secret/* 端点的实际位置）
-- `oa/o2server/x_organization_assemble_control/src/main/java/com/x/organization/assemble/control/jaxrs/person/PersonAction.java`
+- `oa/o2server/x_program_init/src/main/java/com/x/program/init/api/secret/SecretAction.java`（/api/secret/* 端点的实际位置）
+- `oa/o2server/x_organization_assemble_control/src/main/java/com/x/organization/assemble/control/api/person/PersonAction.java`
 
 **Test scenarios:**
-- Happy path: POST `/jaxrs/secret/check` 返回与 Java 侧一致的 `ActionResult` 结构
-- Happy path: GET `/jaxrs/person/{flag}` 返回正确的人员数据
+- Happy path: POST `/api/secret/check` 返回与 Java 侧一致的 `ActionResult` 结构
+- Happy path: GET `/api/person/{flag}` 返回正确的人员数据
 - Edge case: 无效的 `{flag}` 参数返回与 Java 侧一致的错误响应
 - Error path: 数据库连接失败时返回 500，body 为标准错误格式
 - Integration: 响应 JSON 的 `data` 字段被前端 `action.js` 正确提取
@@ -383,7 +383,7 @@ Axum Router
 
 ### U6. nginx 路由配置与流量切换
 
-**Goal:** 配置 nginx 前缀路由，将认证模块的 `/jaxrs/*` 请求路由到 Rust 服务，其余请求继续指向 Java 服务，实现认证模块的流量切换和回滚。
+**Goal:** 配置 nginx 前缀路由，将认证模块的 `/api/*` 请求路由到 Rust 服务，其余请求继续指向 Java 服务，实现认证模块的流量切换和回滚。
 
 **Requirements:** R9, R10, R14, R15
 
@@ -394,21 +394,21 @@ Axum Router
 - Modify: （系统 nginx 配置，路径取决于部署环境）
 
 **Approach:**
-- 在 nginx 配置中新增认证模块的路由规则：`/jaxrs/secret/*` 和 `/jaxrs/person/*` 转发到 Rust 服务端口
-- 其余 `/jaxrs/*` 路径继续转发到 Java 服务（端口 20020）
+- 在 nginx 配置中新增认证模块的路由规则：`/api/secret/*` 和 `/api/person/*` 转发到 Rust 服务端口
+- 其余 `/api/*` 路径继续转发到 Java 服务（端口 20020）
 - 配置健康检查：Rust 服务健康检查失败时自动回滚到 Java 服务
 - 提供回滚脚本：一键将认证路径切回 Java 服务
 
 **Technical design:**
 ```nginx
 # 认证模块 → Rust 服务
-location ~ ^/jaxrs/(secret|person)/ {
+location ~ ^/api/(secret|person)/ {
     proxy_pass http://127.0.0.1:RUST_PORT;
     proxy_set_header Host $host;
 }
 
 # 其他模块 → Java 服务
-location /jaxrs/ {
+location /api/ {
     proxy_pass http://127.0.0.1:20020;
 }
 ```
@@ -418,8 +418,8 @@ location /jaxrs/ {
 - `oa/o2server/start_linux.sh` 中的系统启动脚本模式
 
 **Test scenarios:**
-- Happy path: 请求 `/jaxrs/secret/check` 被路由到 Rust 服务，返回正确响应
-- Happy path: 请求 `/jaxrs/cms/*`（未迁移模块）被路由到 Java 服务，返回正确响应
+- Happy path: 请求 `/api/secret/check` 被路由到 Rust 服务，返回正确响应
+- Happy path: 请求 `/api/cms/*`（未迁移模块）被路由到 Java 服务，返回正确响应
 - Error path: Rust 服务健康检查失败时，nginx 返回 502 或可配置的回退行为
 - Integration: 前端通过浏览器访问认证页面，功能正常，URL 路径不变
 
@@ -435,7 +435,7 @@ location /jaxrs/ {
 - **Interaction graph:** Rust 认证服务接收前端直接发起的认证请求（登录、密码验证、人员查询）；Java 服务继续处理所有未迁移模块的请求。两个服务在认证模块切换期间互不调用。
 - **Error propagation:** Rust 服务中间件层统一处理 panic 和错误，输出与 Java 侧一致的 `ActionResult` 格式，前端无需区分后端来源。
 - **State lifecycle risks:** 认证模块数据在切换窗口期从 MySQL 迁移到 PostgreSQL，迁移完成后 Java 侧停止写入。回滚时通过 nginx 路由切回 Java，Java 侧数据保持原样。
-- **API surface parity:** 认证模块首批覆盖的 API 路径（`/jaxrs/secret/check`、`/jaxrs/person/*`）必须与 Java 侧的请求方法、响应结构和错误码完全一致。
+- **API surface parity:** 认证模块首批覆盖的 API 路径（`/api/secret/check`、`/api/person/*`）必须与 Java 侧的请求方法、响应结构和错误码完全一致。
 - **Unchanged invariants:** 未迁移模块的所有 API 路径和行为不受影响，继续由 Java 服务处理。
 
 ---

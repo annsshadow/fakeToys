@@ -45,9 +45,13 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Run Vitest tests
         run: pnpm test
+      - name: Run mobile Vitest tests
+        run: pnpm test:mobile
       - name: Type-check all packages
         run: pnpm typecheck
       - name: Run Biome gate on the whole frontend
         run: pnpm lint
       - name: Build desktop
         run: pnpm build
+      - name: Build mobile (uni-app H5)
+        run: pnpm --filter @oa4rust/mobile build:h5

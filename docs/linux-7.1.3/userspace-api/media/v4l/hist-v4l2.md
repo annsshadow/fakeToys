@@ -1,3 +1,5 @@
+# hist-v4l2
+
 ﻿######## V4L2 API 的变
 
 本页记录 V4L2（Video4Linux2）用户空API 的演进与变更历史，按时间顺序整理了自 1998 V4L2 取代 V4L 以来各版本在接口、ioctl 与数据格式上的关键改动，供驱动开发者与应用程序作者追API 的演变
@@ -2133,6 +2135,7 @@ To combine the advantages of Xv and V4L a special Xv driver exists in
 XFree86 and XOrg, just programming any overlay capable Video4Linux
 device it finds. To enable it `/etc/X11/XF86Config` must contain these
 lines:
+
 
 为了结合 Xv V4L 的优势，XFree86 XOrg 中存在一个特殊的 Xv 驱动
 它会对它发现的任何支持叠加的 Video4Linux 设备进行编程。要启用它，

@@ -1,3 +1,5 @@
+# summary
+
 ﻿## I2C SMBus 简
 
 I²C（读作：I 平方 C，在内核文档中写I2C）是Philips 开发的一种协议。它是一种两线制

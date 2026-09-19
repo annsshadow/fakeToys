@@ -1,3 +1,5 @@
+# mpc52xx
+
 ﻿## Linux 2.6.x MPC52xx 系列
 
 最新信息请访问 https://www.246tNt.com/mpc52xx/
@@ -13,6 +15,7 @@
      => bootm 200000 400000
 
   - DBug::
+
 
      # <编辑 Makefile，设ARCH=ppc CROSS_COMPILE=...（如果需要也可设EXTRAVERSION）     # make lite5200_defconfig
      # cp your_initrd.gz arch/ppc/boot/images/ramdisk.image.gz

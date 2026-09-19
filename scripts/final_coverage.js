@@ -23,7 +23,7 @@ for (const file of rustFiles) {
     if (depth !== 0) continue;
     let path = line.substring(pathStart, endIdx);
     path = path.replace(/\\"/g, '');
-    if (path.startsWith('/jaxrs/')) rustPaths.add(path);
+    if (path.startsWith('/api/')) rustPaths.add(path);
   }
 }
 
@@ -49,15 +49,15 @@ const allFrontend = new Set([...apiModulePaths, ...vuePaths]);
 
 // Modules with request fallback
 const modulesWithFallback = [
-  ['processplatformSurfaceApi', '/jaxrs/processplatform/assemble/surface'],
-  ['attendanceControlApi', '/jaxrs/attendance/assemble/control'],
-  ['generalControlApi', '/jaxrs/general/assemble/control'],
-  ['meetingControlApi', '/jaxrs/meeting/assemble/control'],
-  ['messageCommunicateApi', '/jaxrs/message/assemble/communicate'],
-  ['fileControlApi', '/jaxrs/file'],
-  ['portalSurfaceApi', '/jaxrs/surface/appdict'],
-  ['programCenterApi', '/jaxrs/program_center'],
-  ['processServiceApi', '/jaxrs/processplatform/service/processing'],
+  ['processplatformSurfaceApi', '/api/processplatform/assemble/surface'],
+  ['attendanceControlApi', '/api/attendance/assemble/control'],
+  ['generalControlApi', '/api/general/assemble/control'],
+  ['meetingControlApi', '/api/meeting/assemble/control'],
+  ['messageCommunicateApi', '/api/message/assemble/communicate'],
+  ['fileControlApi', '/api/file'],
+  ['portalSurfaceApi', '/api/surface/appdict'],
+  ['programCenterApi', '/api/program_center'],
+  ['processServiceApi', '/api/processplatform/service/processing'],
 ];
 
 console.log('=== 最终覆盖率分析 ===\n');
@@ -85,19 +85,19 @@ for (const [mod, prefix] of modulesWithFallback) {
 
 // Paths without any fallback
 const noFallbackPrefixes = [
-  '/jaxrs/person/list', '/jaxrs/group/list', '/jaxrs/unit/list',
-  '/jaxrs/data/document', '/jaxrs/anonymous/surface',
-  '/jaxrs/mind/assemble', '/jaxrs/hotpic/assemble',
-  '/jaxrs/categoryinfo', '/jaxrs/appinfo', '/jaxrs/document',
-  '/jaxrs/fileinfo', '/jaxrs/form', '/jaxrs/view',
-  '/jaxrs/comment', '/jaxrs/commend', '/jaxrs/recycle',
-  '/jaxrs/share', '/jaxrs/log', '/jaxrs/jpush', '/jaxrs/image',
-  '/jaxrs/component', '/jaxrs/console', '/jaxrs/empower',
-  '/jaxrs/queryview', '/jaxrs/express', '/jaxrs/templateform',
-  '/jaxrs/correlation', '/jaxrs/work', '/jaxrs/process',
-  '/jaxrs/query/service', '/jaxrs/personal', '/jaxrs/portal',
-  '/jaxrs/complex', '/jaxrs/folder', '/jaxrs/cms',
-  '/jaxrs/export', '/jaxrs/import', '/javrs/output',
+  '/api/person/list', '/api/group/list', '/api/unit/list',
+  '/api/data/document', '/api/anonymous/surface',
+  '/api/mind/assemble', '/api/hotpic/assemble',
+  '/api/categoryinfo', '/api/appinfo', '/api/document',
+  '/api/fileinfo', '/api/form', '/api/view',
+  '/api/comment', '/api/commend', '/api/recycle',
+  '/api/share', '/api/log', '/api/jpush', '/api/image',
+  '/api/component', '/api/console', '/api/empower',
+  '/api/queryview', '/api/express', '/api/templateform',
+  '/api/correlation', '/api/work', '/api/process',
+  '/api/query/service', '/api/personal', '/api/portal',
+  '/api/complex', '/api/folder', '/api/cms',
+  '/api/export', '/api/import', '/javrs/output',
   '/javrs/viewrecord', '/javrs/docpermission',
 ];
 

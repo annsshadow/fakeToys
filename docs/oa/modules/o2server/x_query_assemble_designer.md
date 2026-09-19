@@ -19,7 +19,7 @@
 
 ## Key Flows
 
-- 查询设计 CRUD：`POST /jaxrs/query/assemble/designer/create` → `create_designer`（uuid v4）→ INSERT INTO `x_query_design`（name/category/query_definition）；`POST .../designer/save/{id}` UPDATE 同表，`POST .../delete/{id}` 软删（SET deleted_at=NOW()），列表查询均带 `deleted_at IS NULL`
+- 查询设计 CRUD：`POST /api/query/assemble/designer/create` → `create_designer`（uuid v4）→ INSERT INTO `x_query_design`（name/category/query_definition）；`POST .../designer/save/{id}` UPDATE 同表，`POST .../delete/{id}` 软删（SET deleted_at=NOW()），列表查询均带 `deleted_at IS NULL`
 - 神经网络模型生命周期：创建走 INSERT INTO `x_query_neural_model`（初始 status='idle'）；`neural/generate/model/{modelFlag}`、`neural/learn/model/{modelFlag}` 分别 UPDATE status='generating'/'learning'；stop/reset 动作恢复为 'idle'（stop 带 status 前置条件）
 - 导入模型与输入/输出：`importmodel/list/query/{queryFlag}` 按 query_flag 查询 `x_query_import_model`（含 permission 校验读取）；输入草稿经 `input/create` INSERT INTO `x_query_input`、cover 更新 content；`output/list` 查询 `x_query_output`（WHERE deleted_at IS NULL）
 
@@ -46,8 +46,8 @@
 
 
 
-- `POST /jaxrs/query/assemble/designer/create`
-- `POST /jaxrs/query/assemble/designer/delete/{id}`
-- `GET /jaxrs/query/assemble/designer/get/{id}`
-- `GET /jaxrs/query/assemble/designer/list/{category}`
-- `POST /jaxrs/query/assemble/designer/save/{id}`
+- `POST /api/query/assemble/designer/create`
+- `POST /api/query/assemble/designer/delete/{id}`
+- `GET /api/query/assemble/designer/get/{id}`
+- `GET /api/query/assemble/designer/list/{category}`
+- `POST /api/query/assemble/designer/save/{id}`

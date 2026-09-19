@@ -1,3 +1,5 @@
+# api
+
 ﻿## 实时补丁（Livepatching）API
 
 
@@ -9,15 +11,18 @@
    :export:
 
 
+
 ## 影子变量
 
 
    :export:
 
+
 ## 系统状态变
 
 
    :export:
+
 
 ## 对象类型
 

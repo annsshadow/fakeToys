@@ -1,3 +1,5 @@
+# vm
+
 ﻿## /proc/sys/vm/ 文档说明
 
 
@@ -243,6 +245,7 @@ hugetlb_shm_group 包含允许使用 hugetlb 页创SysV 共享内存段的id
     pagesets
       cpu: 0 pcp: 0
           :
+
 
 ```
 这些保护值被加到评分中，以判断该 zone 是否应用于页分配，还是应被回收

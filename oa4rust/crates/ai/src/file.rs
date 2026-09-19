@@ -24,14 +24,28 @@ pub async fn file_get(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("xlength"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i64>>("xlength").unwrap_or(0),
+                    )),
                 ),
-                ("storage".to_string(), Value::String(row.get("xstorage"))),
-                ("creator".to_string(), Value::String(row.get("xcreator"))),
+                (
+                    "storage".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xstorage").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xcreator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -119,7 +133,7 @@ pub async fn file_delete(
         return Ok(Json(ActionResult::error("file not found")));
     };
 
-    let file_creator: String = row.get("xcreator");
+    let file_creator: String = row.get::<_, Option<String>>("xcreator").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &file_creator).await?;
 
     client

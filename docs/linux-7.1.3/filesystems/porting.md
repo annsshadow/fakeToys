@@ -1,4 +1,7 @@
+# porting
+
 ﻿## Changes since 2.5.0:
+
 
 ## 2.5.0 起的变更
 
@@ -425,6 +428,7 @@ had ->revalidate()) add calls in ->follow_link()/->readlink().
 
 ->d_parent changes are not protected by BKL anymore.  Read access is safe
 if at least one of the following is true:
+
 
 ->d_parent 的变更不再受 BKL 保护。如果以下至少一项成立，则读取访问是
 安全的：
@@ -1454,6 +1458,7 @@ might be a fit.
 
 Rules for inode destruction:
 
+
 inode 销毁规则：
 
  - if ->destroy_inode() is non-NULL, it gets called
@@ -1747,6 +1752,7 @@ In the old mechanism reusing or creating a superblock for a racing mount(2) and
 umount(2) relied on the file_system_type as the holder. This was severely
 underdocumented however:
 
+
 在旧机制中，为竞态中mount(2) umount(2) 复用或创建超级块依赖于作为持有者的
 file_system_type。然而这一点文档记录严重不足：
 
@@ -1799,6 +1805,7 @@ superblock.
 The new logic thus waits until the superblock and the devices are shutdown in
 ->kill_sb(). Removal of the superblock from the list of superblocks of the
 filesystem type is now moved to a later point when the devices are closed:
+
 
 因此新逻辑会等待直到超级块和设备在 ->kill_sb() 中被关闭。超级块从文件系统类型的
 超级块列表中移除，现在被推迟到设备关闭时
@@ -2062,6 +2069,7 @@ kern_path_locked() user_path_locked() 不再返回dentry，因此无需检查这
 lookup_one_qstr_excl() is changed to return errors in more cases, so
 these conditions don't require explicit checks:
 
+
 lookup_one_qstr_excl() 被改为在更多情况下返回错误，因此这些条件无需显式检查：
 
  - if LOOKUP_CREATE is NOT given, then the dentry won't be negative,
@@ -2280,6 +2288,7 @@ be configured using the mmap_action_*() helpers.
 **强制**
 
 Several functions are renamed:
+
 
 若干函数被重命名
 

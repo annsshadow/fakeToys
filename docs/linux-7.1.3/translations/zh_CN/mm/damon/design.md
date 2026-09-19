@@ -1,11 +1,15 @@
 
+# design
+
 :Original: Documentation/mm/damon/design.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## 设计
@@ -29,6 +33,7 @@ DAMON提供了数据访问监控功能，同时使其准确性和开销可控。
 
 
 基本访问监测的低级基元被定义为两部分。:
+
 
 1. 确定地址空间的监测目标地址范围
 2. 目标空间中特定地址范围的访问检查。

@@ -1,3 +1,5 @@
+# kernel-per-CPU-kthreads
+
 ﻿## 减少per-cpu kthread 引起的操作系统抖动（Reducing OS jitter due to per-cpu kthreads
 本文档列出了 Linux 内核中的 per-CPU kthread，并给出了控制其操作系统抖动（OS jitter）的
 若干选项。注意，这里不列出非 per-CPU kthread。要减少来自per-CPU kthread 的操作系抖动，请将其绑定到一个专用于此类工作管家"（housekeeping）CPU 上

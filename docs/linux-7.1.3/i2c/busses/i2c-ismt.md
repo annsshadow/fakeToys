@@ -1,3 +1,5 @@
+# i2c-ismt
+
 ﻿## 内核驱动 i2c-ismt
 
 
@@ -8,7 +10,7 @@
 	Bill Brown <bill.e.brown@intel.com>
 
 
-### 模块参数
+## 模块参数
 
 
 - bus_speed（无符号整型

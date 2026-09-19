@@ -1,3 +1,5 @@
+# vfio-mediated-device
+
 ﻿
 ## VFIO Mediated 设备
 
@@ -28,6 +30,7 @@ access the 物理 设备. framework reused 用于 mediated 设备.
 The mediated 核心 驱动 提供 一通用 接口 用于 mediated 设备
 管理 使用 驱动 不同 设备. 模块
 提供 一generic 接口 perform 这些 操作:
+
 
 - 创建 destroy 一mediated 设备
 - Add 一mediated 设备 remove 来自 一mediated 总线 驱动
@@ -77,6 +80,7 @@ the VFIO mediated 驱动 framework. The diagram 显示 NVIDIA, Intel, IBM
 The mediated 核心 驱动 提供 the 以下 types registration
 interfaces:
 
+
 - Registration 接口 用于 一mediated 总线 驱动
 - 物理 设备 驱动 接口
 
@@ -103,6 +107,7 @@ The registration 接口 用于 一mediated 设备 驱动 提供 the 以下
 ```
 一mediated 总线 驱动 用于 mdev 应当 使用 结构the 函数 calls
 注册 注销 itself the 核心 驱动:
+
 
 ```
 
@@ -143,6 +148,7 @@ The 管理 接口 through sysfs enables 用户空间 软件, 例如
 libvirt, query configure mediated 设备 一hardware-agnostic fashion.
 管理 接口 提供 flexibility the underlying 物理
 设备's 驱动 支持 特例如:
+
 
 - Mediated 设备 hot plug
 - 多个 mediated 设备 一单个 虚拟 machine
@@ -247,7 +253,7 @@ doesn't 支持 hot unplug.
 	# echo 1 > /sys/bus/mdev/devices/$mdev_UUID/remove
 
 ```
-### Mediated 设备 Hot plug
+## Mediated 设备 Hot plug
 
 
 Mediated 设备 已创assigned runtime. The procedure hot

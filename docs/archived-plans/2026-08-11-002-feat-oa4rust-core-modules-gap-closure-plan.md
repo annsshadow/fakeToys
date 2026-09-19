@@ -222,9 +222,9 @@ oa4rust 已完成 86 个 crate 的路由挂载，但核心业务模块存在大�
 - `crates/file_core_entity/src/lib.rs`（参考文件 CRUD 模式）
 
 **Test scenarios:**
-- Happy path: POST /jaxrs/file/upload → 文件元数据写入 DB
-- Happy path: GET /jaxrs/file/{id}/download → 返回 base64 编码的文件内容 + 正确 Content-Type
-- Happy path: POST /jaxrs/recycle/resume/{id} → 文件从回收站恢复
+- Happy path: POST /api/file/upload → 文件元数据写入 DB
+- Happy path: GET /api/file/{id}/download → 返回 base64 编码的文件内容 + 正确 Content-Type
+- Happy path: POST /api/recycle/resume/{id} → 文件从回收站恢复
 - Edge case: 下载不存在的文件 → 返回 404
 - Error path: 上传超大文件（>5MB）→ 返回 error
 

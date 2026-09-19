@@ -15,7 +15,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/list/meeting-001")
+                    .uri("/api/meeting/assemble/control/list/meeting-001")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/create")
+                    .uri("/api/meeting/assemble/control/create")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -56,7 +56,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/delete/test-id")
+                    .uri("/api/meeting/assemble/control/delete/test-id")
                     .method("DELETE")
                     .body(Body::empty())
                     .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite")
+                    .uri("/api/meeting/assemble/control/meeting/meeting-001/add/invite")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"invitee":"user-001"}"#))
@@ -96,7 +96,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite")
+                    .uri("/api/meeting/assemble/control/meeting/meeting-001/delete/invite")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"invitee":"user-001"}"#))
@@ -115,7 +115,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/create")
+                    .uri("/api/meeting/assemble/control/meeting/create")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(
@@ -137,7 +137,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/room/list")
+                    .uri("/api/meeting/assemble/control/room/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -156,7 +156,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/list")
+                    .uri("/api/meeting/assemble/control/building/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -233,13 +233,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_delete_jaxrs_meeting_assemble_control_delete_id() {
+    async fn test_delete_meeting_assemble_control_delete_id() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/delete/test-id")
+                    .uri("/api/meeting/assemble/control/delete/test-id")
                     .method(Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),
@@ -251,13 +251,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_building_() {
+    async fn test_get_meeting_assemble_control_building_() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/building/list")
+                    .uri("/api/meeting/assemble/control/building/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -269,13 +269,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_config_sy() {
+    async fn test_get_meeting_assemble_control_config_sy() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/config/system/config")
+                    .uri("/api/meeting/assemble/control/config/system/config")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -287,13 +287,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_list_meet() {
+    async fn test_get_meeting_assemble_control_list_meet() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/list/test-id")
+                    .uri("/api/meeting/assemble/control/list/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -305,13 +305,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_meeting_l() {
+    async fn test_get_meeting_assemble_control_meeting_l() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/list/applied/completed")
+                    .uri("/api/meeting/assemble/control/meeting/list/applied/completed")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -323,13 +323,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_meeting_i() {
+    async fn test_get_meeting_assemble_control_meeting_i() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -341,13 +341,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_openmeeti() {
+    async fn test_get_meeting_assemble_control_openmeeti() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/openmeeting/list/room")
+                    .uri("/api/meeting/assemble/control/openmeeting/list/room")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -359,13 +359,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_room_list() {
+    async fn test_get_meeting_assemble_control_room_list() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/room/list")
+                    .uri("/api/meeting/assemble/control/room/list")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -377,13 +377,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_get_jaxrs_meeting_assemble_control_room_id() {
+    async fn test_get_meeting_assemble_control_room_id() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/room/test-id")
+                    .uri("/api/meeting/assemble/control/room/test-id")
                     .method(Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -395,13 +395,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_meeting_assemble_control_config_sy() {
+    async fn test_post_meeting_assemble_control_config_sy() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/config/system/config/manage")
+                    .uri("/api/meeting/assemble/control/config/system/config/manage")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -413,13 +413,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_meeting_assemble_control_create() {
+    async fn test_post_meeting_assemble_control_create() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/create")
+                    .uri("/api/meeting/assemble/control/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -431,13 +431,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_meeting_assemble_control_meeting_c() {
+    async fn test_post_meeting_assemble_control_meeting_c() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/create")
+                    .uri("/api/meeting/assemble/control/meeting/create")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -449,13 +449,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_meeting_assemble_control_meeting_d() {
+    async fn test_post_meeting_assemble_control_meeting_d() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/delete/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/delete/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -467,13 +467,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_meeting_assemble_control_meeting_s() {
+    async fn test_post_meeting_assemble_control_meeting_s() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/save/test-id")
+                    .uri("/api/meeting/assemble/control/meeting/save/test-id")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),
@@ -485,13 +485,13 @@ mod tests {
 
     #[ignore = "requires a running PostgreSQL server"]
     #[tokio::test]
-    async fn test_post_jaxrs_meeting_assemble_control_meeting_i() {
+    async fn test_post_meeting_assemble_control_meeting_i() {
         let pool = test_pool();
         let app = crate::meeting_assemble_control_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/accept")
+                    .uri("/api/meeting/assemble/control/meeting/test-id/accept")
                     .method(Method::POST)
                     .body(Body::empty())
                     .unwrap(),

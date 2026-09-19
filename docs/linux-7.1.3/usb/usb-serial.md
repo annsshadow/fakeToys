@@ -1,3 +1,5 @@
+# usb-serial
+
 ﻿## USB serial
 
 
@@ -241,6 +243,7 @@
 	If you have any questions, problems, patches, feature requests, etc. you can
 	contact me here via email:
 
+
 					dignome@gmail.com
 
 		(your problems/patches can alternately be submitted to usb-devel)
@@ -434,6 +437,7 @@
 
   其中 <vid> <pid> 替换为你设备的厂id 和产id 的十六进制表示
   如果驱动编译为模块，你也可以在加载模块时提供一id::
+
 
 	insmod usbserial vendor=0x#### product=0x####
 

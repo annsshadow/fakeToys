@@ -1,4 +1,6 @@
 
+# email-clients
+
 :Original: [../../../process/email-clients](../../../process/email-clients)
 :Translator: Alessia Mantegazza <amantegazza@vaga.pv.it>
 
@@ -79,15 +81,18 @@ completa.
 
 Legenda:
 
+
 - TUI = interfaccia utente testuale (**text-based user interface**)
 - GUI = interfaccia utente grafica (**graphical user interface**)
 
-######## Alpine (TUI)
+#### Alpine (TUI)
 
 
 Opzioni per la configurazione:
 
+
 Nella sezione `Sending Preferences`:
+
 
 - `Do Not Send Flowed Text` deve essere `enabled`
 - `Strip Whitespace Before Sending` deve essere `disabled`
@@ -96,7 +101,7 @@ Quando state scrivendo un messaggio, il cursore dev'essere posizionato
 dove volete che la patch inizi, poi premendo `CTRL-R` vi verrà chiesto
 di selezionare il file patch da inserire nel messaggio.
 
-######## Claws Mail (GUI)
+##### Claws Mail (GUI)
 
 
 Funziona. Alcune persone riescono ad usarlo con successo per inviare le patch.
@@ -221,6 +226,7 @@ prima di premere il tasto centrale o shift-insert. Oppure usate il
 ```
 Opzioni per la configurazione:
 
+
 Tutto dovrebbe funzionare già nella configurazione base.
 ```
 
@@ -258,11 +264,12 @@ Mutt è molto personalizzabile. Qui di seguito trovate la configurazione minima
 ```
 La documentazione di Mutt contiene molte più informazioni:
 
+
     https://gitlab.com/muttmua/mutt/-/wikis/UseCases/Gmail
 
     http://www.mutt.org/doc/manual/
 
-######## Pine (TUI)
+## Pine (TUI)
 
 
 Pine aveva alcuni problemi con gli spazi vuoti, ma questi dovrebbero essere
@@ -272,10 +279,11 @@ Se potete usate alpine (il successore di pine).
 
 Opzioni di configurazione:
 
+
 - Nelle versioni più recenti è necessario avere `quell-flowed-text`
 - l'opzione `no-strip-whitespace-before-send` è necessaria
 
-######## Sylpheed (GUI)
+### Sylpheed (GUI)
 
 
 - funziona bene per aggiungere testo in linea (o usando allegati)
@@ -296,6 +304,7 @@ Dopo la configurazione, inclusa l'installazione delle estenzioni, dovrete
 riavviare Thunderbird.
 
 - permettere l'uso di editor esterni:
+
 
   La cosa più semplice da fare con Thunderbird e le patch è quello di usare
   estensioni che permettano di aprire il vostro editor preferito.
@@ -331,6 +340,7 @@ riavviare Thunderbird.
     consultate il loro  manuale per sapere come configurarli.`)`
 
 Per rendere l'editor interno un po' più sensato, fate così:
+
 
 - Modificate le impostazioni di Thunderbird per far si che non usi `format=flowed`!
   Andate sulla finestra principale e cercate il bottone per il menu a tendina principale.

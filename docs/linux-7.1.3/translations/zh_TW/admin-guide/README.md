@@ -1,8 +1,11 @@
 
 
+# README
+
 :Original: Documentation/admin-guide/README.rst
 
 :譯者:
+
 
  吳想成 Wu XiangCheng <bobwxc@email.cn>
  胡皓文 Hu Haowen <2023002089@link.tyut.edu.cn>
@@ -73,6 +76,7 @@
    安裝，請獲取所有較新的補丁文件，進入內核源代碼（linux-6.x）的目錄並
    執行::
 
+
      xz -cd ../patch-6.x.xz | patch -p1
 
    請【按順序】替換所有大於當前源代碼樹版本的“x”，這樣就可以了。您可能想要
@@ -89,12 +93,14 @@
    或者，腳本 patch-kernel 可以用來自動化這個過程。它能確定當前內核版本並
    應用找到的所有補丁::
 
+
      linux/scripts/patch-kernel linux
 
    上面命令中的第一個參數是內核源代碼的位置。補丁是在當前目錄應用的，但是
    可以將另一個目錄指定爲第二個參數。
 
  - 確保沒有過時的 .o 文件和依賴項::
+
 
      cd linux
      make mrproper
@@ -122,6 +128,7 @@
      build directory:    /home/name/build/kernel
 
    要配置和構建內核，請使用::
+
 
      cd /usr/src/linux-6.x
      make O=/home/name/build/kernel menuconfig
@@ -211,6 +218,7 @@
    Documentation/kbuild/kconfig.rst。
 
  - ``make config`` 注意事項:
+
 
     - 包含不必要的驅動程序會使內核變大，並且在某些情況下會導致問題：
       探測不存在的控制器卡可能會混淆其他控制器。

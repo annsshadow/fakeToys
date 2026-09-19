@@ -1,3 +1,5 @@
+# iio_configfs
+
 ﻿## 工业 IIO configfs 支持
 
 
@@ -62,7 +64,7 @@ IIO 软件触发器的实现支持创建多种触发器类型。一个新的触�
 每种触发器类型在 /config/iio/triggers 下都有自己的目录。加iio-trig-sample 模块将创'trig-sample' 触发器类型目/config/iio/triggers/trig-sample
 我们支持以下中断源（触发器类型）
  - hrtimer，使用高分辨率定时器作为中断
-### 3.1 hrtimer 触发器的创建与销
+## 3.1 hrtimer 触发器的创建与销
 
 加载 iio-trig-hrtimer 模块将注hrtimer 触发器类型，允许用户/config/iio/triggers/hrtimer 下创hrtimer 触发器
 ```

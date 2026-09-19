@@ -88,9 +88,15 @@ pub async fn work_processing(
             ("title".to_string(), Value::String(row.get("title"))),
             (
                 "workStatus".to_string(),
-                Value::String(row.get("work_status")),
+                Value::String(
+                    row.get::<_, Option<String>>("work_status")
+                        .unwrap_or_default(),
+                ),
             ),
-            ("activity".to_string(), Value::String(row.get("activity"))),
+            (
+                "activity".to_string(),
+                Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+            ),
         ]),
     ))))
 }
@@ -112,9 +118,18 @@ pub async fn task_processing(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("title".to_string(), Value::String(row.get("title"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("activity".to_string(), Value::String(row.get("activity"))),
+            (
+                "title".to_string(),
+                Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+            ),
+            (
+                "person".to_string(),
+                Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+            ),
+            (
+                "activity".to_string(),
+                Value::String(row.get::<_, Option<String>>("activity").unwrap_or_default()),
+            ),
         ]),
     ))))
 }
@@ -176,27 +191,24 @@ pub async fn task_count_with_person(
 pub fn processplatform_core_express_router(pool: Pool) -> Router {
     Router::new()
         .route(
-            "/jaxrs/processplatform/work/terminate/{id}",
+            "/api/processplatform/work/terminate/{id}",
             get(work_terminate),
         )
+        .route("/api/processplatform/work/retract/{id}", get(work_retract))
         .route(
-            "/jaxrs/processplatform/work/retract/{id}",
-            get(work_retract),
-        )
-        .route(
-            "/jaxrs/processplatform/work/processing/{id}",
+            "/api/processplatform/work/processing/{id}",
             get(work_processing),
         )
         .route(
-            "/jaxrs/processplatform/task/processing/{id}",
+            "/api/processplatform/task/processing/{id}",
             get(task_processing),
         )
         .route(
-            "/jaxrs/processplatform/work/count/with/person/{id}",
+            "/api/processplatform/work/count/with/person/{id}",
             get(work_count_with_person),
         )
         .route(
-            "/jaxrs/processplatform/task/count/with/person/{id}",
+            "/api/processplatform/task/count/with/person/{id}",
             get(task_count_with_person),
         )
         .layer(Extension(pool))

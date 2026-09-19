@@ -1,3 +1,5 @@
+# intel-tdx
+
 ﻿
 ## Intel 信任域扩展（TDX
 
@@ -143,7 +145,7 @@ Intel 的信任域扩展（TDX）保护机密客户机 VM 免受主机和物理�
 
 
 ```
-### KVM_TDX_FINALIZE_VM
+## KVM_TDX_FINALIZE_VM
 
 :Type: vm ioctl
 :Returns: 成功返回 0，错误返<0

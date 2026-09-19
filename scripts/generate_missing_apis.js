@@ -32,7 +32,7 @@ for (const file of rustFiles) {
     path = path.replace(/\{\\?"[^\\"]*\\?"\}/g, '{p}');
     // Also clean any remaining stray backslashes
     path = path.replace(/\\/g, '');
-    if (path.startsWith('/jaxrs/')) {
+    if (path.startsWith('/api/')) {
       rustPaths.add(path);
     }
   }
@@ -92,25 +92,25 @@ for (const p of rustPaths) {
   const key = parts.slice(0, 4).join('/');
 
   let target = null;
-  if (key.startsWith('jaxrs/processplatform/assemble/surface')) target = 'processplatformSurfaceApi';
-  else if (key.startsWith('jaxrs/processplatform/assemble/designer')) target = 'processApi';
-  else if (key.startsWith('jaxrs/processplatform/service/processing')) target = 'processServiceApi';
-  else if (key.startsWith('jaxrs/attendance/assemble/control')) target = 'attendanceControlApi';
-  else if (key.startsWith('jaxrs/meeting/assemble/control')) target = 'meetingControlApi';
-  else if (key.startsWith('jaxrs/general/assemble/control')) target = 'generalControlApi';
-  else if (key.startsWith('jaxrs/message/assemble/communicate')) target = 'messageCommunicateApi';
+  if (key.startsWith('api/processplatform/assemble/surface')) target = 'processplatformSurfaceApi';
+  else if (key.startsWith('api/processplatform/assemble/designer')) target = 'processApi';
+  else if (key.startsWith('api/processplatform/service/processing')) target = 'processServiceApi';
+  else if (key.startsWith('api/attendance/assemble/control')) target = 'attendanceControlApi';
+  else if (key.startsWith('api/meeting/assemble/control')) target = 'meetingControlApi';
+  else if (key.startsWith('api/general/assemble/control')) target = 'generalControlApi';
+  else if (key.startsWith('api/message/assemble/communicate')) target = 'messageCommunicateApi';
   else if (key.startsWith('javrs/person/list') || key.startsWith('javrs/group/list') || key.startsWith('javrs/unit/list')) target = 'orgApi';
-  else if (key.startsWith('jaxrs/bbs/assemble/control')) target = 'extraApis';
-  else if (key.startsWith('jaxrs/mind/assemble/control')) target = 'mindApi';
-  else if (key.startsWith('jaxrs/file/assemble/control') || key.startsWith('jaxrs/file/attachment') || key.startsWith('javrs/file/attachment2') || key.startsWith('javrs/file/core') || key.startsWith('javrs/file/folder') || key.startsWith('javrs/file/folder2') || key.startsWith('javrs/file/list') || key.startsWith('javrs/file/share') || key.startsWith('javrs/file/upload') || key.startsWith('javrs/file/editor') || key.startsWith('javrs/file/clean') || key.startsWith('javrs/file/copy') || key.startsWith('javrs/file/complex') || key.startsWith('javrs/file/permission') || key.startsWith('javrs/file/{flag}')) target = 'fileControlApi';
-  else if (key.startsWith('jaxrs/data/document')) target = 'dataApi';
+  else if (key.startsWith('api/bbs/assemble/control')) target = 'extraApis';
+  else if (key.startsWith('api/mind/assemble/control')) target = 'mindApi';
+  else if (key.startsWith('api/file/assemble/control') || key.startsWith('api/file/attachment') || key.startsWith('javrs/file/attachment2') || key.startsWith('javrs/file/core') || key.startsWith('javrs/file/folder') || key.startsWith('javrs/file/folder2') || key.startsWith('javrs/file/list') || key.startsWith('javrs/file/share') || key.startsWith('javrs/file/upload') || key.startsWith('javrs/file/editor') || key.startsWith('javrs/file/clean') || key.startsWith('javrs/file/copy') || key.startsWith('javrs/file/complex') || key.startsWith('javrs/file/permission') || key.startsWith('javrs/file/{flag}')) target = 'fileControlApi';
+  else if (key.startsWith('api/data/document')) target = 'dataApi';
   else if (key.startsWith('javrs/surface/appdict') || key.startsWith('javrs/design/appdict')) target = 'portalSurfaceApi';
   else if (key.startsWith('javrs/anonymous/surface/appdict')) target = 'anonymousApi';
-  else if (key.startsWith('jaxrs/program_center/')) target = 'programCenterApi';
+  else if (key.startsWith('api/program_center/')) target = 'programCenterApi';
   else if (key.startsWith('javrs/ai/') || key.startsWith('javrs/ai_assemble_control/')) target = 'extraApis';
-  else if (key.startsWith('jaxrs/hotpic/assemble/control') || key.startsWith('javrs/hotpic_assemble_control')) target = 'hotpicApi';
-  else if (key.startsWith('jaxrs/calendar_assemble_control')) target = 'calendarDeepApi';
-  else if (key.startsWith('jaxrs/categoryinfo/filter/list') || key.startsWith('javrs/categoryinfo/list') || key.startsWith('javrs/categoryinfo/{id}') || key.startsWith('javrs/categoryinfo/alias') || key.startsWith('javrs/categoryinfo/erase')) target = 'categoryApi';
+  else if (key.startsWith('api/hotpic/assemble/control') || key.startsWith('javrs/hotpic_assemble_control')) target = 'hotpicApi';
+  else if (key.startsWith('api/calendar_assemble_control')) target = 'calendarDeepApi';
+  else if (key.startsWith('api/categoryinfo/filter/list') || key.startsWith('javrs/categoryinfo/list') || key.startsWith('javrs/categoryinfo/{id}') || key.startsWith('javrs/categoryinfo/alias') || key.startsWith('javrs/categoryinfo/erase')) target = 'categoryApi';
   else if (key.startsWith('javrs/appinfo/list') || key.startsWith('javrs/appinfo/filter/list') || key.startsWith('javrs/appinfo/erase') || key.startsWith('javrs/appinfo/alias') || key.startsWith('javrs/appinfo/get/user') || key.startsWith('javrs/appinfo/{id}/permission') || key.startsWith('javrs/appinfo/{id}/control') || key.startsWith('javrs/appinfo/{id}/icon') || key.startsWith('javrs/appconfig/')) target = 'appInfoApi';
   else if (key.startsWith('javrs/comment/list')) target = 'commentApi';
   else if (key.startsWith('javrs/commend/list')) target = 'commendApi';

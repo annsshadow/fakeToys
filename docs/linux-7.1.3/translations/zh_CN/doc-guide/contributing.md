@@ -1,5 +1,7 @@
 
 
+# contributing
+
 :Original: Documentation/doc-guide/contributing.rst
 
 :译者: 吴想成 Wu XiangCheng <bobwxc@email.cn>
@@ -71,6 +73,7 @@ C代码编译器发出的警告常常会被视为误报，从而导致出现了�
 
   Two kerneldoc comments in devfreq.c fail to adhere to the required format,
   resulting in these doc-build warnings:
+
 
     ./drivers/devfreq/devfreq.c:1818: warning: bad line:
   	  - Resource-managed devfreq_register_notifier()

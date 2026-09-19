@@ -1,7 +1,10 @@
+# sht3x
+
 ﻿## 内核驱动 sht3x
 
 
 Supported chips:
+
 
   - Sensirion SHT3x-DIS
 
@@ -33,10 +36,11 @@ Supported chips:
 
 Author:
 
+
   - David Frey <david.frey@sensirion.com>
   - Pascal Sachs <pascal.sachs@sensirion.com>
 
-### 描述
+## 描述
 
 
 该驱动实现了Sensirion SHT3x-DIS、STS3x-DIS 以及 SHT85 系列温湿度传感器支持。温度以摄氏度为单位测量，相对湿度以百分比表示。在 sysfs 接口中，所值都放大 1000 倍，31.5 摄氏度对应的值为 31500

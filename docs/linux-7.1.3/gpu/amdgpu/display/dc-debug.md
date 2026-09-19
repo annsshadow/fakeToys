@@ -1,3 +1,5 @@
+# dc-debug
+
 ﻿## 显示核心调试工具（Display Core Debug tools
 本节将为你提供从显示角度调试 amdgpu 驱动的有用信息。本页介绍了一些调试机制与流程以帮助你判断某些问题是否与显示代码相关
 ## 缩小显示问题的范围（Narrow down display issues

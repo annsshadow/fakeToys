@@ -19,8 +19,8 @@
 
 ## Key Flows
 
-- 服务状态：`GET /jaxrs/correlation/core/express/status` → `get_status` 经 deadpool 连接池 `SELECT COUNT(*) FROM x_correlation`，输出 status="running"、totalRecords、enabled=count>0
-- 关联同步：`GET /jaxrs/correlation/core/express/sync` → `sync_correlation` 统计 x_correlation 记录数，输出 synced=count>0、syncedRecords、message="同步完成"
+- 服务状态：`GET /api/correlation/core/express/status` → `get_status` 经 deadpool 连接池 `SELECT COUNT(*) FROM x_correlation`，输出 status="running"、totalRecords、enabled=count>0
+- 关联同步：`GET /api/correlation/core/express/sync` → `sync_correlation` 统计 x_correlation 记录数，输出 synced=count>0、syncedRecords、message="同步完成"
 - 路由注册：`correlation_core_express_router(pool)` 挂 status/sync 共 2 条路由并以 `.layer(Extension(pool))` 注入连接池；routes.rs 委托回 lib.rs
 
 ## Dependencies
@@ -42,5 +42,5 @@
 
 
 
-- `GET /jaxrs/correlation/core/express/status`
-- `GET /jaxrs/correlation/core/express/sync`
+- `GET /api/correlation/core/express/status`
+- `GET /api/correlation/core/express/sync`

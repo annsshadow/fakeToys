@@ -1,3 +1,5 @@
+# zorro
+
 ﻿## Zorro 设备编写设备驱动
 
 
@@ -5,7 +7,7 @@
 :Last revised: September 5, 2003
 
 
-### 简
+## 简
 
 Zorro 总线Amiga 系列计算机中使用的总线。得益于 AutoConfig(tm)，它100%
 即插即用（Plug-and-Play）的
@@ -81,6 +83,7 @@ Zorro 设备资源中的地址区域Zorro 总线地址区域。由Zorro 总线�
 	bus_addr = ZTWO_PADDR(virt_addr);
 
   - Zorro III 地址空间必须先使z_ioremap() 显式映射，然后才能访:
+
 
 	virt_addr = z_ioremap(bus_addr, size);
 	...

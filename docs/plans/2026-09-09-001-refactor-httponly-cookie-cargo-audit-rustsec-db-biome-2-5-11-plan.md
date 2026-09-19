@@ -941,7 +941,7 @@ navigates; logout returns to `/login` and `who` is anonymous.
 
 ### Backend 500s on dashboard stats (found 2026-09-10, fixed same day)
 
-`GET /jaxrs/processplatform/assemble/surface/work/count/{credential}` and
+`GET /api/processplatform/assemble/surface/work/count/{credential}` and
 the application-list literal routes returned 500 against the local DB:
 - `work_count_credential*` queried `pp_c_work` with an unquoted
   `xcreatorPerson`; PostgreSQL folds unquoted identifiers to lowercase but

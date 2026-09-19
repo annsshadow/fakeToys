@@ -1,3 +1,5 @@
+# quickly-build-trimmed-linux
+
 ﻿
 ## 如何快速构建一个精简Linux 内核
 
@@ -89,11 +91,13 @@
    If you want to access recent mainline releases and pre-releases, deepen you
    clone's history to the oldest mainline version you are interested in::
 
+
      git fetch --shallow-exclude=v6.0 origin
 
    In case you want to access a stable/longterm release (say v6.1.5), simply add
    the branch holding that series; afterwards fetch the history at least up to
    the mainline version that started the series (v6.1)::
+
 
      git remote set-branches --add origin linux-6.1.y
      git fetch --shallow-exclude=v6.0 origin
@@ -101,6 +105,7 @@
    Now checkout the code you are interested in. If you just performed the
    initial clone, you will be able to check out a fresh mainline codebase, which
    is ideal for checking whether developers already fixed an issue::
+
 
       git checkout --detach origin/master
 
@@ -137,6 +142,7 @@
 ```
 
 .. _configuration_sbs:
+
 
 * 基于现有配置为你的内核创建构建配置
   如果你自己已经准备好了这样一'.config' 文件，把它复制到 ~/linux/ 并运  ``make olddefconfig``
@@ -202,17 +208,20 @@
    In case you want to build a version from a stable/longterm series you have
    not used yet (say 6.2.y), tell git to track it::
 
+
       git remote set-branches --add origin linux-6.2.y
 
    Now fetch the latest upstream changes; you again need to specify the earliest
    version you care about, as git otherwise might retrieve the entire commit
    history::
 
+
      git fetch --shallow-exclude=v6.0 origin
 
    Now switch to the version you are interested in -- but be aware the command
    used here will discard any modifications you performed, as they would
    conflict with the sources you want to checkout::
+
 
      git checkout --force --detach origin/master
 
@@ -222,15 +231,18 @@
    you prepared earlier using localmodconfig  (~/linux/.config) for your next
    kernel::
 
+
      # reminder: if you want to apply patches, do it at this point
      # reminder: you might want to update your build tag at this point
      make olddefconfig
 
    Now build your kernel::
 
+
      make -j $(nproc --all)
 
    Afterwards install the kernel as outlined above::
+
 
      command -v installkernel && sudo make modules_install install
 
@@ -306,10 +318,12 @@
 
  * Fedora and derivatives::
 
+
      sudo dnf install binutils /usr/include/{libelf.h,openssl/pkcs7.h} \
        /usr/bin/{bc,bison,flex,gcc,git,openssl,make,perl,pahole}
 
  * openSUSE and derivatives::
+
 
      sudo zypper install bc binutils bison dwarves flex gcc git make perl-base \
        openssl openssl-devel libelf-dev

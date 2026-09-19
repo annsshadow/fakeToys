@@ -1,10 +1,12 @@
+# svga
+
 ﻿锘。
 ## 视频 模式 Selection 支持 2.13
 
 
 :Copyright: |copy| 1995--1999 Martin Mares, <mj@ucw.cz>
 
-#### Intro
+### Intro
 
 
 small document describes the "视频 模式 Selection" 特

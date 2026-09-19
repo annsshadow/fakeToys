@@ -168,3 +168,200 @@ pub async fn get_detail(
 
     Ok(Json(ActionResult::success(info)))
 }
+
+// ── person/signature/save + personal/face/list（斜杠路径家族补齐，查/写真实表 095）──
+/// POST /api/person/signature/save —— 保存当前登录用户签名（upsert x_person_signature）。
+pub async fn save_signature(
+    pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
+    Json(payload): Json<serde_json::Value>,
+) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+    let token =
+        shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
+    let session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let signature = payload
+        .get("signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let mime = payload
+        .get("mimeType")
+        .and_then(|v| v.as_str())
+        .unwrap_or("image/png")
+        .to_string();
+
+    let existing = client
+        .query_opt(
+            "SELECT id FROM x_person_signature WHERE person_id = $1 AND deleted_at IS NULL LIMIT 1",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if let Some(row) = existing {
+        let eid: String = row.get("id");
+        client
+            .execute(
+                "UPDATE x_person_signature SET signature = $1, mime_type = $2, update_time = NOW() WHERE id = $3",
+                &[&signature, &mime, &eid],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        Ok(Json(ActionResult::success(serde_json::Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), serde_json::Value::String(eid)),
+                ("saved".to_string(), serde_json::Value::Bool(true)),
+            ]),
+        ))))
+    } else {
+        let id = uuid::Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_person_signature (id, person_id, signature, mime_type, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+                &[&id, &session.person_unique, &signature, &mime, &session.person_unique],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        Ok(Json(ActionResult::success(serde_json::Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), serde_json::Value::String(id)),
+                ("saved".to_string(), serde_json::Value::Bool(true)),
+            ]),
+        ))))
+    }
+}
+
+/// GET /api/personal/face/list —— 当前登录用户的人脸特征列表（x_person_face）。
+pub async fn face_list(
+    pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
+) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+    let token =
+        shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
+    let session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, face_name, face_type, status, create_time::text AS create_time FROM x_person_face \
+             WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|row| {
+            serde_json::Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), serde_json::Value::String(row.get("id"))),
+                (
+                    "faceName".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("face_name")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "faceType".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("face_type")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("status").unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    serde_json::Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        serde_json::Value::Array(data),
+        count,
+        0,
+    )))
+}
+
+// ── face 家族 CRUD（x_person_face 095，通用参数化写）──
+fn face_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_person_face",
+        columns: &[
+            ("personId", "person_id"),
+            ("faceName", "face_name"),
+            ("faceType", "face_type"),
+            ("feature", "feature"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn face_create(
+    pool: Extension<Pool>,
+    Json(payload): Json<serde_json::Value>,
+) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+    let id = shared::crud_create(&pool, &face_spec(), &payload).await?;
+    Ok(Json(ActionResult::success(serde_json::Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), serde_json::Value::String(id)),
+            ("created".to_string(), serde_json::Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn face_save(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    Json(payload): Json<serde_json::Value>,
+) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &face_spec(), &id, &payload).await?;
+    Ok(Json(ActionResult::success(serde_json::Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), serde_json::Value::String(id)),
+            ("saved".to_string(), serde_json::Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn face_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &face_spec(), &id).await?;
+    Ok(Json(ActionResult::success(serde_json::Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), serde_json::Value::String(id)),
+            ("deleted".to_string(), serde_json::Value::Bool(deleted)),
+        ]),
+    ))))
+}

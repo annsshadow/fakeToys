@@ -1,3 +1,5 @@
+# legacy_dvb_video
+
 ﻿
 
 ## DVB 视频设备（DVB Video Device
@@ -309,7 +311,7 @@ DVB 视频设备控制 DVB 硬件MPEG2 视频解码器。可以通过 `/dev/dvb/
     #define VIDEO_VSYNC_FIELD_EVEN              (2)
     #define VIDEO_VSYNC_FIELD_PROGRESSIVE       (3)
 
-#### 常量（Constants
+## 常量（Constants
 
     :header-rows:  0
     :stub-columns: 0
@@ -412,7 +414,7 @@ DVB 视频设备控制 DVB 硬件MPEG2 视频解码器。可以通过 `/dev/dvb/
 	} u;
     };
 
-#### 变量（Variables
+## 变量（Variables
 
     :header-rows:  0
     :stub-columns: 0
@@ -467,7 +469,7 @@ DVB 视频设备控制 DVB 硬件MPEG2 视频解码器。可以通过 `/dev/dvb/
        - | unknown / odd / even / progressive
           | 参见：`Predefined decoder commands and flags`_
 
-#### 描述（Description
+### 描述（Description
 
 这是 `VIDEO_GET_EVENT`_ 调用返回视频事件的结构。更多细节请参见那里
 
@@ -583,7 +585,7 @@ DVB 视频设备控制 DVB 硬件MPEG2 视频解码器。可以通过 `/dev/dvb/
     #define VIDEO_CAP_SYS     4
     #define VIDEO_CAP_PROG    8
 
-#### 常量（Constants
+## 常量（Constants
 
 能力位的定义
     :header-rows:  0
@@ -613,7 +615,7 @@ DVB 视频设备控制 DVB 硬件MPEG2 视频解码器。可以通过 `/dev/dvb/
        - 视频设备接受节目流（program stream）
           你仍然必须打开视频和音频设备，
           但只将流发送到视频设备
-#### 描述（Description
+### 描述（Description
 
 `VIDEO_GET_CAPABILITIES`_ 的调用返回一个无符号整数，其根据
 硬件的能力设置了以下位
@@ -1645,7 +1647,7 @@ Generic Error Codes <gen-errors> 章节中描述
     #include <fcntl.h>
 
 
-#### 参数（Arguments
+## 参数（Arguments
 
     :header-rows:  0
     :stub-columns: 0
@@ -1677,7 +1679,7 @@ Generic Error Codes <gen-errors> 章节中描述
        - `O_NONBLOCK`
        - | 以非阻塞模式打开
           | （默认是阻塞模式
-#### 描述（Description
+### 描述（Description
 
 此系统调用打开一个具名的视频设备（例/dev/dvb/adapter/video）以供后续使用
 open() 调用成功后，设备将准备就绪可供使用。阻塞或非阻塞模式的意义存在差异的函数文档中描述。它不影open() 调用本身的语义。以

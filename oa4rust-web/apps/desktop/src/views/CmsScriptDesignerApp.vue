@@ -6,12 +6,12 @@
 
 <script setup lang="ts">
 // W7：真实脚本设计器——CodeMirror 编辑器（ScriptWorkbench 内建 XScript 补全）
-// + /jaxrs/script u2 CRUD + 脚本内容（scriptContent）。
+// + /api/script u2 CRUD + 脚本内容（scriptContent）。
 import { api } from '@oa4rust/sdk'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ScriptWorkbench, { type ScriptListItem, type ScriptWorkbenchAdapter } from '../components/ScriptWorkbench.vue'
 
-const base = '/jaxrs/script'
+const base = '/api/script'
 
 function extractData(response: unknown): Record<string, unknown>[] {
   const data = (response as { data?: unknown })?.data

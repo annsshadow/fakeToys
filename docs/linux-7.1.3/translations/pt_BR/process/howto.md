@@ -1,6 +1,6 @@
 
 
-## COMO FAZER o desenvolvimento do kernel Linux
+# COMO FAZER o desenvolvimento do kernel Linux
 
 
 Este é o documento definitivo sobre este tópico. Ele contém instruções
@@ -13,7 +13,7 @@ Se algo neste documento ficar desatualizado, por favor, envie patches para
 o mantenedor deste arquivo, que está listado no final do documento.
 
 
-### Introdução
+## Introdução
 
 
 Então, você quer aprender como se tornar um desenvolvedor do kernel Linux?
@@ -31,6 +31,7 @@ arquitetura) não é obrigatório, a menos que você planeje fazer
 desenvolvimento de baixo nível para essa arquitetura específica. Embora não
 sejam um substituto para uma formação sólida em C e/ou anos de experiência,
 os seguintes livros são bons para, no mínimo, referência:
+
 
   - "The C Programming Language" por Kernighan e Ritchie [Prentice Hall]
 
@@ -73,6 +74,7 @@ declarações sobre assuntos jurídicos.
 
 Para perguntas e respostas comuns sobre a GPL, por favor, veja:
 
+
         https://www.gnu.org/licenses/gpl-faq.html
 
 
@@ -91,6 +93,7 @@ a lista linux-api@vger.kernel.org.
 
 Aqui está uma lista de arquivos que estão na árvore de fontes do kernel e
 que são de leitura obrigatória:
+
 
   Documentation/admin-guide/README.rst <readme>
     Este arquivo fornece um breve histórico sobre o kernel Linux e descreve
@@ -113,6 +116,7 @@ que são de leitura obrigatória:
     Este arquivo descreve em detalhes explícitos como criar e enviar
     um patch com sucesso, incluindo (mas não limitado a):
 
+
         - Conteúdo do e-mail
         - Formato do e-mail
         - Para quem enviá-lo
@@ -123,6 +127,7 @@ que são de leitura obrigatória:
 
 Outras excelentes descrições de como criar patches adequadamente são:
 
+
 	"O Patch Perfeito"
 		https://www.ozlabs.org/~akpm/stuff/tpp.txt
 
@@ -132,6 +137,7 @@ Outras excelentes descrições de como criar patches adequadamente são:
   Documentation/process/stable-api-nonsense.rst <stable_api_nonsense>
     Este arquivo descreve a justificativa por trás da decisão consciente de
     não ter uma API estável dentro do kernel, incluindo pontos como:
+
 
       - Camadas de adaptação (shim-layers) de subsistemas (para compatibilidade?)
       - Portabilidade de drivers entre sistemas operacionais.
@@ -198,6 +204,7 @@ Documentation/output. Eles também podem ser gerados nos formatos
 Se você não sabe nada sobre o desenvolvimento do kernel Linux, você deve
 consultar o projeto Linux KernelNewbies:
 
+
 	https://kernelnewbies.org
 
 Ele consiste em uma lista de discussão útil onde você pode fazer quase
@@ -215,6 +222,7 @@ como compilar um kernel e aplicar um patch.
 Se você não sabe por onde começar, mas deseja procurar alguma tarefa
 para iniciar sua integração na comunidade de desenvolvimento do kernel,
 acesse o projeto Linux Kernel Janitor:
+
 
 	https://kernelnewbies.org/KernelJanitors
 
@@ -235,6 +243,7 @@ Linux Cross-Reference, que é capaz de apresentar o código-fonte em um
 formato de página web indexada e auto-referenciada. Um excelente
 repositório atualizado do código do kernel pode ser encontrado em:
 
+
     https://elixir.bootlin.com/
 
 
@@ -244,6 +253,7 @@ repositório atualizado do código do kernel pode ser encontrado em:
 O processo de desenvolvimento do kernel Linux consiste atualmente em algumas
 "branches" (ramos) principais diferentes e muitos ramos de subsistemas
 específicos. Esses diferentes ramos são:
+
 
   - Árvore principal (mainline) do Linus
   - Várias árvores estáveis com múltiplos números de versão principal
@@ -256,6 +266,7 @@ específicos. Esses diferentes ramos são:
 A árvore principal é mantida por Linus Torvalds e pode ser encontrada em
 https://kernel.org ou no repositório. Seu processo de desenvolvimento é
 o seguinte:
+
 
   - Assim que um novo kernel é lançado, uma janela de duas semanas é aberta;
     durante esse período, os mantenedores podem enviar grandes diffs para
@@ -282,6 +293,7 @@ o seguinte:
 
 Vale a pena mencionar o que Andrew Morton escreveu na lista de discussão
 do kernel Linux sobre os lançamentos do kernel:
+
 
     *"Ninguém sabe quando um kernel será lançado, porque ele é
     lançado de acordo com o status percebido dos bugs, não de acordo
@@ -348,6 +360,7 @@ este propósito, existe um repositório de testes especial no qual
 praticamente todas as árvores de subsistemas são integradas (pulled)
 quase diariamente:
 
+
     https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
 
 Dessa forma, a linux-next oferece uma visão resumida do que se espera
@@ -394,10 +407,12 @@ do núcleo (core) do kernel participa da Linux Kernel Mailing List (LKML).
 Detalhes sobre como se inscrever e cancelar a inscrição na lista podem
 ser encontrados em:
 
+
     https://subspace.kernel.org/subscribing.html
 
 Existem arquivos de mensagens da lista na web em muitos lugares diferentes.
 Use um mecanismo de busca para encontrar esses arquivos. Por exemplo:
+
 
     https://lore.kernel.org/linux-kernel/
 
@@ -413,11 +428,13 @@ listas para os diferentes grupos.
 Muitas das listas estão hospedadas no kernel.org. Informações sobre elas
 podem ser encontradas em:
 
+
     https://subspace.kernel.org
 
 Por favor, lembre-se de seguir bons hábitos de comportamento ao usar as
 listas. Embora um pouco clichê, a URL a seguir possui algumas diretrizes
 simples para interagir com a lista (ou qualquer outra lista):
+
 
     https://subspace.kernel.org/etiquette.html
 
@@ -496,7 +513,9 @@ A comunidade do kernel trabalha de forma diferente da maioria dos ambientes
 tradicionais de desenvolvimento corporativo. Aqui está uma lista de coisas
 que você pode tentar fazer para evitar problemas:
 
+
   Boas coisas a dizer em relação às suas mudanças propostas:
+
 
     - "Isto resolve múltiplos problemas."
     - "Isto remove 2000 linhas de código."
@@ -506,6 +525,7 @@ que você pode tentar fazer para evitar problemas:
     - "Isto aumenta a performance em máquinas comuns..."
 
   Coisas ruins que você deve evitar dizer:
+
 
     - "Nós fizemos desta forma no AIX/ptx/Solaris, portanto deve ser bom..."
     - "Eu faço isso há 20 anos, então..."
@@ -551,6 +571,7 @@ deve ser menor que isso quase sempre.
 
 As razões para dividir as coisas são as seguintes:
 
+
 1) Patches pequenos aumentam a probabilidade de serem aplicados, pois não
    exigem muito tempo ou esforço para verificar sua correção. Um patch de
    5 linhas pode ser aplicado por um mantenedor com apenas um olhar rápido.
@@ -566,6 +587,7 @@ As razões para dividir as coisas são as seguintes:
    e simplificar (ou simplesmente reordenar) os patches antes de submetê-los.
 
 Aqui está uma analogia do desenvolvedor do kernel Al Viro:
+
 
     *"Pense em um professor corrigindo o dever de casa de um aluno de
     matemática. O professor não quer ver as tentativas e erros do aluno
@@ -605,6 +627,7 @@ do seu e-mail. Essas informações se tornarão as informações do ChangeLog
 para o patch e serão preservadas para que todos vejam para sempre. Elas
 devem descrever o patch completamente, contendo:
 
+
   - por que a mudança é necessária
   - a abordagem geral de design no patch
   - detalhes de implementação
@@ -612,6 +635,7 @@ devem descrever o patch completamente, contendo:
 
 Para mais detalhes sobre como tudo isso deve ser, por favor, veja a seção
 ChangeLog do documento:
+
 
   "O Patch Perfeito"
       https://www.ozlabs.org/~akpm/stuff/tpp.txt

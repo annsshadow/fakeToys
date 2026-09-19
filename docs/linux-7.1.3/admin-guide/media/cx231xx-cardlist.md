@@ -1,3 +1,5 @@
+# cx231xx-cardlist
+
 ﻿
 ## cx231xx 硬件卡列
 

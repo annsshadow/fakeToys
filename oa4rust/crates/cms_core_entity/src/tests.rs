@@ -29,7 +29,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/list")
+                        .uri("/api/cms/category/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -52,7 +52,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/test-category-id")
+                        .uri("/api/cms/category/test-category-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -77,7 +77,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/list")
+                        .uri("/api/cms/category/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -101,7 +101,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/category/test-category-id")
+                        .uri("/api/cms/category/test-category-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -128,7 +128,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/article/create")
+                        .uri("/api/cms/article/create")
                         .method(axum::http::Method::POST)
                         .header("content-type", "application/json")
                         .body(Body::from(r#"{"title":"test","categoryId":"cat-001"}"#))
@@ -152,7 +152,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/article/list")
+                        .uri("/api/cms/article/list")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -175,7 +175,7 @@ mod tests {
                 .clone()
                 .oneshot(
                     Request::builder()
-                        .uri("/jaxrs/cms/article/test-article-id")
+                        .uri("/api/cms/article/test-article-id")
                         .method(axum::http::Method::GET)
                         .body(Body::empty())
                         .unwrap(),
@@ -229,5 +229,40 @@ mod tests {
         let json = serde_json::to_value(&article).unwrap();
         assert_eq!(json["title"], "测试文章");
         assert_eq!(json["publish_time"], "2024-01-01T10:00:00");
+    }
+
+    // cms/core/entity/* 斜杠路径家族（093 迁移建表）：路由已注册，无 DB 时返回 500 而非 404。
+    #[test]
+    fn test_cms_core_entity_list_routes_registered() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let pool = build_test_pool();
+            let app = crate::cms_core_entity_router(pool);
+            for uri in [
+                "/api/cms/core/entity/column/list",
+                "/api/cms/core/entity/column_manager/list",
+                "/api/cms/core/entity/index/list",
+                "/api/cms/core/entity/module/list",
+                "/api/cms/core/entity/note/list",
+            ] {
+                let response = app
+                    .clone()
+                    .oneshot(
+                        Request::builder()
+                            .uri(uri)
+                            .method(axum::http::Method::GET)
+                            .body(Body::empty())
+                            .unwrap(),
+                    )
+                    .await
+                    .unwrap();
+                assert_ne!(
+                    response.status(),
+                    StatusCode::NOT_FOUND,
+                    "route {} should be registered",
+                    uri
+                );
+            }
+        });
     }
 }

@@ -1,3 +1,5 @@
+# bonding
+
 ﻿
 ## Linux 以太Bonding 驱动使用手册（HOWTO
 
@@ -1017,7 +1019,7 @@ ifcfg 文件的其它通用选项与细节见
 注意，该模板并未记录上面描述的各`BONDING_*` 设置，但确实描述了许多其
 选项
 
-### 3.1.1 Sysconfig 中使DHCP
+## 3.1.1 Sysconfig 中使DHCP
 
 sysconfig 下，将设备配置为 BOOTPROTO='dhcp' 会导致它DHCP 查询IP
 地址信息。在撰写本文时，这对 bonding 设备不起作用；脚本会尝试在添加任
@@ -1190,7 +1192,7 @@ bonding銆。
 同样，为方便起见，可能希望创建一个包含这些命令的脚本
 
 
-### 3.3.1 手动配置多个 Bond
+## 3.3.1 手动配置多个 Bond
 
 本节包含为那些网络初始化脚本不支持配置多bond 的系统配置带有不同选项
 多个 bonding 设备的信息
@@ -1272,7 +1274,7 @@ bonding 编译进内核时，它同样允许你使用多个配置不同的 bond
    由于 sysfs 文件4K 大小限制，如果你有数百个以上bond，此列表可能会被
    截断。在正常操作条件下这不太可能发生
 
-### 添加与移Slave
+## 添加与移Slave
 
 可以使用文件 /sys/class/net/<bond>/bonding/slaves 将接enslave 到某bond
 该文件的语义bonding_masters 文件相同
@@ -1296,7 +1298,7 @@ bonding 编译进内核时，它同样允许你使用多个配置不同的 bond
 # echo -eth0 > /sys/class/net/eth0/master/bonding/slaves
 将把 eth0 从它enslave 的任bond 中释放，无论 bond 接口的名称是什么
 
-### 更改 Bond 的配
+## 更改 Bond 的配
 
 可以通过操作位于 /sys/class/net/<bond name>/bonding 中的文件来单独配置每bond
 
@@ -1347,7 +1349,7 @@ bonding 编译进内核时，它同样允许你使用多个配置不同的 bond
    lp_interval bonding 驱动向每slave 的对端交换机发送学习数据包的间隔秒数
    默认间隔1 秒
 
-### 示例配置
+## 示例配置
 
 我们从第 3.3 节中展示的同一个例子开始，使用 sysfs 执行，并且不使用 ifenslave
 
@@ -1506,7 +1508,7 @@ qid 简单地保留0 的一个好处是，现bonding 驱动中存在的多队列
 此特性首次出现在 bonding 驱动版本 3.7.0 中，并且对输slave 选择的支持仅限于
 round-robin active-backup 模式
 
-### 3.7 以更安全的方式为 802.3ad 模式配置 LACP
+## 3.7 以更安全的方式为 802.3ad 模式配置 LACP
 
 当使802.3ad bonding 模式时，Actor（主机）Partner（交换机）会交换 LACPDU
 这些 LACPDU 无法被嗅探，因为它们发往链路本地 mac 地址（交换机/网桥不应转发这些
@@ -1704,7 +1706,7 @@ ARP 监控如其名称所示运作：它向网络上一个或多个指定的对�
 
 
 ```
-### 7.3 MII 监控工作机制
+## 7.3 MII 监控工作机制
 
 
 MII 监控只监控本地网络接口的 carrier 状态。它通过以下三种方式之一完成：依赖设
@@ -2352,7 +2354,7 @@ MAC 地址也可以通过bond 设备 down/up 来更
 要恢复你slave MAC 地址，你需要将它们bond 上分离（`ifenslave -d bond0 eth0`）。bonding
 驱动随后将恢复这slave 在被 enslave 之前拥有MAC 地址
 
-### 9.  哪些 bonding 模式支持原生 XDP
+## 9.  哪些 bonding 模式支持原生 XDP
 
 
   - balance-rr (0)

@@ -1,7 +1,10 @@
 
+# cputopology
+
 :Original: Documentation/admin-guide/cputopology.rst
 
 :翻譯:
+
 
   唐藝舟 Tang Yizhou <tangyeechou@gmail.com>
 
@@ -38,6 +41,7 @@ draw這些層次結構相關的文件僅在體系結構提供了下文描述的�
 
 爲了在所有體系結構上保持一致，include/linux/topology.h提供了上述所有宏的默認定義，以防
 它們未在include/asm-XXX/topology.h中定義:
+
 
 1) topology_physical_package_id: -1
 2) topology_die_id: -1

@@ -1,4 +1,4 @@
-## RISC-V 上的 ACPI
+# RISC-V 上的 ACPI
 
 
 本文件说明 RISC-V 架构上 ACPI 的相关规则。

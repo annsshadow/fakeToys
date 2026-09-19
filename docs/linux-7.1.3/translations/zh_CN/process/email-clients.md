@@ -1,6 +1,8 @@
 
 
 
+# email-clients
+
 :Original: Documentation/process/email-clients.rst
 
 :译者:
@@ -72,7 +74,7 @@ xclip或者xcutsel也许可以，但是最好测试一下或者避免使用复�
 - TUI = 以文本为基础的用户接口
 - GUI = 图形界面用户接口
 
-######## Alpine (TUI)
+#### Alpine (TUI)
 
 
 配置选项：
@@ -85,7 +87,7 @@ xclip或者xcutsel也许可以，但是最好测试一下或者避免使用复�
 当写邮件时，光标应该放在补丁会出现的地方，然后按下 `CTRL-R` 组合键，使指
 定的补丁文件嵌入到邮件中。
 
-######## Claws Mail (GUI)
+##### Claws Mail (GUI)
 
 
 可以用，有人用它成功地发过补丁。
@@ -230,7 +232,7 @@ Mutt文档含有更多信息：
 
     http://www.mutt.org/doc/manual/
 
-######## Pine (TUI)
+## Pine (TUI)
 
 
 Pine过去有一些空格删减问题，但是这些现在应该都被修复了。
@@ -243,7 +245,7 @@ Pine过去有一些空格删减问题，但是这些现在应该都被修复了�
 - `no-strip-whitespace-before-send` 选项也是需要的。
 
 
-######## Sylpheed (GUI)
+### Sylpheed (GUI)
 
 
 - 内嵌文本可以很好的工作（或者使用附件）。

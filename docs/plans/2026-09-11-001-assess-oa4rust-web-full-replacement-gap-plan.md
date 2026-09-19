@@ -3,7 +3,11 @@ title: "assess: oa4rust + oa4rust-web 能否完全替代 oa/o2server + oa/o2web 
 type: assessment-and-plan
 status: active
 date: 2026-09-11
-rev: 14  # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈 o2server/o2web 未上线，无影子迁移/生产切流前提；「功能可替换」= 项 1/2/3/5 达成（门禁级功能等价，非逐字节等价），S4 不阻塞；保留「不宣布 100% 完全替代」边界
+rev: 15  # v15：S4 真实流量 gate 彻底移除——无旧系统（o2server/o2web 从未上线），不需要真实流量，改好即上线；
+      # 上线判据 = 静态门禁全绿 + 仓内 live E2E + 上线后常态监控（非前置）；
+      # 已删 pilot-gate workflow / shadow-traffic.sh / java-drill conf / rollback-playbook / s4-pilot-canary-runbook；
+      # pilot_gate.py 降级为可选离线观测工具（非门禁）；REALIZE_RUNBOOK §4.2 口径同步改写
+      # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈 o2server/o2web 未上线，无影子迁移/生产切流前提；「功能可替换」= 项 1/2/3/5 达成（门禁级功能等价，非逐字节等价），S4 不阻塞；保留「不宣布 100% 完全替代」边界
       # v13：S3 前端 E2E 闭环实跑全绿（§七验收项 2 本地达成）——Playwright 对运行中双栈 5/5 通过
       # （designer-roundtrip process/form/query/portal + workflow-runtime 发起→填报→审批→收尾）；
       # 根因修复：ProcessDesigner 死模板未定义标识符（simState/ganttRows/branchStates 等）+ 行129 v-for/v-if 防御；
@@ -15,7 +19,7 @@ rev: 14  # v14：S4 重新定位为「上线前稳定性金丝雀」——旧栈
       # 项1 复验（2026-09-14）：干净双栈（全新 o2server + 干净 Rust DB，双侧全播种）重跑 behavior_compare
       # = 136 FAIL / 1877 PASS / 2029 SKIP ≤ 基线 170，gate 无回归（较 rev12 153 下降）——本次后端改动未使 gate 回归
       # 项3/项5 复核：W13 crud-view manifest（47 项裁决，壳视 replacementClaim:false）+ 守卫测试 6/6；§五 四条书面边界声明在档
-      # 项4 S4：离线门禁 pilot_gate 4/4 达成；v14 重新定位为上线前稳定性金丝雀（旧栈未上线→无影子迁移前提），不阻塞「功能可替换」，真实试点流量待上线时验证
+      # 项4 S4：v15 起真实流量 gate 彻底移除（无旧系统、不需要真实流量，改好即上线）；离线 pilot_gate 4/4 保留为可选观测工具，非门禁
       # v12：W12 第三批收敛 + 双栈实测 gate 下降——批二 11 处理器（01891cc4）+ 批三 5 端点
       # （person custom/definition 删除族对齐 WoId {id} + queryview reload/dynamic 对齐 WrapBoolean）；
       # 双栈容器同环境 A/B 实测 gate 观测 156→153（-3，1857→1860 PASS，基线 170 通过）；
@@ -104,7 +108,7 @@ problem_type: capability-parity-audit
 
 1. **ProcessDesigner 与流程引擎数据契约不兼容（最致命）**：输出自定义 `{config:{nodes,edges}}`（BPMN 风格），而 **Rust 引擎按 O2OA `activities` 键解析 JSONB**（`service_processing/lib.rs:2476`）→ **引擎无法执行**。缺 15 类 activity（begin/manual/choice/condition/split/merge/embed/publish/delay/invoke/service/agent/cancel）、字段权限、edition 列表/diff、waypoint；事件脚本为裸 `<textarea>`；"流程地图"含 `window.__fakeProcesses` 演示兜底。
 2. **无 Xform 表单运行时**：全局缺把 `surface/form/view` JSON 渲染为控件的运行时；`ProcessWork.vue` 审批提交空 `{}`。→ 即便有流程也无法填报审批。
-3. **FormDesigner 契约偏差**：保存自定义 `{schema}` 到 `/jaxrs/form`，非 O2OA `moduleList`；缺移动端、DOM 树、样式刷、Actions/Events/Validation。
+3. **FormDesigner 契约偏差**：保存自定义 `{schema}` 到 `/api/form`，非 O2OA `moduleList`；缺移动端、DOM 树、样式刷、Actions/Events/Validation。
 4. **3×ScriptDesigner（process/cms/portal）全为 172 行 CRUD 空壳**：零代码编辑、无 XScript 补全、无版本历史。【实测 09-11：`ProcessScriptDesignerApp`/`CmsScriptDesignerApp`/`PortalScriptDesignerApp` 各 172 行；service 域无脚本设计器视图（仅 `ServiceInvokeDesignerApp`，属 Invoke 设计器），实为特性整类缺失。】
 5. **设计器前端调用与后端路由逐端点对账【rev6】**：`ProcessDesigner/QueryStatementDesigner/QueryManagerDeep/PortalDesigner/FormDesigner.vue` 真实调用点（27 条），对账后端路由实测，**15 条不闭合分三档**（明细+复现见 §9.4；固化于测试 `oa4rust/tests/designer_route_match.rs`）：
    - **404 无路由（4）**：`POST /designer/process`（应 `/create`）、query `GET /designer/list`、`POST /designer/execute`、portal `POST /designer/script`。
@@ -119,7 +123,7 @@ problem_type: capability-parity-audit
 - **QueryTable/ViewDesigner**：列编辑/建表 DDL、可视化视图（过滤/排序/分页/simulate/bundle/lookup）为空壳。
 - **Selector（组织/人员选择器）**：核心复用组件缺位（仅 crud 壳，`packages/ui` 无组件）——**阻塞任何真实流程/表单编辑器**。
 - **IMChat**：纯文本，缺 12 类富媒体/交互能力。
-- **API 层质量缺陷**【实测 09-11】：`packages/apis/src/index.ts` 含 **11 处未插值路径参数字面量**（如 `:1214 getid:(_id)=>api.get('/jaxrs/person/empower/:id')`，另有 `/generate/:model`、`/paging/:page`、`/size/:size`、`/room/:room`、`/classname/:className`），参数被接收却不进 URL → 调用必错；部分分组仅只读壳函数。
+- **API 层质量缺陷**【实测 09-11】：`packages/apis/src/index.ts` 含 **11 处未插值路径参数字面量**（如 `:1214 getid:(_id)=>api.get('/api/person/empower/:id')`，另有 `/generate/:model`、`/paging/:page`、`/size/:size`、`/room/:room`、`/classname/:className`），参数被接收却不进 URL → 调用必错；部分分组仅只读壳函数。
 
 ### 3.4 P2
 
@@ -166,7 +170,7 @@ Minder 无画布编辑器（仅列表）；`service_AgentDesigner`/`ServiceManag
 - **W6（A2｜设计器路由闭合，验收即 `tests/designer_route_match.rs` 转绿到"目标态"）**：实测对账已固化为该测试。三类动作按危险度排序——① **先消 5 条静默档**：收窄 `process/{id}`、`table/{flag}`、`page/{id}`、`script/{id}` 宽路由（给字面量段 `list/export` 设专用路由或提优先级），否则"列表页"拿到"单资源"错数据仍 200；② 前端改名命中既有：process 新建 `POST /designer/process`→`/create`（实测 `/create` 匹配）、query 保存 `PUT /update/{id}`→`POST /save/{id}`；③ 后端补缺：query 裸 `list`/`execute`、portal 裸 `POST /script`（实测 404）。每闭合一条，把测试对应 case 从当前实测档改为 `Matched` 并附真实语义 → CI 死链回归（对齐 `92d09e1f` behavior gate）。
 - **W7（A6｜3×ScriptDesigner + service 域）**：`Process/Cms/PortalScriptDesignerApp`（现各 172 行空壳）复用已引入 CodeMirror 落真实编辑器 + XScript 补全 + 版本历史；service 域脚本设计器视图当前缺失，按需补或书面排除。
 - **W8（A6｜Selector 共享组件）**：`packages/ui` 建组织/人员/身份选择器，接入 W3/W4/W5。**（先决：无它则负责人/权限无法闭环。）**
-  - **rev8 落地**：`OrganizationSelector.vue`（person/identity 搜索实调 `/jaxrs/organization/assemble/control`）已接入 **W3 ProcessDesigner 节点"负责人"**（与 `assignee` CSV 双向映射，写入 `taskIdentityList`）——负责人闭环点即此；W4/W5 无身份选择语义（审批人由流程定义决定），无需接入。
+  - **rev8 落地**：`OrganizationSelector.vue`（person/identity 搜索实调 `/api/organization/assemble/control`）已接入 **W3 ProcessDesigner 节点"负责人"**（与 `assignee` CSV 双向映射，写入 `taskIdentityList`）——负责人闭环点即此；W4/W5 无身份选择语义（审批人由流程定义决定），无需接入。
 - **W9（A6｜Portal & Query 设计器）**：Portal 拖拽布局 + 模块类型 + widget 设计器；QueryTable 列编辑/建表、QueryView 可视化过滤排序分页/simulate/bundle。
 - **W10（A6｜IMChat 富媒体）**：图片/文件/语音/视频/位置/链接卡片、引用/撤回/合并转发/收藏/拖拽上传；传输走既有 WebSocket，不承诺 XMPP 全协议（对齐 R6）。
 - **W11（A6｜API 层质量）**：修 `packages/apis` 中 11 处未插值路径参数字面量（`:id`/`:model`/`:page` 等，见 §3.3）为正确模板插值、补齐只读壳为真实调用。
@@ -231,6 +235,13 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 > 2. S4 重新定位为「**上线前稳定性金丝雀**」——真正上线时跑一个观察窗口、核对 5xx/错误预算即可，**不作为宣布功能可替换的前置**；
 > 3. 保留边界：**不宣布"100% 完全替代并下线旧栈"**，因 136 条残余差异 + 2029 条跳过 + 书面范围外（IM 完整协议、历史迁移）客观存在。
 
+> **rev15 口径（2026-09-15，用户指令：不需要真实流量，改好即上线，没有旧系统）**：S4 真实流量 gate **彻底移除**（rev14 的「上线前金丝雀观察窗口」也一并取消）：
+> 1. **上线判据** = 静态门禁全绿（workspace `cargo test` / behavior_compare 基线无回归 / 前端 vitest+typecheck+build / 契约守卫）+ 仓内 live E2E 通过 + 上线后常态监控（5xx 告警，非前置条件）。不再需要任何真实试点流量或外部签核。
+> 2. **已删除**：`.github/workflows/oa4rust-pilot-gate.yml`、`oa4rust/deploy/shadow-traffic.sh`、`oa4rust/deploy/nginx-auth-routes-java-drill.conf`、`oa4rust/deploy/rollback-playbook.md`、`docs/ops/s4-pilot-canary-runbook.md`（均为旧系统/真实流量机制，无旧系统后作废）。`scripts/pilot_gate.py` + 测试降级为**可选离线观测工具**（对任意 access log 离线核算 5xx，非门禁）。`docs/REALIZE_RUNBOOK.md §4.2` 同步改写。
+> 3. rev14 第 3 条「不宣布 100% 完全替代」边界仍保留（136 残余差异 + 2029 跳过客观存在）；但**上线不再以 S4 为前置**——缺口家族/壳视图/IM 完整协议/复杂表单/FILE_FILE 落点已在 2026-09-15 批次全部闭环（见本文档 rev15 附注与 `oa4rust-web` 契约守卫）。
+
+**rev15 附注（2026-09-15 批次闭环）**：27 后端缺口家族实装（KNOWN_BACKEND_GAPS 52→0 清除，契约守卫 fixture 全量 4090 路由）；44 桌面 CRUD 壳视图数据驱动化（W13 manifest 33 implemented）；IM 完整协议（realtime crate：WS 5 IM 事件 + presence/roster + receipt 回执 + 房间切换，16 单测 + 401 握手守卫测试；前端 IMChat presence/receipt/joinRoom(conv.id) + P2P WebRTC 语音信令复用 IM 房间通道）；移动端发起流程复杂控件（附件/富文本/布局容器）；文件上传落点 = 附件存储 FILE_FILE（非 x_file 列表）。三端门禁：cargo test 7436 ok/0 failed、vitest 105/105、typecheck 6 工程、desktop+mobile 3 build、biome 0 error。
+
 ---
 
 ## 八、相关文档
@@ -243,7 +254,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 - `oa4rust/migrations/056_seed_process_definition_test_data.sql` — 流程种子原为 `'{}'` 占位；rev8 已由 `091_seed_real_process_definition.sql` upsert 真实 activities/form 种子覆盖
 - `docs/plans/2026-09-04-003-frontend-completion-audit.md` — 前端旧口径（~8%，已被本计划 §三取代）
 - `docs/plans/2026-09-09-001-...httponly-cookie-cargo-audit-rustsec-db-biome-plan.md` — 安全/工具链加固（正交轨道）
-- `docs/ops/s4-pilot-canary-runbook.md` — 项 4（S4 金丝雀）试点部署 + 专属 Nginx 访问日志采集 + `pilot-gate` workflow 输入的交接 runbook（使项 4 可签核的外部操作件，非项 4 达成证据）
+- ~~`docs/ops/s4-pilot-canary-runbook.md`~~ — 项 4（S4 金丝雀）交接 runbook；**rev15 起已删除**（S4 真实流量 gate 移除，无旧系统/无真实流量前提）
 
 ---
 
@@ -284,7 +295,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 
 方法（下表逐格为对账结论；**以末尾"合计（rev6）"为准**——query `update/{id}`、`stat/do`、portal `script/run`/`script/{id}`、form `submit` 为 405 非 404；`delete/{id}`/form CRUD 匹配）。从 `ProcessDesigner/QueryStatementDesigner/QueryManagerDeep/PortalDesigner/FormDesigner.vue` 抽真实 `api.<verb>(url)` 调用点，按 `crates/*/src/{lib,routes}.rs` 全路径 + 方法链核对。图例：✅ 匹配 / ❌ 404 无路由 或 405 方法缺 / ⚠️ 静默影子(命中宽 `{id}`，200 错体)。
 
-**Process designer**（base `/jaxrs/processplatform/assemble/designer`）
+**Process designer**（base `/api/processplatform/assemble/designer`）
 | 前端调用 | 后端路由 | 判定 |
 |---|---|---|
 | GET `process/{id}` | `process/{id}` (get) | ✅ |
@@ -293,7 +304,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | GET `process/list` | 命中 `process/{id}`（id=`list`） | ⚠️ |
 | GET `process/export` | 命中 `process/{id}`（id=`export`） | ⚠️ |
 
-**Query designer**（base `/jaxrs/query/assemble/designer`）
+**Query designer**（base `/api/query/assemble/designer`）
 | 前端调用 | 后端路由 | 判定 |
 |---|---|---|
 | GET `list` | 仅 `list/{category}`；裸 `list` 无 | ❌ |
@@ -305,7 +316,7 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | GET `entity/entity/properties/{tbl}/default/default` | `entity/entity/properties/{query}/{category}/{entityCategory}` | ✅ |
 | POST `stat/do` | 命中 `stat/{id}`（id=`do`），但 `stat/{id}` 无 POST | ❌ 405 |
 
-**Portal designer**（base `/jaxrs/portal/assemble/designer`）
+**Portal designer**（base `/api/portal/assemble/designer`）
 | 前端调用 | 后端路由 | 判定 |
 |---|---|---|
 | GET `page/list` | 仅 `page/list/{category}`+`/portal/{id}`；裸命中 `page/{id}` | ⚠️ |
@@ -317,13 +328,13 @@ W6 后端路由 ─┼─► W3 ProcessDesigner 契约 ─► W4 Form 运行时 
 | POST `script`（裸） | 无裸 `script` | ❌ |
 | POST `script/run` | 无 | ❌ |
 
-**Form designer**（base `/jaxrs/form`，`cms_assemble_control::router` 承载；路由见 `cms_assemble_control/src/routes.rs:400-630`；schema 层另列 P0-3）
+**Form designer**（base `/api/form`，`cms_assemble_control::router` 承载；路由见 `cms_assemble_control/src/routes.rs:400-630`；schema 层另列 P0-3）
 | 前端调用 | 后端路由 | 判定（route-table 精确） |
 |---|---|---|
 | GET `form/list` | 命中 `form/{id}`(get, L404) id=`list`；真实列表为 `form/list/all` | ⚠️ 静默影子 |
 | GET `form/{id}` | `form/{id}` (get, L404) | ✅ |
 | PUT `form/{id}` | `form/{id}` (put, L493) | ✅ |
-| POST `form`（裸） | `/jaxrs/form` (post, L492) | ✅ |
+| POST `form`（裸） | `/api/form` (post, L492) | ✅ |
 | POST `form/submit` | 无 `form/submit`；命中 `form/{id}` 但无 POST 变体 | ❌ 405 |
 
 **合计（rev6）**：现覆盖 **27 个前端真实调用点**（process/query/portal 22 + form 5），固化于提交测试 **`oa4rust/tests/designer_route_match.rs`**（合并 `cms_assemble_control::router`）。**15 条不闭合按 HTTP 码分三档**：

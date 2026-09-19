@@ -2,7 +2,7 @@
   <div class="mod-view">
     <div class="view-header glass-card">
       <h1>程序中心</h1>
-      <p class="subtitle">/jaxrs/program_center/* — 319条路由</p>
+      <p class="subtitle">/api/program_center/* — 319条路由</p>
     </div>
     <div class="content-panel glass-card">
       <div class="tabs">
@@ -29,6 +29,7 @@
             <span class="col-status" :class="a.enabled!==false?'enabled':'disabled'">{{ a.enabled!==false?'启用':'禁用' }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="toggleAgent(a)">{{ a.enabled!==false ? '禁用' : '启用' }}</button>
+              <button class="btn-sm" @click="editAgent(a)">编辑</button>
               <button class="btn-sm" style="color:var(--color-error)" @click="deleteAgent(a)">删除</button>
             </span>
           </div>
@@ -61,8 +62,10 @@
             <div class="ib">
               <div class="it">{{ s.name || s.scriptName || '未命名' }}</div>
               <div class="im">flag: {{ s.flag || s.id }}</div>
-              <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteScript(s)">删除</button>
+              <button class="btn-sm" style="margin-top:4px" @click="openScriptEditor(s)">编辑代码</button>
+              <button class="btn-sm" style="margin-top:4px" @click="loadVersions(s)">版本</button>
               <button class="btn-sm" style="margin-top:4px" @click="runScript(s)">执行</button>
+              <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteScript(s)">删除</button>
             </div>
           </div>
         </div>
@@ -81,6 +84,7 @@
             <div class="ib">
               <div class="it">{{ d.name || d.dictName || '未命名' }}</div>
               <div class="im">flag: {{ d.flag || d.id }}</div>
+              <button class="btn-sm" style="margin-top:4px" :disabled="!d.flag" @click="openDictData(d)">数据</button>
               <button class="btn-sm" style="color:var(--color-error);margin-top:4px" @click="deleteDict(d)">删除</button>
             </div>
           </div>
@@ -113,6 +117,77 @@
         </div>
       </div>
     </div>
+    <!-- Agent 属性编辑（POST agent/save/{id}） -->
+    <div v-if="showEditAgent" class="modal-overlay" @click.self="showEditAgent=false">
+      <div class="modal glass-card">
+        <h3>编辑Agent</h3>
+        <div class="form-group"><label>名称</label><input v-model="agentEdit.name" class="form-input"/></div>
+        <div class="form-group"><label>Flag</label><input v-model="agentEdit.flag" class="form-input"/></div>
+        <div class="form-group"><label>描述</label><input v-model="agentEdit.description" class="form-input"/></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="showEditAgent=false">取消</button>
+          <button class="btn-primary" :disabled="agentSaving" @click="saveAgentEdit">{{ agentSaving?'保存中…':'保存' }}</button>
+        </div>
+      </div>
+    </div>
+    <!-- 新建字典（POST /api/program_center/dict，dictFlag 为后端字段名） -->
+    <div v-if="showCreateDict" class="modal-overlay" @click.self="showCreateDict=false">
+      <div class="modal glass-card">
+        <h3>新建字典</h3>
+        <div class="form-group"><label>名称</label><input v-model="dictForm.name" class="form-input" placeholder="字典名称"/></div>
+        <div class="form-group"><label>Flag</label><input v-model="dictForm.dictFlag" class="form-input" placeholder="唯一标识（dictFlag）"/></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="showCreateDict=false">取消</button>
+          <button class="btn-primary" :disabled="!dictForm.name?.trim()||!dictForm.dictFlag?.trim()" @click="onCreateDict">创建</button>
+        </div>
+      </div>
+    </div>
+    <!-- 字典数据编辑器（GET dict/{flag}/data + POST dict/{flag}/data/data） -->
+    <div v-if="showDictData" class="modal-overlay" @click.self="closeDictData">
+      <div class="modal glass-card">
+        <h3>字典数据 · {{ dictDataFlag }}</h3>
+        <div v-if="dictDataLoading" class="hint">加载中…</div>
+        <div v-else>
+          <div class="form-group"><label>数据（JSON）</label><textarea v-model="dictDataText" rows="10" class="form-input mono" style="width:100%;resize:vertical"/></div>
+          <div v-if="dictDataError" class="error" style="color:var(--color-error);font-size:12px;margin-top:6px">{{ dictDataError }}</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="closeDictData">关闭</button>
+          <button class="btn-primary" :disabled="dictDataLoading||!dictDataText.trim()" @click="saveDictData">保存数据</button>
+        </div>
+      </div>
+    </div>
+    <!-- 脚本代码编辑器（GET script/{flag} + POST script/{flag}） -->
+    <div v-if="showScriptEdit" class="modal-overlay" @click.self="closeScriptEdit">
+      <div class="modal glass-card" style="width:640px">
+        <h3>脚本代码 · {{ scriptEdit.name || scriptEdit.flag }}</h3>
+        <div v-if="scriptEditLoading" class="hint">加载中…</div>
+        <div v-else class="form-group">
+          <textarea v-model="scriptEdit.content" rows="16" class="form-input mono" style="width:100%;resize:vertical;font-size:12px"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="closeScriptEdit">关闭</button>
+          <button class="btn-primary" :disabled="scriptEditLoading||!scriptEdit.flag" @click="saveScript">保存脚本</button>
+        </div>
+      </div>
+    </div>
+    <!-- 脚本版本历史（GET /api/scriptversion/list/script/{scriptId}） -->
+    <div v-if="showVersions" class="modal-overlay" @click.self="closeVersions">
+      <div class="modal glass-card">
+        <h3>版本历史 · {{ versionsScript.name || versionsScript.flag }}</h3>
+        <div v-if="versions.length===0" class="hint">暂无版本记录</div>
+        <table v-else class="ver-table">
+          <thead><tr><th>ID</th><th>创建时间</th></tr></thead>
+          <tbody>
+            <tr v-for="v in versions" :key="v.id">
+              <td class="mono">{{ v.id }}</td>
+              <td>{{ v.createTime || v.create_time || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="modal-actions"><button class="btn-cancel" @click="closeVersions">关闭</button></div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -126,7 +201,7 @@ type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market'
 type Agent = { id?: string; name?: string; label?: string; agentName?: string; flag?: string; enabled?: boolean }
 type App = { id?: string; name?: string; appName?: string; desc?: string; description?: string; flag?: string }
 type Script = { id?: string; name?: string; scriptName?: string; flag?: string }
-type Dict = { id?: string; name?: string; dictName?: string; flag?: string }
+type Dict = { id?: string; name?: string; dictName?: string; flag?: string; keyName?: string }
 type Market = { id?: string; name?: string; title?: string; desc?: string }
 
 const tab = ref<Tab>('agent')
@@ -144,6 +219,33 @@ const showCreateAgent = ref(false)
 const showCreateDict = ref(false)
 const agentForm = ref({ name: '', flag: '' })
 const agentSearch = ref('')
+
+// Agent 属性编辑（POST agent/save/{id}）
+const showEditAgent = ref(false)
+const agentEdit = ref({ id: '', name: '', flag: '', description: '' })
+const agentSaving = ref(false)
+
+// 字典创建（POST /api/program_center/dict；后端字段名为 dictFlag）
+const dictForm = ref({ name: '', dictFlag: '' })
+
+// 字典数据编辑器（GET dict/{flag}/data + POST dict/{flag}/data/data）
+const showDictData = ref(false)
+const dictDataFlag = ref('')
+const dictDataText = ref('')
+const dictDataLoading = ref(false)
+const dictDataSaving = ref(false)
+const dictDataError = ref('')
+
+// 脚本代码编辑器（GET script/{flag} + POST script/{flag}）
+const showScriptEdit = ref(false)
+const scriptEdit = ref({ flag: '', name: '', content: '' })
+const scriptEditLoading = ref(false)
+const scriptEditSaving = ref(false)
+
+// 脚本版本历史（GET /api/scriptversion/list/script/{scriptId}）
+const showVersions = ref(false)
+const versionsScript = ref<Script>({})
+const versions = ref<Array<{ id: string; createTime?: string; create_time?: string }>>([])
 const filteredAgents = computed(() =>
   agentSearch.value
     ? agents.value.filter((a) => (a.name || a.flag || '').toLowerCase().includes(agentSearch.value.toLowerCase()))
@@ -153,7 +255,7 @@ const filteredAgents = computed(() =>
 async function loadAgents() {
   loadingAgent.value = true
   try {
-    const r = await api.get('/jaxrs/program_center/agent/list')
+    const r = await api.get('/api/program_center/agent/list')
     agents.value = r.data ?? []
   } catch {
     agents.value = []
@@ -164,7 +266,7 @@ async function loadAgents() {
 async function loadApps() {
   loadingApp.value = true
   try {
-    const r = await api.get('/jaxrs/program_center/application/list')
+    const r = await api.get('/api/program_center/application/list')
     applications.value = r.data ?? []
   } catch {
     applications.value = []
@@ -175,7 +277,7 @@ async function loadApps() {
 async function loadScripts() {
   loadingScript.value = true
   try {
-    const r = await api.get('/jaxrs/program_center/script/list')
+    const r = await api.get('/api/program_center/script/list')
     scripts.value = r.data ?? []
   } catch {
     scripts.value = []
@@ -186,8 +288,9 @@ async function loadScripts() {
 async function loadDict() {
   loadingDict.value = true
   try {
-    const r = await api.get('/jaxrs/program_center/dict/list')
-    dicts.value = r.data ?? []
+    const r = await api.get('/api/program_center/dict/list')
+    // 后端 dict/list 回 keyName（= 创建时的 dictFlag/唯一标识），卡片/按钮读 flag，归一。
+    dicts.value = ((r.data ?? []) as Dict[]).map((d) => ({ ...d, flag: d.flag ?? d.keyName }))
   } catch {
     dicts.value = []
   } finally {
@@ -197,7 +300,7 @@ async function loadDict() {
 async function loadMarket() {
   loadingMarket.value = true
   try {
-    const r = await api.post('/jaxrs/program_center/market/list/paging/1/20', {})
+    const r = await api.post('/api/program_center/market/list/paging/1/size/20', {})
     markets.value = r.data?.list ?? r.data ?? []
   } catch {
     markets.value = []
@@ -218,7 +321,7 @@ function switchTab(t: Tab) {
 async function toggleAgent(a: Agent) {
   try {
     const action = a.enabled !== false ? 'disable' : 'enable'
-    await api.post(`/jaxrs/program_center/agent/${a.flag || a.id}/${action}`, null)
+    await api.post(`/api/program_center/agent/${a.flag || a.id}/${action}`, null)
     toast.success(action === 'enable' ? '已启用' : '已禁用')
     loadAgents()
   } catch (e: any) {
@@ -227,7 +330,7 @@ async function toggleAgent(a: Agent) {
 }
 
 const createAgentM = useMutation({
-  mutationFn: (data: { name: string; flag: string }) => api.post('/jaxrs/program_center/agent/create', data),
+  mutationFn: (data: { name: string; flag: string }) => api.post('/api/program_center/agent/create', data),
   onSuccess: () => {
     showCreateAgent.value = false
     agentForm.value = { name: '', flag: '' }
@@ -245,67 +348,208 @@ async function onCreateAgent() {
 watch(tab, (t) => switchTab(t), { immediate: true })
 
 const deleteAgentM = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/agent/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/program_center/agent/${id}`),
   onSuccess: () => {
     loadAgents()
     toast.success('Agent已删除')
   },
 })
 const deleteAppM = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/application/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/program_center/application/${id}`),
   onSuccess: () => {
     loadApps()
     toast.success('Application已删除')
   },
 })
 const deleteScriptM = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/script/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/program_center/script/${id}`),
   onSuccess: () => {
     loadScripts()
     toast.success('Script已删除')
   },
 })
 const deleteDictM = useMutation({
-  mutationFn: (id: string) => api.delete(`/jaxrs/program_center/dict/${id}`),
+  mutationFn: (id: string) => api.delete(`/api/program_center/dict/${id}`),
   onSuccess: () => {
     loadDict()
     toast.success('字典已删除')
   },
 })
-function deleteAgent(a: Agent) {
-  if (confirmMsg('确定删除该Agent？')) deleteAgentM.mutate(a.id!)
+async function deleteAgent(a: Agent) {
+  if (await confirmMsg('确定删除该Agent？')) deleteAgentM.mutate(a.id!)
 }
-function deleteApp(a: App) {
-  if (confirmMsg('确定删除该Application？')) deleteAppM.mutate(a.id!)
+async function deleteApp(a: App) {
+  if (await confirmMsg('确定删除该Application？')) deleteAppM.mutate(a.id!)
 }
-function deleteScript(s: Script) {
-  if (confirmMsg('确定删除该Script？')) deleteScriptM.mutate(s.id!)
+async function deleteScript(s: Script) {
+  if (await confirmMsg('确定删除该Script？')) deleteScriptM.mutate(s.id!)
 }
-function deleteDict(d: Dict) {
-  if (confirmMsg('确定删除该字典？')) deleteDictM.mutate(d.id!)
+async function deleteDict(d: Dict) {
+  if (await confirmMsg('确定删除该字典？')) deleteDictM.mutate(d.id!)
 }
 
-// 新建字典
+// 新建字典（POST /api/program_center/dict；DictCreateRequest 的 flag 键名为 dictFlag，
+// 原 /dict/create 为未注册死端点且误用 flag 键）
 const createDictM = useMutation({
-  mutationFn: (data: { name: string; flag: string }) => api.post('/jaxrs/program_center/dict/create', data),
+  mutationFn: (data: { name: string; dictFlag: string }) => api.post('/api/program_center/dict', data),
   onSuccess: () => {
     showCreateDict.value = false
+    dictForm.value = { name: '', dictFlag: '' }
     toast.success('字典已创建')
     loadDict()
   },
   onError: () => toast.error('创建失败'),
 })
-async function onCreateDict() {
-  // Simple dialog for dict creation
-  const name = prompt('字典名称:')
-  const flag = prompt('字典Flag:')
-  if (!name || !flag) return
-  createDictM.mutate({ name, flag })
+function onCreateDict() {
+  createDictM.mutate(dictForm.value)
+}
+
+// ── Agent 属性编辑（POST agent/save/{id}，AgentSaveRequest {name,flag,description}）──
+function editAgent(a: Agent): void {
+  agentEdit.value = {
+    id: String(a.id ?? ''),
+    name: a.name ?? a.agentName ?? '',
+    flag: a.flag ?? '',
+    description: '',
+  }
+  showEditAgent.value = true
+}
+async function saveAgentEdit(): Promise<void> {
+  const { id, name, flag, description } = agentEdit.value
+  if (!id || agentSaving.value) return
+  agentSaving.value = true
+  try {
+    await api.post(`/api/program_center/agent/save/${id}`, { name, flag, description })
+    toast.success('Agent 属性已保存')
+    showEditAgent.value = false
+    loadAgents()
+  } catch {
+    toast.error('保存失败')
+  } finally {
+    agentSaving.value = false
+  }
+}
+
+// ── 字典数据编辑器 ──
+async function openDictData(d: Dict): Promise<void> {
+  const flag = d.flag
+  if (!flag) return
+  dictDataFlag.value = flag
+  dictDataText.value = ''
+  dictDataError.value = ''
+  dictDataLoading.value = true
+  showDictData.value = true
+  try {
+    const r = (await api.get(`/api/program_center/dict/${encodeURIComponent(flag)}/data`)) as unknown as {
+      data?: { data?: string }
+    }
+    const raw = r.data?.data
+    if (raw) {
+      try {
+        dictDataText.value = JSON.stringify(JSON.parse(raw), null, 2)
+      } catch {
+        dictDataText.value = raw
+      }
+    }
+  } catch {
+    dictDataError.value = '字典数据加载失败'
+  } finally {
+    dictDataLoading.value = false
+  }
+}
+function closeDictData(): void {
+  showDictData.value = false
+  dictDataText.value = ''
+  dictDataError.value = ''
+}
+async function saveDictData(): Promise<void> {
+  if (dictDataSaving.value) return
+  let body: unknown
+  try {
+    body = JSON.parse(dictDataText.value)
+  } catch {
+    dictDataError.value = '数据不是合法 JSON，保存已阻止'
+    return
+  }
+  dictDataError.value = ''
+  dictDataSaving.value = true
+  try {
+    // path 段为占位（handler 仅按 dictFlag 写 app_data）；dict_data_write 对
+    // 对象 body 走紧凑序列化、对字符串 body 原样落库，这里统一发解析后的值。
+    await api.post(`/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data/data`, body)
+    toast.success('字典数据已保存')
+    showDictData.value = false
+  } catch {
+    dictDataError.value = '保存失败'
+  } finally {
+    dictDataSaving.value = false
+  }
+}
+
+// ── 脚本代码编辑器（x_program_script.content）──
+async function openScriptEditor(s: Script): Promise<void> {
+  const flag = s.flag
+  if (!flag) return
+  scriptEdit.value = { flag, name: s.name ?? s.scriptName ?? '', content: '' }
+  scriptEditLoading.value = true
+  showScriptEdit.value = true
+  try {
+    const r = (await api.get(`/api/program_center/script/${encodeURIComponent(flag)}`)) as unknown as {
+      data?: { content?: string; name?: string }
+    }
+    scriptEdit.value.content = r.data?.content ?? ''
+    if (r.data?.name) scriptEdit.value.name = r.data.name
+  } catch {
+    scriptEdit.value.content = ''
+  } finally {
+    scriptEditLoading.value = false
+  }
+}
+function closeScriptEdit(): void {
+  showScriptEdit.value = false
+  scriptEdit.value = { flag: '', name: '', content: '' }
+}
+async function saveScript(): Promise<void> {
+  const { flag, name, content } = scriptEdit.value
+  if (!flag || scriptEditSaving.value) return
+  scriptEditSaving.value = true
+  try {
+    // script_save_flag：ScriptSaveRequest {name, content, category}，按 flag 定位更新
+    await api.post(`/api/program_center/script/${encodeURIComponent(flag)}`, { name, content })
+    toast.success('脚本已保存')
+    showScriptEdit.value = false
+    loadScripts()
+  } catch {
+    toast.error('脚本保存失败')
+  } finally {
+    scriptEditSaving.value = false
+  }
+}
+
+// ── 脚本版本历史（cms crate 已注册 /api/scriptversion/list/script/{scriptId}）──
+async function loadVersions(s: Script): Promise<void> {
+  const scriptId = String(s.id ?? s.flag ?? '')
+  if (!scriptId) return
+  versionsScript.value = s
+  versions.value = []
+  showVersions.value = true
+  try {
+    const r = (await api.get(`/api/scriptversion/list/script/${encodeURIComponent(scriptId)}`)) as unknown as {
+      data?: Array<{ id: string; createTime?: string; create_time?: string }>
+    }
+    versions.value = r.data ?? []
+  } catch {
+    versions.value = []
+  }
+}
+function closeVersions(): void {
+  showVersions.value = false
+  versions.value = []
 }
 
 // 模块对比
 const compareM = useMutation({
-  mutationFn: (id: string) => api.post(`/jaxrs/program_center/module/${id}/compare`, {}),
+  mutationFn: (id: string) => api.post(`/api/program_center/module/${id}/compare`, {}),
   onSuccess: () => toast.success('对比完成'),
   onError: () => toast.error('对比失败'),
 })
@@ -316,25 +560,25 @@ function compareApp(app: App) {
 
 // 执行脚本
 const runScriptM = useMutation({
-  mutationFn: (flag: string) => api.post(`/jaxrs/program_center/invoke/${flag}/execute`, {}),
+  mutationFn: (flag: string) => api.post(`/api/program_center/invoke/${flag}/execute`, {}),
   onSuccess: () => toast.success('脚本已执行'),
   onError: () => toast.error('执行失败'),
 })
-function runScript(s: Script) {
+async function runScript(s: Script) {
   if (!s.flag) return
-  if (!confirmMsg(`确认执行脚本「${s.flag}」？`)) return
+  if (!(await confirmMsg(`确认执行脚本「${s.flag}」？`))) return
   runScriptM.mutate(s.flag)
 }
 
 // 收集管理
 const collectAddM = useMutation({
-  mutationFn: () => api.post('/jaxrs/program_center/collect/add', null),
+  mutationFn: () => api.post('/api/program_center/collect/add', null),
   onSuccess: () => toast.success('收集已添加'),
   onError: () => toast.error('添加失败'),
 })
 async function loadCollect() {
   try {
-    const r = await api.get('/jaxrs/program_center/collect/list')
+    const r = await api.get('/api/program_center/collect/list')
     collectList.value = r.data ?? []
   } catch {
     collectList.value = []
@@ -349,18 +593,18 @@ function addCollect() {
 // AppStyle 图片管理
 const eraseImageM = useMutation({
   mutationFn: ({ type, flag }: { type: string; flag: string }) =>
-    api.post(`/jaxrs/program_center/appstyle/image/${type}/${flag}/erase`, null),
+    api.post(`/api/program_center/appstyle/image/${type}/${flag}/erase`, null),
   onSuccess: () => toast.success('图片已清除'),
   onError: () => toast.error('操作失败'),
 })
-function eraseAppStyleImage(type: string, flag: string) {
-  if (!confirmMsg(`确认清除 ${type} 图片？`)) return
+async function eraseAppStyleImage(type: string, flag: string) {
+  if (!(await confirmMsg(`确认清除 ${type} 图片？`))) return
   eraseImageM.mutate({ type, flag })
 }
 
 // 命令执行
 const commandExecM = useMutation({
-  mutationFn: (data: unknown) => api.post('/jaxrs/program_center/command/execute', data),
+  mutationFn: (data: unknown) => api.post('/api/program_center/command/execute', data),
   onSuccess: () => toast.success('命令已执行'),
   onError: () => toast.error('执行失败'),
 })
@@ -376,7 +620,7 @@ function execCommand() {
 
 // Market 扩展
 const marketDownloadM = useMutation({
-  mutationFn: (flag: string) => api.get(`/jaxrs/program_center/market/${flag}/download`),
+  mutationFn: (flag: string) => api.get(`/api/program_center/market/${flag}/download`),
   onSuccess: () => toast.success('下载已触发'),
   onError: () => toast.error('下载失败'),
 })
@@ -385,7 +629,7 @@ function downloadMarket(flag: string) {
 }
 
 const marketCoverPicM = useMutation({
-  mutationFn: (flag: string) => api.post(`/jaxrs/program_center/market/${flag}/cover/pic`, null),
+  mutationFn: (flag: string) => api.post(`/api/program_center/market/${flag}/cover/pic`, null),
   onSuccess: () => toast.success('封面已更新'),
   onError: () => toast.error('操作失败'),
 })
@@ -394,29 +638,11 @@ function setMarketCover(flag: string) {
 }
 
 // MPWeixin 扩展
-const wxCheckM = useMutation({
-  mutationFn: () => api.get('/jaxrs/program_center/mpweixin/check'),
-  onSuccess: () => toast.success('微信检查通过'),
-  onError: () => toast.error('检查失败'),
-})
-function checkWx() {
-  wxCheckM.mutate()
-}
+// 注：后端 /api/program_center/mpweixin/check 与 /mpweixin/menu/add 为无参占位注册，
+// 其 handler 需 Path 参数 → 运行时必 500（同 BBS 裸路由问题），且无参数化正确路由可改调；
+// 小程序菜单管理（list/delete/update 参数化路由可用但无对应管理 UI）暂不提供入口，
+// 移除死调用避免客户打到 500。
 
-const wxMenuAddM = useMutation({
-  mutationFn: (data: unknown) => api.post('/jaxrs/program_center/mpweixin/menu/add', data),
-  onSuccess: () => toast.success('菜单已添加'),
-  onError: () => toast.error('操作失败'),
-})
-function addWxMenu() {
-  const json = prompt('输入菜单JSON:')
-  if (!json) return
-  try {
-    wxMenuAddM.mutate(JSON.parse(json))
-  } catch {
-    toast.error('JSON格式错误')
-  }
-}
 const file_download_pk_1_ref = ref<any[]>([])
 const mass_0_10_ref = ref<any[]>([])
 const m_1_install_log_ref = ref<any[]>([])
@@ -517,4 +743,9 @@ const program_center_module_write_m_1_ref = ref<any[]>([])
 .modal-actions{display:flex;justify-content:flex-end;gap:8px}
 .btn-cancel{padding:8px 20px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);border-radius:var(--radius-md);cursor:pointer}
 .font-mono{font-family:'JetBrains Mono',monospace}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.hint{padding:20px;text-align:center;color:var(--text-muted);font-size:13px}
+.ver-table{width:100%;border-collapse:collapse;margin-bottom:8px}
+.ver-table th,.ver-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border-subtle);font-size:13px}
+.ver-table th{color:var(--text-muted);font-size:11px;text-transform:uppercase}
 </style>

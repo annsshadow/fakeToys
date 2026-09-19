@@ -43,8 +43,8 @@
 
 
 
-- `POST /jaxrs/processplatform/assemble/bam/create`
-- `POST /jaxrs/processplatform/assemble/bam/delete/{id}`
-- `GET /jaxrs/processplatform/assemble/bam/get/{id}`
-- `GET /jaxrs/processplatform/assemble/bam/list/{category}`
-- `GET /jaxrs/processplatform/assemble/bam/status/{id}`
+- `POST /api/processplatform/assemble/bam/create`
+- `POST /api/processplatform/assemble/bam/delete/{id}`
+- `GET /api/processplatform/assemble/bam/get/{id}`
+- `GET /api/processplatform/assemble/bam/list/{category}`
+- `GET /api/processplatform/assemble/bam/status/{id}`

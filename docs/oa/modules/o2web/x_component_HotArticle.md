@@ -20,7 +20,7 @@
 
 ## Key Flows
 
-- 后端请求：向 `x_file_assemble_control/jaxrs/file/{{$.picId}}/download/stream` 发起 POST 流式请求，处理返回数据并渲染。
+- 后端请求：向 `x_file_assemble_control/api/file/{{$.picId}}/download/stream` 发起 POST 流式请求，处理返回数据并渲染。
 - 与后端 `HotPictureInfoAction` 交互：在组件中调用 `HotPictureInfoAction.changeTitle`、`delete`、`listForPage` 等方法完成 调用/删除/列出 等操作。
 - 跨组件跳转：通过 `openApplication` 打开其它应用（ForumDocument、cms）。
 

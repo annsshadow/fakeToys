@@ -1,5 +1,5 @@
 -- plan002 U2: message_assemble_communicate missing-endpoint tables & columns.
--- x_message_ws_session -> jaxrs/ws family (POST /ws, count/person, list/person[/current/node])
+-- x_message_ws_session -> /api/ws family (POST /ws, count/person, list/person[/current/node])
 -- x_message_conversation_ext -> im virtual delete of single conversation (per-person soft delete)
 -- Additive columns fix latent schema gaps hit by existing routed reads/writes:
 --   x_message_conversation.read_status / read_time / last_message_time

@@ -1,5 +1,7 @@
+# persist
+
 ﻿
-#### 系统挂起期间 USB 设备的持久
+## 系统挂起期间 USB 设备的持久
 
 :Author: Alan Stern <stern@rowland.harvard.edu>
 :Date: September 2, 2006 (Updated February 25, 2008)

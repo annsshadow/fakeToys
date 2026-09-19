@@ -1,6 +1,8 @@
 
 
 
+# stable-kernel-rules
+
 :Original: Documentation/process/stable-kernel-rules.rst <stable_kernel_rules>
 
 如果想評論或更新本文的內容，請直接聯繫原文檔的維護者。如果你使用英文

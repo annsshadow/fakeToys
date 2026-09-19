@@ -1,3 +1,5 @@
+# imx
+
 ﻿
 ## i.MX 视频捕获驱动
 
@@ -223,7 +225,7 @@ UYVY2X8锛。
    media-ctl -V "'ipu1_csi1':2 [fmt:AYUV32/640x480 field:none]"
 
 然后可以在捕获设备节点“ipu1_csi0 capture”和“ipu1_csi1 capture”上独立开流传输。v4l2-ctl 工具可用于在捕获设备节点上选择任何受支持的 YUV 像素格式包括平面格式
-### ADV7180 解码器的 i.MX6Q SabreAuto
+## ADV7180 解码器的 i.MX6Q SabreAuto
 
 i.MX6Q SabreAuto 上，板载 ADV7180 SD 解码器连接到内部视频多路复用器到 IPU1
 CSI0 的并行总线输入
@@ -265,7 +267,7 @@ CSI0 的并行总线输入
 然后可以/dev/video2 上开始流传输。v4l2-ctl 工具也可用于/dev/video2 上选择
 任何受支持的 YUV 像素格式
 该平台接ADV7180 Ain1（连接器 J42）的复合视频（Composite Video）模拟输入
-### ADV7180 解码器的 i.MX6DL SabreAuto
+## ADV7180 解码器的 i.MX6DL SabreAuto
 
 i.MX6DL SabreAuto 上，板载 ADV7180 SD 解码器连接到内部视频多路复用器到 IPU1
 CSI0 的并行总线输入
@@ -307,7 +309,7 @@ CSI0 的并行总线输入
 然后可以/dev/video2 上开始流传输。v4l2-ctl 工具也可用于/dev/video2 上选择
 任何受支持的 YUV 像素格式
 该平台接ADV7180 Ain1（连接器 J42）的复合视频（Composite Video）模拟输入
-### 甯?MIPI CSI-2 OV5640 鐨?i.MX6Q SabreSD
+## 甯?MIPI CSI-2 OV5640 鐨?i.MX6Q SabreSD
 
 i.MX6Q SabreLite 类似，i.MX6Q SabreSD IPU1 CSI0 上支持并行接口的 OV5642
 模块，以MIPI CSI-2 OV5640 模块。OV5642 连接i2c 总线 1，OV5640 连接i2c
@@ -375,7 +377,7 @@ SabreSD 的设备树包含了并OV5642 MIPI CSI-2 OV5640 OF 图（OF graphs）�
 
    gst-launch-1.0 v4l2src device=/dev/video1 ! kmssink
 
-### 已知问题
+## 已知问题
 
 1. 当在接近 IC 缩放1024x1024 限制的分辨率下使90 270 度旋转控件，
    并且与平面像素格式（YUV420、YUV422p）结合使用时，帧捕获经常会失败，   IDMAC 通道没有帧结束中断。变通方法是，在需90 270 度旋转时，使用较低的

@@ -13,7 +13,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/user/hotpic/exists/check")
+                    .uri("/api/hotpic/user/hotpic/exists/check")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -38,7 +38,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/user/hotpic/test-id")
+                    .uri("/api/hotpic/user/hotpic/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -63,7 +63,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic/user/hotpic/test-id/test-id")
+                    .uri("/api/hotpic/user/hotpic/test-id/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),

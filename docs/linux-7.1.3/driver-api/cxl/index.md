@@ -1,3 +1,5 @@
+# index
+
 ﻿
 ## CXL 快速链
 
@@ -28,4 +30,4 @@ BIOS、EFI）、操作系统（早期启动、核心内核、驱动程序）和�
 - [分配/DAX](allocation/dax)
 - [分配/页分配器](allocation/page-allocator)
 - [分配/回收](allocation/reclaim)
-- [分配/大页](allocation/hugepages.rst)
+- [分配/大页](allocation/hugepages.md)

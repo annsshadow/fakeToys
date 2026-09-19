@@ -1,3 +1,5 @@
+# pin-control
+
 ﻿## PINCTRL（引脚控制）子系
 
 本文档概述了 Linux 中的引脚控制子系

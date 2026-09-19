@@ -1,3 +1,5 @@
+# coretemp
+
 ﻿## 内核驱动 coretemp
 
 本页介绍 coretemp 硬件监控驱动，说明其如何读取 Intel Core/Atom 处理器内置数字温度传感器（DTS）的核心与封装温度，列出所支持CPU 型号（按 CPUID family 0x6 区分）及温度读取方式，供硬件监控与散热管理参考
@@ -30,7 +32,7 @@
 
 作者（Author）：Rudolf Marek
 
-### 描述
+## 描述
 
 
 该驱动允许读取内置于 Intel CPU 中的 DTS（数字温度传感器）。该驱动可以使用

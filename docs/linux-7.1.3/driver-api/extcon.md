@@ -1,3 +1,5 @@
+# extcon
+
 ﻿## Extcon 设备子系
 
 ## 概述
@@ -197,6 +199,6 @@ Extcon 设备暴露以下 sysfs 属性：
 
     module_platform_driver(my_extcon_driver);
 
-### 此示例演示了
+## 此示例演示了
 
 - 定义受支持的线缆类型（本例中USB USB Host）- 分配并注册一extcon 设备- 为线缆设置初始状态（本例中为 USB 已连接）- 在驱动被移除时清除状态

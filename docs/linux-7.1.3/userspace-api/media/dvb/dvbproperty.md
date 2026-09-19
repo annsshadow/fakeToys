@@ -1,7 +1,9 @@
+# dvbproperty
+
 ﻿
 
 
-######## 属性类
+## 属性类
 
 要调谐到一个数字电视（Digital TV）物理频道并开始解码，需要改变一组参数，以控调谐器（tuner）、解调器（demodulator）、线性低噪声放大器（LNA），并通过卫星设备
 控制（Satellite Equipment Control，SEC，用于卫星系统）来设置天线子系统。具体的

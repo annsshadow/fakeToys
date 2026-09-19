@@ -1,3 +1,5 @@
+# mmc-dev-attrs
+
 ﻿## SD MMC 块设备属
 
 这些属性为SD MMC 设备相关联的块设备定义

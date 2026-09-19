@@ -1,6 +1,8 @@
+# lirc-set-transmitter-mask
+
 ﻿
 
-######## ioctl LIRC_SET_TRANSMITTER_MASK
+## ioctl LIRC_SET_TRANSMITTER_MASK
 
 
 ## 姓名

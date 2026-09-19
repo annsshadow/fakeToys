@@ -19,9 +19,9 @@
 
 ## Key Flows
 
-- 登录：`POST /jaxrs/authentication`（兼容 `/login`）→ 查 `auth_person` 校验锁定状态，LDAP 认证优先、失败或未启用时回退 bcrypt/MD5/DES 密码校验并对旧哈希自动 rehash 升级 → 联查角色与身份列表后由 SessionManager 签发 UUID 会话令牌（Bearer）
-- 刷新与登出：`POST /jaxrs/authentication/refresh` → 校验 header token 与 body old_token 一致并验证会话 → 签发新令牌、移除旧会话；`DELETE /jaxrs/authentication` 移除会话完成登出
-- 双因素登录：`GET /jaxrs/authentication/code/credential/{credential}` 校验凭据存在（防枚举）后经 CodeStore 签发 6 位验证码（5 分钟 TTL）→ `POST /jaxrs/authentication/code` 验证 TempToken 绑定与验证码 → 通过后查 `auth_person` 签发完整会话
+- 登录：`POST /api/authentication`（兼容 `/login`）→ 查 `auth_person` 校验锁定状态，LDAP 认证优先、失败或未启用时回退 bcrypt/MD5/DES 密码校验并对旧哈希自动 rehash 升级 → 联查角色与身份列表后由 SessionManager 签发 UUID 会话令牌（Bearer）
+- 刷新与登出：`POST /api/authentication/refresh` → 校验 header token 与 body old_token 一致并验证会话 → 签发新令牌、移除旧会话；`DELETE /api/authentication` 移除会话完成登出
+- 双因素登录：`GET /api/authentication/code/credential/{credential}` 校验凭据存在（防枚举）后经 CodeStore 签发 6 位验证码（5 分钟 TTL）→ `POST /api/authentication/code` 验证 TempToken 绑定与验证码 → 通过后查 `auth_person` 签发完整会话
 
 ## Dependencies
 
@@ -40,5 +40,5 @@
 
 
 
-- `GET /jaxrs/organization/assemble/authentication/identity/{id}`
-- `GET /jaxrs/organization/assemble/authentication/person/{id}/icon`
+- `GET /api/organization/assemble/authentication/identity/{id}`
+- `GET /api/organization/assemble/authentication/person/{id}/icon`

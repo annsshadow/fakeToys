@@ -1,3 +1,5 @@
+# kernel-api
+
 ﻿## The Linux Kernel API
 
 
@@ -10,20 +12,26 @@
 
    :export:
 
+
    :functions: kstrtol kstrtoul
 
    :export:
 
+
    :export:
+
 
 ### String Manipulation
 
 
    :internal:
 
+
    :export:
 
+
    :internal:
+
 
    :functions: kstrdup kstrdup_const kstrndup kmemdup kmemdup_nul memdup_user
                vmemdup_user strndup_user memdup_user_nul
@@ -37,9 +45,12 @@ Linux 内核提供了更多基础的实用函数
 
    :internal:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+
 
 ### Bitmap Operations
 
@@ -54,26 +65,33 @@ Linux 内核提供了更多基础的实用函数
 
    :export:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+
 
 ### Command-line Parsing
 
 
    :export:
 
+
 ### Error Pointers
 
 
    :internal:
+
 
 ### Sorting
 
 
    :export:
 
+
    :export:
+
 
 ### Text Searching
 
@@ -81,6 +99,7 @@ Linux 内核提供了更多基础的实用函数
    :doc: ts_intro
 
    :export:
+
 
    :functions: textsearch_find textsearch_next \
                textsearch_get_pattern textsearch_get_pattern_len
@@ -93,22 +112,30 @@ Linux 内核提供了更多基础的实用函数
 
    :internal:
 
+
 ### CRC Functions
 
 
    :export:
 
-   :export:
 
    :export:
 
-   :export:
 
    :export:
 
-   :export:
 
    :export:
+
+
+   :export:
+
+
+   :export:
+
+
+   :export:
+
 
 
 ### Base 2 log and power Functions
@@ -116,13 +143,16 @@ Linux 内核提供了更多基础的实用函数
 
    :internal:
 
+
 ### Integer log and power Functions
 
 
 
    :export:
 
+
    :export:
+
 
 ### Division Functions
 
@@ -131,12 +161,15 @@ Linux 内核提供了更多基础的实用函数
 
    :internal:
 
+
    :export:
+
 
 ### UUID/GUID
 
 
    :export:
+
 
 ## Kernel IPC facilities
 
@@ -146,6 +179,7 @@ Linux 内核提供了更多基础的实用函数
 
    :internal:
 
+
 ## FIFO Buffer
 
 
@@ -153,6 +187,7 @@ Linux 内核提供了更多基础的实用函数
 
 
    :internal:
+
 
 ## relay interface support
 
@@ -163,7 +198,9 @@ Relay 接口支持旨在为工具和设施提供一种高效机制，将大量�
 
    :export:
 
+
    :internal:
+
 
 ## Module Support
 
@@ -173,17 +210,18 @@ Relay 接口支持旨在为工具和设施提供一种高效机制，将大量�
 
    :export:
 
+
 ### Module debugging
 
 
    :doc: module debugging statistics overview
 
-######## dup_failed_modules - tracks duplicate failed modules
+#### dup_failed_modules - tracks duplicate failed modules
 
 
    :doc: dup_failed_modules - tracks duplicate failed modules
 
-######## module statistics debugfs counters
+##### module statistics debugfs counters
 
 
    :doc: module statistics debugfs counters
@@ -200,70 +238,93 @@ Relay 接口支持旨在为工具和设施提供一种高效机制，将大量�
 
    :export:
 
+
 ### Resources Management
 
 
    :internal:
 
+
    :export:
+
 
 ### MTRR Handling
 
 
    :export:
 
+
 ## Security Framework
 
 
    :internal:
 
+
    :export:
+
 
 ## Audit Interfaces
 
 
    :export:
 
-   :internal:
 
    :internal:
+
+
+   :internal:
+
 
 ## Accounting Framework
 
 
    :internal:
 
+
 ## Block Devices
 
 
    :export:
 
-   :internal:
-
-   :export:
 
    :internal:
 
-   :export:
 
    :export:
 
-   :export:
-
-   :export:
 
    :internal:
 
+
+   :export:
+
+
+   :export:
+
+
+   :export:
+
+
+   :export:
+
+
    :internal:
 
-   :export:
+
+   :internal:
+
 
    :export:
+
+
+   :export:
+
 
 ## Char devices
 
 
    :export:
+
 
 ## Clock Framework
 
@@ -273,6 +334,7 @@ Relay 接口支持旨在为工具和设施提供一种高效机制，将大量�
 注重功耗的驱动仅在其管理的设备处于活动使用状态时启用其时钟。此外，系统睡眠状态通常根据哪些时钟域处于活动状态而不同：虽然"standby"状态可能允许来自多个活动域的唤醒，mem"（挂起到 RAM）状态可能需要更全面地关闭源自高PLL 和振荡器的时钟，从而限制可能的唤醒事件源数量。驱动的 suspend 方法可能需要了解目标睡眠状态上与系统相关的时钟约束
 某些平台支持可编程时钟发生器。这些可被各种外部芯片使用，例如其他 CPU、多媒体编解码器，以及对接口时钟有严格要求的设备
    :internal:
+
 
 ## Synchronization Primitives
 

@@ -1,3 +1,5 @@
+# fw-pseudo-registers
+
 ﻿
 ## ARM 固件伪寄存器接口
 
@@ -7,6 +9,7 @@ KVM 按照客户机的请求处理 hypercall 服务。ARM 规范KVM（作为供�
 为了补救这种情况，KVM 暴露了一组可以使GET/SET_ONE_REG 接口操纵的“固件伪寄存器”。这些寄存器可以由用户空间保恢复，并根据需要设置为方便的值
 定义了以下寄存器
 - KVM_REG_ARM_PSCI_VERSION:
+
 
   KVM 实现PSCI（Power State Coordination Interface，电源状态协调接口）规范，以向客户机提供 CPU 开关机、复位和断电等服务
   - 仅当 vcpu 设置KVM_ARM_VCPU_PSCI_0_2 特性（并且因此已经初始化）时才有效

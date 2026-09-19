@@ -1,5 +1,8 @@
+# msm-preemption
+
 ﻿
 :orphan:
+
 
 ## MSM 抢占（Preemption
 抢占允许 Adreno GPU 在工作被推送到更高优先级的 ring 时切换到ring，从而降高优先级提交（submission）的延迟

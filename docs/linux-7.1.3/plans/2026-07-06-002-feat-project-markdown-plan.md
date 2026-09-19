@@ -1,3 +1,5 @@
+# 2026-07-06-002-feat-project-markdown-plan
+
 ﻿---
 title: feat: Generate PROJECT.md from kernel source
 type: feat

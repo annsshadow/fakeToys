@@ -1,3 +1,5 @@
+# arcnet
+
 ﻿
 ## ARCnet
 
@@ -242,6 +244,7 @@ ARCnet 驱动 v2.10 ALPHA 支持三种协议，每种都在其自己的“虚拟
 
    If you need arc0e (and only arc0e), it's a little different::
 
+
 	ifconfig arc0 MY.IP.ADD.RESS
 	ifconfig arc0e MY.IP.ADD.RESS
 	route add MY.IP.ADD.RESS arc0e
@@ -278,6 +281,7 @@ ARCnet 驱动 v2.10 ALPHA 支持三种协议，每种都在其自己的“虚拟
 
    And freedom gets configured like so::
 
+
 	ifconfig arc0 freedom
 	route add freedom arc0
 	route add insight arc0
@@ -311,6 +315,7 @@ ARCnet 驱动 v2.10 ALPHA 支持三种协议，每种都在其自己的“虚拟
 
    To configure freedom (in addition to the commands above)::
 
+
 	ifconfig arc0e gatekeeper
 	route add gatekeeper arc0e
 	route add patience arc0e
@@ -338,6 +343,7 @@ ARCnet 驱动 v2.10 ALPHA 支持三种协议，每种都在其自己的“虚拟
 
    For those who like diagrams, I have created two "virtual subnets" on the
    same physical ARCnet wire.  You can picture it like this::
+
 
 
 	  [RFC1201 NETWORK]                   [ETHER-ENCAP NETWORK]

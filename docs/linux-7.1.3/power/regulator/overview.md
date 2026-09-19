@@ -1,3 +1,5 @@
+# overview
+
 ﻿## Linux 电压与电流调节器框架
 
 
@@ -43,16 +45,19 @@ Author: Liam Girdwood <lrg@slimlogic.co.uk>
 
                    That is one regulator and three power domains:
 
+
                    - Domain 1: Switch-1, Consumers D & E.
                    - Domain 2: Switch-2, Consumers B & C.
                    - Domain 3: Consumer A.
 
                    and this represents a "supplies" relationship:
 
+
                    Domain-1 --> Domain-2 --> Domain-3.
 
                    A power domain may have regulators that are supplied power
                    by other regulators. i.e.::
+
 
                      Regulator-1 -+-> Regulator-2 -+-> [Consumer A]
                                   |
@@ -60,10 +65,12 @@ Author: Liam Girdwood <lrg@slimlogic.co.uk>
 
                    This gives us two regulators and two power domains:
 
+
                    - Domain 1: Regulator-2, Consumer B.
                    - Domain 2: Consumer A.
 
                    and a "supplies" relationship:
+
 
                    Domain-1 --> Domain-2
 

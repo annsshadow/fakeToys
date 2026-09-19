@@ -1,3 +1,5 @@
+# firmware-usage-guidelines
+
 ﻿## 固件使用指南（Firmware Guidelines
 
 切换到更新内核的用户**不应**需要安装更新的固件文件来让他们的硬件继续工作。同时，

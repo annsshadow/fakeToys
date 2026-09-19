@@ -35,7 +35,7 @@ pub async fn org_person_meeting_flow() {
 
     // Step 1: Create a meeting room
     let room_resp = client
-        .post(format!("{}/jaxrs/meeting/assemble/control/room", base))
+        .post(format!("{}/api/meeting/assemble/control/room", base))
         .header("Authorization", &auth_header)
         .json(&json!({
             "name": "Test Conference Room",

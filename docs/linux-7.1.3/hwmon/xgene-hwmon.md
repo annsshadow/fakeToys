@@ -1,3 +1,5 @@
+# xgene-hwmon
+
 ﻿## 内核驱动 xgene-hwmon
 
 
@@ -5,7 +7,7 @@
 
  - APM X-Gene SoC
 
-### 说明
+## 说明
 
 
 该驱动通过邮箱（mailbox）通信接口APM X-Gene SoC 添加硬件温度和功率读取支持

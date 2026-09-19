@@ -1,5 +1,7 @@
+# cec-func-close
+
 ﻿
-######## cec close()
+## cec close()
 
 ## 名称
 

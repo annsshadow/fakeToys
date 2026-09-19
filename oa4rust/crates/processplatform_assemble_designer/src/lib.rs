@@ -1,6 +1,6 @@
 #[allow(dead_code, non_snake_case)]
 use axum::{
-    extract::{Extension, Query},
+    extract::{Extension, Path, Query},
     Json,
 };
 use deadpool_postgres::tokio_postgres::Row;
@@ -76,8 +76,7 @@ pub async fn get_flow(
     let row = client
         .query_one(
             "SELECT id, name, category, process_definition, version, creator, \
-             to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time, \
-             to_char(update_time, 'YYYY-MM-DD HH24:MI:SS') AS update_time \
+             create_time::text AS create_time, update_time::text AS update_time \
              FROM x_process_definition WHERE id = $1",
             &[&id],
         )
@@ -93,9 +92,14 @@ pub async fn get_flow(
         ),
         (
             "version".to_string(),
-            Value::Number(serde_json::Number::from(row.get::<_, i32>("version"))),
+            Value::Number(serde_json::Number::from(
+                row.get::<_, Option<i32>>("version").unwrap_or(0),
+            )),
         ),
-        ("creator".to_string(), Value::String(row.get("creator"))),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
             Value::String(
@@ -158,7 +162,7 @@ pub async fn list_flows(
     let rows = if category.is_empty() || category == "all" {
         client
             .query(
-                "SELECT id, name, category, version, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_process_definition \
+                "SELECT id, name, category, version, creator, create_time::text AS create_time FROM x_process_definition \
                  WHERE 1=1 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
                 &[&size, &offset],
             )
@@ -167,7 +171,7 @@ pub async fn list_flows(
     } else {
         client
             .query(
-                "SELECT id, name, category, version, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_process_definition \
+                "SELECT id, name, category, version, creator, create_time::text AS create_time FROM x_process_definition \
                  WHERE category = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
                 &[&category, &size, &offset],
             )
@@ -187,9 +191,14 @@ pub async fn list_flows(
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("version"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("version").unwrap_or(0),
+                    )),
                 ),
-                ("creator".to_string(), Value::String(row.get("creator"))),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(
@@ -218,6 +227,57 @@ pub async fn list_flows(
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
+}
+
+/// GET /api/processplatform/assemble/designer（裸根，桌面 ProcessDesigner 配置串引用）：
+/// 返回全部流程定义（等价 category=all，取前 100 条）。
+#[allow(non_snake_case)]
+pub async fn designer_bare_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, category, version::text AS version, creator, create_time::text AS create_time \
+             FROM x_process_definition ORDER BY create_time DESC LIMIT 100",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "category".to_string(),
+                    Value::String(row.get::<_, Option<String>>("category").unwrap_or_default()),
+                ),
+                (
+                    "version".to_string(),
+                    Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+    let count = data.len() as i64;
+    Ok(Json(ActionResult::legacy_success(
+        Value::Array(data),
+        count,
+        0,
+    )))
 }
 
 /// 保存流程定义
@@ -337,7 +397,7 @@ pub async fn preview_flow(
 }
 
 /// 流程平台设计器组装路由
-/// 路由前缀: /jaxrs/processplatform/assemble/designer/*
+/// 路由前缀: /api/processplatform/assemble/designer/*
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     routes::router(pool)
 }
@@ -558,7 +618,10 @@ pub async fn application_id_icon(
             let icon: Option<String> = row.get("xicon");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("icon".to_string(), Value::String(icon.unwrap_or_default())),
                 ]),
             ))))
@@ -590,7 +653,10 @@ pub async fn application_id_permission(
                 .unwrap_or(Value::Object(serde_json::Map::new()));
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("permissions".to_string(), permissions),
                 ]),
             ))))
@@ -868,7 +934,10 @@ pub async fn file_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -949,7 +1018,10 @@ pub async fn file_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -981,7 +1053,10 @@ pub async fn file_flag_application_applicationFlag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1013,7 +1088,10 @@ pub async fn file_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1047,7 +1125,10 @@ pub async fn file_id_content(
             let content: Option<String> = row.get("xcontent");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "content".to_string(),
                         Value::String(content.unwrap_or_default()),
@@ -1078,7 +1159,10 @@ pub async fn file_id_download(
             let content: Option<String> = row.get("xcontent");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "downloadUrl".to_string(),
                         Value::String(format!("/file/download/{}", id)),
@@ -1283,15 +1367,23 @@ pub async fn formversion_list_form_formId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("form".to_string(), Value::String(row.get("xform"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "form".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xform").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -1334,15 +1426,23 @@ pub async fn formversion_id(
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("form".to_string(), Value::String(row.get("xform"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "form".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xform").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -1502,13 +1602,22 @@ pub async fn item_access_path_path(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1550,13 +1659,22 @@ pub async fn item_access_process_processId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1599,13 +1717,22 @@ pub async fn item_access_process_processId_path_path(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1646,13 +1773,22 @@ pub async fn item_access_id(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
-                ("path".to_string(), Value::String(row.get("xpath"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
+                (
+                    "path".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("\"xcreateTime\"")),
@@ -1689,7 +1825,10 @@ pub async fn mapping_list_application_applicationFlag(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -1781,7 +1920,10 @@ pub async fn mapping_flag(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -1832,11 +1974,14 @@ pub async fn mapping_flag_execute(
     let found = row.is_some();
     match row {
         Some(row) => {
-            let source: String = row.get("xsource");
-            let target: String = row.get("xtarget");
+            let source: String = row.get::<_, Option<String>>("xsource").unwrap_or_default();
+            let target: String = row.get::<_, Option<String>>("xtarget").unwrap_or_default();
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("execute".to_string(), Value::Bool(found)),
                     ("source".to_string(), Value::String(source)),
                     ("target".to_string(), Value::String(target)),
@@ -1988,12 +2133,18 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "output".to_string(),
                     Value::String(row.get::<_, Option<String>>("xoutput").unwrap_or_default()),
@@ -2039,12 +2190,18 @@ pub async fn output_applicationFlag_select(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "output".to_string(),
                     Value::String(row.get::<_, Option<String>>("xoutput").unwrap_or_default()),
@@ -2086,8 +2243,14 @@ pub async fn process_activity_flag_activityType_activityType(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "activityType".to_string(),
                     Value::String(row.get("\"xactivityType\"")),
@@ -2164,8 +2327,14 @@ pub async fn process_application_applicationId_disable_edition(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 ("edition".to_string(), Value::String("disabled".to_string())),
                 (
                     "createTime".to_string(),
@@ -2209,8 +2378,14 @@ pub async fn process_application_applicationId_edition_edition(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 ("edition".to_string(), Value::String(edition.clone())),
                 (
                     "createTime".to_string(),
@@ -2260,7 +2435,7 @@ pub async fn process_upgrade_all(
     pool: Extension<Pool>,
     session: Extension<Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // W12 收敛：对齐 Java ActionUpgradeAll——Wo extends WrapBoolean（仅 value 键）。
+    // W12 收敛：对齐 o2server ActionUpgradeAll——Wo extends WrapBoolean（仅 value 键）。
     // 语义 = effectivePerson.isManager()：管理员执行全量流程 edition 升级并回 true，
     // 非管理员跳过升级回 false。比对恒以 testadmin（管理员）发起 → value:true。
     let is_manager = shared::middleware::is_admin(&pool, &session.person_unique).await;
@@ -2367,8 +2542,14 @@ pub async fn process_id_enabled(
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "enabled".to_string(),
                     Value::Bool(
@@ -2409,7 +2590,10 @@ pub async fn process_id_execute_projection(
             let phase: Option<String> = row.get("\"xserialPhase\"");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "projection".to_string(),
                         Value::Object(serde_json::Map::from_iter([
@@ -2453,12 +2637,18 @@ pub async fn process_id_lead_out(
             let _process_def: Option<String> = row.get("xname");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     (
                         "exportUrl".to_string(),
                         Value::String(format!("/export/process/{}", id)),
                     ),
-                    ("name".to_string(), Value::String(row.get("xname"))),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                    ),
                 ]),
             ))))
         }
@@ -2484,8 +2674,14 @@ pub async fn process_id_list_element(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "processId".to_string(),
                     Value::String(row.get("\"xprocessId\"")),
@@ -2543,7 +2739,10 @@ pub async fn process_id_permission(
                 .unwrap_or(Value::Object(serde_json::Map::new()));
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
                     ("permissions".to_string(), permissions),
                 ]),
             ))))
@@ -2636,8 +2835,14 @@ pub async fn process_id_onlyRemoveNotCompleted_edition(
             let edition: Option<String> = row.get("xedition");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("name".to_string(), Value::String(row.get("xname"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                    ),
                     (
                         "edition".to_string(),
                         Value::String(edition.unwrap_or_default()),
@@ -2671,15 +2876,23 @@ pub async fn processversion_list_process_processId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -2722,15 +2935,23 @@ pub async fn processversion_id(
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("process".to_string(), Value::String(row.get("xprocess"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "process".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -2970,8 +3191,14 @@ pub async fn scriptversion_list_script_scriptId(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("script".to_string(), Value::String(row.get("xscript"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "script".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xscript").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -2983,7 +3210,9 @@ pub async fn scriptversion_list_script_scriptId(
                 ),
                 (
                     "version".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                    Value::Number(serde_json::Number::from(
+                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                    )),
                 ),
                 (
                     "createTime".to_string(),
@@ -3027,15 +3256,23 @@ pub async fn scriptversion_id(
             let code: Option<String> = row.get("xcode");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("script".to_string(), Value::String(row.get("xscript"))),
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                    ),
+                    (
+                        "script".to_string(),
+                        Value::String(row.get::<_, Option<String>>("xscript").unwrap_or_default()),
+                    ),
                     (
                         "name".to_string(),
                         Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
                     ),
                     (
                         "version".to_string(),
-                        Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion"))),
+                        Value::Number(serde_json::Number::from(
+                            row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        )),
                     ),
                     ("code".to_string(), Value::String(code.unwrap_or_default())),
                     (
@@ -3074,8 +3311,14 @@ pub async fn templateform_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(
@@ -3124,8 +3367,14 @@ pub async fn templateform_list_category(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(
@@ -3174,8 +3423,14 @@ pub async fn templateform_id(
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
             let mut map = serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
                 (
                     "category".to_string(),
                     Value::String(
@@ -3223,7 +3478,10 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 ("workId".to_string(), Value::String(row.get("\"xworkId\""))),
                 (
                     "\"completedTime\"".to_string(),
@@ -3270,7 +3528,10 @@ pub async fn workcompleted_process_processFlag_merge_data(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 ("workId".to_string(), Value::String(row.get("\"xworkId\""))),
                 (
                     "\"completedTime\"".to_string(),
@@ -3305,7 +3566,7 @@ mod tests;
 mod tests_generated;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// plan002 U2 · Java 端点缺口闭合（51 个）
+// plan002 U2 · o2server 端点缺口闭合（51 个）
 //
 // 约定（对齐 docs/solutions/security-issues/idor-vulnerability-write-handlers.md）：
 //   - 写端点（PUT/POST/DELETE）先取记录归属（"xcreatorPerson"，回退 creator_person），
@@ -3451,7 +3712,7 @@ pub async fn application_id_update(
     ))))
 }
 
-/// PUT /application/{id}/icon —— 更新应用图标（Java 精确路径形态）。
+/// PUT /application/{id}/icon —— 更新应用图标（o2server 精确路径形态）。
 #[allow(non_snake_case)]
 pub async fn application_id_icon_update(
     pool: Extension<Pool>,
@@ -3567,7 +3828,7 @@ pub async fn applicationdict_create(
     ))))
 }
 
-/// POST /applicationdict/list/paging/{page}/size/{size} —— Java 分页精确形态（POST 动词）。
+/// POST /applicationdict/list/paging/{page}/size/{size} —— o2server 分页精确形态（POST 动词）。
 #[allow(non_snake_case)]
 pub async fn applicationdict_paging_post(
     pool: Extension<Pool>,
@@ -3817,7 +4078,7 @@ pub async fn item_access_bach_save(
     ))))
 }
 
-/// DELETE /item-access/delete/process/{processId}/path/{path} —— Java 精确形态删除。
+/// DELETE /item-access/delete/process/{processId}/path/{path} —— o2server 精确形态删除。
 #[allow(non_snake_case)]
 pub async fn item_access_delete_exact(
     pool: Extension<Pool>,
@@ -3898,13 +4159,22 @@ pub async fn item_access_process_path_list(
 
 fn row_to_item_access_data(row: &Row) -> Value {
     Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("xid"))),
+        (
+            "id".to_string(),
+            Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+        ),
         (
             "name".to_string(),
             Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
         ),
-        ("process".to_string(), Value::String(row.get("xprocess"))),
-        ("path".to_string(), Value::String(row.get("xpath"))),
+        (
+            "process".to_string(),
+            Value::String(row.get::<_, Option<String>>("xprocess").unwrap_or_default()),
+        ),
+        (
+            "path".to_string(),
+            Value::String(row.get::<_, Option<String>>("xpath").unwrap_or_default()),
+        ),
         (
             "createTime".to_string(),
             Value::String(
@@ -4143,7 +4413,7 @@ pub async fn mergeitemplan_create(
     ))))
 }
 
-/// GET /mergeitemplan/list/application/{applicationId}/paging/{page}/size/{size} —— Java 精确形态分页。
+/// GET /mergeitemplan/list/application/{applicationId}/paging/{page}/size/{size} —— o2server 精确形态分页。
 #[allow(non_snake_case)]
 pub async fn mergeitemplan_paging_by_application(
     pool: Extension<Pool>,
@@ -4324,7 +4594,10 @@ pub async fn process_disable_edition_list(
         .iter()
         .map(|r| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(r.get("xid"))),
+                (
+                    "id".to_string(),
+                    Value::String(r.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(r.get::<_, Option<String>>("xname").unwrap_or_default()),
@@ -4498,12 +4771,12 @@ pub async fn script_by_name_exact(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, \"xname\", xapplication, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM pp_e_script \
+        "SELECT xid, \"xname\", xapplication, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM pp_e_script \
              WHERE xapplication = $1 AND \"xname\" = $2 ORDER BY \"xcreateTime\" DESC NULLS LAST",
-            &[&application_id, &name],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+        &[&application_id, &name],
+    )
+    .await
+    .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(row_to_app_data).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4512,6 +4785,369 @@ pub async fn script_by_name_exact(
                 Value::Number(serde_json::Number::from(data.len() as i64)),
             ),
             ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// dict / form / xform 斜杠路径家族（设计器桌面视图 + shared::crud 通用参数化写）
+// dict/form 复用既有 pp_e_* 双轨表（以 list SQL 为准），xform 查 x_pp_xform（097）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── dict/list（流程字典设计器，查 pp_e_applicationdict）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xapplication, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE deleted_at IS NULL ORDER BY \"xcreateTime\" DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                (
+                    "application".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xapplication")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── dict 家族 CRUD（pp_e_applicationdict，通用参数化写）──
+fn dict_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "pp_e_applicationdict",
+        columns: &[("name", "xname"), ("application", "xapplication")],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &dict_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &dict_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn dict_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &dict_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── form/list（流程表单设计器，查 pp_e_form）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xapplication, \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE deleted_at IS NULL ORDER BY \"xcreateTime\" DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
+                ),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default()),
+                ),
+                (
+                    "application".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xapplication")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xcreateTime")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("xupdateTime")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── form 家族 CRUD（pp_e_form，通用参数化写）──
+fn form_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "pp_e_form",
+        columns: &[("name", "xname"), ("application", "xapplication")],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &form_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &form_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn form_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &form_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
+        ]),
+    ))))
+}
+
+// ── xform/list（流程 XForm 设计器，查 x_pp_xform 097）──
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, definition, status, creator, create_time::text AS create_time, update_time::text AS update_time \
+             FROM x_pp_xform WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                (
+                    "name".to_string(),
+                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                ),
+                (
+                    "definition".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("definition")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ── xform 家族 CRUD（x_pp_xform 097，通用参数化写）──
+fn xform_spec() -> shared::crud::CrudSpec {
+    shared::crud::CrudSpec {
+        table: "x_pp_xform",
+        columns: &[
+            ("name", "name"),
+            ("definition", "definition"),
+            ("status", "status"),
+        ],
+        soft_delete: true,
+    }
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_create(
+    pool: Extension<Pool>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = shared::crud_create(&pool, &xform_spec(), &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    body: Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let saved = shared::crud_save(&pool, &xform_spec(), &id, &body.0).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(saved)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn xform_delete(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let deleted = shared::crud_delete(&pool, &xform_spec(), &id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(deleted)),
         ]),
     ))))
 }

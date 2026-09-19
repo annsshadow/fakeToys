@@ -1,3 +1,5 @@
+# features
+
 ﻿# xtensa Architecture Features
 
 This page lists the architecture-specific features for the xtensa architecture.

@@ -1,7 +1,9 @@
+# dma-attributes
+
 ﻿## DMA 属
 
 本文档描述了linux/dma-mapping.h 中定义的 DMA 属性的语义
-### DMA_ATTR_WEAK_ORDERING
+## DMA_ATTR_WEAK_ORDERING
 
 
 DMA_ATTR_WEAK_ORDERING 指明对该映射的读写可以弱序（weakly ordered）执行，

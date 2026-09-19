@@ -1,6 +1,8 @@
 
 
 
+# changes
+
 Requisitos mínimos para compilar o Kernel
 ++++++++++++++++++++++++++++++++++++++++++
 
@@ -14,7 +16,7 @@ Este documento é originalmente baseado no meu arquivo 'Changes' para os kernels
 2.0.x e portanto, deve créditos às mesmas pessoas que aquele arquivo (Jared
 Mauch, Axel Boldt, Alessandro Sigala e inúmeros outros usuários em toda a rede).
 
-######## Requisitos Mínimos Atuais
+### Requisitos Mínimos Atuais
 
 
 Atualize para pelo menos estas revisões de software antes de pensar que
@@ -66,7 +68,7 @@ GNU AWK (opcional)     5.1.0            gawk --version
 ====================== ===============  ========================================
 
 
-######## Compilação do Kernel
+#### Compilação do Kernel
 
 
 ### GCC
@@ -209,7 +211,7 @@ O GNU AWK é necessário caso você deseje que a compilação do kernel gere dad
 intervalo de endereços para
 módulos integrados (CONFIG_BUILTIN_MODULE_RANGES).
 
-######## Utilitários de sistema
+#### Utilitários de sistema
 
 
 ### Mudanças de arquitetura
@@ -265,12 +267,14 @@ Obviamente, é uma boa ideia atualizar.
 O pacote jfsutils contém os utilitários para o sistema de arquivos. Os seguintes
 utilitários estão disponíveis:
 
+
 - `fsck.jfs` - inicia a reprodução (replay) do log de transações, além de
   verificar e reparar uma partição formatada em JFS.
 
 - `mkfs.jfs` - cria uma partição formatada em JFS.
 
 - Para o seu arquivo changes.rst, a tradução técnica adequada é:
+
 
 Outros utilitários de sistema de arquivos também estão disponíveis neste pacote.
 
@@ -329,7 +333,7 @@ tempo a nomeação persistente de dispositivos.
 Necessita do libfuse 2.4.0 ou posterior. O mínimo absoluto é a versão 2.3.0,
 mas as opções de montagem direct_io e kernel_cache não funcionarão.
 
-######## Redes
+#### Redes
 
 
 ### Mudanças gerais
@@ -396,7 +400,7 @@ eventos de machine check quando opção CONFIG_X86_MCE está ativada. Eventos de
 machine check são erros relatados pela CPU. O processamento desses eventos é
 fortemente recomendado.
 
-######## Documentação do Kernel
+#### Documentação do Kernel
 
 
 ### Sphinx
@@ -414,7 +418,7 @@ consulte Documentation/rust/general-information.rst para mais informações.
 ## Obtendo software atualizado
 
 
-######## Compilação do kernel
+### Compilação do kernel
 
 
 ### gcc
@@ -467,7 +471,7 @@ consulte Documentation/rust/general-information.rst para mais informações.
 
 - <https://www.openssl.org/>
 
-######## System utilities
+#### System utilities
 
 
 ### Util-linux
@@ -539,7 +543,7 @@ consulte Documentation/rust/general-information.rst para mais informações.
 
 - <https://www.mcelog.org/>
 
-######## Redes
+#### Redes
 
 
 ### PPP
@@ -570,7 +574,7 @@ consulte Documentation/rust/general-information.rst para mais informações.
 
 - <https://oprofile.sf.net/download/>
 
-######## Kernel documentation
+#### Kernel documentation
 
 
 ### Sphinx

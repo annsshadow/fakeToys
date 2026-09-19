@@ -25,7 +25,7 @@ describe('organization selector API contract', () => {
 
       await searchOrganizationSelector(type, '  张三  ')
 
-      expect(organizationSelectorSearchPath(type)).toBe(`/jaxrs/organization/assemble/control/${type}/list/like`)
+      expect(organizationSelectorSearchPath(type)).toBe(`/api/organization/assemble/control/${type}/list/like`)
       expect(put).toHaveBeenCalledWith(organizationSelectorSearchPath(type), { key: '张三' })
     },
   )

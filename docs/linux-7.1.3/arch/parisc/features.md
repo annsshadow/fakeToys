@@ -1,3 +1,5 @@
+# features
+
 ﻿# parisc Architecture Features
 
 This page lists the architecture-specific features for the parisc architecture.

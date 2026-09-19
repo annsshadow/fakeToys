@@ -1,3 +1,5 @@
+# audigy-mixer
+
 ﻿## Sound Blaster Audigy 混音/ 默认 DSP 代码
 
 本文基于 sb-live-mixer.rst。EMU10K2 芯片包含一DSP 部分，它可以被编程以支持多种采样处理方式，本文对此进行描述。（本文不涉EMU10K2 芯片的整体功能，详见 manuals 一节。）ALSA 驱动默认会对芯片的这一部分进行编程（之后可以修改），从而提供以下功能：

@@ -1,5 +1,7 @@
 
 
+# kmemleak
+
 :Original: Documentation/dev-tools/kmemleak.rst
 :Translator: 刘浩阳 Haoyang Liu <tttturtleruss@hust.edu.cn>
 
@@ -79,7 +81,7 @@ cing_garbage_collection>`_ 的方法来检测可能的内核内存泄漏，不�
 如果出现 "Error while writing to stdout" 或 "write_loop: Invalid argument" 这样
 的错误，请确认 kmemleak 被正确启用。
 
-### 基础算法
+## 基础算法
 
 
 通过 `kmalloc`, `vmalloc`, `kmem_cache_alloc` 以及同类
@@ -123,7 +125,7 @@ cing_garbage_collection>`_ 的方法来检测可能的内核内存泄漏，不�
    # cat /sys/kernel/debug/kmemleak
 
 ```
-### 释放 kmemleak 内核对象
+## 释放 kmemleak 内核对象
 
 
 为了允许访问先前发现的内存泄露，当用户禁用或发生致命错误导致 kmemleak
@@ -135,7 +137,7 @@ cing_garbage_collection>`_ 的方法来检测可能的内核内存泄漏，不�
    # echo clear > /sys/kernel/debug/kmemleak
 
 ```
-### Kmemleak API
+## Kmemleak API
 
 
 在 include/linux/kmemleak.h 头文件中查看函数原型：

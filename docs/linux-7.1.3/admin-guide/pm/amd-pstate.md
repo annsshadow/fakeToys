@@ -1,3 +1,5 @@
+# amd-pstate
+
 ﻿
 ## ``amd-pstate`` CPU 性能缩放驱动
 
@@ -511,7 +513,7 @@ AMD pstate 处于自动模式时，动EPP 将控制内核是否自主更EPP 模�
 `CPUFreq` 核心（对于使用其他缩放调控器的策略）触发
 
 
-### 跟踪工具（Tracer Tool
+## 跟踪工具（Tracer Tool
 
 
 `amd_pstate_tracer.py` 可以记录和解`amd-pstate` 跟踪日志，然后生成性能图
@@ -616,17 +618,20 @@ AMD pstate 处于自动模式时，动EPP 将控制内核是否自主更EPP 模�
 
         + make perf ::
 
+
             $ cd tools/perf/
             $ make
 
 
     2). Installation & Steps ::
 
+
         $ make -C tools/testing/selftests install INSTALL_PATH=~/kselftest
         $ cp tools/perf/perf /usr/bin/perf
         $ sudo ./kselftest/run_kselftest.sh -c amd-pstate
 
     3). Specified test case ::
+
 
         $ cd ~/kselftest/amd-pstate
         $ sudo ./run.sh -t basic
@@ -656,6 +661,7 @@ AMD pstate 处于自动模式时，动EPP 将控制内核是否自主更EPP 模�
 
          When you finish test, you will get the following log info ::
 
+
           $ dmesg | grep "amd_pstate_ut" | tee log.txt
           [12977.570663] amd_pstate_ut: 1    amd_pstate_ut_acpi_cpc_valid  success!
           [12977.570673] amd_pstate_ut: 2    amd_pstate_ut_check_enabled   success!
@@ -668,6 +674,7 @@ AMD pstate 处于自动模式时，动EPP 将控制内核是否自主更EPP 模�
          The selftest.tbench.csv file contains the raw data and the drop of the comparative test.
          The png images shows the performance, energy and performan per watt of each test.
          Open selftest.tbench.csv :
+
 
          +-------------------------------------------------+--------------+----------+---------+----------+-------------+---------+----------------------+
          + Governor                                        | Round        | Des-perf | Freq    | Load     | Performance | Energy  | Performance Per Watt |
@@ -721,6 +728,7 @@ AMD pstate 处于自动模式时，动EPP 将控制内核是否自主更EPP 模�
          The selftest.gitsource.csv file contains the raw data and the drop of the comparative test.
          The png images shows the performance, energy and performan per watt of each test.
          Open selftest.gitsource.csv :
+
 
          +-------------------------------------------------+--------------+----------+----------+----------+-------------+---------+----------------------+
          + Governor                                        | Round        | Des-perf | Freq     | Load     | Time        | Energy  | Performance Per Watt |

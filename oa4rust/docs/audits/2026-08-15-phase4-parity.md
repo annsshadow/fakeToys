@@ -82,12 +82,12 @@ Provides `pub fn diff(a: &serde_json::Value, b: &serde_json::Value) -> Vec<Strin
 
 | # | Name (corpus file) | Path | Basis |
 |---|--------------------|------|-------|
-| 1 | `cms_assemble_data_document` | `/jaxrs/cms_assemble_control/data/document` | proven 200 in `cms_document` scenario |
-| 2 | `program_applications` | `/jaxrs/program/applications` | proven 200 in `program_center` scenario |
-| 3 | `program_datastructure_modules_all` | `/jaxrs/program/datastructure/modules/all` | proven 200 in `program_center` scenario |
-| 4 | `cms_assemble_appinfo` | `/jaxrs/cms_assemble_control/appinfo` | proven 200 in `cms_extended` scenario |
+| 1 | `cms_assemble_data_document` | `/api/cms_assemble_control/data/document` | proven 200 in `cms_document` scenario |
+| 2 | `program_applications` | `/api/program/applications` | proven 200 in `program_center` scenario |
+| 3 | `program_datastructure_modules_all` | `/api/program/datastructure/modules/all` | proven 200 in `program_center` scenario |
+| 4 | `cms_assemble_appinfo` | `/api/cms_assemble_control/appinfo` | proven 200 in `cms_extended` scenario |
 
-> Note: there are **no** `/jaxrs/organization/...` routes anywhere in the codebase, so
+> Note: there are **no** `/api/organization/...` routes anywhere in the codebase, so
 > the originally suggested `organization` list endpoint was substituted with the four
 > proven GET list endpoints above. To add more, append to `ENDPOINTS` in
 > `parity_runner.rs`.
@@ -125,7 +125,7 @@ Each file looks like:
 
 ```json
 {
-  "path": "/jaxrs/program/applications",
+  "path": "/api/program/applications",
   "status": 200,
   "body": { "...": "..." }
 }

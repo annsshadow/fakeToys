@@ -1,8 +1,10 @@
+# porting
+
 ﻿## 移植（Porting
 
 取自列表存档 http://lists.arm.linux.org.uk/pipermail/linux-arm-kernel/2001-July/004064.html
 
-### 初始定义
+## 初始定义
 
 
 以下符号定义依赖于你了解 __virt_to_phys() 为你的机器所做的转换。此宏将传入的虚拟地址转换为物理地址通常，它简单地是：

@@ -19,6 +19,20 @@ CREDENTIAL = "xadmin"
 PASSWORD = "o2oa@2022"
 
 
+class JavaSideUnavailable(RuntimeError):
+    """Java 参考容器不可用/未就绪。
+
+    与 CI workflow 中 `Wait for o2server readiness` 步骤的既定语义保持一致：
+    该步骤超时后只发 `::warning::` 并明确写明
+    "behavior comparison will SKIP Java side"，不判定失败。
+    因此本脚本在未显式要求初始化（`--init`）时，遇到 Java 侧不可用应当
+    同样优雅跳过，而不是 SystemExit 掉整个 job。
+
+    o2server 是冷启动约 10 分钟的 Java 容器，在 GitHub runner 上按 30 分钟
+    的 job 超时常常无法就绪——旧实现会因此让 behavior-compare 必然失败。
+    """
+
+
 def call(method: str, path: str, body: dict | None = None, token: str | None = None):
     data = json.dumps(body).encode() if body is not None else None
     headers = {"Content-Type": "application/json"}
@@ -60,7 +74,7 @@ def login() -> str:
     status, payload = call("POST", "/x_organization_assemble_authentication/jaxrs/authentication",
                            {"credential": CREDENTIAL, "password": PASSWORD})
     if status != 200 or payload.get("type") != "success":
-        raise SystemExit(f"LOGIN FAILED {status} {str(payload)[:200]}")
+        raise JavaSideUnavailable(f"LOGIN FAILED {status} {str(payload)[:200]}")
     print("login ok")
     return payload["data"]["token"]
 
@@ -214,7 +228,16 @@ def seed_process_form(token: str) -> None:
 def main() -> int:
     if "--init" in sys.argv:
         init_fresh_container()
-    token = login()
+    try:
+        token = login()
+    except JavaSideUnavailable as e:
+        if "--init" in sys.argv or "--required" in sys.argv:
+            # 显式要求 Java 侧时必须就绪，保持严格语义。
+            raise SystemExit(str(e))
+        print(f"::warning::Java side unavailable ({e}); skipping Java-side seed. "
+              "Behavior comparison will run with Java side absent "
+              "(same contract as the 'Wait for o2server readiness' CI step).")
+        return 0
     seed_testadmin(token)
     seed_org_domain(token)
     if "--process-form" in sys.argv:

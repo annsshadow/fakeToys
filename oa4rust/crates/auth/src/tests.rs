@@ -64,7 +64,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("POST")
-                    .uri("/jaxrs/authentication/refresh")
+                    .uri("/api/authentication/refresh")
                     .header("cookie", "oa4rust_session=old")
                     .body(Body::empty())
                     .unwrap(),
@@ -84,7 +84,7 @@ mod tests {
                 .oneshot(
                     Request::builder()
                         .method("DELETE")
-                        .uri("/jaxrs/authentication")
+                        .uri("/api/authentication")
                         .body(Body::empty())
                         .unwrap(),
                 )
@@ -118,7 +118,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("POST")
-                    .uri("/jaxrs/authentication/refresh")
+                    .uri("/api/authentication/refresh")
                     .header("authorization", "Bearer good")
                     .body(Body::empty())
                     .unwrap(),
@@ -139,7 +139,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("POST")
-                    .uri("/jaxrs/authentication/refresh")
+                    .uri("/api/authentication/refresh")
                     .header("cookie", "oa4rust_session=good")
                     .header("authorization", "Bearer good")
                     .body(Body::empty())
@@ -155,7 +155,7 @@ mod tests {
     }
 
     // U12 matrix #4: current-user credential semantics. No credentials at all ->
-    // anonymous 200 (Java probe compatibility); invalid credentials -> 401, and an
+    // anonymous 200 (o2server probe compatibility); invalid credentials -> 401, and an
     // invalid cookie never falls back to a valid Bearer.
     #[tokio::test]
     async fn test_whoami_no_credentials_is_anonymous() {
@@ -167,7 +167,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("GET")
-                    .uri("/jaxrs/authentication/who")
+                    .uri("/api/authentication/who")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -191,7 +191,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("GET")
-                    .uri("/jaxrs/authentication/who")
+                    .uri("/api/authentication/who")
                     .header("cookie", "oa4rust_session=bogus")
                     .body(Body::empty())
                     .unwrap(),
@@ -204,7 +204,7 @@ mod tests {
     #[tokio::test]
     async fn test_whoami_invalid_cookie_with_valid_bearer_is_unauthorized() {
         let pool = shared::testing::test_pool();
-        let mut manager = SessionManager::new();
+        let manager = SessionManager::new();
         manager
             .create_session("user".to_string(), "good".to_string())
             .await
@@ -215,7 +215,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("GET")
-                    .uri("/jaxrs/authentication/who")
+                    .uri("/api/authentication/who")
                     .header("cookie", "oa4rust_session=bogus")
                     .header("authorization", "Bearer good")
                     .body(Body::empty())
@@ -267,7 +267,7 @@ mod tests {
         let result: ActionResult<String> = ActionResult::success("test".to_string());
         assert_eq!(result.r#type, Some("success".to_string()));
         assert_eq!(result.data, Some("test".to_string()));
-        // Java 成功信封 message 恒为空串（2026-08-25 行为对比结论）
+        // o2server 成功信封 message 恒为空串（2026-08-25 行为对比结论）
         assert_eq!(result.message, Some(String::new()));
     }
 
@@ -284,7 +284,7 @@ mod tests {
             ActionResult::success(serde_json::json!({"key": "value"}));
         assert_eq!(result.r#type, Some("success".to_string()));
         assert!(result.data.is_some());
-        // Java 成功信封元数据字段恒填充（2026-08-25 行为对比结论）
+        // o2server 成功信封元数据字段恒填充（2026-08-25 行为对比结论）
         assert_eq!(result.message, Some(String::new()));
         assert!(result.date.is_some());
         assert_eq!(result.spent, Some(0));
@@ -464,7 +464,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/oidc/authorize?client_id=test&redirect_uri=http://localhost&response_type=code&scope=openid&state=abc")
+                    .uri("/api/authentication/oidc/authorize?client_id=test&redirect_uri=http://localhost&response_type=code&scope=openid&state=abc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -486,7 +486,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/oidc/callback?code=testcode&state=abc")
+                    .uri("/api/authentication/oidc/callback?code=testcode&state=abc")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -918,7 +918,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/unit/list")
+                    .uri("/api/authentication/unit/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -947,7 +947,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/role/list")
+                    .uri("/api/authentication/role/list")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -976,7 +976,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/code/credential/admin")
+                    .uri("/api/authentication/code/credential/admin")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1003,28 +1003,36 @@ mod tests {
         let client = pool.get().await.ok();
 
         // Seed a test user with a known bcrypt password hash
+        // 注意：此处不可吞掉 execute 的错误。若 seed 静默失败，后续登录必然 401，
+        // 而失败现场不会留下任何线索（曾因此耗费大量排查时间）。
         if let Some(c) = &client {
-            let _ = c
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
-                     VALUES ($1, $2, $3, $4, false, NULL) \
-                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-                    &[
-                        &"person-it-login",
-                        &"it-login",
-                        &"IT Login User",
-                        &format!("{}{}", crate::password::BCRYPT_PREFIX, bcrypt::hash("testpass123", bcrypt::DEFAULT_COST).unwrap().as_str()),
-                    ],
-                )
-                .await;
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                 VALUES ($1, $2, $3, $4, false, NULL) \
+                 ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                &[
+                    &"person-it-login",
+                    &"it-login",
+                    &"IT Login User",
+                    &format!(
+                        "{}{}",
+                        crate::password::BCRYPT_PREFIX,
+                        bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                            .unwrap()
+                            .as_str()
+                    ),
+                ],
+            )
+            .await
+            .expect("seed auth_person for it-login failed");
 
             // 清理 auth_token_threshold 中可能残留的测试数据，避免阈值拦截登录
-            let _ = c
-                .execute(
-                    "DELETE FROM auth_token_threshold WHERE person_unique = $1",
-                    &[&"it-login"],
-                )
-                .await;
+            c.execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique = $1",
+                &[&"it-login"],
+            )
+            .await
+            .expect("cleanup auth_token_threshold for it-login failed");
         }
 
         let rate_limiter = RateLimiter::new();
@@ -1039,7 +1047,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/login")
+                    .uri("/api/authentication/login")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_vec(&body).unwrap()))
@@ -1121,7 +1129,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/login")
+                    .uri("/api/authentication/login")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_vec(&body).unwrap()))
@@ -1148,25 +1156,25 @@ mod tests {
         let client = pool.get().await.ok();
 
         if let Some(c) = &client {
-            let _ = c
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
-                     VALUES ($1, $2, $3, $4, false, NULL) \
-                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-                    &[
-                        &"person-2fa-phase1",
-                        &"2fa-phase1-user",
-                        &"2FA Phase1 User",
-                        &format!(
-                            "{}{}",
-                            crate::password::BCRYPT_PREFIX,
-                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
-                                .unwrap()
-                                .as_str()
-                        ),
-                    ],
-                )
-                .await;
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                 VALUES ($1, $2, $3, $4, false, NULL) \
+                 ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                &[
+                    &"person-2fa-phase1",
+                    &"2fa-phase1-user",
+                    &"2FA Phase1 User",
+                    &format!(
+                        "{}{}",
+                        crate::password::BCRYPT_PREFIX,
+                        bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                            .unwrap()
+                            .as_str()
+                    ),
+                ],
+            )
+            .await
+            .expect("seed auth_person for 2fa-phase1-user failed");
         }
 
         let rate_limiter = RateLimiter::new();
@@ -1181,7 +1189,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/two_factor")
+                    .uri("/api/authentication/two_factor")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_vec(&body).unwrap()))
@@ -1215,25 +1223,25 @@ mod tests {
         let client = pool.get().await.ok();
 
         if let Some(c) = &client {
-            let _ = c
-                .execute(
-                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
-                     VALUES ($1, $2, $3, $4, false, NULL) \
-                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-                    &[
-                        &"person-2fa-full",
-                        &"2fa-full-user",
-                        &"2FA Full User",
-                        &format!(
-                            "{}{}",
-                            crate::password::BCRYPT_PREFIX,
-                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
-                                .unwrap()
-                                .as_str()
-                        ),
-                    ],
-                )
-                .await;
+            c.execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                 VALUES ($1, $2, $3, $4, false, NULL) \
+                 ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                &[
+                    &"person-2fa-full",
+                    &"2fa-full-user",
+                    &"2FA Full User",
+                    &format!(
+                        "{}{}",
+                        crate::password::BCRYPT_PREFIX,
+                        bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                            .unwrap()
+                            .as_str()
+                    ),
+                ],
+            )
+            .await
+            .expect("seed auth_person for 2fa-full-user failed");
         }
 
         let rate_limiter = RateLimiter::new();
@@ -1249,7 +1257,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/two_factor")
+                    .uri("/api/authentication/two_factor")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_vec(&body).unwrap()))
@@ -1270,7 +1278,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/code/credential/2fa-full-user")
+                    .uri("/api/authentication/code/credential/2fa-full-user")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -1291,7 +1299,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/code")
+                    .uri("/api/authentication/code")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_vec(&body).unwrap()))
@@ -1332,7 +1340,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/authentication/code")
+                    .uri("/api/authentication/code")
                     .method("POST")
                     .header("content-type", "application/json")
                     .body(Body::from(serde_json::to_vec(&body).unwrap()))

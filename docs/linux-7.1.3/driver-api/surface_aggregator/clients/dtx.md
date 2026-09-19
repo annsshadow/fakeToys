@@ -1,3 +1,5 @@
+# dtx
+
 ﻿
 ## 用户空间 DTX（剪贴板分离系统）接
 
@@ -269,7 +271,7 @@ EC 发送的未知状态或错误码由驱动归入 `UNKNOWN` 类别，并可能
 
 各事件的更多细节
 
-##### ``SDTX_EVENT_REQUEST``
+#### ``SDTX_EVENT_REQUEST``
 
 
 当分离过程被用户启动或（如果正在进行）被中止时发送，无论是通过按下分离按钮还是
@@ -472,7 +474,7 @@ EC 发送的未知状态或错误码由驱动归入 `UNKNOWN` 类别，并可能
      - `GET_LATCH_STATUS`
      - 获取当前设备闩锁状态
 
-##### ``SDTX_IOCTL_EVENTS_ENABLE``
+#### ``SDTX_IOCTL_EVENTS_ENABLE``
 
 
 定义`_IO(0xA5, 0x22)`

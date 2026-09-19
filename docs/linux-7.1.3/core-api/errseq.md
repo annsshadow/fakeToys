@@ -1,3 +1,5 @@
+# errseq
+
 ﻿## errseq_t 数据类型
 
 

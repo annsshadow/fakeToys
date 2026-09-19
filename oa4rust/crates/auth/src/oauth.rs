@@ -193,7 +193,7 @@ async fn check_dingtalk_health() -> bool {
 pub fn fallback_auth_url() -> Option<&'static str> {
     std::env::var("OAUTH_FALLBACK_URL")
         .ok()
-        .or_else(|| Some("/jaxrs/authentication".to_string()))
+        .or_else(|| Some("/api/authentication".to_string()))
         .map(|s| Box::leak(s.into_boxed_str()))
         .map(|s: &mut str| s as &str)
 }
@@ -459,7 +459,7 @@ async fn login_or_create_user(
     ))
 }
 
-/// GET /jaxrs/authentication/oauth/list —— 可用第三方登录提供方
+/// GET /api/authentication/oauth/list —— 可用第三方登录提供方
 #[allow(non_snake_case)]
 pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
     let providers = vec![
@@ -475,7 +475,7 @@ pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
         }),
     ];
     let total_providers = providers.len();
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(providers),
         total_providers as i64,
         0,
@@ -500,7 +500,7 @@ fn provider_authorize_url(name: &str, config: &OAuthConfig) -> String {
     }
 }
 
-/// GET /jaxrs/authentication/oauth/qywx/config
+/// GET /api/authentication/oauth/qywx/config
 #[allow(non_snake_case)]
 pub async fn oauth_qywx_config() -> Result<Json<ActionResult<Value>>, AppError> {
     let config = qywx_config();
@@ -511,7 +511,7 @@ pub async fn oauth_qywx_config() -> Result<Json<ActionResult<Value>>, AppError> 
     }))))
 }
 
-/// GET /jaxrs/authentication/oauth/dingding/config
+/// GET /api/authentication/oauth/dingding/config
 #[allow(non_snake_case)]
 pub async fn oauth_dingding_config() -> Result<Json<ActionResult<Value>>, AppError> {
     let config = dingding_config();
@@ -522,7 +522,7 @@ pub async fn oauth_dingding_config() -> Result<Json<ActionResult<Value>>, AppErr
     }))))
 }
 
-/// GET /jaxrs/authentication/oauth/name/{name} —— 按名称分发到对应提供方配置
+/// GET /api/authentication/oauth/name/{name} —— 按名称分发到对应提供方配置
 #[allow(non_snake_case)]
 pub async fn oauth_name_config(
     Path(name): Path<String>,
@@ -561,7 +561,7 @@ pub struct OAuthStateQuery {
     code_verifier: Option<String>,
 }
 
-/// GET /jaxrs/authentication/oauth/login/qywx/code/{code}
+/// GET /api/authentication/oauth/login/qywx/code/{code}
 #[allow(non_snake_case)]
 pub async fn oauth_login_qywx(
     pool: Extension<Pool>,
@@ -582,7 +582,7 @@ pub async fn oauth_login_qywx(
     provider_login(pool, session_manager, QYWX_NAME, &code).await
 }
 
-/// GET /jaxrs/authentication/oauth/login/dingding/code/{code}
+/// GET /api/authentication/oauth/login/dingding/code/{code}
 #[allow(non_snake_case)]
 pub async fn oauth_login_dingding(
     pool: Extension<Pool>,
@@ -603,7 +603,7 @@ pub async fn oauth_login_dingding(
     provider_login(pool, session_manager, DINGDING_NAME, &code).await
 }
 
-/// GET /jaxrs/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}
+/// GET /api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}
 #[allow(non_snake_case)]
 pub async fn oauth_login_name(
     pool: Extension<Pool>,
@@ -625,11 +625,11 @@ pub async fn oauth_login_name(
     provider_login(pool, session_manager, &name, &code).await
 }
 
-/// GET /jaxrs/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}
+/// GET /api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}
 ///
 /// 第三方绑定/登录一体化：OAuth 授权码为有效凭证，交换后绑定或创建本地用户。
 /// 注意：与 /login/name/... 行为一致（第三方账号不存在时自动创建），
-/// 与扫码绑定（/jaxrs/authentication/bind）的"确认后签发"语义不同。
+/// 与扫码绑定（/api/authentication/bind）的"确认后签发"语义不同。
 #[allow(non_snake_case)]
 pub async fn oauth_bind_name(
     pool: Extension<Pool>,

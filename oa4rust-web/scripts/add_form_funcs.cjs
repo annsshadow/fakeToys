@@ -49,7 +49,7 @@ const lines = [
   '}',
   'async function submitPreview() {',
   '  if (!validatePreview()) return',
-  '  try { await api.post("/jaxrs/form/submit", { formFlag: currentForm.value.flag, data: previewData.value }); alert("提交成功"); previewData.value = {}; previewErrors.value = {} }',
+  '  try { await api.post("/api/form/submit", { formFlag: currentForm.value.flag, data: previewData.value }); alert("提交成功"); previewData.value = {}; previewErrors.value = {} }',
   '  catch(e) { alert("提交失败: " + (e?.message ?? "")) }',
   '}',
   'function exportFormJson() { return JSON.stringify(currentForm.value, null, 2) }',

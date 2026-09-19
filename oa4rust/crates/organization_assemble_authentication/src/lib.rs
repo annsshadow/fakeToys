@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
-pub const JAVA_BASE: &str = "/jaxrs/organization_assemble_authentication";
+pub const API_BASE: &str = "/api/organization_assemble_authentication";
 pub mod routes;
 pub mod u2;
 
@@ -126,7 +126,7 @@ fn bind_store() -> &'static OrganizationBindStore {
 // 通用扫码绑定：生成 meta（需已登录）
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// POST /jaxrs/organization/assemble/authentication/bind/{provider}/init
+/// POST /api/organization/assemble/authentication/bind/{provider}/init
 ///
 /// 已登录用户请求绑定第三方账号，生成 meta 供后续回调使用
 #[allow(non_snake_case)]
@@ -225,7 +225,7 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
         .ok_or(AppError::Internal)
 }
 
-/// GET /jaxrs/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}
+/// GET /api/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}
 ///
 /// 企业微信 OAuth 回调：用 code 换取 userid，绑定到 meta 对应的用户
 #[allow(non_snake_case)]
@@ -258,7 +258,7 @@ pub async fn qiyeweixin_bind_callback(
     }))))
 }
 
-/// POST /jaxrs/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm
+/// POST /api/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm
 ///
 /// 客户端确认绑定：创建/更新 auth_person 的 unique_id
 #[allow(non_snake_case)]
@@ -322,7 +322,7 @@ pub async fn qiyeweixin_bind_confirm(
     }
 }
 
-/// GET /jaxrs/organization/assemble/authentication/qiyeweixin/login/{code}
+/// GET /api/organization/assemble/authentication/qiyeweixin/login/{code}
 ///
 /// 企业微信扫码登录：用 code 换取 userid → 查 auth_person → 签发会话
 #[allow(non_snake_case)]
@@ -436,7 +436,7 @@ async fn dingding_exchange_code(config: &(String, String), code: &str) -> Result
         .ok_or(AppError::Internal)
 }
 
-/// GET /jaxrs/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}
+/// GET /api/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}
 #[allow(non_snake_case)]
 pub async fn dingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
@@ -459,7 +459,7 @@ pub async fn dingding_bind_callback(
     }))))
 }
 
-/// POST /jaxrs/organization/assemble/authentication/dingding/bind/{meta}/confirm
+/// POST /api/organization/assemble/authentication/dingding/bind/{meta}/confirm
 #[allow(non_snake_case)]
 pub async fn dingding_bind_confirm(
     pool: Extension<Pool>,
@@ -515,7 +515,7 @@ pub async fn dingding_bind_confirm(
     }
 }
 
-/// GET /jaxrs/organization/assemble/authentication/dingding/login/{code}
+/// GET /api/organization/assemble/authentication/dingding/login/{code}
 #[allow(non_snake_case)]
 pub async fn dingding_login(
     pool: Extension<Pool>,
@@ -576,7 +576,7 @@ pub async fn dingding_login(
 
 const ZWDINGDING_UNIQUE_PREFIX: &str = "zwding_";
 
-/// GET /jaxrs/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}
+/// GET /api/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
@@ -639,7 +639,7 @@ pub async fn zhengwudingding_bind_callback(
     }))))
 }
 
-/// POST /jaxrs/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm
+/// POST /api/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_bind_confirm(
     pool: Extension<Pool>,
@@ -695,7 +695,7 @@ pub async fn zhengwudingding_bind_confirm(
     }
 }
 
-/// GET /jaxrs/organization/assemble/authentication/zhengwudingding/login/{code}
+/// GET /api/organization/assemble/authentication/zhengwudingding/login/{code}
 #[allow(non_snake_case)]
 pub async fn zhengwudingding_login(
     pool: Extension<Pool>,
@@ -978,168 +978,168 @@ pub async fn andfx_moa_sso_token_enter(
 
 pub fn organization_assemble_authentication_router() -> Router {
     Router::new()
-        .route("/jaxrs/organization/assemble/authentication/person/{id}/icon", get(person_id_icon))
-        .route("/jaxrs/organization/assemble/authentication/identity/{id}", get(identity_id))
+        .route("/api/organization/assemble/authentication/person/{id}/icon", get(person_id_icon))
+        .route("/api/organization/assemble/authentication/identity/{id}", get(identity_id))
         // 企业微信
         .route(
-            "/jaxrs/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}",
+            "/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/callback/{code}",
             get(qiyeweixin_bind_callback),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm",
+            "/api/organization/assemble/authentication/qiyeweixin/bind/{meta}/confirm",
             post(qiyeweixin_bind_confirm),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/qiyeweixin/login/{code}",
+            "/api/organization/assemble/authentication/qiyeweixin/login/{code}",
             get(qiyeweixin_login),
         )
         // 钉钉
         .route(
-            "/jaxrs/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}",
+            "/api/organization/assemble/authentication/dingding/bind/{meta}/callback/{code}",
             get(dingding_bind_callback),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/dingding/bind/{meta}/confirm",
+            "/api/organization/assemble/authentication/dingding/bind/{meta}/confirm",
             post(dingding_bind_confirm),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/dingding/login/{code}",
+            "/api/organization/assemble/authentication/dingding/login/{code}",
             get(dingding_login),
         )
         // 政务钉钉
         .route(
-            "/jaxrs/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}",
+            "/api/organization/assemble/authentication/zhengwudingding/bind/{meta}/callback/{code}",
             get(zhengwudingding_bind_callback),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm",
+            "/api/organization/assemble/authentication/zhengwudingding/bind/{meta}/confirm",
             post(zhengwudingding_bind_confirm),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/zhengwudingding/login/{code}",
+            "/api/organization/assemble/authentication/zhengwudingding/login/{code}",
             get(zhengwudingding_login),
         )
-        // ══ Java x_organization_assemble_authentication 契约补齐（u2）═════
+        // ══ o2server x_organization_assemble_authentication 契约补齐（u2）═════
         // AuthenticationAction（类路径 authentication）
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/mode",
+            "/api/organization/assemble/authentication/authentication/mode",
             get(u2::mode),
         )
-        .route("/jaxrs/organization/assemble/authentication/authentication/mockdeletetoget", get(u2::logout_get))
+        .route("/api/organization/assemble/authentication/authentication/mockdeletetoget", get(u2::logout_get))
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication",
+            "/api/organization/assemble/authentication/authentication",
             post(auth::login).delete(auth::logout).get(auth::whoami),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/captcha",
+            "/api/organization/assemble/authentication/authentication/captcha",
             post(u2::captcha_login),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/captcha/width/{width}/height/{height}",
+            "/api/organization/assemble/authentication/authentication/captcha/width/{width}/height/{height}",
             get(u2::captcha_with_size_alias),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/captchaRSAPublicKey",
+            "/api/organization/assemble/authentication/authentication/captchaRSAPublicKey",
             get(u2::captcha_rsa_public_key),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/two/factory/login",
+            "/api/organization/assemble/authentication/authentication/two/factory/login",
             post(auth::two_factor::two_factor_login),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/code",
+            "/api/organization/assemble/authentication/authentication/code",
             post(auth::code),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/code/credential/{credential}",
+            "/api/organization/assemble/authentication/authentication/code/credential/{credential}",
             get(auth::code_send),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/safe/logout",
+            "/api/organization/assemble/authentication/authentication/safe/logout",
             get(u2::safe_logout_get),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/check/token",
+            "/api/organization/assemble/authentication/authentication/check/token",
             post(auth::check_token::check_token),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/switchuser",
+            "/api/organization/assemble/authentication/authentication/switchuser",
             put(auth::switch_user::switch_user),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/switchuser/mockputtopost",
+            "/api/organization/assemble/authentication/authentication/switchuser/mockputtopost",
             post(auth::switch_user::switch_user),
         )
         // BindAction
         .route(
-            "/jaxrs/organization/assemble/authentication/bind/list",
+            "/api/organization/assemble/authentication/bind/list",
             get(u2::bind_list),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/bind/meta/{meta}",
+            "/api/organization/assemble/authentication/bind/meta/{meta}",
             get(auth::bind::bind_poll).post(auth::bind::bind_confirm),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/authentication/bind",
+            "/api/organization/assemble/authentication/authentication/bind",
             get(auth::bind::bind),
         )
         // SsoAction
         .route(
-            "/jaxrs/organization/assemble/authentication/sso/encrypt/client/{client}/key/{key}/credential/{credential}",
+            "/api/organization/assemble/authentication/sso/encrypt/client/{client}/key/{key}/credential/{credential}",
             get(u2::sso_encrypt_get),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/sso",
+            "/api/organization/assemble/authentication/sso",
             post(auth::sso::sso_post_login),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/sso/encrypt",
+            "/api/organization/assemble/authentication/sso/encrypt",
             post(auth::sso::sso_encrypt),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/sso/client/{client}/token/{token}",
+            "/api/organization/assemble/authentication/sso/client/{client}/token/{token}",
             get(auth::sso::sso_get_login),
         )
         // DingdingAction / ZhengwuDingdingAction
         .route(
-            "/jaxrs/organization/assemble/authentication/dingding/info",
+            "/api/organization/assemble/authentication/dingding/info",
             post(u2::dingding_info),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/dingding/code/{code}",
+            "/api/organization/assemble/authentication/dingding/code/{code}",
             get(dingding_login),
         )
         .route(
-            "/jaxrs/organization/assemble/authentication/zhengwudingding/info",
+            "/api/organization/assemble/authentication/zhengwudingding/info",
             post(u2::zhengwudingding_info_post),
         )
         // ---- plan002 U2 gaps: oauth / qiyeweixin info/sign ----
-        .route("/jaxrs/organization/assemble/authentication/oauth/auth", get(oauth_auth))
-        .route("/jaxrs/organization/assemble/authentication/oauth/generate/code", post(oauth_generate_code))
-        .route("/jaxrs/organization/assemble/authentication/oauth/info", get(oauth_info_get).post(oauth_info_post))
-        .route("/jaxrs/organization/assemble/authentication/oauth/info/jira", get(oauth_info_jira_get).post(oauth_info_jira_post))
-        .route("/jaxrs/organization/assemble/authentication/oauth/token", get(oauth_token_get).post(oauth_token_post))
-        .route("/jaxrs/organization/assemble/authentication/oauth/token/jira", post(oauth_token_jira_post))
-        .route("/jaxrs/organization/assemble/authentication/qiyeweixin/info/sign", post(qiyeweixin_info_sign))
+        .route("/api/organization/assemble/authentication/oauth/auth", get(oauth_auth))
+        .route("/api/organization/assemble/authentication/oauth/generate/code", post(oauth_generate_code))
+        .route("/api/organization/assemble/authentication/oauth/info", get(oauth_info_get).post(oauth_info_post))
+        .route("/api/organization/assemble/authentication/oauth/info/jira", get(oauth_info_jira_get).post(oauth_info_jira_post))
+        .route("/api/organization/assemble/authentication/oauth/token", get(oauth_token_get).post(oauth_token_post))
+        .route("/api/organization/assemble/authentication/oauth/token/jira", post(oauth_token_jira_post))
+        .route("/api/organization/assemble/authentication/qiyeweixin/info/sign", post(qiyeweixin_info_sign))
         // Additional OAuth and platform login routes
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/list", get(oauth_list))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/qywx/config", get(oauth_qywx_config))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/dingding/config", get(oauth_dingding_config))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/name/{name}", get(oauth_name))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}", get(oauth_login_name_code_redirecturi))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/login/qywx/code/{code}", get(oauth_login_qywx_code))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/login/dingding/code/{code}", get(oauth_login_dingding_code))
-        .route("/jaxrs/organization/assemble/authentication/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}", get(oauth_bind_name_code_redirecturi))
-        .route("/jaxrs/organization/assemble/authentication/mpweixin/login/code/{code}", get(mpweixin_login_code))
-        .route("/jaxrs/organization/assemble/authentication/mpweixin/bind/openid/{openid}", get(mpweixin_bind_openid))
-        .route("/jaxrs/organization/assemble/authentication/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
-        .route("/jaxrs/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}", post(mpweixin_menu_test_send_to))
-        .route("/jaxrs/organization/assemble/authentication/qiyeweixin/code/{code}", get(qiyeweixin_code))
-        .route("/jaxrs/organization/assemble/authentication/qiyeweixin/update/person/detail/{code}", get(qiyeweixin_update_person_detail))
-        .route("/jaxrs/organization/assemble/authentication/welink/code/{code}", get(welink_code))
-        .route("/jaxrs/organization/assemble/authentication/zhengwudingding/code/{code}", get(zhengwudingding_code))
-        .route("/jaxrs/organization/assemble/authentication/authentication/bind/meta/{meta}", get(authentication_bind_meta_get).post(authentication_bind_meta_post))
-        .route("/jaxrs/organization/assemble/authentication/andfx/moa/sso/token/{token}/enter/{enterId}", get(andfx_moa_sso_token_enter))
+        .route("/api/organization/assemble/authentication/authentication/oauth/list", get(oauth_list))
+        .route("/api/organization/assemble/authentication/authentication/oauth/qywx/config", get(oauth_qywx_config))
+        .route("/api/organization/assemble/authentication/authentication/oauth/dingding/config", get(oauth_dingding_config))
+        .route("/api/organization/assemble/authentication/authentication/oauth/name/{name}", get(oauth_name))
+        .route("/api/organization/assemble/authentication/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}", get(oauth_login_name_code_redirecturi))
+        .route("/api/organization/assemble/authentication/authentication/oauth/login/qywx/code/{code}", get(oauth_login_qywx_code))
+        .route("/api/organization/assemble/authentication/authentication/oauth/login/dingding/code/{code}", get(oauth_login_dingding_code))
+        .route("/api/organization/assemble/authentication/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}", get(oauth_bind_name_code_redirecturi))
+        .route("/api/organization/assemble/authentication/mpweixin/login/code/{code}", get(mpweixin_login_code))
+        .route("/api/organization/assemble/authentication/mpweixin/bind/openid/{openid}", get(mpweixin_bind_openid))
+        .route("/api/organization/assemble/authentication/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
+        .route("/api/organization/assemble/authentication/mpweixin/menu/test/send/to/{person}", post(mpweixin_menu_test_send_to))
+        .route("/api/organization/assemble/authentication/qiyeweixin/code/{code}", get(qiyeweixin_code))
+        .route("/api/organization/assemble/authentication/qiyeweixin/update/person/detail/{code}", get(qiyeweixin_update_person_detail))
+        .route("/api/organization/assemble/authentication/welink/code/{code}", get(welink_code))
+        .route("/api/organization/assemble/authentication/zhengwudingding/code/{code}", get(zhengwudingding_code))
+        .route("/api/organization/assemble/authentication/authentication/bind/meta/{meta}", get(authentication_bind_meta_get).post(authentication_bind_meta_post))
+        .route("/api/organization/assemble/authentication/andfx/moa/sso/token/{token}/enter/{enterId}", get(andfx_moa_sso_token_enter))
 }
 
 #[axum::debug_handler]
@@ -1153,7 +1153,7 @@ pub async fn person_id_icon(
         .query_one("SELECT icon_url FROM auth_person WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::NotFound)?;
-    let icon_url: String = row.get("icon_url");
+    let icon_url: String = row.get::<_, Option<String>>("icon_url").unwrap_or_default();
     let data = Value::Object(serde_json::Map::from_iter([
         ("iconUrl".to_string(), Value::String(icon_url)),
         ("id".to_string(), Value::String(id)),
@@ -1178,7 +1178,10 @@ pub async fn identity_id(
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("unit_id".to_string(), Value::String(row.get("unit_id"))),
+        (
+            "unit_id".to_string(),
+            Value::String(row.get::<_, Option<String>>("unit_id").unwrap_or_default()),
+        ),
     ]));
     Ok(Json(ActionResult::success(data)))
 }
@@ -1297,9 +1300,9 @@ pub async fn oauth_token_get(
         Some(r) => {
             let data = serde_json::json!({
                 "access_token": r.get::<_, String>("id"),
-                "client": r.get::<_, String>("client"),
+                "client": r.get::<_, Option<String>>("client").unwrap_or_default(),
                 "personId": r.get::<_, Option<String>>("person_id"),
-                "scope": r.get::<_, String>("scope"),
+                "scope": r.get::<_, Option<String>>("scope").unwrap_or_default(),
             });
             ActionResult::success(data)
         }

@@ -1,5 +1,5 @@
 
-## Continuidade do projeto do kernel Linux
+# Continuidade do projeto do kernel Linux
 
 
 O projeto de desenvolvimento do kernel Linux é amplamente distribuído, com mais de

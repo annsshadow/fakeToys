@@ -99,17 +99,17 @@ pub async fn get_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 
 /// 创建组织核心服务路由
 /// 注册以下路由：
-/// - /jaxrs/organization/core/express/status - 服务状态
-/// - /jaxrs/organization/core/express/sync - 同步组织数据
-/// - /jaxrs/organization/core/express/config - 服务配置
+/// - /api/organization/core/express/status - 服务状态
+/// - /api/organization/core/express/sync - 同步组织数据
+/// - /api/organization/core/express/config - 服务配置
 pub fn organization_core_express_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/organization/core/express/status", get(get_status))
+        .route("/api/organization/core/express/status", get(get_status))
         .route(
-            "/jaxrs/organization/core/express/sync",
+            "/api/organization/core/express/sync",
             get(sync_organization),
         )
-        .route("/jaxrs/organization/core/express/config", get(get_config))
+        .route("/api/organization/core/express/config", get(get_config))
         .layer(Extension(pool))
 }
 

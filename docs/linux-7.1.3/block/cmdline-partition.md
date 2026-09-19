@@ -1,3 +1,5 @@
+# cmdline-partition
+
 ﻿## 嵌入式设备命令行分区解析
 
 
@@ -32,6 +34,7 @@ ro
     'blkdevparts=mmcblk0:1G(data0),1G(data1),-;mmcblk0boot0:1m(boot)ro,-(kernel)'
 
   dmesg::
+
 
     mmcblk0: p1(data0) p2(data1) p3()
     mmcblk0boot0: p1(boot) p2(kernel)

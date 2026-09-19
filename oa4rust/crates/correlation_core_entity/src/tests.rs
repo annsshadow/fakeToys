@@ -24,7 +24,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/list")
+                    .uri("/api/correlation/core/entity/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -44,7 +44,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/list/by/user/user-001")
+                    .uri("/api/correlation/core/entity/list/by/user/user-001")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -93,7 +93,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/create")
+                    .uri("/api/correlation/core/entity/create")
                     .method(axum::http::Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"sourceType":"user","sourceId":"u1","targetType":"doc","targetId":"d1","weight":5}"#))
@@ -117,7 +117,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/correlation/core/entity/delete/corr-test-001")
+                    .uri("/api/correlation/core/entity/delete/corr-test-001")
                     .method(axum::http::Method::DELETE)
                     .body(Body::empty())
                     .unwrap(),

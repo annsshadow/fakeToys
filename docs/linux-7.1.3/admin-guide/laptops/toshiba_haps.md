@@ -1,3 +1,5 @@
+# toshiba_haps
+
 ﻿## Toshiba 硬盘主动保护传感器（HDD Active Protection Sensor
 
 内核驱动：toshiba_haps
@@ -12,7 +14,7 @@ Author: Azael Avalos <coproscefalo@gmail.com>
    4. 支持的设   5. 用法
 
 
-### 1. 描述
+## 1. 描述
 
 
 该驱动为各种 Toshiba 笔记本电脑中配备的加速度计提供支持，官方称之"Toshiba HDD Protection - Shock Sensor"（东芝硬盘保护——冲击传感器），并能自动检测带有该设备的笔记本电脑Windows 上，Toshiba 提供的软件会监控该设备，并在突然移动或剧烈震动时提供自动的硬盘保护（磁头卸载）。然而，该驱动仅通过一sysfs 文件提供通知，以便用户空间工具或守护进程做出相应动作，同时还提供一sysfs 文件来设置期望的保护级别或传感器灵敏度

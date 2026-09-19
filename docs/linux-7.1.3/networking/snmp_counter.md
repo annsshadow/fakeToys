@@ -1,3 +1,5 @@
+# snmp_counter
+
 ﻿## SNMP 计数
 
 
@@ -328,6 +330,7 @@ socket Establish CloseWait 状态收到了一RST 报文
 
   It is split into a fast path and a slow path. The fast path is
   disabled when:
+
 
   - A zero window was announced from us
   - zero window probing
@@ -861,7 +864,7 @@ IP 层传递给 ICMP 层，因此 IpInDelivers 增加 1。ping 的默认数据�
 
 因此 IpExtInOctets IpExtOutOctets 均为 20+16+48=84
 
-### TCP 三次握手
+## TCP 三次握手
 ```
 
   nstatuser@nstat-b:~$ nc -lknv 0.0.0.0 9000
@@ -1027,7 +1030,7 @@ ACK，当内核处理这个 ACK 时，快速路径尚未启用，因此ACK 被�
 在服务器端第二次 nstat 输出中，快速路径已启用，并且从客户端收到的
 报文符合快速路径条件，因此它被计入 'TcpExtTCPHPHits'
 
-### TcpExtTCPAbortOnClose
+## TcpExtTCPAbortOnClose
 ```
 
   import socket
@@ -1295,7 +1298,7 @@ TcpExtTCPAbortOnMemory 的变化
 第一个报文仍在接收队列中。因TCP 层合并了这两个报文，我们可以看到
 TcpExtTCPRcvCoalesce 增加1
 
-### TcpExtListenOverflows 涓?TcpExtListenDrops
+## TcpExtListenOverflows 涓?TcpExtListenDrops
 ```
 
   nstatuser@nstat-b:~$ nc -lkv 0.0.0.0 9000
@@ -1342,7 +1345,7 @@ TcpExtListenOverflows TcpExtListenDrops 均为 4。如果第 4 nc
 nstat 之间的时间间隔更长，TcpExtListenOverflows TcpExtListenDrops 
 值会更大，因为第 4 nc SYN 被丢弃了，客户端正在重试
 
-### IpInAddrErrors、IpExtInNoRoutes IpOutNoRoutes
+## IpInAddrErrors、IpExtInNoRoutes IpOutNoRoutes
 
 server A IP address: 192.168.122.250
 server B IP address: 192.168.122.251
@@ -1442,7 +1445,7 @@ server B 收到这样的报文时，它可能会向 server A 发送一ICMP Redir
 我们已在 server B 上删除了默认路由。server B 找不到通往 8.8.8.8 的路由，
 因此 server B 增加IpOutNoRoutes
 
-### TcpExtTCPACKSkippedSynRecv
+## TcpExtTCPACKSkippedSynRecv
 
 在本测试中，我们从客户端向服务器发3 个相同的 SYN 报文。第一SYN
 会让服务器创建一socket，将其置Syn-Recv 状态，并回SYN/ACK。第二个

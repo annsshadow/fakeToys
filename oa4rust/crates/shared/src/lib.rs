@@ -12,6 +12,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 pub mod config;
+pub mod crud;
 pub mod db;
 pub mod error;
 pub mod input_validation;
@@ -29,6 +30,7 @@ pub mod storage;
 pub mod testing;
 
 pub use crate::error::AppError;
+pub use crud::{crud_create, crud_delete, crud_save, CrudSpec};
 pub use deadpool_postgres::Pool;
 pub use rate_limit::RateLimiter;
 pub use session::SessionManager;

@@ -1,3 +1,5 @@
+# static-keys
+
 ﻿## 静态键
 
 
@@ -13,6 +15,7 @@
 	static_key_false()
 
    The updated API replacements are::
+
 
 	DEFINE_STATIC_KEY_TRUE(key);
 	DEFINE_STATIC_KEY_FALSE(key);
@@ -248,6 +251,7 @@ https://gcc.gnu.org/ml/gcc-patches/2009-07/msg01556.html
 
  Performance counter stats for 'bash -c /tmp/pipe-test' (50 runs):
 
+
         855.700314 task-clock                #    0.534 CPUs utilized            ( +-  0.11% )
            200,003 context-switches          #    0.234 M/sec                    ( +-  0.00% )
                  0 CPU-migrations            #    0.000 M/sec                    ( +- 39.58% )
@@ -265,6 +269,7 @@ https://gcc.gnu.org/ml/gcc-patches/2009-07/msg01556.html
 ```
 
  Performance counter stats for 'bash -c /tmp/pipe-test' (50 runs):
+
 
         841.043185 task-clock                #    0.533 CPUs utilized            ( +-  0.12% )
            200,004 context-switches          #    0.238 M/sec                    ( +-  0.00% )

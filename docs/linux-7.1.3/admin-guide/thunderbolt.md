@@ -1,3 +1,5 @@
+# thunderbolt
+
 ﻿
 ##  USB4 and Thunderbolt（USB4 Thunderbolt
 
@@ -89,7 +91,7 @@ Ridge 又增加了一个安全级别（usbonly）。之所以需要这些，是�
 如果设备返回的挑战值与基于密钥所期望的值匹配，设备就被连接并且 PCIe 隧道被创建然而，如果挑战失败，则不会创建任何隧道，并向用户返回错误
 如果用户仍想连接该设备，他们可以不用密钥直接批准该设备，或者写入一个新密钥并向
 `authorized` 文件写入 1，从而将新密钥存储在设备NVM 上
-### De-authorizing devices（取消授权设备）
+## De-authorizing devices（取消授权设备）
 
 
 可以通过`0` 写入`authorized` 属性来取消对设备的授权。这需要连接管理器
@@ -160,7 +162,7 @@ fwupd 默认已安装。如果你的系统上没有它，只需使用你的发�
 这意味着 NVM 映像的认证失败
 注意，NVMem 设备的名`nvm_activeN` `nvm_non_activeN` 取决于它们在 NVMem
 子系统中注册的顺序。名称中N NVMem 子系统添加的标识符
-### Upgrading on-board retimer NVM when there is no cable connected（在没有线缆连接时升级板载重定时器的 NVM
+## Upgrading on-board retimer NVM when there is no cable connected（在没有线缆连接时升级板载重定时器的 NVM
 
 如果平台支持，即USB4 端口上没有连接任何东西，也可能升级重定时NVM 固件在这种情况下，`usb4_portX` 设备有两个特殊属性：`offline`（离线）`rescan`
 （重新扫描）。升级固件的方式是：
@@ -188,7 +190,7 @@ fwupd 默认已安装。如果你的系统上没有它，只需使用你的发�
   # echo 0 > /sys/bus/thunderbolt/devices/0-0/usb4_port1/offline
 
 ```
-### Upgrading NVM when host controller is in safe mode（在主机控制器处于安全模式时升级 NVM
+## Upgrading NVM when host controller is in safe mode（在主机控制器处于安全模式时升级 NVM
 
 如果现有 NVM 未被正确认证（或缺失），主机控制器会进入安全模式，这意味着唯一
 可用的功能是刷写一个新NVM 映像。在此模式下，读`nvm_version` 会因
@@ -228,7 +230,7 @@ ThunderboltIP 协议
 驱动会为每个 Thunderbolt 端口创建一个虚拟以太网接口，其名称类似 `thunderbolt0`
 等等。从这一点起，你可以使用 `ip` 等标准用户空间工具来配置接口，或让你GUI
 自动处理它
-### Forcing power（强制上电）
+## Forcing power（强制上电）
 
 
 许多 OEM 包含一个方法，可用于将 Thunderbolt 控制器的电源强制置于“开”状态，即使

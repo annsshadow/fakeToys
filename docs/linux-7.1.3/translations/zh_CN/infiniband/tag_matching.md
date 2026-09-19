@@ -1,11 +1,15 @@
 
+# tag_matching
+
 :Original: Documentation/infiniband/tag_matching.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  王普宇 Puyu Wang <realpuyuwang@gmail.com>
  时奎亮 Alex Shi <alexs@kernel.org>
@@ -16,6 +20,7 @@
 
 MPI标准定义了一套规则，称为标签匹配，用于将源发送操作与目的接收匹配。以下参数必
 须与以下源和目的参数相匹配:
+
 
 - 沟通者
 - 用户标签--通配符(wild card)可由接收方指定
@@ -32,6 +37,7 @@ MPI标准定义了一套规则，称为标签匹配，用于将源发送操作�
 息。实现时经常为这两种不同的匹配实例使用不同的匹配方案。
 
 为了减少MPI库的内存占用，MPI实现通常使用两种不同的协议来实现这一目的:
+
 
 1. Eager协议--当发送方处理完发送时，完整的信息就会被发送。在send_cq中会收到
 一个完成发送的通知，通知缓冲区可以被重新使用。

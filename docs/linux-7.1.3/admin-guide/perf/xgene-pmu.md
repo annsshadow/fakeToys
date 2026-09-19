@@ -1,7 +1,9 @@
+# xgene-pmu
+
 ﻿## APM X-Gene SoC 性能监视单元（PMU
 
 X-Gene SoC PMU 由多个相互独立的系统设备 PMU 组成，例L3 cache（L3 缓存）、I/O bridge（I/O 桥）、内存控制器桥（memory controller bridge）以及内存控制器（memory controller）。这PMU 设备采用松散架构，遵循与 ARM 核心 PMU 相同的模型。这PMU 共享相同的最高级中断和状CSR 区域
-### PMU（perf）驱
+## PMU（perf）驱
 
 xgene-pmu 驱动会注册多perf PMU 驱动。每perf 驱动都在 sysfs 中提供其可用事件与配置选项的描述，参见 /sys/bus/event_source/devices/<l3cX/iobX/mcbX/mcX>/
 “format”目录描perf_event_attr 结构config（事ID）、config1（代ID）字段的格式。“events”目录提供所有受支持事件类型的配置模板，可与 perf 工具一起使用。例如，“l3c0/bank-fifo-full/”等价于“l3c0/config=0x0b/”

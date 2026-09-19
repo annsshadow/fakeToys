@@ -1,3 +1,5 @@
+# media-controller
+
 ﻿# 第四部分 - 媒体控制API
 
 
@@ -8,7 +10,7 @@
 - [媒体函数](media-funcs)
 - [媒体头](media-header)
 
-######## 修订与版
+## 修订与版
 
 
 作者（Authors）：
@@ -25,7 +27,7 @@
 
 **Copyright** |copy| 2015-2016 : Mauro Carvalho Chehab
 
-######## 修订历史
+### 修订历史
 
 
 :revision: 1.1.0 / 2015-12-12 (**mcc**)

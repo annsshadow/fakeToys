@@ -82,7 +82,7 @@ topic: o2server-rust-rewrite
 
 **集成与部署**
 - R8. Rust 服务与 Java 服务独立部署、独立进程，互不依赖。
-- R9. 前端通过 nginx 或等价反向代理按 URL 前缀路由请求：原有路径（如 `/jaxrs/*`）继续指向 Java 服务，已迁移模块的路径指向 Rust 服务。前端无需改动代码。
+- R9. 前端通过 nginx 或等价反向代理按 URL 前缀路由请求：原有路径（如 `/api/*`）继续指向 Java 服务，已迁移模块的路径指向 Rust 服务。前端无需改动代码。
 - R10. 两个服务在同一 API 前缀空间内无冲突：迁移前后前端感知到的 URL 路径保持不变。
 
 **数据迁移**
@@ -102,7 +102,7 @@ topic: o2server-rust-rewrite
 ## Acceptance Examples
 
 - AE1. **Covers R1, R2.** 扫描完成所有 `o2server` 模块的 `pom.xml` 后，落地文档中包含 57+ 个模块条目，每个条目标注了直接依赖的模块列表和优先级排序，开发者能通过文档看出替换顺序。
-- AE2. **Covers R9, R10.** 将考勤模块迁移到 Rust 后，前端访问考勤相关接口的 URL 路径保持不变（如仍为 `/jaxrs/x_attendance_*`），nginx 内部将请求路由到 Rust 服务，前端页面无需任何代码改动，功能正常。
+- AE2. **Covers R9, R10.** 将考勤模块迁移到 Rust 后，前端访问考勤相关接口的 URL 路径保持不变（如仍为 `/api/x_attendance_*`），nginx 内部将请求路由到 Rust 服务，前端页面无需任何代码改动，功能正常。
 - AE3. **Covers R12, R14.** 组织管理模块切换时，迁移脚本成功将 Java 侧 MySQL 中组织相关数据导入 Rust 侧数据库，校验通过后切流，Java 侧组织模块停止接收写入请求，整个过程可回滚至切流前状态。
 
 ---

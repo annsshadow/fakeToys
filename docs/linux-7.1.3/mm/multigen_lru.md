@@ -1,3 +1,5 @@
+# multigen_lru
+
 ﻿
 ## Multi-Gen LRU
 
@@ -50,10 +52,12 @@ statistically compare the refault percentages across 那些 categories
 The protection 鐨?hot 椤，鍜?the selection 鐨?cold 椤，鏄?based
 access channels patterns. 存在 two access channels:
 
+
 - Accesses through 椤，琛。
 - Accesses through 文件 描述
 
 The protection the former channel design stronger 因为:
+
 
 1. The uncertainty 鍦?determining the access patterns 鐨?the former
    channel higher 由于 the approximation the accessed 
@@ -65,7 +69,8 @@ The protection the former channel design stronger 因为:
    commonly 使用 dedicated I/O 线程 avoid blocking rendering
    线程.
 
-瀛樺湪 涔?two access patterns:
+子樺湪 涔?two access patterns:
+
 
 - Accesses exhibiting temporal locality
 - Accesses 涓?exhibiting temporal locality
@@ -104,7 +109,7 @@ modeled 之后 the PID 控制monitors refaults 在…上 全部 the tiers
 evict 鎴?protect. The desired effect 鏄，鍒?balance refault percentages
 之间 anon 文件 types proportional the swappiness level.
 
-瀛樺湪 two conceptually independent procedures: the aging 鍜?the
+子樺湪 two conceptually independent procedures: the aging 鍜?the
 eviction. 它们 form 一closed-loop 系统, i.e., the reclaim.
 
 ### Aging
@@ -150,6 +155,7 @@ words, 瀹?prevents the working set 鐨?`lru_gen_min_ttl` milliseconds
 cannot kept 内存.
 
 time-based approach 具有 the 以下 advantages:
+
 
 1. 它是 easier configure 因为 它是 agnostic applications
    内存 sizes.
@@ -229,6 +235,7 @@ since 每个 node memcg combination 具有 一LRU folios (参见
 The 基本 结构一memcg LRU understood 一analogy 
 the active/inactive LRU (鐨?folios):
 
+
 1. 瀹，鍏锋湁 the young 鍜?the 鏃?(generations), i.e., the counterparts
    鍒?the active 鍜?the inactive;
 2. The increment 鐨?`max_seq` triggers promotion, i.e., the
@@ -252,6 +259,7 @@ complexity.
 
 The multi-gen LRU (folios) disassembled 进入 the 以下
 parts:
+
 
 - Generations
 - Rmap walks

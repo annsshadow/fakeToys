@@ -1,5 +1,7 @@
+# maintainer-tip
+
 ﻿
-## tip 鏍戞墜鍐。
+## tip 鏍戞墜内。
 ### 什么是 tip 树？
 
 tip 树（tip tree）是若干子系统与开发领域的集合。tip 树既是一个直接的开发树也是若干子维护者（sub-maintainer）树的聚合树。tip 树的 gitweb URL 为：
@@ -52,7 +54,7 @@ tip 树包含以下子系统
        - 零散的零碎代
 ### 补丁提交说明
 
-##### 选择分支
+#### 选择分支
 
 一般来说，针对 tip master 分支的头部进行开发是可以的，但对于单独维护、拥自己git 树并且只是聚合到 tip 树的那些子系统，开发应该针对相关的子系统树分支进行
 针对主线的缺陷修复（bug fix）应该始终可以应用到主线内核树上。与已经排队tip
@@ -85,6 +87,7 @@ tip 树维护者非常重视遵循这些规则，尤其是要求以祈使语气�
 
   Improved version::
 
+
     x86/intel_rdt/mbm: Fix MBM overflow handler during CPU hotplug
 
     When a CPU is dying, the overflow worker is canceled and rescheduled on a
@@ -98,6 +101,7 @@ tip 树维护者非常重视遵循这些规则，尤其是要求以祈使语气�
 
   Example 2::
 
+
     time: POSIX CPU timers: Ensure that variable is initialized
 
     If cpu_timer_sample_group returns -EINVAL, it will not have written into
@@ -109,6 +113,7 @@ tip 树维护者非常重视遵循这些规则，尤其是要求以祈使语气�
     actually be used to update *oldval.
 
   Improved version::
+
 
     posix-cpu-timers: Make set_process_cpu_timer() more robust
 
@@ -124,11 +129,13 @@ tip 树维护者非常重视遵循这些规则，尤其是要求以祈使语气�
 
   Example 3::
 
+
     The entity can also be used for other purposes.
 
     Let's rename it to be more generic.
 
   Improved version::
+
 
     The entity can also be used for other purposes.
 
@@ -214,6 +221,7 @@ Lockdep 提供了类似的有助于描绘可能死锁的输出
 
    Please say instead::
 
+
      The recent replacement of foo with bar left an unused instance of
      variable foo around. Remove it.
 
@@ -246,6 +254,7 @@ Lockdep 提供了类似的有助于描绘可能死锁的输出
    传播到我们这里所经过*真实**路径，其中第一SOB 条目表示该补丁单一   主要作者。Ack 应以 Acked-by 行给出，审阅批准应以 Reviewed-by 行给出
    如果处理者（handler）对补丁或变更日志做了修改，那么应该在变更日志文*之后**   所有提交标*之上**，以下列格式提及::
 
+
      ... changelog text ends.
 
      [ handler: Replaced foo by bar and updated changelog ]
@@ -254,6 +263,7 @@ Lockdep 提供了类似的有助于描绘可能死锁的输出
 
    注意用两个空行将该提示与变更日志文本及提交标签分隔开
    如果补丁由处理者发送到邮件列表，那么作者必须在变更日志的第一行用以下方式注明::
+
 
      From: Author <author@mail>
 
@@ -275,10 +285,12 @@ Lockdep 提供了类似的有助于描绘可能死锁的输出
 
    对于引用发布到内核邮件列表的邮件，请使用 lore.kernel.org 重定向器 URL::
 
+
      Link: https://lore.kernel.org/email-message-id@here
 
    URL 应用于引用相关的邮件列表主题、相关的补丁集或其它值得注意的讨论线程。将
    ``Link:`` 预告（trailer）与提交信息关联起来的一个便捷方法是使用Markdown    方括号记法，例如::
+
 
      A similar approach was attempted before as part of a different
      effort [1], but the initial implementation caused too many
@@ -290,6 +302,7 @@ Lockdep 提供了类似的有助于描绘可能死锁的输出
    你也可以使用 ``Link:`` 预告来标示将补丁应用到你git 树时的来源。在这种情况下，
    请使用专用的 ``patch.msgid.link`` 域名，而不``lore.kernel.org``。这种做法使
    自动化工具能够识别使用哪个链接来取回原始补丁提交。例:
+
 
      Link: https://patch.msgid.link/patch-source-message-id@here
 
@@ -330,7 +343,7 @@ tip 维护者接受来自维护者的 git pull 请求，这些维护者提供要
 其中一些选项x86 特定的，在其它架构上测试时可以省去
 ### 编码风格说明
 
-##### 注释风格
+#### 注释风格
 
 注释中的句子以大写字母开头
 ```
@@ -362,6 +375,7 @@ tip 维护者接受来自维护者的 git pull 请求，这些维护者提供要
 
   Use freestanding comments instead::
 
+
 	/* This condition is not obvious without a comment */
 	if (somecondition_is_true) {
 		/* This really needs to be documented */
@@ -374,6 +388,7 @@ tip 维护者接受来自维护者的 git pull 请求，这些维护者提供要
   Use C++ style, tail comments when documenting structs in headers to
   achieve a more compact layout and better readability::
 
+
         // eax
         u32     x2apic_shift    :  5, // Number of bits to shift APIC ID right
                                       // for the topology ID at the next level
@@ -383,6 +398,7 @@ tip 维护者接受来自维护者的 git pull 请求，这些维护者提供要
                                 : 16; // Reserved
 
   versus::
+
 
 	/* eax */
 	        /*
@@ -417,6 +433,7 @@ tip 维护者接受来自维护者的 git pull 请求，这些维护者提供要
 
   Instead, comments should explain the non-obvious details and document
   constraints::
+
 
 	if (refcount_dec_and_test(&p->refcnt)) {
 		/*
@@ -471,6 +488,7 @@ tip 维护者接受来自维护者的 git pull 请求，这些维护者提供要
 	}
 
   Please use::
+
 
 	void func(struct foo *foo)
 	{

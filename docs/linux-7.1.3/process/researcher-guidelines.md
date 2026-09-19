@@ -1,3 +1,5 @@
+# researcher-guidelines
+
 ﻿锘。
 
 Researcher Guidelines
@@ -21,6 +23,7 @@ the very least, 姝ょ被 research 鍜?related activities 搴斿綋 follow
 标准 research ethics rules. 用于 更多 background research ethics
 generally, ethics 鍦?technology, 鍜?research 鐨?developer communities
 特别 参见:
+
 
 - `History of Research Ethics <https://www.unlv.edu/research/ORI-HSR/history-ethics>`_
 - `IEEE Ethics <https://www.ieee.org/about/ethics/index.html>`_
@@ -90,6 +93,7 @@ traditionally 已经 the best way make 一impact. Linux 已经 具有
 plenty known bugs -- 什s much 更多 helpful having vetted fixes.
 之前 contributing, carefully 读取 the appropriate documentation:
 
+
 - Documentation/进程/development-process.rst
 - Documentation/进程/submitting-patches.rst
 - Documentation/admin-guide/reporting-issues.rst
@@ -102,6 +106,7 @@ sending patches produced 来自 research, the commit logs 应当
 包含 至少 the 以下 details, 因此 developers 具有
 appropriate 上下用于 understanding the contribution. Answer:
 
+
 - 什the 特定 problem 具有 已经 found
 - 如何 可以 the problem reached 一运行系系
 - 什effect 将会 encountering the problem 具有 the 系系
@@ -110,7 +115,7 @@ appropriate 上下用于 understanding the contribution. Answer:
   方法 使用 perform the work.
 - 版本 Linux 曾是 the problem found  使用 the 大多recent
   释放 一recent linux-next branch strongly preferred (参见
-  Documentation/进程/howto.rst).
+  Documentation/进程/howto.md).
 - 什曾是 changed fix the problem, 为何 它是 believed correct
 - 濡備綍 鏇炬槸 the change build tested 鍜?run-time tested?
 - 什prior commit 执行 change fix 应当 go 一"Fixes:"
@@ -132,6 +137,7 @@ appropriate 上下用于 understanding the contribution. Answer:
   This flaw was found using an experimental static analysis tool we are
   developing, LeakMagic[1], which reported the following warning when
   analyzing the v5.15 kernel release:
+
 
    path/to/foo_bar.c:187: missing kfree() call?
 

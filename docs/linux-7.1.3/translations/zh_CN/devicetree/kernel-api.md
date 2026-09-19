@@ -1,11 +1,15 @@
 
+# kernel-api
+
 :Original: Documentation/devicetree/kernel-api.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
 
 ## 内核中的设备树API
@@ -15,6 +19,7 @@
 
 
 该API在以下内核代码中:
+
 
 drivers/of/base.c
 
@@ -35,6 +40,7 @@ drivers/of/fdt.c
 
 该API在以下内核代码中:
 
+
 include/linux/of_device.h
 
 drivers/of/device.c
@@ -47,6 +53,7 @@ drivers/of/platform.c
 
 
 该API在以下内核代码中:
+
 
 drivers/of/resolver.c
 

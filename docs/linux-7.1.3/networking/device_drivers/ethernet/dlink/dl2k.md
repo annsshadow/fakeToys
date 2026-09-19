@@ -1,3 +1,5 @@
+# dl2k
+
 ﻿
 ## D-Link 基于 DL2000 的千兆以太网适配器安
 2002 骞?5 鏈?23 鏃。
@@ -85,6 +87,7 @@ Linux 中，NIC 驱动最常见是配置为可加载模块。构建单体（mono
 
   鎴?:
 
+
     insmod dl2k.o <可选参	; 添加参数
 
 ```
@@ -96,9 +99,11 @@ Linux 中，NIC 驱动最常见是配置为可加载模块。构建单体（mono
 
   鎴?:
 
+
     insmod dl2k.o media=3
 
   鎴?:
+
 
     insmod dl2k.o media=3,2	; 针对 2 张网
 ```
@@ -113,16 +118,19 @@ Linux 中，NIC 驱动最常见是配置为可加载模块。构建单体（mono
 
   最后，要将驱动绑定到活动的协议（例Linux 下的 TCP/IP），输入以下命令::
 
+
     ifup eth0
 
   注意，这仅在系统能够找到包含必要网络信息的配置脚本时才有意义。示例将在下一  给出
   卸载驱动的命令如:
+
 
     ifdown eth0
     ifconfig eth0 down
     rmmod dl2k.o
 
   下面是用于列出当前已加载模块以及查看当前网络配置的命:
+
 
     lsmod
     ifconfig
@@ -197,6 +205,7 @@ Q1. 源文件每行末尾都包含 ^ M
 	mv dl2k.tmp dl2k.c
 
     鎴?:
+
 
 	cat dl2k.c | tr -d "\r" > dl2k.tmp
 	mv dl2k.tmp dl2k.c

@@ -1,8 +1,11 @@
 
 
+# padata
+
 :Original: Documentation/core-api/padata.rst
 
 :翻译:
+
 
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
@@ -45,7 +48,7 @@ Padata还支持多线程作业，将作业平均分割，同时在线程之间�
 序列化。一个padata_instance可以有一个或多个padata_shell与之相关联，每个
 都允许一系列独立的作业。
 
-### 修改cpumasks
+## 修改cpumasks
 
 
 用于运行作业的CPU可以通过两种方式改变，通过padata_set_cpumask()编程或通
@@ -159,6 +162,7 @@ padata_do_parallel()的返回值在成功时为0，表示工作正在进行中�
 
 
 该API在以下内核代码中:
+
 
 include/linux/padata.h
 

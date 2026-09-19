@@ -172,10 +172,10 @@ origin: docs/brainstorms/2026-08-10-oa4rust-auth-and-toolchain-closure-requireme
 - 环境变量：`MPWEXIN_APP_ID`、`MPWEXIN_APP_SECRET`
 - `unique_id` 前缀：`mpwx_{openid}`
 - 4 个端点：
-  - `GET /jaxrs/mpweixin/login/code/{code}` — code→openid→查/建用户→返回 token+用户信息（未绑定返回 `unbind=true`）
-  - `GET /jaxrs/mpweixin/bind/code/{code}` — code→openid→绑定到当前登录用户（需认证）
-  - `GET /jaxrs/mpweixin/bind/openid/{openid}` — 直接绑定 openid（需认证）
-  - `POST /jaxrs/mpweixin/menu/test/send/to/{person}` — 管理员发送模板消息（admin only）
+  - `GET /api/mpweixin/login/code/{code}` — code→openid→查/建用户→返回 token+用户信息（未绑定返回 `unbind=true`）
+  - `GET /api/mpweixin/bind/code/{code}` — code→openid→绑定到当前登录用户（需认证）
+  - `GET /api/mpweixin/bind/openid/{openid}` — 直接绑定 openid（需认证）
+  - `POST /api/mpweixin/menu/test/send/to/{person}` — 管理员发送模板消息（admin only）
 - 微信小程序 access_token 缓存（内存 HashMap，5 分钟 TTL）
 - 返回完整用户信息：`token` + `person`（unique、name、mobile、email、icon）+ `unbind` 标识
 
@@ -229,7 +229,7 @@ bind/openid/{openid}:
 **Approach：**
 - 环境变量：`WELINK_APP_KEY`、`WELINK_APP_SECRET`
 - `unique_id` 前缀：`welink_{userId}`
-- 1 个端点：`GET /jaxrs/welink/code/{code}`
+- 1 个端点：`GET /api/welink/code/{code}`
 - API：`https://open.welink.huaweicloud.com/api/auth/v2/userid?code={code}` + Header `WeLink-Auth-Key: {accessToken}`
 - accessToken 通过 `app_key` + `app_secret` 换取
 - 用户不存在时返回错误（WeLink 不需要 unbind 流程，用户需预先在 OA 中创建）
@@ -263,8 +263,8 @@ bind/openid/{openid}:
 - 环境变量：`ZWDINGDING_API_BASE`、`ZWDINGDING_CORP_ACCESS_TOKEN`、`ZWDINGDING_APP_ACCESS_TOKEN`
 - `unique_id` 前缀：`zwding_{userId}`
 - 2 个端点：
-  - `GET /jaxrs/zhengwudingding/code/{code}` — code→dingUserId→userId 两步映射→登录
-  - `GET /jaxrs/zhengwudingding/info` — 获取配置状态（enable + client 列表）
+  - `GET /api/zhengwudingding/code/{code}` — code→dingUserId→userId 两步映射→登录
+  - `GET /api/zhengwudingding/info` — 获取配置状态（enable + client 列表）
 - 两步映射：
   1. `GET {api_base}/user/getuserinfo?access_token={corp_token}&code={code}` → dingUserId
   2. `POST {api_base}/user/singleGetUserIdByDingId?access_token={app_token}&dingUserId={dingUserId}` → userId
@@ -297,7 +297,7 @@ bind/openid/{openid}:
 
 **Approach：**
 - `unique_id` 前缀：`andfx_{token}`
-- 1 个端点：`GET /jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}`
+- 1 个端点：`GET /api/andfx/moa/sso/token/{token}/enter/{enterId}`
 - token 解析：参考 Java `ActionMoaLogin`，token 为加密格式，enterId 为企业 ID 校验
 - 实现时参考 Java 源码确定 token 解密逻辑
 
@@ -329,8 +329,8 @@ bind/openid/{openid}:
 **Approach:**
 - 环境变量：`QYWX_CORP_ID`（复用现有企微配置）、`QYWX_AGENT_ID`、`QYWX_APP_SECRET`
 - 3 个端点：
-  - `GET /jaxrs/qiyeweixin/code/{code}` — 企业微信扫码登录
-  - `GET /jaxrs/qiyeweixin/update/person/detail/{code}` — 登录并同步用户详细信息
+  - `GET /api/qiyeweixin/code/{code}` — 企业微信扫码登录
+  - `GET /api/qiyeweixin/update/person/detail/{code}` — 登录并同步用户详细信息
   - `POST /jar/rs/qiyeweixin/jssdk/sign/info` — JSSDK 签名（SHA1(jsapi_ticket+noncestr+timestamp+url)）
 - JSSDK 签名算法：`sha1("jsapi_ticket={ticket}&noncestr={nonce}&timestamp={ts}&url={url}")`
 - `jsticket` 类型：支持 `app` 类型（应用 ticket）和普通企业 ticket
@@ -352,7 +352,7 @@ bind/openid/{openid}:
 
 ### U7. SSO GET 端点
 
-**Goal：** 新增 `GET /jaxrs/authentication/sso/client/{client}/token/{token}` 端点，支持浏览器 URL 重定向场景。
+**Goal：** 新增 `GET /api/authentication/sso/client/{client}/token/{token}` 端点，支持浏览器 URL 重定向场景。
 
 **Requirements:** R9
 
@@ -370,7 +370,7 @@ bind/openid/{openid}:
 
 **Technical design（directional）:**
 ```
-GET /jaxrs/authentication/sso/client/{client}/token/{token}:
+GET /api/authentication/sso/client/{client}/token/{token}:
   1. 从 sso_client 表查询 client_name = {client} 的记录
   2. 获取 key
   3. 调用 decrypt_sso_token(token, key) → decrypted
@@ -418,7 +418,7 @@ GET /jaxrs/authentication/sso/client/{client}/token/{token}:
   .merge(zhengwudingding::router())
   .merge(andfx::router())
   .merge(qiyeweixin::router())
-  .route("/jaxrs/authentication/sso/client/{client}/token/{token}", get(sso::sso_get_login))
+  .route("/api/authentication/sso/client/{client}/token/{token}", get(sso::sso_get_login))
   ```
 - 重运行 `gen_mcp_tools.py`：生成新的 `generated_routes.rs`（新增 ~12 条路由）
 - 重运行 `gen_openapi_paths.py`：生成新的 `lib.rs`（新增 ~12 条 utoipa 路径）

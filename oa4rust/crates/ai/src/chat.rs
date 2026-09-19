@@ -36,8 +36,14 @@ pub async fn chat_list_paging(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                (
+                    "title".to_string(),
+                    Value::String(row.get::<_, Option<String>>("title").unwrap_or_default()),
+                ),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),
@@ -46,7 +52,7 @@ pub async fn chat_list_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size,
@@ -86,13 +92,22 @@ pub async fn chat_list_completion_paging(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                (
+                    "person".to_string(),
+                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                ),
                 (
                     "\"clueId\"".to_string(),
                     Value::String(row.get("\"clueId\"")),
                 ),
-                ("input".to_string(), Value::String(row.get("input"))),
-                ("content".to_string(), Value::String(row.get("content"))),
+                (
+                    "input".to_string(),
+                    Value::String(row.get::<_, Option<String>>("input").unwrap_or_default()),
+                ),
+                (
+                    "content".to_string(),
+                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+                ),
                 (
                     "\"generateType\"".to_string(),
                     Value::String(row.get("\"generateType\"")),
@@ -105,7 +120,7 @@ pub async fn chat_list_completion_paging(
         })
         .collect();
 
-    Ok(Json(ActionResult::java_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size,
@@ -131,7 +146,7 @@ pub async fn chat_delete(
         ))));
     };
 
-    let clue_person: String = row.get("person");
+    let clue_person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &clue_person).await?;
 
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;

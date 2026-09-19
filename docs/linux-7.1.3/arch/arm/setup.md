@@ -1,3 +1,5 @@
+# setup
+
 ﻿## ARM Linux 上的内核初始化参
 
 本文档描述了内核初始化参数结构，也称‘struct param_struct’，它用于大多数 ARM Linux 架构

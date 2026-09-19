@@ -1,11 +1,15 @@
 
+# ipoib
+
 :Original: Documentation/infiniband/ipoib.rst
 
 :翻译:
 
+
  司延腾 Yanteng Si <siyanteng@loongson.cn>
 
 :校译:
+
 
  王普宇 Puyu Wang <realpuyuwang@gmail.com>
  时奎亮 Alex Shi <alexs@kernel.org>
@@ -30,6 +34,7 @@
 
   这将用P_Key 0x8001创建一个名为ib0.8001的接口。要删除一个子接口，使用
   ``delete_child`` 文件::
+
 
     echo 0x8001 > /sys/class/net/ib0/delete_child
 

@@ -28,7 +28,7 @@ async fn test_get_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/calendar_assemble_control/get/control/config")
+                .uri("/api/calendar_assemble_control/get/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -47,7 +47,7 @@ async fn test_list_control_calendars_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/calendar_assemble_control/list/control/calendars")
+                .uri("/api/calendar_assemble_control/list/control/calendars")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -69,7 +69,7 @@ async fn test_update_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/calendar_assemble_control/update/control/config")
+                .uri("/api/calendar_assemble_control/update/control/config")
                 .method(Method::GET)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))
@@ -106,7 +106,7 @@ async fn route_calendar_create() {
     assert_registered(
         hit_route(
             Method::POST,
-            "/jaxrs/calendar_assemble_control/calendar",
+            "/api/calendar_assemble_control/calendar",
             Some("{}"),
         )
         .await,
@@ -117,7 +117,7 @@ async fn route_calendar_follow_get() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/calendar/follow/x",
+            "/api/calendar_assemble_control/calendar/follow/x",
             None,
         )
         .await,
@@ -128,7 +128,7 @@ async fn route_calendar_follow_cancel() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/calendar/follow/x/cancel",
+            "/api/calendar_assemble_control/calendar/follow/x/cancel",
             None,
         )
         .await,
@@ -139,7 +139,7 @@ async fn route_calendar_ismanager_calendar() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/calendar/ismanager/calendar/x",
+            "/api/calendar_assemble_control/calendar/ismanager/calendar/x",
             None,
         )
         .await,
@@ -150,7 +150,7 @@ async fn route_calendar_list_filter() {
     assert_registered(
         hit_route(
             Method::PUT,
-            "/jaxrs/calendar_assemble_control/calendar/list/filter",
+            "/api/calendar_assemble_control/calendar/list/filter",
             Some("{}"),
         )
         .await,
@@ -161,7 +161,7 @@ async fn route_calendar_manager_list_with_person() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/calendar/manager/list/with/person/x",
+            "/api/calendar_assemble_control/calendar/manager/list/with/person/x",
             None,
         )
         .await,
@@ -172,7 +172,7 @@ async fn route_calendar_delete() {
     assert_registered(
         hit_route(
             Method::DELETE,
-            "/jaxrs/calendar_assemble_control/calendar/x",
+            "/api/calendar_assemble_control/calendar/x",
             None,
         )
         .await,
@@ -183,7 +183,7 @@ async fn route_event_create() {
     assert_registered(
         hit_route(
             Method::POST,
-            "/jaxrs/calendar_assemble_control/event",
+            "/api/calendar_assemble_control/event",
             Some("{}"),
         )
         .await,
@@ -194,7 +194,7 @@ async fn route_event_delete_after() {
     assert_registered(
         hit_route(
             Method::DELETE,
-            "/jaxrs/calendar_assemble_control/event/after/x",
+            "/api/calendar_assemble_control/event/after/x",
             None,
         )
         .await,
@@ -205,7 +205,7 @@ async fn route_event_delete_all() {
     assert_registered(
         hit_route(
             Method::DELETE,
-            "/jaxrs/calendar_assemble_control/event/all/x",
+            "/api/calendar_assemble_control/event/all/x",
             None,
         )
         .await,
@@ -216,7 +216,7 @@ async fn route_event_list_filter() {
     assert_registered(
         hit_route(
             Method::PUT,
-            "/jaxrs/calendar_assemble_control/event/list/filter",
+            "/api/calendar_assemble_control/event/list/filter",
             Some("{}"),
         )
         .await,
@@ -227,7 +227,7 @@ async fn route_event_rfc() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/event/rfc/x",
+            "/api/calendar_assemble_control/event/rfc/x",
             None,
         )
         .await,
@@ -238,7 +238,7 @@ async fn route_message_create() {
     assert_registered(
         hit_route(
             Method::POST,
-            "/jaxrs/calendar_assemble_control/message",
+            "/api/calendar_assemble_control/message",
             Some("{}"),
         )
         .await,
@@ -249,7 +249,7 @@ async fn route_setting_create() {
     assert_registered(
         hit_route(
             Method::POST,
-            "/jaxrs/calendar_assemble_control/setting",
+            "/api/calendar_assemble_control/setting",
             Some("{}"),
         )
         .await,
@@ -260,7 +260,7 @@ async fn route_setting_get_by_code() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/setting/code/x",
+            "/api/calendar_assemble_control/setting/code/x",
             None,
         )
         .await,
@@ -271,7 +271,7 @@ async fn route_setting_get() {
     assert_registered(
         hit_route(
             Method::GET,
-            "/jaxrs/calendar_assemble_control/setting/x",
+            "/api/calendar_assemble_control/setting/x",
             None,
         )
         .await,
@@ -279,9 +279,7 @@ async fn route_setting_get() {
 }
 #[tokio::test]
 async fn route_test_1() {
-    assert_registered(
-        hit_route(Method::GET, "/jaxrs/calendar_assemble_control/test/1", None).await,
-    );
+    assert_registered(hit_route(Method::GET, "/api/calendar_assemble_control/test/1", None).await);
 }
 
 // ───────────── plan002 U2：真实 DB 集成测试（DB 可用时执行，含清理）─────────────
@@ -321,7 +319,7 @@ async fn real_calendar_get_and_setting_by_code() {
         .oneshot(
             Request::builder()
                 .uri(format!(
-                    "/jaxrs/calendar_assemble_control/calendar/{}",
+                    "/api/calendar_assemble_control/calendar/{}",
                     cal_id
                 ))
                 .body(Body::empty())
@@ -340,7 +338,7 @@ async fn real_calendar_get_and_setting_by_code() {
         .oneshot(
             Request::builder()
                 .uri(format!(
-                    "/jaxrs/calendar_assemble_control/setting/code/{}",
+                    "/api/calendar_assemble_control/setting/code/{}",
                     code
                 ))
                 .body(Body::empty())

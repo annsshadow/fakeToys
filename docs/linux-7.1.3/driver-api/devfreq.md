@@ -1,3 +1,5 @@
+# devfreq
+
 ﻿
 ## 设备频率调节（Device Frequency Scaling
 
@@ -18,3 +20,4 @@
 
         :export:
         :export:
+

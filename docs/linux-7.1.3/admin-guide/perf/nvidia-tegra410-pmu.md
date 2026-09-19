@@ -1,3 +1,5 @@
+# nvidia-tegra410-pmu
+
 ﻿## NVIDIA Tegra410 SoC 非核心性能监控单元（PMU
 
 NVIDIA Tegra410 SoC 包含多个系统PMU，用于测量诸如内存带宽、延迟和利用率等关键性能指标
@@ -9,7 +11,7 @@ NVIDIA Tegra410 SoC 包含多个系统PMU，用于测量诸如内存带宽、延
 - NV-CLink
 - NV-DLink
 
-### PMU 驱动
+## PMU 驱动
 
 
 PMU 驱动sysfs 中描述每PMU 可用的事件与配置。请参阅以下各节以获取每PMU sysfs 路径。与其他非核心（uncore）PMU 驱动一样，该驱动提"cpumask" sysfs 属性以显示用于处理PMU 事件CPU id。还有一"associated_cpus" sysfs 属性，其中包含与该 PMU 实例相关联的一CPU
@@ -190,7 +192,7 @@ RC# 映射lspci 段号可能并不容易；因此为每个 RP PCIE 配置空间�
   000e:00:00.0: Bus=00, Segment=0e, RP=00, RC=05, Socket=01
 
 ```
-### PCIE-TGT PMU
+## PCIE-TGT PMU
 
 
 PMU 位于连接 PCIE 根复合体（RC）与内存子系统的 SoC 互连中。它监控PCIE BAR CXL HDM 范围为目标的流量。SoC 中每PCIE RC 有一PCIE-TGT PMU。Tegra410 SoC 中的每个 RC 最多可16 条通道，可被分叉为最8 个根端口（RP）。该 PMU 提供 RP 过滤器来统计到每RP PCIE BAR 流量，以及地址过滤器来统计PCIE BAR CXL HDM 范围的访问。过滤器的细节在以下各节描述
@@ -287,21 +289,26 @@ C2C 接口连接GPU 时，用户可以使用 "gpu_mask" 参数来过滤到/来�
 
   * Count incoming traffic from GPU 0 connected via NVLink-C2C::
 
+
       perf stat -a -e nvidia_nvlink_c2c_pmu_0/in_rd_cum_outs,gpu_mask=0x1/
 
   * Count incoming traffic from GPU 1 connected via NVLink-C2C::
+
 
       perf stat -a -e nvidia_nvlink_c2c_pmu_0/in_rd_cum_outs,gpu_mask=0x2/
 
   * Count outgoing traffic to all GPUs connected via NVLink-C2C::
 
+
       perf stat -a -e nvidia_nvlink_c2c_pmu_0/out_rd_req/
 
   * Count outgoing traffic to GPU 0 connected via NVLink-C2C::
 
+
       perf stat -a -e nvidia_nvlink_c2c_pmu_0/out_rd_cum_outs,gpu_mask=0x1/
 
   * Count outgoing traffic to GPU 1 connected via NVLink-C2C::
+
 
       perf stat -a -e nvidia_nvlink_c2c_pmu_0/out_rd_cum_outs,gpu_mask=0x2/
 
@@ -331,6 +338,7 @@ PMU 设备的事件与配置选项sysfs 中可用，参见 /sys/bus/event_source
       perf stat -a -e nvidia_nvclink_pmu_0/in_rd_req/
 
   * Count outgoing read traffic to remote SoC connected via NV-CLINK::
+
 
       perf stat -a -e nvidia_nvclink_pmu_0/out_rd_req/
 

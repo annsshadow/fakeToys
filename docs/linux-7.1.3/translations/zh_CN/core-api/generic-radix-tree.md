@@ -1,8 +1,11 @@
 
 
+# generic-radix-tree
+
 :Original: Documentation/core-api/generic-radix-tree.rst
 
 :翻译:
+
 
  周彬彬 Binbin Zhou <zhoubinbin@loongson.cn>
 
@@ -16,5 +19,6 @@
 
 
 该API在以下内核代码中:
+
 
 include/linux/generic-radix-tree.h

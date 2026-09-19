@@ -1,7 +1,9 @@
+# bra_cadence
+
 ﻿### Cadence IP BRA 支持
 
 
-#### 格式要求
+## 格式要求
 
 
 Cadence IP 依赖 PDI0 用于 TX，PDI1 用于 RX。数据需要按以下约定格式化：
@@ -12,7 +14,7 @@ Cadence IP 依赖 PDI0 用于 TX，PDI1 用于 RX。数据需要按以下约定�
   (4) ID 存储在位 19..16 中。该ID 由软件确定，通常是一个滚动计数器
   (5) 应根据需要插入填充，Header CRC、Header response、Footer CRC、Footer response
       始终位于 Byte0。写操作时由软件插入填充，读操作时软件应丢弃硬件添加的填充
-#### 示例格式
+### 示例格式
 
 
 下表表示提供PDI0 的一个写命令后跟一个读命令的序列```
