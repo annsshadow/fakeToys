@@ -6470,7 +6470,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 63,
+    "line": 64,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/securityclearance/system",
+    "path": "/api/general/assemble/control/securityclearance/system",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/general/assemble/control/securityclearance/system",
+    "hit_crate": "general_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 65,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/attendscope/list",
+    "path": "/api/general/assemble/control/attendscope/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/general/assemble/control/attendscope/list",
+    "hit_crate": "general_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 66,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/qrcode/list",
+    "path": "/api/general/assemble/control/qrcode/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/general/assemble/control/qrcode/list",
+    "hit_crate": "general_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 78,
     "method": "GET",
     "raw": "/api/general/assemble/control/status",
     "path": "/api/general/assemble/control/status",
@@ -6483,7 +6522,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 64,
+    "line": 79,
     "method": "GET",
     "raw": "/api/general/assemble/control/area/list",
     "path": "/api/general/assemble/control/area/list",
@@ -6496,7 +6535,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 65,
+    "line": 80,
     "method": "GET",
     "raw": "/api/general/assemble/control/worktime/minutesofworkday",
     "path": "/api/general/assemble/control/worktime/minutesofworkday",
@@ -6509,7 +6548,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 77,
+    "line": 92,
     "method": "GET",
     "raw": "/api/console/status",
     "path": "/api/console/status",
@@ -6522,7 +6561,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 78,
+    "line": 93,
     "method": "GET",
     "raw": "/api/console/system/info",
     "path": "/api/console/system/info",
@@ -6535,7 +6574,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 91,
+    "line": 106,
     "method": "GET",
     "raw": "/api/server/license",
     "path": "/api/server/license",
@@ -6548,7 +6587,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 107,
+    "line": 122,
     "method": "GET",
     "raw": "/api/server/execute?command=${encodeURIComponent(command.value)}",
     "path": "/api/server/execute",
@@ -6561,7 +6600,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 120,
+    "line": 135,
     "method": "GET",
     "raw": "/api/server/stop",
     "path": "/api/server/stop",
