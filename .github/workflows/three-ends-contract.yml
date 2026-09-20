@@ -1,0 +1,73 @@
+name: OA4Rust three-ends contract
+
+# 三端（服务端 / 桌面端 / 移动端）API 契约门禁 —— 计划阶段 E1/E3/E4/E5
+#
+# 对账对象：后端 axum 路由表 × 各前端端（desktop / mobile / packages）的全部 API 调用。
+# 门禁判据（任一不满足即失败）：
+#   1. suspicious-shadow / 405 / 404 必须全为 0
+#      （shadow = 静默影子误路由：返回 200 但拿错数据，危害最高）
+#   2. schema_audit 的 A（请求体被完全忽略）必须为 0
+#   3. schema_audit 的 B/C/D/E 不得高于 schema_baseline.json（只许降，不许升）
+#
+# 说明：B/C/D 含**已知误报**（契约提取器不跟随间接引用，详见
+# docs/plans/2026-09-20-001-... §九 状态表），因此用"不许新增"而非"必须为 0"，
+# 这样门禁既可执行、又不撒谎。降低计数后请同步下调基线。
+#
+# 审计产物与脚本见 docs/audits/three-ends-2026-09-20/。
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "oa4rust/**"
+      - "oa4rust-web/**"
+      - "docs/audits/three-ends-2026-09-20/**"
+      - ".github/workflows/three-ends-contract.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "oa4rust/**"
+      - "oa4rust-web/**"
+      - "docs/audits/three-ends-2026-09-20/**"
+      - ".github/workflows/three-ends-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: three-ends-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.x"
+      - name: Extract backend routes
+        run: python docs/audits/three-ends-2026-09-20/extract_routes.py
+      - name: Extract frontend calls
+        run: python docs/audits/three-ends-2026-09-20/extract_calls.py
+      - name: Reconcile three ends (shadow / 405 / 404 must be zero)
+        run: python docs/audits/three-ends-2026-09-20/compare.py --gate
+      - name: Request/response contract gate (A must be zero; B/C/D/E must not regress)
+        run: python docs/audits/three-ends-2026-09-20/schema_audit.py --gate
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: three-ends-audit
+          path: |
+            docs/audits/three-ends-2026-09-20/backend_routes.json
+            docs/audits/three-ends-2026-09-20/frontend_calls.json
+            docs/audits/three-ends-2026-09-20/api_reconcile.json
+            docs/audits/three-ends-2026-09-20/schema_audit.json
+          if-no-files-found: warn

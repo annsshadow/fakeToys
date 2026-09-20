@@ -40,6 +40,10 @@ jobs:
         run: cargo check --workspace
       - name: Designer route reconciliation (no DB)
         run: cargo test --test designer_route_match
+      - name: Escaped-quote key guard (no DB)
+        # 阶段 E6：禁止源码出现 "\"key\"" 形态字面量（键名里字面包含引号）。
+        # 该缺陷曾造成 81 处 row.get panic(500) + 115 处响应键前端读不到。
+        run: cargo test --test quoted_key_guard
 
   unit-tests:
     runs-on: ubuntu-24.04

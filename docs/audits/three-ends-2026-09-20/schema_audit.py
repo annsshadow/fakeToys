@@ -11,9 +11,11 @@
     C 后端读但前端不发（可能缺必填字段）
     D 响应字段：视图读取的字段 ∉ 该视图所调端点的产出键并集
 """
+import argparse
 import json
 import os
 import re
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -585,6 +587,14 @@ def scan_quoted_key_defect(routes):
 
 
 def main():
+    ap = argparse.ArgumentParser(description="请求/响应体契约校验（--gate 模式可用于 CI 门禁）")
+    ap.add_argument(
+        "--gate",
+        action="store_true",
+        help="门禁模式：A 必须为 0，B/C/D/E 不得高于 schema_baseline.json（E2/E5）",
+    )
+    args = ap.parse_args()
+
     handlers, structs = scan_rust_index()
     routes = json.load(open(os.path.join(HERE, "backend_routes.json"), encoding="utf-8"))
     bodies = scan_frontend_bodies()
@@ -711,6 +721,47 @@ def main():
     for r in report["D_delegated_unverifiable"]:
         print(f"  {r['method']} {r['path']}  <- {r['file']}:{r['line']}  handler={r['handlers']}")
 
+    if args.gate:
+        return run_gate(report["meta"])
+    return 0
+
+
+BASELINE_PATH = os.path.join(HERE, "schema_baseline.json")
+
+
+def run_gate(meta):
+    """门禁：A 必须为 0；B/C/D/E 不得高于基线（只许降，不许升）。
+
+    基线存在的理由：B/C/D 含**已知误报**（提取器不跟随间接引用，见文档 §九 状态表），
+    无法直接要求 0。用"不许新增"作为可执行且不撒谎的门禁。
+    """
+    if not os.path.exists(BASELINE_PATH):
+        print(f"[gate] 缺少基线文件 {BASELINE_PATH}；先用当前值建立基线。")
+        with open(BASELINE_PATH, "w", encoding="utf-8") as fh:
+            json.dump({k: meta[k] for k in ("A", "B", "C", "D", "E_total")}, fh, indent=1)
+        return 0
+
+    base = json.load(open(BASELINE_PATH, encoding="utf-8"))
+    cur = {"A": meta["A"], "B": meta["B"], "C": meta["C"], "D": meta["D"], "E_total": meta["E_total"]}
+    print("\n[gate] 类别  当前  基线  判定")
+    failed = []
+    for k in ("A", "B", "C", "D", "E_total"):
+        c, b = cur[k], base.get(k, 0)
+        if k == "A" and c != 0:
+            verdict = "FAIL（A 必须为 0：请求体被完全忽略 = 数据静默丢失）"
+            failed.append(k)
+        elif c > b:
+            verdict = "FAIL（高于基线 = 新增错配）"
+            failed.append(k)
+        else:
+            verdict = "ok"
+        print(f"[gate] {k:8s}{c:5d}{b:6d}  {verdict}")
+    if failed:
+        print(f"[gate] FAIL —— {', '.join(failed)}")
+        return 1
+    print("[gate] PASS —— 无新增契约错配")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
