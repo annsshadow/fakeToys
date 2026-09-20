@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>签到中枢 · Checkin Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="aurora"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="wrap">
+    <!-- 顶栏 -->
+    <header class="topbar glass">
+      <div class="brand">
+        <div class="logo">◈</div>
+        <div>
+          <h1>签到中枢</h1>
+          <div class="sub">Multi-Station Auto Checkin · Hub</div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="live" id="live">
+          <span class="live-dot" id="live-dot"></span>
+          <span id="live-text">连接中…</span>
+        </div>
+        <button id="run-all" class="btn primary"><span>⚡</span> 全部签到</button>
+        <button id="refresh" class="btn ghost"><span>↻</span></button>
+      </div>
+    </header>
+
+    <!-- 顶部指标 Bento -->
+    <section class="bento metrics" id="metrics"></section>
+
+    <!-- 趋势图 -->
+    <section class="panel glass">
+      <div class="panel-head">
+        <div>
+          <h2>奖励趋势</h2>
+          <div class="panel-sub">每日领取奖励（美元折算）</div>
+        </div>
+        <div class="range" id="range">
+          <button data-days="7">7天</button>
+          <button data-days="30" class="active">30天</button>
+          <button data-days="90">90天</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <svg id="chart" preserveAspectRatio="none"></svg>
+        <div class="chart-tip" id="chart-tip"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <!-- 站点卡片 -->
+    <section>
+      <div class="section-title"><h2>站点详情</h2><span class="hint">全部字段实时展示</span></div>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <!-- 记录 -->
+    <section class="panel glass">
+      <div class="panel-head"><h2>运行记录</h2><span class="panel-sub" id="rec-count"></span></div>
+      <div class="table-scroll">
+        <table class="records">
+          <thead>
+            <tr><th>时间</th><th>站点</th><th>状态</th><th>奖励</th><th>余额</th><th>耗时</th><th>说明</th></tr>
+          </thead>
+          <tbody id="records-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      🔒 账号密码仅存本机 <code>.env</code>，数据仅存 <code>data/</code>，均不入库、不上传 · 面板绑定 127.0.0.1
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
