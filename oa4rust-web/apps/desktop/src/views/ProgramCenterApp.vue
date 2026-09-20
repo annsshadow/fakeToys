@@ -11,6 +11,9 @@
         <button :class="{active:tab==='script'}" @click="tab='script'">Script</button>
         <button :class="{active:tab==='dict'}" @click="tab='dict'">Dict</button>
         <button :class="{active:tab==='market'}" @click="tab='market'">Market</button>
+        <button :class="{active:tab==='invoke'}" @click="switchTab('invoke')">Invoke</button>
+        <button :class="{active:tab==='config'}" @click="switchTab('config')">Config</button>
+        <button :class="{active:tab==='style'}" @click="switchTab('style')">Style</button>
       </div>
       <!-- Agent tab -->
       <div v-if="tab==='agent'" class="tab-content">
@@ -29,6 +32,7 @@
             <span class="col-status" :class="a.enabled!==false?'enabled':'disabled'">{{ a.enabled!==false?'启用':'禁用' }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="toggleAgent(a)">{{ a.enabled!==false ? '禁用' : '启用' }}</button>
+              <button class="btn-sm" @click="executeAgent(a)">执行</button>
               <button class="btn-sm" @click="editAgent(a)">编辑</button>
               <button class="btn-sm" style="color:var(--color-error)" @click="deleteAgent(a)">删除</button>
             </span>
@@ -92,6 +96,11 @@
       </div>
       <!-- Market tab -->
       <div v-if="tab==='market'" class="tab-content">
+        <div class="market-bar">
+          <button class="chip" :class="{on:marketCat===''}" @click="filterCat('')">全部</button>
+          <button v-for="c in marketCats" :key="c" class="chip" :class="{on:marketCat===c}" @click="filterCat(c)">{{ c }}</button>
+          <button class="chip" @click="loadTopThree">🔥 热门 Top3</button>
+        </div>
         <div v-if="loadingMarket" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="markets.length===0" class="empty"><div class="ei">🏪</div><p>暂无市场数据</p></div>
         <div v-else class="item-grid">
@@ -100,11 +109,75 @@
             <div class="ib">
               <div class="it">{{ m.name || m.title || '未命名' }}</div>
               <div class="im">{{ m.desc || '' }}</div>
+              <div v-if="m.id && installedVer[m.id]" class="im">已装版本: {{ installedVer[m.id] }}</div>
+            </div>
+            <div class="market-acts">
+              <button class="btn-sm" @click="installMarket(m)">安装/更新</button>
+              <button class="btn-sm" @click="checkVersion(m)">版本</button>
+              <button class="btn-sm" @click="uninstallMarket(m)">卸载</button>
             </div>
           </div>
         </div>
       </div>
     </div>
+      <!-- Invoke tab -->
+      <div v-if="tab==='invoke'" class="tab-content">
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadInvokes">刷新</button>
+          <button class="btn-create" @click="createInvoke">+ 新建接口</button>
+        </div>
+        <div v-if="loadingInvoke" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="invokes.length===0" class="empty"><div class="ei">🔌</div><p>暂无接口</p></div>
+        <div v-else class="item-table">
+          <div class="table-header"><span class="col-name">名称</span><span class="col-flag">别名</span><span class="col-status">状态</span><span class="col-actions">操作</span></div>
+          <div v-for="iv in invokes" :key="iv.id" class="table-row glass-card">
+            <span class="col-name">{{ iv.name || '未命名' }}</span>
+            <span class="col-flag font-mono">{{ iv.alias || iv.category || '—' }}</span>
+            <span class="col-status" :class="iv.enable!==false?'enabled':'disabled'">{{ iv.enable!==false?'启用':'禁用' }}</span>
+            <span class="col-actions">
+              <button class="btn-sm" style="color:var(--color-error)" @click="deleteInvoke(iv)">删除</button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <!-- Config tab -->
+      <div v-if="tab==='config'" class="tab-content">
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadConfigs">全部配置</button>
+          <button class="btn-primary" @click="loadConfigApps">应用配置</button>
+          <button class="btn-primary" @click="loadConfigEntities">实体配置</button>
+          <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
+        </div>
+        <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
+        <div v-else class="item-table">
+          <div class="table-header"><span class="col-name">Key</span><span class="col-flag">Value</span><span class="col-status">分类</span><span class="col-actions">—</span></div>
+          <div v-for="cf in configs" :key="cf.id || cf.key" class="table-row glass-card">
+            <span class="col-name">{{ cf.key || '—' }}</span>
+            <span class="col-flag font-mono">{{ cf.value || '—' }}</span>
+            <span class="col-status">{{ cf.category || '—' }}</span>
+            <span class="col-actions"></span>
+          </div>
+        </div>
+      </div>
+      <!-- Style tab -->
+      <div v-if="tab==='style'" class="tab-content">
+        <div class="toolbar">
+          <button class="btn-primary" @click="loadCurrentStyle">当前样式</button>
+          <button class="btn-primary" @click="loadPortalApps">门户应用</button>
+        </div>
+        <div v-if="loadingStyle" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+        <div v-else-if="styleApps.length===0" class="empty"><div class="ei">🎨</div><p>暂无样式/应用</p></div>
+        <div v-else class="item-table">
+          <div class="table-header"><span class="col-name">应用</span><span class="col-flag">App ID</span><span class="col-status">状态</span><span class="col-actions">—</span></div>
+          <div v-for="ap in styleApps" :key="ap.id || ap.appId" class="table-row glass-card">
+            <span class="col-name">{{ ap.name || '—' }}</span>
+            <span class="col-flag font-mono">{{ ap.appId || ap.id || '—' }}</span>
+            <span class="col-status" :class="ap.disable?'disabled':'enabled'">{{ ap.disable?'停用':'启用' }}</span>
+            <span class="col-actions"></span>
+          </div>
+        </div>
+      </div>
     <!-- Create agent modal -->
     <div v-if="showCreateAgent" class="modal-overlay" @click.self="showCreateAgent=false">
       <div class="modal glass-card">
@@ -195,14 +268,17 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
-import { toast } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
-type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market'
+type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market' | 'invoke' | 'config' | 'style'
 type Agent = { id?: string; name?: string; label?: string; agentName?: string; flag?: string; enabled?: boolean }
 type App = { id?: string; name?: string; appName?: string; desc?: string; description?: string; flag?: string }
 type Script = { id?: string; name?: string; scriptName?: string; flag?: string }
 type Dict = { id?: string; name?: string; dictName?: string; flag?: string; keyName?: string }
 type Market = { id?: string; name?: string; title?: string; desc?: string }
+type Invoke = { id?: string; name?: string; alias?: string; category?: string; enable?: boolean }
+type Config = { id?: string; key?: string; value?: string; category?: string }
+type StyleApp = { id?: string; name?: string; appId?: string; disable?: boolean }
 
 const tab = ref<Tab>('agent')
 const loadingAgent = ref(false)
@@ -215,6 +291,12 @@ const applications = ref<App[]>([])
 const scripts = ref<Script[]>([])
 const dicts = ref<Dict[]>([])
 const markets = ref<Market[]>([])
+const invokes = ref<Invoke[]>([])
+const loadingInvoke = ref(false)
+const configs = ref<Config[]>([])
+const loadingConfig = ref(false)
+const styleApps = ref<StyleApp[]>([])
+const loadingStyle = ref(false)
 const showCreateAgent = ref(false)
 const showCreateDict = ref(false)
 const agentForm = ref({ name: '', flag: '' })
@@ -317,16 +399,28 @@ function switchTab(t: Tab) {
   else if (t === 'script') loadScripts()
   else if (t === 'dict') loadDict()
   else if (t === 'market') loadMarket()
+  else if (t === 'invoke') loadInvokes()
+  else if (t === 'config') loadConfigs()
+  else if (t === 'style') loadCurrentStyle()
 }
 
 async function toggleAgent(a: Agent) {
   try {
     const action = a.enabled !== false ? 'disable' : 'enable'
-    await api.post(`/api/program_center/agent/${a.flag || a.id}/${action}`, null)
+    await api.get(`/api/program_center/agent/${a.flag || a.id}/${action}`)
     toast.success(action === 'enable' ? '已启用' : '已禁用')
     loadAgents()
   } catch (e: any) {
     toast.error(e?.message ?? '操作失败')
+  }
+}
+async function executeAgent(a: Agent) {
+  try {
+    // GET /agent/{flag}/execute —— 触发调度并记录日志
+    await api.get(`/api/program_center/agent/${a.flag || a.id}/execute`)
+    toast.success('已触发执行')
+  } catch (e: any) {
+    toast.error(e?.message ?? '执行失败')
   }
 }
 
@@ -637,6 +731,181 @@ function setMarketCover(flag: string) {
   marketCoverPicM.mutate(flag)
 }
 
+// 应用市场：分类 / 热门 / 安装-卸载-版本（program_center market 族，均 GET）
+const marketCats = ref<string[]>([])
+const marketCat = ref('')
+const installedVer = ref<Record<string, string>>({})
+async function loadMarketCats() {
+  try {
+    const r: any = await api.get('/api/program_center/market/list/category')
+    marketCats.value = ((r.data ?? []) as any[])
+      .map((c) => (typeof c === 'string' ? c : (c?.category ?? c?.name)))
+      .filter((c): c is string => !!c)
+  } catch {
+    marketCats.value = []
+  }
+}
+
+// 接口调用（invoke）：列表 / 新建 / 删除 / 分类（program_center invoke 族）
+async function loadInvokes() {
+  loadingInvoke.value = true
+  try {
+    const r: any = await api.get('/api/program_center/invoke')
+    invokes.value = (r.data ?? []) as Invoke[]
+  } catch {
+    invokes.value = []
+  } finally {
+    loadingInvoke.value = false
+  }
+}
+async function createInvoke() {
+  const name = prompt('接口名称:')
+  if (!name) return
+  const alias = prompt('别名（可选）:', '') ?? ''
+  const category = prompt('分类（可选）:', '') ?? ''
+  try {
+    // 后端 u2_invoke_create：U2InvokeRequest{ name(必填)/alias/category/description }
+    await api.post('/api/program_center/invoke', { name, alias, category, description: '' })
+    loadInvokes()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteInvoke(iv: Invoke) {
+  if (!(await confirmMsg('确定删除接口「' + (iv.name || iv.id) + '」？'))) return
+  try {
+    await api.delete('/api/program_center/invoke/' + (iv.id || ''))
+    loadInvokes()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadInvokeCats() {
+  try {
+    await api.get('/api/program_center/invoke/list/category')
+  } catch {
+    /* 分类列表供后续过滤，失败忽略 */
+  }
+}
+loadInvokeCats()
+
+// 平台配置（config）：列表 / 应用 / 实体 / 新建更新（program_center config 族）
+async function loadConfigs() {
+  loadingConfig.value = true
+  try {
+    const r: any = await api.get('/api/program_center/config/list')
+    configs.value = (r.data ?? []) as Config[]
+  } catch {
+    configs.value = []
+  } finally {
+    loadingConfig.value = false
+  }
+}
+async function loadConfigApps() {
+  loadingConfig.value = true
+  try {
+    const r: any = await api.get('/api/program_center/config/list/application')
+    configs.value = (r.data ?? []) as Config[]
+  } catch {
+    configs.value = []
+  } finally {
+    loadingConfig.value = false
+  }
+}
+async function loadConfigEntities() {
+  loadingConfig.value = true
+  try {
+    const r: any = await api.get('/api/program_center/config/list/entity')
+    configs.value = (r.data ?? []) as Config[]
+  } catch {
+    configs.value = []
+  } finally {
+    loadingConfig.value = false
+  }
+}
+async function saveConfig() {
+  const key = prompt('配置 Key:')
+  if (!key) return
+  const value = prompt('配置 Value（可选）:', '') ?? ''
+  const category = prompt('分类（可选）:', '') ?? ''
+  try {
+    // 后端 config_save：ConfigSaveRequest{ key(必填)/value/category/creator }，key 冲突则更新
+    await api.post('/api/program_center/config/save', { key, value, category })
+    loadConfigs()
+  } catch (e: any) {
+    toast.error('保存失败: ' + (e?.message ?? ''))
+  }
+}
+// 应用样式（appstyle）：当前样式 / 门户应用（program_center appstyle 族，GET 只读）
+async function loadCurrentStyle() {
+  loadingStyle.value = true
+  try {
+    const r: any = await api.get('/api/program_center/appstyle/current/style')
+    const d = r.data
+    styleApps.value = (Array.isArray(d) ? d : d ? [d] : []) as StyleApp[]
+  } catch {
+    styleApps.value = []
+  } finally {
+    loadingStyle.value = false
+  }
+}
+async function loadPortalApps() {
+  loadingStyle.value = true
+  try {
+    const r: any = await api.get('/api/program_center/appstyle/index/portal')
+    styleApps.value = (r.data ?? []) as StyleApp[]
+  } catch {
+    styleApps.value = []
+  } finally {
+    loadingStyle.value = false
+  }
+}
+loadMarketCats()
+function filterCat(cat: string) {
+  marketCat.value = cat
+  if (!cat) {
+    loadMarket()
+  } else {
+    markets.value = markets.value.filter((m) => (m as any).category === cat)
+  }
+}
+async function loadTopThree() {
+  try {
+    const r: any = await api.get('/api/program_center/market/list/top/three')
+    markets.value = (r.data ?? []) as Market[]
+  } catch {
+    toast.error('加载热门失败')
+  }
+}
+async function installMarket(m: Market) {
+  try {
+    await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/install/or/update`)
+    toast.success('安装/更新已触发')
+    checkVersion(m)
+  } catch {
+    toast.error('安装失败')
+  }
+}
+async function checkVersion(m: Market) {
+  if (!m.id) return
+  try {
+    const r: any = await api.get(`/api/program_center/market/${encodeURIComponent(m.id)}/installed/version`)
+    installedVer.value = { ...installedVer.value, [m.id]: r.data?.version || '未安装' }
+  } catch {
+    /* 未部署时后端返回 error，忽略 */
+  }
+}
+async function uninstallMarket(m: Market) {
+  if (!(await confirmMsg('确定卸载「' + (m.name || m.title || m.id) + '」？'))) return
+  try {
+    await api.get(`/api/program_center/market/${encodeURIComponent(m.id || '')}/uninstall`)
+    toast.success('卸载已触发')
+  } catch {
+    toast.error('卸载失败')
+  }
+}
+loadMarketCats()
+
 // MPWeixin 扩展
 // 注：后端 /api/program_center/mpweixin/check 与 /mpweixin/menu/add 为无参占位注册，
 // 其 handler 需 Path 参数 → 运行时必 500（同 BBS 裸路由问题），且无参数化正确路由可改调；
@@ -748,4 +1017,8 @@ const program_center_module_write_m_1_ref = ref<any[]>([])
 .ver-table{width:100%;border-collapse:collapse;margin-bottom:8px}
 .ver-table th,.ver-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border-subtle);font-size:13px}
 .ver-table th{color:var(--text-muted);font-size:11px;text-transform:uppercase}
+.market-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{padding:4px 12px;border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
+.chip.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
+.market-acts{display:flex;gap:6px;flex-wrap:wrap}
 </style>

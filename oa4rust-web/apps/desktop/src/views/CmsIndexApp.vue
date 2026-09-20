@@ -11,7 +11,9 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索索引 / 目标..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
       </div>
+      <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🔖</div><p>暂无索引</p></div>
       <table v-else class="data-table">
@@ -49,7 +51,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -63,6 +65,17 @@ interface Item {
 }
 
 const listEp = '/api/cms/core/entity/index/list'
+const cmsConfigText = ref('')
+async function loadCmsConfig() {
+  try {
+    // GET /api/cms_assemble_control/get/control/config —— CMS 控制配置
+    const r: any = await api.get('/api/cms_assemble_control/get/control/config')
+    const d = r.data ?? {}
+    cmsConfigText.value = '控制配置：' + JSON.stringify(d).slice(0, 120)
+  } catch (e: any) {
+    toast.error('加载配置失败: ' + (e?.message ?? ''))
+  }
+}
 const createEp = '/api/cms/core/entity/index/create'
 const qk = ['cms_Index', 'list']
 
@@ -186,4 +199,5 @@ function fmtTime(t?: string) {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.cfg-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-secondary);word-break:break-all}
 </style>

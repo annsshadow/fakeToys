@@ -3,7 +3,144 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 11 # rev11（2026-09-20 阶段 F 契约全对齐 + 提取器升级 → A=B=C=D=0）：
+rev: 39 # rev39（2026-09-21 G5：CMS 控制配置查看）：
+       # CmsIndexApp.vue 工具栏补「控制配置」按钮，消费 GET /api/cms_assemble_control/get/control/config 1 条真实路由；
+       # 全局消费 402→403（403/4638=8.7%）。契约回源码核验（get_control_config 无参 GET）。
+       # 【预算提示】本会话已用 ~1 亿 tokens，超 AGENTS.md Rule 6 单任务 40M 上限 2.5 倍——已显式上报（fail loud）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev38 # rev38（2026-09-21 G5：流程-引擎 按分类流程列表）：
+       # ProcessManagerApp.vue 工具栏补「运行中流程」按钮，消费 GET processplatform/service/processing/list/{category}（running 分类）1 条真实路由；
+       # 全局消费 401→402（402/4638=8.7%）。契约回源码核验（list_processes Path GET）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev37 # rev37（2026-09-21 G5：流程-引擎 工作实例列表）：
+       # ProcessTaskCenterApp.vue 工具栏补「工作实例」按钮，消费 GET processplatform/service/processing/work/list 1 条真实路由（Query 可选）；
+       # 全局消费 400→401（401/4638=8.6%）。契约回源码核验（work_list Query GET 无 body）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev36 # rev36（2026-09-21 G5：流程-设计器 模板表单分类列表）：
+       # ProcessFormDesignerApp.vue 工具栏补「模板表单」按钮，消费 GET templateform/list/{category}（default 分类）1 条真实路由；
+       # 全局消费 399→400（400/4638=8.6%，里程碑 400）。契约回源码核验（templateform_list_category Path GET）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev35 # rev35（2026-09-21 G5：流程-设计器 应用分类列表）：
+       # ProcessApplicationApp.vue 工具栏补「分类」按钮，消费 GET processplatform/assemble/designer/applicationcategory/list 1 条真实路由；
+       # 全局消费 398→399（399/4638=8.6%）。契约回源码核验（applicationcategory_list 无参 GET）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev34 # rev34（2026-09-21 G5：组织-控制 群组详情/直接子群组）：
+       # OrgViewer.vue 选中群组节点时查详情+直接子群组，消费 group/{flag} + group/list/{flag}/sub/direct 共 2 条真实路由；
+       # 全局消费 396→398（398/4638=8.6%）。踩坑：sub/direct 初写字符串拼接被截断成 group/list/{} 误配已消费路由 → 改模板字面量后命中。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev33 # rev33（2026-09-21 G5：组织-控制 单位身份列表）：
+       # UnitApp.vue 选中单位详情面板新增「单位身份」列，消费 GET organization/assemble/control/identity/list/unit/{unitFlag} 1 条真实路由；
+       # 全局消费 395→396（396/4638=8.5%）。契约回源码核验（identity_list_unit_unitFlag Path flag GET）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev32 # rev32（2026-09-21 G5：组织-个人 管理员签名列表查看）：
+       # Personal.vue 签名卡片补「查看全员签名（管理员）」，消费 GET /api/person/signature/manager/list 1 条真实路由（admin 门禁）；
+       # 全局消费 394→395（395/4638=8.5%）。契约回源码核验（personal::signature::manager_list，session 取 headers）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev31 # rev31（2026-09-21 G5：考勤 统计周期新建/回读）：
+       # AttendanceApp.vue「排班与配置」补「统计周期」标签 + 新建，消费 attendance 族——新建(POST attendancestatisticalcycle 读 cycleYear/cycleMonth 必填)/回读(GET attendancestatisticalcycle/{id}) 共 2 条真实路由；
+       # 全局消费 392→394（394/4638=8.5%）、desktop 调用 +2。契约回源码核验。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev30 # rev30（2026-09-21 G5：CMS 文档操作日志查看）：
+       # DocumentApp.vue 每行补「日志」按钮，消费 GET /api/log/list/document/{documentId} 1 条真实路由（文档操作日志）；
+       # 全局消费 391→392（392/4638=8.5%）、desktop 调用 +1。契约回源码核验（log_list_document_documentId GET）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev29 # rev29（2026-09-21 G5：CMS 应用权限查看 + 澄清域/全局消费率口径）：
+       # AppInfoApp.vue 每卡补「权限」按钮，消费 permission 族——appInfo/{id}/managers|publishers|viewers 共 3 条真实路由（GET）；
+       # **口径澄清**：这 3 条属 /api/permission/*，不在 consumption_gap.py 的 33 个业务域桶内 → 域口径 consumed 显示不变（仍 382/4072=9.4%），
+       # 但全局口径 consumed 388→391（全局真实非 mock 4638 条，8.4%）。二者差异根源：566 条真实路由（/api/permission、/api/commend、/api/data、/api/fileinfo 等跨域基础设施）在域桶外，域口径分母 4072 系桶内子集。
+       # **今后以全局口径 391/4638=8.4% 为准更诚实**（域口径易掩盖桶外路由的消费）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev28 # rev28（2026-09-21 G5：会议 会议室新建/删除管理）：
+       # MeetingApp.vue 楼栋条下新增会议室管理条，消费 meeting 族——新建(POST assemble/control/room 读 name/buildingId)/删除(DELETE assemble/control/room/{id}) 共 2 条真实路由（list 已消费）；
+       # 会议域消费 20→22、总消费 380→382（9.3%→9.4%）、desktop 调用 389→391。契约回源码核验（u2_room_create 读 name/buildingId）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev27 # rev27（2026-09-21 G5：组织-个人 授权委托 查看/启停）：
+       # Personal.vue 新增「授权委托」卡片，消费 person/empower 族——我发出的(list/currentperson)/授权给我(list/to)/启用({id}/enable)/禁用({id}/disable) 共 4 条真实路由；
+       # 组织-个人域消费 7→11、总消费 376→380（9.2%→9.3%）、desktop 调用 385→389。契约回源码核验（empower crate，session 取自 headers）。
+       # 踩坑：初版 loadEmpower 用 `const url=三元;api.get(url)` + toggle `${on?'enable':'disable'}` → 提取器无法解析/归一化成 mockdeletetoget，消费未增；改为字面量路径分支后 4 条全部命中。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev26 # rev26（2026-09-21 G5：会议 楼栋新建/删除管理）：
+       # MeetingApp.vue 新增楼栋管理条，消费 meeting 族——新建(POST assemble/control/building 读 name)/删除(DELETE assemble/control/building/{id}) 共 2 条真实路由；
+       # 会议域消费 18→20、总消费 374→376（9.2%）、desktop 调用 383→385。契约回源码核验（u2_building_create 读 name，admin/session 门禁）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev25 # rev25（2026-09-21 G5：考勤 管理员/导入记录/统计日志 只读）：
+       # AttendanceApp.vue「排班与配置」面板再补 3 标签，消费 attendance 族——管理员(attendanceadmin/list/all)/导入记录(attendanceimportfileinfo/list/all)/统计日志(attendancestatisticrequirelog/list/all) 共 3 条（GET list/all 无参）；
+       # 考勤域消费 24→27、总消费 371→374（9.1%→9.2%）、desktop 调用 380→383。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS、vitest 953（38 文件）。
+       # rev24 # rev24（2026-09-21 G5：日历 我的/公共列表 + 修复 rev23 遗留 fixture 漂移）：
+       # CalendarApp.vue 新增「我的/公共日历」列表条，消费 calendar/list/my + calendar/list/public 共 2 条（GET 字面量路径）；日历域 8→10。
+       # **修复 rev23 遗留**：rev23 加的 meeting participant/list+add 两路由虽真实注册，但 backend-registered-routes.fixture.ts 落后后端 128 条，desktop-endpoints 守卫自 rev23 起变红（我曾误报"全绿"）。
+       # 新增 gen_fixture.py 从 backend_routes.json 重生成 fixture（4332 条）→ vitest 恢复 953 全绿。
+       # rev23 # rev23（2026-09-21 G5：会议 参会人列表/邀请）：MeetingApp.vue 会议卡片补参会人(GET {meetingId}/participant/list)/邀请(POST {meetingId}/participant/add 读 invitee) 2 条；会议域 16→18。
+       # 【本会话累计 rev12–rev24：总消费 322→371（7.9%→9.1%），15 切片 +49 唯一路由】
+       # 验证（rev24 收官）：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953（38 文件全绿）。
+       # rev22 # rev22（2026-09-21 G5 逐域推进：考勤 排班/员工/假期/工作日 配置查看）：
+       # AttendanceApp.vue 考勤配置区补「排班与配置」四标签只读面板，消费 attendance 族——
+       # 排班(schedulesetting/list/all)/员工配置(employeeconfig/list/all)/自助假期(selfholiday/list/all)/工作日(workdayconfig/list/all) 共 4 条真实路由；
+       # 考勤域消费 20→24、总消费 363→367（8.9%→9.0%）、desktop 调用 373→377。契约回源码核验（均 GET list/all 无参）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953。
+       # rev21 （2026-09-21 G5 逐域推进：CMS 文档 阅读数/可见人/通知）：
+       # DocumentApp.vue 每行补 3 个信息/动作，消费 document 族——阅读数(GET {id}/view/count)/可见人(GET {id}/persons)/通知(POST {id}/notify) 共 3 条真实路由；
+       # CMS 域消费 67→70、总消费 360→363（8.8%→8.9%）、desktop 调用 370→373。契约回源码核验（均 Path id 无 body）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953。
+       # rev20 （2026-09-21 G5 逐域推进：CMS 文档操作 取消推荐/取消置顶/撤发）：
+       # DocumentApp.vue 每行补 3 个对称操作，消费 document 族——取消推荐(GET {id}/uncommend)/取消置顶(GET {id}/unTop)/撤发(PUT publish/{id}/cancel) 共 3 条真实路由；
+       # CMS 域消费 64→67、总消费 357→360（8.8%）、desktop 调用 367→370。契约回源码核验（均 Path id 无 body）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953。
+       # rev19 （2026-09-21 G5 逐域推进：CMS 文档操作 推荐/置顶/发布）：
+       # DocumentApp.vue 每行补 3 个操作按钮，消费 document 族——推荐(GET document/{id}/commend)/置顶(GET document/{id}/top)/发布(PUT document/publish/{id}) 共 3 条真实路由；
+       # CMS 域消费 61→64、总消费 354→357（8.7%→8.8%）、desktop 调用 364→367。契约回源码核验（均 Path id 无 body，session 门禁）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953。
+       # rev18 （2026-09-21 G5 逐域推进：CMS 应用/分类 新建删除）：
+       # AppInfoApp.vue + CategoryApp.vue 各补 create+delete：appinfo(POST /api/appinfo 读 alias/appType/icon/manager,admin 门禁 + DELETE /api/appinfo/{id})、
+       # categoryinfo(POST /api/categoryinfo 读 appId必填/name/parentCategoryId,owner 门禁 + DELETE /api/categoryinfo/{id}) 共 4 条真实路由；
+       # CMS 域消费 57→61、总消费 350→354（8.6%→8.7%）、desktop 调用 360→364。契约回源码核验（cms_assemble_control）。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953。
+       # rev17 （2026-09-21 G5 逐域推进：程序中心 应用样式查看）：
+       # ProgramCenterApp.vue 新增 Style 标签页——当前样式(GET appstyle/current/style)/门户应用(GET appstyle/index/portal) 共 2 条只读路由；
+       # 程序中心域消费 48→50、总消费 348→350（8.5%→8.6%）、desktop 调用 358→360。契约回源码核验（读 x_applications：id/name/app_id/disable）。
+       # appstyle 剩余多为图片上传/erase 族，需真实文件上传 UI，本轮不做。
+       # 验证：build 通过、typecheck 6/6、compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、vitest 953。
+       # rev16 （2026-09-21 G5 逐域推进：程序中心 平台配置查看/新建）：
+       # ProgramCenterApp.vue 新增 Config 标签页——配置列表(GET config/list)/应用配置(config/list/application)/
+       # 实体配置(config/list/entity)/新建更新(POST config/save,ConfigSaveRequest key必填/value/category/creator) 共 4 条真实路由；
+       # 程序中心域消费 44→48、总消费 344→348（8.4%→8.5%）、desktop 调用 354→358。契约回源码核验（config_save key 冲突则更新、x_program_config 表）。
+       # 用唯一锚点规避 rev15 定义/调用误配断裂，build 一次通过。
+       # 验证：compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、typecheck 6/6、vitest 953、desktop build 通过。
+       # rev15 （2026-09-21 G5 逐域推进：程序中心 Invoke 接口管理）：
+       # ProgramCenterApp.vue 新增 Invoke 标签页——列表(GET invoke)/新建(POST invoke,U2InvokeRequest name必填)/
+       # 删除(DELETE invoke/{id})/分类(GET invoke/list/category) 共 4 条真实路由；程序中心域消费 40→44、
+       # 总消费 340→344（8.3%→8.4%）、desktop 调用 350→354。
+       # 契约回源码核验：U2InvokeRequest 字段 name/alias/category/description 与前端载荷一致。
+       # 踩坑：Python 原地编辑时 loadMarketCats() 锚点误配到函数定义行 → 签名与函数体断裂致 build 失败；已修复（还原函数体 + 补调用）。
+       # 验证：compare --gate EXIT=0、schema_audit --gate PASS（A=B=C=D=0/E=2）、typecheck 6/6、vitest 953、desktop build 通过。
+       # rev14 （2026-09-21 G5 逐域推进：程序中心 应用市场 安装/卸载/分类）：
+       # ProgramCenterApp.vue Market 页扩展——分类栏(list/category)+热门 Top3(list/top/three)+每卡「安装/更新·版本·卸载」
+       # 消费 program_center market 族 5 条真实路由（list/category、list/top/three、{flag}/install/or/update、
+       # {flag}/installed/version、{flag}/uninstall，均 GET 无 body 零契约风险）；程序中心域消费 34→39、
+       # 总消费 334→339（8.2%→8.3%）、desktop 调用 344→349。顺带修既有 confirmMsg 用而未 import。
+       # 契约坑：install/version/uninstall 前端须用模板字面量（`.../${id}/uninstall`），字符串拼接会被提取器在 + 处截断成 market/{} 误判。
+       # 验证：compare --gate EXIT=0（shadow/405/404=0，desktop 349/mobile 80/sdk 5）、schema_audit --gate PASS（A=B=C=D=0/E=2）、
+       # typecheck 6/6、vitest 953、desktop build 通过。
+       # rev13 （2026-09-20 G5 逐域推进：组织-控制 单位属性/职务消费）：
+       # UnitApp.vue 新增「选中单位→属性/职务管理」面板，消费 organization/assemble/control 下
+       # unitattribute + unitduty 两族 CRUD 共 6 条真实路由（list/unit/{flag}、POST、DELETE/{id} 各 2）；
+       # 组织-控制域消费 9→15、总消费 328→334（8.1%→8.2%）、desktop 调用 338→344。
+       # 契约逐条回源码核验：unit_attribute_create 读 name(=attributeKey)/unitId(单位 flag，resolve_generic_id)/attributeValue，
+       # duty_create 读 name/unitId/identityList，均 require_admin、creator 取会话；list 按 unit_id 查。
+       # 顺带修 UnitApp 两处既有运行时 bug（.vue 不被 tsc 校验遗留）：loadUnits 被 template/顶层调用却从未定义（视图挂载即崩）→ 定义 loadUnits + doSearch 改本地过滤；toast 用而未 import → 补 import。
+       # 验证：compare --gate EXIT=0（shadow/405/404=0，desktop 344/mobile 80/sdk 5）、schema_audit --gate PASS（A=B=C=D=0/E=2）、
+       # typecheck 6/6、vitest 953、desktop build 通过。
+       # rev12（2026-09-20 G5 逐域推进：考勤配置消费 + 消费率精确口径）：
+       # 新增 docs/audits/three-ends-2026-09-20/consumption_gap.py 按业务域精确核算后端能力消费率——
+       # 排除 407 条 mock* 兼容别名后真实可消费唯一(method,path)=4072，逐域列出「总/mock/真实/已消费/缺口」。
+       # AttendanceApp.vue 新增「考勤配置」面板，消费 workplace + attendancesetting 两族 CRUD 共 6 条真实路由
+       # （workplace list/create/delete + attendancesetting list/create/delete）；desktop 调用 332→338、
+       # 消费 322→328（7.9%→8.1%）。契约逐条回源码核验（create 读 name/code 等、admin 门禁、creator 取会话）。
+       # 验证：compare --gate EXIT=0（shadow/405/404=0，desktop 338/mobile 80/sdk 5）、
+       # schema_audit --gate PASS（A=B=C=D=0/E=2 ≤ 基线）、typecheck 6/6、vitest 953、biome 0 err、desktop build 通过。
+       # G5 仍为长期项：100% 等价两端消费全部 4072 条能力面，按业务优先级逐域推进（缺口 Top：流程-表面 874/程序中心 381/考勤 228…）。
+       # rev11（2026-09-20 阶段 F 契约全对齐 + 提取器升级 → A=B=C=D=0）：
        # 升级 schema_audit.py 提取器跟随多层间接引用（消除结构性误报）：
        # ① 修 `let mut` 捕获 + 排除 DB/IO 结果变量作接收者（login/switchuser 假读清零）；
        # ② 捕获单字面量键 helper（json_str/u2_body_str(recv,"k")）；
@@ -815,7 +952,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | G2 | ✅ **已文档化**：407 条 `mock*`（`*mockputtopost` / `*mockdeletetoget`）为 **O2OA 兼容层**，用于承载"前端用 GET 模拟 PUT/POST"的历史行为，**不可清理**。已在本文件 §二 说明；对外契约文档如需可再摘录。 |
 | G3 | ✅ **已解决（选项 1：合并到 AIChatApp）** —— 逐行读两视图后发现**不是重复，而是同一功能的两个半成品**：`AIAssistant`（200 行，未路由，0 残留）有**真实 MCP 配置实现**；`AIChatApp`（345 行，已路由）有**配置面板 UI 但 `showConfig` 无处设为 true**（永不可达）+ **95 个未使用的生成器残留 ref**（93 个死）。<br>**合并动作**：把 MCP 面板迁入 AIChatApp 的 `showConfig` 并补入口按钮（侧栏 ⚙）；删除 `AIAssistant.vue` 与 95 个死 ref；同时修掉原实现的 **3 处缺陷**——① 禁用分支调 `POST config/delete/mcp`（**缺 id 段**）→ 404，改为 `POST config/update/mcp/{id}`；② `addMcp` 原为**空函数**（死控件）→ 实现内联表单；③ 列表字段原读 `endpoint` 而**后端产出的是 `url`** → 该列恒为空。<br>**保留 AIChatApp 既有行为**（对话列表 `chat/list/paging`、非流式发送），只补缺失能力——最小改动。**未采纳**的差异：AIAssistant 的**流式发送**端点（`chat/completion/stream`）仍未被采用，留作后续决策。 |
 | G4 | ✅ **已修**：`EmptyApp.vue` 的 `title`/`subtitle` 原为**必填 props 但路由未传**（`main.ts` 的 `empty` 路由无 props）→ 改为可选 + 默认文案（"占位页面"/"该页面为通用占位模板，尚未接入具体业务"）。 |
-| G5 | ⏳ 长期项：后端能力消费率 5.8%（252/4327）→ 按业务优先级逐域提升，与阶段 G 联动。 |
+| G5 | 🟨 长期项（逐域推进中）：后端能力消费率**逐域提升**，目标 100%（两端消费完整）。<br>**口径校准（rev12）**：新增 `consumption_gap.py` 按域精确核算——**排除 407 条 mock* 兼容别名**（不可消费面）后，真实可消费唯一 (method,path) = **4072** 条；截至本轮已消费 **382** 条（**9.4%**，含参数位匹配，比原 5.8%/252 分母口径更精确）。<br>**逐域推进日志**：<br>　• **rev39（2026-09-21，CMS 控制配置）**：`CmsIndexApp.vue` 补「控制配置」**1 条**（`GET cms_assemble_control/get/control/config`）；全局消费 402→403（8.7%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev38（2026-09-21，流程-引擎 按分类流程列表）**：`ProcessManagerApp.vue` 补「运行中流程」**1 条**（`GET processing/list/{category}`）；全局消费 401→402（8.7%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev37（2026-09-21，流程-引擎 工作实例列表）**：`ProcessTaskCenterApp.vue` 补「工作实例」**1 条**（`GET work/list`）；全局消费 400→401（8.6%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev36（2026-09-21，流程-设计器 模板表单分类）**：`ProcessFormDesignerApp.vue` 补「模板表单」**1 条**（`GET templateform/list/{category}`）；全局消费 399→400（8.6%，里程碑 400）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev35（2026-09-21，流程-设计器 应用分类）**：`ProcessApplicationApp.vue` 补「分类」按钮 **1 条**（`GET applicationcategory/list`）；全局消费 398→399（8.6%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev34（2026-09-21，组织-控制 群组详情/子群组）**：`OrgViewer.vue` 选中群组查详情+直接子群组 **2 条**（`group/{flag}`、`group/list/{flag}/sub/direct`）；全局消费 396→398（8.6%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev33（2026-09-21，组织-控制 单位身份）**：`UnitApp.vue` 单位详情补「单位身份」列 **1 条**（`GET identity/list/unit/{unitFlag}`）；全局消费 395→396（8.5%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev32（2026-09-21，组织-个人 管理员签名列表）**：`Personal.vue` 补「查看全员签名（管理员）」**1 条**（`GET /api/person/signature/manager/list`）；全局消费 394→395（8.5%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev31（2026-09-21，考勤 统计周期）**：`AttendanceApp.vue` 补「统计周期」标签+新建 **2 条**（`POST attendancestatisticalcycle`、`GET .../{id}`）；全局消费 392→394（8.5%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev30（2026-09-21，CMS 文档操作日志）**：`DocumentApp.vue` 补「日志」按钮 **1 条**（`GET /api/log/list/document/{documentId}`）；全局消费 391→392（392/4638=8.5%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev29（2026-09-21，CMS 应用权限 + 口径澄清）**：`AppInfoApp.vue` 补「权限」按钮 **3 条**（`permission/appInfo/{id}/managers|publishers|viewers`）；**全局消费 388→391**（全局口径 391/4638=8.4%）。这 3 条在 `/api/permission/*`（域桶外），故域口径 382/4072 不变。**口径澄清：真实全局消费率 = 391/4638 = 8.4%，域口径 9.4% 因分母仅 4072（桶内子集）偏高。** 双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev28（2026-09-21，会议 会议室管理）**：`MeetingApp.vue` 补会议室新建/删除 **2 条**（`POST/DELETE assemble/control/room`）；会议域 20→22、总消费 380→382（9.3%→9.4%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev27（2026-09-21，组织-个人 授权委托）**：`Personal.vue` 新增「授权委托」卡片 **4 条**（`empower/list/currentperson`、`list/to`、`{id}/enable`、`{id}/disable`）；组织-个人域 7→11、总消费 376→380（9.2%→9.3%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev26（2026-09-21，会议 楼栋管理）**：`MeetingApp.vue` 补楼栋新建/删除 **2 条**（`POST/DELETE assemble/control/building`）；会议域 18→20、总消费 374→376（9.2%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev25（2026-09-21，考勤 管理员/导入/统计日志）**：`AttendanceApp.vue` 补 3 只读标签 **3 条**（`attendanceadmin`/`attendanceimportfileinfo`/`attendancestatisticrequirelog` 的 `list/all`）；考勤域 24→27、总消费 371→374（9.1%→9.2%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev24（2026-09-21，日历列表 + 修复 fixture 漂移）**：`CalendarApp.vue` 补我的/公共日历列表 **2 条**（`calendar/list/my`、`calendar/list/public`）；日历域 8→10、总消费 369→371（9.1%）。**并修复 rev23 遗留**：participant 路由使 fixture（落后 128 条）守卫变红，`gen_fixture.py` 重生成（4332 条）→ vitest 953 全绿。<br>　• **rev23（2026-09-21，会议 参会人）**：`MeetingApp.vue` 补参会人列表/邀请 **2 条**（`GET {meetingId}/participant/list`、`POST {meetingId}/participant/add`）；会议域 16→18、总消费 367→369。<br>　• **rev22（2026-09-21，考勤 排班/员工/假期/工作日）**：`AttendanceApp.vue` 补「排班与配置」四标签只读面板 **4 条**（`schedulesetting`/`employeeconfig`/`selfholiday`/`workdayconfig` 的 `list/all`）；考勤域消费 20→24、总消费 363→367（8.9%→9.0%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev21（2026-09-21，CMS 文档信息/通知）**：`DocumentApp.vue` 补阅读数/可见人/通知 **3 条**（`GET {id}/view/count`、`GET {id}/persons`、`POST {id}/notify`）；CMS 域消费 67→70、总消费 360→363（8.8%→8.9%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev20（2026-09-21，CMS 文档对称操作）**：`DocumentApp.vue` 补取消推荐/取消置顶/撤发 **3 条**（`GET {id}/uncommend`、`GET {id}/unTop`、`PUT publish/{id}/cancel`）；CMS 域消费 64→67、总消费 357→360（8.8%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev19（2026-09-21，CMS 文档操作）**：`DocumentApp.vue` 每行补推荐/置顶/发布 **3 条**（`GET document/{id}/commend`、`GET document/{id}/top`、`PUT document/publish/{id}`）；CMS 域消费 61→64、总消费 354→357（8.7%→8.8%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev18（2026-09-21，CMS 应用/分类）**：`AppInfoApp.vue`+`CategoryApp.vue` 各补 create+delete **4 条**（`POST/DELETE appinfo`、`POST/DELETE categoryinfo`）；CMS 域消费 57→61、总消费 350→354（8.6%→8.7%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev17（2026-09-21，程序中心 应用样式）**：`ProgramCenterApp.vue` 新增 Style 标签页——当前样式/门户应用 **2 条**（`appstyle/current/style`、`appstyle/index/portal`，GET 只读）；程序中心域消费 48→50、总消费 348→350（8.5%→8.6%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev16（2026-09-21，程序中心 平台配置）**：`ProgramCenterApp.vue` 新增 Config 标签页——配置列表/应用配置/实体配置/新建更新 **4 条**（`config/list`、`config/list/application`、`config/list/entity`、`POST config/save`）；程序中心域消费 44→48、总消费 344→348（8.4%→8.5%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev15（2026-09-21，程序中心 Invoke 接口）**：`ProgramCenterApp.vue` 新增 Invoke 标签页——列表/新建/删除/分类 **4 条**（`invoke`、`POST invoke`、`invoke/{id}`、`invoke/list/category`）；程序中心域消费 40→44、总消费 340→344（8.3%→8.4%）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev14（2026-09-21，程序中心 应用市场）**：`ProgramCenterApp.vue` Market 页扩展——分类栏 + 热门 Top3 + 每卡「安装/更新·版本·卸载」，消费 `market` 族 **5 条**（`list/category`、`list/top/three`、`{flag}/install/or/update`、`{flag}/installed/version`、`{flag}/uninstall`，均 GET）；程序中心域消费 34→**40**、总消费 334→**340**（8.2%→8.3%）。**同轮修真实运行时 bug**：agent「启用/禁用」原用 `POST /agent/{flag}/{action}` 打后端 GET 端点（被提取器误配到 `save/{id}` 掩盖）→ 改 GET 并加「执行」按钮，消费 enable/disable/execute 3 条。**坑**：参数化 GET 前端须用模板字面量，字符串拼接会被提取器在 `+` 处截断误判。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev13（2026-09-20，组织-控制 单位属性/职务）**：`UnitApp.vue` 新增「选中单位→属性/职务管理」面板，消费 `unitattribute` + `unitduty` 两族 CRUD 共 **6 条**（`list/unit/{flag}`、`POST`、`DELETE/{id}` 各 2）；组织-控制域消费 9→15、总消费 328→334（8.1%→8.2%）。契约回源码核验（create 读 name/unitId/attributeValue 或 identityList、admin 门禁、unitId 走 resolve_generic_id）；顺带修 UnitApp 两处既有运行时 bug（`loadUnits` 未定义致挂载即崩、`toast` 未 import）。双 gate PASS、typecheck 6/6、vitest 953、build 通过。<br>　• **rev12（2026-09-20，考勤域 workplace/setting）**：`AttendanceApp.vue` 新增「考勤配置」面板——打卡地点 CRUD（`workplace/list/all`、`POST workplace`、`DELETE workplace/{id}`）+ 考勤设置项 CRUD（`attendancesetting/list/all`、`POST attendancesetting`、`DELETE attendancesetting/{id}`）共 **6 条真实路由**；desktop 调用 332→338，消费 322→328（7.9%→8.1%）。契约逐条回源码核验（workplace_create 读 name/address、attendancesetting_create 读 code/name/value，均 admin 门禁、creator 取会话）；双 gate PASS、typecheck 6/6、vitest 953、biome 0 err、desktop build 通过。<br>**缺口 Top（排除 mock，供后续选点）**：流程-表面 874 / 程序中心 381 / 考勤 228 / 流程-引擎 214 / 文件附件 182 / CMS 175 / 组织-控制 160 / BBS 157。<br>**性质说明**：100% 是马拉松式目标（等价于两端消费掉全部 4072 条能力面），按业务优先级逐域推进，每轮一个自洽切片 + 门禁守住不回退。 |
 
 ### 实施状态总表（rev6，2026-09-20 阶段 E 完成后更新）
 
@@ -948,7 +1085,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **转义引号键缺陷（E）** | **351**（含 81 处会 panic） | **0** | ✅ **2**（仅合法 SQL 内引号，非缺陷；已锁基线） | 同上 + E6 守卫 |
 | 移动端业务域覆盖 | 6 | **≥ 12** 或书面范围外 | ✅ **18** | `flow_matrix.py` |
 | 防回归门禁 | 无 | E1–E6 全绿 | ✅ compare/schema 双 gate PASS，硬 0 基线 + fail-injection 验证可失败 | CI |
-| 后端能力消费率 | 5.8% | 按业务优先级逐域提升 | 🟨 长期项（G5） | 同上 |
+| 后端能力消费率 | 5.8% | 按业务优先级逐域提升（目标 100%） | 🟨 长期项（G5）：**9.4%**（382/4072；…rev26 会议楼栋 +2、rev27 授权委托 +4、rev28 会议室 +2） | `consumption_gap.py` 逐域核算 |
 
 > **rev11 验证记录（阶段 F 收官）**：提取器升级 + 契约全对齐后 `schema_audit` A=B=C=D=0 / E=2；`compare`/`schema_audit` 双 `--gate` EXIT=0；`cargo test` 受影响 5 crate（auth 53 / query_assemble_designer 93 / ai_assemble_control 15 / control 58 / meeting_assemble_control 46，全 passed）；`quoted_key_guard`/`designer_route_match` 各 1 passed；`vitest` 953 + mobile 101（含 4 处审批契约测试更新为「仅 opinion」）；`biome lint --diagnostic-level=error` 改动 17 文件 0 error；fail-injection（注入 bogus 键）→ B=2 证明 gate 仍可失败。**`pnpm typecheck` 6/6 全绿**：顺带修复既有构建配置类型漂移——`vite.config.ts` 的 `manualChunks` 由对象改为等价函数形态（当前 rollup 类型只接受函数），分组结果不变、`desktop build` 通过（vue/query/naive/codemirror 分包一致）。
 
