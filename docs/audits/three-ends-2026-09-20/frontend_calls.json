@@ -3774,7 +3774,17 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/RoleManager.vue",
-    "line": 77,
+    "line": 74,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/person/list/role/{}",
+    "path": "/api/organization/assemble/control/person/list/role/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RoleManager.vue",
+    "line": 92,
     "method": "POST",
     "raw": "/api/role/list",
     "path": "/api/role/list",
@@ -3784,7 +3794,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/RoleManager.vue",
-    "line": 102,
+    "line": 117,
     "method": "PUT",
     "raw": "/api/role/${form.value.flag}",
     "path": "/api/role/{}",
@@ -3794,7 +3804,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/RoleManager.vue",
-    "line": 104,
+    "line": 119,
     "method": "POST",
     "raw": "/api/role",
     "path": "/api/role",
@@ -3804,7 +3814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/RoleManager.vue",
-    "line": 120,
+    "line": 135,
     "method": "DELETE",
     "raw": "/api/role/${r.flag || r.id}",
     "path": "/api/role/{}",
