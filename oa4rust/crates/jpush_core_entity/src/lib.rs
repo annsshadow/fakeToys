@@ -1,4 +1,6 @@
-use axum::{extract::Extension, extract::Path, routing::get, routing::post, Json, Router};
+use axum::{
+    extract::Extension, extract::Path, routing::delete, routing::get, routing::post, Json, Router,
+};
 use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
@@ -199,9 +201,28 @@ pub fn jpush_core_entity_router(_pool: Pool) -> Router {
     Router::new()
         .route("/api/jpush/core/entity/device/list", get(device_list))
         .route("/api/jpush/core/entity/device/{id}", get(device_get))
+        .route("/api/jpush/core/entity/device/{id}", delete(device_delete))
         .route("/api/jpush/core/entity/device/create", post(device_create))
         .route("/api/jpush/core/entity/template/list", get(template_list))
         .route("/api/jpush/core/entity/template/{id}", get(template_get))
+}
+
+/// DELETE /api/jpush/core/entity/device/{id} — 删除推送设备
+#[allow(non_snake_case)]
+pub async fn device_delete(
+    db: Extension<DatabaseConnection>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let result = jpush_device::Entity::delete_by_id(&id)
+        .exec(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([(
+            "deleted".to_string(),
+            Value::Bool(result.rows_affected > 0),
+        )]),
+    ))))
 }
 
 #[cfg(test)]

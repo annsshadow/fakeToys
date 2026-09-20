@@ -4509,6 +4509,18 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
 }
 
 #[allow(non_snake_case)]
+/// POST /api/program_center/dict/{dictFlag}/data — 字典数据写入（无 path 段）。
+/// 与 `dict_dictFlag_path_data_mockputtopost` 同义：handler 本就忽略 path 段，
+/// 此处显式提供前端实际调用的无 path 形态。
+#[allow(non_snake_case)]
+pub async fn dict_dictFlag_data_post(
+    pool: Extension<Pool>,
+    Path(dict_flag): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    dict_dictFlag_path_data_mockputtopost(pool, Path((dict_flag, String::new())), Json(body)).await
+}
+
 pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Extension<Pool>,
     Path((dict_flag, _path)): Path<(String, String)>,

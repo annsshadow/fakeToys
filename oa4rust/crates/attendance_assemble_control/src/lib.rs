@@ -186,6 +186,27 @@ pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
+/// DELETE /api/attendance/assemble/control/rule/{id} — 删除考勤规则
+#[allow(non_snake_case)]
+pub async fn delete_control_rule(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            &dialect().format_sql("DELETE FROM x_attendance_assemble_control_rule WHERE id = $1"),
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
+    ))))
+}
+
 pub async fn toggle_control_rule(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,

@@ -68,6 +68,19 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 199,
+    "method": "DELETE",
+    "raw": "/api/attendance/assemble/control/rule/{}",
+    "path": "/api/attendance/assemble/control/rule/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/attendance/assemble/control/rule/{id}",
+    "hit_crate": "attendance_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/BBSForum.vue",
     "line": 321,
     "method": "POST",
@@ -445,6 +458,32 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
+    "line": 237,
+    "method": "DELETE",
+    "raw": "/api/config/delete/{}",
+    "path": "/api/config/delete/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/config/delete/{id}",
+    "hit_crate": "console",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
+    "line": 246,
+    "method": "PUT",
+    "raw": "/api/config/update/{}",
+    "path": "/api/config/update/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/config/update/{id}",
+    "hit_crate": "console",
+    "extra": null
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/DeploymentApp.vue",
     "line": 124,
     "method": "POST",
@@ -692,6 +731,19 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 99,
+    "method": "DELETE",
+    "raw": "/api/jpush/core/entity/device/${d.id}",
+    "path": "/api/jpush/core/entity/device/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/jpush/core/entity/device/{id}",
+    "hit_crate": "jpush_core_entity",
+    "extra": null
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
     "line": 146,
     "method": "PUT",
@@ -805,6 +857,19 @@
     "ambiguous": false,
     "hit": "/api/attachment/download/{attid}/stream",
     "hit_crate": "file_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 58,
+    "method": "DELETE",
+    "raw": "/api/portal/assemble/surface/page/${id}",
+    "path": "/api/portal/assemble/surface/page/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/portal/assemble/surface/page/{id}",
+    "hit_crate": "portal_assemble_surface",
     "extra": null
    },
    {
@@ -1304,6 +1369,19 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 479,
+    "method": "POST",
+    "raw": "/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data",
+    "path": "/api/program_center/dict/{}/data",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/program_center/dict/{dictFlag}/data",
+    "hit_crate": "program_center",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
     "line": 497,
     "method": "GET",
     "raw": "/api/program_center/script/${encodeURIComponent(flag)}",
@@ -1780,6 +1858,19 @@
     "ambiguous": false,
     "hit": "/api/organization/assemble/control/threemember/delete/{id}",
     "hit_crate": "organization_assemble_control",
+    "extra": null
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/UnitApp.vue",
+    "line": 65,
+    "method": "GET",
+    "raw": "/api/unit/check/${u.flag || u.id}",
+    "path": "/api/unit/check/{}",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/unit/check/{id}",
+    "hit_crate": "organization_assemble_express",
     "extra": null
    }
   ],
@@ -4361,111 +4452,8 @@
    }
   ],
   "suspicious-shadow": [],
-  "405": [
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 199,
-    "method": "DELETE",
-    "raw": "/api/attendance/assemble/control/rule/{}",
-    "path": "/api/attendance/assemble/control/rule/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/attendance/assemble/control/rule/list",
-    "hit_crate": "attendance_assemble_control",
-    "extra": [
-     "GET",
-     "POST"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/JPushApp.vue",
-    "line": 99,
-    "method": "DELETE",
-    "raw": "/api/jpush/core/entity/device/${d.id}",
-    "path": "/api/jpush/core/entity/device/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/jpush/core/entity/device/list",
-    "hit_crate": "jpush_core_entity",
-    "extra": [
-     "GET",
-     "POST"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/PortalApp.vue",
-    "line": 58,
-    "method": "DELETE",
-    "raw": "/api/portal/assemble/surface/page/${id}",
-    "path": "/api/portal/assemble/surface/page/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/portal/assemble/surface/{page}/{id}",
-    "hit_crate": "portal_assemble_surface",
-    "extra": [
-     "GET"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 479,
-    "method": "POST",
-    "raw": "/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data",
-    "path": "/api/program_center/dict/{}/data",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": "/api/program_center/dict/dictFlag/data",
-    "hit_crate": "program_center",
-    "extra": [
-     "GET"
-    ]
-   }
-  ],
-  "404": [
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
-    "line": 237,
-    "method": "DELETE",
-    "raw": "/api/config/delete/{}",
-    "path": "/api/config/delete/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": null,
-    "hit_crate": null,
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
-    "line": 246,
-    "method": "PUT",
-    "raw": "/api/config/update/{}",
-    "path": "/api/config/update/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": null,
-    "hit_crate": null,
-    "extra": null
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/UnitApp.vue",
-    "line": 65,
-    "method": "GET",
-    "raw": "/api/unit/check/${u.flag || u.id}",
-    "path": "/api/unit/check/{}",
-    "via": "literal",
-    "ambiguous": false,
-    "hit": null,
-    "hit_crate": null,
-    "extra": null
-   }
-  ]
+  "405": [],
+  "404": []
  },
  "mobile": {
   "exact": [

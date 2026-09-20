@@ -6,9 +6,9 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    clear_cache, config_create, execute_command, get_logs, get_metric, get_status, get_system_info,
-    send_message, server_deploy_create, server_deploy_delete, server_deploy_list,
-    server_deploy_save,
+    clear_cache, config_create, config_delete, config_update, execute_command, get_logs,
+    get_metric, get_status, get_system_info, send_message, server_deploy_create,
+    server_deploy_delete, server_deploy_list, server_deploy_save,
 };
 
 pub fn router(pool: Pool) -> Router {
@@ -22,6 +22,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/console/system/info", get(get_system_info))
         // ── config/server-deploy 斜杠路径家族（补齐 KNOWN_BACKEND_GAPS）──
         .route("/api/config/create", post(config_create))
+        .route("/api/config/update/{id}", put(config_update))
+        .route("/api/config/delete/{id}", delete(config_delete))
         .route("/api/server/deploy/list", get(server_deploy_list))
         .route("/api/server/deploy/create", post(server_deploy_create))
         .route("/api/server/deploy/save/{id}", put(server_deploy_save))

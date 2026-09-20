@@ -61,12 +61,13 @@ use crate::{
         person_list_unit_sub_nested_object,
     },
     endpoints_unit2::{
-        unit_check_unit_has_identity, unit_check_unit_has_unit, unit_get_with_identity_with_level,
-        unit_get_with_identity_with_level_object, unit_get_with_identity_with_type,
-        unit_get_with_identity_with_type_object, unit_list_identity, unit_list_identity_object,
-        unit_list_identity_sup_nested, unit_list_identity_sup_nested_object, unit_list_level,
-        unit_list_level_name_object, unit_list_level_object, unit_list_person,
-        unit_list_person_object, unit_list_person_sup_nested, unit_list_person_sup_nested_object,
+        unit_check_id, unit_check_unit_has_identity, unit_check_unit_has_unit,
+        unit_get_with_identity_with_level, unit_get_with_identity_with_level_object,
+        unit_get_with_identity_with_type, unit_get_with_identity_with_type_object,
+        unit_list_identity, unit_list_identity_object, unit_list_identity_sup_nested,
+        unit_list_identity_sup_nested_object, unit_list_level, unit_list_level_name_object,
+        unit_list_level_object, unit_list_person, unit_list_person_object,
+        unit_list_person_sup_nested, unit_list_person_sup_nested_object,
         unit_list_type_type_object, unit_list_types, unit_list_types_object, unit_list_unit_tree,
         unit_list_unitattribute, unit_list_unitattribute_object, unit_list_unitduty,
         unit_list_unitduty_object,
@@ -357,6 +358,7 @@ pub fn router(pool: Pool) -> axum::Router {
             "/api/unit/check/unit/has/unit",
             post(unit_check_unit_has_unit),
         )
+        .route("/api/unit/check/{id}", get(unit_check_id))
         .route("/api/unit/list/types", post(unit_list_types))
         .route("/api/unit/list/types/object", post(unit_list_types_object))
         .route(
