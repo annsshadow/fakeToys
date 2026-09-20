@@ -226,19 +226,72 @@ def scan_rust_index():
                     for bm in JSON_STRUCT_RE.finditer(sig):
                         body_params.append(bm.group(1))
                     if not body_params:
+                        # 普通 helper（非 axum handler）也要索引，否则"跟随一层间接引用"找不到它。
+                        # 形如 `fn helper(body: &Value, ..)` / `Option<&Value>` / `serde_json::Value`
+                        for pm2 in re.finditer(
+                            r"\b([A-Za-z_]\w*)\s*:\s*(?:Option\s*<\s*)?&?\s*"
+                            r"(?:serde_json\s*::\s*)?Value\b",
+                            sig,
+                        ):
+                            body_params.append(pm2.group(1))
+                    if not body_params:
                         continue
 
                     reads = set()
                     alt_groups = []
+                    # 接收者集合 = 请求体参数 + 由它派生的别名。
+                    # 派生来源：① 闭包绑定 `|Json(v)| v.get("k")`（如 body.as_ref().map(|Json(v)| v)）
+                    #           ② `let NAME = <含接收者的表达式>`
+                    receivers = set(body_params)
+                    for cm in re.finditer(r"\|\s*Json\s*\(\s*([A-Za-z_]\w*)\s*\)\s*\|", body_orig):
+                        receivers.add(cm.group(1))
+                    changed = True
+                    while changed:
+                        changed = False
+                        # ① `let NAME = <直接引用 Json 请求体参数的表达式>`
+                        #    只允许从 body_params（Json 参数）**直接**派生，不做传递闭包——
+                        #    否则 pool→client→tx→row 这类 DB 句柄链会被当成请求体，
+                        #    把 `row.get("task_status")` 误计为请求体读取键。
+                        for lm in re.finditer(
+                            r"\blet\s+([A-Za-z_]\w*)\s*(?::[^=;\n]*)?=\s*([^;]*);", body_orig
+                        ):
+                            # 注意：不能用 name —— 它会覆盖外层 handler 名（曾因此把
+                            # let 变量名当成函数名写入索引，使 handlers 从 921 掉到 479）
+                            alias_name, expr = lm.group(1), lm.group(2)
+                            if alias_name in receivers:
+                                continue
+                            if any(
+                                re.search(r"\b" + re.escape(bp) + r"\b", expr)
+                                for bp in body_params
+                            ):
+                                receivers.add(alias_name)
+                                changed = True
+                        # ② 闭包参数派生：`body.and_then(|v| v.get("k"))` → v 是接收者的派生。
+                        #    要求闭包在调用括号内（`(|`），否则会松散匹配到无关的 `|..|`
+                        #    （曾因此把无关标识符当接收者，产生假读取键）。
+                        for r in list(receivers):
+                            for cm in re.finditer(
+                                r"\b"
+                                + re.escape(r)
+                                + r"\b[\s\S]{0,60}?\(\s*\|\s*"
+                                + r"([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)\s*\|",
+                                body_orig,
+                            ):
+                                for part in cm.group(1).split(","):
+                                    nm = part.strip()
+                                    if nm and nm not in receivers:
+                                        receivers.add(nm)
+                                        changed = True
                     # 先收集所有 .get("k") 及其位置，用于识别 or_else/|| 构成的"或"链
                     get_hits = []
-                    for bp in body_params:
+                    for bp in sorted(receivers):
                         for rm in re.finditer(
                             re.escape(bp)
                             + r"\s*(?:\.get\s*\(\s*|\s*\[\s*)\"([A-Za-z_][\w]*)\"",
                             body_orig,
                         ):
                             get_hits.append((rm.group(1), rm.end()))
+                    get_hits.sort(key=lambda t: t[1])
                     # 若某个 .get("k") 之后紧跟 .or_else(...)/.or(...)，则它与后续的 .get 构成"或"组
                     or_chained = set()
                     for i, (key, end) in enumerate(get_hits):
@@ -263,12 +316,14 @@ def scan_rust_index():
                             i += 1
                     # 数组键表 helper：body_str(&body, &["process", "processId"]) —— 语义是"或"
                     for hm in HELPER_KEYS_RE.finditer(body_orig):
-                        if hm.group(1) in body_params:
+                        if hm.group(1) in receivers:
                             alts = [sm.group(1) for sm in STR_LIT_RE.finditer(hm.group(2))]
                             if alts:
                                 alt_groups.append(alts)
-                    # 委派检测：body 被整体传给另一个函数 → 键读取发生在被调函数内，静态不可判定
+                    # 委派检测 + 收集被调函数名（供"跟随一层间接引用"用）：
+                    # body 被整体传给另一个函数 → 键读取可能发生在被调函数内
                     delegated = False
+                    callees = set()
                     ACCESSORS = {
                         "get", "as_str", "as_i64", "as_u64", "as_f64", "as_bool", "as_array",
                         "as_object", "to_string", "unwrap_or", "unwrap_or_default", "unwrap",
@@ -277,7 +332,7 @@ def scan_rust_index():
                         "expect", "to_owned", "into", "take", "as_ref", "as_deref", "to_value",
                         "from_value", "is_empty", "parse", "as_object_mut", "as_str_or",
                     }
-                    for bp in body_params:
+                    for bp in sorted(receivers):
                         for cm in re.finditer(r"\b([a-z_][a-z0-9_]*)\s*\(", body_orig):
                             callee = cm.group(1)
                             if callee in ACCESSORS:
@@ -289,9 +344,7 @@ def scan_rust_index():
                             args = body_orig[open_p + 1 : close_p]
                             if re.search(r"\b" + re.escape(bp) + r"\b", args):
                                 delegated = True
-                                break
-                        if delegated:
-                            break
+                                callees.add(callee)
                     emits = set()
                     for em in re.finditer(r'\(\s*"([A-Za-z_][\w]*)"\s*\.to_string\(\)\s*,', body_orig):
                         emits.add(em.group(1))
@@ -317,10 +370,30 @@ def scan_rust_index():
                             "reads": sorted(reads),
                             "alt_groups": alt_groups,
                             "delegated": delegated,
+                            "callees": sorted(callees),
                             "emits": sorted(emits),
                             "file": os.path.relpath(p, RUST).replace("\\", "/"),
                         },
                     )
+
+    # 跟随一层间接引用：把被调 helper 的读取键并入调用方。
+    # 修的是"把已修判成未修"的误报（如 task_complete 的 opinion 读取在 completion_record_fields 内）。
+    for _ in range(2):  # 两轮，覆盖 helper 再调 helper 的一层
+        for key, h in handlers.items():
+            crate = key[0]
+            extra_reads, extra_alts = set(), []
+            for callee in h.get("callees", []):
+                target = handlers.get((crate, callee))
+                if not target:
+                    continue
+                extra_reads.update(target["reads"])
+                extra_alts.extend(target["alt_groups"])
+            if extra_reads or extra_alts:
+                h["reads"] = sorted(set(h["reads"]) | extra_reads)
+                for g in extra_alts:
+                    if g not in h["alt_groups"]:
+                        h["alt_groups"].append(g)
+                h["delegated_resolved"] = True
     return handlers, structs
 
 
