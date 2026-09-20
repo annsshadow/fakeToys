@@ -5,7 +5,7 @@
       <div class="sidebar-header">
         <h2>消息</h2>
         <div class="header-actions">
-          <button class="new-chat-btn" title="新建会话">✉</button>
+          <button class="new-chat-btn" title="在线/会话概览" @click="loadImMeta">✉</button>
         </div>
       </div>
       <div class="search-bar">
@@ -117,6 +117,7 @@
 
 <script setup lang="ts">
 import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/sdk'
+import { toast } from '../utils/toast'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
@@ -474,6 +475,20 @@ function scrollToBottom(): void {
 function formatContent(content: string): string {
   // Return raw text — Vue interpolates safely via text nodes.
   return content
+}
+
+async function loadImMeta() {
+  try {
+    // GET im/conversation/list/with/person + ws/list/person —— 会话概览 + 在线人员
+    const [convs, online] = await Promise.all([
+      api.get('/api/message/assemble/communicate/im/conversation/list/with/person'),
+      api.get('/api/message/assemble/communicate/ws/list/person'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`会话 ${n(convs)} / 在线 ${n(online)}`)
+  } catch (e: any) {
+    toast.error('加载会话概览失败: ' + (e?.message ?? ''))
+  }
 }
 
 onMounted(initWebSocket)

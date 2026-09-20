@@ -1814,7 +1814,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 250,
+    "line": 251,
     "method": "GET",
     "raw": "/api/message/assemble/communicate/im/conversation/list/my",
     "path": "/api/message/assemble/communicate/im/conversation/list/my",
@@ -1824,7 +1824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 283,
+    "line": 284,
     "method": "POST",
     "raw": "/api/message/assemble/communicate/im/msg/list/1/size/50",
     "path": "/api/message/assemble/communicate/im/msg/list/1/size/50",
@@ -1834,7 +1834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 318,
+    "line": 319,
     "method": "POST",
     "raw": "/api/message/assemble/communicate/im/msg",
     "path": "/api/message/assemble/communicate/im/msg",
@@ -1844,10 +1844,30 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 382,
+    "line": 383,
     "method": "POST",
     "raw": "/api/message/assemble/communicate/mark_read/${convId}",
     "path": "/api/message/assemble/communicate/mark_read/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 484,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/im/conversation/list/with/person",
+    "path": "/api/message/assemble/communicate/im/conversation/list/with/person",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 485,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/ws/list/person",
+    "path": "/api/message/assemble/communicate/ws/list/person",
     "via": "literal",
     "ambiguous": false
    },
