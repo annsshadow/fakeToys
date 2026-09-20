@@ -3014,7 +3014,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 59,
+    "line": 60,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/list/running",
     "path": "/api/processplatform/service/processing/list/running",
@@ -3024,7 +3024,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 69,
+    "line": 71,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/elementtool/form/orphan",
+    "path": "/api/processplatform/assemble/designer/elementtool/form/orphan",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 72,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/elementtool/process/orphan",
+    "path": "/api/processplatform/assemble/designer/elementtool/process/orphan",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 73,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/elementtool/script/orphan",
+    "path": "/api/processplatform/assemble/designer/elementtool/script/orphan",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 84,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
     "path": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
@@ -3034,7 +3064,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 88,
+    "line": 103,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process_manager/list",
     "path": "/api/processplatform/assemble/surface/process_manager/list",
