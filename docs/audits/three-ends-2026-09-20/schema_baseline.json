@@ -2,7 +2,7 @@
  "A": 0,
  "B": 18,
  "C": 21,
- "D": 24,
+ "D": 23,
  "E_total": 2,
- "_note": "rev8 基线：随契约提取器「跟随一层间接引用」改进同步更新。B 24→18（消除 2 处已证实误报：task opinion / im_msg conversationId，及若干）；C 13→21（提取器更敏感，新发现真实错配：attendance appeal status/auditStatus、rule name/ruleName、form schema/definition、mobile check userId）；D 24。已知残留误报：login/switchuser 把 auth_person 列名当作请求体键、task/reject 的 id 来自 Path。"
+ "_note": "rev8 基线：随契约提取器「跟随一层间接引用」改进同步更新。B 24→18（消除 2 处已证实误报：task opinion / im_msg conversationId，及若干）；C 13→21（提取器更敏感，新发现真实错配：attendance appeal status/auditStatus、rule name/ruleName、form schema/definition、mobile check userId）；D 24→23（删除 AIAssistant 后其流式调用随之消失，按「降计数同步下调基线」约定收紧）。已知残留误报：login/switchuser 把 auth_person 列名当作请求体键、task/reject 的 id 来自 Path。"
 }
