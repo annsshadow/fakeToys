@@ -6,6 +6,7 @@
         <h2>消息</h2>
         <div class="header-actions">
           <button class="new-chat-btn" title="在线/会话概览" @click="loadImMeta">✉</button>
+          <button class="new-chat-btn" title="未读/在线数/IM配置" @click="loadImStats">🔔</button>
         </div>
       </div>
       <div class="search-bar">
@@ -477,6 +478,23 @@ function formatContent(content: string): string {
   return content
 }
 
+async function loadImStats() {
+  try {
+    // GET message/unread/count + ws/count/person + im/manager/config —— 未读消息数/在线人数/IM 管理配置
+    const [unread, online, cfg] = await Promise.all([
+      api.get('/api/message/unread/count'),
+      api.get('/api/message/assemble/communicate/ws/count/person'),
+      api.get('/api/message/assemble/communicate/im/manager/config'),
+    ])
+    const num = (r: any) => {
+      const d = (r as any)?.data
+      return typeof d === 'number' ? d : (Array.isArray(d) ? d.length : (d?.count ?? 0))
+    }
+    toast.success(`未读 ${num(unread)} / 在线 ${num(online)} / IM配置 ${(cfg as any)?.data ? '有' : '无'}`)
+  } catch (e: any) {
+    toast.error('加载 IM 统计失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadImMeta() {
   try {
     // GET im/conversation/list/with/person + ws/list/person —— 会话概览 + 在线人员
