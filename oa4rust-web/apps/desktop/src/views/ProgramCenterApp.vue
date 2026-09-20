@@ -148,8 +148,10 @@
           <button class="btn-primary" @click="loadConfigs">全部配置</button>
           <button class="btn-primary" @click="loadConfigApps">应用配置</button>
           <button class="btn-primary" @click="loadConfigEntities">实体配置</button>
+          <button class="btn-primary" @click="loadDataStructure">数据结构</button>
           <button class="btn-create" @click="saveConfig">+ 新建/更新</button>
         </div>
+        <div v-if="dsText" class="app-meta">{{ dsText }}</div>
         <div v-if="loadingConfig" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="configs.length===0" class="empty"><div class="ei">⚙️</div><p>暂无配置项</p></div>
         <div v-else class="item-table">
@@ -816,6 +818,20 @@ async function loadInvokeCats() {
 loadInvokeCats()
 
 // 平台配置（config）：列表 / 应用 / 实体 / 新建更新（program_center config 族）
+const dsText = ref('')
+async function loadDataStructure() {
+  try {
+    // GET program_center/datastructure/modules/all + module/output/list/structure —— 数据结构模块
+    const [mods, structs] = await Promise.all([
+      api.get('/api/program_center/datastructure/modules/all'),
+      api.get('/api/program_center/module/output/list/structure'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    dsText.value = `数据结构模块 ${n(mods)} / 输出结构 ${n(structs)}`
+  } catch (e: any) {
+    toast.error('加载数据结构失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadConfigs() {
   loadingConfig.value = true
   try {
