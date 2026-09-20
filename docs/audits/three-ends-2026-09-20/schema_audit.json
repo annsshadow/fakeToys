@@ -962,23 +962,8 @@
   "D_delegated_unverifiable": [
    {
     "app": "desktop",
-    "file": "apps/desktop/src/views/AIAssistant.vue",
-    "line": 110,
-    "method": "POST",
-    "path": "/api/ai_assemble_control/chat/completion/stream",
-    "sent": [
-     "conversationId",
-     "message"
-    ],
-    "handler_reads": [],
-    "handlers": [
-     "chat_completion_stream"
-    ]
-   },
-   {
-    "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 140,
+    "line": 150,
     "method": "POST",
     "path": "/api/ai_assemble_control/chat/completion",
     "sent": [
@@ -992,7 +977,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 170,
+    "line": 180,
     "method": "POST",
     "path": "/api/ai_assemble_control/chat/completion",
     "sent": [
@@ -1337,11 +1322,11 @@
   "meta": {
    "handlers_indexed": 1030,
    "structs_indexed": 278,
-   "frontend_body_calls": 172,
+   "frontend_body_calls": 171,
    "A": 0,
    "B": 18,
    "C": 21,
-   "D": 24,
+   "D": 23,
    "E_total": 2
   },
   "E_quoted_key_defect": {
