@@ -44,7 +44,7 @@ pub async fn device_list(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
+                ("userId".to_string(), Value::String(m.user_id.clone())),
                 ("platform".to_string(), Value::String(m.platform.clone())),
                 ("token".to_string(), Value::String(m.token.clone())),
             ]))
@@ -76,7 +76,7 @@ pub async fn device_get(
         Some(m) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
+                ("userId".to_string(), Value::String(m.user_id.clone())),
                 ("platform".to_string(), Value::String(m.platform.clone())),
                 ("token".to_string(), Value::String(m.token.clone())),
             ]),
@@ -92,7 +92,7 @@ pub async fn device_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let user_id = req
-        .get("\"userId\"")
+        .get("userId")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -123,7 +123,7 @@ pub async fn device_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"userId\"".to_string(), Value::String(user_id)),
+            ("userId".to_string(), Value::String(user_id)),
             ("platform".to_string(), Value::String(platform)),
             ("token".to_string(), Value::String(token)),
         ]),

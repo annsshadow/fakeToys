@@ -97,7 +97,8 @@ async function loadMeetings() {
     const p: Record<string, string> = {}
     if (searchKey.value) p.key = searchKey.value
     if (statusFilter.value !== '') p.status = statusFilter.value
-    const r = await api.get('/api/meeting/assemble/control/meeting/list', { params: p })
+    // 后端无裸 meeting/list；meeting/list/apply/{page}/size/{size} 为真实列表端点。
+    const r = await api.get('/api/meeting/assemble/control/meeting/list/apply/1/size/50')
     meetings.value = (r.data ?? []) as M[]
   } catch {
     meetings.value = []
@@ -141,7 +142,8 @@ async function updateMeeting(m: M) {
   const title = prompt('修改会议标题:', m.title || m.name)
   if (!title) return
   try {
-    await api.put('/api/meeting/assemble/control/meeting/update', { id: m.id, title })
+    // 后端为 RESTful PUT meeting/{id}（无 /meeting/update）。
+    await api.put('/api/meeting/assemble/control/meeting/' + encodeURIComponent(m.id), { title })
     loadMeetings()
   } catch (e: any) {
     toast.error('更新失败: : ' + (e?.message ?? ''))
@@ -150,7 +152,8 @@ async function updateMeeting(m: M) {
 async function cancelMeeting(m: M) {
   if (!(await confirmMsg('确定取消该会议？'))) return
   try {
-    await api.post('/api/meeting/assemble/control/meeting/cancel', { id: m.id })
+    // 后端无 /meeting/cancel；取消会议 = 删除该会议。
+    await api.delete('/api/meeting/assemble/control/meeting/' + encodeURIComponent(m.id))
     loadMeetings()
   } catch (e: any) {
     toast.error('取消失败: : ' + (e?.message ?? ''))
@@ -158,7 +161,8 @@ async function cancelMeeting(m: M) {
 }
 async function approveMeeting(m: M) {
   try {
-    await api.post('/api/meeting/assemble/control/meeting/approve', { id: m.id })
+    // 审批通过 = confirm/allow。
+    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/confirm/allow`)
     loadMeetings()
   } catch (e: any) {
     toast.error('审批失败: : ' + (e?.message ?? ''))
@@ -166,7 +170,8 @@ async function approveMeeting(m: M) {
 }
 async function joinMeeting(m: M) {
   try {
-    await api.post('/api/meeting/assemble/control/meeting/join', { id: m.id })
+    // 加入会议 = accept（接受邀请）。
+    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/accept`)
     toast.info('已加入会议')
     loadMeetings()
   } catch (e: any) {
@@ -175,7 +180,8 @@ async function joinMeeting(m: M) {
 }
 async function leaveMeeting(m: M) {
   try {
-    await api.post('/api/meeting/assemble/control/meeting/leave', { id: m.id })
+    // 后端无 /meeting/leave；退出/拒绝继续参与 = reject（最接近的真实语义，待产品确认）。
+    await api.post(`/api/meeting/assemble/control/meeting/${encodeURIComponent(m.id)}/reject`)
     loadMeetings()
   } catch (e: any) {
     toast.error('离开失败: : ' + (e?.message ?? ''))

@@ -82,14 +82,14 @@ pub async fn get_process(
                     Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("start_time")
                             .unwrap_or_default(),
                     ),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))
@@ -133,14 +133,14 @@ pub async fn get_process(
                 ),
             ),
             (
-                "\"startTime\"".to_string(),
+                "startTime".to_string(),
                 Value::String(
                     row.get::<_, Option<String>>("start_time")
                         .unwrap_or_default(),
                 ),
             ),
             (
-                "\"endTime\"".to_string(),
+                "endTime".to_string(),
                 Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
             ),
             ("tasks".to_string(), Value::Array(task_list)),
@@ -3091,10 +3091,39 @@ pub async fn task_claim(
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
+/// 从「任务办理」请求体中提取处理意见，并确定流程记录的操作人。
+///
+/// - `content`：`body.opinion` 非空时用它；否则回退到 `fallback`
+///   （保证"无 body"的既有调用方文案不变）。
+/// - `creator`：取任务负责人（服务端事实，**不信任客户端传值**）；为空时回退 `"system"`。
+fn completion_record_fields(
+    body: Option<&Value>,
+    task_person: &str,
+    fallback: &str,
+) -> (String, String) {
+    let opinion = body
+        .and_then(|v| v.get("opinion"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    let content = if opinion.is_empty() {
+        fallback.to_string()
+    } else {
+        opinion.to_string()
+    };
+    let creator = if task_person.trim().is_empty() {
+        "system".to_string()
+    } else {
+        task_person.to_string()
+    };
+    (content, creator)
+}
+
 #[allow(non_snake_case)]
 pub async fn task_complete(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -3123,10 +3152,16 @@ pub async fn task_complete(
     .map_err(|_| AppError::Internal)?;
     let work_id: String = row.get("work");
     let activity_token: String = row.get("activity_token");
+    // 处理意见与操作人：此前本 handler 完全忽略请求体，导致桌面端/移动端填写的
+    // 处理意见从未落库、creator 恒为 "system"（见 docs/plans/2026-09-20-001 §6.3 A 类）。
+    // 现按 body 可选读取：无 body 时保持原有默认文案，不破坏既有调用方。
+    let task_person = row.get::<_, Option<String>>("person").unwrap_or_default();
+    let payload = body.as_ref().map(|Json(v)| v);
+    let (content, creator) = completion_record_fields(payload, &task_person, "task completed");
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id2, &work_id, &id, &"complete", &"task completed", &"system"],
+            &[&id2, &work_id, &id, &"complete", &content, &creator],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3183,6 +3218,7 @@ pub async fn task_complete(
 pub async fn task_reject(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
+    body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
@@ -3211,11 +3247,15 @@ pub async fn task_reject(
     .map_err(|_| AppError::Internal)?;
     let work_id: String = row.get("work");
     let activity_token: String = row.get("activity_token");
+    // 同 task_complete：接收处理意见并记录真实操作人（此前恒为 "system"）。
+    let task_person = row.get::<_, Option<String>>("person").unwrap_or_default();
+    let fallback_reason = format!("task rejected from {}", activity_token);
+    let payload = body.as_ref().map(|Json(v)| v);
+    let (reason, creator) = completion_record_fields(payload, &task_person, &fallback_reason);
     let id2 = Uuid::new_v4().to_string();
-    let reason = format!("task rejected from {}", activity_token);
     tx.execute(
             "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id2, &work_id, &id, &"reject", &reason, &"system"],
+            &[&id2, &work_id, &id, &"reject", &reason, &creator],
         )
         .await
         .map_err(|_| AppError::Internal)?;

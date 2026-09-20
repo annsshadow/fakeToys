@@ -476,13 +476,10 @@ pub async fn event_create(
         map.insert("location".to_string(), val);
     }
     map.insert(
-        "\"startTime\"".to_string(),
+        "startTime".to_string(),
         Value::String(m.start_time.to_string()),
     );
-    map.insert(
-        "\"endTime\"".to_string(),
-        Value::String(m.end_time.to_string()),
-    );
+    map.insert("endTime".to_string(), Value::String(m.end_time.to_string()));
     map.insert("allDay".to_string(), Value::Bool(m.all_day));
     map.insert(
         "visibility".to_string(),
@@ -562,11 +559,11 @@ pub async fn event_update(
         map.insert("location".to_string(), val);
     }
     map.insert(
-        "\"startTime\"".to_string(),
+        "startTime".to_string(),
         Value::String(updated.start_time.to_string()),
     );
     map.insert(
-        "\"endTime\"".to_string(),
+        "endTime".to_string(),
         Value::String(updated.end_time.to_string()),
     );
     map.insert("allDay".to_string(), Value::Bool(updated.all_day));
@@ -664,13 +661,10 @@ pub async fn event_list_by_calendar(
                 map.insert("location".to_string(), val);
             }
             map.insert(
-                "\"startTime\"".to_string(),
+                "startTime".to_string(),
                 Value::String(m.start_time.to_string()),
             );
-            map.insert(
-                "\"endTime\"".to_string(),
-                Value::String(m.end_time.to_string()),
-            );
+            map.insert("endTime".to_string(), Value::String(m.end_time.to_string()));
             map.insert("allDay".to_string(), Value::Bool(m.all_day));
             map.insert(
                 "visibility".to_string(),

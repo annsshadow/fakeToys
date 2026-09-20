@@ -23472,8 +23472,8 @@ pub async fn snap_u2_delete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     match u2_check_owner(
         &pool,
-        "\"pp_c_snap\"",
-        "\"creator_person\"",
+        "pp_c_snap",
+        "creator_person",
         &id,
         &session.person_unique,
     )
@@ -23505,8 +23505,8 @@ pub async fn snap_u2_restore(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     match u2_check_owner(
         &pool,
-        "\"pp_c_snap\"",
-        "\"creator_person\"",
+        "pp_c_snap",
+        "creator_person",
         &id,
         &session.person_unique,
     )
@@ -23725,7 +23725,7 @@ pub async fn snap_u2_work_type_snap(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_snap_by_type(&pool, "\"xwork\"", &work, "snap").await
+    u2_snap_by_type(&pool, "xwork", &work, "snap").await
 }
 
 #[allow(non_snake_case)]
@@ -23733,7 +23733,7 @@ pub async fn snap_u2_work_type_abandoned(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_snap_by_type(&pool, "\"xwork\"", &work, "abandoned").await
+    u2_snap_by_type(&pool, "xwork", &work, "abandoned").await
 }
 
 #[allow(non_snake_case)]
@@ -23741,7 +23741,7 @@ pub async fn snap_u2_work_type_suspend(
     pool: Extension<Pool>,
     axum::extract::Path(work): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_snap_by_type(&pool, "\"xwork\"", &work, "suspend").await
+    u2_snap_by_type(&pool, "xwork", &work, "suspend").await
 }
 
 #[allow(non_snake_case)]
@@ -23751,7 +23751,7 @@ pub async fn snap_u2_workcompleted_type_snapworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_snap_by_type(
         &pool,
-        "\"xworkCompleted\"",
+        "xworkCompleted",
         &work_completed,
         "snapWorkCompleted",
     )
@@ -23765,7 +23765,7 @@ pub async fn snap_u2_workcompleted_type_abandonedworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_snap_by_type(
         &pool,
-        "\"xworkCompleted\"",
+        "xworkCompleted",
         &work_completed,
         "abandonedWorkCompleted",
     )
@@ -23942,7 +23942,7 @@ pub async fn attachment_u2_get_by_work(
     pool: Extension<Pool>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "\"xwork\"", &work).await?;
+    let row = u2_att_get_with_check(&pool, &id, "xwork", &work).await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_att_json(&row)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -23955,14 +23955,14 @@ pub async fn attachment_u2_delete_by_work(
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let exists = u2_att_get_with_check(&pool, &id, "\"xwork\"", &work).await?;
+    let exists = u2_att_get_with_check(&pool, &id, "xwork", &work).await?;
     if exists.is_none() {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
     match u2_check_owner(
         &pool,
-        "\"pp_c_attachment\"",
-        "\"xperson\"",
+        "pp_c_attachment",
+        "xperson",
         &id,
         &session.person_unique,
     )
@@ -24014,7 +24014,7 @@ pub async fn attachment_u2_get_by_workcompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, work_completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &work_completed).await?;
+    let row = u2_att_get_with_check(&pool, &id, "xworkCompleted", &work_completed).await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_att_json(&row)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -24140,15 +24140,8 @@ pub async fn snap_list_id_next_count_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, application_flag)): axum::extract::Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let rows = u2_snap_cursor_filtered(
-        &pool,
-        &id,
-        count,
-        false,
-        "\"xapplication\"",
-        &application_flag,
-    )
-    .await?;
+    let rows = u2_snap_cursor_filtered(&pool, &id, count, false, "xapplication", &application_flag)
+        .await?;
     Ok(u2_snap_cursor_response(rows, false))
 }
 
@@ -24157,15 +24150,8 @@ pub async fn snap_list_id_prev_count_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, application_flag)): axum::extract::Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let rows = u2_snap_cursor_filtered(
-        &pool,
-        &id,
-        count,
-        true,
-        "\"xapplication\"",
-        &application_flag,
-    )
-    .await?;
+    let rows =
+        u2_snap_cursor_filtered(&pool, &id, count, true, "xapplication", &application_flag).await?;
     Ok(u2_snap_cursor_response(rows, true))
 }
 
@@ -24174,8 +24160,7 @@ pub async fn snap_list_id_next_count_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, process_flag)): axum::extract::Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let rows =
-        u2_snap_cursor_filtered(&pool, &id, count, false, "\"xprocess\"", &process_flag).await?;
+    let rows = u2_snap_cursor_filtered(&pool, &id, count, false, "xprocess", &process_flag).await?;
     Ok(u2_snap_cursor_response(rows, false))
 }
 
@@ -24184,8 +24169,7 @@ pub async fn snap_list_id_prev_count_process_processFlag(
     pool: Extension<Pool>,
     axum::extract::Path((id, count, process_flag)): axum::extract::Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let rows =
-        u2_snap_cursor_filtered(&pool, &id, count, true, "\"xprocess\"", &process_flag).await?;
+    let rows = u2_snap_cursor_filtered(&pool, &id, count, true, "xprocess", &process_flag).await?;
     Ok(u2_snap_cursor_response(rows, true))
 }
 
@@ -24195,10 +24179,10 @@ pub async fn attachment_id_workorworkcompleted_workOrWorkCompleted(
     axum::extract::Path((id, flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 归属门禁：附件必须属于给定 work 或 workcompleted
-    let row = u2_att_get_with_check(&pool, &id, "\"xwork\"", &flag).await?;
+    let row = u2_att_get_with_check(&pool, &id, "xwork", &flag).await?;
     let row = match row {
         Some(r) => Some(r),
-        None => u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &flag).await?,
+        None => u2_att_get_with_check(&pool, &id, "xworkCompleted", &flag).await?,
     };
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
@@ -24237,8 +24221,8 @@ pub async fn attachment_id(
     // DELETE /api/attachment/{id}：资源级 IDOR 门禁（creator 或 admin），模式同 snap_u2_delete
     match u2_check_owner(
         &pool,
-        "\"pp_c_attachment\"",
-        "\"creator_person\"",
+        "pp_c_attachment",
+        "creator_person",
         &id,
         &session.person_unique,
     )
@@ -24595,7 +24579,7 @@ pub async fn attachment_u2b_upload_work(
         &id,
         &name,
         bytes,
-        "\"xwork\"",
+        "xwork",
         &work,
     )
     .await
@@ -24616,7 +24600,7 @@ pub async fn attachment_u2b_upload_work_callback(
         &id,
         &name,
         bytes,
-        "\"xwork\"",
+        "xwork",
         &work,
     )
     .await
@@ -24637,7 +24621,7 @@ pub async fn attachment_u2b_upload_workcompleted(
         &id,
         &name,
         bytes,
-        "\"xworkCompleted\"",
+        "xworkCompleted",
         &wc,
     )
     .await
@@ -24658,7 +24642,7 @@ pub async fn attachment_u2b_upload_save_as(
         &id,
         &save_as,
         bytes,
-        "\"xwork\"",
+        "xwork",
         &work,
     )
     .await
@@ -24721,7 +24705,7 @@ pub async fn attachment_u2b_v2_upload_base64(
         &id,
         &name,
         bytes,
-        "\"xwork\"",
+        "xwork",
         &flag,
     )
     .await
@@ -24750,7 +24734,7 @@ pub async fn attachment_u2b_batch_upload_manage(
         &id,
         &name,
         bytes,
-        "\"xsite\"",
+        "xsite",
         "manage-batch",
     )
     .await
@@ -24940,15 +24924,7 @@ async fn u2_gate_att_or_business_error(
     id: &str,
     person_unique: &str,
 ) -> Result<(), AppError> {
-    match u2_check_owner(
-        pool,
-        "\"pp_c_attachment\"",
-        "\"xperson\"",
-        id,
-        person_unique,
-    )
-    .await?
-    {
+    match u2_check_owner(pool, "pp_c_attachment", "xperson", id, person_unique).await? {
         U2Gate::NotFound => (), // 存在性由具体 UPDATE 的 WHERE 兜底
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => (),
@@ -25165,7 +25141,7 @@ async fn u2_att_copy(
     let mut copied: Vec<String> = Vec::new();
     for src in &ids {
         // IDOR 门禁：仅 owner 或 admin 可复制他人附件元数据
-        match u2_check_owner(pool, "\"pp_c_attachment\"", "\"xperson\"", src, person).await? {
+        match u2_check_owner(pool, "pp_c_attachment", "xperson", src, person).await? {
             U2Gate::NotFound | U2Gate::Forbidden => continue,
             U2Gate::Allowed => {}
         }
@@ -25219,15 +25195,7 @@ pub async fn attachment_u2b_copy_to_work(
     axum::extract::Path(work): axum::extract::Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_att_copy(
-        &pool,
-        &session.person_unique,
-        &body,
-        "\"xwork\"",
-        &work,
-        false,
-    )
-    .await
+    u2_att_copy(&pool, &session.person_unique, &body, "xwork", &work, false).await
 }
 
 #[allow(non_snake_case)]
@@ -25237,15 +25205,7 @@ pub async fn attachment_u2b_copy_to_work_soft(
     axum::extract::Path(work): axum::extract::Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    u2_att_copy(
-        &pool,
-        &session.person_unique,
-        &body,
-        "\"xwork\"",
-        &work,
-        true,
-    )
-    .await
+    u2_att_copy(&pool, &session.person_unique, &body, "xwork", &work, true).await
 }
 
 #[allow(non_snake_case)]
@@ -25259,7 +25219,7 @@ pub async fn attachment_u2b_copy_to_workcompleted(
         &pool,
         &session.person_unique,
         &body,
-        "\"xworkCompleted\"",
+        "xworkCompleted",
         &wc,
         false,
     )
@@ -25277,7 +25237,7 @@ pub async fn attachment_u2b_copy_to_workcompleted_soft(
         &pool,
         &session.person_unique,
         &body,
-        "\"xworkCompleted\"",
+        "xworkCompleted",
         &wc,
         true,
     )
@@ -25445,14 +25405,14 @@ pub async fn attachment_u2b_delete_by_workcompleted(
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let exists = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
+    let exists = u2_att_get_with_check(&pool, &id, "xworkCompleted", &wc).await?;
     if exists.is_none() {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
     match u2_check_owner(
         &pool,
-        "\"pp_c_attachment\"",
-        "\"xperson\"",
+        "pp_c_attachment",
+        "xperson",
         &id,
         &session.person_unique,
     )
@@ -25484,7 +25444,7 @@ pub async fn attachment_u2b_get_by_work_mockdeletetoget(
     axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // GET 化的 DELETE 预览：返回将被删除的对象元数据（与 sibling mockdeletetoget 一致）
-    let row = u2_att_get_with_check(&pool, &id, "\"xwork\"", &work).await?;
+    let row = u2_att_get_with_check(&pool, &id, "xwork", &work).await?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -25496,7 +25456,7 @@ pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
+    let row = u2_att_get_with_check(&pool, &id, "xworkCompleted", &wc).await?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -25635,16 +25595,13 @@ impl U2FilterWi {
     fn to_snap_filter_sql(&self, application_flag: Option<&str>) -> U2FilterSql {
         let mut fs = U2FilterSql::default();
         if let Some(app) = application_flag {
-            fs.push_eq("\"xapplication\"", app);
+            fs.push_eq("xapplication", app);
         }
-        fs.push_in("\"xapplication\"", &self.applicationList);
-        fs.push_in("\"xprocess\"", &self.processList);
-        fs.push_in("\"xperson\"", &self.personList);
+        fs.push_in("xapplication", &self.applicationList);
+        fs.push_in("xprocess", &self.processList);
+        fs.push_in("xperson", &self.personList);
         let key = self.key.clone().unwrap_or_default();
-        fs.push_key_ilike(
-            &["\"xtitle\"", "\"xcreatorPerson\"", "\"xcreatorUnit\""],
-            &key,
-        );
+        fs.push_key_ilike(&["xtitle", "xcreatorPerson", "xcreatorUnit"], &key);
         fs
     }
 }
@@ -25944,62 +25901,62 @@ u2_attribute_post_handler!(
     read_u2_filter_attribute_post,
     "PP_C_READ",
     [
-        ("applicationList", "xapplication", "\"xapplicationName\""),
-        ("processList", "xprocess", "\"xprocessName\""),
+        ("applicationList", "xapplication", "xapplicationName"),
+        ("processList", "xprocess", "xprocessName"),
         ("creatorUnitList", "xunit", "xunit")
     ],
-    [("startTimeMonthList", "\"xcreateTime\"")]
+    [("startTimeMonthList", "xcreateTime")]
 );
 u2_attribute_post_handler!(
     readcompleted_u2_filter_attribute_post,
     "PP_C_READCOMPLETED",
     [
-        ("applicationList", "xapplication", "\"xapplicationName\""),
-        ("processList", "xprocess", "\"xprocessName\""),
+        ("applicationList", "xapplication", "xapplicationName"),
+        ("processList", "xprocess", "xprocessName"),
         ("creatorUnitList", "xunit", "xunit")
     ],
     [
-        ("startTimeMonthList", "\"xstartTime\""),
-        ("completedTimeMonthList", "\"xviewTime\"")
+        ("startTimeMonthList", "xstartTime"),
+        ("completedTimeMonthList", "xviewTime")
     ]
 );
 u2_attribute_post_handler!(
     task_u2_filter_attribute_post,
     "PP_C_TASK",
     [
-        ("applicationList", "xapplication", "\"xapplicationName\""),
-        ("processList", "xprocess", "\"xprocessName\""),
-        ("creatorUnitList", "\"xcreatorUnit\"", "\"xcreatorUnit\"")
+        ("applicationList", "xapplication", "xapplicationName"),
+        ("processList", "xprocess", "xprocessName"),
+        ("creatorUnitList", "xcreatorUnit", "xcreatorUnit")
     ],
     [
-        ("startTimeMonthList", "\"xstartTime\""),
-        ("completedTimeMonthList", "\"xexpireTime\"")
+        ("startTimeMonthList", "xstartTime"),
+        ("completedTimeMonthList", "xexpireTime")
     ]
 );
 u2_attribute_post_handler!(
     taskcompleted_u2_filter_attribute_post,
     "PP_C_TASKCOMPLETED",
     [
-        ("applicationList", "xapplication", "\"xapplicationName\""),
-        ("processList", "xprocess", "\"xprocessName\""),
-        ("creatorUnitList", "\"xcreatorUnit\"", "\"xcreatorUnit\"")
+        ("applicationList", "xapplication", "xapplicationName"),
+        ("processList", "xprocess", "xprocessName"),
+        ("creatorUnitList", "xcreatorUnit", "xcreatorUnit")
     ],
     [
-        ("startTimeMonthList", "\"xstartTime\""),
-        ("completedTimeMonthList", "\"xcompletedTime\"")
+        ("startTimeMonthList", "xstartTime"),
+        ("completedTimeMonthList", "xcompletedTime")
     ]
 );
 u2_attribute_post_handler!(
     review_u2_filter_attribute_post,
     "PP_C_REVIEW",
     [
-        ("applicationList", "xapplication", "\"xapplicationName\""),
-        ("processList", "xprocess", "\"xprocessName\""),
-        ("creatorUnitList", "\"xcreatorUnit\"", "\"xcreatorUnit\"")
+        ("applicationList", "xapplication", "xapplicationName"),
+        ("processList", "xprocess", "xprocessName"),
+        ("creatorUnitList", "xcreatorUnit", "xcreatorUnit")
     ],
     [
-        ("startTimeMonthList", "\"xstartTime\""),
-        ("completedTimeMonthList", "\"xcompletedTime\"")
+        ("startTimeMonthList", "xstartTime"),
+        ("completedTimeMonthList", "xcompletedTime")
     ]
 );
 
@@ -26085,14 +26042,11 @@ pub async fn review_u2_v2_search(
                 ("serial".to_string(), u2_s(row, "xserial")),
                 ("person".to_string(), u2_s(row, "xperson")),
                 ("application".to_string(), u2_s(row, "xapplication")),
-                (
-                    "applicationName".to_string(),
-                    u2_s(row, "\"xapplicationName\""),
-                ),
+                ("applicationName".to_string(), u2_s(row, "xapplicationName")),
                 ("process".to_string(), u2_s(row, "xprocess")),
-                ("processName".to_string(), u2_s(row, "\"xprocessName\"")),
-                ("createTime".to_string(), u2_s(row, "\"xcreateTime\"")),
-                ("updateTime".to_string(), u2_s(row, "\"xupdateTime\"")),
+                ("processName".to_string(), u2_s(row, "xprocessName")),
+                ("createTime".to_string(), u2_s(row, "xcreateTime")),
+                ("updateTime".to_string(), u2_s(row, "xupdateTime")),
             ]))
         })
         .collect();
@@ -26571,8 +26525,8 @@ pub async fn workcompleted_u2_shift_time(
     let adjust = adjust.unwrap();
     let gate = u2_check_owner(
         &pool,
-        "\"pp_c_workcompleted\"",
-        "\"creator_person\"",
+        "pp_c_workcompleted",
+        "creator_person",
         &id,
         &session.person_unique,
     )
@@ -26703,8 +26657,8 @@ pub async fn snap_u2_download(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     match u2_check_owner(
         &pool,
-        "\"pp_c_snap\"",
-        "\"creator_person\"",
+        "pp_c_snap",
+        "creator_person",
         &id,
         &session.person_unique,
     )
@@ -26759,8 +26713,8 @@ async fn u2_attachment_ext_download(
     // IDOR：归属门禁（owner 或 admin）
     match u2_check_owner(
         pool,
-        "\"pp_c_attachment\"",
-        "\"creator_person\"",
+        "pp_c_attachment",
+        "creator_person",
         id,
         &session.person_unique,
     )
@@ -26802,10 +26756,10 @@ macro_rules! u2_att_ext_download_handler {
     };
 }
 
-u2_att_ext_download_handler!(attachment_u2c_download_work_stream_ext, "\"xwork\"");
-u2_att_ext_download_handler!(attachment_u2c_download_work_ext, "\"xwork\"");
-u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "\"xworkCompleted\"");
-u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "\"xworkCompleted\"");
+u2_att_ext_download_handler!(attachment_u2c_download_work_stream_ext, "xwork");
+u2_att_ext_download_handler!(attachment_u2c_download_work_ext, "xwork");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_stream_ext, "xworkCompleted");
+u2_att_ext_download_handler!(attachment_u2c_download_wc_ext, "xworkCompleted");
 
 // ── invoice 文档信息/下载 ×2（StorageObject on x_general_invoice）──
 // 对齐 o2server ActionGetInvoiceInfo / ActionDownloadInvoice（原 u2_capability_unavailable 桩已替换）。

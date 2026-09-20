@@ -43,7 +43,8 @@ const loading = ref(false),
   items = ref<Item[]>([]),
   selected = ref<Item | null>(null),
   config = ref('')
-const ep = '/api/query/assemble/designer/find/list'
+// 后端无 find 族；查询设计器真实列表端点为 designer/list/all。
+const ep = '/api/query/assemble/designer/list/all'
 const { data } = useQuery({
   queryKey: ['FindDesigner', 'list'],
   queryFn: async () => {
@@ -70,11 +71,20 @@ function preview() {
   toast.info('配置预览: ' + config.value)
 }
 function save() {
-  if (selected.value && config.value) {
-    api
-      .put(ep + '/' + selected.value.id, { ...selected.value, config: config.value })
-      .then(() => toast.info('保存成功'))
+  const item = selected.value
+  if (!item || !config.value) return
+  if (!item.id) {
+    // 该视图为只读占位：后端无「find 设计」模型，新建请走查询设计器。
+    toast.info('该视图为只读占位，新建请使用查询设计器')
+    return
   }
+  api
+    .put(`/api/query/assemble/designer/save/${encodeURIComponent(item.id)}`, {
+      ...item,
+      config: config.value,
+    })
+    .then(() => toast.info('保存成功'))
+    .catch((e: any) => toast.error('保存失败: ' + (e?.message ?? '')))
 }
 </script>
 <style scoped>

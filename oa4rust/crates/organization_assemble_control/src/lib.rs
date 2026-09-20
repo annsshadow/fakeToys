@@ -171,7 +171,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                     ),
                 ]
                 .into_iter()
-                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+                .chain(parent_id.map(|v| ("parentId".to_string(), Value::String(v)))),
             ))
         })
         .collect();
@@ -224,7 +224,7 @@ pub async fn organization_assemble_control_unit_flag(
                     ),
                 ]
                 .into_iter()
-                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+                .chain(parent_id.map(|v| ("parentId".to_string(), Value::String(v)))),
             ));
             Ok(Json(ActionResult::success(result)))
         }
@@ -291,7 +291,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
                     ),
                 ]
                 .into_iter()
-                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+                .chain(parent_id.map(|v| ("parentId".to_string(), Value::String(v)))),
             ))
         })
         .collect();
@@ -363,7 +363,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
                     ),
                 ]
                 .into_iter()
-                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+                .chain(parent_id.map(|v| ("parentId".to_string(), Value::String(v)))),
             ))
         })
         .collect();
@@ -514,7 +514,7 @@ pub async fn export_result_flag_flag(
                     Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
                 ),
                 (
-                    "\"fileUrl\"".to_string(),
+                    "fileUrl".to_string(),
                     Value::String(row.get::<_, Option<String>>("file_url").unwrap_or_default()),
                 ),
                 (

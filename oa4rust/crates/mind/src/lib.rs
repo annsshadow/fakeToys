@@ -111,7 +111,7 @@ pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
-                    "\"parentId\"".to_string(),
+                    "parentId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("parent_id")
                             .unwrap_or_default(),
@@ -420,7 +420,7 @@ pub async fn create_folder(
         .unwrap_or_default()
         .to_string();
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let order_number = payload
@@ -484,7 +484,7 @@ pub async fn update_folder(
         .map(|s| s.to_string())
         .unwrap_or_else(|| row.get("name"));
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .or_else(|| row.get::<_, Option<String>>("parent_id"))

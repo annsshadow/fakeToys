@@ -23,7 +23,7 @@ use crate::{
 
 pub fn meeting_assemble_control_routes(pool: Pool) -> Router {
     Router::new()
-        .route("/api/meeting/assemble/control/list/{\"meetingId\"}", get(list_meeting_controls))
+        .route("/api/meeting/assemble/control/list/{meetingId}", get(list_meeting_controls))
         .route("/api/meeting/assemble/control/create", post(create_meeting_control))
         .route("/api/meeting/assemble/control/delete/{id}", delete(delete_meeting_control))
         .route("/api/meeting/assemble/control/building/list", get(building_list))

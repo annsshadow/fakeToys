@@ -96,10 +96,7 @@ pub async fn chat_list_completion_paging(
                     "person".to_string(),
                     Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
                 ),
-                (
-                    "\"clueId\"".to_string(),
-                    Value::String(row.get("\"clueId\"")),
-                ),
+                ("clueId".to_string(), Value::String(row.get("clueId"))),
                 (
                     "input".to_string(),
                     Value::String(row.get::<_, Option<String>>("input").unwrap_or_default()),
@@ -109,8 +106,8 @@ pub async fn chat_list_completion_paging(
                     Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
                 ),
                 (
-                    "\"generateType\"".to_string(),
-                    Value::String(row.get("\"generateType\"")),
+                    "generateType".to_string(),
+                    Value::String(row.get("generateType")),
                 ),
                 (
                     "createTime".to_string(),

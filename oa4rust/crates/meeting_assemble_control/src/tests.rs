@@ -194,18 +194,18 @@ mod tests {
     fn test_list_response_shape() {
         let result = ActionResult::success(serde_json::json!({
             "count": 2,
-            "\"meetingId\"": "meeting-001",
+            "meetingId": "meeting-001",
             "data": [
                 {
                     "id": "ctrl-001",
-                    "\"meetingId\"": "meeting-001",
-                    "\"controlType\"": "RECORDER",
+                    "meetingId": "meeting-001",
+                    "controlType": "RECORDER",
                     "enabled": true
                 },
                 {
                     "id": "ctrl-002",
-                    "\"meetingId\"": "meeting-001",
-                    "\"controlType\"": "SCREEN",
+                    "meetingId": "meeting-001",
+                    "controlType": "SCREEN",
                     "enabled": false
                 }
             ]
@@ -214,7 +214,7 @@ mod tests {
         assert_eq!(result.r#type, Some("success".to_string()));
         let data = result.data.unwrap();
         assert_eq!(data["count"], 2);
-        assert_eq!(data["data"][0]["\"controlType\""], "RECORDER");
+        assert_eq!(data["data"][0]["controlType"], "RECORDER");
         assert_eq!(data["data"][1]["enabled"], false);
     }
 

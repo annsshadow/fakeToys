@@ -55,6 +55,11 @@ def skip_angle(s, i):
 
 
 def read_first_string(s, i):
+    """读取首个字符串/模板字面量。
+
+    若其后紧跟 `+` 拼接（如 `'/api/form/' + f.id`），说明路径被拼接扩展，
+    补一个 `{}` 占位 —— 否则会被截断成 `/api/form` 并产生假 405/404。
+    """
     i = skip_ws(s, i)
     if i >= len(s) or s[i] not in "`'\"":
         return None
@@ -68,7 +73,16 @@ def read_first_string(s, i):
             j += 2
             continue
         if c == q:
-            return "".join(buf)
+            val = "".join(buf)
+            # 拼接检测
+            k = j + 1
+            while k < len(s) and s[k] in " \t\r\n":
+                k += 1
+            if k < len(s) and s[k] == "+":
+                if not val.endswith("/"):
+                    val += "/"
+                val += "{}"
+            return val
         buf.append(c)
         j += 1
     return None

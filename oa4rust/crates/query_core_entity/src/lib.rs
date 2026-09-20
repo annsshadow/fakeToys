@@ -43,7 +43,7 @@ pub struct QueryImport {
     pub id: String,
     #[serde(rename = "viewId")]
     pub view_id: String,
-    #[serde(rename = "\"fileName\"")]
+    #[serde(rename = "fileName")]
     pub file_name: String,
     pub status: String,
     #[serde(rename = "importTime")]
@@ -301,7 +301,7 @@ pub async fn import_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                         Value::String(row.get::<_, Option<String>>("view_id").unwrap_or_default()),
                     )),
                     Some((
-                        "\"fileName\"".to_string(),
+                        "fileName".to_string(),
                         Value::String(
                             row.get::<_, Option<String>>("file_name")
                                 .unwrap_or_default(),
