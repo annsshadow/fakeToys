@@ -3,7 +3,16 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 7  # rev7（2026-09-20 阶段 H 复核）：逐条复核一致性治理——
+rev: 8  # rev8（2026-09-20 契约提取器升级）：让提取器「跟随一层间接引用」——闭包绑定 Json、
+       # `let` 别名、一层 helper 调用，并把「参数类型为 Value」的普通 helper 也纳入索引
+       # （原先只索引有 Json 参数的 handler，导致跟随失败）。
+       # 效果：消除 2 处已证实误报（task opinion / im_msg conversationId，B 24→18）；
+       # **新发现 4 处真实字段错配**（attendance appeal status↔auditStatus、rule name↔ruleName、
+       # form schema↔definition、mobile check userId）；也引入 3 处新误报（login/switchuser 的
+       # auth_person 列名、task/reject 的 Path id）——已在 §6.10 逐条列出。
+       # 基线同步更新（B 18 / C 21 / D 24 / E 2 / A 0）并在文件内留 _note 说明"因提取器变敏感而移动"。
+       # 修复过程中踩坑：别名推导误用 `name` 变量覆盖了 handler 名，使 handlers 从 921 掉到 479（已修）。
+       # rev7（2026-09-20 阶段 H 复核）：逐条复核一致性治理——
        # G1 复核为**非问题**（control::unit.rs 产出的 JSON 键本就是 parentId，原判断基于 SQL 列名有误）；
        # G2 已文档化（407 条 mock* 为 O2OA 兼容层，不可清理）；
        # G3 判为**产品决策**不擅自改（AIAssistant 与 AIChatApp 标题同为「AI 助手」，
@@ -544,6 +553,42 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 > 判据很简单——**提取出的路径不以 `/` 开头就说明前缀是拼出来的**，必须还原，否则会把正确的前端判成错的。
 > 本轮 BBS 就是先误判、后由既有测试（`BBSForum.test.ts`）挡下才发现的——**这也印证了"契约测试"的价值**。
 
+### 6.10 rev8：契约提取器"跟随一层间接引用"（把上界变成事实）
+
+原提取器只看 handler 本体的 `body.get("k")`，因此把**已修**的项判成未修。rev8 补上三种派生：
+
+| 派生形态 | 例子 | 处理 |
+|---|---|---|
+| 闭包绑定 Json | `body.as_ref().map(\|Json(v)\| v)` → `v.get("k")` | 把 `v` 加入接收者集合 |
+| `let` 别名 | `let payload = body.as_ref()...` → `completion_record_fields(payload, ..)` | 只允许从 **Json 参数直接派生**（不做传递闭包） |
+| 一层 helper 调用 | `completion_record_fields(payload, ..)` 内的 `\|v\| v.get("opinion")` | 把被调函数的读取键并入调用方 |
+
+**必须同时扩展 helper 的索引范围**：`completion_record_fields(body: Option<&Value>, ..)` 不是 axum handler
+（无 `Json` 参数），原先被跳过 → 跟随失败。现对"参数类型为 `Value`/`&Value`/`Option<&Value>`"的函数也建索引。
+
+**效果（net win）**：
+
+- ✅ 消除了 2 处**已证实的误报**：`task_complete/reject` 的 `opinion`、`im_msg_list` 的 `conversationId`
+  （B 24 → 18）。
+- ✅ **新发现 4 处真实字段错配**（此前完全看不见）：
+
+| 端点 | 前端发送 | 后端读取 |
+|---|---|---|
+| `POST /api/attendance/appeal/audit` | `status` | **`auditStatus`** |
+| `POST /api/attendance/assemble/control/rule/create` | `name` | **`ruleName` / `ruleType` / `description` / `enabled`** |
+| `POST /api/form` | `schema` | **`definition`** |
+| `POST /api/attendance/.../v2/mobile/check` | `checkInType` / `sourceType` | **`recordDateString` / `userId`** |
+
+- ⚠️ 也引入了 3 处**新误报**（C 13 → 21）：`authentication/login` / `switchuser` 把 `auth_person`
+  的列名（`password_hash`/`unique_id`/`department`…）当成请求体键；`task/reject` 的 `id` 实际来自 `Path`。
+  根因是 `let` 派生与结构体字段在少数 handler 上仍过宽。
+
+> **基线同步更新**（`schema_baseline.json` → B 18 / C 21 / D 24 / E 2 / A 0），并在文件内留 `_note`
+> 说明"因提取器变敏感而移动"，避免被误读为放水。**已知残留误报已逐条列出**，不隐藏。
+>
+> **方法论**：契约提取器的准确度提升与字段审计（§5.2 fallback）、命名复核（§九 G1）是同一件事——
+> **必须解析表达式链与一层间接引用**。只看表层标识符，报出的永远是"上界"而非"事实"。
+
 ---
 
 ## 七、业务流程覆盖矩阵
@@ -749,7 +794,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **C** 后端缺失 | ✅ 已完成 | 陈皮（AI） | **404 11 → 0** | BBS 7 处经复核为**误报**（提取器 `fmt` 前缀缺陷，已回滚误改）；后端补 3 处路由 |
 | **D** 字段对齐 | ✅ 复核后免除 | 陈皮（AI） | 字段存疑 5 → **0（非真缺陷）** | 均为 fallback 链次级声明（§5.2 已修正过度结论） |
 | **E** 防回归门禁 | ✅ 已完成（E1–E6） | 陈皮（AI） | 门禁已落地并验证可失败 | **E1/E4/E5**：`compare.py --gate`（shadow/405/404 必须全 0）+ `schema_audit.py --gate`（A 必须为 0，B/C/D/E 不得高于 `schema_baseline.json`）→ 新增 CI workflow `.github/workflows/three-ends-contract.yml`；**E2**：字段/契约侧以基线"不许新增"兜住（单端点级字段断言列为后续增强）；**E3**：CI 顺序 = extract_routes → extract_calls → compare --gate → schema_audit --gate，产物上传 artifact；**E6**：`oa4rust/tests/quoted_key_guard.rs` 已接入 `oa4rust-ci.yml` 的 `quality` job。**门禁可失败已验证**：人为压低基线 → EXIT=1；恢复 → EXIT=0 |
-| **F** 契约修复 + 运行时校验 | 🟨 部分 | 陈皮（AI） | B 24 / C 13 / D 22 待收敛（**含已知误报**） | 阶段 0 已覆盖 A 类全部与部分 B 类；剩余为契约语义项，见下 |
+| **F** 契约修复 + 运行时校验 | 🟨 提取器已升级，真实错配已定位 | 陈皮（AI） | B 18 / C 21 / D 24（基线；含 3 处已知误报） | rev8 让提取器**跟随一层间接引用**（闭包绑定 / `let` 别名 / helper 调用）：消除 2 处已证实误报，**新发现 4 处真实字段错配**（attendance appeal `status`↔`auditStatus`、rule `name`↔`ruleName`、form `schema`↔`definition`、mobile check `userId`）→ 详见 §6.10 |
 | **G** 移动端能力扩展 | 🟨 部分 | 陈皮（AI） | 业务域 6 → ≥12 未达成 | 移动端 IM 已按会话过滤；扩面未做 |
 | **H** 一致性治理 | 🟨 3/5 已闭合 | 陈皮（AI） | G1 非问题、G2 已文档化、G4 已修 | G3 待产品决策（两个同名「AI 助手」，MCP 配置当前不可达）；G5 长期项（消费率 5.8%） |
 

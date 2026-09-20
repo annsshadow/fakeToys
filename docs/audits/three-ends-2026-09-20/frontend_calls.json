@@ -3713,7 +3713,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/EmptyApp.vue",
-    "line": 57,
+    "line": 59,
     "method": "GET",
     "reason": "unresolved-obj:props.apiPath",
     "snippet": "api.get(props.apiPath)     const list = (r.data?.list ?? r.data ?? []) as Array<Record<string, unknown>>     i"
