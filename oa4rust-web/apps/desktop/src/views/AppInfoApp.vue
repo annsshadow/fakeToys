@@ -16,6 +16,7 @@
         <button class="btn-primary" @click="doSearch">搜索</button>
         <button class="btn-primary" @click="createApp">+ 新建应用</button>
         <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
+        <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
       </div>
       <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <div class="list-panel">
@@ -88,6 +89,20 @@ async function viewDetail(item: any) {
 }
 
 const appViewText = ref('')
+async function loadAppPublish() {
+  try {
+    // GET appinfo/list/user/publish + list/user/view/all + list/has/document
+    const [pub, viewAll, hasDoc] = await Promise.all([
+      api.get('/api/appinfo/list/user/publish'),
+      api.get('/api/appinfo/list/user/view/all'),
+      api.get('/api/appinfo/list/has/document'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `可发布 ${n(pub)} / 全部视图 ${n(viewAll)} / 含文档 ${n(hasDoc)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAppViews() {
   try {
     // GET appinfo/list/manage + list/user/view + list/appType —— 管理/用户视图/类型
