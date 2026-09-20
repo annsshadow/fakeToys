@@ -4784,7 +4784,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 62,
+    "line": 63,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/status",
+    "path": "/api/general/assemble/control/status",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 64,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/area/list",
+    "path": "/api/general/assemble/control/area/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 65,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/worktime/minutesofworkday",
+    "path": "/api/general/assemble/control/worktime/minutesofworkday",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 77,
     "method": "GET",
     "raw": "/api/console/status",
     "path": "/api/console/status",
@@ -4794,7 +4824,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 63,
+    "line": 78,
     "method": "GET",
     "raw": "/api/console/system/info",
     "path": "/api/console/system/info",
@@ -4804,7 +4834,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 76,
+    "line": 91,
     "method": "GET",
     "raw": "/api/server/license",
     "path": "/api/server/license",
@@ -4814,7 +4844,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 92,
+    "line": 107,
     "method": "GET",
     "raw": "/api/server/execute?command=${encodeURIComponent(command.value)}",
     "path": "/api/server/execute",
@@ -4824,7 +4854,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 105,
+    "line": 120,
     "method": "GET",
     "raw": "/api/server/stop",
     "path": "/api/server/stop",
