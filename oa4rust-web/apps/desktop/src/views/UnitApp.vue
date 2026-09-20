@@ -11,6 +11,7 @@
         <button class="btn-primary" @click="loadUnits">刷新全部</button>
         <button class="btn-primary" @click="loadTopUnits">顶级单位</button>
         <button class="btn-primary" @click="loadUnitTypes">单位类型</button>
+        <button class="btn-primary" @click="loadUnitRoot">根/可控/名片</button>
       </div>
       <div v-if="unitTypes.length" class="ut-chips">
         <span v-for="t in unitTypes" :key="t" class="ut-chip">{{ t }}</span>
@@ -103,6 +104,20 @@ async function loadUnits() {
     units.value = []
   } finally {
     loading.value = false
+  }
+}
+async function loadUnitRoot() {
+  try {
+    // GET unit/get/root + unit/list/control/top + personcard/mylist —— 根单位/可控顶级/我的名片
+    const [root, ctrlTop, myCard] = await Promise.all([
+      api.get('/api/organization/assemble/control/unit/get/root'),
+      api.get('/api/organization/assemble/control/unit/list/control/top'),
+      api.get('/api/organization/assemble/control/personcard/mylist'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : (r?.data ? 1 : 0))
+    unitTypes.value = [`根单位 ${n(root)} · 可控顶级 ${n(ctrlTop)} · 我的名片 ${n(myCard)}`]
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
   }
 }
 async function loadTopUnits() {
