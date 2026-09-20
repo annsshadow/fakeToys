@@ -4225,7 +4225,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 58,
+    "line": 59,
     "method": "GET",
     "raw": "/api/processplatform/service/processing/list/running",
     "path": "/api/processplatform/service/processing/list/running",
@@ -4240,7 +4240,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProcessManagerApp.vue",
-    "line": 77,
+    "line": 69,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
+    "path": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/processplatform/assemble/surface/application/list/complex/manage/person",
+    "hit_crate": "processplatform_assemble_surface",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 88,
     "method": "GET",
     "raw": "/api/processplatform/assemble/surface/process_manager/list",
     "path": "/api/processplatform/assemble/surface/process_manager/list",

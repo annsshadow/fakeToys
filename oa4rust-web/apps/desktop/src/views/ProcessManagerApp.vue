@@ -11,6 +11,7 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索流程 / 分类 / 创建人..." class="search-input" />
         <button class="btn-refresh" @click="loadRunningProcesses">⚙️ 运行中流程</button>
+        <button class="btn-refresh" @click="loadManagedApps">👤 我管理的应用</button>
       </div>
       <div v-if="runningProcs.length" class="rp-chips">
         <span v-for="rp in runningProcs" :key="rp.id || rp.name" class="rp-chip">{{ rp.name || rp.id }}</span>
@@ -58,6 +59,16 @@ async function loadRunningProcesses() {
     const r: any = await api.get('/api/processplatform/service/processing/list/running')
     runningProcs.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
     if (runningProcs.value.length === 0) toast.success('该分类暂无流程')
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
+async function loadManagedApps() {
+  try {
+    // GET processplatform/assemble/surface/application/list/complex/manage/person —— 我管理的流程应用
+    const r: any = await api.get('/api/processplatform/assemble/surface/application/list/complex/manage/person')
+    const n = Array.isArray(r.data) ? r.data.length : 0
+    toast.success('我管理的应用：' + n + ' 个')
   } catch (e: any) {
     toast.error('加载失败: ' + (e?.message ?? ''))
   }
