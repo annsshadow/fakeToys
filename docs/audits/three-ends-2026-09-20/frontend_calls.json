@@ -4464,7 +4464,27 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 57,
+    "line": 62,
+    "method": "GET",
+    "raw": "/api/console/status",
+    "path": "/api/console/status",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 63,
+    "method": "GET",
+    "raw": "/api/console/system/info",
+    "path": "/api/console/system/info",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 76,
     "method": "GET",
     "raw": "/api/server/license",
     "path": "/api/server/license",
@@ -4474,7 +4494,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 73,
+    "line": 92,
     "method": "GET",
     "raw": "/api/server/execute?command=${encodeURIComponent(command.value)}",
     "path": "/api/server/execute",
@@ -4484,7 +4504,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ServerApp.vue",
-    "line": 86,
+    "line": 105,
     "method": "GET",
     "raw": "/api/server/stop",
     "path": "/api/server/stop",
