@@ -67,7 +67,7 @@ const cols = ref<string[]>([])
 async function loadViews() {
   loading.value = true
   try {
-    const r = await api.get('/api/view/list')
+    const r = await api.get('/api/view/list/all')
     views.value = r.data ?? []
   } catch {
     views.value = []
@@ -82,7 +82,8 @@ async function viewData(v: ViewItem) {
   dataResult.value = []
   cols.value = []
   try {
-    const r = await api.post(`/api/view/viewdata/${v.id}`, {})
+    // 真实路由为 view/viewdata/list/{id}/next/{count}。
+    const r = await api.post(`/api/view/viewdata/list/${v.id}/next/50`, {})
     const list = r.data?.list ?? r.data ?? []
     dataResult.value = Array.isArray(list) ? list : []
     if (dataResult.value.length > 0) cols.value = Object.keys(dataResult.value[0])

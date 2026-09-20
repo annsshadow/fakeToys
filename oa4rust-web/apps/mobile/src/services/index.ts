@@ -137,13 +137,9 @@ export interface MessageRow {
 }
 
 /**
- * 取消息行所属会话 ID。后端生成 handler（O2OA 遗留约定）把会话键序列化为
- * 带引号字面量 `"conversationId"`（JSON 键本身含引号字符），前端解析后需按该
- * 键读取；同时兼容普通键。返回空串表示无会话归属。
+ * 取消息行所属会话 ID。返回空串表示无会话归属。
  */
 export function messageConversationId(row: Record<string, unknown>): string {
-  const quoted = row['"conversationId"']
-  if (typeof quoted === 'string' && quoted) return quoted
   const plain = row.conversationId
   return typeof plain === 'string' ? plain : ''
 }
@@ -151,15 +147,16 @@ export function messageConversationId(row: Record<string, unknown>): string {
 export const messageApi = {
   conversationList: () =>
     list(mapi.get<ConversationRow[]>('/api/message/assemble/communicate/im/conversation/list/my')),
-  msgHistory: (page: number, size: number) =>
-    list(mapi.get<MessageRow[]>(`/api/message/assemble/communicate/im/msg/list/${page}/size/${size}`)),
-  /**
-   * 真实写入 x_message（sent=true 表示落库成功）。后端按带引号键
-   * `"conversationId"` 读取会话归属，这里同时下发两种键保证可读。
-   */
+  /** 会话内消息历史（后端按 body.conversationId 过滤）。 */
+  msgHistory: (conversationId: string, page: number, size: number) =>
+    list(
+      mapi.post<MessageRow[]>(`/api/message/assemble/communicate/im/msg/list/${page}/size/${size}`, {
+        conversationId,
+      }),
+    ),
+  /** 真实写入 x_message（sent=true 表示落库成功）。 */
   send: (conversationId: string, content: string, sender: string) =>
     mapi.post<{ sent?: boolean }>('/api/message/assemble/communicate/im/msg', {
-      ['"conversationId"']: conversationId,
       conversationId,
       content,
       sender,

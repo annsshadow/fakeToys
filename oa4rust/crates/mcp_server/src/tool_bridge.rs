@@ -497,7 +497,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/calendar/event",
         desc: "Create a calendar event",
         path_params: [],
-        body_params: ["title", "\"startTime\"", "\"endTime\""],
+        body_params: ["title", "startTime", "endTime"],
     },
     // ── component ───────────────────────────────────────────────────────────
     register_tool! {
@@ -515,7 +515,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/file/upload",
         desc: "Upload a file",
         path_params: [],
-        body_params: ["\"fileName\"", "contentType", "data"],
+        body_params: ["fileName", "contentType", "data"],
     },
     register_tool! {
         name: "file_list",
@@ -658,7 +658,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/meeting/create",
         desc: "Create a new meeting",
         path_params: [],
-        body_params: ["title", "content", "roomId", "\"startTime\"", "\"endTime\"", "creator"],
+        body_params: ["title", "content", "roomId", "startTime", "endTime", "creator"],
     },
     register_tool! {
         name: "meeting_get_by_id",
@@ -687,17 +687,17 @@ static ROUTE_DEFS: &[RouteDef] = &[
     register_tool! {
         name: "meeting_participant_add",
         method: Post,
-        path: "/api/meeting/{\"meetingId\"}/participant/add",
+        path: "/api/meeting/{meetingId}/participant/add",
         desc: "Add a participant to a meeting",
-        path_params: ["\"meetingId\""],
+        path_params: ["meetingId"],
         body_params: ["invitee"],
     },
     register_tool! {
         name: "meeting_participant_list",
         method: Get,
-        path: "/api/meeting/{\"meetingId\"}/participant/list",
+        path: "/api/meeting/{meetingId}/participant/list",
         desc: "List meeting participants",
-        path_params: ["\"meetingId\""],
+        path_params: ["meetingId"],
         body_params: [],
     },
     // ── mind ────────────────────────────────────────────────────────────────
@@ -909,7 +909,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/api/meeting/assemble/summary",
         desc: "Get assembled meeting summary",
         path_params: [],
-        body_params: ["\"meetingId\""],
+        body_params: ["meetingId"],
     },
     // ── message_assemble_communicate ────────────────────────────────────────
     register_tool! {

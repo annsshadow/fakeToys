@@ -189,6 +189,12 @@
    "file": "crates/ai_assemble_control/src/routes.rs"
   },
   {
+   "method": "DELETE",
+   "path": "/api/ai_assemble_control/chat/delete/{clueId}",
+   "handler": "chat_delete_clue_id",
+   "file": "crates/ai_assemble_control/src/routes.rs"
+  },
+  {
    "method": "POST",
    "path": "/api/ai_assemble_control/chat/write/completion/extra",
    "handler": "chat_write_completion_extra",
@@ -274,6 +280,12 @@
   },
   {
    "method": "GET",
+   "path": "/api/ai_assemble_control/config/delete/mcp/{flag}",
+   "handler": "config_delete_mcp_flag",
+   "file": "crates/ai_assemble_control/src/routes.rs"
+  },
+  {
+   "method": "DELETE",
    "path": "/api/ai_assemble_control/config/delete/mcp/{flag}",
    "handler": "config_delete_mcp_flag",
    "file": "crates/ai_assemble_control/src/routes.rs"
@@ -2722,637 +2734,637 @@
   },
   {
    "method": "GET",
-   "path": "attachment/{id}",
+   "path": "/api/bbs/assemble/control/attachment/{id}",
    "handler": "u2_attachment_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "attachment/{id}",
+   "path": "/api/bbs/assemble/control/attachment/{id}",
    "handler": "u2_attachment_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "attachment/download/{id}",
+   "path": "/api/bbs/assemble/control/attachment/download/{id}",
    "handler": "attachment_download_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "attachment/download/{id}/stream/{stream}",
+   "path": "/api/bbs/assemble/control/attachment/download/{id}/stream/{stream}",
    "handler": "attachment_download_stream_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "attachment/list/subject/{subjectId}",
+   "path": "/api/bbs/assemble/control/attachment/list/subject/{subjectId}",
    "handler": "u2_attachment_list_by_subject",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "attachment/upload/subject/{subjectId}",
+   "path": "/api/bbs/assemble/control/attachment/upload/subject/{subjectId}",
    "handler": "attachment_upload_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "attachment/upload/subject/{subjectId}/callback/{callback}",
+   "path": "/api/bbs/assemble/control/attachment/upload/subject/{subjectId}/callback/{callback}",
    "handler": "attachment_upload_callback_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "forum/{id}",
+   "path": "/api/bbs/assemble/control/forum/{id}",
    "handler": "get_forum",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "forum/view/all",
+   "path": "/api/bbs/assemble/control/forum/view/all",
    "handler": "forum_view_all",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "login",
+   "path": "/api/bbs/assemble/control/login",
    "handler": "login",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "logout",
+   "path": "/api/bbs/assemble/control/logout",
    "handler": "logout",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "mobile/view/all",
+   "path": "/api/bbs/assemble/control/mobile/view/all",
    "handler": "mobile_view_all",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "permission",
+   "path": "/api/bbs/assemble/control/permission",
    "handler": "u2_permission_root",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "permission/replyPublishable/{subjectId}",
+   "path": "/api/bbs/assemble/control/permission/replyPublishable/{subjectId}",
    "handler": "permission_replyPublishable_subjectId",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "permission/section/{sectionId}",
+   "path": "/api/bbs/assemble/control/permission/section/{sectionId}",
    "handler": "permission_section_sectionId",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "permission/subject/{subjectId}",
+   "path": "/api/bbs/assemble/control/permission/subject/{subjectId}",
    "handler": "permission_subject_subjectId",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "permission/subjectPublishable/{sectionId}",
+   "path": "/api/bbs/assemble/control/permission/subjectPublishable/{sectionId}",
    "handler": "permission_subjectPublishable_sectionId",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "picture/encode/base64/size/{size}",
+   "path": "/api/bbs/assemble/control/picture/encode/base64/size/{size}",
    "handler": "picture_encode_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "picture/section/{id}/icon",
+   "path": "/api/bbs/assemble/control/picture/section/{id}/icon",
    "handler": "picture_section_icon_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "reply/{id}",
+   "path": "/api/bbs/assemble/control/reply/{id}",
    "handler": "u2_reply_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "reply/filter/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/reply/filter/list/page/{page}/count/{count}",
    "handler": "u2_reply_filter_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "reply/list/sub/{id}",
+   "path": "/api/bbs/assemble/control/reply/list/sub/{id}",
    "handler": "reply_list_sub_id",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "section/{id}",
+   "path": "/api/bbs/assemble/control/section/{id}",
    "handler": "u2_section_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "section/syn",
+   "path": "/api/bbs/assemble/control/section/syn",
    "handler": "section_syn_501",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "section/viewforum/{forumId}",
+   "path": "/api/bbs/assemble/control/section/viewforum/{forumId}",
    "handler": "section_viewforum_forumId",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "section/viewsub/{sectionId}",
+   "path": "/api/bbs/assemble/control/section/viewsub/{sectionId}",
    "handler": "u2_section_viewsub",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "setting/bbsName",
+   "path": "/api/bbs/assemble/control/setting/bbsName",
    "handler": "u2_setting_bbs_name",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "shutup/get/shutup",
+   "path": "/api/bbs/assemble/control/shutup/get/shutup",
    "handler": "u2_shutup_get_mine",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "shutup/list/paging/{page}/size/{size}",
+   "path": "/api/bbs/assemble/control/shutup/list/paging/{page}/size/{size}",
    "handler": "shutup_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "shutup/save",
+   "path": "/api/bbs/assemble/control/shutup/save",
    "handler": "shutup_create",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "shutup/{id}",
+   "path": "/api/bbs/assemble/control/shutup/{id}",
    "handler": "u2_shutup_delete_admin",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subject/recommended/index/{count}",
+   "path": "/api/bbs/assemble/control/subject/recommended/index/{count}",
    "handler": "topic_recommended_index",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subject/statgrade/sectionName/{sectionName}/subjectType/{subjectType}",
+   "path": "/api/bbs/assemble/control/subject/statgrade/sectionName/{sectionName}/subjectType/{subjectType}",
    "handler": "u2_statgrade",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subject/top/{sectionId}",
+   "path": "/api/bbs/assemble/control/subject/top/{sectionId}",
    "handler": "subject_top_sectionId",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subject/view/{id}",
+   "path": "/api/bbs/assemble/control/subject/view/{id}",
    "handler": "subject_view_id",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "subject/filter/listsubjectinfo/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/{page}/count/{count}",
    "handler": "u2_subject_listsubjectinfo_page",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "subject/creamed/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/subject/creamed/list/page/{page}/count/{count}",
    "handler": "subject_creamed_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "subject/filter/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/subject/filter/list/page/{page}/count/{count}",
    "handler": "subject_filter_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "subject/index/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/subject/index/list/page/{page}/count/{count}",
    "handler": "subject_index_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "subject/recommended/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/subject/recommended/list/page/{page}/count/{count}",
    "handler": "topic_recommended_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "subject/search/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/subject/search/list/page/{page}/count/{count}",
    "handler": "u2_subject_search_page",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subjectattach/{id}",
+   "path": "/api/bbs/assemble/control/subjectattach/{id}",
    "handler": "u2_subjectattach_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "subjectattach/{id}",
+   "path": "/api/bbs/assemble/control/subjectattach/{id}",
    "handler": "u2_subjectattach_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subjectattach/{id}/binary/base64/{size}",
+   "path": "/api/bbs/assemble/control/subjectattach/{id}/binary/base64/{size}",
    "handler": "u2_subjectattach_base64",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "subjectattach/list/subject/{id}",
+   "path": "/api/bbs/assemble/control/subjectattach/list/subject/{id}",
    "handler": "u2_subjectattach_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "user/forum",
+   "path": "/api/bbs/assemble/control/user/forum",
    "handler": "u2_user_forum_save",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "user/forum/{id}",
+   "path": "/api/bbs/assemble/control/user/forum/{id}",
    "handler": "u2_user_forum_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/forum/all",
+   "path": "/api/bbs/assemble/control/user/forum/all",
    "handler": "user_forum_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/permission/forum/{forumId}",
+   "path": "/api/bbs/assemble/control/user/permission/forum/{forumId}",
    "handler": "u2_permission_admin_forum",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/permission/role/{roleCode}",
+   "path": "/api/bbs/assemble/control/user/permission/role/{roleCode}",
    "handler": "u2_permission_admin_role",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/permission/section/{sectionId}",
+   "path": "/api/bbs/assemble/control/user/permission/section/{sectionId}",
    "handler": "u2_permission_admin_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "user/reply",
+   "path": "/api/bbs/assemble/control/user/reply",
    "handler": "u2_user_reply_save",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/reply/accept",
+   "path": "/api/bbs/assemble/control/user/reply/accept",
    "handler": "u2_user_reply_accept",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/reply/my/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/user/reply/my/list/page/{page}/count/{count}",
    "handler": "u2_my_reply_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "user/reply/{id}",
+   "path": "/api/bbs/assemble/control/user/reply/{id}",
    "handler": "u2_user_reply_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "user/role",
+   "path": "/api/bbs/assemble/control/user/role",
    "handler": "u2_role_save",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/bind/object",
+   "path": "/api/bbs/assemble/control/user/role/bind/object",
    "handler": "u2_role_bind_object",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/bind/role",
+   "path": "/api/bbs/assemble/control/user/role/bind/role",
    "handler": "u2_role_bind_user",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/forum/{forumId}",
+   "path": "/api/bbs/assemble/control/user/role/forum/{forumId}",
    "handler": "u2_role_list_by_forum",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/rolecode/selected",
+   "path": "/api/bbs/assemble/control/user/role/rolecode/selected",
    "handler": "u2_role_selected_by_code",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/section/{sectionId}",
+   "path": "/api/bbs/assemble/control/user/role/section/{sectionId}",
    "handler": "u2_role_list_by_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/unit/selected",
+   "path": "/api/bbs/assemble/control/user/role/unit/selected",
    "handler": "u2_role_by_unit",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/role/user/selected",
+   "path": "/api/bbs/assemble/control/user/role/user/selected",
    "handler": "u2_role_by_user",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/role/{id}",
+   "path": "/api/bbs/assemble/control/user/role/{id}",
    "handler": "u2_role_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "user/role/{id}",
+   "path": "/api/bbs/assemble/control/user/role/{id}",
    "handler": "u2_role_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/role/all",
+   "path": "/api/bbs/assemble/control/user/role/all",
    "handler": "u2_role_all",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "user/section",
+   "path": "/api/bbs/assemble/control/user/section",
    "handler": "u2_user_section_save",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "user/section/force/{id}",
+   "path": "/api/bbs/assemble/control/user/section/force/{id}",
    "handler": "u2_user_section_delete_force",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/section/forum/{forumId}",
+   "path": "/api/bbs/assemble/control/user/section/forum/{forumId}",
    "handler": "u2_user_section_forum",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/section/sub/{sectionId}",
+   "path": "/api/bbs/assemble/control/user/section/sub/{sectionId}",
    "handler": "u2_user_section_sub",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "user/section/{id}",
+   "path": "/api/bbs/assemble/control/user/section/{id}",
    "handler": "u2_user_section_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/section/all",
+   "path": "/api/bbs/assemble/control/user/section/all",
    "handler": "user_section_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/setting/code",
+   "path": "/api/bbs/assemble/control/user/setting/code",
    "handler": "u2_setting_get_by_code",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/setting/{id}",
+   "path": "/api/bbs/assemble/control/user/setting/{id}",
    "handler": "u2_setting_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/setting/all",
+   "path": "/api/bbs/assemble/control/user/setting/all",
    "handler": "u2_setting_all",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/setting",
+   "path": "/api/bbs/assemble/control/user/setting",
    "handler": "u2_setting_update",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/subject/change/section",
+   "path": "/api/bbs/assemble/control/user/subject/change/section",
    "handler": "u2_subject_change_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/subject/my/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/user/subject/my/list/page/{page}/count/{count}",
    "handler": "u2_my_subject_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/subject/vote/submit",
+   "path": "/api/bbs/assemble/control/user/subject/vote/submit",
    "handler": "u2_vote_submit",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "user/subject/voterecord/list/page/{page}/count/{count}",
+   "path": "/api/bbs/assemble/control/user/subject/voterecord/list/page/{page}/count/{count}",
    "handler": "u2_voterecord_list",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/acceptreply/{id}/{replyId}",
+   "path": "/api/bbs/assemble/control/user/subject/acceptreply/{id}/{replyId}",
    "handler": "u2_subject_accept_reply",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/unacceptreply/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/unacceptreply/{id}",
    "handler": "u2_subject_unaccept_reply",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/setCream/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/setCream/{id}",
    "handler": "u2_subject_set_cream",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonCream/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonCream/{id}",
    "handler": "u2_subject_non_cream",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/setOriginal/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/setOriginal/{id}",
    "handler": "u2_subject_set_original",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonOriginal/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonOriginal/{id}",
    "handler": "u2_subject_non_original",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/setRecommendToBBSIndex/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/setRecommendToBBSIndex/{id}",
    "handler": "u2_subject_set_recommend_index",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonRecommendToBBSIndex/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonRecommendToBBSIndex/{id}",
    "handler": "u2_subject_non_recommend_index",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/topToBBS/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/topToBBS/{id}",
    "handler": "u2_subject_top_to_bbs",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonTopToBBS/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonTopToBBS/{id}",
    "handler": "u2_subject_non_top_to_bbs",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/topToForum/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/topToForum/{id}",
    "handler": "u2_subject_top_to_forum",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonTopToForum/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonTopToForum/{id}",
    "handler": "u2_subject_non_top_to_forum",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/topToMainSection/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/topToMainSection/{id}",
    "handler": "u2_subject_top_to_main_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonTopToMainSection/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonTopToMainSection/{id}",
    "handler": "u2_subject_non_top_to_main_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/topToSection/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/topToSection/{id}",
    "handler": "u2_subject_top_to_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/nonTopToSection/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/nonTopToSection/{id}",
    "handler": "u2_subject_non_top_to_section",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/lock/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/lock/{id}",
    "handler": "u2_subject_lock",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/unlock/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/unlock/{id}",
    "handler": "u2_subject_unlock",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/complete/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/complete/{id}",
    "handler": "u2_subject_complete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/uncomplete/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/uncomplete/{id}",
    "handler": "u2_subject_uncomplete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "POST",
-   "path": "user/subject",
+   "path": "/api/bbs/assemble/control/user/subject",
    "handler": "u2_subject_save",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "user/subject/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/{id}",
    "handler": "u2_subject_get",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "DELETE",
-   "path": "user/subject/{id}",
+   "path": "/api/bbs/assemble/control/user/subject/{id}",
    "handler": "u2_subject_soft_delete",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "userinfo/update/nick/name/{person}",
+   "path": "/api/bbs/assemble/control/userinfo/update/nick/name/{person}",
    "handler": "u2_userinfo_update_nick",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "PUT",
-   "path": "userinfo",
+   "path": "/api/bbs/assemble/control/userinfo",
    "handler": "u2_userinfo_filter",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "uuid/random",
+   "path": "/api/bbs/assemble/control/uuid/random",
    "handler": "uuid_generate",
    "file": "crates/bbs_assemble_control/src/routes.rs"
   },
@@ -9024,13 +9036,13 @@
   },
   {
    "method": "GET",
-   "path": "/api/general/assemble/control/excel/{\\\"excelName\\\"}",
+   "path": "/api/general/assemble/control/excel/{excelName}",
    "handler": "excel_excelName_excelName",
    "file": "crates/general_assemble_control/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/general/assemble/control/excel/{\\\"excelName\\\"}/sheetList",
+   "path": "/api/general/assemble/control/excel/{excelName}/sheetList",
    "handler": "excel_excelName_excelName_sheetList",
    "file": "crates/general_assemble_control/src/routes.rs"
   },
@@ -10284,13 +10296,13 @@
   },
   {
    "method": "POST",
-   "path": "/api/meeting/{\\\"meetingId\\\"}/participant/add",
+   "path": "/api/meeting/{meetingId}/participant/add",
    "handler": "add_participant",
    "file": "crates/meeting/src/routes.rs"
   },
   {
    "method": "GET",
-   "path": "/api/meeting/{\\\"meetingId\\\"}/participant/list",
+   "path": "/api/meeting/{meetingId}/participant/list",
    "handler": "list_participants",
    "file": "crates/meeting/src/routes.rs"
   }
@@ -10298,7 +10310,7 @@
  "meeting_assemble_control": [
   {
    "method": "GET",
-   "path": "/api/meeting/assemble/control/list/{\\\"meetingId\\\"}",
+   "path": "/api/meeting/assemble/control/list/{meetingId}",
    "handler": "list_meeting_controls",
    "file": "crates/meeting_assemble_control/src/routes.rs"
   },
@@ -30236,145 +30248,145 @@
   },
   {
    "method": "POST",
-   "path": "{p}/design/search",
+   "path": "/api/query_service_processing/{p}/design/search",
    "handler": "design_search",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "POST",
-   "path": "{p}/index/directory/document/count",
+   "path": "/api/query_service_processing/{p}/index/directory/document/count",
    "handler": "index_directory_document_count",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "POST",
-   "path": "{p}/index/update/extra/document",
+   "path": "/api/query_service_processing/{p}/index/update/extra/document",
    "handler": "index_update_extra_document",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/table/reload/dynamic",
+   "path": "/api/query_service_processing/{p}/table/reload/dynamic",
    "handler": "table_reload_dynamic",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "POST",
-   "path": "{p}/table/{{flag}}/insert",
+   "path": "/api/query_service_processing/{p}/table/{{flag}}/insert",
    "handler": "table_insert",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "POST",
-   "path": "{p}/table/{{flag}}/update/{{bundle}}",
+   "path": "/api/query_service_processing/{p}/table/{{flag}}/update/{{bundle}}",
    "handler": "table_update_with_bundle",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/neural/generate/model/{{modelFlag}}",
+   "path": "/api/query_service_processing/{p}/neural/generate/model/{{modelFlag}}",
    "handler": "neural_generate",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/neural/stop/generating/model/{{modelFlag}}",
+   "path": "/api/query_service_processing/{p}/neural/stop/generating/model/{{modelFlag}}",
    "handler": "neural_stop_generating",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/neural/learn/model/{{modelFlag}}",
+   "path": "/api/query_service_processing/{p}/neural/learn/model/{{modelFlag}}",
    "handler": "neural_learn",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/neural/stop/learning/model/{{modelFlag}}",
+   "path": "/api/query_service_processing/{p}/neural/stop/learning/model/{{modelFlag}}",
    "handler": "neural_stop_learning",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/neural/list/calculate/model/{{modelFlag}}/work/{{workId}}",
+   "path": "/api/query_service_processing/{p}/neural/list/calculate/model/{{modelFlag}}/work/{{workId}}",
    "handler": "neural_list_calculate_with_work",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/high/freq/work/node/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/high/freq/work/node/{{node}}/touch",
    "handler": "high_freq_work_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/high/freq/work/node/{{node}}/reset",
+   "path": "/api/query_service_processing/{p}/touch/high/freq/work/node/{{node}}/reset",
    "handler": "high_freq_work_reset",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/low/freq/work/node/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/low/freq/work/node/{{node}}/touch",
    "handler": "low_freq_work_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/low/freq/work/node/{{node}}/reset",
+   "path": "/api/query_service_processing/{p}/touch/low/freq/work/node/{{node}}/reset",
    "handler": "low_freq_work_reset",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/high/freq/workcompleted/node/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/high/freq/workcompleted/node/{{node}}/touch",
    "handler": "high_freq_workcompleted_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/high/freq/workcompleted/node/{{node}}/reset",
+   "path": "/api/query_service_processing/{p}/touch/high/freq/workcompleted/node/{{node}}/reset",
    "handler": "high_freq_workcompleted_reset",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/low/freq/workcompleted/node/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/low/freq/workcompleted/node/{{node}}/touch",
    "handler": "low_freq_workcompleted_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/low/freq/workcompleted/node/{{node}}/reset",
+   "path": "/api/query_service_processing/{p}/touch/low/freq/workcompleted/node/{{node}}/reset",
    "handler": "low_freq_workcompleted_reset",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/high/freq/document/node/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/high/freq/document/node/{{node}}/touch",
    "handler": "high_freq_document_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/high/freq/document/node/{{node}}/reset",
+   "path": "/api/query_service_processing/{p}/touch/high/freq/document/node/{{node}}/reset",
    "handler": "high_freq_document_reset",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/low/freq/document/node/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/low/freq/document/node/{{node}}/touch",
    "handler": "low_freq_document_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/low/freq/document/node/{{node}}/reset",
+   "path": "/api/query_service_processing/{p}/touch/low/freq/document/node/{{node}}/reset",
    "handler": "low_freq_document_reset",
    "file": "crates/query_service_processing/src/lib.rs"
   },
   {
    "method": "GET",
-   "path": "{p}/touch/optimize/index/{{node}}/touch",
+   "path": "/api/query_service_processing/{p}/touch/optimize/index/{{node}}/touch",
    "handler": "optimize_index_touch",
    "file": "crates/query_service_processing/src/lib.rs"
   }

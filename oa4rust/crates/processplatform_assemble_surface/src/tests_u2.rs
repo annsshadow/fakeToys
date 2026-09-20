@@ -1119,10 +1119,7 @@ mod u2c_tests {
         use crate::U2FilterSql;
         let mut fs = U2FilterSql::default();
         fs.push_eq("xperson", "zhang@x");
-        fs.push_in(
-            "\"xapplication\"",
-            &["app-1".to_string(), "app-2".to_string()],
-        );
+        fs.push_in("xapplication", &["app-1".to_string(), "app-2".to_string()]);
         fs.push_key_ilike(&["xtitle", "xserial"], "100%_");
         // 所有用户值必须走占位符，不得内联进 SQL 文本
         let where_clause = fs.where_sql();

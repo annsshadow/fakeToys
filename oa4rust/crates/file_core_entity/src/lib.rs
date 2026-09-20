@@ -187,7 +187,7 @@ pub async fn file_list(
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
                 (
-                    "\"referenceType\"".to_string(),
+                    "referenceType".to_string(),
                     Value::String(m.reference_type.clone()),
                 ),
                 (
@@ -273,7 +273,7 @@ pub async fn complex_top(
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
                 (
-                    "\"referenceType\"".to_string(),
+                    "referenceType".to_string(),
                     Value::String(m.reference_type.clone()),
                 ),
                 (
@@ -389,7 +389,7 @@ pub async fn file_create(
         ("name".to_string(), Value::String(model.name.clone())),
         ("person".to_string(), Value::String(model.person.clone())),
         (
-            "\"referenceType\"".to_string(),
+            "referenceType".to_string(),
             Value::String(model.reference_type.clone()),
         ),
         (

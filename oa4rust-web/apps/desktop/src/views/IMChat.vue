@@ -290,13 +290,13 @@ const {
   staleTime: 10 * 1000,
 })
 
-// 后端列表端点返回全量消息（parity 桩无按会话过滤参数），前端按当前会话过滤。
-// 会话键按后端带引号字面量 "\"conversationId\"" 兼容读取（O2OA 遗留约定）。
+// 后端已支持按会话过滤（im/msg/list/{page}/size/{size} 读取 body.conversationId）；
+// 此处保留一次按普通键 conversationId 的防御性过滤。
 const messages = computed(() => {
   const all = (msgData.value ?? []) as any[]
   const id = selectedChat.value?.id
   if (!id) return []
-  return all.filter((m) => (m?.['"conversationId"'] ?? m?.conversationId) === id)
+  return all.filter((m) => m?.conversationId === id)
 })
 
 // 监听会话切换，重新加载消息
@@ -315,9 +315,7 @@ watch(
 const sendMutation = useMutation({
   mutationFn: (content: string) => {
     if (!selectedChat.value) throw new Error('No conversation selected')
-    // 后端 im/msg handler 按带引号键 "\"conversationId\"" 读取会话归属，双键下发。
     return api.post('/api/message/assemble/communicate/im/msg', {
-      ['"conversationId"']: selectedChat.value!.id,
       conversationId: selectedChat.value!.id,
       content,
       type: 'text',

@@ -173,7 +173,7 @@ pub async fn config_list_model_paging(
         .iter()
         .map(|row| {
             let api_key_val: Option<Value> = {
-                let api_key: Option<String> = row.get("\"apiKey\"");
+                let api_key: Option<String> = row.get("apiKey");
                 api_key.map(|k| {
                     if k.len() > 4 {
                         Value::String(format!("{}****", &k[k.len() - 4..]))
@@ -195,28 +195,21 @@ pub async fn config_list_model_paging(
                         Value::String(row.get::<_, Option<String>>("model").unwrap_or_default()),
                     ),
                     (
-                        "\"completionUrl\"".to_string(),
-                        Value::String(row.get("\"completionUrl\"")),
+                        "completionUrl".to_string(),
+                        Value::String(row.get("completionUrl")),
                     ),
                     (
                         "enable".to_string(),
                         Value::Bool(row.get::<_, Option<bool>>("enable").unwrap_or(false)),
                     ),
-                    (
-                        "\"asDefault\"".to_string(),
-                        Value::Bool(row.get("\"asDefault\"")),
-                    ),
+                    ("asDefault".to_string(), Value::Bool(row.get("asDefault"))),
                     (
                         "desc".to_string(),
                         Value::String(row.get::<_, Option<String>>("desc").unwrap_or_default()),
                     ),
                 ]
                 .into_iter()
-                .chain(
-                    api_key_val
-                        .into_iter()
-                        .map(|v| ("\"apiKey\"".to_string(), v)),
-                ),
+                .chain(api_key_val.into_iter().map(|v| ("apiKey".to_string(), v))),
             ))
         })
         .collect();
@@ -246,7 +239,7 @@ pub async fn config_get_model(
 
     match row {
         Some(row) => {
-            let api_key: Option<String> = row.get("\"apiKey\"");
+            let api_key: Option<String> = row.get("apiKey");
             let masked_key: Option<Value> = api_key
                 .map(|k| {
                     if k.len() > 4 {
@@ -270,28 +263,21 @@ pub async fn config_get_model(
                         Value::String(row.get::<_, Option<String>>("model").unwrap_or_default()),
                     ),
                     (
-                        "\"completionUrl\"".to_string(),
-                        Value::String(row.get("\"completionUrl\"")),
+                        "completionUrl".to_string(),
+                        Value::String(row.get("completionUrl")),
                     ),
                     (
                         "enable".to_string(),
                         Value::Bool(row.get::<_, Option<bool>>("enable").unwrap_or(false)),
                     ),
-                    (
-                        "\"asDefault\"".to_string(),
-                        Value::Bool(row.get("\"asDefault\"")),
-                    ),
+                    ("asDefault".to_string(), Value::Bool(row.get("asDefault"))),
                     (
                         "desc".to_string(),
                         Value::String(row.get::<_, Option<String>>("desc").unwrap_or_default()),
                     ),
                 ]
                 .into_iter()
-                .chain(
-                    masked_key
-                        .into_iter()
-                        .map(|v| ("\"apiKey\"".to_string(), v)),
-                ),
+                .chain(masked_key.into_iter().map(|v| ("apiKey".to_string(), v))),
             ));
             Ok(Json(ActionResult::success(result)))
         }

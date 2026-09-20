@@ -30,7 +30,7 @@ pub async fn record_list(
             Value::Object(serde_json::Map::from_iter(
                 [
                     ("id".to_string(), Value::String(m.id.clone())),
-                    ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
+                    ("userId".to_string(), Value::String(m.user_id.clone())),
                     (
                         "checkInTime".to_string(),
                         Value::String(m.check_in_time.clone()),
@@ -76,11 +76,8 @@ pub async fn rule_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(m.start_time.clone()),
-                ),
-                ("\"endTime\"".to_string(), Value::String(m.end_time.clone())),
+                ("startTime".to_string(), Value::String(m.start_time.clone())),
+                ("endTime".to_string(), Value::String(m.end_time.clone())),
             ]))
         })
         .collect();
@@ -105,7 +102,7 @@ pub async fn record_create(
     use attendance_record::ActiveModel;
 
     let user_id = payload
-        .get("\"userId\"")
+        .get("userId")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -225,13 +222,13 @@ pub async fn rule_create(
         .unwrap_or("")
         .to_string();
     let start_time = payload
-        .get("\"startTime\"")
+        .get("startTime")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
     let end_time = payload
         .get("EndTime")
-        .or_else(|| payload.get("\"endTime\""))
+        .or_else(|| payload.get("endTime"))
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -273,11 +270,11 @@ pub async fn rule_update(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let start_time = payload
-        .get("\"startTime\"")
+        .get("startTime")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let end_time = payload
-        .get("\"endTime\"")
+        .get("endTime")
         .or_else(|| payload.get("EndTime"))
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());

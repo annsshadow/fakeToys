@@ -140,9 +140,9 @@ describe('messageApi request shapes', () => {
       verb: 'get',
       path: '/api/message/assemble/communicate/im/conversation/list/my',
     })
-    await messageApi.msgHistory(1, 30)
+    await messageApi.msgHistory('c-1', 1, 30)
     expect(last()).toMatchObject({
-      verb: 'get',
+      verb: 'post',
       path: '/api/message/assemble/communicate/im/msg/list/1/size/30',
     })
     await messageApi.markRead('c-1')

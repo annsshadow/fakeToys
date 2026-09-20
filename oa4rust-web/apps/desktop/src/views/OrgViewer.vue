@@ -73,7 +73,8 @@ let timer: ReturnType<typeof setTimeout>
 const { data } = useQuery({
   queryKey: ['org', 'tree'],
   queryFn: () =>
-    api.get('/api/organization/assemble/control/group/list').then((r: any) => {
+    // 后端无裸 group/list；group/list/like 返回全部群组（无需 flag）。
+    api.get('/api/organization/assemble/control/group/list/like').then((r: any) => {
       nodes.value = (r.data ?? []) as N[]
       return r
     }),
@@ -83,7 +84,8 @@ function toggleNode(n: N) {
   n._exp = !n._exp
   if (n._exp && !n.children) {
     const id = n.id
-    api.get('/api/organization/assemble/control/group/' + id + '/sub/nested').then((r: any) => {
+    // 真实路由为 group/list/{flag}/sub/nested。
+    api.get('/api/organization/assemble/control/group/list/' + id + '/sub/nested').then((r: any) => {
       n.children = (r.data ?? []) as N[]
     })
   }

@@ -1922,14 +1922,14 @@ pub async fn attendanceimportfileinfo_list_all(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"fileName\"".to_string(),
+                    "fileName".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("file_name")
                             .unwrap_or_default(),
                     ),
                 ),
                 (
-                    "\"fileSize\"".to_string(),
+                    "fileSize".to_string(),
                     Value::Number(serde_json::Number::from(
                         row.get::<_, Option<i64>>("file_size").unwrap_or(0),
                     )),
@@ -1969,14 +1969,14 @@ pub async fn attendanceimportfileinfo_id(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"fileName\"".to_string(),
+                    "fileName".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("file_name")
                             .unwrap_or_default(),
                     ),
                 ),
                 (
-                    "\"fileSize\"".to_string(),
+                    "fileSize".to_string(),
                     Value::Number(serde_json::Number::from(
                         row.get::<_, Option<i64>>("file_size").unwrap_or(0),
                     )),

@@ -29,9 +29,8 @@ onLoad(async (options) => {
 async function loadHistory() {
   loading.value = true
   try {
-    const resp = await messageApi.msgHistory(1, 200)
-    // 后端列表端点返回全量消息，按会话在前端过滤；逆序返回，还原时间正序展示。
-    // 会话键按后端带引号字面量兼容读取（见 messageConversationId）。
+    const resp = await messageApi.msgHistory(conversationId.value, 1, 200)
+    // 后端已按会话过滤；此处保留一次防御性过滤（逆序返回，还原时间正序展示）。
     msgs.value = (resp.data ?? [])
       .filter((m) => messageConversationId(m as Record<string, unknown>) === conversationId.value)
       .reverse()

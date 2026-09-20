@@ -346,11 +346,8 @@ pub async fn period_list_completed_task_application(
                             .unwrap_or_default(),
                     ),
                 ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
-                ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                ("startTime".to_string(), Value::String(r.get("start_time"))),
+                ("endTime".to_string(), Value::String(r.get("end_time"))),
                 (
                     "application".to_string(),
                     Value::String(
@@ -408,11 +405,11 @@ pub async fn period_list_completed_task_unit(
                     ),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))
@@ -456,11 +453,8 @@ pub async fn period_list_completed_work_application(
                             .unwrap_or_default(),
                     ),
                 ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
-                ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                ("startTime".to_string(), Value::String(r.get("start_time"))),
+                ("endTime".to_string(), Value::String(r.get("end_time"))),
             ]))
         })
         .collect();
@@ -507,11 +501,11 @@ pub async fn period_list_completed_work_unit(
                     ),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))
@@ -1593,11 +1587,8 @@ pub async fn period_list_expired_task_application(
                             .unwrap_or_default(),
                     ),
                 ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
-                ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                ("startTime".to_string(), Value::String(r.get("start_time"))),
+                ("endTime".to_string(), Value::String(r.get("end_time"))),
             ]))
         })
         .collect();
@@ -1648,11 +1639,11 @@ pub async fn period_list_expired_task_unit(
                     ),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))
@@ -1696,11 +1687,8 @@ pub async fn period_list_expired_work_application(
                             .unwrap_or_default(),
                     ),
                 ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
-                ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                ("startTime".to_string(), Value::String(r.get("start_time"))),
+                ("endTime".to_string(), Value::String(r.get("end_time"))),
             ]))
         })
         .collect();
@@ -1747,11 +1735,11 @@ pub async fn period_list_expired_work_unit(
                     ),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))
@@ -1807,11 +1795,8 @@ pub async fn period_list_start_task_application(
                             .unwrap_or_default(),
                     ),
                 ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
-                ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                ("startTime".to_string(), Value::String(r.get("start_time"))),
+                ("endTime".to_string(), Value::String(r.get("end_time"))),
             ]))
         })
         .collect();
@@ -1862,11 +1847,11 @@ pub async fn period_list_start_task_unit(
                     ),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))
@@ -1910,11 +1895,8 @@ pub async fn period_list_start_work_application(
                             .unwrap_or_default(),
                     ),
                 ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(r.get("start_time")),
-                ),
-                ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
+                ("startTime".to_string(), Value::String(r.get("start_time"))),
+                ("endTime".to_string(), Value::String(r.get("end_time"))),
             ]))
         })
         .collect();
@@ -1961,11 +1943,11 @@ pub async fn period_list_start_work_unit(
                     ),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("start_time").unwrap_or_default()),
                 ),
                 (
-                    "\"endTime\"".to_string(),
+                    "endTime".to_string(),
                     Value::String(r.get::<_, Option<String>>("end_time").unwrap_or_default()),
                 ),
             ]))

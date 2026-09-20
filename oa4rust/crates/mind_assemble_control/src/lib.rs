@@ -310,7 +310,7 @@ pub async fn folder_move_folderId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let parent_id = req
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 

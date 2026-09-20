@@ -94,8 +94,9 @@ const stats = computed(() => [
 const { data } = useQuery({
   queryKey: ['att', 'recs', month, page],
   queryFn: () =>
+    // 裸 attendancedetail 仅注册 POST；列表真实端点为 attendancedetail/filter/list。
     api
-      .get(`/api/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20`)
+      .get(`/api/attendance/assemble/control/attendancedetail/filter/list?month=${month.value}&page=${page.value}&size=20`)
       .then((r: any) => {
         records.value = r.data?.list ?? []
         totalPages.value = Math.ceil((r.data?.total ?? 1) / 20)

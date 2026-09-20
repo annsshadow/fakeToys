@@ -84,7 +84,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         )
         .route(
             "/api/ai_assemble_control/chat/delete/{clueId}",
-            get(chat_delete_clue_id),
+            get(chat_delete_clue_id).delete(chat_delete_clue_id),
         )
         .route(
             "/api/ai_assemble_control/chat/write/completion/extra",
@@ -139,7 +139,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         )
         .route(
             "/api/ai_assemble_control/config/delete/mcp/{flag}",
-            get(config_delete_mcp_flag),
+            get(config_delete_mcp_flag).delete(config_delete_mcp_flag),
         )
         .route(
             "/api/ai_assemble_control/config/list/enable/model",

@@ -69,7 +69,8 @@ async function executeCommand() {
   execOutput.value = ''
   execError.value = ''
   try {
-    const r = await api.post('/api/server/execute', { command: command.value })
+    // 后端 server/execute 仅注册 GET（命令以 query 传递）。
+    const r = await api.get(`/api/server/execute?command=${encodeURIComponent(command.value)}`)
     execOutput.value = JSON.stringify(r.data, null, 2)
   } catch (e: any) {
     execError.value = e?.message ?? '命令执行失败'
@@ -81,7 +82,8 @@ async function executeCommand() {
 async function stopServer() {
   if (!(await confirmMsg('确定要停止服务器？所有连接将被断开。'))) return
   try {
-    await api.post('/api/server/stop', null)
+    // 后端 server/stop 仅注册 GET。
+    await api.get('/api/server/stop')
     execOutput.value = '服务器已停止'
   } catch (e: any) {
     execError.value = '停止失败: ' + (e?.message ?? '')

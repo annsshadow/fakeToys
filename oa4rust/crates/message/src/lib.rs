@@ -66,7 +66,7 @@ pub async fn consume_list(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
             ]))
         })

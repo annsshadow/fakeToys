@@ -74,7 +74,8 @@ const execResult = ref<Record<string, unknown>[]>([])
 async function doSearch() {
   loading.value = true
   try {
-    const r = await api.get('/api/queryview/search', { params: { keyword: keyword.value } })
+    // 后端 queryview/search 仅注册 POST。
+    const r = await api.post('/api/queryview/search', { keyword: keyword.value })
     views.value = r.data ?? []
   } catch {
     views.value = []
@@ -86,7 +87,8 @@ async function doSearch() {
 async function loadViews() {
   loading.value = true
   try {
-    const r = await api.post('/api/queryview/view/list/paging/1/20', {})
+    // 后端视图列表为 GET view/list/query/{queryFlag}；all 为"不限查询"的取值。
+    const r = await api.get('/api/queryview/view/list/query/all')
     views.value = r.data?.list ?? r.data ?? []
   } catch {
     views.value = []
@@ -100,7 +102,10 @@ async function executeView(v: ViewItem) {
   execLoading.value = true
   execResult.value = []
   try {
-    const r = await api.post(`/api/queryview/execute/${v.flag || v.id}`, {})
+    // 后端 execute 为 GET execute/{view}/{id}；handler 只读 id，view 段为语义占位。
+    const r = await api.get(
+      `/api/queryview/execute/${encodeURIComponent(v.flag || 'view')}/${encodeURIComponent(v.id)}`,
+    )
     execResult.value = r.data?.list ?? r.data ?? []
   } catch (e: any) {
     toast.error('执行失败: : ' + (e?.message ?? '未知错误'))

@@ -134,10 +134,7 @@ function normalizeFolders(raw: unknown): Folder[] {
       id: String(item.id ?? ''),
       name: typeof item.name === 'string' ? item.name : undefined,
       title: typeof item.title === 'string' ? item.title : undefined,
-      parentId:
-        typeof (item.parentId ?? item['"parentId"']) === 'string'
-          ? String(item.parentId ?? item['"parentId"'])
-          : undefined,
+      parentId: typeof item.parentId === 'string' ? String(item.parentId) : undefined,
       children: normalizeFolders(item.children),
     }))
     .filter((item) => item.id)

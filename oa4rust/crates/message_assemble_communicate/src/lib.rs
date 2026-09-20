@@ -44,7 +44,7 @@ pub async fn send_message(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
-        .get("\"conversationId\"")
+        .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let content = req
@@ -75,7 +75,7 @@ pub async fn send_message(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             (
-                "\"conversationId\"".to_string(),
+                "conversationId".to_string(),
                 Value::String(conversation_id.to_string()),
             ),
             ("content".to_string(), Value::String(content.to_string())),
@@ -716,7 +716,7 @@ pub async fn im_conversation_id_group(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"conversationId\"".to_string(),
+                    "conversationId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("conversation_id")
                             .unwrap_or_default(),
@@ -939,7 +939,7 @@ pub async fn im_conversation_id_icon(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("\"conversationId\"".to_string(), Value::String(id)),
+                ("conversationId".to_string(), Value::String(id)),
                 (
                     "iconUrl".to_string(),
                     Value::String(row.get::<_, Option<String>>("icon_url").unwrap_or_default()),
@@ -1168,14 +1168,14 @@ pub async fn im_manager_config(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
-                    "\"configKey\"".to_string(),
+                    "configKey".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("config_key")
                             .unwrap_or_default(),
                     ),
                 ),
                 (
-                    "\"configValue\"".to_string(),
+                    "configValue".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("config_value")
                             .unwrap_or_default(),
@@ -1203,7 +1203,7 @@ pub async fn im_msg(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
-        .get("\"conversationId\"")
+        .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let content = req
@@ -1226,7 +1226,7 @@ pub async fn im_msg(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             (
-                "\"conversationId\"".to_string(),
+                "conversationId".to_string(),
                 Value::String(conversation_id.to_string()),
             ),
             ("content".to_string(), Value::String(content.to_string())),
@@ -1265,7 +1265,7 @@ pub async fn im_msg_collection(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req
-        .get("\"messageId\"")
+        .get("messageId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let result = client
@@ -1304,7 +1304,7 @@ pub async fn im_msg_collection_list_page_size_size(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"messageId\"".to_string(),
+                    "messageId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("message_id")
                             .unwrap_or_default(),
@@ -1337,7 +1337,7 @@ pub async fn im_msg_collection_remove(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req
-        .get("\"messageId\"")
+        .get("messageId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let result = client
@@ -1501,9 +1501,9 @@ pub async fn im_msg_download_id_image_width_width_height_height(
             let resized_url = format!("{}?w={}&h={}", file_url, width, height);
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("\"fileUrl\"".to_string(), Value::String(resized_url)),
+                ("fileUrl".to_string(), Value::String(resized_url)),
                 (
-                    "\"fileName\"".to_string(),
+                    "fileName".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("file_name")
                             .unwrap_or_default(),
@@ -1551,7 +1551,7 @@ pub async fn im_msg_list_object(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"conversationId\"".to_string(),
+                    "conversationId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("conversation_id")
                             .unwrap_or_default(),
@@ -1592,15 +1592,32 @@ pub async fn im_msg_list_object(
 pub async fn im_msg_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+    body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
-    let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // 会话过滤：此前本 handler 完全忽略请求体，导致"某会话的消息列表"实际返回
+    // 全库消息（见 docs/plans/2026-09-20-001 §6.3 A 类）。GET（无 body）保持原行为。
+    let conversation_id = body
+        .as_ref()
+        .and_then(|Json(v)| v.get("conversationId"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let rows = if conversation_id.is_empty() {
+        client
+            .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        client
+            .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3", &[&conversation_id, &limit, &offset])
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
 
     let data: Vec<Value> = rows
         .iter()
@@ -1611,7 +1628,7 @@ pub async fn im_msg_list_page_size_size(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"conversationId\"".to_string(),
+                    "conversationId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("conversation_id")
                             .unwrap_or_default(),
@@ -1729,16 +1746,10 @@ pub async fn im_msg_upload_conversationId_type_type(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            (
-                "\"conversationId\"".to_string(),
-                Value::String(conversation_id),
-            ),
+            ("conversationId".to_string(), Value::String(conversation_id)),
             ("type".to_string(), Value::String(msg_type)),
-            ("\"fileName\"".to_string(), Value::String(name)),
-            (
-                "\"fileUrl\"".to_string(),
-                Value::String(file_url.to_string()),
-            ),
+            ("fileName".to_string(), Value::String(name)),
+            ("fileUrl".to_string(), Value::String(file_url.to_string())),
             ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
@@ -1852,7 +1863,7 @@ pub async fn instant_currentperson_consumed_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id_list = req
-        .get("\"idList\"")
+        .get("idList")
         .and_then(|v| v.as_array())
         .map(|arr| {
             arr.iter()
@@ -2523,7 +2534,7 @@ pub async fn message_custom_create(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req
-        .get("\"conversationId\"")
+        .get("conversationId")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let content = req
@@ -2545,7 +2556,7 @@ pub async fn message_custom_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             (
-                "\"conversationId\"".to_string(),
+                "conversationId".to_string(),
                 Value::String(conversation_id.to_string()),
             ),
             ("content".to_string(), Value::String(content.to_string())),
@@ -2578,7 +2589,7 @@ pub async fn message_list_paging_page_size_size(
                     Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                 ),
                 (
-                    "\"conversationId\"".to_string(),
+                    "conversationId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("conversation_id")
                             .unwrap_or_default(),

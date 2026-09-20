@@ -92,7 +92,8 @@ async function permanentDelete(item: RecycleItem) {
 async function emptyRecycle() {
   if (!(await confirmMsg('确定清空回收站？所有项目将被永久删除。'))) return
   try {
-    await api.post('/api/recycle/empty', null)
+    // 后端 recycle/empty 仅注册 DELETE。
+    await api.delete('/api/recycle/empty')
     items.value = []
   } catch (e: any) {
     toast.error('清空失败: : ' + (e?.message ?? ''))

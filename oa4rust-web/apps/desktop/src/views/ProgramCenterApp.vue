@@ -255,7 +255,8 @@ const filteredAgents = computed(() =>
 async function loadAgents() {
   loadingAgent.value = true
   try {
-    const r = await api.get('/api/program_center/agent/list')
+    // 后端列表端点为裸 /agent（无 /agent/list）。
+    const r = await api.get('/api/program_center/agent')
     agents.value = r.data ?? []
   } catch {
     agents.value = []
@@ -474,9 +475,8 @@ async function saveDictData(): Promise<void> {
   dictDataError.value = ''
   dictDataSaving.value = true
   try {
-    // path 段为占位（handler 仅按 dictFlag 写 app_data）；dict_data_write 对
-    // 对象 body 走紧凑序列化、对字符串 body 原样落库，这里统一发解析后的值。
-    await api.post(`/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data/data`, body)
+    // path 段为占位（handler 仅按 dictFlag 写 app_data）；真实路由无重复 data 段。
+    await api.post(`/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data`, body)
     toast.success('字典数据已保存')
     showDictData.value = false
   } catch {
@@ -549,7 +549,7 @@ function closeVersions(): void {
 
 // 模块对比
 const compareM = useMutation({
-  mutationFn: (id: string) => api.post(`/api/program_center/module/${id}/compare`, {}),
+  mutationFn: (id: string) => api.get(`/api/program_center/module/${id}/compare`),
   onSuccess: () => toast.success('对比完成'),
   onError: () => toast.error('对比失败'),
 })
@@ -593,7 +593,7 @@ function addCollect() {
 // AppStyle 图片管理
 const eraseImageM = useMutation({
   mutationFn: ({ type, flag }: { type: string; flag: string }) =>
-    api.post(`/api/program_center/appstyle/image/${type}/${flag}/erase`, null),
+    api.delete(`/api/program_center/appstyle/image/${type}/${flag}/erase`),
   onSuccess: () => toast.success('图片已清除'),
   onError: () => toast.error('操作失败'),
 })
@@ -629,7 +629,7 @@ function downloadMarket(flag: string) {
 }
 
 const marketCoverPicM = useMutation({
-  mutationFn: (flag: string) => api.post(`/api/program_center/market/${flag}/cover/pic`, null),
+  mutationFn: (flag: string) => api.get(`/api/program_center/market/${flag}/cover/pic`),
   onSuccess: () => toast.success('封面已更新'),
   onError: () => toast.error('操作失败'),
 })

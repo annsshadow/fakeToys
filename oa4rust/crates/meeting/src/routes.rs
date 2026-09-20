@@ -22,11 +22,11 @@ pub fn meeting_router(pool: Pool) -> Router {
         .route("/api/meeting/list", get(list_meetings))
         .route("/api/meeting/schedule/days/{days}", get(list_schedule))
         .route(
-            "/api/meeting/{\"meetingId\"}/participant/add",
+            "/api/meeting/{meetingId}/participant/add",
             post(add_participant),
         )
         .route(
-            "/api/meeting/{\"meetingId\"}/participant/list",
+            "/api/meeting/{meetingId}/participant/list",
             get(list_participants),
         )
         .layer(axum::Extension(pool))

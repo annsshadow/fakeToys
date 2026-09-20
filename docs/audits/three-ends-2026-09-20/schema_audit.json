@@ -1,90 +1,11 @@
 {
  "report": {
-  "A_body_ignored": [
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 283,
-    "method": "POST",
-    "path": "/api/message/assemble/communicate/im/msg/list/1/size/50",
-    "sent": [
-     "conversationId"
-    ],
-    "handler_reads": [],
-    "handlers": [
-     "im_msg_list_page_size_size"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 332,
-    "method": "POST",
-    "path": "/api/task/${taskId}/complete",
-    "sent": [
-     "data",
-     "opinion",
-     "action"
-    ],
-    "handler_reads": [],
-    "handlers": [
-     "task_complete"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/ProcessWork.vue",
-    "line": 334,
-    "method": "POST",
-    "path": "/api/task/${taskId}/reject",
-    "sent": [
-     "data",
-     "opinion",
-     "action"
-    ],
-    "handler_reads": [],
-    "handlers": [
-     "task_reject"
-    ]
-   },
-   {
-    "app": "mobile",
-    "file": "apps/mobile/src/services/index.ts",
-    "line": 87,
-    "method": "POST",
-    "path": "/api/task/${taskId}/complete",
-    "sent": [
-     "data",
-     "opinion",
-     "action"
-    ],
-    "handler_reads": [],
-    "handlers": [
-     "task_complete"
-    ]
-   },
-   {
-    "app": "mobile",
-    "file": "apps/mobile/src/services/index.ts",
-    "line": 96,
-    "method": "POST",
-    "path": "/api/task/${taskId}/reject",
-    "sent": [
-     "data",
-     "opinion",
-     "action"
-    ],
-    "handler_reads": [],
-    "handlers": [
-     "task_reject"
-    ]
-   }
-  ],
+  "A_body_ignored": [],
   "B_sent_not_read": [
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 135,
+    "line": 136,
     "method": "POST",
     "path": "/api/attendance/appeal/audit",
     "sent": [
@@ -105,7 +26,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 189,
+    "line": 190,
     "method": "POST",
     "path": "/api/attendance/assemble/control/rule/create",
     "sent": [
@@ -143,33 +64,59 @@
    },
    {
     "app": "desktop",
-    "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 319,
-    "method": "POST",
-    "path": "/api/message/assemble/communicate/im/msg",
+    "file": "apps/desktop/src/views/FindDesignerApp.vue",
+    "line": 81,
+    "method": "PUT",
+    "path": "/api/query/assemble/designer/save/${encodeURIComponent(item.id)}",
     "sent": [
-     "\"conversationId\"",
-     "conversationId",
-     "content",
-     "type"
+     "config"
     ],
-    "handler_reads": [
-     "content",
-     "sender",
-     "type"
-    ],
+    "handler_reads": [],
     "handlers": [
-     "im_msg"
+     "save_designer"
     ],
     "not_read": [
-     "\"conversationId\"",
+     "config"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HomepageApp.vue",
+    "line": 80,
+    "method": "PUT",
+    "path": "/api/portal/assemble/designer/page/${encodeURIComponent(item.flag)}",
+    "sent": [
+     "config"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "save_page"
+    ],
+    "not_read": [
+     "config"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 283,
+    "method": "POST",
+    "path": "/api/message/assemble/communicate/im/msg/list/1/size/50",
+    "sent": [
+     "conversationId"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "im_msg_list_page_size_size"
+    ],
+    "not_read": [
      "conversationId"
     ]
    },
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 123,
+    "line": 124,
     "method": "POST",
     "path": "/api/meeting/assemble/control/meeting/create",
     "sent": [
@@ -191,109 +138,6 @@
     ],
     "not_read": [
      "buildingId"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 144,
-    "method": "PUT",
-    "path": "/api/meeting/assemble/control/meeting/update",
-    "sent": [
-     "id",
-     "title"
-    ],
-    "handler_reads": [
-     "content",
-     "endTime",
-     "startTime",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_put_save"
-    ],
-    "not_read": [
-     "id"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 153,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/cancel",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "not_read": [
-     "id"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 161,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/approve",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "not_read": [
-     "id"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 169,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/join",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "not_read": [
-     "id"
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 178,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/leave",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "not_read": [
-     "id"
     ]
    },
    {
@@ -329,6 +173,48 @@
     ],
     "not_read": [
      "title"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 332,
+    "method": "POST",
+    "path": "/api/task/${taskId}/complete",
+    "sent": [
+     "data",
+     "opinion",
+     "action"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "task_complete"
+    ],
+    "not_read": [
+     "data",
+     "opinion",
+     "action"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 334,
+    "method": "POST",
+    "path": "/api/task/${taskId}/reject",
+    "sent": [
+     "data",
+     "opinion",
+     "action"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "task_reject"
+    ],
+    "not_read": [
+     "data",
+     "opinion",
+     "action"
     ]
    },
    {
@@ -473,6 +359,82 @@
     ]
    },
    {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 78,
+    "method": "POST",
+    "path": "/api/queryview/search",
+    "sent": [
+     "keyword"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "search_post"
+    ],
+    "not_read": [
+     "keyword"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/SearchApp.vue",
+    "line": 37,
+    "method": "POST",
+    "path": "/api/queryview/search",
+    "sent": [
+     "keyword"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "search_post"
+    ],
+    "not_read": [
+     "keyword"
+    ]
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 87,
+    "method": "POST",
+    "path": "/api/task/${taskId}/complete",
+    "sent": [
+     "data",
+     "opinion",
+     "action"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "task_complete"
+    ],
+    "not_read": [
+     "data",
+     "opinion",
+     "action"
+    ]
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 96,
+    "method": "POST",
+    "path": "/api/task/${taskId}/reject",
+    "sent": [
+     "data",
+     "opinion",
+     "action"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "task_reject"
+    ],
+    "not_read": [
+     "data",
+     "opinion",
+     "action"
+    ]
+   },
+   {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
     "line": 113,
@@ -493,26 +455,17 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 161,
+    "line": 153,
     "method": "POST",
-    "path": "/api/message/assemble/communicate/im/msg",
+    "path": "/api/message/assemble/communicate/im/msg/list/${page}/size/${size}",
     "sent": [
-     "\"conversationId\"",
-     "conversationId",
-     "content",
-     "sender",
-     "type"
+     "conversationId"
     ],
-    "handler_reads": [
-     "content",
-     "sender",
-     "type"
-    ],
+    "handler_reads": [],
     "handlers": [
-     "im_msg"
+     "im_msg_list_page_size_size"
     ],
     "not_read": [
-     "\"conversationId\"",
      "conversationId"
     ]
    }
@@ -521,7 +474,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 135,
+    "line": 136,
     "method": "POST",
     "path": "/api/attendance/appeal/audit",
     "sent": [
@@ -543,7 +496,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 189,
+    "line": 190,
     "method": "POST",
     "path": "/api/attendance/assemble/control/rule/create",
     "sent": [
@@ -569,7 +522,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 212,
+    "line": 213,
     "method": "POST",
     "path": "/api/attendance/appeal/submit",
     "sent": [
@@ -590,6 +543,29 @@
      "creator"
     ],
     "missing_alt_groups": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 405,
+    "method": "POST",
+    "path": "/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}",
+    "sent": [
+     "creator"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "u2_subject_listsubjectinfo_page"
+    ],
+    "missing": [],
+    "missing_alt_groups": [
+     [
+      "forumId"
+     ],
+     [
+      "subjectType"
+     ]
+    ]
    },
    {
     "app": "desktop",
@@ -619,17 +595,17 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/IMChat.vue",
-    "line": 319,
+    "line": 318,
     "method": "POST",
     "path": "/api/message/assemble/communicate/im/msg",
     "sent": [
-     "\"conversationId\"",
      "conversationId",
      "content",
      "type"
     ],
     "handler_reads": [
      "content",
+     "conversationId",
      "sender",
      "type"
     ],
@@ -644,7 +620,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 123,
+    "line": 124,
     "method": "POST",
     "path": "/api/meeting/assemble/control/meeting/create",
     "sent": [
@@ -673,142 +649,8 @@
    },
    {
     "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 144,
-    "method": "PUT",
-    "path": "/api/meeting/assemble/control/meeting/update",
-    "sent": [
-     "id",
-     "title"
-    ],
-    "handler_reads": [
-     "content",
-     "endTime",
-     "startTime",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_put_save"
-    ],
-    "missing": [
-     "content",
-     "endTime",
-     "startTime"
-    ],
-    "missing_alt_groups": []
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 153,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/cancel",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "missing": [
-     "content",
-     "title"
-    ],
-    "missing_alt_groups": [
-     [
-      "roomId",
-      "roomId"
-     ]
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 161,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/approve",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "missing": [
-     "content",
-     "title"
-    ],
-    "missing_alt_groups": [
-     [
-      "roomId",
-      "roomId"
-     ]
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 169,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/join",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "missing": [
-     "content",
-     "title"
-    ],
-    "missing_alt_groups": [
-     [
-      "roomId",
-      "roomId"
-     ]
-    ]
-   },
-   {
-    "app": "desktop",
-    "file": "apps/desktop/src/views/MeetingApp.vue",
-    "line": 178,
-    "method": "POST",
-    "path": "/api/meeting/assemble/control/meeting/leave",
-    "sent": [
-     "id"
-    ],
-    "handler_reads": [
-     "content",
-     "title"
-    ],
-    "handlers": [
-     "u2_meeting_modify"
-    ],
-    "missing": [
-     "content",
-     "title"
-    ],
-    "missing_alt_groups": [
-     [
-      "roomId",
-      "roomId"
-     ]
-    ]
-   },
-   {
-    "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 417,
+    "line": 414,
     "method": "POST",
     "path": "/api/mind/assemble/control/mind/save",
     "sent": [
@@ -906,6 +748,48 @@
      "sql"
     ],
     "missing_alt_groups": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 78,
+    "method": "POST",
+    "path": "/api/queryview/search",
+    "sent": [
+     "keyword"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "search_post"
+    ],
+    "missing": [],
+    "missing_alt_groups": [
+     [
+      "key",
+      "query"
+     ]
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/SearchApp.vue",
+    "line": 37,
+    "method": "POST",
+    "path": "/api/queryview/search",
+    "sent": [
+     "keyword"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "search_post"
+    ],
+    "missing": [],
+    "missing_alt_groups": [
+     [
+      "key",
+      "query"
+     ]
+    ]
    }
   ],
   "D_delegated_unverifiable": [
@@ -956,7 +840,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AttendanceApp.vue",
-    "line": 151,
+    "line": 152,
     "method": "POST",
     "path": "/api/attendance/assemble/control/v2/detail/statistic/export/filter",
     "sent": [
@@ -1033,6 +917,21 @@
    },
    {
     "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 115,
+    "method": "POST",
+    "path": "/api/document",
+    "sent": [
+     "title",
+     "content"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "document_u2_create"
+    ]
+   },
+   {
+    "app": "desktop",
     "file": "apps/desktop/src/views/FaceSetApp.vue",
     "line": 131,
     "method": "POST",
@@ -1046,6 +945,23 @@
     "handler_reads": [],
     "handlers": [
      "face_save"
+    ]
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 314,
+    "method": "POST",
+    "path": "/api/form",
+    "sent": [
+     "name",
+     "flag",
+     "category",
+     "schema"
+    ],
+    "handler_reads": [],
+    "handlers": [
+     "form_u2_create"
     ]
    },
    {
@@ -1083,7 +999,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/ProgramCenterApp.vue",
-    "line": 422,
+    "line": 423,
     "method": "POST",
     "path": "/api/program_center/agent/save/${id}",
     "sent": [
@@ -1114,7 +1030,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/RoleManager.vue",
-    "line": 99,
+    "line": 100,
     "method": "PUT",
     "path": "/api/role/${form.value.flag}",
     "sent": [
@@ -1130,7 +1046,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/RoleManager.vue",
-    "line": 101,
+    "line": 102,
     "method": "POST",
     "path": "/api/role",
     "sent": [
@@ -1180,7 +1096,7 @@
    {
     "app": "mobile",
     "file": "apps/mobile/src/services/index.ts",
-    "line": 239,
+    "line": 236,
     "method": "POST",
     "path": "/api/attendance/assemble/control/v2/mobile/check",
     "sent": [
@@ -1226,223 +1142,39 @@
    }
   ],
   "meta": {
-   "handlers_indexed": 916,
+   "handlers_indexed": 919,
    "structs_indexed": 278,
-   "frontend_body_calls": 182,
-   "A": 5,
-   "B": 21,
-   "C": 15,
-   "D": 20,
-   "E_total": 351
+   "frontend_body_calls": 172,
+   "A": 0,
+   "B": 24,
+   "C": 13,
+   "D": 22,
+   "E_total": 2
   },
   "E_quoted_key_defect": {
-   "total": 351,
+   "total": 2,
    "counts": {
-    "row-column": 81,
-    "response-key": 115,
-    "request-key": 32,
-    "route-path": 5,
-    "other": 118
+    "row-column": 0,
+    "response-key": 0,
+    "request-key": 0,
+    "route-path": 0,
+    "other": 2
    },
    "samples": {
-    "row-column": [
-     {
-      "key": "userId",
-      "file": "crates/ai/src/app.rs",
-      "line": 124
-     },
-     {
-      "key": "clueId",
-      "file": "crates/ai/src/chat.rs",
-      "line": 101
-     },
-     {
-      "key": "generateType",
-      "file": "crates/ai/src/chat.rs",
-      "line": 113
-     },
-     {
-      "key": "apiKey",
-      "file": "crates/ai/src/config.rs",
-      "line": 176
-     },
-     {
-      "key": "completionUrl",
-      "file": "crates/ai/src/config.rs",
-      "line": 199
-     },
-     {
-      "key": "asDefault",
-      "file": "crates/ai/src/config.rs",
-      "line": 207
-     },
-     {
-      "key": "apiKey",
-      "file": "crates/ai/src/config.rs",
-      "line": 249
-     },
-     {
-      "key": "completionUrl",
-      "file": "crates/ai/src/config.rs",
-      "line": 274
-     }
-    ],
-    "response-key": [
-     {
-      "key": "clueId",
-      "file": "crates/ai/src/chat.rs",
-      "line": 100
-     },
-     {
-      "key": "generateType",
-      "file": "crates/ai/src/chat.rs",
-      "line": 112
-     },
-     {
-      "key": "completionUrl",
-      "file": "crates/ai/src/config.rs",
-      "line": 198
-     },
-     {
-      "key": "asDefault",
-      "file": "crates/ai/src/config.rs",
-      "line": 206
-     },
-     {
-      "key": "apiKey",
-      "file": "crates/ai/src/config.rs",
-      "line": 218
-     },
-     {
-      "key": "completionUrl",
-      "file": "crates/ai/src/config.rs",
-      "line": 273
-     },
-     {
-      "key": "asDefault",
-      "file": "crates/ai/src/config.rs",
-      "line": 281
-     },
-     {
-      "key": "apiKey",
-      "file": "crates/ai/src/config.rs",
-      "line": 293
-     }
-    ],
-    "request-key": [
-     {
-      "key": "userId",
-      "file": "crates/attendance_core_entity/src/lib.rs",
-      "line": 108
-     },
-     {
-      "key": "startTime",
-      "file": "crates/attendance_core_entity/src/lib.rs",
-      "line": 228
-     },
-     {
-      "key": "endTime",
-      "file": "crates/attendance_core_entity/src/lib.rs",
-      "line": 234
-     },
-     {
-      "key": "startTime",
-      "file": "crates/attendance_core_entity/src/lib.rs",
-      "line": 276
-     },
-     {
-      "key": "endTime",
-      "file": "crates/attendance_core_entity/src/lib.rs",
-      "line": 280
-     },
-     {
-      "key": "userId",
-      "file": "crates/auth/src/zhengwudingding.rs",
-      "line": 74
-     },
-     {
-      "key": "parentId",
-      "file": "crates/cms_core_entity/src/lib.rs",
-      "line": 111
-     },
-     {
-      "key": "maintenanceMode",
-      "file": "crates/general_assemble_control/src/lib.rs",
-      "line": 211
-     }
-    ],
-    "route-path": [
-     {
-      "key": "/api/general/assemble/control/excel/{\\\"excelName\\\"}",
-      "file": "crates/general_assemble_control/src/routes.rs",
-      "line": 0,
-      "method": "GET"
-     },
-     {
-      "key": "/api/general/assemble/control/excel/{\\\"excelName\\\"}/sheetList",
-      "file": "crates/general_assemble_control/src/routes.rs",
-      "line": 0,
-      "method": "GET"
-     },
-     {
-      "key": "/api/meeting/{\\\"meetingId\\\"}/participant/add",
-      "file": "crates/meeting/src/routes.rs",
-      "line": 0,
-      "method": "POST"
-     },
-     {
-      "key": "/api/meeting/{\\\"meetingId\\\"}/participant/list",
-      "file": "crates/meeting/src/routes.rs",
-      "line": 0,
-      "method": "GET"
-     },
-     {
-      "key": "/api/meeting/assemble/control/list/{\\\"meetingId\\\"}",
-      "file": "crates/meeting_assemble_control/src/routes.rs",
-      "line": 0,
-      "method": "GET"
-     }
-    ],
+    "row-column": [],
+    "response-key": [],
+    "request-key": [],
+    "route-path": [],
     "other": [
      {
-      "key": "referenceType",
-      "file": "crates/file/src/lib.rs",
-      "line": 316
-     },
-     {
       "key": "clueId",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 19
+      "file": "crates/shared/src/db/dialect.rs",
+      "line": 321
      },
      {
-      "key": "clueId",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 27
-     },
-     {
-      "key": "excelName",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 3259
-     },
-     {
-      "key": "excelName",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 3267
-     },
-     {
-      "key": "meetingId",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 4595
-     },
-     {
-      "key": "meetingId",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 4611
-     },
-     {
-      "key": "meetingId",
-      "file": "crates/mcp_server/src/generated_routes.rs",
-      "line": 4675
+      "key": "foo",
+      "file": "crates/shared/src/db/dialect.rs",
+      "line": 383
      }
     ]
    }
@@ -5225,6 +4957,7 @@
    ],
    "reads": [
     "name",
+    "parentId",
     "sortOrder",
     "status"
    ],
@@ -6170,7 +5903,8 @@
     "id",
     "length",
     "name",
-    "person"
+    "person",
+    "referenceType"
    ],
    "file": "crates/file_core_entity/src/lib.rs"
   },
@@ -6204,10 +5938,15 @@
    "body_params": [
     "payload"
    ],
-   "reads": [],
+   "reads": [
+    "allowRegistration",
+    "maintenanceMode"
+   ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
+    "allowRegistration",
+    "maintenanceMode",
     "updated"
    ],
    "file": "crates/general_assemble_control/src/lib.rs"
@@ -6252,6 +5991,7 @@
     "district",
     "level",
     "name",
+    "parentId",
     "province"
    ],
    "alt_groups": [],
@@ -6262,6 +6002,7 @@
     "id",
     "level",
     "name",
+    "parentId",
     "province"
    ],
    "file": "crates/general_assemble_control/src/lib.rs"
@@ -6275,6 +6016,7 @@
     "district",
     "level",
     "name",
+    "parentId",
     "province"
    ],
    "alt_groups": [],
@@ -6292,11 +6034,13 @@
    ],
    "reads": [
     "creator",
+    "excelName",
     "name"
    ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
+    "excelName",
     "flag",
     "id",
     "name"
@@ -6309,11 +6053,13 @@
    ],
    "reads": [
     "creator",
+    "excelName",
     "name"
    ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
+    "excelName",
     "flag",
     "id",
     "name"
@@ -6433,7 +6179,8 @@
     "payload"
    ],
    "reads": [
-    "creator"
+    "creator",
+    "htmlContent"
    ],
    "alt_groups": [],
    "delegated": false,
@@ -6796,14 +6543,16 @@
    ],
    "reads": [
     "platform",
-    "token"
+    "token",
+    "userId"
    ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
     "id",
     "platform",
-    "token"
+    "token",
+    "userId"
    ],
    "file": "crates/jpush/src/lib.rs"
   },
@@ -6903,14 +6652,16 @@
    ],
    "reads": [
     "platform",
-    "token"
+    "token",
+    "userId"
    ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
     "id",
     "platform",
-    "token"
+    "token",
+    "userId"
    ],
    "file": "crates/jpush_core_entity/src/lib.rs"
   },
@@ -6943,14 +6694,18 @@
    "reads": [
     "content",
     "creator",
+    "endTime",
     "roomId",
+    "startTime",
     "title"
    ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
+    "endTime",
     "id",
     "roomId",
+    "startTime",
     "title"
    ],
    "file": "crates/meeting/src/lib.rs"
@@ -6967,7 +6722,8 @@
    "emits": [
     "added",
     "id",
-    "invitee"
+    "invitee",
+    "meetingId"
    ],
    "file": "crates/meeting/src/lib.rs"
   },
@@ -7354,6 +7110,7 @@
    ],
    "reads": [
     "content",
+    "conversationId",
     "sender",
     "type"
    ],
@@ -7361,6 +7118,7 @@
    "delegated": false,
    "emits": [
     "content",
+    "conversationId",
     "id",
     "sender",
     "sent",
@@ -7458,6 +7216,7 @@
    ],
    "reads": [
     "content",
+    "conversationId",
     "sender",
     "type"
    ],
@@ -7465,6 +7224,7 @@
    "delegated": false,
    "emits": [
     "content",
+    "conversationId",
     "id",
     "sender",
     "sent",
@@ -7476,7 +7236,9 @@
    "body_params": [
     "req"
    ],
-   "reads": [],
+   "reads": [
+    "messageId"
+   ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
@@ -7488,7 +7250,9 @@
    "body_params": [
     "req"
    ],
-   "reads": [],
+   "reads": [
+    "messageId"
+   ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
@@ -7496,11 +7260,30 @@
    ],
    "file": "crates/message_assemble_communicate/src/lib.rs"
   },
+  "message_assemble_communicate::im_msg_list_page_size_size": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "alt_groups": [],
+   "delegated": false,
+   "emits": [
+    "content",
+    "conversationId",
+    "createTime",
+    "id",
+    "sender",
+    "type"
+   ],
+   "file": "crates/message_assemble_communicate/src/lib.rs"
+  },
   "message_assemble_communicate::instant_currentperson_consumed_mockputtopost": {
    "body_params": [
     "req"
    ],
-   "reads": [],
+   "reads": [
+    "idList"
+   ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
@@ -7530,12 +7313,14 @@
    ],
    "reads": [
     "content",
+    "conversationId",
     "sender"
    ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
     "content",
+    "conversationId",
     "created",
     "id",
     "type"
@@ -7649,7 +7434,8 @@
     "creatorUnit",
     "description",
     "name",
-    "orderNumber"
+    "orderNumber",
+    "parentId"
    ],
    "alt_groups": [],
    "delegated": false,
@@ -7667,7 +7453,8 @@
    "reads": [
     "description",
     "name",
-    "orderNumber"
+    "orderNumber",
+    "parentId"
    ],
    "alt_groups": [],
    "delegated": false,
@@ -7752,7 +7539,9 @@
    "body_params": [
     "req"
    ],
-   "reads": [],
+   "reads": [
+    "parentId"
+   ],
    "alt_groups": [],
    "delegated": false,
    "emits": [
@@ -7878,7 +7667,8 @@
     "creator",
     "description",
     "name",
-    "orderNumber"
+    "orderNumber",
+    "parentId"
    ],
    "alt_groups": [],
    "delegated": false,
@@ -7896,7 +7686,8 @@
    "reads": [
     "description",
     "name",
-    "orderNumber"
+    "orderNumber",
+    "parentId"
    ],
    "alt_groups": [],
    "delegated": false,
@@ -12076,6 +11867,26 @@
     "recordId",
     "table"
    ],
+   "file": "crates/processplatform_service_processing/src/lib.rs"
+  },
+  "processplatform_service_processing::task_complete": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "alt_groups": [],
+   "delegated": false,
+   "emits": [],
+   "file": "crates/processplatform_service_processing/src/lib.rs"
+  },
+  "processplatform_service_processing::task_reject": {
+   "body_params": [
+    "body"
+   ],
+   "reads": [],
+   "alt_groups": [],
+   "delegated": false,
+   "emits": [],
    "file": "crates/processplatform_service_processing/src/lib.rs"
   },
   "processplatform_service_processing::start_timer": {

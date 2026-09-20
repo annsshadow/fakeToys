@@ -265,15 +265,13 @@ describe('API modules execution coverage', () => {
       const { apis } = await import('./index.ts')
       await apis.message.msgSend({ conversationId: 'conv1', content: 'hello', type: 'text' })
 
-      expect(mockPost).toHaveBeenCalledWith(
-        '/api/message/assemble/communicate/im/msg',
-        expect.objectContaining({
-          conversationId: 'conv1',
-          '"conversationId"': 'conv1',
-          content: 'hello',
-          type: 'text',
-        }),
-      )
+      // 后端已修复「键名带引号」缺陷（docs/plans/2026-09-20-001 §6.7），
+      // 请求体只下发普通键 conversationId，不再双键兼容。
+      expect(mockPost).toHaveBeenCalledWith('/api/message/assemble/communicate/im/msg', {
+        conversationId: 'conv1',
+        content: 'hello',
+        type: 'text',
+      })
     })
   })
 

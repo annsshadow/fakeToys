@@ -210,10 +210,9 @@ export const messageApi = {
   /** 消息历史（后端 im/msg/list/{page}/size/{size} 返回全量，按会话过滤需前端处理）。 */
   msgHistory: (_conversationId?: string, page = 1, size = 50) =>
     api.get<PagedResponse<unknown>>(`/api/message/assemble/communicate/im/msg/list/${page}/size/${size}`),
-  /** 发消息（后端 im/msg；会话键按遗留约定需带引号字面量 "\"conversationId\""）。 */
+  /** 发消息（后端 im/msg）。 */
   msgSend: (data: { conversationId: string; content: string; type: string }) =>
     api.post('/api/message/assemble/communicate/im/msg', {
-      ['"conversationId"']: data.conversationId,
       conversationId: data.conversationId,
       content: data.content,
       type: data.type,

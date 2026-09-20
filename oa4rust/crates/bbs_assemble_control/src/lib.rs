@@ -867,18 +867,35 @@ pub async fn delete_subject(
 #[allow(non_snake_case)]
 pub async fn list_reply_filter(
     pool: Extension<Pool>,
-    Path((page, count)): Path<(i64, i64)>,
+    // 该路由（list/reply/filter）无路径参数，此前却声明 Path((page,count))，
+    // 导致每次调用都在提取阶段失败（路由形同虚设）。改为可选 query 参数。
+    axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let page: i64 = q.get("page").and_then(|v| v.parse().ok()).unwrap_or(1);
+    let count: i64 = q.get("count").and_then(|v| v.parse().ok()).unwrap_or(200);
+    let subject_id = q.get("subjectId").map(|s| s.as_str()).unwrap_or("");
     let offset = (page.saturating_sub(1)).saturating_mul(count);
-    let rows = client
-        .query(
-            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
-             WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
-            &[&count, &offset],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let rows = if subject_id.is_empty() {
+        client
+            .query(
+                "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
+                 WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
+                &[&count, &offset],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        client
+            .query(
+                "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
+                 WHERE deleted_at IS NULL AND topic_id = $1 \
+                 ORDER BY create_time::timestamp DESC LIMIT $2 OFFSET $3",
+                &[&subject_id, &count, &offset],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_reply WHERE deleted_at IS NULL",

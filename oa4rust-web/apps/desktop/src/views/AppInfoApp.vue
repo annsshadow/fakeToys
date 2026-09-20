@@ -60,13 +60,11 @@ const stats = computed(() => [
 async function doSearch() {
   loading.value = true
   try {
-    if (keyword.value.trim()) {
-      const r = await api.get('/api/appinfo/filter', { params: { keyword: keyword.value } })
-      items.value = r.data ?? []
-    } else {
-      const r = await api.get('/api/appinfo/list')
-      items.value = r.data ?? []
-    }
+    // 后端真实列表端点为 appinfo/list/all（appinfo/filter 族只提供 prev/next 翻页）。
+    const r = await api.get('/api/appinfo/list/all')
+    const all = (r.data ?? []) as Item[]
+    const kw = keyword.value.trim().toLowerCase()
+    items.value = kw ? all.filter((a) => (a.name ?? '').toLowerCase().includes(kw)) : all
   } catch {
     items.value = []
   } finally {

@@ -135,6 +135,17 @@ def extract(path):
     def skipped(idx):
         return any(a <= idx < b for a, b in skips)
 
+    # 某些 crate 用 `&fmt("subject/xxx")` 注册路由，前缀由 API_BASE 常量在运行时拼接。
+    # 若不还原前缀，提取出的路径会缺失 /api/... 段，导致与前端对账时产生假 404。
+    consts = {}
+    for cm in re.finditer(r'pub\s+const\s+([A-Z_][A-Z0-9_]*)\s*:\s*&str\s*=\s*"([^"]*)"', src):
+        consts[cm.group(1)] = cm.group(2)
+    base_prefix = ""
+    for name, val in consts.items():
+        if "BASE" in name and val.startswith("/"):
+            base_prefix = val
+            break
+
     found = []
     for m in re.finditer(r"\.route\s*\(", masked):
         if skipped(m.start()):
@@ -149,6 +160,9 @@ def extract(path):
         if not pm:
             continue
         route_path = pm.group(1)
+        # 无前导斜杠 → 说明前缀由 helper 拼接，用 API_BASE 还原
+        if not route_path.startswith("/") and base_prefix:
+            route_path = base_prefix.rstrip("/") + "/" + route_path.lstrip("/")
         methods = []
         for mm in METHOD_RE.finditer(seg_masked):
             name = mm.group(1)
