@@ -420,7 +420,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 135,
+    "line": 152,
     "method": "PUT",
     "raw": "/api/cms/core/entity/index/save/${editingId.value}",
     "path": "/api/cms/core/entity/index/save/{}",
@@ -433,7 +433,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 150,
+    "line": 167,
     "method": "POST",
     "raw": "/api/cms/core/entity/index/delete/${id}",
     "path": "/api/cms/core/entity/index/delete/{}",
@@ -3036,7 +3036,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 72,
+    "line": 74,
     "method": "GET",
     "raw": "/api/cms_assemble_control/get/control/config",
     "path": "/api/cms_assemble_control/get/control/config",
@@ -3049,7 +3049,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 97,
+    "line": 86,
+    "method": "GET",
+    "raw": "/api/cms/category/list",
+    "path": "/api/cms/category/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/category/list",
+    "hit_crate": "cms_core_entity",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 87,
+    "method": "GET",
+    "raw": "/api/cms/article/list",
+    "path": "/api/cms/article/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/article/list",
+    "hit_crate": "cms_core_entity",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 88,
+    "method": "GET",
+    "raw": "/api/cms/templateform/list",
+    "path": "/api/cms/templateform/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/cms/templateform/list",
+    "hit_crate": "cms_express",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 114,
     "method": "GET",
     "raw": "/api/cms/core/entity/index/list",
     "path": "/api/cms/core/entity/index/list",
@@ -3062,7 +3101,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/CmsIndexApp.vue",
-    "line": 136,
+    "line": 153,
     "method": "POST",
     "raw": "/api/cms/core/entity/index/create",
     "path": "/api/cms/core/entity/index/create",

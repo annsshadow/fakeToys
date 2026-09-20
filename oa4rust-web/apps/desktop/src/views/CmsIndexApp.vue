@@ -12,8 +12,10 @@
         <input v-model="search" placeholder="搜索索引 / 目标..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
         <button class="btn-refresh" @click="loadCmsConfig">⚙️ 控制配置</button>
+        <button class="btn-refresh" @click="loadCmsOverview">📊 内容概览</button>
       </div>
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
+      <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🔖</div><p>暂无索引</p></div>
       <table v-else class="data-table">
@@ -74,6 +76,21 @@ async function loadCmsConfig() {
     cmsConfigText.value = '控制配置：' + JSON.stringify(d).slice(0, 120)
   } catch (e: any) {
     toast.error('加载配置失败: ' + (e?.message ?? ''))
+  }
+}
+const overviewText = ref('')
+async function loadCmsOverview() {
+  try {
+    // GET cms/category/list + cms/article/list + cms/templateform/list —— CMS 内容概览
+    const [cat, art, tf] = await Promise.all([
+      api.get('/api/cms/category/list'),
+      api.get('/api/cms/article/list'),
+      api.get('/api/cms/templateform/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    overviewText.value = `分类 ${n(cat)} / 文章 ${n(art)} / 模板表单 ${n(tf)}`
+  } catch (e: any) {
+    toast.error('加载概览失败: ' + (e?.message ?? ''))
   }
 }
 const createEp = '/api/cms/core/entity/index/create'
