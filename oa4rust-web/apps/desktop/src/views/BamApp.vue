@@ -2,8 +2,12 @@
   <div class="dash-view">
     <div class="view-header glass-card">
       <div><h1>业务活动监控</h1><p class="subtitle">/api/processplatform/assemble/bam/*</p></div>
-      <button class="btn-primary" @click="refresh">🔄 刷新</button>
+      <span class="hdr-a">
+        <button class="btn-primary ghost" @click="loadPeriodStats">周期统计</button>
+        <button class="btn-primary" @click="refresh">🔄 刷新</button>
+      </span>
     </div>
+    <div v-if="periodText" class="period-note">{{ periodText }}</div>
     <div class="stats-grid glass-card">
       <div class="stat-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">总活动</div></div>
       <div class="stat-card"><div class="stat-num">{{ stats.active }}</div><div class="stat-label">活跃中</div></div>
@@ -32,9 +36,24 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })
+const periodText = ref('')
+async function loadPeriodStats() {
+  try {
+    // GET bam/period/list/completed/task/application + expired/task/application —— 已办/超期任务周期统计
+    const [done, expired] = await Promise.all([
+      api.get('/api/processplatform/assemble/bam/period/list/completed/task/application'),
+      api.get('/api/processplatform/assemble/bam/period/list/expired/task/application'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    periodText.value = `已办任务周期 ${n(done)} / 超期任务周期 ${n(expired)}`
+  } catch (e: any) {
+    toast.error('加载周期统计失败: ' + (e?.message ?? ''))
+  }
+}
 const events = ref<any[]>([])
 const { data } = useQuery({
   queryKey: ['bam', 'list'],
@@ -107,4 +126,7 @@ function statusCls(s?: string) {
 .status.failed{background:rgba(239,68,68,0.15);color:var(--color-danger)}
 .status.error{background:rgba(239,68,68,0.2);color:var(--color-danger)}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
+.hdr-a{display:flex;gap:8px;align-items:center}
+.btn-primary.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.period-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>

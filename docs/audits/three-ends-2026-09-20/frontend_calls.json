@@ -484,7 +484,27 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/BamApp.vue",
-    "line": 45,
+    "line": 48,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/bam/period/list/completed/task/application",
+    "path": "/api/processplatform/assemble/bam/period/list/completed/task/application",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 49,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/bam/period/list/expired/task/application",
+    "path": "/api/processplatform/assemble/bam/period/list/expired/task/application",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 64,
     "method": "GET",
     "raw": "/api/processplatform/assemble/bam/state/summary",
     "path": "/api/processplatform/assemble/bam/state/summary",
