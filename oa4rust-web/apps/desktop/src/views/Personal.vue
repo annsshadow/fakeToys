@@ -70,6 +70,13 @@
       </div>
     </div>
 
+    <!-- 登录方式/账户绑定 -->
+    <div class="settings-card glass-card">
+      <h3>登录方式 / 账户绑定</h3>
+      <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
+      <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
+    </div>
+
     <!-- 授权委托 -->
     <div class="settings-card glass-card">
       <h3>授权委托</h3>
@@ -181,6 +188,22 @@ function saveSignature(): void {
 }
 
 interface SigMgr { id: string; name?: string; personName?: string }
+const authMetaText = ref('')
+async function loadAuthMeta() {
+  try {
+    // GET org/assemble/authentication mode + bind/list + oauth/list —— 登录方式/账户绑定/OAuth
+    const [mode, binds, oauth] = await Promise.all([
+      api.get('/api/organization/assemble/authentication/authentication/mode'),
+      api.get('/api/organization/assemble/authentication/bind/list'),
+      api.get('/api/organization/assemble/authentication/authentication/oauth/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    const m = (mode as any)?.data
+    authMetaText.value = `登录方式 ${typeof m === 'string' ? m : JSON.stringify(m ?? {}).slice(0, 30)} · 绑定 ${n(binds)} · OAuth ${n(oauth)}`
+  } catch (e: any) {
+    toast.error('加载登录方式失败: ' + (e?.message ?? ''))
+  }
+}
 const sigManagers = ref<SigMgr[]>([])
 async function loadSignatureManagers() {
   try {
@@ -256,4 +279,5 @@ loadEmpower('mine')
 .save-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary);margin-left:8px}
 .sig-mgr-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .sig-mgr-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
+.auth-note{margin-top:8px;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary);word-break:break-all}
 </style>
