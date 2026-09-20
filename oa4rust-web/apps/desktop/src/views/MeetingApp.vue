@@ -11,8 +11,10 @@
         <option value="">全部状态</option><option value="0">未开始</option><option value="1">进行中</option><option value="2">已结束</option>
       </select>
       <button class="sb" @click="loadMeetings">搜索</button>
+      <button class="sb" @click="loadMyApplied">我的申请</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
+    <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
     <div v-if="buildings.length" class="bld-bar glass-card">
       <span class="bld-title">楼栋：</span>
       <span v-for="b in buildings" :key="b.id" class="bld-chip">{{ b.name }}<button class="bld-del" @click="removeBuilding(b)">×</button></span>
@@ -182,6 +184,21 @@ async function inviteParticipant(m: M) {
     toast.success('已邀请')
   } catch (e: any) {
     toast.error('邀请失败: ' + (e?.message ?? ''))
+  }
+}
+const appliedText = ref('')
+async function loadMyApplied() {
+  try {
+    // GET meeting/list/applied/wait + processing + completed —— 我申请的会议（待审/进行/已办）
+    const [wait, proc, done] = await Promise.all([
+      api.get('/api/meeting/assemble/control/meeting/list/applied/wait'),
+      api.get('/api/meeting/assemble/control/meeting/list/applied/processing'),
+      api.get('/api/meeting/assemble/control/meeting/list/applied/completed'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `待审 ${n(wait)} / 进行 ${n(proc)} / 已办 ${n(done)}`
+  } catch (e: any) {
+    toast.error('加载我的申请失败: ' + (e?.message ?? ''))
   }
 }
 async function addBuilding() {
@@ -404,4 +421,5 @@ const api_meeting_as_895_data = ref<any[]>([])
 .bld-title{font-size:13px;color:var(--text-muted)}
 .bld-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 .bld-del{border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+.applied-note{margin:8px 0;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>
