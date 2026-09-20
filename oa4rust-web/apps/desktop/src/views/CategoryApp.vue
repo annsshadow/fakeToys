@@ -46,7 +46,8 @@ const stats = computed(() => [
 async function load() {
   loading.value = true
   try {
-    const r = await api.get('/api/categoryinfo/list')
+    // 后端真实列表端点为 categoryinfo/list/all（裸 /list 会被 {id} 宽路由吞掉）。
+    const r = await api.get('/api/categoryinfo/list/all')
     items.value = r.data ?? []
   } catch {
     items.value = []

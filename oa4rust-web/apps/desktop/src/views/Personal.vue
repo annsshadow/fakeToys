@@ -96,7 +96,7 @@ signature.value = sigData.value ?? ''
 
 // 修改密码
 const pwdMutation = useMutation({
-  mutationFn: (data: { oldPassword: string; newPassword: string }) => api.post('/api/person/password', data),
+  mutationFn: (data: { oldPassword: string; newPassword: string }) => api.put('/api/person/password', data),
   onSuccess: () => {
     pwdForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' }
     pwdError.value = ''

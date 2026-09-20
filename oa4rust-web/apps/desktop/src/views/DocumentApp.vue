@@ -98,7 +98,8 @@ async function doSearch() {
     const params: Record<string, string> = {}
     if (keyword.value.trim()) params.keyword = keyword.value
     if (tab.value === 'draft') params.type = 'draft'
-    const r = await api.get('/api/document/list', { params })
+    // 后端文档列表为 POST document/list/document（裸 GET /list 会被 {id} 宽路由吞掉）。
+    const r = await api.post('/api/document/list/document', params)
     items.value = r.data?.list ?? r.data ?? []
   } catch {
     items.value = []
@@ -111,7 +112,7 @@ async function onCreate() {
   if (!createForm.value.title.trim()) return
   creating.value = true
   try {
-    await api.post('/api/document/document', createForm.value)
+    await api.post('/api/document', createForm.value)
     showCreate.value = false
     createForm.value = { title: '', content: '' }
     doSearch()

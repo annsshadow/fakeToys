@@ -254,14 +254,15 @@ pub async fn create_meeting(
         .get("roomId")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("roomId is required".to_string()))?;
-    let start_time = payload
-        .get("\"startTime\"")
-        .and_then(|v| v.as_str())
-        .ok_or(AppError::BadRequest(
-            "\"startTime\" is required".to_string(),
-        ))?;
+    let start_time =
+        payload
+            .get("startTime")
+            .and_then(|v| v.as_str())
+            .ok_or(AppError::BadRequest(
+                "\"startTime\" is required".to_string(),
+            ))?;
     let end_time = payload
-        .get("\"endTime\"")
+        .get("endTime")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
     let creator = payload
@@ -284,13 +285,10 @@ pub async fn create_meeting(
             ("title".to_string(), Value::String(title.to_string())),
             ("roomId".to_string(), Value::String(room_id.to_string())),
             (
-                "\"startTime\"".to_string(),
+                "startTime".to_string(),
                 Value::String(start_time.to_string()),
             ),
-            (
-                "\"endTime\"".to_string(),
-                Value::String(end_time.to_string()),
-            ),
+            ("endTime".to_string(), Value::String(end_time.to_string())),
         ]),
     ))))
 }
@@ -337,13 +335,10 @@ pub async fn get_meeting(
                     Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(row.get("start_time")),
                 ),
-                (
-                    "\"endTime\"".to_string(),
-                    Value::String(row.get("end_time")),
-                ),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -426,9 +421,9 @@ pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[utoipa::path(
     post,
-    path = "/api/meeting/{\"meetingId\"}/participant/add",
+    path = "/api/meeting/{meetingId}/participant/add",
     params(
-        ("\"meetingId\"" = String, Path, description = "Meeting ID")
+        ("meetingId" = String, Path, description = "Meeting ID")
     ),
     request_body = serde_json::Value,
     responses(
@@ -463,7 +458,7 @@ pub async fn add_participant(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("\"meetingId\"".to_string(), Value::String(meeting_id)),
+            ("meetingId".to_string(), Value::String(meeting_id)),
             ("invitee".to_string(), Value::String(invitee.to_string())),
             ("added".to_string(), Value::Bool(true)),
         ]),
@@ -472,9 +467,9 @@ pub async fn add_participant(
 
 #[utoipa::path(
     get,
-    path = "/api/meeting/{\"meetingId\"}/participant/list",
+    path = "/api/meeting/{meetingId}/participant/list",
     params(
-        ("\"meetingId\"" = String, Path, description = "Meeting ID")
+        ("meetingId" = String, Path, description = "Meeting ID")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -504,7 +499,7 @@ pub async fn list_participants(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
-                    "\"meetingId\"".to_string(),
+                    "meetingId".to_string(),
                     Value::String(row.get("meeting_id")),
                 ),
                 ("invitee".to_string(), Value::String(row.get("invitee"))),
@@ -571,13 +566,10 @@ pub async fn list_schedule(
                     Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(row.get("start_time")),
                 ),
-                (
-                    "\"endTime\"".to_string(),
-                    Value::String(row.get("end_time")),
-                ),
+                ("endTime".to_string(), Value::String(row.get("end_time"))),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),

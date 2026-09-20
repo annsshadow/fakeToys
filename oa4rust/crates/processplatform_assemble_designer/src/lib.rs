@@ -940,11 +940,11 @@ pub async fn file_list_application_applicationFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -1024,11 +1024,11 @@ pub async fn file_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]),
         )))),
@@ -1059,11 +1059,11 @@ pub async fn file_flag_application_applicationFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]),
         )))),
@@ -1094,11 +1094,11 @@ pub async fn file_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]),
         )))),
@@ -1387,11 +1387,11 @@ pub async fn formversion_list_form_formId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -1446,11 +1446,11 @@ pub async fn formversion_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]);
             if let Some(c) = content.as_ref().and_then(|s| serde_json::from_str(s).ok()) {
@@ -1620,11 +1620,11 @@ pub async fn item_access_path_path(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -1677,11 +1677,11 @@ pub async fn item_access_process_processId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -1735,11 +1735,11 @@ pub async fn item_access_process_processId_path_path(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -1791,11 +1791,11 @@ pub async fn item_access_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]),
         )))),
@@ -1842,11 +1842,11 @@ pub async fn mapping_list_application_applicationFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -1945,11 +1945,11 @@ pub async fn mapping_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]),
         )))),
@@ -2151,11 +2151,11 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -2253,15 +2253,15 @@ pub async fn process_activity_flag_activityType_activityType(
                 ),
                 (
                     "activityType".to_string(),
-                    Value::String(row.get("\"xactivityType\"")),
+                    Value::String(row.get("xactivityType")),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -2338,11 +2338,11 @@ pub async fn process_application_applicationId_disable_edition(
                 ("edition".to_string(), Value::String("disabled".to_string())),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -2389,11 +2389,11 @@ pub async fn process_application_applicationId_edition_edition(
                 ("edition".to_string(), Value::String(edition.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -2585,9 +2585,9 @@ pub async fn process_id_execute_projection(
 
     match row {
         Some(row) => {
-            let texture: Option<String> = row.get("\"xserialTexture\"");
-            let activity: Option<String> = row.get("\"xserialActivity\"");
-            let phase: Option<String> = row.get("\"xserialPhase\"");
+            let texture: Option<String> = row.get("xserialTexture");
+            let activity: Option<String> = row.get("xserialActivity");
+            let phase: Option<String> = row.get("xserialPhase");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     (
@@ -2684,22 +2684,22 @@ pub async fn process_id_list_element(
                 ),
                 (
                     "processId".to_string(),
-                    Value::String(row.get("\"xprocessId\"")),
+                    Value::String(row.get("xprocessId")),
                 ),
                 (
                     "elementType".to_string(),
                     Value::String(
-                        row.get::<_, Option<String>>("\"xelementType\"")
+                        row.get::<_, Option<String>>("xelementType")
                             .unwrap_or_default(),
                     ),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -2896,11 +2896,11 @@ pub async fn processversion_list_process_processId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -2955,11 +2955,11 @@ pub async fn processversion_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]);
             if let Some(c) = content.as_ref().and_then(|s| serde_json::from_str(s).ok()) {
@@ -3216,11 +3216,11 @@ pub async fn scriptversion_list_script_scriptId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -3277,11 +3277,11 @@ pub async fn scriptversion_id(
                     ("code".to_string(), Value::String(code.unwrap_or_default())),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("\"xcreateTime\"")),
+                        Value::String(row.get("xcreateTime")),
                     ),
                     (
                         "updateTime".to_string(),
-                        Value::String(row.get("\"xupdateTime\"")),
+                        Value::String(row.get("xupdateTime")),
                     ),
                 ]),
             ))))
@@ -3328,11 +3328,11 @@ pub async fn templateform_list(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -3384,11 +3384,11 @@ pub async fn templateform_list_category(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]))
         })
@@ -3440,11 +3440,11 @@ pub async fn templateform_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("\"xupdateTime\"")),
+                    Value::String(row.get("xupdateTime")),
                 ),
             ]);
             if let Some(c) = content.as_ref().and_then(|s| serde_json::from_str(s).ok()) {
@@ -3482,10 +3482,10 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
                     "id".to_string(),
                     Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
                 ),
-                ("workId".to_string(), Value::String(row.get("\"xworkId\""))),
+                ("workId".to_string(), Value::String(row.get("xworkId"))),
                 (
-                    "\"completedTime\"".to_string(),
-                    Value::String(row.get("\"xcompletedTime\"")),
+                    "completedTime".to_string(),
+                    Value::String(row.get("xcompletedTime")),
                 ),
                 (
                     "creator".to_string(),
@@ -3493,7 +3493,7 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
             ]))
         })
@@ -3532,10 +3532,10 @@ pub async fn workcompleted_process_processFlag_merge_data(
                     "id".to_string(),
                     Value::String(row.get::<_, Option<String>>("xid").unwrap_or_default()),
                 ),
-                ("workId".to_string(), Value::String(row.get("\"xworkId\""))),
+                ("workId".to_string(), Value::String(row.get("xworkId"))),
                 (
-                    "\"completedTime\"".to_string(),
-                    Value::String(row.get("\"xcompletedTime\"")),
+                    "completedTime".to_string(),
+                    Value::String(row.get("xcompletedTime")),
                 ),
                 (
                     "creator".to_string(),
@@ -3543,7 +3543,7 @@ pub async fn workcompleted_process_processFlag_merge_data(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
             ]))
         })

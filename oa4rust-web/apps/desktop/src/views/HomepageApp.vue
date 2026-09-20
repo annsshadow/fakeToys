@@ -42,7 +42,8 @@ const loading = ref(false),
   items = ref<Item[]>([]),
   selected = ref<Item | null>(null),
   config = ref('')
-const ep = '/api/portal/assemble/surface/homepage/list'
+// 后端无 homepage 族；门户页面列表真实端点为 surface/page/list/portal/{portal}。
+const ep = '/api/portal/assemble/surface/page/list/portal/default'
 const { data } = useQuery({
   queryKey: ['Homepage', 'list'],
   queryFn: async () => {
@@ -69,11 +70,20 @@ function preview() {
   toast.info('配置预览: ' + config.value)
 }
 function save() {
-  if (selected.value && config.value) {
-    api
-      .put(ep + '/' + selected.value.id, { ...selected.value, config: config.value })
-      .then(() => toast.success('保存成功'))
+  const item = selected.value
+  if (!item || !config.value) return
+  if (!item.flag) {
+    // 该视图为只读占位：后端无「首页配置」模型，新建请走门户设计器。
+    toast.info('该视图为只读占位，新建页面请使用门户设计器')
+    return
   }
+  api
+    .put(`/api/portal/assemble/designer/page/${encodeURIComponent(item.flag)}`, {
+      ...item,
+      config: config.value,
+    })
+    .then(() => toast.success('保存成功'))
+    .catch((e: any) => toast.error('保存失败: ' + (e?.message ?? '')))
 }
 </script>
 <style scoped>

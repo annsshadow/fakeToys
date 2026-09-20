@@ -226,7 +226,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("person".to_string(), Value::String(row.get("person"))),
                 (
-                    "\"referenceType\"".to_string(),
+                    "referenceType".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("referenceType")
                             .unwrap_or_default(),
@@ -313,7 +313,7 @@ pub async fn file_upload(
                 "name" => name = Some(value),
                 "person" => person = Some(value),
                 "referenceId" => reference_id = Some(value),
-                "\"referenceType\"" => reference_type = Some(value),
+                "referenceType" => reference_type = Some(value),
                 _ => {}
             }
         }

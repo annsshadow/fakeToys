@@ -91,7 +91,8 @@ const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 const { data: events } = useQuery({
   queryKey: ['calendar', currentYear, currentMonth],
   queryFn: async () => {
-    const resp = await api.get('/api/calendar_assemble_control/event/list/filter')
+    // 后端 event/list/filter 仅注册 PUT。
+    const resp = await api.put('/api/calendar_assemble_control/event/list/filter', {})
     return ((resp as any)?.data ?? []) as CalendarEvent[]
   },
   staleTime: 60 * 1000,

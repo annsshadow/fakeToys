@@ -33,7 +33,7 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ),
             ]);
             if let Some(parent_id) = row.get::<_, Option<String>>("parent_id") {
-                district_map.insert("\"parentId\"".to_string(), Value::String(parent_id));
+                district_map.insert("parentId".to_string(), Value::String(parent_id));
             }
             Value::Object(district_map)
         })

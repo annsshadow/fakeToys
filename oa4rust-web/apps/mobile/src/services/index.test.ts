@@ -49,19 +49,20 @@ describe('processApi approval bodies (真实审批引擎 /api/task/{id}/complete
   })
 })
 
-describe('messageApi.send (IM 双键下发)', () => {
-  it('emits both the quoted legacy key and the plain key so any reader can attribute the message', async () => {
-    // 后端生成 handler 按带引号键读取会话归属；只发一种键会让另一端解析不到会话。
+describe('messageApi.send (IM 会话归属)', () => {
+  it('sends the plain conversationId key only', async () => {
+    // 后端已修复「键名带引号」缺陷（docs/plans/2026-09-20-001 §6.7），
+    // 只发普通键即可，不再需要双键兼容。
     const calls = installRequestCapture()
     await messageApi.send('conv-9', 'hi', 'alice')
     expect(calls[0].url).toBe('/api/message/assemble/communicate/im/msg')
     expect(calls[0].data).toMatchObject({
-      '"conversationId"': 'conv-9',
       conversationId: 'conv-9',
       content: 'hi',
       sender: 'alice',
       type: 'text',
     })
+    expect(Object.keys(calls[0].data as Record<string, unknown>)).not.toContain('"conversationId"')
   })
 
   afterEach(() => {
@@ -81,17 +82,14 @@ describe('fileApi download URLs (原生 App / 小程序绝对地址)', () => {
 })
 
 describe('messageConversationId (IM 会话键解析)', () => {
-  it('prefers the quoted "conversationId" key emitted by the legacy generator', () => {
-    // 后端生成 handler 把会话键序列化为带引号字面量（JSON 键本身含引号字符）——
-    // IM 会话列表/历史页全靠它归属消息，丢了键就整条 IM 无会话。
-    expect(messageConversationId({ '"conversationId"': 'c-1', conversationId: 'c-2' })).toBe('c-1')
+  it('reads the plain conversationId key', () => {
+    // 后端已修复「键名带引号」缺陷（见 docs/plans/2026-09-20-001 §6.7），
+    // 现在统一按普通键 conversationId 归属消息。
+    expect(messageConversationId({ conversationId: 'c-2' })).toBe('c-2')
   })
 
-  it('falls back to the plain conversationId key', () => {
-    expect(messageConversationId({ conversationId: 'c-plain' })).toBe('c-plain')
-  })
-
-  it('an empty quoted key falls through to the plain key', () => {
+  it('ignores a legacy quoted key and still resolves the plain key', () => {
+    expect(messageConversationId({ '"conversationId"': 'c-1', conversationId: 'c-2' })).toBe('c-2')
     expect(messageConversationId({ '"conversationId"': '', conversationId: 'c-2' })).toBe('c-2')
   })
 

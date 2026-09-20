@@ -326,13 +326,10 @@ pub async fn meeting_list(
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(m.start_time.to_string()),
                 ),
-                (
-                    "\"endTime\"".to_string(),
-                    Value::String(m.end_time.to_string()),
-                ),
+                ("endTime".to_string(), Value::String(m.end_time.to_string())),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -378,13 +375,10 @@ pub async fn meeting_list_by_room(
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(m.start_time.to_string()),
                 ),
-                (
-                    "\"endTime\"".to_string(),
-                    Value::String(m.end_time.to_string()),
-                ),
+                ("endTime".to_string(), Value::String(m.end_time.to_string())),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -424,17 +418,18 @@ pub async fn create_meeting(
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("roomId is required".to_string()))?;
     let room_id = room_id.to_string();
-    let start_time_str = payload
-        .get("\"startTime\"")
-        .and_then(|v| v.as_str())
-        .ok_or(AppError::BadRequest(
-            "\"startTime\" is required".to_string(),
-        ))?;
+    let start_time_str =
+        payload
+            .get("startTime")
+            .and_then(|v| v.as_str())
+            .ok_or(AppError::BadRequest(
+                "\"startTime\" is required".to_string(),
+            ))?;
     let start_time: chrono::NaiveDateTime = start_time_str
         .parse()
         .map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
     let end_time_str = payload
-        .get("\"endTime\"")
+        .get("endTime")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
     let end_time: chrono::NaiveDateTime = end_time_str
@@ -473,13 +468,10 @@ pub async fn create_meeting(
                 Value::String(m.room_id.clone().unwrap_or(room_id)),
             ),
             (
-                "\"startTime\"".to_string(),
+                "startTime".to_string(),
                 Value::String(m.start_time.to_string()),
             ),
-            (
-                "\"endTime\"".to_string(),
-                Value::String(m.end_time.to_string()),
-            ),
+            ("endTime".to_string(), Value::String(m.end_time.to_string())),
         ]),
     ))))
 }
@@ -509,13 +501,10 @@ pub async fn get_meeting(
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
                 (
-                    "\"startTime\"".to_string(),
+                    "startTime".to_string(),
                     Value::String(m.start_time.to_string()),
                 ),
-                (
-                    "\"endTime\"".to_string(),
-                    Value::String(m.end_time.to_string()),
-                ),
+                ("endTime".to_string(), Value::String(m.end_time.to_string())),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -548,11 +537,11 @@ pub async fn update_meeting(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let start_time_str = payload
-        .get("\"startTime\"")
+        .get("startTime")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let end_time_str = payload
-        .get("\"endTime\"")
+        .get("endTime")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
 

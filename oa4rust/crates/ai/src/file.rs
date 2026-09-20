@@ -48,7 +48,7 @@ pub async fn file_get(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("\"xcreateTime\"")),
+                    Value::String(row.get("xcreateTime")),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))

@@ -121,7 +121,7 @@ pub async fn conversation_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
+                ("userId".to_string(), Value::String(row.get("user_id"))),
                 (
                     "createTime".to_string(),
                     Value::String(row.get("create_time")),

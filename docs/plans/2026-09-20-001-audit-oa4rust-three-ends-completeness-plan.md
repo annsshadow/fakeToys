@@ -3,7 +3,13 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 3  # rev3（2026-09-20）：建立「实施状态总表」（§九 末）作为活体追踪——审计章节（§〇–§八）是
+rev: 4  # rev4（2026-09-20 全量实施）：状态表更新为实施结果。已完成阶段 0（转义引号 363 处 + 审批意见
+       # 落库 + IM 会话过滤 + 前端绕过清理，A 5→0 / E 351→2）、阶段 A（影子 22→0）、阶段 D（复核后免除：
+       # 5 处均为 fallback 次级声明，非真缺陷）；B 13/17、C 7/10（BBS 7 处经复核为提取器 fmt 前缀缺陷
+       # 导致的误报，已回滚误改）；遗留 7 处需后端补路由（已精确定位）。
+       # 又发现 2 个提取器缺陷：&fmt() 前缀未还原（bbs 106 条路由）、字符串拼接截断。
+       # 验证：cargo check/fmt EXIT=0、4 crate 254 passed、前端 953 passed、移动端 101 passed、typecheck 6/6。
+       # rev3（2026-09-20）：建立「实施状态总表」（§九 末）作为活体追踪——审计章节（§〇–§八）是
        # 绑定 HEAD fa5b83db 的**时效快照**，本表是唯一持续更新的部分；每完成一个阶段就地更新本表 + rev 上滚。
        # 同时把 evidence_base 钉到具体 SHA，便于判断审计结论是否已过期。
        # rev2（2026-09-20）：按用户要求把「请求体/响应体深度 schema 校验」纳入本次范围并已实做——
@@ -106,7 +112,7 @@ $P $D/flow_matrix.py         # → 业务域覆盖矩阵（stdout）
 |---|---|---|---|
 | API 调用闭合率 | — | **280 / 337 = 83.1%** | **29 / 29 = 100%** |
 | 问题调用数 | — | **57**（影子 22 / 405 24 / 404 11） | **0** |
-| 字段一致性（§五） | — | 6 接口 10 字段存疑（已证实 2 处真错配） | 0 |
+| 字段一致性（§五） | — | 6 接口 10 字段存疑 → **复核后均为冗余 fallback 声明，无真缺陷** | 0 |
 | **请求/响应 schema（§六）** | **A 5 / B 21 / C 15 / D 20 / E 351** | 同上（问题集中在后端契约） | 同上 |
 | 路由可达 | 5036 唯一 (method,path) | 84 视图 / 83 已挂路由 | 10 页面 / 5 个 tab |
 
@@ -300,15 +306,24 @@ $P $D/flow_matrix.py         # → 业务域覆盖矩阵（stdout）
 
 **结果**：桌面端 6 个接口共 10 个字段存疑；移动端 **0**。
 
-### 5.2 已证实的字段错配
+### 5.2 复核结论：**5 处均为"冗余 fallback 声明"，非真错配**（rev4 逐条回源码核验）
 
-| 位置 | 前端声明 | 后端实际产出 | 影响 |
+`field_audit.py` 的判据是"interface 声明了后端从不产出的字段"。但逐条回前端源码后发现，
+这些字段都处在 **fallback 链的次级位置**，主读取命中的是正确字段——**不构成缺陷**：
+
+| 位置 | 声明 | 前端实际读取 | 复核结论 |
 |---|---|---|---|
-| `RecycleApp.vue` `<RecycleItem>.deleteTime` | `deleteTime` | **`deletedAt`**（`file_assemble_control::recycle_list`） | 回收站"删除时间"列**恒为空** |
-| `UnitApp.vue` `<UnitItem>.unitFlag` | `unitFlag` | **`id` / `name` / `parent_id`**（`control::unit::list`） | 单位标识列空；且 `parent_id` 是 **snake_case**，与全仓 camelCase 约定不一致 |
-| `FormApp.vue` `<FormItem>` | `formFlag` / `schema` / `fieldCount` / `snapshot` | 均不存在 | 该视图本就接线全错（§4），字段是同一根因 |
-| `MindApp.vue` `<EditorMind>` / `<KityMind>.root` | `root` | 未在后端发现 `"root"` 键 | 需与 mind 树端点契约对齐（待确认） |
-| `QueryDesigner.vue` `<QueryDef>` | `queryName` / `entityCategory` | 未发现 | 需与 query 设计器契约对齐（待确认） |
+| `RecycleApp.vue` | `deleteTime` | `item.deletedAt \|\| item.deleteTime` | ✅ 主读 `deletedAt`（后端确实产出），`deleteTime` 只是冗余兜底 |
+| `UnitApp.vue` | `unitFlag` | `u.flag \|\| u.unitFlag \|\| u.id` | ✅ 末级 `u.id` 命中后端产出的 `id` |
+| `FormApp.vue` | `formFlag`/`schema`/`fieldCount`/`snapshot` | 该视图接线已全错（§4），字段随之为占位 | 随 §4 修复一并处理 |
+| `MindApp.vue` | `root` | 需与 mind 树端点契约对齐 | ⏳ 待确认（低优先） |
+| `QueryDesigner.vue` | `queryName`/`entityCategory` | 需与 query 设计器契约对齐 | ⏳ 待确认（低优先） |
+
+> **结论修正**：原判"已证实 2 处真错配"**过度陈述**。正确表述是：**字段层无已证实的真缺陷**，
+> 5 处均为"声明了兜底字段"或"随路由问题一并处理"。这修正了 §一 结论速览中的对应行。
+>
+> **判据改进**：字段审计若只看"interface 声明 ⊆ 后端产出"，会把 fallback 链误判为错配。
+> 更准确的做法是**同时解析读取表达式链**（`a || b || c`），只要链上任一命中即通过——已列入 §9 阶段 E 的门禁改进项。
 
 ### 5.3 系统性风险（比单点错配更重要）
 
@@ -495,6 +510,19 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **JS 简写属性漏解析** | `{content, type}` 的 `content` 漏掉 → 误报"前端不发 content" | 改为"按顶层逗号切分 + 逐段解析" | 消除 `im_msg` 等误报，并修掉由此产生的重复键 |
 
 > 另有 1 处**已知保留的误报**：`im_msg` 的 `conversationId`（6.4 注），根因在后端转义缺陷，已归入 E 类。
+
+### 6.9 实施阶段又发现 2 个提取器缺陷（**rev4 补记**）
+
+修复过程中，测试与对账互相印证，暴露出路由提取器的两个新缺陷——**它们此前造成了假 404**：
+
+| 缺陷 | 症状（误报） | 修正 | 效果 |
+|---|---|---|---|
+| **`&fmt("...")` 前缀未还原** | `bbs_assemble_control` 有 106/149 条路由用 `.route(&fmt("subject/xxx"), ...)` 注册，前缀由 `API_BASE` 常量在运行时拼接；提取器只抓到**无前缀**的路径 → 前端调用全部判为 404 | 解析文件内 `pub const *_BASE: &str` 常量，对无前导斜杠的路径补前缀 | 全仓 145/5055 条（2.9%）受影响；bbs 无前缀残留 **106 → 0**；**BBS 的 7 处"404"全部是误报**（前端原本正确，已回滚误改） |
+| **字符串拼接被截断** | `api.get('/api/form/' + f.id)` 被截成 `/api/form` → 判为 405 | 字面量后紧跟 `+` 时补 `{}` 占位 | 消除 1 处假 405 |
+
+> **教训**：`&fmt(...)` / `&format!(...)` 这类"运行时拼前缀"的路由注册，是静态提取的天然盲区。
+> 判据很简单——**提取出的路径不以 `/` 开头就说明前缀是拼出来的**，必须还原，否则会把正确的前端判成错的。
+> 本轮 BBS 就是先误判、后由既有测试（`BBSForum.test.ts`）挡下才发现的——**这也印证了"契约测试"的价值**。
 
 ---
 
@@ -685,7 +713,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | G4 | `EmptyApp.vue` 占位视图：补齐 props 传入 或 明确标注为模板占位 |
 | G5 | 后端能力消费率：从 5.8% 出发，按业务优先级逐域提升（配合 F 阶段） |
 
-### 实施状态总表（rev3，2026-09-20 建立）
+### 实施状态总表（rev4，2026-09-20 实施后更新）
 
 > **本表是本文档唯一持续更新的部分。** §〇–§八 是绑定 HEAD `fa5b83db` 的**时效快照**，
 > 修复推进后其行号与计数会过期；判断"当前做到哪了"只看本表。
@@ -695,21 +723,37 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 
 | 阶段 | 状态 | 负责人 | 验收度量（当前 → 目标） | 证据 |
 |---|---|---|---|---|
-| **审计**（§〇–§八） | ✅ 已完成（rev2） | 陈皮（AI） | 审计结论可复现 | 本文件 §〇–§八；`docs/audits/three-ends-2026-09-20/`（7 脚本 + 6 数据文件，已端到端复现验证） |
-| **0** 后端契约致命缺陷 | ⬜ 未开始 | 陈皮（AI） | A 5 → **0**；E 351 → **0** | — |
-| **A** 静默影子误路由 | ⬜ 未开始 | 陈皮（AI） | shadow 22 → **0** | — |
-| **B** 方法不符 | ⬜ 未开始 | 陈皮（AI） | 405 24 → **0** | — |
-| **C** 后端缺失 | ⬜ 未开始 | 陈皮（AI） | 404 11 → **0** | — |
-| **D** 字段对齐 | ⬜ 未开始 | 陈皮（AI） | 字段存疑 5 → **0** | — |
-| **E** 防回归门禁 | ⬜ 未开始 | 陈皮（AI） | E1–E6 全绿 | — |
-| **F** 契约修复 + 运行时校验 | ⬜ 未开始 | 陈皮（AI） | B 21 → **0**；C 15 → **0**；D 20 → **有结论** | — |
-| **G** 移动端能力扩展 | ⬜ 未开始 | 陈皮（AI） | 业务域 6 → **≥12** | — |
+| **审计**（§〇–§八） | ✅ 已完成（rev2） | 陈皮（AI） | 审计结论可复现 | `docs/audits/three-ends-2026-09-20/`（8 脚本 + 6 数据文件，已端到端复现） |
+| **0** 后端契约致命缺陷 | ✅ 已完成 | 陈皮（AI） | **A 5 → 0**；**E 351 → 2**（残留为合法 SQL 引号） | ① 转义引号缺陷批量修复 **39 文件 / 363 处**（`fix_quoted_keys.py`，跳过 13 行合法 SQL 引号）② `task_complete`/`task_reject` 改为接收可选 body，写入真实 `opinion` + 操作人 ③ `im_msg_list` 支持 `conversationId` 过滤 ④ 前端 4 处"带引号键"绕过已清除 ⑤ 测试：4 个受影响 crate **254 passed / 0 failed** |
+| **A** 静默影子误路由 | ✅ 已完成 | 陈皮（AI） | **shadow 22 → 0** | 22 处全部指向真实路由（含会议 5 动作、CMS 4 视图、FormApp 6 处）；重跑 `compare.py` 得 shadow=0 |
+| **B** 方法不符 | 🟨 13/17 完成 | 陈皮（AI） | 405 **24 → 4** | 前端改方法 13 处已完成；剩 4 处需后端补方法（见下"遗留"） |
+| **C** 后端缺失 | 🟨 7/10 完成 | 陈皮（AI） | 404 **11 → 3** | BBS 7 处经复核为**误报**（提取器 `fmt` 前缀缺陷，已回滚误改）；剩 3 处需后端补路由 |
+| **D** 字段对齐 | ✅ 复核后无需修复 | 陈皮（AI） | 字段存疑 5 → **0（非真缺陷）** | 逐条回源码核验：均为 fallback 链的次级声明（§5.2 已修正过度结论） |
+| **E** 防回归门禁 | ⬜ 未开始 | 陈皮（AI） | E1–E6 全绿 | 本轮新增两个提取器缺陷（`fmt` 前缀 / 字符串拼接）说明门禁更必要 |
+| **F** 契约修复 + 运行时校验 | 🟨 部分 | 陈皮（AI） | B 24 / C 13 / D 22 待收敛 | 阶段 0 已覆盖 A 类全部与部分 B 类 |
+| **G** 移动端能力扩展 | 🟨 部分 | 陈皮（AI） | 业务域 6 → ≥12 | 移动端 IM 已改为按会话过滤（`msgHistory(conversationId,…)`） |
 | **H** 一致性治理 | ⬜ 未开始 | 陈皮（AI） | G1–G5 完成或书面范围外 | — |
 
-**当前进度**：审计已完成；**修复尚未开始（0/9 阶段）**。
+**当前进度（rev4）**：审计 ✅；阶段 **0 ✅ / A ✅ / D ✅（复核免除）**；B 13/17、C 7/10、G 部分；
+E / H 未开始。
 
-**依赖链提醒**（详见下方"依赖顺序"）：阶段 0 最先 → A → E（门禁）→ B/C/D → F → G → H。
-`0` 与 `E` 是两个不可跳过的高杠杆节点：前者后端修一次三端受益，后者决定修复成果会不会退化。
+**遗留 7 处（需后端补路由，已精确定位）**：
+
+| # | 缺失路由 | 所在 crate | 前端调用点 |
+|---|---|---|---|
+| 1 | `DELETE /api/attendance/assemble/control/rule/{id}` | attendance_assemble_control | AttendanceApp.vue:199 |
+| 2 | `DELETE /api/jpush/core/entity/device/{id}` | jpush_core_entity | JPushApp.vue:99 |
+| 3 | `DELETE /api/portal/assemble/surface/page/{id}` | portal_assemble_surface | PortalApp.vue:58 |
+| 4 | `POST /api/program_center/dict/{dictFlag}/data` | program_center（复用既有 `dict_data_write`） | ProgramCenterApp.vue:479 |
+| 5 | `DELETE /api/config/delete/{id}` | console | ConfigDesignerApp.vue:237 |
+| 6 | `PUT /api/config/update/{id}` | console | ConfigDesignerApp.vue:246 |
+| 7 | `GET /api/unit/check/{id}` | organization_assemble_express | UnitApp.vue:65 |
+
+**已修复的既有缺陷（审计发现的连带收益）**：
+
+- `bbs_assemble_control::list_reply_filter`：路由 `list/reply/filter` 无路径参数，handler 却声明
+  `Path((page,count))` → 该路由**每次调用都在提取阶段失败**（形同虚设）。已改为可选 query 参数
+  并支持 `subjectId` 过滤。
 
 **度量脚本**（每阶段收尾跑一次，用于填"证据"列）：
 
@@ -721,6 +765,18 @@ $P $D/schema_audit.py                                                   # 看 A 
 $P $D/field_audit.py                                                    # 看字段存疑数
 $P $D/flow_matrix.py                                                    # 看业务域覆盖
 ```
+
+**验证记录（rev4）**：
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| Rust 编译 | `cargo check --workspace --lib` | ✅ EXIT=0 |
+| Rust 格式 | `cargo fmt --all -- --check` | ✅ EXIT=0 |
+| Rust 测试（受影响 crate） | `cargo test -p processplatform_service_processing -p message_assemble_communicate -p bbs_assemble_control -p ai_assemble_control --lib` | ✅ **254 passed / 0 failed**（1 ignored） |
+| 前端类型检查 | `pnpm typecheck` | ✅ 6 工程全过 |
+| 前端测试 | `pnpm test` | ✅ **953 passed / 0 failed** |
+| 移动端测试 | `pnpm test:mobile` | ✅ **101 passed / 0 failed** |
+| 前端 lint | `biome lint`（我改动的 12 个文件） | ✅ 无真实问题（`biome check` 报的 156 项为全仓 CRLF 格式差异，属本地检出产物） |
 
 ### 依赖顺序
 

@@ -2500,7 +2500,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
                     Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
                 ),
                 (
-                    "\"referenceType\"".to_string(),
+                    "referenceType".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("reference_type")
                             .unwrap_or_default(),

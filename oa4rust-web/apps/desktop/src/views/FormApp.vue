@@ -252,7 +252,7 @@ const searchedForms = computed(() => {
 async function loadList() {
   loading.value = true
   try {
-    const r = await api.get('/api/form/list')
+    const r = await api.get('/api/form/list/all')
     items.value = r.data ?? []
   } catch {
     items.value = []
@@ -264,7 +264,8 @@ async function loadList() {
 async function loadV2() {
   loadingV2.value = true
   try {
-    const r = await api.get('/api/form/v2/list')
+    // 后端无 form/v2 列表端点；v2 视图复用 form/list/all。
+    const r = await api.get('/api/form/list/all')
     itemsV2.value = r.data ?? []
   } catch {
     itemsV2.value = []
@@ -308,9 +309,9 @@ async function saveForm() {
   }
   try {
     if (editingForm.value?.id) {
-      await api.put('/api/form/update/' + editingForm.value.id, mform.value)
+      await api.put('/api/form/' + editingForm.value.id, mform.value)
     } else {
-      await api.post('/api/form/create', mform.value)
+      await api.post('/api/form', mform.value)
     }
     showCreate.value = false
     loadList()
@@ -322,7 +323,7 @@ async function saveForm() {
 async function deleteForm(f: FormItem) {
   if (!(await confirmMsg('确定删除表单「' + (f.name || f.id) + '」？'))) return
   try {
-    await api.delete('/api/form/delete/' + f.id)
+    await api.delete('/api/form/' + f.id)
     items.value = items.value.filter((x) => x.id !== f.id)
   } catch (e: any) {
     toast.error('删除失败: : ' + (e?.message ?? ''))
@@ -377,7 +378,7 @@ async function doImport() {
     }
     for (const f of data) {
       try {
-        await api.post('/api/form/create', f)
+        await api.post('/api/form', f)
       } catch {}
     }
     importMsg.value = { ok: true, txt: '成功导入 ' + data.length + ' 个表单' }

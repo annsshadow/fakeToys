@@ -43,14 +43,14 @@ pub async fn get_general_control_status(
                 ),
             ),
             (
-                "\"maintenanceMode\"".to_string(),
+                "maintenanceMode".to_string(),
                 Value::Bool(
                     r.get::<_, Option<bool>>("maintenance_mode")
                         .unwrap_or(false),
                 ),
             ),
             (
-                "\"allowRegistration\"".to_string(),
+                "allowRegistration".to_string(),
                 Value::Bool(
                     r.get::<_, Option<bool>>("allow_registration")
                         .unwrap_or(false),
@@ -64,8 +64,8 @@ pub async fn get_general_control_status(
         Err(_) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(String::new())),
             ("systemName".to_string(), Value::String(String::new())),
-            ("\"maintenanceMode\"".to_string(), Value::Bool(false)),
-            ("\"allowRegistration\"".to_string(), Value::Bool(false)),
+            ("maintenanceMode".to_string(), Value::Bool(false)),
+            ("allowRegistration".to_string(), Value::Bool(false)),
             ("version".to_string(), Value::String(String::new())),
         ]),
     };
@@ -208,11 +208,11 @@ pub async fn update_general_control_status(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let maintenance_mode: bool = payload
-        .get("\"maintenanceMode\"")
+        .get("maintenanceMode")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
     let allow_registration: bool = payload
-        .get("\"allowRegistration\"")
+        .get("allowRegistration")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
@@ -226,12 +226,9 @@ pub async fn update_general_control_status(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
+            ("maintenanceMode".to_string(), Value::Bool(maintenance_mode)),
             (
-                "\"maintenanceMode\"".to_string(),
-                Value::Bool(maintenance_mode),
-            ),
-            (
-                "\"allowRegistration\"".to_string(),
+                "allowRegistration".to_string(),
                 Value::Bool(allow_registration),
             ),
             ("updated".to_string(), Value::Bool(result > 0)),
@@ -270,7 +267,7 @@ pub async fn get_module_permissions(
                     ),
                 ),
                 (
-                    "\"userId\"".to_string(),
+                    "userId".to_string(),
                     Value::String(row.get::<_, Option<String>>("user_id").unwrap_or_default()),
                 ),
                 (
@@ -526,7 +523,7 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
-                    "\"parentId\"".to_string(),
+                    "parentId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("parent_id")
                             .unwrap_or_default(),
@@ -599,7 +596,7 @@ pub async fn area_list_province_province(
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
-                    "\"parentId\"".to_string(),
+                    "parentId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("parent_id")
                             .unwrap_or_default(),
@@ -673,7 +670,7 @@ pub async fn area_list_province_province_city_city(
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
-                    "\"parentId\"".to_string(),
+                    "parentId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("parent_id")
                             .unwrap_or_default(),
@@ -748,7 +745,7 @@ pub async fn area_list_province_province_city_city_district_district(
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
-                    "\"parentId\"".to_string(),
+                    "parentId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("parent_id")
                             .unwrap_or_default(),
@@ -809,7 +806,7 @@ pub async fn area_create(
         .unwrap_or_default()
         .to_string();
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
@@ -851,7 +848,7 @@ pub async fn area_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
-            ("\"parentId\"".to_string(), Value::String(parent_id)),
+            ("parentId".to_string(), Value::String(parent_id)),
             ("level".to_string(), Value::String(level)),
             ("province".to_string(), Value::String(province)),
             ("city".to_string(), Value::String(city)),
@@ -887,7 +884,7 @@ pub async fn area_get(
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                 ),
                 (
-                    "\"parentId\"".to_string(),
+                    "parentId".to_string(),
                     Value::String(
                         row.get::<_, Option<String>>("parent_id")
                             .unwrap_or_default(),
@@ -941,7 +938,7 @@ pub async fn area_update(
         .unwrap_or_default()
         .to_string();
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
@@ -1086,7 +1083,7 @@ pub async fn excel_excelName_excelName(
                 ),
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
-                    "\"excelName\"".to_string(),
+                    "excelName".to_string(),
                     Value::String(row.get("excel_name")),
                 ),
                 (
@@ -1223,7 +1220,7 @@ pub async fn excel_upload(
         .unwrap_or("")
         .to_string();
     let excel_name = payload
-        .get("\"excelName\"")
+        .get("excelName")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -1246,7 +1243,7 @@ pub async fn excel_upload(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
-            ("\"excelName\"".to_string(), Value::String(excel_name)),
+            ("excelName".to_string(), Value::String(excel_name)),
             ("flag".to_string(), Value::String(flag)),
         ]),
     ))))
@@ -1266,7 +1263,7 @@ pub async fn excel_upload_with_url(
         .unwrap_or("")
         .to_string();
     let excel_name = payload
-        .get("\"excelName\"")
+        .get("excelName")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -1289,7 +1286,7 @@ pub async fn excel_upload_with_url(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
-            ("\"excelName\"".to_string(), Value::String(excel_name)),
+            ("excelName".to_string(), Value::String(excel_name)),
             ("flag".to_string(), Value::String(flag)),
         ]),
     ))))
@@ -1890,7 +1887,7 @@ pub async fn office_html_to_word(
 
     let id = uuid::Uuid::new_v4().to_string();
     let html_content = payload
-        .get("\"htmlContent\"")
+        .get("htmlContent")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -1938,7 +1935,7 @@ pub async fn office_html_to_word_result_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("wordFlag".to_string(), Value::String(row.get("word_flag"))),
                 (
-                    "\"htmlContent\"".to_string(),
+                    "htmlContent".to_string(),
                     Value::String(row.get("html_content")),
                 ),
                 (

@@ -108,7 +108,7 @@ pub async fn category_create(
         .unwrap_or_default()
         .to_string();
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let sort_order = payload

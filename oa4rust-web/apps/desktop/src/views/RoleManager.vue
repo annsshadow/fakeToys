@@ -73,7 +73,8 @@ const form = ref({ name: '', flag: '', desc: '' })
 async function loadRoles() {
   loading.value = true
   try {
-    const r = await api.get('/api/role/list')
+    // 后端角色列表仅注册 POST /api/role/list（GET 会被 {flag} 宽路由吞掉）。
+    const r = await api.post('/api/role/list')
     roles.value = r.data ?? []
   } catch {
     roles.value = []

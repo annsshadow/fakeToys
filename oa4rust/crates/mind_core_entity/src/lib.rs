@@ -301,7 +301,7 @@ pub async fn create_folder(
         .unwrap_or_default()
         .to_string();
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let order_number = payload
@@ -362,7 +362,7 @@ pub async fn update_folder(
         .map(|s| s.to_string())
         .unwrap_or_else(|| model.name.clone());
     let parent_id = payload
-        .get("\"parentId\"")
+        .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .or_else(|| model.parent_id.clone())
