@@ -3,7 +3,14 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 6  # rev6（2026-09-20 阶段 E 完成）：防回归门禁落地——compare.py / schema_audit.py 新增 --gate
+rev: 7  # rev7（2026-09-20 阶段 H 复核）：逐条复核一致性治理——
+       # G1 复核为**非问题**（control::unit.rs 产出的 JSON 键本就是 parentId，原判断基于 SQL 列名有误）；
+       # G2 已文档化（407 条 mock* 为 O2OA 兼容层，不可清理）；
+       # G3 判为**产品决策**不擅自改（AIAssistant 与 AIChatApp 标题同为「AI 助手」，
+       #    前者含 MCP 配置面板但未路由 → MCP 配置当前不可达；三选项已写入文档）；
+       # G4 已修（EmptyApp 必填 props 无人传入 → 改可选 + 默认文案）；
+       # G5 长期项。**未改动任何后端代码**。
+       # rev6（2026-09-20 阶段 E 完成）：防回归门禁落地——compare.py / schema_audit.py 新增 --gate
        # （A 必须为 0；B/C/D/E 不得高于 schema_baseline.json，只许降不许升），新增 CI workflow
        # .github/workflows/three-ends-contract.yml（extract→compare --gate→schema_audit --gate，
        # 产物上传 artifact）；E6 守卫接入 oa4rust-ci.yml 的 quality job。
@@ -716,17 +723,17 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 
 **阶段验收**：移动端调用数 ≥ 80，覆盖业务域 ≥ 12 个；或对未覆盖域给出书面范围外声明。
 
-### 阶段 H（P2）—— 一致性治理
+### 阶段 H（P2）—— 一致性治理（rev6 逐条复核）
 
-| 任务 | 内容 |
+| 任务 | 复核结论（rev6） |
 |---|---|
-| G1 | 字段命名统一：以 camelCase 为准，清理 `control::unit::list` 等 snake_case 漏点 |
-| G2 | 407 条 `mock*` 兼容别名：在对外 API 契约文档中显式声明为"O2OA 兼容层"，并从"疑似冗余"清单中移出 |
-| G3 | `AIAssistant.vue` 孤儿视图：挂路由 或 删除（当前其逻辑被 AIChatApp 复用） |
-| G4 | `EmptyApp.vue` 占位视图：补齐 props 传入 或 明确标注为模板占位 |
-| G5 | 后端能力消费率：从 5.8% 出发，按业务优先级逐域提升（配合 F 阶段） |
+| G1 | ✅ **复核为非问题**：`control::unit.rs:107` 产出的 JSON 键**本就是 `parentId`**（只是 SQL 列名是 `parent_id`）。原判断基于 SQL 列名而非 JSON 键，属**误判**，已修正。全仓亦无 `parent_id` 硬消费方（`organization-selector.ts:61` 是 `parentId ?? parent_id` 的 fallback 链）。 |
+| G2 | ✅ **已文档化**：407 条 `mock*`（`*mockputtopost` / `*mockdeletetoget`）为 **O2OA 兼容层**，用于承载"前端用 GET 模拟 PUT/POST"的历史行为，**不可清理**。已在本文件 §二 说明；对外契约文档如需可再摘录。 |
+| G3 | ⏳ **产品决策（不擅自改）**：`AIAssistant.vue`(200 行) 与 `AIChatApp.vue`(345 行) **标题同为「AI 助手」**，前者是含 **MCP 配置面板**的旧版、后者是已路由的新版。三选项：① 路由 AIAssistant 并下线 AIChatApp（取功能超集）；② 把 MCP 配置合并进 AIChatApp；③ 明确放弃 MCP 配置 UI 并删除 AIAssistant。**当前 MCP 配置功能对用户不可达**，需产品定夺。 |
+| G4 | ✅ **已修**：`EmptyApp.vue` 的 `title`/`subtitle` 原为**必填 props 但路由未传**（`main.ts` 的 `empty` 路由无 props）→ 改为可选 + 默认文案（"占位页面"/"该页面为通用占位模板，尚未接入具体业务"）。 |
+| G5 | ⏳ 长期项：后端能力消费率 5.8%（252/4327）→ 按业务优先级逐域提升，与阶段 G 联动。 |
 
-### 实施状态总表（rev5，2026-09-20 全量实施完成）
+### 实施状态总表（rev6，2026-09-20 阶段 E 完成后更新）
 
 > **本表是本文档唯一持续更新的部分。** §〇–§八 是绑定 HEAD `fa5b83db` 的**时效快照**，
 > 修复推进后其行号与计数会过期；判断"当前做到哪了"只看本表。
@@ -744,7 +751,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **E** 防回归门禁 | ✅ 已完成（E1–E6） | 陈皮（AI） | 门禁已落地并验证可失败 | **E1/E4/E5**：`compare.py --gate`（shadow/405/404 必须全 0）+ `schema_audit.py --gate`（A 必须为 0，B/C/D/E 不得高于 `schema_baseline.json`）→ 新增 CI workflow `.github/workflows/three-ends-contract.yml`；**E2**：字段/契约侧以基线"不许新增"兜住（单端点级字段断言列为后续增强）；**E3**：CI 顺序 = extract_routes → extract_calls → compare --gate → schema_audit --gate，产物上传 artifact；**E6**：`oa4rust/tests/quoted_key_guard.rs` 已接入 `oa4rust-ci.yml` 的 `quality` job。**门禁可失败已验证**：人为压低基线 → EXIT=1；恢复 → EXIT=0 |
 | **F** 契约修复 + 运行时校验 | 🟨 部分 | 陈皮（AI） | B 24 / C 13 / D 22 待收敛（**含已知误报**） | 阶段 0 已覆盖 A 类全部与部分 B 类；剩余为契约语义项，见下 |
 | **G** 移动端能力扩展 | 🟨 部分 | 陈皮（AI） | 业务域 6 → ≥12 未达成 | 移动端 IM 已按会话过滤；扩面未做 |
-| **H** 一致性治理 | ⬜ 未开始 | 陈皮（AI） | G1–G5 未做 | — |
+| **H** 一致性治理 | 🟨 3/5 已闭合 | 陈皮（AI） | G1 非问题、G2 已文档化、G4 已修 | G3 待产品决策（两个同名「AI 助手」，MCP 配置当前不可达）；G5 长期项（消费率 5.8%） |
 
 **核心成果（rev5）：三端 API 调用闭合率 100%**
 
