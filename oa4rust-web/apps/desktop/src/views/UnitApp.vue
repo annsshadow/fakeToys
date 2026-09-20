@@ -49,7 +49,8 @@
           </div>
         </section>
         <section class="dcol">
-          <div class="dcol-head"><span>单位职务</span><button class="mini-add" @click="addDuty">+ 新增</button></div>
+          <div class="dcol-head"><span>单位职务</span><span><button class="mini-add" @click="loadDutyNames">常用名</button><button class="mini-add" @click="addDuty">+ 新增</button></span></div>
+          <div v-if="dutyNames.length" class="dn-chips"><span v-for="dn in dutyNames" :key="dn" class="dn-chip">{{ dn }}</span></div>
           <div v-if="duties.length === 0" class="empty-sm">暂无职务</div>
           <div v-else class="dlist">
             <div v-for="d in duties" :key="d.id" class="drow">
@@ -161,6 +162,18 @@ const selectedUnit = ref<UnitItem | null>(null)
 const attrs = ref<Attr[]>([])
 const duties = ref<Duty[]>([])
 const identities = ref<Array<{ id: string; name?: string; personName?: string; unitName?: string }>>([])
+const dutyNames = ref<string[]>([])
+async function loadDutyNames() {
+  try {
+    // GET organization/assemble/control/unitduty/distinct/name —— 职务名去重列表
+    const r: any = await api.get('/api/organization/assemble/control/unitduty/distinct/name')
+    dutyNames.value = ((r.data ?? []) as any[])
+      .map((x) => (typeof x === 'string' ? x : (x?.name ?? x)))
+      .filter((x): x is string => !!x)
+  } catch {
+    dutyNames.value = []
+  }
+}
 function unitKey(u: UnitItem) {
   return u.flag || u.unitFlag || u.id
 }
@@ -330,6 +343,8 @@ const api_organizati_842_data = ref<any[]>([])
 .dname{font-weight:600;color:var(--text-primary);font-size:13px}
 .dsub{font-size:12px;color:var(--text-muted)}
 .dcol-del{padding:4px 12px;border-radius:var(--radius-sm);border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);cursor:pointer;font-size:12px}
+.dn-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.dn-chip{padding:1px 8px;border-radius:8px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:11px;color:var(--text-muted)}
 .empty-sm{color:var(--text-muted);font-size:13px;padding:16px;text-align:center}
 @media(max-width:768px){.detail-cols{grid-template-columns:1fr}}@media(min-width:769px) and (max-width:1100px){.detail-cols{grid-template-columns:1fr 1fr}}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;flex:1}
