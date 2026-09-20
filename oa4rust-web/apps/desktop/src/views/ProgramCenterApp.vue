@@ -41,6 +41,7 @@
       </div>
       <!-- Application tab -->
       <div v-if="tab==='application'" class="tab-content">
+        <div class="toolbar"><button class="btn-primary" @click="loadAllApplications">全部应用</button><span v-if="appMetaText" class="app-meta">{{ appMetaText }}</span></div>
         <div v-if="loadingApp" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
         <div v-else-if="applications.length===0" class="empty"><div class="ei">📱</div><p>暂无Application</p></div>
         <div v-else class="item-grid">
@@ -344,6 +345,20 @@ async function loadAgents() {
     agents.value = []
   } finally {
     loadingAgent.value = false
+  }
+}
+const appMetaText = ref('')
+async function loadAllApplications() {
+  try {
+    // GET program_center/applications + center/applications —— 全部应用/中心应用
+    const [apps, center] = await Promise.all([
+      api.get('/api/program_center/applications'),
+      api.get('/api/program_center/center/applications'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appMetaText.value = `全部应用 ${n(apps)} / 中心应用 ${n(center)}`
+  } catch (e: any) {
+    toast.error('加载应用清单失败: ' + (e?.message ?? ''))
   }
 }
 async function loadApps() {
@@ -1021,4 +1036,5 @@ const program_center_module_write_m_1_ref = ref<any[]>([])
 .chip{padding:4px 12px;border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
 .chip.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
 .market-acts{display:flex;gap:6px;flex-wrap:wrap}
+.app-meta{margin-left:10px;font-size:12px;color:var(--text-muted)}
 </style>
