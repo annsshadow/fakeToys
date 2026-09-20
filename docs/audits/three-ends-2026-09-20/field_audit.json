@@ -1,0 +1,60 @@
+{
+ "vocab_size": 1009,
+ "report": {
+  "desktop": [
+   {
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "iface": "FormItem",
+    "declared": 12,
+    "missing": [
+     "formFlag",
+     "schema",
+     "fieldCount",
+     "snapshot"
+    ]
+   },
+   {
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "iface": "EditorMind",
+    "declared": 9,
+    "missing": [
+     "root"
+    ]
+   },
+   {
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "iface": "KityMind",
+    "declared": 1,
+    "missing": [
+     "root"
+    ]
+   },
+   {
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "iface": "QueryDef",
+    "declared": 9,
+    "missing": [
+     "queryName",
+     "entityCategory"
+    ]
+   },
+   {
+    "file": "apps/desktop/src/views/RecycleApp.vue",
+    "iface": "RecycleItem",
+    "declared": 7,
+    "missing": [
+     "deleteTime"
+    ]
+   },
+   {
+    "file": "apps/desktop/src/views/UnitApp.vue",
+    "iface": "UnitItem",
+    "declared": 7,
+    "missing": [
+     "unitFlag"
+    ]
+   }
+  ],
+  "mobile": []
+ }
+}

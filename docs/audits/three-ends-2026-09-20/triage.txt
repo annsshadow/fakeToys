@@ -1,0 +1,622 @@
+====================================================================================================
+APP: desktop
+
+---- suspicious-shadow (22) ----
+
+  [GET] /api/appinfo/filter
+      at apps/desktop/src/views/AppInfoApp.vue:64   hit=cms_assemble_control:/api/appinfo/{id} ['id=filter']
+      后端同前缀(3段)候选 4:
+        POST    /api/appinfo/filter/list/{id}/next/{count}/mockputtopost   <cms_assemble_control>
+        POST    /api/appinfo/filter/list/{id}/prev/{count}/mockputtopost   <cms_assemble_control>
+        PUT     /api/appinfo/filter/list/{id}/next/{count}   <cms_assemble_control>
+        PUT     /api/appinfo/filter/list/{id}/prev/{count}   <cms_assemble_control>
+
+  [GET] /api/appinfo/list
+      at apps/desktop/src/views/AppInfoApp.vue:67   hit=cms_assemble_control:/api/appinfo/{id} ['id=list']
+      后端同前缀(3段)候选 17:
+        GET     /api/appinfo/list/all   <cms_assemble_control>
+        GET     /api/appinfo/list/appType   <cms_assemble_control>
+        GET     /api/appinfo/list/appType/manager   <cms_assemble_control>
+        GET     /api/appinfo/list/has/document   <cms_assemble_control>
+        GET     /api/appinfo/list/has/document/appType   <cms_assemble_control>
+        GET     /api/appinfo/list/has/document/type/{appType}   <cms_assemble_control>
+        GET     /api/appinfo/list/manage   <cms_assemble_control>
+        GET     /api/appinfo/list/manage/type/{appType}   <cms_assemble_control>
+        GET     /api/appinfo/list/user/publish   <cms_assemble_control>
+        GET     /api/appinfo/list/user/publish/type/{appType}   <cms_assemble_control>
+        GET     /api/appinfo/list/user/publish/with/process   <cms_assemble_control>
+        GET     /api/appinfo/list/user/view   <cms_assemble_control>
+        GET     /api/appinfo/list/user/view/all   <cms_assemble_control>
+        GET     /api/appinfo/list/user/view/all/type/{appType}   <cms_assemble_control>
+        ... 另有 3 条
+
+  [GET] /api/categoryinfo/list
+      at apps/desktop/src/views/CategoryApp.vue:49   hit=cms_assemble_control:/api/categoryinfo/{id} ['id=list']
+      后端同前缀(3段)候选 7:
+        GET     /api/categoryinfo/list/all   <cms_assemble_control>
+        GET     /api/categoryinfo/list/manage/app/{appId}   <cms_assemble_control>
+        GET     /api/categoryinfo/list/publish/app/{appId}   <cms_assemble_control>
+        GET     /api/categoryinfo/list/view/app/{appId}   <cms_assemble_control>
+        GET     /api/categoryinfo/list/view/app/{appId}/all   <cms_assemble_control>
+        GET     /api/categoryinfo/list/view/app/{appId}/data   <cms_assemble_control>
+        POST    /api/categoryinfo/list/objects   <cms_assemble_control>
+
+  [GET] /api/document/list
+      at apps/desktop/src/views/DocumentApp.vue:101   hit=cms_assemble_control:/api/document/{id} ['id=list']
+      后端同前缀(3段)候选 2:
+        POST    /api/document/list/document   <cms_assemble_control>
+        POST    /api/document/list/document/data   <cms_assemble_control>
+
+  [GET] /api/query/assemble/designer/find/list
+      at apps/desktop/src/views/FindDesignerApp.vue:52   hit=query_assemble_designer:/api/query/assemble/designer/{id}/{count} ['id=find']
+      后端同前缀(4段)候选 175:
+        DELETE  /api/query/assemble/designer/delete   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/importer/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/importmodel/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/importmodel/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/neural/delete/model/{modelFlag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/neural/model/{modelFlag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/query/{flag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/stat/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/stat/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/statement/{flag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/table/delete/{flag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/table/row/delete/all/{tableFlag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/table/row/delete/{tableFlag}/{id}   <query_assemble_designer>
+        ... 另有 161 条
+
+  [GET] /api/form/list
+      at apps/desktop/src/views/FormApp.vue:255   hit=cms_assemble_control:/api/form/{id} ['id=list']
+      后端同前缀(3段)候选 4:
+        GET     /api/form/list/all   <cms_assemble_control>
+        GET     /api/form/list/app/{appId}   <cms_assemble_control>
+        GET     /api/form/list/formfield/appInfo/{appId}   <cms_assemble_control>
+        GET     /api/form/list/{id}/formfield   <cms_assemble_control>
+
+  [GET] /api/form/v2/list
+      at apps/desktop/src/views/FormApp.vue:267   hit=cms_assemble_control:/api/form/v2/{id} ['id=list']
+      后端同前缀(3段)候选 4:
+        GET     /api/form/v2/lookup/document/{docId}   <cms_assemble_control>
+        GET     /api/form/v2/lookup/document/{docId}/mobile   <cms_assemble_control>
+        GET     /api/form/v2/{id}   <cms_assemble_control>
+        GET     /api/form/v2/{id}/mobile   <cms_assemble_control>
+
+  [PUT] /api/form/update
+      at apps/desktop/src/views/FormApp.vue:311   hit=cms_assemble_control:/api/form/{id} ['id=update']
+      后端同前缀(0段)候选 0:
+
+  [DELETE] /api/form/delete
+      at apps/desktop/src/views/FormApp.vue:325   hit=cms_assemble_control:/api/form/{id} ['id=delete']
+      后端同前缀(0段)候选 0:
+
+  [GET] /api/portal/assemble/surface/homepage/list
+      at apps/desktop/src/views/HomepageApp.vue:51   hit=portal_assemble_surface:/api/portal/assemble/surface/{page}/{id} ['id=list']
+      后端同前缀(4段)候选 72:
+        DELETE  /api/portal/assemble/surface/delete/layout   <portal_assemble_surface>
+        DELETE  /api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        DELETE  /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/list/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/portal/data/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/portal/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/data   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockdeletetoget   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/file/download/{flag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/file/list/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/file/portal/content/{flag}/{portalFlag}   <portal_assemble_surface>
+        ... 另有 58 条
+
+  [GET] /api/meeting/assemble/control/meeting/list
+      at apps/desktop/src/views/MeetingApp.vue:100   hit=meeting_assemble_control:/api/meeting/assemble/control/meeting/{id} ['id=list']
+      后端同前缀(6段)候选 31:
+        GET     /api/meeting/assemble/control/meeting/list/applied/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/wait   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/day/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/month/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/{month}/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/all/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invited/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invited/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invited/rejected   <meeting_assemble_control>
+        ... 另有 17 条
+
+  [PUT] /api/meeting/assemble/control/meeting/update
+      at apps/desktop/src/views/MeetingApp.vue:144   hit=meeting_assemble_control:/api/meeting/assemble/control/meeting/{id} ['id=update']
+      后端同前缀(5段)候选 64:
+        DELETE  /api/meeting/assemble/control/meeting/delete/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}/delete/invite   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/wait   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/day/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/month/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/{month}/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/all/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}   <meeting_assemble_control>
+        ... 另有 50 条
+
+  [POST] /api/meeting/assemble/control/meeting/cancel
+      at apps/desktop/src/views/MeetingApp.vue:153   hit=meeting_assemble_control:/api/meeting/assemble/control/meeting/{id} ['id=cancel']
+      后端同前缀(5段)候选 64:
+        DELETE  /api/meeting/assemble/control/meeting/delete/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}/delete/invite   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/wait   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/day/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/month/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/{month}/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/all/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}   <meeting_assemble_control>
+        ... 另有 50 条
+
+  [POST] /api/meeting/assemble/control/meeting/approve
+      at apps/desktop/src/views/MeetingApp.vue:161   hit=meeting_assemble_control:/api/meeting/assemble/control/meeting/{id} ['id=approve']
+      后端同前缀(5段)候选 64:
+        DELETE  /api/meeting/assemble/control/meeting/delete/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}/delete/invite   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/wait   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/day/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/month/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/{month}/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/all/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}   <meeting_assemble_control>
+        ... 另有 50 条
+
+  [POST] /api/meeting/assemble/control/meeting/join
+      at apps/desktop/src/views/MeetingApp.vue:169   hit=meeting_assemble_control:/api/meeting/assemble/control/meeting/{id} ['id=join']
+      后端同前缀(5段)候选 64:
+        DELETE  /api/meeting/assemble/control/meeting/delete/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}/delete/invite   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/wait   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/day/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/month/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/{month}/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/all/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}   <meeting_assemble_control>
+        ... 另有 50 条
+
+  [POST] /api/meeting/assemble/control/meeting/leave
+      at apps/desktop/src/views/MeetingApp.vue:178   hit=meeting_assemble_control:/api/meeting/assemble/control/meeting/{id} ['id=leave']
+      后端同前缀(5段)候选 64:
+        DELETE  /api/meeting/assemble/control/meeting/delete/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}   <meeting_assemble_control>
+        DELETE  /api/meeting/assemble/control/meeting/{id}/delete/invite   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/completed   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/processing   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/applied/wait   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/apply/{page}/size/{size}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/day/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/month/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/coming/{month}/{count}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/all/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all   <meeting_assemble_control>
+        GET     /api/meeting/assemble/control/meeting/list/invite/{page}/{size}/{size}   <meeting_assemble_control>
+        ... 另有 50 条
+
+  [GET] /api/organization/assemble/control/group/list
+      at apps/desktop/src/views/OrgViewer.vue:76   hit=organization_assemble_control:/api/organization/assemble/control/group/{flag} ['flag=list']
+      后端同前缀(6段)候选 21:
+        GET     /api/organization/assemble/control/group/list/like   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like/mockputtopost   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like/pinyin   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like/pinyin/mockputtopost   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/person/{personFlag}/sup/direct   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/person/{personFlag}/sup/nested   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/pinyininitial   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/pinyininitial/mockputtopost   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/role/{roleFlag}   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/{flag}/next/{count}   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/{flag}/prev/{count}   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/{flag}/sub/direct   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/{flag}/sub/nested   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/{flag}/sup/direct   <organization_assemble_control>
+        ... 另有 7 条
+
+  [GET] /api/program_center/agent/list
+      at apps/desktop/src/views/ProgramCenterApp.vue:258   hit=program_center:/api/program_center/agent/{flag} ['flag=list']
+      后端同前缀(3段)候选 17:
+        DELETE  /api/program_center/agent/{flag}   <program_center>
+        GET     /api/program_center/agent   <program_center>
+        GET     /api/program_center/agent/flag   <program_center>
+        GET     /api/program_center/agent/flag/disable   <program_center>
+        GET     /api/program_center/agent/flag/enable   <program_center>
+        GET     /api/program_center/agent/flag/execute   <program_center>
+        GET     /api/program_center/agent/flag/file   <program_center>
+        GET     /api/program_center/agent/{flag}   <program_center>
+        GET     /api/program_center/agent/{flag}/disable   <program_center>
+        GET     /api/program_center/agent/{flag}/enable   <program_center>
+        GET     /api/program_center/agent/{flag}/execute   <program_center>
+        POST    /api/program_center/agent   <program_center>
+        POST    /api/program_center/agent/create   <program_center>
+        POST    /api/program_center/agent/save/{id}   <program_center>
+        ... 另有 3 条
+
+  [POST] /api/program_center/dict/{}/data/data
+      at apps/desktop/src/views/ProgramCenterApp.vue:479   hit=program_center:/api/program_center/dict/{dictFlag}/{path}/data ['path=data']
+      后端同前缀(3段)候选 19:
+        DELETE  /api/program_center/dict/dictFlag/path/data/mockdeletetoget   <program_center>
+        DELETE  /api/program_center/dict/{dictFlag}/{path}/data   <program_center>
+        DELETE  /api/program_center/dict/{id}   <program_center>
+        GET     /api/program_center/dict/dictFlag/data   <program_center>
+        GET     /api/program_center/dict/dictFlag/path/data   <program_center>
+        GET     /api/program_center/dict/id   <program_center>
+        GET     /api/program_center/dict/list   <program_center>
+        GET     /api/program_center/dict/list/paging/page/size/size   <program_center>
+        GET     /api/program_center/dict/{dictFlag}/data   <program_center>
+        GET     /api/program_center/dict/{dictFlag}/{path}/data   <program_center>
+        GET     /api/program_center/dict/{dictFlag}/{path}/data/mockdeletetoget   <program_center>
+        GET     /api/program_center/dict/{id}   <program_center>
+        POST    /api/program_center/dict   <program_center>
+        POST    /api/program_center/dict/dictFlag/path/data/mockputtopost   <program_center>
+        ... 另有 5 条
+
+  [GET] /api/role/list
+      at apps/desktop/src/views/RoleManager.vue:76   hit=control:/api/role/{flag} ['flag=list']
+      后端同前缀(3段)候选 6:
+        GET     /api/role/list/{flag}/next/{count}   <control>
+        GET     /api/role/list/{flag}/prev/{count}   <control>
+        POST    /api/role/list   <organization_assemble_express>
+        POST    /api/role/list/object   <organization_assemble_express>
+        POST    /api/role/list/person   <organization_assemble_express>
+        POST    /api/role/list/person/object   <organization_assemble_express>
+
+  [GET] /api/view/list
+      at apps/desktop/src/views/ViewApp.vue:70   hit=cms_assemble_control:/api/view/{id} ['id=list']
+      后端同前缀(3段)候选 4:
+        GET     /api/view/list/all   <cms_assemble_control>
+        GET     /api/view/list/app/{appId}   <cms_assemble_control>
+        GET     /api/view/list/category/{categoryId}   <cms_assemble_control>
+        GET     /api/view/list/form/{formId}   <cms_assemble_control>
+
+  [POST] /api/view/viewdata/{}
+      at apps/desktop/src/views/ViewApp.vue:85   hit=cms_assemble_control:/api/view/{id}/mockputtopost ['id=viewdata']
+      后端同前缀(3段)候选 1:
+        POST    /api/view/viewdata/list/{id}/next/{count}   <cms_assemble_control>
+
+---- 405 (24) ----
+
+  [DELETE] /api/ai_assemble_control/config/delete/mcp/{}
+      at apps/desktop/src/views/AIAssistant.vue:129   hit=ai_assemble_control:/api/ai_assemble_control/config/delete/mcp/{flag} ['GET']
+      后端同前缀(5段)候选 1:
+        GET     /api/ai_assemble_control/config/delete/mcp/{flag}   <ai_assemble_control>
+
+  [DELETE] /api/ai_assemble_control/chat/delete/{}
+      at apps/desktop/src/views/AIChatApp.vue:152   hit=ai_assemble_control:/api/ai_assemble_control/chat/delete/{clueId} ['GET']
+      后端同前缀(4段)候选 1:
+        GET     /api/ai_assemble_control/chat/delete/{clueId}   <ai_assemble_control>
+
+  [GET] /api/attendance/assemble/control/attendancedetail
+      at apps/desktop/src/views/AttendanceApp.vue:97   hit=attendance_assemble_control:/api/attendance/assemble/control/attendancedetail ['POST']
+      后端同前缀(5段)候选 40:
+        DELETE  /api/attendance/assemble/control/attendancedetail/mobile/{id}   <attendance_assemble_control>
+        DELETE  /api/attendance/assemble/control/attendancedetail/{id}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/analyse/id/{id}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/archive/{id}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/filter/list   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/filter/list/topUnit   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/filter/list/unit   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/filter/list/user   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/list/persons/nonesign   <attendance_assemble_control>
+        GET     /api/attendance/assemble/control/attendancedetail/list/{file_id}   <attendance_assemble_control>
+        ... 另有 26 条
+
+  [GET] /api/calendar_assemble_control/event/list/filter
+      at apps/desktop/src/views/CalendarApp.vue:94   hit=calendar_assemble_control:/api/calendar_assemble_control/event/list/filter ['PUT']
+      后端同前缀(5段)候选 3:
+        POST    /api/calendar_assemble_control/event/list/filter/sample/manager   <calendar_assemble_control>
+        PUT     /api/calendar_assemble_control/event/list/filter   <calendar_assemble_control>
+        PUT     /api/calendar_assemble_control/event/list/filter/sample   <calendar_assemble_control>
+
+  [POST] /api/document/document
+      at apps/desktop/src/views/DocumentApp.vue:114   hit=cms_assemble_control:/api/document/{id} ['DELETE', 'GET']
+      后端同前缀(3段)候选 1:
+        GET     /api/document/document/fields   <cms_assemble_control>
+
+  [PUT] /api/query/assemble/designer/find/list
+      at apps/desktop/src/views/FindDesignerApp.vue:74   hit=query_assemble_designer:/api/query/assemble/designer/{id}/{count} ['GET']
+      后端同前缀(4段)候选 175:
+        DELETE  /api/query/assemble/designer/delete   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/importer/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/importmodel/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/importmodel/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/neural/delete/model/{modelFlag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/neural/model/{modelFlag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/query/{flag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/stat/delete/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/stat/{id}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/statement/{flag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/table/delete/{flag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/table/row/delete/all/{tableFlag}   <query_assemble_designer>
+        DELETE  /api/query/assemble/designer/table/row/delete/{tableFlag}/{id}   <query_assemble_designer>
+        ... 另有 161 条
+
+  [GET] /api/form
+      at apps/desktop/src/views/FormApp.vue:277   hit=cms_assemble_control:/api/form ['POST']
+      后端同前缀(0段)候选 0:
+
+  [POST] /api/form/create
+      at apps/desktop/src/views/FormApp.vue:313   hit=cms_assemble_control:/api/form/{id} ['DELETE', 'GET', 'PUT']
+      后端同前缀(0段)候选 0:
+
+  [POST] /api/form/create
+      at apps/desktop/src/views/FormApp.vue:380   hit=cms_assemble_control:/api/form/{id} ['DELETE', 'GET', 'PUT']
+      后端同前缀(0段)候选 0:
+
+  [PUT] /api/portal/assemble/surface/homepage/list
+      at apps/desktop/src/views/HomepageApp.vue:73   hit=portal_assemble_surface:/api/portal/assemble/surface/{page}/{id} ['GET']
+      后端同前缀(4段)候选 72:
+        DELETE  /api/portal/assemble/surface/delete/layout   <portal_assemble_surface>
+        DELETE  /api/portal/assemble/surface/dict/portal/path/data/mockdeletetoget/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        DELETE  /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/list/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/portal/data/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/portal/path/data/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/portal/{dictFlag}/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/data   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockdeletetoget   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/file/download/{flag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/file/list/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/file/portal/content/{flag}/{portalFlag}   <portal_assemble_surface>
+        ... 另有 58 条
+
+  [DELETE] /api/jpush/core/entity/device/{}
+      at apps/desktop/src/views/JPushApp.vue:99   hit=jpush_core_entity:/api/jpush/core/entity/device/list ['GET', 'POST']
+      后端同前缀(5段)候选 3:
+        GET     /api/jpush/core/entity/device/list   <jpush_core_entity>
+        GET     /api/jpush/core/entity/device/{id}   <jpush_core_entity>
+        POST    /api/jpush/core/entity/device/create   <jpush_core_entity>
+
+  [GET] /api/organization/assemble/control/group
+      at apps/desktop/src/views/OrgViewer.vue:86   hit=organization_assemble_control:/api/organization/assemble/control/group ['POST']
+      后端同前缀(5段)候选 39:
+        DELETE  /api/organization/assemble/control/group/{flag}   <organization_assemble_control>
+        DELETE  /api/organization/assemble/control/group/{flag}/delete/member   <organization_assemble_control>
+        DELETE  /api/organization/assemble/control/group/{flag}/delete/member/mockputtopost   <organization_assemble_control>
+        DELETE  /api/organization/assemble/control/group/{flag}/mockdeletetoget   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like/mockputtopost   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like/pinyin   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/like/pinyin/mockputtopost   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/person/{personFlag}/sup/direct   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/person/{personFlag}/sup/nested   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/pinyininitial   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/pinyininitial/mockputtopost   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/role/{roleFlag}   <organization_assemble_control>
+        GET     /api/organization/assemble/control/group/list/{flag}/next/{count}   <organization_assemble_control>
+        ... 另有 25 条
+
+  [POST] /api/person/password
+      at apps/desktop/src/views/Personal.vue:99   hit=control:/api/person/{flag} ['DELETE', 'GET', 'PUT']
+      后端同前缀(3段)候选 2:
+        POST    /api/person/password/mockputtopost   <personal>
+        PUT     /api/person/password   <personal>
+
+  [DELETE] /api/portal/assemble/surface/page/{}
+      at apps/desktop/src/views/PortalApp.vue:58   hit=portal_assemble_surface:/api/portal/assemble/surface/{page}/{id} ['GET']
+      后端同前缀(5段)候选 8:
+        GET     /api/portal/assemble/surface/page/list/portal/{portal}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}/mobile   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/v2/{id}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/v2/{id}/mobile   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/{flag}/portal/{portalFlag}   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/{flag}/portal/{portalFlag}/mobile   <portal_assemble_surface>
+        GET     /api/portal/assemble/surface/page/{id}/mobile   <portal_assemble_surface>
+
+  [POST] /api/program_center/module/{}/compare
+      at apps/desktop/src/views/ProgramCenterApp.vue:552   hit=program_center:/api/program_center/module/id/compare ['GET', 'PUT']
+      后端同前缀(3段)候选 20:
+        DELETE  /api/program_center/module/remove/structure/id   <program_center>
+        DELETE  /api/program_center/module/remove/structure/{id}   <program_center>
+        GET     /api/program_center/module/id/compare   <program_center>
+        GET     /api/program_center/module/list   <program_center>
+        GET     /api/program_center/module/list/category   <program_center>
+        GET     /api/program_center/module/output/list/structure   <program_center>
+        GET     /api/program_center/module/output/structure   <program_center>
+        GET     /api/program_center/module/output/{id}/file   <program_center>
+        GET     /api/program_center/module/remove/structure/id   <program_center>
+        GET     /api/program_center/module/write/flag   <program_center>
+        GET     /api/program_center/module/{id}/compare   <program_center>
+        POST    /api/program_center/module/compare/upload   <program_center>
+        POST    /api/program_center/module/output   <program_center>
+        POST    /api/program_center/module/output/flag/file   <program_center>
+        ... 另有 6 条
+
+  [POST] /api/program_center/appstyle/image/{}/{}/erase
+      at apps/desktop/src/views/ProgramCenterApp.vue:596   hit=program_center:/api/program_center/appstyle/image/application/top/erase ['DELETE', 'GET']
+      后端同前缀(4段)候选 28:
+        DELETE  /api/program_center/appstyle/image/application/top/erase   <program_center>
+        DELETE  /api/program_center/appstyle/image/launch/logo/erase   <program_center>
+        DELETE  /api/program_center/appstyle/image/login/avatar/erase   <program_center>
+        DELETE  /api/program_center/appstyle/image/menu/logo/blur/erase   <program_center>
+        DELETE  /api/program_center/appstyle/image/menu/logo/focus/erase   <program_center>
+        DELETE  /api/program_center/appstyle/image/process/default/erase   <program_center>
+        DELETE  /api/program_center/appstyle/image/setup/about/logo/erase   <program_center>
+        GET     /api/program_center/appstyle/image/application/top   <program_center>
+        GET     /api/program_center/appstyle/image/application/top/erase   <program_center>
+        GET     /api/program_center/appstyle/image/launch/logo   <program_center>
+        GET     /api/program_center/appstyle/image/launch/logo/erase   <program_center>
+        GET     /api/program_center/appstyle/image/login/avatar   <program_center>
+        GET     /api/program_center/appstyle/image/login/avatar/erase   <program_center>
+        GET     /api/program_center/appstyle/image/menu/logo/blur   <program_center>
+        ... 另有 14 条
+
+  [POST] /api/program_center/market/{}/cover/pic
+      at apps/desktop/src/views/ProgramCenterApp.vue:632   hit=program_center:/api/program_center/market/flag/cover/pic ['GET']
+      后端同前缀(3段)候选 28:
+        GET     /api/program_center/market/cloud/unit/is/vip   <program_center>
+        GET     /api/program_center/market/flag   <program_center>
+        GET     /api/program_center/market/flag/cover/pic   <program_center>
+        GET     /api/program_center/market/flag/install/log   <program_center>
+        GET     /api/program_center/market/flag/install/or/update   <program_center>
+        GET     /api/program_center/market/flag/installed/version   <program_center>
+        GET     /api/program_center/market/flag/uninstall   <program_center>
+        GET     /api/program_center/market/id/download   <program_center>
+        GET     /api/program_center/market/install/offline   <program_center>
+        GET     /api/program_center/market/list/category   <program_center>
+        GET     /api/program_center/market/list/install/log/paging/page/size/size   <program_center>
+        GET     /api/program_center/market/list/paging/page/size/size   <program_center>
+        GET     /api/program_center/market/list/paging/page/size/size/category/category   <program_center>
+        GET     /api/program_center/market/list/paging/{page}/size/{size}/category/{category}   <program_center>
+        ... 另有 14 条
+
+  [GET] /api/queryview/search
+      at apps/desktop/src/views/QueryViewApp.vue:77   hit=query_assemble_surface:/api/queryview/search ['POST']
+      后端同前缀(3段)候选 1:
+        POST    /api/queryview/search   <query_assemble_surface>
+
+  [POST] /api/queryview/view/list/paging/1/20
+      at apps/desktop/src/views/QueryViewApp.vue:89   hit=query_assemble_surface:/api/queryview/{view}/{flag}/{flag}/{query}/{queryFlag} ['GET']
+      后端同前缀(4段)候选 1:
+        GET     /api/queryview/view/list/query/{queryFlag}   <query_assemble_surface>
+
+  [POST] /api/queryview/execute/{}
+      at apps/desktop/src/views/QueryViewApp.vue:103   hit=query_assemble_surface:/api/queryview/{query}/{flag} ['GET']
+      后端同前缀(3段)候选 4:
+        GET     /api/queryview/execute/v2/{view}/{id}/{page}/{size}   <query_assemble_surface>
+        GET     /api/queryview/execute/{view}/{id}   <query_assemble_surface>
+        POST    /api/queryview/execute/mockputtopost/{view}/{flag}/{flag}/{query}/{queryFlag}   <query_assemble_surface>
+        POST    /api/queryview/execute/mockputtopost/{view}/{id}   <query_assemble_surface>
+
+  [POST] /api/recycle/empty
+      at apps/desktop/src/views/RecycleApp.vue:95   hit=file_assemble_control:/api/recycle/empty ['DELETE', 'GET']
+      后端同前缀(3段)候选 1:
+        DELETE  /api/recycle/empty   <file_assemble_control>
+
+  [GET] /api/queryview/search
+      at apps/desktop/src/views/SearchApp.vue:36   hit=query_assemble_surface:/api/queryview/search ['POST']
+      后端同前缀(3段)候选 1:
+        POST    /api/queryview/search   <query_assemble_surface>
+
+  [POST] /api/server/execute
+      at apps/desktop/src/views/ServerApp.vue:72   hit=program_init:/api/server/execute ['GET']
+      后端同前缀(3段)候选 2:
+        GET     /api/server/execute   <program_init>
+        GET     /api/server/execute/status   <program_init>
+
+  [POST] /api/server/stop
+      at apps/desktop/src/views/ServerApp.vue:84   hit=program_init:/api/server/stop ['GET']
+      后端同前缀(3段)候选 1:
+        GET     /api/server/stop   <program_init>
+
+---- 404 (12) ----
+
+  [POST] /api/ai_assemble_control/config/${m.enabled 
+      at apps/desktop/src/views/AIAssistant.vue:126   hit=None:None None
+      后端同前缀(3段)候选 15:
+        GET     /api/ai_assemble_control/config/base/config   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/delete/mcp/{flag}   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/delete/model/{flag}   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/get   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/get/mcp/ext/{flag}   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/get/mcp/{flag}   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/get/model/{flag}   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/list/enable/model   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/list/mcp/paging/{page}/size/{size}   <ai_assemble_control>
+        GET     /api/ai_assemble_control/config/list/model/paging/{page}/size/{size}   <ai_assemble_control>
+        POST    /api/ai_assemble_control/config/create/mcp   <ai_assemble_control>
+        POST    /api/ai_assemble_control/config/create/model   <ai_assemble_control>
+        POST    /api/ai_assemble_control/config/save   <ai_assemble_control>
+        POST    /api/ai_assemble_control/config/update/mcp/{flag}   <ai_assemble_control>
+        ... 另有 1 条
+
+  [DELETE] /api/attendance/assemble/control/rule
+      at apps/desktop/src/views/AttendanceApp.vue:198   hit=None:None None
+      后端同前缀(5段)候选 4:
+        GET     /api/attendance/assemble/control/rule/list   <attendance_assemble_control>
+        POST    /api/attendance/assemble/control/rule/create   <attendance_assemble_control>
+        POST    /api/attendance/assemble/control/rule/{id}/toggle   <attendance_assemble_control>
+        PUT     /api/attendance/assemble/control/rule/{id}/toggle   <attendance_assemble_control>
+
+  [PUT] /api/bbs/assemble/control/subject/search/list/page/1/count/{}
+      at apps/desktop/src/views/BBSForum.vue:371   hit=None:None None
+      后端同前缀(6段)候选 1:
+        GET     /api/bbs/assemble/control/subject/search   <bbs_assemble_control>
+
+  [PUT] /api/bbs/assemble/control/subject/recommended/list/page/{}/count/{}
+      at apps/desktop/src/views/BBSForum.vue:377   hit=None:None None
+      后端同前缀(5段)候选 5:
+        GET     /api/bbs/assemble/control/subject/creamed/list   <bbs_assemble_control>
+        GET     /api/bbs/assemble/control/subject/filter/list   <bbs_assemble_control>
+        GET     /api/bbs/assemble/control/subject/index/list   <bbs_assemble_control>
+        GET     /api/bbs/assemble/control/subject/search   <bbs_assemble_control>
+        GET     /api/bbs/assemble/control/subject/statgrade   <bbs_assemble_control>
+
+  [PUT] /api/bbs/assemble/control/subject/creamed/list/page/{}/count/{}
+      at apps/desktop/src/views/BBSForum.vue:382   hit=None:None None
+      后端同前缀(6段)候选 1:
+        GET     /api/bbs/assemble/control/subject/creamed/list   <bbs_assemble_control>
+
+  [PUT] /api/bbs/assemble/control/user/reply/my/list/page/{}/count/{}
+      at apps/desktop/src/views/BBSForum.vue:388   hit=None:None None
+      后端同前缀(5段)候选 1:
+        GET     /api/bbs/assemble/control/user/info   <bbs_assemble_control>
+
+  [POST] /api/bbs/assemble/control/subject/filter/listsubjectinfo/page/{}/count/{}
+      at apps/desktop/src/views/BBSForum.vue:405   hit=None:None None
+      后端同前缀(6段)候选 1:
+        GET     /api/bbs/assemble/control/subject/filter/list   <bbs_assemble_control>
+
+  [PUT] /api/bbs/assemble/control/subject/index/list/page/{}/count/{}
+      at apps/desktop/src/views/BBSForum.vue:410   hit=None:None None
+      后端同前缀(6段)候选 1:
+        GET     /api/bbs/assemble/control/subject/index/list   <bbs_assemble_control>
+
+  [PUT] /api/bbs/assemble/control/reply/filter/list/page/1/count/50
+      at apps/desktop/src/views/BBSForum.vue:441   hit=None:None None
+      后端同前缀(5段)候选 1:
+        POST    /api/bbs/assemble/control/reply/create   <bbs_assemble_control>
+
+  [DELETE] /api/config/delete
+      at apps/desktop/src/views/ConfigDesignerApp.vue:237   hit=None:None None
+      后端同前缀(0段)候选 0:
+
+  [PUT] /api/config/update
+      at apps/desktop/src/views/ConfigDesignerApp.vue:246   hit=None:None None
+      后端同前缀(0段)候选 0:
+
+  [GET] /api/unit/check/{}
+      at apps/desktop/src/views/UnitApp.vue:65   hit=None:None None
+      后端同前缀(3段)候选 3:
+        POST    /api/unit/check/unit/has/identity   <organization_assemble_express>
+        POST    /api/unit/check/unit/has/person   <organization_assemble_express>
+        POST    /api/unit/check/unit/has/unit   <organization_assemble_express>
+====================================================================================================
+APP: mobile

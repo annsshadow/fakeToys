@@ -78,6 +78,8 @@ oa4rust/deploy/.backups/
 
 *.txt
 !oa4rust/docs/ops/*.txt
+# 审计/对账的文本证据（可读报告、候选路由对照）需入库，否则审计不可复现。
+!docs/audits/**/*.txt
 # ai 子项目的依赖清单必须纳入版本控制：CI 的 cache-dependency-path、
 # Dockerfile 的 COPY requirements.txt 均依赖之，缺失会直接导致构建失败。
 !ai/requirements.txt
