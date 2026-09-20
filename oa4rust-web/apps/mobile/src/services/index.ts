@@ -82,20 +82,20 @@ export const processApi = {
     list(
       mapi.post<ProcessWorkRow[]>(`/api/processplatform/assemble/surface/work/list/my/paging/${page}/size/${size}`, {}),
     ),
-  /** 审批通过：任务置 completed，自动认领下一活动或收尾工作。 */
+  /** 审批通过：任务置 completed，自动认领下一活动或收尾工作。后端仅读 opinion。 */
   completeTask: (taskId: string, payload?: Omit<TaskActionPayload, 'action'>) =>
     mapi.post<never>(
       `/api/task/${taskId}/complete`,
-      { data: {}, opinion: '', action: 'approve', ...payload },
+      { opinion: payload?.opinion ?? '' },
       {
         discardResponse: true,
       },
     ),
-  /** 驳回：任务回退并记录处理意见。 */
+  /** 驳回：任务回退并记录处理意见。后端仅读 opinion。 */
   rejectTask: (taskId: string, payload?: Omit<TaskActionPayload, 'action'>) =>
     mapi.post<never>(
       `/api/task/${taskId}/reject`,
-      { data: {}, opinion: '', action: 'reject', ...payload },
+      { opinion: payload?.opinion ?? '' },
       {
         discardResponse: true,
       },
@@ -237,6 +237,9 @@ export const attendanceApi = {
       checkInType,
       sourceType: '移动端',
     }),
+  /** 出勤统计（按日聚合，工作台今日概览用）。 */
+  statistics: () =>
+    list(mapi.get<Array<{ date?: string; records?: number; status?: string }>>('/api/attendance/assemble/control/statistics/list')),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -252,12 +255,40 @@ export interface PersonRow {
   [key: string]: unknown
 }
 
+export interface UnitRow {
+  id?: string
+  name?: string
+  parentId?: string
+  level?: number
+  [key: string]: unknown
+}
+export interface NamedRow {
+  id?: string
+  name?: string
+  [key: string]: unknown
+}
+
 export const orgApi = {
   /** 全员 / 按姓名模糊搜索（POST mockputtopost 别名，body.key 为空返回全员）。 */
   personSearch: (key?: string) =>
     list(mapi.post<PersonRow[]>('/api/organization/assemble/control/person/list/like/mockputtopost', { key })),
   /** 人员详情。 */
   personDetail: (flag: string) => mapi.get<PersonRow>(`/api/organization/assemble/control/person/${flag}`),
+  /** 单位清单（阶段 G / F1：通讯录组织维度）。 */
+  unitList: () => list(mapi.get<UnitRow[]>('/api/unit/list/all')),
+  /** 单位树（后端此路由仅注册 POST）。 */
+  unitTree: () => list(mapi.post<UnitRow[]>('/api/unit/list/unit/tree', {})),
+  /** 群组清单（group/list/like 返回全部群组，无需 flag）。 */
+  groupList: () => list(mapi.get<NamedRow[]>('/api/organization/assemble/control/group/list/like')),
+  /** 某群组的下级（嵌套）。 */
+  groupSubNested: (flag: string) =>
+    list(mapi.get<NamedRow[]>(`/api/organization/assemble/control/group/list/${flag}/sub/nested`)),
+  /** 某人的身份清单。 */
+  personIdentities: (personFlag: string) =>
+    list(mapi.get<NamedRow[]>(`/api/organization/assemble/control/identity/list/person/${personFlag}`)),
+  /** 某人的角色清单。 */
+  personRoles: (personFlag: string) =>
+    list(mapi.get<NamedRow[]>(`/api/organization/assemble/control/role/list/person/${personFlag}`)),
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -280,6 +311,194 @@ export const annApi = {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 会议（阶段 G / F2：我的会议 + 接受/拒绝/确认/签到）
+//
+// 全部对齐 meeting_assemble_control 已注册路由（见 routes.rs）。
+// ─────────────────────────────────────────────────────────────
+export interface MeetingRow {
+  id: string
+  title?: string
+  name?: string
+  startTime?: string
+  endTime?: string
+  status?: string
+  buildingId?: string
+  roomId?: string
+  [key: string]: unknown
+}
+
+export const meetingApi = {
+  /** 我申请/参与的会议（分页）。 */
+  applied: (page: number, size: number) =>
+    list(mapi.get<MeetingRow[]>(`/api/meeting/assemble/control/meeting/list/apply/${page}/size/${size}`)),
+  /** 待我接受的邀请。 */
+  invitedWait: () => list(mapi.get<MeetingRow[]>('/api/meeting/assemble/control/meeting/list/invited/wait')),
+  /** 待我确认（已接受、待确认）。 */
+  waitConfirm: () => list(mapi.get<MeetingRow[]>('/api/meeting/assemble/control/meeting/list/wait/confirm')),
+  /** 未来 N 天会议。 */
+  comingDay: (count: number) =>
+    list(mapi.get<MeetingRow[]>(`/api/meeting/assemble/control/meeting/list/coming/day/${count}`)),
+  detail: (id: string) => mapi.get<MeetingRow>(`/api/meeting/assemble/control/meeting/${id}`),
+  /** 接受邀请。 */
+  accept: (id: string) =>
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/accept`, null, { discardResponse: true }),
+  /** 拒绝邀请。 */
+  reject: (id: string) =>
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/reject`, null, { discardResponse: true }),
+  /** 确认出席。 */
+  confirmAllow: (id: string) =>
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/confirm/allow`, null, {
+      discardResponse: true,
+    }),
+  /** 确认缺席。 */
+  confirmDeny: (id: string) =>
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/confirm/deny`, null, {
+      discardResponse: true,
+    }),
+  /** 签到。 */
+  checkin: (id: string) =>
+    mapi.post<never>(`/api/meeting/assemble/control/meeting/${id}/checkin`, null, { discardResponse: true }),
+  /** 签到码（二维码内容）。 */
+  checkinCode: (id: string) => mapi.get<{ code?: string }>(`/api/meeting/assemble/control/meeting/${id}/checkin/code`),
+}
+
+// ─────────────────────────────────────────────────────────────
+// 日历（阶段 G / F3：我的日历 + 日程事件）
+// ─────────────────────────────────────────────────────────────
+export interface CalendarRow {
+  id: string
+  name?: string
+  type?: string
+  [key: string]: unknown
+}
+export interface CalendarEventRow {
+  id: string
+  title?: string
+  startTime?: string
+  endTime?: string
+  calendarId?: string
+  [key: string]: unknown
+}
+
+export const calendarApi = {
+  /** 我的日历。 */
+  myCalendars: () => list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/calendar/list/my')),
+  /** 公开日历。 */
+  publicCalendars: () => list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/calendar/list/public')),
+  calendarDetail: (id: string) => mapi.get<CalendarRow>(`/api/calendar_assemble_control/calendar/${id}`),
+  /** 事件列表（filter，body 传时间范围；后端此路由仅注册 PUT）。 */
+  eventsFilter: (payload: Record<string, unknown>) =>
+    list(mapi.put<CalendarEventRow[]>('/api/calendar_assemble_control/event/list/filter', payload)),
+  eventDetail: (id: string) => mapi.get<CalendarEventRow>(`/api/calendar_assemble_control/event/${id}`),
+  /** iCalendar(RFC5545) 内容。 */
+  eventRfc: (id: string) => mapi.get<{ rfc?: string }>(`/api/calendar_assemble_control/event/rfc/${id}`),
+  /** 日历控制配置。 */
+  controlConfig: () => mapi.get<Record<string, unknown>>('/api/calendar_assemble_control/get/control/config'),
+  /** 我可见的日历清单（控制面）。 */
+  controlCalendars: () =>
+    list(mapi.get<CalendarRow[]>('/api/calendar_assemble_control/list/control/calendars')),
+}
+
+// ─────────────────────────────────────────────────────────────
+// 门户表面 / 查询表面 / 内容 CMS（阶段 G / F4：只读浏览）
+// ─────────────────────────────────────────────────────────────
+export const portalApi = {
+  /** 门户页面清单。 */
+  pageList: (portal: string) =>
+    list(mapi.get<Record<string, unknown>[]>(`/api/portal/assemble/surface/page/list/portal/${portal}`)),
+  pageDetail: (id: string) => mapi.get<Record<string, unknown>>(`/api/portal/assemble/surface/page/v2/${id}`),
+  /** 移动端页面视图（含移动布局）。 */
+  pageMobile: (id: string) => mapi.get<Record<string, unknown>>(`/api/portal/assemble/surface/page/v2/${id}/mobile`),
+  pageByFlag: (flag: string, portalFlag: string) =>
+    mapi.get<Record<string, unknown>>(`/api/portal/assemble/surface/page/v2/${flag}/portal/${portalFlag}`),
+}
+
+export const queryviewApi = {
+  /** 视图清单（按查询 flag 过滤；'all' 表示不限）。 */
+  viewList: (queryFlag: string) =>
+    list(mapi.get<Record<string, unknown>[]>(`/api/queryview/view/list/query/${queryFlag}`)),
+  /** 执行视图（handler 只读 id，view 段为语义占位）。 */
+  execute: (view: string, id: string) =>
+    mapi.get<Record<string, unknown>>(`/api/queryview/execute/${view}/${id}`),
+  /** 分页执行。 */
+  executeV2: (view: string, id: string, page: number, size: number) =>
+    mapi.get<Record<string, unknown>>(`/api/queryview/execute/v2/${view}/${id}/${page}/${size}`),
+  /** 视图 + 数据一次性返回。 */
+  bundle: (view: string, id: string) => mapi.get<Record<string, unknown>>(`/api/queryview/bundle/${view}/${id}`),
+  bundleV2: (view: string, id: string) => mapi.get<Record<string, unknown>>(`/api/queryview/bundle/v2/${view}/${id}`),
+  /** 查询清单。 */
+  list: () => list(mapi.get<Record<string, unknown>[]>('/api/queryview/list')),
+}
+
+export const cmsApi = {
+  /** CMS 栏目清单。 */
+  columnList: () => list(mapi.get<Record<string, unknown>[]>('/api/cms/core/entity/column/list')),
+  /** 栏目管理清单（含未发布）。 */
+  columnManagerList: () =>
+    list(mapi.get<Record<string, unknown>[]>('/api/cms/core/entity/column_manager/list')),
+  /** 文档全文检索（后端 GET，条件走 query：q 关键字 + limit）。 */
+  documentSearch: (q: string, limit = 20) =>
+    list(
+      mapi.get<Record<string, unknown>[]>('/api/cms_assemble_control/document/search', {
+        params: { q, limit: String(limit) },
+      }),
+    ),
+}
+
+// ─────────────────────────────────────────────────────────────
+// 回收站 / 搜索 / 统计（阶段 G / F5）
+// ─────────────────────────────────────────────────────────────
+export const recycleApi = {
+  list: () => list(mapi.get<Record<string, unknown>[]>('/api/recycle/list')),
+  detail: (id: string) => mapi.get<Record<string, unknown>>(`/api/recycle/${id}`),
+  remove: (id: string) => mapi.delete<never>(`/api/recycle/delete/${id}`, { discardResponse: true }),
+  /** 清空回收站（后端此路由仅注册 DELETE）。 */
+  empty: () => mapi.delete<never>('/api/recycle/empty', { discardResponse: true }),
+}
+
+export const searchApi = {
+  /** 全局检索（queryview，后端仅注册 POST，读取键为 key）。 */
+  global: (keyword: string) => list(mapi.post<Record<string, unknown>[]>('/api/queryview/search', { key: keyword })),
+  /** 论坛主题检索。 */
+  bbsSubject: (keyword: string) =>
+    list(
+      mapi.get<Record<string, unknown>[]>(
+        `/api/bbs/assemble/control/subject/search?keyword=${encodeURIComponent(keyword)}`,
+      ),
+    ),
+}
+
+export const statisticsApi = {
+  /** 考勤统计周期清单。 */
+  attendanceCycles: () =>
+    list(mapi.get<Record<string, unknown>[]>('/api/attendance/assemble/control/attendancestatisticalcycle/list/all')),
+  /** 某月统计明细。 */
+  attendanceCycleDetail: (year: number, month: number) =>
+    mapi.get<Record<string, unknown>>(
+      `/api/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/${year}/${month}`,
+    ),
+  /** 个人月度统计。 */
+  attendancePersonMonth: (year: number, month: number) =>
+    mapi.get<Record<string, unknown>>(
+      `/api/attendance/assemble/control/dingding/statistic/person/year/${year}/month/${month}`,
+    ),
+}
+
+// ─────────────────────────────────────────────────────────────
+// 推送设备（阶段 G / F5：设备注册状态只读）
+// ─────────────────────────────────────────────────────────────
+export const pushApi = {
+  /** 某推送类型下的设备清单。 */
+  deviceList: (pushType: string) =>
+    list(mapi.get<Record<string, unknown>[]>(`/api/jpush/assemble/control/device/list/${pushType}`)),
+  /** 推送类型配置。 */
+  pushTypeConfig: () =>
+    mapi.get<Record<string, unknown>>('/api/jpush/assemble/control/device/config/push/type'),
+  /** 推送应用清单。 */
+  apps: () => list(mapi.get<Record<string, unknown>[]>('/api/jpush/assemble/control/list/control/apps')),
+}
+
+// ─────────────────────────────────────────────────────────────
 // 通用（字典）
 // ─────────────────────────────────────────────────────────────
 export const generalApi = {
@@ -295,6 +514,15 @@ export const apis = {
   org: orgApi,
   ann: annApi,
   general: generalApi,
+  meeting: meetingApi,
+  calendar: calendarApi,
+  portal: portalApi,
+  queryview: queryviewApi,
+  cms: cmsApi,
+  recycle: recycleApi,
+  search: searchApi,
+  statistics: statisticsApi,
+  push: pushApi,
 }
 
 export default apis

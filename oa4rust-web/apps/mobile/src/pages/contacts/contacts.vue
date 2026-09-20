@@ -48,6 +48,62 @@ function doSearch() {
   void search()
 }
 
+// ── 阶段 G / F1：通讯录增强（单位 / 群组维度 + 人员身份/角色）──
+type Mode = 'person' | 'unit' | 'group'
+const mode = ref<Mode>('person')
+const units = ref<Record<string, unknown>[]>([])
+const groups = ref<Record<string, unknown>[]>([])
+const orgLoading = ref(false)
+const detail = ref<Record<string, unknown> | null>(null)
+const identities = ref<Record<string, unknown>[]>([])
+const roles = ref<Record<string, unknown>[]>([])
+const detailLoading = ref(false)
+
+async function loadOrg(): Promise<void> {
+  orgLoading.value = true
+  try {
+    if (mode.value === 'unit') {
+      const r = await orgApi.unitList()
+      units.value = (r.data ?? []) as Record<string, unknown>[]
+    } else if (mode.value === 'group') {
+      const r = await orgApi.groupList()
+      groups.value = (r.data ?? []) as Record<string, unknown>[]
+    }
+  } catch {
+    units.value = []
+    groups.value = []
+  } finally {
+    orgLoading.value = false
+  }
+}
+
+function switchMode(next: Mode): void {
+  if (mode.value === next) return
+  mode.value = next
+  if (next !== 'person') void loadOrg()
+}
+
+/** 打开人员详情：并行取身份与角色（任一失败不影响另一）。 */
+async function openPerson(row: Record<string, unknown>): Promise<void> {
+  const flag = typeof row.flag === 'string' ? row.flag : ''
+  detail.value = row
+  identities.value = []
+  roles.value = []
+  if (!flag) return
+  detailLoading.value = true
+  try {
+    const [ids, rls] = await Promise.allSettled([orgApi.personIdentities(flag), orgApi.personRoles(flag)])
+    if (ids.status === 'fulfilled') identities.value = (ids.value.data ?? []) as Record<string, unknown>[]
+    if (rls.status === 'fulfilled') roles.value = (rls.value.data ?? []) as Record<string, unknown>[]
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function orgNameOf(row: Record<string, unknown>): string {
+  return String(row.name ?? row.id ?? '未命名')
+}
+
 /** 发起单聊：创建一条 type=single 会话（名字取对方姓名），随即进入聊天页。 */
 async function startChat(row: Record<string, unknown>): Promise<void> {
   const flag = typeof row.flag === 'string' ? row.flag : ''
@@ -86,19 +142,64 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       </button>
     </view>
 
-    <view v-if="loading && !loaded" class="tip">加载中…</view>
-    <view v-else-if="rows.length === 0" class="tip">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</view>
-    <view v-else class="list">
-      <view v-for="(row, i) in rows" :key="i" class="item">
-        <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
-        <view class="body" @tap="startChat(row)">
-          <view class="title">{{ nameOf(row) }}</view>
-          <view class="meta">{{ subOf(row) || ' ' }}</view>
+    <view class="modes">
+      <view class="mode" :class="{ on: mode === 'person' }" @tap="switchMode('person')">人员</view>
+      <view class="mode" :class="{ on: mode === 'unit' }" @tap="switchMode('unit')">单位</view>
+      <view class="mode" :class="{ on: mode === 'group' }" @tap="switchMode('group')">群组</view>
+    </view>
+
+    <template v-if="mode === 'person'">
+      <view v-if="loading && !loaded" class="tip">加载中…</view>
+      <view v-else-if="rows.length === 0" class="tip">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</view>
+      <view v-else class="list">
+        <view v-for="(row, i) in rows" :key="i" class="item">
+          <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
+          <view class="body" @tap="openPerson(row)">
+            <view class="title">{{ nameOf(row) }}</view>
+            <view class="meta">{{ subOf(row) || ' ' }}</view>
+          </view>
+          <button class="chat-btn" size="mini" type="primary" :disabled="busyId !== ''" @tap="startChat(row)">
+            聊天
+          </button>
         </view>
-        <button class="chat-btn" size="mini" type="primary" :disabled="busyId !== ''" @tap="startChat(row)">
-          聊天
-        </button>
       </view>
+    </template>
+
+    <template v-else>
+      <view v-if="orgLoading" class="tip">加载中…</view>
+      <view v-else-if="(mode === 'unit' ? units : groups).length === 0" class="tip">
+        {{ mode === 'unit' ? '暂无单位' : '暂无群组' }}
+      </view>
+      <view v-else class="list">
+        <view v-for="(o, i) in mode === 'unit' ? units : groups" :key="i" class="item">
+          <text class="avatar">{{ mode === 'unit' ? '🏢' : '👥' }}</text>
+          <view class="body">
+            <view class="title">{{ orgNameOf(o) }}</view>
+            <view class="meta">{{ o.id ? String(o.id) : ' ' }}</view>
+          </view>
+        </view>
+      </view>
+    </template>
+
+    <view v-if="detail" class="detail">
+      <view class="detail-head">
+        <text class="detail-title">{{ nameOf(detail) }}</text>
+        <text class="detail-close" @tap="detail = null">关闭</text>
+      </view>
+      <view class="detail-sub">{{ subOf(detail) || '—' }}</view>
+      <view v-if="detailLoading" class="tip">加载身份与角色…</view>
+      <template v-else>
+        <view class="detail-sec">
+          <text class="detail-label">身份（{{ identities.length }}）</text>
+          <view v-if="identities.length === 0" class="detail-empty">—</view>
+          <view v-for="(x, i) in identities" :key="i" class="detail-item">{{ orgNameOf(x) }}</view>
+        </view>
+        <view class="detail-sec">
+          <text class="detail-label">角色（{{ roles.length }}）</text>
+          <view v-if="roles.length === 0" class="detail-empty">—</view>
+          <view v-for="(x, i) in roles" :key="i" class="detail-item">{{ orgNameOf(x) }}</view>
+        </view>
+      </template>
     </view>
   </view>
 </template>
@@ -165,5 +266,68 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 }
 .chat-btn {
   flex-shrink: 0;
+}
+/* ── 阶段 G / F1：单位·群组·人员详情 ── */
+.modes {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+.mode {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  font-size: 28rpx;
+  color: #5b6572;
+  background: #fff;
+  border-radius: 12rpx;
+}
+.mode.on {
+  background: #2d8cf0;
+  color: #fff;
+  font-weight: 600;
+}
+.detail {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-top: 20rpx;
+}
+.detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.detail-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #263238;
+}
+.detail-close {
+  font-size: 26rpx;
+  color: #2d8cf0;
+}
+.detail-sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #90979f;
+}
+.detail-sec {
+  margin-top: 20rpx;
+}
+.detail-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #263238;
+}
+.detail-item {
+  font-size: 26rpx;
+  color: #5b6572;
+  padding: 8rpx 0;
+}
+.detail-empty {
+  font-size: 26rpx;
+  color: #c0c4cc;
+  padding: 8rpx 0;
 }
 </style>
