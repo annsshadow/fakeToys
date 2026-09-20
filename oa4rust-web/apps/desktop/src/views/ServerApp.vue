@@ -3,6 +3,8 @@
     <div class="view-header glass-card">
       <h1>服务器管理</h1>
       <p class="subtitle">/api/server/* — 命令执行与授权管理</p>
+      <button class="srv-meta-btn" @click="loadSysStatus">系统状态/信息</button>
+      <div v-if="sysStatusText" class="srv-meta-note">{{ sysStatusText }}</div>
     </div>
     <div class="content-panel glass-card">
       <div class="grid-2col">
@@ -43,6 +45,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+import { toast } from '../utils/toast'
 
 const command = ref('')
 const executing = ref(false)
@@ -50,6 +53,22 @@ const execOutput = ref('')
 const execError = ref('')
 const loadingLicense = ref(false)
 const license = ref<Record<string, unknown> | null>(null)
+
+const sysStatusText = ref('')
+async function loadSysStatus() {
+  try {
+    // GET console/status + console/system/info —— 控制台状态与系统信息
+    const [status, info] = await Promise.all([
+      api.get('/api/console/status'),
+      api.get('/api/console/system/info'),
+    ])
+    const st = (status as any)?.data ? '在线' : '未知'
+    const infoObj = (info as any)?.data ?? {}
+    sysStatusText.value = `状态 ${st} · 信息 ${JSON.stringify(infoObj).slice(0, 60)}`
+  } catch (e: any) {
+    toast.error('加载系统状态失败: ' + (e?.message ?? ''))
+  }
+}
 
 async function loadLicense() {
   loadingLicense.value = true
@@ -117,6 +136,8 @@ const api_fireschedule_cla_721_data = ref<any[]>([])
 
 <style scoped>
 .mod-view{display:flex;flex-direction:column;gap:16px;height:100%}
+.srv-meta-btn{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
+.srv-meta-note{margin-top:8px;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary);word-break:break-all}
 .view-header{padding:16px 24px}
 .view-header h1{font-family:'Orbitron',sans-serif;font-size:20px;color:var(--color-primary);margin:0 0 4px;text-shadow:0 0 15px var(--color-primary-glow)}
 .subtitle{font-size:12px;color:var(--text-muted);margin:0;font-family:'JetBrains Mono',monospace}
