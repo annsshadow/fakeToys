@@ -1096,7 +1096,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 260,
+    "line": 275,
     "method": "GET",
     "raw": "/api/mind/assemble/control/mind/${encodeURIComponent(item.id)}",
     "path": "/api/mind/assemble/control/mind/{}",
@@ -4269,7 +4269,33 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 182,
+    "line": 183,
+    "method": "GET",
+    "raw": "/api/mind/assemble/control/config",
+    "path": "/api/mind/assemble/control/config",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/assemble/control/config",
+    "hit_crate": "mind_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 184,
+    "method": "GET",
+    "raw": "/api/mind/assemble/control/folder/tree/my",
+    "path": "/api/mind/assemble/control/folder/tree/my",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/mind/assemble/control/folder/tree/my",
+    "hit_crate": "mind_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 197,
     "method": "GET",
     "raw": "/api/mind/core/entity/list",
     "path": "/api/mind/core/entity/list",
@@ -4282,7 +4308,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 183,
+    "line": 198,
     "method": "GET",
     "raw": "/api/mind/core/entity/folder/list",
     "path": "/api/mind/core/entity/folder/list",
@@ -4295,7 +4321,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 196,
+    "line": 211,
     "method": "GET",
     "raw": "/api/mind/folder/tree/my",
     "path": "/api/mind/folder/tree/my",
@@ -4308,7 +4334,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 219,
+    "line": 234,
     "method": "PUT",
     "raw": "/api/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1",
     "path": "/api/mind/assemble/control/mind/filter/list/{}/next/1",
@@ -4323,7 +4349,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/MindApp.vue",
-    "line": 432,
+    "line": 447,
     "method": "POST",
     "raw": "/api/mind/assemble/control/mind/save",
     "path": "/api/mind/assemble/control/mind/save",
