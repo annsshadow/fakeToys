@@ -3,8 +3,12 @@
     <div class="view-header glass-card">
       <h1>门户管理</h1>
       <p class="subtitle">接入 /api/portal/* — 页面设计与发布</p>
-      <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
+      <span class="hdr-actions">
+        <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
+        <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
+      </span>
     </div>
+    <div v-if="portalListText" class="portal-note">{{ portalListText }}</div>
     <div class="page-grid glass-card">
       <div v-if="pages.length === 0" class="empty-state">
         <div class="empty-icon">📄</div>
@@ -29,7 +33,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface PortalPage {
   id: string
@@ -40,6 +44,20 @@ interface PortalPage {
   appId?: string
 }
 
+const portalListText = ref('')
+async function loadPortalList() {
+  try {
+    // GET /api/portal/list + /api/portalcategory/list —— 门户与门户分类列表
+    const [portals, cats] = await Promise.all([
+      api.get('/api/portal/list'),
+      api.get('/api/portalcategory/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    portalListText.value = `门户 ${n(portals)} 个 / 分类 ${n(cats)} 个`
+  } catch (e: any) {
+    toast.error('加载门户列表失败: ' + (e?.message ?? ''))
+  }
+}
 const pages = ref<PortalPage[]>([])
 const showEditor = ref(false)
 const queryClient = useQueryClient()
@@ -93,4 +111,7 @@ async function deletePage(id: string): void {
 .icon-btn.danger:hover { border-color: var(--color-error); }
 .empty-state { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); gap: 12px; }
 .empty-icon { font-size: 48px; opacity: 0.4; }
+.hdr-actions{display:flex;gap:8px;align-items:center}
+.new-page-btn.ghost{background:transparent;border:1px solid var(--border-subtle);color:var(--text-secondary)}
+.portal-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>
