@@ -74,8 +74,8 @@ const execResult = ref<Record<string, unknown>[]>([])
 async function doSearch() {
   loading.value = true
   try {
-    // 后端 queryview/search 仅注册 POST。
-    const r = await api.post('/api/queryview/search', { keyword: keyword.value })
+    // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
+    const r = await api.post('/api/queryview/search', { key: keyword.value })
     views.value = r.data ?? []
   } catch {
     views.value = []
