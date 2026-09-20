@@ -2227,7 +2227,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/TemplateApp.vue",
-    "line": 119,
+    "line": 131,
     "method": "POST",
     "raw": "/api/templateform/save/${editingId.value}",
     "path": "/api/templateform/save/{}",
@@ -2240,7 +2240,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/TemplateApp.vue",
-    "line": 134,
+    "line": 146,
     "method": "POST",
     "raw": "/api/templateform/delete/${id}",
     "path": "/api/templateform/delete/{}",
@@ -6483,7 +6483,20 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/TemplateApp.vue",
-    "line": 81,
+    "line": 68,
+    "method": "GET",
+    "raw": "/api/templateform/list/category",
+    "path": "/api/templateform/list/category",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/templateform/list/category",
+    "hit_crate": "cms_assemble_control",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/TemplateApp.vue",
+    "line": 93,
     "method": "GET",
     "raw": "/api/templateform/list",
     "path": "/api/templateform/list",
@@ -6496,7 +6509,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/TemplateApp.vue",
-    "line": 120,
+    "line": 132,
     "method": "POST",
     "raw": "/api/templateform/create",
     "path": "/api/templateform/create",
