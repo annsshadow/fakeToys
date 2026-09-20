@@ -18,6 +18,7 @@
         <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
         <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
         <button class="btn-primary" @click="loadAppExtra">受控栏目/带流程/视图数据</button>
+        <button class="btn-primary" @click="loadAppExtra2">类型管理/含文档类型/输出</button>
       </div>
       <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <div class="list-panel">
@@ -90,6 +91,20 @@ async function viewDetail(item: any) {
 }
 
 const appViewText = ref('')
+async function loadAppExtra2() {
+  try {
+    // GET appinfo/list/appType/manager + list/has/document/appType + output/list
+    const [mgr, hasDocType, out] = await Promise.all([
+      api.get('/api/appinfo/list/appType/manager'),
+      api.get('/api/appinfo/list/has/document/appType'),
+      api.get('/api/output/list'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `类型管理 ${n(mgr)} / 含文档类型 ${n(hasDocType)} / 输出 ${n(out)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAppExtra() {
   try {
     // GET cms_assemble_control/list/control/sections + appinfo/list/user/publish/with/process + list/user/view/data

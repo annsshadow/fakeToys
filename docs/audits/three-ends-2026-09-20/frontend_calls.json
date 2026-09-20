@@ -194,7 +194,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 72,
+    "line": 73,
     "method": "GET",
     "raw": "/api/appinfo/list/all",
     "path": "/api/appinfo/list/all",
@@ -204,7 +204,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 85,
+    "line": 86,
     "method": "GET",
     "raw": "/api/appinfo/${item.id}",
     "path": "/api/appinfo/{}",
@@ -214,7 +214,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 97,
+    "line": 98,
+    "method": "GET",
+    "raw": "/api/appinfo/list/appType/manager",
+    "path": "/api/appinfo/list/appType/manager",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 99,
+    "method": "GET",
+    "raw": "/api/appinfo/list/has/document/appType",
+    "path": "/api/appinfo/list/has/document/appType",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 100,
+    "method": "GET",
+    "raw": "/api/output/list",
+    "path": "/api/output/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 112,
     "method": "GET",
     "raw": "/api/cms_assemble_control/list/control/sections",
     "path": "/api/cms_assemble_control/list/control/sections",
@@ -224,7 +254,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 98,
+    "line": 113,
     "method": "GET",
     "raw": "/api/appinfo/list/user/publish/with/process",
     "path": "/api/appinfo/list/user/publish/with/process",
@@ -234,7 +264,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 99,
+    "line": 114,
     "method": "GET",
     "raw": "/api/appinfo/list/user/view/data",
     "path": "/api/appinfo/list/user/view/data",
@@ -244,7 +274,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 111,
+    "line": 126,
     "method": "GET",
     "raw": "/api/appinfo/list/user/publish",
     "path": "/api/appinfo/list/user/publish",
@@ -254,7 +284,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 112,
+    "line": 127,
     "method": "GET",
     "raw": "/api/appinfo/list/user/view/all",
     "path": "/api/appinfo/list/user/view/all",
@@ -264,7 +294,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 113,
+    "line": 128,
     "method": "GET",
     "raw": "/api/appinfo/list/has/document",
     "path": "/api/appinfo/list/has/document",
@@ -274,7 +304,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 125,
+    "line": 140,
     "method": "GET",
     "raw": "/api/appinfo/list/manage",
     "path": "/api/appinfo/list/manage",
@@ -284,7 +314,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 126,
+    "line": 141,
     "method": "GET",
     "raw": "/api/appinfo/list/user/view",
     "path": "/api/appinfo/list/user/view",
@@ -294,7 +324,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 127,
+    "line": 142,
     "method": "GET",
     "raw": "/api/appinfo/list/appType",
     "path": "/api/appinfo/list/appType",
@@ -304,7 +334,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 141,
+    "line": 156,
     "method": "POST",
     "raw": "/api/appinfo",
     "path": "/api/appinfo",
@@ -314,7 +344,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 150,
+    "line": 165,
     "method": "DELETE",
     "raw": "/api/appinfo/{}",
     "path": "/api/appinfo/{}",
@@ -324,7 +354,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 161,
+    "line": 176,
     "method": "GET",
     "raw": "/api/permission/appInfo/${id}/managers",
     "path": "/api/permission/appInfo/{}/managers",
@@ -334,7 +364,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 162,
+    "line": 177,
     "method": "GET",
     "raw": "/api/permission/appInfo/${id}/publishers",
     "path": "/api/permission/appInfo/{}/publishers",
@@ -344,7 +374,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AppInfoApp.vue",
-    "line": 163,
+    "line": 178,
     "method": "GET",
     "raw": "/api/permission/appInfo/${id}/viewers",
     "path": "/api/permission/appInfo/{}/viewers",
