@@ -12,6 +12,7 @@
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
         <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
         <button class="btn-refresh" @click="loadCounts">📊 计数</button>
+        <button class="btn-refresh" @click="loadTouch">⏰ 超期触发</button>
       </div>
       <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
@@ -60,6 +61,20 @@ interface Item {
 const listEp = '/api/processplatform/service/processing/task/list'
 const workItems = ref<Array<{ id?: string; title?: string }>>([])
 const countsText = ref('')
+async function loadTouch() {
+  try {
+    // GET surface touch/expire + passexpired + touchdetained —— 超期/超期通过/催办触发
+    const [exp, passExp, detained] = await Promise.all([
+      api.get('/api/processplatform/assemble/surface/touch/expire'),
+      api.get('/api/processplatform/assemble/surface/touch/passexpired'),
+      api.get('/api/processplatform/assemble/surface/touch/touchdetained'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : ((r as any)?.data ? 1 : 0))
+    countsText.value = `超期 ${cnt(exp)} / 超期通过 ${cnt(passExp)} / 催办 ${cnt(detained)}`
+  } catch (e: any) {
+    toast.error('触发失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadCounts() {
   try {
     // GET surface task/read/workcompleted list/count/application —— 待办/待阅/已办按应用计数
