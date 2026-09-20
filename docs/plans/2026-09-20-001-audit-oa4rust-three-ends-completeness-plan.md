@@ -3,7 +3,13 @@ title: "审计与落地规划：oa4rust 三端（服务端 / 桌面端 / 移动�
 type: audit-and-plan
 status: active
 date: 2026-09-20
-rev: 5  # rev5（2026-09-20 全量实施完成）：三端 API 调用闭合率 100%（桌面 336/336、移动 29/29、
+rev: 6  # rev6（2026-09-20 阶段 E 完成）：防回归门禁落地——compare.py / schema_audit.py 新增 --gate
+       # （A 必须为 0；B/C/D/E 不得高于 schema_baseline.json，只许降不许升），新增 CI workflow
+       # .github/workflows/three-ends-contract.yml（extract→compare --gate→schema_audit --gate，
+       # 产物上传 artifact）；E6 守卫接入 oa4rust-ci.yml 的 quality job。
+       # **门禁可失败已验证**：人为压低基线 → EXIT=1，恢复 → EXIT=0。
+       # 两个 workflow 的 YAML 已用 pyyaml 校验；action SHA 与仓库既有钉法逐一对齐。
+       # rev5（2026-09-20 全量实施完成）：三端 API 调用闭合率 100%（桌面 336/336、移动 29/29、
        # 共享 sdk 5/5、共享 ui 3/3），shadow/405/404 全 0。补齐遗留 7 条后端路由
        # （attendance rule DELETE、jpush device DELETE、portal page DELETE、pc dict data POST、
        # console config update/delete、unit check GET）；新增阶段 E6 转义引号守卫测试。
@@ -735,7 +741,7 @@ packages/apis/src/index.ts:216    ['"conversationId"']: data.conversationId
 | **B** 方法不符 | ✅ 已完成 | 陈皮（AI） | **405 24 → 0** | 前端改方法 13 处 + 后端补方法/路由 4 处 |
 | **C** 后端缺失 | ✅ 已完成 | 陈皮（AI） | **404 11 → 0** | BBS 7 处经复核为**误报**（提取器 `fmt` 前缀缺陷，已回滚误改）；后端补 3 处路由 |
 | **D** 字段对齐 | ✅ 复核后免除 | 陈皮（AI） | 字段存疑 5 → **0（非真缺陷）** | 均为 fallback 链次级声明（§5.2 已修正过度结论） |
-| **E** 防回归门禁 | 🟨 E6 已完成 | 陈皮（AI） | E6 ✅；E1–E5 未做 | **E6 转义引号守卫**：`oa4rust/tests/quoted_key_guard.rs`，扫描全仓源码禁止 `"\"key\""`（白名单 `dialect.rs` 的 SQL 引号），已跑通 1 passed |
+| **E** 防回归门禁 | ✅ 已完成（E1–E6） | 陈皮（AI） | 门禁已落地并验证可失败 | **E1/E4/E5**：`compare.py --gate`（shadow/405/404 必须全 0）+ `schema_audit.py --gate`（A 必须为 0，B/C/D/E 不得高于 `schema_baseline.json`）→ 新增 CI workflow `.github/workflows/three-ends-contract.yml`；**E2**：字段/契约侧以基线"不许新增"兜住（单端点级字段断言列为后续增强）；**E3**：CI 顺序 = extract_routes → extract_calls → compare --gate → schema_audit --gate，产物上传 artifact；**E6**：`oa4rust/tests/quoted_key_guard.rs` 已接入 `oa4rust-ci.yml` 的 `quality` job。**门禁可失败已验证**：人为压低基线 → EXIT=1；恢复 → EXIT=0 |
 | **F** 契约修复 + 运行时校验 | 🟨 部分 | 陈皮（AI） | B 24 / C 13 / D 22 待收敛（**含已知误报**） | 阶段 0 已覆盖 A 类全部与部分 B 类；剩余为契约语义项，见下 |
 | **G** 移动端能力扩展 | 🟨 部分 | 陈皮（AI） | 业务域 6 → ≥12 未达成 | 移动端 IM 已按会话过滤；扩面未做 |
 | **H** 一致性治理 | ⬜ 未开始 | 陈皮（AI） | G1–G5 未做 | — |

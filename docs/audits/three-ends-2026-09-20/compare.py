@@ -8,9 +8,11 @@
   405      路径存在但方法未注册
   404      无任何路径匹配
 """
+import argparse
 import json
 import os
 import re
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KEYWORDS = {
@@ -112,6 +114,14 @@ def classify(call, backend):
 
 
 def main():
+    ap = argparse.ArgumentParser(description="三端 API 对账（--gate 模式可用于 CI 门禁）")
+    ap.add_argument(
+        "--gate",
+        action="store_true",
+        help="门禁模式：shadow / 405 / 404 任一 > 0 即退出码 1（E1/E4/E5）",
+    )
+    args = ap.parse_args()
+
     backend = json.load(open(os.path.join(HERE, "backend_routes.json"), encoding="utf-8"))
     fe = json.load(open(os.path.join(HERE, "frontend_calls.json"), encoding="utf-8"))["calls"]
 
@@ -126,15 +136,25 @@ def main():
     with open(os.path.join(HERE, "api_reconcile.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
 
+    bad_total = 0
     for app, b in report.items():
         tot = sum(len(v) for v in b.values())
         print(f"\n=== {app} ({tot} calls) ===")
         for k in ("exact", "param-ok", "suspicious-shadow", "405", "404"):
             print(f"  {k:20s} {len(b[k])}")
         for k in ("suspicious-shadow", "405", "404"):
+            bad_total += len(b[k])
             for r in b[k]:
                 print(f"    [{k}] {r['method']} {r['path']}  <- {r['file']}:{r['line']}  hit={r['hit_crate']}:{r['hit']} extra={r['extra']}")
 
+    if args.gate:
+        print(f"\n[gate] shadow/405/404 合计 = {bad_total}")
+        if bad_total > 0:
+            print("[gate] FAIL —— 三端存在未闭合的 API 调用（见上方明细）")
+            return 1
+        print("[gate] PASS —— 三端 API 调用全部闭合")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
