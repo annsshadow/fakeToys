@@ -4,6 +4,7 @@
       <h1>文件管理</h1>
       <div class="header-actions">
         <button class="action-btn primary" @click="handleUpload">📤 上传</button>
+        <button class="action-btn" @click="loadTopAttachments">📎 顶层附件</button>
         <button class="action-btn" @click="toggleView">{{ viewType === 'grid' ? '☰ 列表' : '⊞ 网格' }}</button>
       </div>
     </div>
@@ -82,7 +83,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface FileItem {
   id: string
@@ -104,6 +105,16 @@ const uploadProgress = ref(0)
 const queryClient = useQueryClient()
 
 // 加载文件列表
+async function loadTopAttachments(): Promise<void> {
+  try {
+    // GET /api/file/attachment/list/top —— 顶层附件列表
+    const resp: any = await api.get('/api/file/attachment/list/top')
+    const n = Array.isArray(resp?.data) ? resp.data.length : 0
+    toast.success('顶层附件：' + n + ' 个')
+  } catch (e: any) {
+    toast.error('加载顶层附件失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadFiles(folderId?: string): Promise<void> {
   loading.value = true
   try {
