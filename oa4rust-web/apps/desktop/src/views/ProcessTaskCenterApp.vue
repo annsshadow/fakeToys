@@ -11,7 +11,9 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
         <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
+        <button class="btn-refresh" @click="loadCounts">📊 计数</button>
       </div>
+      <div v-if="countsText" class="wk-chips"><span class="wk-chip">{{ countsText }}</span></div>
       <div v-if="workItems.length" class="wk-chips">
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
       </div>
@@ -57,6 +59,21 @@ interface Item {
 
 const listEp = '/api/processplatform/service/processing/task/list'
 const workItems = ref<Array<{ id?: string; title?: string }>>([])
+const countsText = ref('')
+async function loadCounts() {
+  try {
+    // GET surface task/read/workcompleted list/count/application —— 待办/待阅/已办按应用计数
+    const [task, read, done] = await Promise.all([
+      api.get('/api/processplatform/assemble/surface/task/list/count/application'),
+      api.get('/api/processplatform/assemble/surface/read/list/count/application'),
+      api.get('/api/processplatform/assemble/surface/workcompleted/list/count/application'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    countsText.value = `待办应用 ${n(task)} / 待阅应用 ${n(read)} / 已办应用 ${n(done)}`
+  } catch (e: any) {
+    toast.error('加载计数失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadWorkList() {
   try {
     // GET processplatform/service/processing/work/list —— 工作实例列表（Query 可选）
