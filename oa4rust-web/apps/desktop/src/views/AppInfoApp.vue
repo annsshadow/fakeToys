@@ -17,6 +17,7 @@
         <button class="btn-primary" @click="createApp">+ 新建应用</button>
         <button class="btn-primary" @click="loadAppViews">管理/视图/类型</button>
         <button class="btn-primary" @click="loadAppPublish">发布/全部视图/含文档</button>
+        <button class="btn-primary" @click="loadAppExtra">受控栏目/带流程/视图数据</button>
       </div>
       <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <div class="list-panel">
@@ -89,6 +90,20 @@ async function viewDetail(item: any) {
 }
 
 const appViewText = ref('')
+async function loadAppExtra() {
+  try {
+    // GET cms_assemble_control/list/control/sections + appinfo/list/user/publish/with/process + list/user/view/data
+    const [sections, pubProc, viewData] = await Promise.all([
+      api.get('/api/cms_assemble_control/list/control/sections'),
+      api.get('/api/appinfo/list/user/publish/with/process'),
+      api.get('/api/appinfo/list/user/view/data'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appViewText.value = `受控栏目 ${n(sections)} / 带流程可发布 ${n(pubProc)} / 视图数据 ${n(viewData)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAppPublish() {
   try {
     // GET appinfo/list/user/publish + list/user/view/all + list/has/document
