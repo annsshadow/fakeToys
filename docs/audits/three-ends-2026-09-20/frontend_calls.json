@@ -1,0 +1,3753 @@
+{
+ "calls": {
+  "desktop": [
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIAssistant.vue",
+    "line": 79,
+    "method": "GET",
+    "raw": "/api/ai/conversation/list",
+    "path": "/api/ai/conversation/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIAssistant.vue",
+    "line": 95,
+    "method": "POST",
+    "raw": "/api/ai_assemble_control/chat/write/completion/extra",
+    "path": "/api/ai_assemble_control/chat/write/completion/extra",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIAssistant.vue",
+    "line": 110,
+    "method": "POST",
+    "raw": "/api/ai_assemble_control/chat/completion/stream",
+    "path": "/api/ai_assemble_control/chat/completion/stream",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIAssistant.vue",
+    "line": 126,
+    "method": "POST",
+    "raw": "/api/ai_assemble_control/config/${m.enabled ? 'create' : 'delete'}/mcp",
+    "path": "/api/ai_assemble_control/config/{}/mcp",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIAssistant.vue",
+    "line": 129,
+    "method": "DELETE",
+    "raw": "/api/ai_assemble_control/config/delete/mcp/${id}",
+    "path": "/api/ai_assemble_control/config/delete/mcp/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIAssistant.vue",
+    "line": 137,
+    "method": "GET",
+    "raw": "/api/ai_assemble_control/config/list/mcp/paging/1/size/20",
+    "path": "/api/ai_assemble_control/config/list/mcp/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 115,
+    "method": "GET",
+    "raw": "/api/ai_assemble_control/chat/list/paging/1/size/20",
+    "path": "/api/ai_assemble_control/chat/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 126,
+    "method": "GET",
+    "raw": "/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50",
+    "path": "/api/ai_assemble_control/chat/list/completion/{}/paging/1/size/50",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 140,
+    "method": "POST",
+    "raw": "/api/ai_assemble_control/chat/completion",
+    "path": "/api/ai_assemble_control/chat/completion",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 152,
+    "method": "DELETE",
+    "raw": "/api/ai_assemble_control/chat/delete/${chat.id}",
+    "path": "/api/ai_assemble_control/chat/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 170,
+    "method": "POST",
+    "raw": "/api/ai_assemble_control/chat/completion",
+    "path": "/api/ai_assemble_control/chat/completion",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AnnApp.vue",
+    "line": 83,
+    "method": "GET",
+    "raw": "/api/ai/assemble/control/ann/list",
+    "path": "/api/ai/assemble/control/ann/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AnnApp.vue",
+    "line": 121,
+    "method": "PUT",
+    "raw": "/api/ai/assemble/control/ann/save/${editingId.value}",
+    "path": "/api/ai/assemble/control/ann/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AnnApp.vue",
+    "line": 122,
+    "method": "POST",
+    "raw": "/api/ai/assemble/control/ann/create",
+    "path": "/api/ai/assemble/control/ann/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AnnApp.vue",
+    "line": 136,
+    "method": "POST",
+    "raw": "/api/ai/assemble/control/ann/delete/${id}",
+    "path": "/api/ai/assemble/control/ann/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 64,
+    "method": "GET",
+    "raw": "/api/appinfo/filter",
+    "path": "/api/appinfo/filter",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 67,
+    "method": "GET",
+    "raw": "/api/appinfo/list",
+    "path": "/api/appinfo/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AppInfoApp.vue",
+    "line": 79,
+    "method": "GET",
+    "raw": "/api/appinfo/${item.id}",
+    "path": "/api/appinfo/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 97,
+    "method": "GET",
+    "raw": "/api/attendance/assemble/control/attendancedetail?month=${month.value}&page=${page.value}&size=20",
+    "path": "/api/attendance/assemble/control/attendancedetail",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 107,
+    "method": "GET",
+    "raw": "/api/attendance/appeal/list",
+    "path": "/api/attendance/appeal/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 135,
+    "method": "POST",
+    "raw": "/api/attendance/appeal/audit",
+    "path": "/api/attendance/appeal/audit",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 151,
+    "method": "POST",
+    "raw": "/api/attendance/assemble/control/v2/detail/statistic/export/filter",
+    "path": "/api/attendance/assemble/control/v2/detail/statistic/export/filter",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 179,
+    "method": "GET",
+    "raw": "/api/attendance/assemble/control/rule/list",
+    "path": "/api/attendance/assemble/control/rule/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 189,
+    "method": "POST",
+    "raw": "/api/attendance/assemble/control/rule/create",
+    "path": "/api/attendance/assemble/control/rule/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 198,
+    "method": "DELETE",
+    "raw": "/api/attendance/assemble/control/rule/",
+    "path": "/api/attendance/assemble/control/rule",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 212,
+    "method": "POST",
+    "raw": "/api/attendance/appeal/submit",
+    "path": "/api/attendance/appeal/submit",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 224,
+    "method": "GET",
+    "raw": "/api/attendance/appeal/list",
+    "path": "/api/attendance/appeal/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AttendanceApp.vue",
+    "line": 234,
+    "method": "GET",
+    "raw": "/api/attendance/assemble/control/statistics/list?month=",
+    "path": "/api/attendance/assemble/control/statistics/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BamApp.vue",
+    "line": 45,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/bam/state/summary",
+    "path": "/api/processplatform/assemble/bam/state/summary",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 265,
+    "method": "GET",
+    "raw": "/api/bbs/assemble/control/section/list",
+    "path": "/api/bbs/assemble/control/section/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 321,
+    "method": "POST",
+    "raw": "/api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}",
+    "path": "/api/bbs/assemble/control/section/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 324,
+    "method": "POST",
+    "raw": "/api/bbs/assemble/control/section/create",
+    "path": "/api/bbs/assemble/control/section/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 341,
+    "method": "POST",
+    "raw": "/api/bbs/assemble/control/section/delete/${sec.id}",
+    "path": "/api/bbs/assemble/control/section/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 371,
+    "method": "PUT",
+    "raw": "/api/bbs/assemble/control/subject/search/list/page/1/count/${pageSize}",
+    "path": "/api/bbs/assemble/control/subject/search/list/page/1/count/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 375,
+    "method": "GET",
+    "raw": "/api/bbs/subject/list/${selectedSection.value.id}",
+    "path": "/api/bbs/subject/list/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 377,
+    "method": "PUT",
+    "raw": "/api/bbs/assemble/control/subject/recommended/list/page/${page.value}/count/${pageSize}",
+    "path": "/api/bbs/assemble/control/subject/recommended/list/page/{}/count/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 382,
+    "method": "PUT",
+    "raw": "/api/bbs/assemble/control/subject/creamed/list/page/${page.value}/count/${pageSize}",
+    "path": "/api/bbs/assemble/control/subject/creamed/list/page/{}/count/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 388,
+    "method": "PUT",
+    "raw": "/api/bbs/assemble/control/user/reply/my/list/page/${page.value}/count/${pageSize}",
+    "path": "/api/bbs/assemble/control/user/reply/my/list/page/{}/count/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 405,
+    "method": "POST",
+    "raw": "/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/${page.value}/count/${pageSize}",
+    "path": "/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/{}/count/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 410,
+    "method": "PUT",
+    "raw": "/api/bbs/assemble/control/subject/index/list/page/${page.value}/count/${pageSize}",
+    "path": "/api/bbs/assemble/control/subject/index/list/page/{}/count/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 441,
+    "method": "PUT",
+    "raw": "/api/bbs/assemble/control/reply/filter/list/page/1/count/50",
+    "path": "/api/bbs/assemble/control/reply/filter/list/page/1/count/50",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 457,
+    "method": "POST",
+    "raw": "/api/bbs/subject/create",
+    "path": "/api/bbs/subject/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 497,
+    "method": "POST",
+    "raw": "/api/bbs/assemble/control/reply/create",
+    "path": "/api/bbs/assemble/control/reply/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/BBSForum.vue",
+    "line": 538,
+    "method": "GET",
+    "raw": "/api/bbs/subject/view/${targetId}",
+    "path": "/api/bbs/subject/view/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CalendarApp.vue",
+    "line": 94,
+    "method": "GET",
+    "raw": "/api/calendar_assemble_control/event/list/filter",
+    "path": "/api/calendar_assemble_control/event/list/filter",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CategoryApp.vue",
+    "line": 49,
+    "method": "GET",
+    "raw": "/api/categoryinfo/list",
+    "path": "/api/categoryinfo/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnApp.vue",
+    "line": 85,
+    "method": "GET",
+    "raw": "/api/cms/core/entity/column/list",
+    "path": "/api/cms/core/entity/column/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnApp.vue",
+    "line": 120,
+    "method": "PUT",
+    "raw": "/api/cms/core/entity/column/save/${editingId.value}",
+    "path": "/api/cms/core/entity/column/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnApp.vue",
+    "line": 121,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/column/create",
+    "path": "/api/cms/core/entity/column/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnApp.vue",
+    "line": 135,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/column/delete/${id}",
+    "path": "/api/cms/core/entity/column/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnManagerApp.vue",
+    "line": 81,
+    "method": "GET",
+    "raw": "/api/cms/core/entity/column_manager/list",
+    "path": "/api/cms/core/entity/column_manager/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnManagerApp.vue",
+    "line": 119,
+    "method": "PUT",
+    "raw": "/api/cms/core/entity/column_manager/save/${editingId.value}",
+    "path": "/api/cms/core/entity/column_manager/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnManagerApp.vue",
+    "line": 120,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/column_manager/create",
+    "path": "/api/cms/core/entity/column_manager/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsColumnManagerApp.vue",
+    "line": 134,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/column_manager/delete/${id}",
+    "path": "/api/cms/core/entity/column_manager/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsDictDesignerApp.vue",
+    "line": 78,
+    "method": "GET",
+    "raw": "/api/cms/assemble/control/dict/list",
+    "path": "/api/cms/assemble/control/dict/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsDictDesignerApp.vue",
+    "line": 117,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/dict/save/${editingId.value}",
+    "path": "/api/cms/assemble/control/dict/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsDictDesignerApp.vue",
+    "line": 118,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/dict/create",
+    "path": "/api/cms/assemble/control/dict/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsDictDesignerApp.vue",
+    "line": 132,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/dict/delete/${id}",
+    "path": "/api/cms/assemble/control/dict/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsFormDesignerApp.vue",
+    "line": 81,
+    "method": "GET",
+    "raw": "/api/cms/assemble/control/form/list",
+    "path": "/api/cms/assemble/control/form/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsFormDesignerApp.vue",
+    "line": 119,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/form/save/${editingId.value}",
+    "path": "/api/cms/assemble/control/form/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsFormDesignerApp.vue",
+    "line": 120,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/form/create",
+    "path": "/api/cms/assemble/control/form/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsFormDesignerApp.vue",
+    "line": 134,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/form/delete/${id}",
+    "path": "/api/cms/assemble/control/form/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 84,
+    "method": "GET",
+    "raw": "/api/cms/core/entity/index/list",
+    "path": "/api/cms/core/entity/index/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 122,
+    "method": "PUT",
+    "raw": "/api/cms/core/entity/index/save/${editingId.value}",
+    "path": "/api/cms/core/entity/index/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 123,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/index/create",
+    "path": "/api/cms/core/entity/index/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsIndexApp.vue",
+    "line": 137,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/index/delete/${id}",
+    "path": "/api/cms/core/entity/index/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsModuleApp.vue",
+    "line": 85,
+    "method": "GET",
+    "raw": "/api/cms/core/entity/module/list",
+    "path": "/api/cms/core/entity/module/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsModuleApp.vue",
+    "line": 123,
+    "method": "PUT",
+    "raw": "/api/cms/core/entity/module/save/${editingId.value}",
+    "path": "/api/cms/core/entity/module/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsModuleApp.vue",
+    "line": 124,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/module/create",
+    "path": "/api/cms/core/entity/module/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsModuleApp.vue",
+    "line": 138,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/module/delete/${id}",
+    "path": "/api/cms/core/entity/module/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsScriptDesignerApp.vue",
+    "line": 43,
+    "method": "POST",
+    "raw": "/api/script",
+    "path": "/api/script",
+    "via": "const:base",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsViewDesignerApp.vue",
+    "line": 81,
+    "method": "GET",
+    "raw": "/api/cms/assemble/control/view/list",
+    "path": "/api/cms/assemble/control/view/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsViewDesignerApp.vue",
+    "line": 119,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/view/save/${editingId.value}",
+    "path": "/api/cms/assemble/control/view/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsViewDesignerApp.vue",
+    "line": 120,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/view/create",
+    "path": "/api/cms/assemble/control/view/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsViewDesignerApp.vue",
+    "line": 134,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/view/delete/${id}",
+    "path": "/api/cms/assemble/control/view/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsXformApp.vue",
+    "line": 81,
+    "method": "GET",
+    "raw": "/api/cms/assemble/control/xform/list",
+    "path": "/api/cms/assemble/control/xform/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsXformApp.vue",
+    "line": 119,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/xform/save/${editingId.value}",
+    "path": "/api/cms/assemble/control/xform/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsXformApp.vue",
+    "line": 120,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/xform/create",
+    "path": "/api/cms/assemble/control/xform/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CmsXformApp.vue",
+    "line": 134,
+    "method": "POST",
+    "raw": "/api/cms/assemble/control/xform/delete/${id}",
+    "path": "/api/cms/assemble/control/xform/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CollectApp.vue",
+    "line": 86,
+    "method": "GET",
+    "raw": "/api/program_center/collect/list",
+    "path": "/api/program_center/collect/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CollectApp.vue",
+    "line": 129,
+    "method": "POST",
+    "raw": "/api/program_center/collect/save/${editingId.value}",
+    "path": "/api/program_center/collect/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CollectApp.vue",
+    "line": 130,
+    "method": "POST",
+    "raw": "/api/program_center/collect/create",
+    "path": "/api/program_center/collect/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CollectApp.vue",
+    "line": 144,
+    "method": "POST",
+    "raw": "/api/program_center/collect/delete/${id}",
+    "path": "/api/program_center/collect/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CommonApp.vue",
+    "line": 93,
+    "method": "GET",
+    "raw": "/api/general/assemble/control/list",
+    "path": "/api/general/assemble/control/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CommonApp.vue",
+    "line": 143,
+    "method": "POST",
+    "raw": "/api/general/assemble/control/save/${editingId.value}",
+    "path": "/api/general/assemble/control/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CommonApp.vue",
+    "line": 144,
+    "method": "POST",
+    "raw": "/api/general/assemble/control/create",
+    "path": "/api/general/assemble/control/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/CommonApp.vue",
+    "line": 158,
+    "method": "POST",
+    "raw": "/api/general/assemble/control/delete/${id}",
+    "path": "/api/general/assemble/control/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
+    "line": 237,
+    "method": "DELETE",
+    "raw": "/api/config/delete/",
+    "path": "/api/config/delete",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
+    "line": 246,
+    "method": "PUT",
+    "raw": "/api/config/update/",
+    "path": "/api/config/update",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ConfigDesignerApp.vue",
+    "line": 314,
+    "method": "POST",
+    "raw": "/api/config/create",
+    "path": "/api/config/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ControlPanelApp.vue",
+    "line": 61,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/work/count/currentperson",
+    "path": "/api/processplatform/assemble/surface/work/count/currentperson",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ControlPanelApp.vue",
+    "line": 62,
+    "method": "GET",
+    "raw": "/api/program_center/application/list",
+    "path": "/api/program_center/application/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Dashboard.vue",
+    "line": 125,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/work/count/currentperson",
+    "path": "/api/processplatform/assemble/surface/work/count/currentperson",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Dashboard.vue",
+    "line": 126,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/work/count/completedperson",
+    "path": "/api/processplatform/assemble/surface/work/count/completedperson",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Dashboard.vue",
+    "line": 131,
+    "method": "GET",
+    "raw": "/api/message/unread/count/im",
+    "path": "/api/message/unread/count/im",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Dashboard.vue",
+    "line": 175,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DeploymentApp.vue",
+    "line": 86,
+    "method": "GET",
+    "raw": "/api/server/deploy/list",
+    "path": "/api/server/deploy/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DeploymentApp.vue",
+    "line": 124,
+    "method": "POST",
+    "raw": "/api/server/deploy/save/${editingId.value}",
+    "path": "/api/server/deploy/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DeploymentApp.vue",
+    "line": 125,
+    "method": "POST",
+    "raw": "/api/server/deploy/create",
+    "path": "/api/server/deploy/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DeploymentApp.vue",
+    "line": 139,
+    "method": "POST",
+    "raw": "/api/server/deploy/delete/${id}",
+    "path": "/api/server/deploy/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 101,
+    "method": "GET",
+    "raw": "/api/document/list",
+    "path": "/api/document/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 114,
+    "method": "POST",
+    "raw": "/api/document/document",
+    "path": "/api/document/document",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/DocumentApp.vue",
+    "line": 128,
+    "method": "DELETE",
+    "raw": "/api/document/${item.id}",
+    "path": "/api/document/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FaceSetApp.vue",
+    "line": 87,
+    "method": "GET",
+    "raw": "/api/personal/face/list",
+    "path": "/api/personal/face/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FaceSetApp.vue",
+    "line": 131,
+    "method": "POST",
+    "raw": "/api/personal/face/save/${editingId.value}",
+    "path": "/api/personal/face/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FaceSetApp.vue",
+    "line": 132,
+    "method": "POST",
+    "raw": "/api/personal/face/create",
+    "path": "/api/personal/face/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FaceSetApp.vue",
+    "line": 146,
+    "method": "POST",
+    "raw": "/api/personal/face/delete/${id}",
+    "path": "/api/personal/face/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileInfoApp.vue",
+    "line": 75,
+    "method": "GET",
+    "raw": "/api/fileinfo/download/document/${f.id}",
+    "path": "/api/fileinfo/download/document/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileInfoApp.vue",
+    "line": 86,
+    "method": "GET",
+    "raw": "/api/fileinfo/list/all",
+    "path": "/api/fileinfo/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 110,
+    "method": "GET",
+    "raw": "/api/file/assemble/control/file/list/${folderId || ''}",
+    "path": "/api/file/assemble/control/file/list/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 198,
+    "method": "DELETE",
+    "raw": "/api/file/assemble/control/file/${id}",
+    "path": "/api/file/assemble/control/file/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FileManager.vue",
+    "line": 245,
+    "method": "UPLOAD",
+    "raw": "/api/file/assemble/control/file/upload",
+    "path": "/api/file/assemble/control/file/upload",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FindDesignerApp.vue",
+    "line": 52,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/find/list",
+    "path": "/api/query/assemble/designer/find/list",
+    "via": "const:ep",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FindDesignerApp.vue",
+    "line": 74,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/find/list",
+    "path": "/api/query/assemble/designer/find/list",
+    "via": "const:ep",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 255,
+    "method": "GET",
+    "raw": "/api/form/list",
+    "path": "/api/form/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 267,
+    "method": "GET",
+    "raw": "/api/form/v2/list",
+    "path": "/api/form/v2/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 277,
+    "method": "GET",
+    "raw": "/api/form/",
+    "path": "/api/form",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 311,
+    "method": "PUT",
+    "raw": "/api/form/update/",
+    "path": "/api/form/update",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 313,
+    "method": "POST",
+    "raw": "/api/form/create",
+    "path": "/api/form/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 325,
+    "method": "DELETE",
+    "raw": "/api/form/delete/",
+    "path": "/api/form/delete",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormApp.vue",
+    "line": 380,
+    "method": "POST",
+    "raw": "/api/form/create",
+    "path": "/api/form/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormDesigner.vue",
+    "line": 1030,
+    "method": "GET",
+    "raw": "/api/form/${f.id}",
+    "path": "/api/form/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormDesigner.vue",
+    "line": 1089,
+    "method": "PUT",
+    "raw": "/api/form/${currentForm.value.id}",
+    "path": "/api/form/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormDesigner.vue",
+    "line": 1091,
+    "method": "POST",
+    "raw": "/api/form",
+    "path": "/api/form",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormDesigner.vue",
+    "line": 1256,
+    "method": "POST",
+    "raw": "/api/form/submit",
+    "path": "/api/form/submit",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FtSearchApp.vue",
+    "line": 86,
+    "method": "GET",
+    "raw": "/api/ftsearch/list",
+    "path": "/api/ftsearch/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FtSearchApp.vue",
+    "line": 129,
+    "method": "POST",
+    "raw": "/api/ftsearch/save/${editingId.value}",
+    "path": "/api/ftsearch/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FtSearchApp.vue",
+    "line": 130,
+    "method": "POST",
+    "raw": "/api/ftsearch/create",
+    "path": "/api/ftsearch/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FtSearchApp.vue",
+    "line": 144,
+    "method": "POST",
+    "raw": "/api/ftsearch/delete/${id}",
+    "path": "/api/ftsearch/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HomepageApp.vue",
+    "line": 51,
+    "method": "GET",
+    "raw": "/api/portal/assemble/surface/homepage/list",
+    "path": "/api/portal/assemble/surface/homepage/list",
+    "via": "const:ep",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HomepageApp.vue",
+    "line": 73,
+    "method": "PUT",
+    "raw": "/api/portal/assemble/surface/homepage/list",
+    "path": "/api/portal/assemble/surface/homepage/list",
+    "via": "const:ep",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 55,
+    "method": "GET",
+    "raw": "/api/hotpic/core/entity/list",
+    "path": "/api/hotpic/core/entity/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/HotpicApp.vue",
+    "line": 67,
+    "method": "DELETE",
+    "raw": "/api/hotpic/core/entity/delete/${item.id}",
+    "path": "/api/hotpic/core/entity/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 250,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/im/conversation/list/my",
+    "path": "/api/message/assemble/communicate/im/conversation/list/my",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 283,
+    "method": "POST",
+    "raw": "/api/message/assemble/communicate/im/msg/list/1/size/50",
+    "path": "/api/message/assemble/communicate/im/msg/list/1/size/50",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 319,
+    "method": "POST",
+    "raw": "/api/message/assemble/communicate/im/msg",
+    "path": "/api/message/assemble/communicate/im/msg",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/IMChat.vue",
+    "line": 383,
+    "method": "POST",
+    "raw": "/api/message/assemble/communicate/mark_read/${convId}",
+    "path": "/api/message/assemble/communicate/mark_read/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 75,
+    "method": "GET",
+    "raw": "/api/jpush_assemble_control/device/list/jpush",
+    "path": "/api/jpush_assemble_control/device/list/jpush",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 87,
+    "method": "GET",
+    "raw": "/api/jpush/template/list",
+    "path": "/api/jpush/template/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/JPushApp.vue",
+    "line": 99,
+    "method": "DELETE",
+    "raw": "/api/jpush/core/entity/device/${d.id}",
+    "path": "/api/jpush/core/entity/device/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/LogViewerApp.vue",
+    "line": 62,
+    "method": "GET",
+    "raw": "/api/log/list",
+    "path": "/api/log/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 82,
+    "method": "GET",
+    "raw": "/api/meeting/assemble/control/building/list",
+    "path": "/api/meeting/assemble/control/building/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 91,
+    "method": "GET",
+    "raw": "/api/meeting/assemble/control/room/list?buildingId=${form.value.buildingId}",
+    "path": "/api/meeting/assemble/control/room/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 100,
+    "method": "GET",
+    "raw": "/api/meeting/assemble/control/meeting/list",
+    "path": "/api/meeting/assemble/control/meeting/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 123,
+    "method": "POST",
+    "raw": "/api/meeting/assemble/control/meeting/create",
+    "path": "/api/meeting/assemble/control/meeting/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 144,
+    "method": "PUT",
+    "raw": "/api/meeting/assemble/control/meeting/update",
+    "path": "/api/meeting/assemble/control/meeting/update",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 153,
+    "method": "POST",
+    "raw": "/api/meeting/assemble/control/meeting/cancel",
+    "path": "/api/meeting/assemble/control/meeting/cancel",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 161,
+    "method": "POST",
+    "raw": "/api/meeting/assemble/control/meeting/approve",
+    "path": "/api/meeting/assemble/control/meeting/approve",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 169,
+    "method": "POST",
+    "raw": "/api/meeting/assemble/control/meeting/join",
+    "path": "/api/meeting/assemble/control/meeting/join",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 178,
+    "method": "POST",
+    "raw": "/api/meeting/assemble/control/meeting/leave",
+    "path": "/api/meeting/assemble/control/meeting/leave",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MeetingApp.vue",
+    "line": 188,
+    "method": "GET",
+    "raw": "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
+    "path": "/api/meeting/assemble/control/meeting/list/apply/1/size/50",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 181,
+    "method": "GET",
+    "raw": "/api/mind/folder/tree/my",
+    "path": "/api/mind/folder/tree/my",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 204,
+    "method": "PUT",
+    "raw": "/api/mind/assemble/control/mind/filter/list/${encodeURIComponent(folderId)}/next/1",
+    "path": "/api/mind/assemble/control/mind/filter/list/{}/next/1",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 245,
+    "method": "GET",
+    "raw": "/api/mind/assemble/control/mind/${encodeURIComponent(item.id)}",
+    "path": "/api/mind/assemble/control/mind/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/MindApp.vue",
+    "line": 417,
+    "method": "POST",
+    "raw": "/api/mind/assemble/control/mind/save",
+    "path": "/api/mind/assemble/control/mind/save",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/NoteApp.vue",
+    "line": 82,
+    "method": "GET",
+    "raw": "/api/cms/core/entity/note/list",
+    "path": "/api/cms/core/entity/note/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/NoteApp.vue",
+    "line": 120,
+    "method": "PUT",
+    "raw": "/api/cms/core/entity/note/save/${editingId.value}",
+    "path": "/api/cms/core/entity/note/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/NoteApp.vue",
+    "line": 121,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/note/create",
+    "path": "/api/cms/core/entity/note/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/NoteApp.vue",
+    "line": 135,
+    "method": "POST",
+    "raw": "/api/cms/core/entity/note/delete/${id}",
+    "path": "/api/cms/core/entity/note/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 76,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/list",
+    "path": "/api/organization/assemble/control/group/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 86,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/",
+    "path": "/api/organization/assemble/control/group",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/OrgViewer.vue",
+    "line": 100,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/group/list/like",
+    "path": "/api/organization/assemble/control/group/list/like",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PdfViewerApp.vue",
+    "line": 46,
+    "method": "GET",
+    "raw": "/api/attachment/download/${fid}/stream",
+    "path": "/api/attachment/download/{}/stream",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 90,
+    "method": "GET",
+    "raw": "/api/person/signature/list",
+    "path": "/api/person/signature/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 99,
+    "method": "POST",
+    "raw": "/api/person/password",
+    "path": "/api/person/password",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 144,
+    "method": "UPLOAD",
+    "raw": "/api/person/icon/${user.value!.unique}",
+    "path": "/api/person/icon/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/Personal.vue",
+    "line": 154,
+    "method": "POST",
+    "raw": "/api/person/signature/save",
+    "path": "/api/person/signature/save",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 50,
+    "method": "GET",
+    "raw": "/api/portal/assemble/surface/page/list/portal/default",
+    "path": "/api/portal/assemble/surface/page/list/portal/default",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalApp.vue",
+    "line": 58,
+    "method": "DELETE",
+    "raw": "/api/portal/assemble/surface/page/${id}",
+    "path": "/api/portal/assemble/surface/page/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 141,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/list",
+    "path": "/api/portal/assemble/designer/list",
+    "via": "obj:designerPaths.portalList",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 152,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/get/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/get/{}",
+    "via": "obj-fn:designerPaths.portalGet",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 189,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/create",
+    "path": "/api/portal/assemble/designer/create",
+    "via": "obj:designerPaths.portalCreate",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDesigner.vue",
+    "line": 202,
+    "method": "PUT",
+    "raw": "/api/portal/assemble/designer/save/${encodeURIComponent(id)}",
+    "path": "/api/portal/assemble/designer/save/{}",
+    "via": "obj-fn:designerPaths.portalSave",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDictDesignerApp.vue",
+    "line": 79,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/dict/list",
+    "path": "/api/portal/assemble/designer/dict/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDictDesignerApp.vue",
+    "line": 117,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/dict/save/${editingId.value}",
+    "path": "/api/portal/assemble/designer/dict/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDictDesignerApp.vue",
+    "line": 118,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/dict/create",
+    "path": "/api/portal/assemble/designer/dict/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalDictDesignerApp.vue",
+    "line": 132,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/dict/delete/${id}",
+    "path": "/api/portal/assemble/designer/dict/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalPageDesignerApp.vue",
+    "line": 85,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/page/list",
+    "path": "/api/portal/assemble/designer/page/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalPageDesignerApp.vue",
+    "line": 147,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/page/save/${editingId.value}",
+    "path": "/api/portal/assemble/designer/page/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalPageDesignerApp.vue",
+    "line": 148,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/page/create",
+    "path": "/api/portal/assemble/designer/page/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalPageDesignerApp.vue",
+    "line": 166,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/page/delete/${id}",
+    "path": "/api/portal/assemble/designer/page/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+    "line": 83,
+    "method": "GET",
+    "raw": "/api/portal/assemble/designer/widget/list",
+    "path": "/api/portal/assemble/designer/widget/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+    "line": 122,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/widget/save/${editingId.value}",
+    "path": "/api/portal/assemble/designer/widget/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+    "line": 123,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/widget/create",
+    "path": "/api/portal/assemble/designer/widget/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/PortalWidgetDesignerApp.vue",
+    "line": 137,
+    "method": "POST",
+    "raw": "/api/portal/assemble/designer/widget/delete/${id}",
+    "path": "/api/portal/assemble/designer/widget/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessApplicationApp.vue",
+    "line": 92,
+    "method": "GET",
+    "raw": "/api/program_center/application/list",
+    "path": "/api/program_center/application/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessApplicationApp.vue",
+    "line": 143,
+    "method": "POST",
+    "raw": "/api/program_center/application/save/${editingId.value}",
+    "path": "/api/program_center/application/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessApplicationApp.vue",
+    "line": 145,
+    "method": "POST",
+    "raw": "/api/program_center/application/create",
+    "path": "/api/program_center/application/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessApplicationApp.vue",
+    "line": 159,
+    "method": "POST",
+    "raw": "/api/program_center/application/delete/${id}",
+    "path": "/api/program_center/application/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5736,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/get/${p.id}",
+    "path": "/api/processplatform/assemble/designer/get/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5797,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/create",
+    "path": "/api/processplatform/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5804,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/save/${id}",
+    "path": "/api/processplatform/assemble/designer/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5816,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/save/${currentProcess.value.id}",
+    "path": "/api/processplatform/assemble/designer/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 5828,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/list/all?page=1&size=100",
+    "path": "/api/processplatform/assemble/designer/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDesigner.vue",
+    "line": 11860,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/get/${selectedProcess.value.id}",
+    "path": "/api/processplatform/assemble/designer/get/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDictDesignerApp.vue",
+    "line": 78,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/dict/list",
+    "path": "/api/processplatform/assemble/designer/dict/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDictDesignerApp.vue",
+    "line": 117,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/dict/save/${editingId.value}",
+    "path": "/api/processplatform/assemble/designer/dict/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDictDesignerApp.vue",
+    "line": 118,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/dict/create",
+    "path": "/api/processplatform/assemble/designer/dict/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessDictDesignerApp.vue",
+    "line": 132,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/dict/delete/${id}",
+    "path": "/api/processplatform/assemble/designer/dict/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 78,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/form/list",
+    "path": "/api/processplatform/assemble/designer/form/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 117,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/form/save/${editingId.value}",
+    "path": "/api/processplatform/assemble/designer/form/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 118,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/form/create",
+    "path": "/api/processplatform/assemble/designer/form/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessFormDesignerApp.vue",
+    "line": 132,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/form/delete/${id}",
+    "path": "/api/processplatform/assemble/designer/form/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessManagerApp.vue",
+    "line": 61,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/process_manager/list",
+    "path": "/api/processplatform/assemble/surface/process_manager/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 68,
+    "method": "GET",
+    "raw": "/api/processplatform/service/processing/task/list",
+    "path": "/api/processplatform/service/processing/task/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 89,
+    "method": "POST",
+    "raw": "/api/processplatform/service/processing/task/processing/${id}",
+    "path": "/api/processplatform/service/processing/task/processing/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 98,
+    "method": "GET",
+    "raw": "/api/processplatform/service/processing/task/urge/${id}",
+    "path": "/api/processplatform/service/processing/task/urge/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessTaskCenterApp.vue",
+    "line": 105,
+    "method": "DELETE",
+    "raw": "/api/processplatform/service/processing/task/${id}",
+    "path": "/api/processplatform/service/processing/task/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 150,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "via": "expand:endpoints",
+    "ambiguous": true
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 150,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
+    "via": "expand:endpoints",
+    "ambiguous": true
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 150,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
+    "via": "expand:endpoints",
+    "ambiguous": true
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 151,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "via": "expand:endpoints",
+    "ambiguous": true
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 151,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/20",
+    "via": "expand:endpoints",
+    "ambiguous": true
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 151,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/work/list/my/paging/1/size/20",
+    "via": "expand:endpoints",
+    "ambiguous": true
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 181,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/${id}",
+    "path": "/api/processplatform/assemble/surface/form/v2/lookup/workorworkcompleted/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 182,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/data/work/${id}",
+    "path": "/api/processplatform/assemble/surface/data/work/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 192,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "path": "/api/processplatform/assemble/surface/task/list/my/paging/1/size/20",
+    "via": "obj:endpoints.pending",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 238,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/list/all",
+    "path": "/api/processplatform/assemble/designer/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 267,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/get/${encodeURIComponent(startProcessId.value)}",
+    "path": "/api/processplatform/assemble/designer/get/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 279,
+    "method": "GET",
+    "raw": "/api/form/${encodeURIComponent(formFlag)}",
+    "path": "/api/form/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 298,
+    "method": "POST",
+    "raw": "/api/processplatform/service/processing/work",
+    "path": "/api/processplatform/service/processing/work",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 305,
+    "method": "PUT",
+    "raw": "/api/processplatform/service/processing/data/work/${workId}",
+    "path": "/api/processplatform/service/processing/data/work/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 329,
+    "method": "PUT",
+    "raw": "/api/processplatform/service/processing/data/work/${id}",
+    "path": "/api/processplatform/service/processing/data/work/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 332,
+    "method": "POST",
+    "raw": "/api/task/${taskId}/complete",
+    "path": "/api/task/{}/complete",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessWork.vue",
+    "line": 334,
+    "method": "POST",
+    "raw": "/api/task/${taskId}/reject",
+    "path": "/api/task/{}/reject",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessXformApp.vue",
+    "line": 82,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/xform/list",
+    "path": "/api/processplatform/assemble/designer/xform/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessXformApp.vue",
+    "line": 121,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/xform/save/${editingId.value}",
+    "path": "/api/processplatform/assemble/designer/xform/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessXformApp.vue",
+    "line": 122,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/xform/create",
+    "path": "/api/processplatform/assemble/designer/xform/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProcessXformApp.vue",
+    "line": 136,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/designer/xform/delete/${id}",
+    "path": "/api/processplatform/assemble/designer/xform/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 258,
+    "method": "GET",
+    "raw": "/api/program_center/agent/list",
+    "path": "/api/program_center/agent/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 269,
+    "method": "GET",
+    "raw": "/api/program_center/application/list",
+    "path": "/api/program_center/application/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 280,
+    "method": "GET",
+    "raw": "/api/program_center/script/list",
+    "path": "/api/program_center/script/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 291,
+    "method": "GET",
+    "raw": "/api/program_center/dict/list",
+    "path": "/api/program_center/dict/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 303,
+    "method": "POST",
+    "raw": "/api/program_center/market/list/paging/1/size/20",
+    "path": "/api/program_center/market/list/paging/1/size/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 324,
+    "method": "POST",
+    "raw": "/api/program_center/agent/${a.flag || a.id}/${action}",
+    "path": "/api/program_center/agent/{}/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 333,
+    "method": "POST",
+    "raw": "/api/program_center/agent/create",
+    "path": "/api/program_center/agent/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 351,
+    "method": "DELETE",
+    "raw": "/api/program_center/agent/${id}",
+    "path": "/api/program_center/agent/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 358,
+    "method": "DELETE",
+    "raw": "/api/program_center/application/${id}",
+    "path": "/api/program_center/application/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 365,
+    "method": "DELETE",
+    "raw": "/api/program_center/script/${id}",
+    "path": "/api/program_center/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 372,
+    "method": "DELETE",
+    "raw": "/api/program_center/dict/${id}",
+    "path": "/api/program_center/dict/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 394,
+    "method": "POST",
+    "raw": "/api/program_center/dict",
+    "path": "/api/program_center/dict",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 422,
+    "method": "POST",
+    "raw": "/api/program_center/agent/save/${id}",
+    "path": "/api/program_center/agent/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 443,
+    "method": "GET",
+    "raw": "/api/program_center/dict/${encodeURIComponent(flag)}/data",
+    "path": "/api/program_center/dict/{}/data",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 479,
+    "method": "POST",
+    "raw": "/api/program_center/dict/${encodeURIComponent(dictDataFlag.value)}/data/data",
+    "path": "/api/program_center/dict/{}/data/data",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 497,
+    "method": "GET",
+    "raw": "/api/program_center/script/${encodeURIComponent(flag)}",
+    "path": "/api/program_center/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 518,
+    "method": "POST",
+    "raw": "/api/program_center/script/${encodeURIComponent(flag)}",
+    "path": "/api/program_center/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 537,
+    "method": "GET",
+    "raw": "/api/scriptversion/list/script/${encodeURIComponent(scriptId)}",
+    "path": "/api/scriptversion/list/script/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 552,
+    "method": "POST",
+    "raw": "/api/program_center/module/${id}/compare",
+    "path": "/api/program_center/module/{}/compare",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 563,
+    "method": "POST",
+    "raw": "/api/program_center/invoke/${flag}/execute",
+    "path": "/api/program_center/invoke/{}/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 575,
+    "method": "POST",
+    "raw": "/api/program_center/collect/add",
+    "path": "/api/program_center/collect/add",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 581,
+    "method": "GET",
+    "raw": "/api/program_center/collect/list",
+    "path": "/api/program_center/collect/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 596,
+    "method": "POST",
+    "raw": "/api/program_center/appstyle/image/${type}/${flag}/erase",
+    "path": "/api/program_center/appstyle/image/{}/{}/erase",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 607,
+    "method": "POST",
+    "raw": "/api/program_center/command/execute",
+    "path": "/api/program_center/command/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 623,
+    "method": "GET",
+    "raw": "/api/program_center/market/${flag}/download",
+    "path": "/api/program_center/market/{}/download",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ProgramCenterApp.vue",
+    "line": 632,
+    "method": "POST",
+    "raw": "/api/program_center/market/${flag}/cover/pic",
+    "path": "/api/program_center/market/{}/cover/pic",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 302,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/list/all",
+    "path": "/api/query/assemble/designer/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 339,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/get/${encodeURIComponent(selected.value.id)}",
+    "path": "/api/query/assemble/designer/get/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 361,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/save/${editingQuery.value.id}",
+    "path": "/api/query/assemble/designer/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 363,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 381,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/query",
+    "path": "/api/query/assemble/designer/query",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 396,
+    "method": "DELETE",
+    "raw": "/api/query/assemble/designer/delete/${q.id}",
+    "path": "/api/query/assemble/designer/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryDesigner.vue",
+    "line": 548,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryExplorerApp.vue",
+    "line": 55,
+    "method": "GET",
+    "raw": "/api/query/assemble/surface/explorer/list",
+    "path": "/api/query/assemble/surface/explorer/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryImporterDesignerApp.vue",
+    "line": 83,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/importer/list",
+    "path": "/api/query/assemble/designer/importer/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryImporterDesignerApp.vue",
+    "line": 121,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/importer/save/${editingId.value}",
+    "path": "/api/query/assemble/designer/importer/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryImporterDesignerApp.vue",
+    "line": 122,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/importer/create",
+    "path": "/api/query/assemble/designer/importer/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryImporterDesignerApp.vue",
+    "line": 136,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/importer/delete/${id}",
+    "path": "/api/query/assemble/designer/importer/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 76,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/list/all",
+    "path": "/api/query/assemble/designer/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 91,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/execute",
+    "path": "/api/query/assemble/designer/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 104,
+    "method": "DELETE",
+    "raw": "/api/query/assemble/designer/delete/${id}",
+    "path": "/api/query/assemble/designer/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 114,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 402,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/execute",
+    "path": "/api/query/assemble/designer/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 422,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/stat/do",
+    "path": "/api/query/assemble/designer/stat/do",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 437,
+    "method": "DELETE",
+    "raw": "/api/query/assemble/designer/delete/${id}",
+    "path": "/api/query/assemble/designer/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 450,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 510,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/execute",
+    "path": "/api/query/assemble/designer/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManagerDeep.vue",
+    "line": 637,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 78,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/list",
+    "path": "/api/query/assemble/designer/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 122,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/save",
+    "path": "/api/query/assemble/designer/save",
+    "via": "const:saveEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryQueryApp.vue",
+    "line": 136,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/delete",
+    "path": "/api/query/assemble/designer/delete",
+    "via": "const:deleteEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 81,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/stat/list",
+    "path": "/api/query/assemble/designer/stat/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 120,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/stat/save/${editingId.value}",
+    "path": "/api/query/assemble/designer/stat/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 121,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/stat/create",
+    "path": "/api/query/assemble/designer/stat/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatDesignerApp.vue",
+    "line": 136,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/stat/delete/${id}",
+    "path": "/api/query/assemble/designer/stat/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 919,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/list/all",
+    "path": "/api/query/assemble/designer/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 980,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/save/${currentStatement.value!.id}",
+    "path": "/api/query/assemble/designer/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 981,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 999,
+    "method": "DELETE",
+    "raw": "/api/query/assemble/designer/delete/${id}",
+    "path": "/api/query/assemble/designer/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 1015,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/execute",
+    "path": "/api/query/assemble/designer/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 1190,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/table/list/manage",
+    "path": "/api/query/assemble/designer/table/list/manage",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 1207,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/entity/entity/properties/${selectedTableForFields.value}/default/default",
+    "path": "/api/query/assemble/designer/entity/entity/properties/{}/default/default",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 1282,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/execute",
+    "path": "/api/query/assemble/designer/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 1927,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/create",
+    "path": "/api/query/assemble/designer/create",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryStatementDesigner.vue",
+    "line": 1960,
+    "method": "DELETE",
+    "raw": "/api/query/assemble/designer/delete/${id}",
+    "path": "/api/query/assemble/designer/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryTableDesignerApp.vue",
+    "line": 90,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/table/list/manage",
+    "path": "/api/query/assemble/designer/table/list/manage",
+    "via": "obj:designerPaths.tableList",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryTableDesignerApp.vue",
+    "line": 104,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/table/${encodeURIComponent(flag)}",
+    "path": "/api/query/assemble/designer/table/{}",
+    "via": "obj-fn:designerPaths.tableSave",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryTableDesignerApp.vue",
+    "line": 105,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/table",
+    "path": "/api/query/assemble/designer/table",
+    "via": "obj:designerPaths.tableCreate",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryTableDesignerApp.vue",
+    "line": 119,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/table/${encodeURIComponent(flag)}/execute",
+    "path": "/api/query/assemble/designer/table/{}/execute",
+    "via": "obj-fn:designerPaths.tableExecute",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 77,
+    "method": "GET",
+    "raw": "/api/queryview/search",
+    "path": "/api/queryview/search",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 89,
+    "method": "POST",
+    "raw": "/api/queryview/view/list/paging/1/20",
+    "path": "/api/queryview/view/list/paging/1/20",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 103,
+    "method": "POST",
+    "raw": "/api/queryview/execute/${v.flag || v.id}",
+    "path": "/api/queryview/execute/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewApp.vue",
+    "line": 114,
+    "method": "GET",
+    "raw": "/api/queryview/excel/${v.flag || v.id}",
+    "path": "/api/queryview/excel/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewDesignerApp.vue",
+    "line": 69,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/view/list/query/${encodeURIComponent(queryFlag)}",
+    "path": "/api/query/assemble/designer/view/list/query/{}",
+    "via": "obj-fn:designerPaths.viewList",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewDesignerApp.vue",
+    "line": 77,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/view/${encodeURIComponent(id)}",
+    "path": "/api/query/assemble/designer/view/{}",
+    "via": "obj-fn:designerPaths.viewGet",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewDesignerApp.vue",
+    "line": 100,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/view/${encodeURIComponent(id)}",
+    "path": "/api/query/assemble/designer/view/{}",
+    "via": "obj-fn:designerPaths.viewSave",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewDesignerApp.vue",
+    "line": 101,
+    "method": "POST",
+    "raw": "/api/query/assemble/designer/view",
+    "path": "/api/query/assemble/designer/view",
+    "via": "obj:designerPaths.viewCreate",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewDesignerApp.vue",
+    "line": 116,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/view/${encodeURIComponent(id)}/simulate",
+    "path": "/api/query/assemble/designer/view/{}/simulate",
+    "via": "obj-fn:designerPaths.viewSimulate",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryViewDesignerApp.vue",
+    "line": 129,
+    "method": "PUT",
+    "raw": "/api/query/assemble/designer/view/${encodeURIComponent(id)}/bundle",
+    "path": "/api/query/assemble/designer/view/{}/bundle",
+    "via": "obj-fn:designerPaths.viewBundle",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RecycleApp.vue",
+    "line": 64,
+    "method": "GET",
+    "raw": "/api/recycle/list",
+    "path": "/api/recycle/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RecycleApp.vue",
+    "line": 75,
+    "method": "POST",
+    "raw": "/api/recycle/resume/${item.id}",
+    "path": "/api/recycle/resume/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RecycleApp.vue",
+    "line": 85,
+    "method": "DELETE",
+    "raw": "/api/recycle/${item.id}",
+    "path": "/api/recycle/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RecycleApp.vue",
+    "line": 95,
+    "method": "POST",
+    "raw": "/api/recycle/empty",
+    "path": "/api/recycle/empty",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RoleManager.vue",
+    "line": 76,
+    "method": "GET",
+    "raw": "/api/role/list",
+    "path": "/api/role/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RoleManager.vue",
+    "line": 99,
+    "method": "PUT",
+    "raw": "/api/role/${form.value.flag}",
+    "path": "/api/role/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RoleManager.vue",
+    "line": 101,
+    "method": "POST",
+    "raw": "/api/role",
+    "path": "/api/role",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/RoleManager.vue",
+    "line": 117,
+    "method": "DELETE",
+    "raw": "/api/role/${r.flag || r.id}",
+    "path": "/api/role/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/SearchApp.vue",
+    "line": 36,
+    "method": "GET",
+    "raw": "/api/queryview/search",
+    "path": "/api/queryview/search",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 57,
+    "method": "GET",
+    "raw": "/api/server/license",
+    "path": "/api/server/license",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 72,
+    "method": "POST",
+    "raw": "/api/server/execute",
+    "path": "/api/server/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServerApp.vue",
+    "line": 84,
+    "method": "POST",
+    "raw": "/api/server/stop",
+    "path": "/api/server/stop",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+    "line": 90,
+    "method": "GET",
+    "raw": "/api/program_center/invoke/list",
+    "path": "/api/program_center/invoke/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+    "line": 134,
+    "method": "POST",
+    "raw": "/api/program_center/invoke/save/${editingId.value}",
+    "path": "/api/program_center/invoke/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+    "line": 135,
+    "method": "POST",
+    "raw": "/api/program_center/invoke/create",
+    "path": "/api/program_center/invoke/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+    "line": 149,
+    "method": "POST",
+    "raw": "/api/program_center/invoke/delete/${id}",
+    "path": "/api/program_center/invoke/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ServiceInvokeDesignerApp.vue",
+    "line": 162,
+    "method": "POST",
+    "raw": "/api/program_center/invoke/${encodeURIComponent(flag)}/execute",
+    "path": "/api/program_center/invoke/{}/execute",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/TemplateApp.vue",
+    "line": 81,
+    "method": "GET",
+    "raw": "/api/templateform/list",
+    "path": "/api/templateform/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/TemplateApp.vue",
+    "line": 119,
+    "method": "POST",
+    "raw": "/api/templateform/save/${editingId.value}",
+    "path": "/api/templateform/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/TemplateApp.vue",
+    "line": 120,
+    "method": "POST",
+    "raw": "/api/templateform/create",
+    "path": "/api/templateform/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/TemplateApp.vue",
+    "line": 134,
+    "method": "POST",
+    "raw": "/api/templateform/delete/${id}",
+    "path": "/api/templateform/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ThreeMemberApp.vue",
+    "line": 93,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/threemember/list",
+    "path": "/api/organization/assemble/control/threemember/list",
+    "via": "const:listEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ThreeMemberApp.vue",
+    "line": 146,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/threemember/save/${editingId.value}",
+    "path": "/api/organization/assemble/control/threemember/save/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ThreeMemberApp.vue",
+    "line": 147,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/threemember/create",
+    "path": "/api/organization/assemble/control/threemember/create",
+    "via": "const:createEp",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ThreeMemberApp.vue",
+    "line": 161,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/threemember/delete/${id}",
+    "path": "/api/organization/assemble/control/threemember/delete/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/UnitApp.vue",
+    "line": 54,
+    "method": "GET",
+    "raw": "/api/unit/list",
+    "path": "/api/unit/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/UnitApp.vue",
+    "line": 65,
+    "method": "GET",
+    "raw": "/api/unit/check/${u.flag || u.id}",
+    "path": "/api/unit/check/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 70,
+    "method": "GET",
+    "raw": "/api/view/list",
+    "path": "/api/view/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/ViewApp.vue",
+    "line": 85,
+    "method": "POST",
+    "raw": "/api/view/viewdata/${v.id}",
+    "path": "/api/view/viewdata/{}",
+    "via": "literal",
+    "ambiguous": false
+   }
+  ],
+  "mobile": [
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 30,
+    "method": "POST",
+    "raw": "/api/authentication/login",
+    "path": "/api/authentication/login",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 31,
+    "method": "POST",
+    "raw": "/api/authentication/logout",
+    "path": "/api/authentication/logout",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 32,
+    "method": "GET",
+    "raw": "/api/authentication/who",
+    "path": "/api/authentication/who",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 33,
+    "method": "POST",
+    "raw": "/api/authentication/refresh",
+    "path": "/api/authentication/refresh",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 34,
+    "method": "GET",
+    "raw": "/api/authentication/captcha",
+    "path": "/api/authentication/captcha",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 72,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/task/list/my/paging/${page}/size/${size}",
+    "path": "/api/processplatform/assemble/surface/task/list/my/paging/{}/size/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 76,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/${page}/size/${size}",
+    "path": "/api/processplatform/assemble/surface/taskcompleted/list/my/paging/{}/size/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 83,
+    "method": "POST",
+    "raw": "/api/processplatform/assemble/surface/work/list/my/paging/${page}/size/${size}",
+    "path": "/api/processplatform/assemble/surface/work/list/my/paging/{}/size/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 87,
+    "method": "POST",
+    "raw": "/api/task/${taskId}/complete",
+    "path": "/api/task/{}/complete",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 96,
+    "method": "POST",
+    "raw": "/api/task/${taskId}/reject",
+    "path": "/api/task/{}/reject",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 105,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/list/all",
+    "path": "/api/processplatform/assemble/designer/list/all",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 108,
+    "method": "GET",
+    "raw": "/api/processplatform/assemble/designer/get/${processId}",
+    "path": "/api/processplatform/assemble/designer/get/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 110,
+    "method": "GET",
+    "raw": "/api/form/${formFlag}",
+    "path": "/api/form/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 113,
+    "method": "POST",
+    "raw": "/api/processplatform/service/processing/work",
+    "path": "/api/processplatform/service/processing/work",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 116,
+    "method": "PUT",
+    "raw": "/api/processplatform/service/processing/data/work/${workId}",
+    "path": "/api/processplatform/service/processing/data/work/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 153,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/im/conversation/list/my",
+    "path": "/api/message/assemble/communicate/im/conversation/list/my",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 155,
+    "method": "GET",
+    "raw": "/api/message/assemble/communicate/im/msg/list/${page}/size/${size}",
+    "path": "/api/message/assemble/communicate/im/msg/list/{}/size/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 161,
+    "method": "POST",
+    "raw": "/api/message/assemble/communicate/im/msg",
+    "path": "/api/message/assemble/communicate/im/msg",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 169,
+    "method": "POST",
+    "raw": "/api/message/assemble/communicate/im/conversation/${conversationId}/read",
+    "path": "/api/message/assemble/communicate/im/conversation/{}/read",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 175,
+    "method": "POST",
+    "raw": "/api/message/assemble/communicate/im/conversation",
+    "path": "/api/message/assemble/communicate/im/conversation",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 199,
+    "method": "GET",
+    "raw": "/api/file/assemble/control/file/list/${folderId}",
+    "path": "/api/file/assemble/control/file/list/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 208,
+    "method": "UPLOAD",
+    "raw": "/api/attachment/upload/folder/${folderId}",
+    "path": "/api/attachment/upload/folder/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 213,
+    "method": "GET",
+    "raw": "/api/attachment/list/editor/${owner}",
+    "path": "/api/attachment/list/editor/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 236,
+    "method": "GET",
+    "raw": "/api/attendance/assemble/control/v2/mobile/check/pre",
+    "path": "/api/attendance/assemble/control/v2/mobile/check/pre",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 239,
+    "method": "POST",
+    "raw": "/api/attendance/assemble/control/v2/mobile/check",
+    "path": "/api/attendance/assemble/control/v2/mobile/check",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 261,
+    "method": "POST",
+    "raw": "/api/organization/assemble/control/person/list/like/mockputtopost",
+    "path": "/api/organization/assemble/control/person/list/like/mockputtopost",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 263,
+    "method": "GET",
+    "raw": "/api/organization/assemble/control/person/${flag}",
+    "path": "/api/organization/assemble/control/person/{}",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 282,
+    "method": "GET",
+    "raw": "/api/ai/assemble/control/ann/list",
+    "path": "/api/ai/assemble/control/ann/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "mobile",
+    "file": "apps/mobile/src/services/index.ts",
+    "line": 289,
+    "method": "GET",
+    "raw": "/api/general/dict/list",
+    "path": "/api/general/dict/list",
+    "via": "literal",
+    "ambiguous": false
+   }
+  ],
+  "shared-ui": [],
+  "shared-sdk": [
+   {
+    "app": "shared-sdk",
+    "file": "packages/sdk/src/router.ts",
+    "line": 61,
+    "method": "GET",
+    "raw": "/api/authentication/who",
+    "path": "/api/authentication/who",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "shared-sdk",
+    "file": "packages/sdk/src/session.ts",
+    "line": 42,
+    "method": "GET",
+    "raw": "/api/authentication/who",
+    "path": "/api/authentication/who",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "shared-sdk",
+    "file": "packages/sdk/src/session.ts",
+    "line": 69,
+    "method": "POST",
+    "raw": "/api/authentication/login",
+    "path": "/api/authentication/login",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "shared-sdk",
+    "file": "packages/sdk/src/session.ts",
+    "line": 81,
+    "method": "POST",
+    "raw": "/api/authentication/logout",
+    "path": "/api/authentication/logout",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "shared-sdk",
+    "file": "packages/sdk/src/session.ts",
+    "line": 100,
+    "method": "POST",
+    "raw": "/api/authentication/switchuser",
+    "path": "/api/authentication/switchuser",
+    "via": "literal",
+    "ambiguous": false
+   }
+  ]
+ },
+ "unresolved": {
+  "desktop": [
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/EmptyApp.vue",
+    "line": 57,
+    "method": "GET",
+    "reason": "unresolved-obj:props.apiPath",
+    "snippet": "api.get(props.apiPath)     const list = (r.data?.list ?? r.data ?? []) as Array<Record<string, unknown>>     i"
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/FormDesigner.vue",
+    "line": 1015,
+    "method": "GET",
+    "reason": "unresolved-var:path",
+    "snippet": "api.get(path)     forms.value = (r?.data?.data ?? r?.data ?? []).map((form: any) => ({       ...form,       fl"
+   }
+  ],
+  "mobile": [],
+  "shared-ui": [
+   {
+    "app": "shared-ui",
+    "file": "packages/ui/src/components/organization-selector.ts",
+    "line": 73,
+    "method": "PUT",
+    "reason": "unresolved-var:organizationSelectorSearchPath",
+    "snippet": "api.put<OrganizationSearchRecord[]>(organizationSelectorSearchPath(type), {     key: keyword.trim(),   })    r"
+   }
+  ],
+  "shared-sdk": []
+ }
+}

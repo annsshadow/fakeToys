@@ -1,0 +1,120 @@
+{
+ "handlers_indexed": 916,
+ "structs_indexed": 278,
+ "frontend_body_calls": 182,
+ "A": 5,
+ "B": 21,
+ "C": 15,
+ "D": 20,
+ "E_total": 351
+}
+
+--- A 请求体被完全忽略 ---
+  POST /api/message/assemble/communicate/im/msg/list/1/size/50  <- apps/desktop/src/views/IMChat.vue:283
+      前端发送: ['conversationId']   后端 handler: ['im_msg_list_page_size_size']（无 Json 参数）
+  POST /api/task/${taskId}/complete  <- apps/desktop/src/views/ProcessWork.vue:332
+      前端发送: ['data', 'opinion', 'action']   后端 handler: ['task_complete']（无 Json 参数）
+  POST /api/task/${taskId}/reject  <- apps/desktop/src/views/ProcessWork.vue:334
+      前端发送: ['data', 'opinion', 'action']   后端 handler: ['task_reject']（无 Json 参数）
+  POST /api/task/${taskId}/complete  <- apps/mobile/src/services/index.ts:87
+      前端发送: ['data', 'opinion', 'action']   后端 handler: ['task_complete']（无 Json 参数）
+  POST /api/task/${taskId}/reject  <- apps/mobile/src/services/index.ts:96
+      前端发送: ['data', 'opinion', 'action']   后端 handler: ['task_reject']（无 Json 参数）
+
+--- B 发送但后端不读 ---
+  POST /api/attendance/appeal/audit  <- apps/desktop/src/views/AttendanceApp.vue:135
+      未读键: ['status']   handler: ['audit_appeal']  读取: ['auditStatus', 'id']
+  POST /api/attendance/assemble/control/rule/create  <- apps/desktop/src/views/AttendanceApp.vue:189
+      未读键: ['name']   handler: ['create_control_rule']  读取: ['description', 'enabled', 'ruleName', 'ruleType']
+  POST /api/bbs/assemble/control/section/create  <- apps/desktop/src/views/BBSForum.vue:324
+      未读键: ['name']   handler: ['section_create']  读取: []
+  POST /api/message/assemble/communicate/im/msg  <- apps/desktop/src/views/IMChat.vue:319
+      未读键: ['"conversationId"', 'conversationId']   handler: ['im_msg']  读取: ['content', 'sender', 'type']
+  POST /api/meeting/assemble/control/meeting/create  <- apps/desktop/src/views/MeetingApp.vue:123
+      未读键: ['buildingId']   handler: ['create_meeting', 'u2_meeting_modify']  读取: ['content', 'creator', 'endTime', 'startTime', 'title']
+  PUT /api/meeting/assemble/control/meeting/update  <- apps/desktop/src/views/MeetingApp.vue:144
+      未读键: ['id']   handler: ['u2_meeting_put_save']  读取: ['content', 'endTime', 'startTime', 'title']
+  POST /api/meeting/assemble/control/meeting/cancel  <- apps/desktop/src/views/MeetingApp.vue:153
+      未读键: ['id']   handler: ['u2_meeting_modify']  读取: ['content', 'title']
+  POST /api/meeting/assemble/control/meeting/approve  <- apps/desktop/src/views/MeetingApp.vue:161
+      未读键: ['id']   handler: ['u2_meeting_modify']  读取: ['content', 'title']
+  POST /api/meeting/assemble/control/meeting/join  <- apps/desktop/src/views/MeetingApp.vue:169
+      未读键: ['id']   handler: ['u2_meeting_modify']  读取: ['content', 'title']
+  POST /api/meeting/assemble/control/meeting/leave  <- apps/desktop/src/views/MeetingApp.vue:178
+      未读键: ['id']   handler: ['u2_meeting_modify']  读取: ['content', 'title']
+  POST /api/portal/assemble/designer/page/save/${editingId.value}  <- apps/desktop/src/views/PortalPageDesignerApp.vue:147
+      未读键: ['content']   handler: ['save_page']  读取: []
+  POST /api/processplatform/service/processing/work  <- apps/desktop/src/views/ProcessWork.vue:298
+      未读键: ['title']   handler: ['work_create']  读取: []
+  PUT /api/query/assemble/designer/save/${editingQuery.value.id}  <- apps/desktop/src/views/QueryDesigner.vue:361
+      未读键: ['name', 'category', 'query']   handler: ['save_designer']  读取: []
+  POST /api/query/assemble/designer/create  <- apps/desktop/src/views/QueryDesigner.vue:363
+      未读键: ['name', 'category', 'query']   handler: ['create_designer']  读取: []
+  POST /api/query/assemble/designer/query  <- apps/desktop/src/views/QueryDesigner.vue:381
+      未读键: ['queryId']   handler: ['query_create_v2']  读取: []
+  POST /api/query/assemble/designer/execute  <- apps/desktop/src/views/QueryManager.vue:91
+      未读键: ['id', 'filter']   handler: ['designer_execute']  读取: ['sql']
+  POST /api/query/assemble/designer/execute  <- apps/desktop/src/views/QueryManagerDeep.vue:402
+      未读键: ['id']   handler: ['designer_execute']  读取: ['sql']
+  POST /api/query/assemble/designer/create  <- apps/desktop/src/views/QueryManagerDeep.vue:450
+      未读键: ['name', 'sql', 'category']   handler: ['create_designer']  读取: []
+  POST /api/query/assemble/designer/execute  <- apps/desktop/src/views/QueryStatementDesigner.vue:1015
+      未读键: ['id']   handler: ['designer_execute']  读取: ['sql']
+  POST /api/processplatform/service/processing/work  <- apps/mobile/src/services/index.ts:113
+      未读键: ['title']   handler: ['work_create']  读取: []
+  POST /api/message/assemble/communicate/im/msg  <- apps/mobile/src/services/index.ts:161
+      未读键: ['"conversationId"', 'conversationId']   handler: ['im_msg']  读取: ['content', 'sender', 'type']
+
+--- C 后端读但前端不发 ---
+  POST /api/attendance/appeal/audit  <- apps/desktop/src/views/AttendanceApp.vue:135
+      缺失: ['auditStatus']  缺失或组: []  前端发送: ['id', 'status']
+  POST /api/attendance/assemble/control/rule/create  <- apps/desktop/src/views/AttendanceApp.vue:189
+      缺失: ['description', 'enabled', 'ruleName', 'ruleType']  缺失或组: []  前端发送: ['name']
+  POST /api/attendance/appeal/submit  <- apps/desktop/src/views/AttendanceApp.vue:212
+      缺失: ['creator']  缺失或组: []  前端发送: ['personId', 'appealDate', 'reason']
+  POST /api/bbs/subject/create  <- apps/desktop/src/views/BBSForum.vue:457
+      缺失: ['content', 'sectionId', 'title']  缺失或组: []  前端发送: ['authorId']
+  POST /api/message/assemble/communicate/im/msg  <- apps/desktop/src/views/IMChat.vue:319
+      缺失: ['sender']  缺失或组: []  前端发送: ['"conversationId"', 'conversationId', 'content', 'type']
+  POST /api/meeting/assemble/control/meeting/create  <- apps/desktop/src/views/MeetingApp.vue:123
+      缺失: ['content', 'creator', 'endTime']  缺失或组: []  前端发送: ['title', 'buildingId', 'roomId', 'startTime']
+  PUT /api/meeting/assemble/control/meeting/update  <- apps/desktop/src/views/MeetingApp.vue:144
+      缺失: ['content', 'endTime', 'startTime']  缺失或组: []  前端发送: ['id', 'title']
+  POST /api/meeting/assemble/control/meeting/cancel  <- apps/desktop/src/views/MeetingApp.vue:153
+      缺失: ['content', 'title']  缺失或组: [['roomId', 'roomId']]  前端发送: ['id']
+  POST /api/meeting/assemble/control/meeting/approve  <- apps/desktop/src/views/MeetingApp.vue:161
+      缺失: ['content', 'title']  缺失或组: [['roomId', 'roomId']]  前端发送: ['id']
+  POST /api/meeting/assemble/control/meeting/join  <- apps/desktop/src/views/MeetingApp.vue:169
+      缺失: ['content', 'title']  缺失或组: [['roomId', 'roomId']]  前端发送: ['id']
+  POST /api/meeting/assemble/control/meeting/leave  <- apps/desktop/src/views/MeetingApp.vue:178
+      缺失: ['content', 'title']  缺失或组: [['roomId', 'roomId']]  前端发送: ['id']
+  POST /api/mind/assemble/control/mind/save  <- apps/desktop/src/views/MindApp.vue:417
+      缺失: ['creatorUnit', 'parentId']  缺失或组: []  前端发送: ['id', 'name', 'folderId', 'description', 'shared', 'content']
+  POST /api/person/signature/save  <- apps/desktop/src/views/Personal.vue:154
+      缺失: ['mimeType']  缺失或组: []  前端发送: ['signature']
+  POST /api/query/assemble/designer/query  <- apps/desktop/src/views/QueryDesigner.vue:381
+      缺失: []  缺失或组: [['name'], ['category'], ['data', 'query']]  前端发送: ['queryId']
+  POST /api/query/assemble/designer/execute  <- apps/desktop/src/views/QueryManager.vue:91
+      缺失: ['sql']  缺失或组: []  前端发送: ['id', 'filter']
+
+--- D 委派给泛型 helper，静态不可判定 ---
+  POST /api/ai_assemble_control/chat/completion/stream  <- apps/desktop/src/views/AIAssistant.vue:110  handler=['chat_completion_stream']
+  POST /api/ai_assemble_control/chat/completion  <- apps/desktop/src/views/AIChatApp.vue:140  handler=['chat_completion']
+  POST /api/ai_assemble_control/chat/completion  <- apps/desktop/src/views/AIChatApp.vue:170  handler=['chat_completion']
+  POST /api/attendance/assemble/control/v2/detail/statistic/export/filter  <- apps/desktop/src/views/AttendanceApp.vue:151  handler=['v2_detail_statistic_export_filter']
+  POST /api/bbs/assemble/control/section/save/${sectionModalTarget.value.id}  <- apps/desktop/src/views/BBSForum.vue:321  handler=['section_update']
+  POST /api/bbs/assemble/control/reply/create  <- apps/desktop/src/views/BBSForum.vue:497  handler=['create_reply']
+  POST /api/program_center/collect/save/${editingId.value}  <- apps/desktop/src/views/CollectApp.vue:129  handler=['collect_save']
+  POST /api/general/assemble/control/save/${editingId.value}  <- apps/desktop/src/views/CommonApp.vue:143  handler=['general_control_save']
+  POST /api/personal/face/save/${editingId.value}  <- apps/desktop/src/views/FaceSetApp.vue:131  handler=['face_save']
+  POST /api/ftsearch/save/${editingId.value}  <- apps/desktop/src/views/FtSearchApp.vue:129  handler=['ftsearch_save']
+  POST /api/program_center/application/save/${editingId.value}  <- apps/desktop/src/views/ProcessApplicationApp.vue:143  handler=['application_save']
+  POST /api/program_center/agent/save/${id}  <- apps/desktop/src/views/ProgramCenterApp.vue:422  handler=['agent_save']
+  POST /api/program_center/script/${encodeURIComponent(flag)}  <- apps/desktop/src/views/ProgramCenterApp.vue:518  handler=['script_save_flag']
+  PUT /api/role/${form.value.flag}  <- apps/desktop/src/views/RoleManager.vue:99  handler=['update']
+  POST /api/role  <- apps/desktop/src/views/RoleManager.vue:101  handler=['create']
+  POST /api/program_center/invoke/save/${editingId.value}  <- apps/desktop/src/views/ServiceInvokeDesignerApp.vue:134  handler=['invoke_save']
+  POST /api/organization/assemble/control/threemember/save/${editingId.value}  <- apps/desktop/src/views/ThreeMemberApp.vue:146  handler=['threemember_save']
+  POST /api/attendance/assemble/control/v2/mobile/check  <- apps/mobile/src/services/index.ts:239  handler=['v2_mobile_check']
+  POST /api/authentication/login  <- packages/sdk/src/session.ts:69  handler=['', 'login']
+  POST /api/authentication/switchuser  <- packages/sdk/src/session.ts:100  handler=['switch_user']
