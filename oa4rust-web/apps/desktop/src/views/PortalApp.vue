@@ -5,6 +5,7 @@
       <p class="subtitle">接入 /api/portal/* — 页面设计与发布</p>
       <span class="hdr-actions">
         <button class="new-page-btn ghost" @click="loadPortalList">门户列表</button>
+        <button class="new-page-btn ghost" @click="loadPortalSurface">表面/移动</button>
         <button class="new-page-btn" @click="showEditor = true">+ 新建页面</button>
       </span>
     </div>
@@ -45,6 +46,19 @@ interface PortalPage {
 }
 
 const portalListText = ref('')
+async function loadPortalSurface() {
+  try {
+    // GET portal/surface/list + portal/assemble/surface/portal/list/mobile —— 门户表面/移动门户
+    const [surface, mobile] = await Promise.all([
+      api.get('/api/portal/surface/list'),
+      api.get('/api/portal/assemble/surface/portal/list/mobile'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    portalListText.value = `表面门户 ${n(surface)} / 移动门户 ${n(mobile)}`
+  } catch (e: any) {
+    toast.error('加载门户表面失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadPortalList() {
   try {
     // GET /api/portal/list + /api/portalcategory/list —— 门户与门户分类列表
