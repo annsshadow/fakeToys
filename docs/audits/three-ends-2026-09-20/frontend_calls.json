@@ -4,7 +4,37 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 125,
+    "line": 129,
+    "method": "GET",
+    "raw": "/api/ai/model/list",
+    "path": "/api/ai/model/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 130,
+    "method": "GET",
+    "raw": "/api/ai/app/list",
+    "path": "/api/ai/app/list",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 131,
+    "method": "GET",
+    "raw": "/api/ai/config/list/enable/model",
+    "path": "/api/ai/config/list/enable/model",
+    "via": "literal",
+    "ambiguous": false
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/AIChatApp.vue",
+    "line": 142,
     "method": "GET",
     "raw": "/api/ai_assemble_control/chat/list/paging/1/size/20",
     "path": "/api/ai_assemble_control/chat/list/paging/1/size/20",
@@ -14,7 +44,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 136,
+    "line": 153,
     "method": "GET",
     "raw": "/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50",
     "path": "/api/ai_assemble_control/chat/list/completion/{}/paging/1/size/50",
@@ -24,7 +54,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 150,
+    "line": 167,
     "method": "POST",
     "raw": "/api/ai_assemble_control/chat/completion",
     "path": "/api/ai_assemble_control/chat/completion",
@@ -34,7 +64,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 162,
+    "line": 179,
     "method": "DELETE",
     "raw": "/api/ai_assemble_control/chat/delete/${chat.id}",
     "path": "/api/ai_assemble_control/chat/delete/{}",
@@ -44,7 +74,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 180,
+    "line": 197,
     "method": "POST",
     "raw": "/api/ai_assemble_control/chat/completion",
     "path": "/api/ai_assemble_control/chat/completion",
@@ -54,7 +84,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 220,
+    "line": 237,
     "method": "GET",
     "raw": "/api/ai_assemble_control/config/list/mcp/paging/1/size/50",
     "path": "/api/ai_assemble_control/config/list/mcp/paging/1/size/50",
@@ -64,7 +94,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 237,
+    "line": 254,
     "method": "POST",
     "raw": "/api/ai_assemble_control/config/update/mcp/${encodeURIComponent(m.id)}",
     "path": "/api/ai_assemble_control/config/update/mcp/{}",
@@ -74,7 +104,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 251,
+    "line": 268,
     "method": "DELETE",
     "raw": "/api/ai_assemble_control/config/delete/mcp/${encodeURIComponent(id)}",
     "path": "/api/ai_assemble_control/config/delete/mcp/{}",
@@ -84,7 +114,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/AIChatApp.vue",
-    "line": 266,
+    "line": 283,
     "method": "POST",
     "raw": "/api/ai_assemble_control/config/create/mcp",
     "path": "/api/ai_assemble_control/config/create/mcp",

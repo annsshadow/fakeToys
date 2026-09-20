@@ -3,6 +3,8 @@
     <div class="view-header glass-card">
       <h1>AI 助手</h1>
       <p class="subtitle">/api/ai_assemble_control/* — 智能对话与配置</p>
+      <button class="btn-ai-meta" @click="loadAiMeta">模型/应用</button>
+      <div v-if="aiMetaText" class="ai-meta-note">{{ aiMetaText }}</div>
     </div>
     <div class="split-layout">
       <!-- 左侧: 对话列表 -->
@@ -119,6 +121,21 @@ const inputText = ref('')
 const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
+const aiMetaText = ref('')
+async function loadAiMeta() {
+  try {
+    // GET ai/model/list + ai/app/list + ai/config/list/enable/model —— AI 模型/应用/可用模型
+    const [models, apps, enabled] = await Promise.all([
+      api.get('/api/ai/model/list'),
+      api.get('/api/ai/app/list'),
+      api.get('/api/ai/config/list/enable/model'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    aiMetaText.value = `模型 ${n(models)} / 应用 ${n(apps)} / 可用模型 ${n(enabled)}`
+  } catch (e: any) {
+    toast.error('加载 AI 元数据失败: ' + (e?.message ?? ''))
+  }
+}
 
 async function loadConversations() {
   try {
@@ -337,4 +354,6 @@ async function addMcp() {
 .config-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px }
 .btn-close-config { padding: 6px 16px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; font-size: 12px }
 @media (max-width: 768px) { .split-layout { grid-template-columns: 1fr } .sidebar { display: none } }
+.btn-ai-meta{padding:6px 14px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:13px}
+.ai-meta-note{margin-top:8px;padding:6px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary)}
 </style>
