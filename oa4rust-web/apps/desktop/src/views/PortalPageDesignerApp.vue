@@ -11,7 +11,9 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索页面 / 分类..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <button class="btn-refresh" @click="loadPortalMeta">模板页/门户概要</button>
       </div>
+      <div v-if="portalMetaText" class="pm-note">{{ portalMetaText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🗂️</div><p>暂无门户页面</p></div>
       <table v-else class="data-table">
@@ -48,7 +50,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -64,6 +66,20 @@ interface PageForm {
 }
 
 const listEp = '/api/portal/assemble/designer/page/list'
+const portalMetaText = ref('')
+async function loadPortalMeta() {
+  try {
+    // GET templatepage/list + portal/list/summary —— 模板页与门户概要
+    const [tpl, summary] = await Promise.all([
+      api.get('/api/portal/assemble/designer/templatepage/list'),
+      api.get('/api/portal/assemble/designer/portal/list/summary'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    portalMetaText.value = `模板页 ${n(tpl)} / 门户概要 ${n(summary)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 const createEp = '/api/portal/assemble/designer/page/create'
 const qk = ['PortalPageDesigner', 'list']
 
@@ -183,6 +199,7 @@ function loadData() {
 .btn-primary{padding:8px 16px;border-radius:var(--radius-md);border:none;background:var(--color-primary);color:white;cursor:pointer;font-weight:600}
 .content-panel{padding:16px}
 .toolbar{display:flex;gap:8px;margin-bottom:16px}
+.pm-note{margin-bottom:12px;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-secondary)}
 .search-input{flex:1;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);outline:none}
 .btn-refresh{padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer}
 .data-table{width:100%;border-collapse:collapse}
