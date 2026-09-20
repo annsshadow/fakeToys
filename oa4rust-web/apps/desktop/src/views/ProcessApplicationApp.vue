@@ -11,6 +11,10 @@
       <div class="toolbar">
         <input v-model="search" placeholder="搜索名称 / 应用 ID..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
+        <button class="btn-refresh" @click="loadCategories">📁 分类</button>
+      </div>
+      <div v-if="categories.length" class="cat-chips">
+        <span v-for="c in categories" :key="c.id || c.name" class="cat-chip">{{ c.name || c.id }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🧩</div><p>暂无应用</p></div>
@@ -52,7 +56,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -164,6 +168,18 @@ const delM = useMutation({
 async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该应用？')) delM.mutate(item.id)
 }
+const categories = ref<Array<{ id?: string; name?: string }>>([])
+async function loadCategories() {
+  try {
+    // GET processplatform/assemble/designer/applicationcategory/list —— 流程应用分类
+    const r: any = await api.get('/api/processplatform/assemble/designer/applicationcategory/list')
+    categories.value = (r.data ?? []) as Array<{ id?: string; name?: string }>
+    if (categories.value.length === 0) toast.success('暂无分类')
+  } catch (e: any) {
+    toast.error('加载分类失败: ' + (e?.message ?? ''))
+  }
+}
+
 function loadData() {
   qc.invalidateQueries({ queryKey: qk })
 }
@@ -209,4 +225,6 @@ function fmtTime(t?: string) {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.cat-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-subtle);font-size:12px;color:var(--text-primary)}
 </style>

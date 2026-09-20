@@ -14,6 +14,7 @@
       <div class="list-toolbar">
         <input v-model="keyword" placeholder="搜索应用..." class="search-input" @keyup.enter="doSearch" />
         <button class="btn-primary" @click="doSearch">搜索</button>
+        <button class="btn-primary" @click="createApp">+ 新建应用</button>
       </div>
       <div class="list-panel">
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
@@ -26,6 +27,8 @@
               <div class="im">{{ item.desc || item.content || item.description || '' }}</div>
               <div class="meta">ID: {{ item.id }}</div>
             </div>
+            <button class="btn-act2" @click.stop="showPerms(item)">权限</button>
+            <button class="btn-del" @click.stop="deleteApp(item)">删除</button>
           </div>
         </div>
       </div>
@@ -44,6 +47,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { confirmMsg, toast } from '../utils/toast'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -78,6 +82,43 @@ async function viewDetail(item: any) {
     detailItem.value = r.data ?? item
   } catch {
     detailItem.value = item
+  }
+}
+
+async function createApp() {
+  const alias = prompt('应用别名 (alias):')
+  if (!alias) return
+  const appType = prompt('应用类型 (appType):', 'cms') ?? 'cms'
+  try {
+    // 后端 appinfo_u2_create：读 alias/appType/icon/manager（均可选，admin 门禁），manager 默认当前登录人
+    await api.post('/api/appinfo', { alias, appType })
+    doSearch()
+  } catch (e: any) {
+    toast.error('新建失败: ' + (e?.message ?? ''))
+  }
+}
+async function deleteApp(item: any) {
+  if (!(await confirmMsg('确定删除应用「' + (item.name || item.alias || item.id) + '」？'))) return
+  try {
+    await api.delete('/api/appinfo/' + item.id)
+    doSearch()
+  } catch (e: any) {
+    toast.error('删除失败: ' + (e?.message ?? ''))
+  }
+}
+async function showPerms(item: any) {
+  try {
+    // GET permission/appInfo/{id}/{managers|publishers|viewers} —— 应用权限成员
+    const id = encodeURIComponent(item.id)
+    const [mgr, pub, viewer] = await Promise.all([
+      api.get(`/api/permission/appInfo/${id}/managers`),
+      api.get(`/api/permission/appInfo/${id}/publishers`),
+      api.get(`/api/permission/appInfo/${id}/viewers`),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    toast.success(`管理者 ${n(mgr)} / 发布者 ${n(pub)} / 查看者 ${n(viewer)}`)
+  } catch (e: any) {
+    toast.error('查询权限失败: ' + (e?.message ?? ''))
   }
 }
 
@@ -129,6 +170,9 @@ const api_list_i_1_574_data = ref<any[]>([])
 .it{font-size:14px;font-weight:600;color:var(--text-primary)}
 .im{font-size:12px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .meta{font-size:10px;color:var(--color-primary-deep);margin-top:4px;font-family:'JetBrains Mono',monospace}
+.btn-act2{padding:4px 10px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-secondary);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;flex-shrink:0;margin-right:4px}
+.btn-act2:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.btn-del{padding:4px 10px;border:1px solid var(--color-error);background:var(--color-error-glow);color:var(--color-error);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;flex-shrink:0}
 .empty,.loading-row{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px}
 .ei{font-size:48px;opacity:0.4}
 .sk{height:40px;border-radius:var(--radius-md);background:var(--bg-elevated);animation:pulse 1.2s ease-in-out infinite}

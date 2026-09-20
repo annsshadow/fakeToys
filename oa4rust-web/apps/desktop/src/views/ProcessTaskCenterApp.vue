@@ -10,6 +10,10 @@
     <div class="content-panel glass-card">
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
+        <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
+      </div>
+      <div v-if="workItems.length" class="wk-chips">
+        <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
       <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">⚡</div><p>暂无任务</p></div>
@@ -38,7 +42,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 
 interface Item {
   id: string
@@ -52,6 +56,17 @@ interface Item {
 }
 
 const listEp = '/api/processplatform/service/processing/task/list'
+const workItems = ref<Array<{ id?: string; title?: string }>>([])
+async function loadWorkList() {
+  try {
+    // GET processplatform/service/processing/work/list —— 工作实例列表（Query 可选）
+    const r: any = await api.get('/api/processplatform/service/processing/work/list')
+    workItems.value = (r.data ?? []) as Array<{ id?: string; title?: string }>
+    if (workItems.value.length === 0) toast.success('暂无工作实例')
+  } catch (e: any) {
+    toast.error('加载工作实例失败: ' + (e?.message ?? ''))
+  }
+}
 const qk = ['ProcessTaskCenter', 'list']
 
 const search = ref(''),
@@ -141,4 +156,6 @@ function fmtTime(t?: string) {
 .empty-icon{font-size:32px;margin-bottom:8px}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.wk-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.wk-chip{padding:2px 10px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-primary)}
 </style>
