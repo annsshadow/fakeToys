@@ -1,8 +1,8 @@
 <template>
   <div class="mod-view">
     <div class="view-header glass-card">
-      <h1>{{ title }}</h1>
-      <p class="subtitle">{{ subtitle }}</p>
+      <h1>{{ title ?? '占位页面' }}</h1>
+      <p class="subtitle">{{ subtitle ?? '该页面为通用占位模板，尚未接入具体业务' }}</p>
     </div>
     <div class="content-panel glass-card" v-if="loading">
       <div class="loading-state"><div class="sk" v-for="i in 4" :key="i"></div></div>
@@ -32,8 +32,10 @@ import { api } from '@oa4rust/sdk'
 import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps<{
-  title: string
-  subtitle: string
+  // 该视图是通用占位页，路由未传任何 props（main.ts 的 'empty' 路由）——
+  // 故所有 props 均为可选并带默认值，避免 Vue 必填校验告警与空标题渲染。
+  title?: string
+  subtitle?: string
   emptyIcon?: string
   emptyText?: string
   apiPath?: string
