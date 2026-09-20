@@ -12,6 +12,7 @@
       </select>
       <button class="sb" @click="loadMeetings">搜索</button>
       <button class="sb" @click="loadMyApplied">我的申请</button>
+      <button class="sb" @click="loadMyInvited">我的邀请</button>
       <button class="sb" @click="addBuilding">+ 楼栋</button>
     </div>
     <div v-if="appliedText" class="applied-note">{{ appliedText }}</div>
@@ -187,6 +188,20 @@ async function inviteParticipant(m: M) {
   }
 }
 const appliedText = ref('')
+async function loadMyInvited() {
+  try {
+    // GET meeting/list/invited/processing + completed + rejected —— 我受邀会议（进行/已办/已拒）
+    const [proc, done, rej] = await Promise.all([
+      api.get('/api/meeting/assemble/control/meeting/list/invited/processing'),
+      api.get('/api/meeting/assemble/control/meeting/list/invited/completed'),
+      api.get('/api/meeting/assemble/control/meeting/list/invited/rejected'),
+    ])
+    const cnt = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    appliedText.value = `受邀进行 ${cnt(proc)} / 已办 ${cnt(done)} / 已拒 ${cnt(rej)}`
+  } catch (e: any) {
+    toast.error('加载我的邀请失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadMyApplied() {
   try {
     // GET meeting/list/applied/wait + processing + completed —— 我申请的会议（待审/进行/已办）
