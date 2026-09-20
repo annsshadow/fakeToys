@@ -74,6 +74,7 @@
     <div class="settings-card glass-card">
       <h3>登录方式 / 账户绑定</h3>
       <button class="save-btn ghost" @click="loadAuthMeta">查看</button>
+      <button class="save-btn ghost" @click="loadOauthConfig">OAuth 配置</button>
       <div v-if="authMetaText" class="auth-note">{{ authMetaText }}</div>
     </div>
 
@@ -189,6 +190,20 @@ function saveSignature(): void {
 
 interface SigMgr { id: string; name?: string; personName?: string }
 const authMetaText = ref('')
+async function loadOauthConfig() {
+  try {
+    // GET org/auth oauth/qywx/config + oauth/dingding/config + captchaRSAPublicKey —— 企微/钉钉 OAuth 配置/验证码公钥
+    const [qywx, dingding, rsa] = await Promise.all([
+      api.get('/api/organization/assemble/authentication/authentication/oauth/qywx/config'),
+      api.get('/api/organization/assemble/authentication/authentication/oauth/dingding/config'),
+      api.get('/api/organization/assemble/authentication/authentication/captchaRSAPublicKey'),
+    ])
+    const has = (r: any) => ((r as any)?.data ? '有' : '无')
+    authMetaText.value = `企微配置 ${has(qywx)} · 钉钉配置 ${has(dingding)} · 验证码公钥 ${has(rsa)}`
+  } catch (e: any) {
+    toast.error('加载 OAuth 配置失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadAuthMeta() {
   try {
     // GET org/assemble/authentication mode + bind/list + oauth/list —— 登录方式/账户绑定/OAuth
