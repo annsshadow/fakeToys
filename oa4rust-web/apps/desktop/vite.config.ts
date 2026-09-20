@@ -51,20 +51,29 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vue: ['vue', 'vue-router', 'pinia'],
-          naive: ['naive-ui'],
-          query: ['@tanstack/vue-query'],
-          echarts: ['echarts'],
-          codemirror: [
-            'codemirror',
-            '@codemirror/state',
-            '@codemirror/view',
-            '@codemirror/language',
-            '@codemirror/autocomplete',
-            '@codemirror/commands',
-            '@codemirror/lang-sql',
-          ],
+        // 手动分包：按第三方包分组（函数形态；对象形态在当前 rollup 类型下被判为只接受函数）。
+        // 分组结果与原对象写法等价。
+        manualChunks(id: string) {
+          if (!id.includes('/node_modules/')) return undefined
+          const groups: Record<string, string[]> = {
+            vue: ['vue', 'vue-router', 'pinia'],
+            naive: ['naive-ui'],
+            query: ['@tanstack/vue-query'],
+            echarts: ['echarts'],
+            codemirror: [
+              'codemirror',
+              '@codemirror/state',
+              '@codemirror/view',
+              '@codemirror/language',
+              '@codemirror/autocomplete',
+              '@codemirror/commands',
+              '@codemirror/lang-sql',
+            ],
+          }
+          for (const [chunk, pkgs] of Object.entries(groups)) {
+            if (pkgs.some((pkg) => id.includes(`/node_modules/${pkg}/`))) return chunk
+          }
+          return undefined
         },
       },
     },

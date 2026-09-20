@@ -132,8 +132,9 @@ function appealStatus(s?: string) {
   return s === 'approved' ? '已通过' : s === 'rejected' ? '已驳回' : s === 'pending' ? '待审批' : '—'
 }
 const am = useMutation({
+  // 后端 audit_appeal 读取 auditStatus（非 status）
   mutationFn: ({ id, status }: { id: string; status: string }) =>
-    api.post('/api/attendance/appeal/audit', { id, status }),
+    api.post('/api/attendance/appeal/audit', { id, auditStatus: status }),
   onSuccess: () => qc.invalidateQueries({ queryKey: ['att', 'apps'] }),
 })
 function audit(a: A, action: string) {
@@ -187,7 +188,13 @@ async function createRule() {
   const name = prompt('规则名称:')
   if (!name) return
   try {
-    await api.post('/api/attendance/assemble/control/rule/create', { name })
+    // 后端 create_control_rule 读取 ruleName/ruleType/enabled/description
+    await api.post('/api/attendance/assemble/control/rule/create', {
+      ruleName: name,
+      ruleType: 'normal',
+      enabled: true,
+      description: '',
+    })
     loadRules()
   } catch (e: any) {
     toast.error('创建失败: ' + (e?.message ?? ''))
@@ -209,9 +216,10 @@ async function submitAppeal() {
   const end = prompt('结束日期:', new Date().toISOString().slice(0, 10))
   if (!start || !end) return
   try {
-    // 后端 appeal/submit 契约：personId + appealDate + reason（单日期，无结束日字段）
+    // 后端 appeal/submit 契约：personId + appealDate + reason + creator（单日期，无结束日字段）
     await api.post('/api/attendance/appeal/submit', {
       personId: session.state.user?.unique ?? '',
+      creator: session.state.user?.unique ?? '',
       appealDate: start,
       reason: type,
     })

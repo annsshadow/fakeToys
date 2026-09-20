@@ -318,6 +318,7 @@ const sendMutation = useMutation({
     return api.post('/api/message/assemble/communicate/im/msg', {
       conversationId: selectedChat.value!.id,
       content,
+      sender: session.user?.unique ?? '',
       type: 'text',
     })
   },

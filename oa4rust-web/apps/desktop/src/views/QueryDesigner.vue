@@ -378,8 +378,9 @@ async function runQuery() {
     if (conditions.value.length > 0) {
       params.conditions = conditions.value.filter((c) => c.field && c.value)
     }
-    const r = await api.post(`/api/query/assemble/designer/query`, {
-      queryId: selected.value.id,
+    // 运行已保存查询走 execute（后端支持按 id 取回 SQL）；/designer/query 是创建端点，勿用于执行。
+    const r = await api.post(`/api/query/assemble/designer/execute`, {
+      id: selected.value.id,
       ...params,
     })
     resultData.value = r.data?.list ?? r.data ?? []

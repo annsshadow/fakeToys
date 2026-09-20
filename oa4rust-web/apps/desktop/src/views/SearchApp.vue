@@ -33,8 +33,8 @@ async function doSearch() {
   loading.value = true
   queried.value = true
   try {
-    // 后端 queryview/search 仅注册 POST。
-    const r: any = await api.post('/api/queryview/search', { keyword: query.value })
+    // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
+    const r: any = await api.post('/api/queryview/search', { key: query.value })
     results.value = (r?.data ?? []) as any[]
   } finally {
     loading.value = false
