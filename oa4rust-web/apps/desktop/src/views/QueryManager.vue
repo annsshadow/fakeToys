@@ -5,6 +5,7 @@
       <p class="subtitle">/api/query/assemble/designer/*</p>
       <span class="hdr-a">
         <button class="nb ghost" @click="loadQueryMeta">分类/语句</button>
+        <button class="nb ghost" @click="loadQueryExtra">模型/导出</button>
         <button class="nb" @click="showCreate=true">+ 新建查询</button>
       </span>
     </div>
@@ -67,6 +68,20 @@ interface Q {
   sql?: string
 }
 const queryMetaText = ref('')
+async function loadQueryExtra() {
+  try {
+    // GET neural/list/model + output/list + list/summary —— 神经模型/导出/查询概要
+    const [models, outputs, summary] = await Promise.all([
+      api.get('/api/query/assemble/designer/neural/list/model'),
+      api.get('/api/query/assemble/designer/output/list'),
+      api.get('/api/query/assemble/designer/list/summary'),
+    ])
+    const n = (r: any) => (Array.isArray(r?.data) ? r.data.length : 0)
+    queryMetaText.value = `神经模型 ${n(models)} / 导出 ${n(outputs)} / 概要 ${n(summary)}`
+  } catch (e: any) {
+    toast.error('加载失败: ' + (e?.message ?? ''))
+  }
+}
 async function loadQueryMeta() {
   try {
     // GET querycategory/list + statement/list/manage —— 查询分类与语句管理列表

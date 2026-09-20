@@ -1941,7 +1941,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 123,
+    "line": 138,
     "method": "DELETE",
     "raw": "/api/query/assemble/designer/delete/${id}",
     "path": "/api/query/assemble/designer/delete/{}",
@@ -5228,7 +5228,46 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 74,
+    "line": 75,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/neural/list/model",
+    "path": "/api/query/assemble/designer/neural/list/model",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/neural/list/model",
+    "hit_crate": "query_assemble_designer",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 76,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/output/list",
+    "path": "/api/query/assemble/designer/output/list",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/output/list",
+    "hit_crate": "query_assemble_designer",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 77,
+    "method": "GET",
+    "raw": "/api/query/assemble/designer/list/summary",
+    "path": "/api/query/assemble/designer/list/summary",
+    "via": "literal",
+    "ambiguous": false,
+    "hit": "/api/query/assemble/designer/list/summary",
+    "hit_crate": "query_assemble_designer",
+    "extra": []
+   },
+   {
+    "app": "desktop",
+    "file": "apps/desktop/src/views/QueryManager.vue",
+    "line": 89,
     "method": "GET",
     "raw": "/api/query/assemble/designer/querycategory/list",
     "path": "/api/query/assemble/designer/querycategory/list",
@@ -5241,7 +5280,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 75,
+    "line": 90,
     "method": "GET",
     "raw": "/api/query/assemble/designer/statement/list/manage",
     "path": "/api/query/assemble/designer/statement/list/manage",
@@ -5254,7 +5293,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 95,
+    "line": 110,
     "method": "GET",
     "raw": "/api/query/assemble/designer/list/all",
     "path": "/api/query/assemble/designer/list/all",
@@ -5267,7 +5306,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 110,
+    "line": 125,
     "method": "POST",
     "raw": "/api/query/assemble/designer/execute",
     "path": "/api/query/assemble/designer/execute",
@@ -5280,7 +5319,7 @@
    {
     "app": "desktop",
     "file": "apps/desktop/src/views/QueryManager.vue",
-    "line": 133,
+    "line": 148,
     "method": "POST",
     "raw": "/api/query/assemble/designer/create",
     "path": "/api/query/assemble/designer/create",
